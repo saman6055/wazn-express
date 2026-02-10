@@ -1,4 +1,17 @@
 {
+  "errors": {
+    "sessionExpiredPleaseLogin": "دانیشتنەکەت تەواوبوو - تکایە دووبارە چوونەژوورەوە بکە",
+    "redirectingToLogin": "گەڕاندنەوە بۆ چوونەژوورەوە...",
+    "networkError": "هەڵەی تۆڕ",
+    "somethingWentWrong": "هەڵەیەک ڕوویدا",
+    "resourceNotFound": "ئەم بابەتە نەدۆزرایەوە",
+    "checkConnectionAndRetry": "پەیوەندی ئینتەرنێت بپشکنە و دووبارە هەوڵ بدەرەوە",
+    "operationSuccess": "کردارەکە سەرکەوتووبوو",
+    "operationFailed": "کردارەکە سەرکەوتوو نەبوو",
+    "offlineBanner": "ئۆفلاین - پەیوەندیتان بە ئینتەرنێت نییە",
+    "offlinePendingActions": "{{count}} کردار چاوەڕوانن کاتێک ئۆنلاین بیت دووبارە هەوڵ بدرێنەوە",
+    "backOnline": "ئێستا ئۆنلاینیت. دەتوانیت کردارەکانی پێشوو دووبارە تاقی بکەیتەوە."
+  },
   "darkMode": "ڕەنگی تاریک",
   "signOut": "چوونەدەرەوە",
   "unclaimedPackages": "پاکەتە بێ خاوەنەکان",
@@ -126,6 +139,9 @@
     "demo": "دیمۆ",
     "help": "یارمەتی",
     "support": "پشتگیری",
+    "tryAgain": "دووبارە هەوڵ بدەرەوە",
+    "goHome": "گەڕانەوە بۆ سەرەکی",
+    "copyErrorDetails": "کۆپیکردنی وردەکاری بۆ پشتگیری",
     "feedback": "ڕای خۆت",
     "contact": "پەیوەندی",
     "about": "دەربارە",

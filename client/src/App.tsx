@@ -8,6 +8,9 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { PortalThemeProvider } from "./contexts/PortalThemeContext";
 import { PWAInstallPrompt, OfflineIndicator } from "./components/PWAInstallPrompt";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
+import QueryErrorBoundary from "./components/QueryErrorBoundary";
+import { MutationToastHandler } from "./components/MutationToastHandler";
+import { OfflineProvider } from "./contexts/OfflineContext";
 
 // ---------------------------------------------------------------------------
 // Core & Home
@@ -304,14 +307,19 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light" switchable={true}>
         <LanguageProvider>
-          <PortalThemeProvider>
-            <TooltipProvider>
-              <Toaster />
-              <OfflineIndicator />
-              <Router />
-              <PWAInstallPrompt />
-            </TooltipProvider>
-          </PortalThemeProvider>
+          <OfflineProvider>
+            <PortalThemeProvider>
+              <TooltipProvider>
+                <Toaster />
+                <MutationToastHandler />
+                <OfflineIndicator />
+                <QueryErrorBoundary>
+                  <Router />
+                </QueryErrorBoundary>
+                <PWAInstallPrompt />
+              </TooltipProvider>
+            </PortalThemeProvider>
+          </OfflineProvider>
         </LanguageProvider>
       </ThemeProvider>
     </ErrorBoundary>

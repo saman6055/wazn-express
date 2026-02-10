@@ -1,4 +1,17 @@
 {
+  "errors": {
+    "sessionExpiredPleaseLogin": "انتهت الجلسة - يرجى تسجيل الدخول مرة أخرى",
+    "redirectingToLogin": "جاري التحويل لتسجيل الدخول...",
+    "networkError": "خطأ في الشبكة",
+    "somethingWentWrong": "حدث خطأ ما",
+    "resourceNotFound": "المورد غير موجود",
+    "checkConnectionAndRetry": "تحقق من اتصالك وحاول مرة أخرى",
+    "operationSuccess": "تمت العملية بنجاح",
+    "operationFailed": "فشلت العملية",
+    "offlineBanner": "أنت غير متصل بالإنترنت",
+    "offlinePendingActions": "{{count}} إجراء سيتم إعادة المحاولة عند الاتصال",
+    "backOnline": "تم الاتصال. يمكنك إعادة المحاولة للإجراءات السابقة."
+  },
   "common": {
     "appName": "وزن إكسبرس",
     "loading": "جاري التحميل...",
@@ -104,6 +117,9 @@
     "demo": "عرض توضيحي",
     "help": "مساعدة",
     "support": "الدعم",
+    "tryAgain": "حاول مرة أخرى",
+    "goHome": "العودة للرئيسية",
+    "copyErrorDetails": "نسخ تفاصيل الخطأ للدعم",
     "feedback": "ملاحظاتك",
     "contact": "اتصل بنا",
     "about": "حول",

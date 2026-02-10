@@ -1,4 +1,17 @@
 {
+  "errors": {
+    "sessionExpiredPleaseLogin": "会话已过期 - 请重新登录",
+    "redirectingToLogin": "正在跳转到登录...",
+    "networkError": "网络错误",
+    "somethingWentWrong": "出了点问题",
+    "resourceNotFound": "未找到资源",
+    "checkConnectionAndRetry": "请检查网络连接后重试",
+    "operationSuccess": "操作成功",
+    "operationFailed": "操作失败",
+    "offlineBanner": "您已离线",
+    "offlinePendingActions": "{{count}} 个操作将在重新联网后重试",
+    "backOnline": "已恢复联网。您可以重试之前的操作。"
+  },
   "common": {
     "appName": "Wazn Express",
     "loading": "加载中...",
@@ -103,8 +116,11 @@
     "test": "تاقیکردنەوە",
     "demo": "دیمۆ",
     "help": "یارمەتی",
-    "support": "پشتگیری",
-    "feedback": "ڕای خۆت",
+    "support": "支持",
+    "tryAgain": "重试",
+    "goHome": "返回首页",
+    "copyErrorDetails": "复制错误详情以供支持",
+    "feedback": "反馈",
     "contact": "پەیوەندی",
     "about": "دەربارە",
     "version": "وەشان",

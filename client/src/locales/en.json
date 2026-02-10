@@ -1,4 +1,17 @@
 {
+  "errors": {
+    "sessionExpiredPleaseLogin": "Session expired - please login again",
+    "redirectingToLogin": "Redirecting to login...",
+    "networkError": "Network error",
+    "somethingWentWrong": "Something went wrong",
+    "resourceNotFound": "Resource not found",
+    "checkConnectionAndRetry": "Check your connection and try again",
+    "operationSuccess": "Operation successful",
+    "operationFailed": "Operation failed",
+    "offlineBanner": "You are offline",
+    "offlinePendingActions": "{{count}} action(s) will be retried when back online",
+    "backOnline": "Back online. You can retry your previous actions."
+  },
   "common": {
     "appName": "Wazn Express",
     "loading": "Loading...",
@@ -104,6 +117,9 @@
     "demo": "Demo",
     "help": "Help",
     "support": "Support",
+    "tryAgain": "Try again",
+    "goHome": "Go home",
+    "copyErrorDetails": "Copy error details for support",
     "feedback": "Feedback",
     "contact": "Contact",
     "about": "About",

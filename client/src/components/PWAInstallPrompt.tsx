@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { X, Download, Smartphone } from 'lucide-react';
+import { useOffline } from '@/contexts/OfflineContext';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -147,17 +149,22 @@ export function usePWA() {
   return { isInstalled, isOnline };
 }
 
-// Offline indicator component
+// Offline indicator component. Requires OfflineProvider and LanguageProvider in App.
 export function OfflineIndicator() {
-  const { isOnline } = usePWA();
+  const { isOnline, pendingCount } = useOffline();
+  const { t } = useTranslation();
 
   if (isOnline) return null;
 
+  const message = pendingCount > 0
+    ? t("errors.offlinePendingActions", { count: pendingCount })
+    : t("errors.offlineBanner");
+
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white text-center py-2 text-sm font-medium">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white text-center py-2.5 text-sm font-medium shadow-md">
       <span className="inline-flex items-center gap-2">
         <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-        ئۆفلاین - هەندێک تایبەتمەندی بەردەست نییە
+        {message}
       </span>
     </div>
   );
