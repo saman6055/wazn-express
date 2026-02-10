@@ -1,0 +1,42 @@
+{
+  "query": "SELECT * FROM payments WHERE customerId = 6002462 LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT * FROM payments WHERE customerId = 6002462 LIMIT 10",
+  "rows": [
+    {
+      "id": "1200001",
+      "customerId": "6002462",
+      "invoiceId": "NULL",
+      "amountUsd": "1837.00",
+      "amountLocal": "NULL",
+      "currency": "USD",
+      "exchangeRate": "NULL",
+      "paymentMethod": "cash",
+      "referenceNumber": "NULL",
+      "status": "completed",
+      "notes": "NULL",
+      "receivedById": "1",
+      "paymentDate": "2025-12-25 11:59:38",
+      "createdAt": "2025-12-25 11:59:38"
+    },
+    {
+      "id": "1200002",
+      "customerId": "6002462",
+      "invoiceId": "NULL",
+      "amountUsd": "1837.00",
+      "amountLocal": "NULL",
+      "currency": "USD",
+      "exchangeRate": "NULL",
+      "paymentMethod": "cash",
+      "referenceNumber": "NULL",
+      "status": "completed",
+      "notes": "NULL",
+      "receivedById": "1",
+      "paymentDate": "2025-12-25 12:00:24",
+      "createdAt": "2025-12-25 12:00:24"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcustomerId\tinvoiceId\tamountUsd\tamountLocal\tcurrency\texchangeRate\tpaymentMethod\treferenceNumber\tstatus\tnotes\treceivedById\tpaymentDate\tcreatedAt\n1200001\t6002462\tNULL\t1837.00\tNULL\tUSD\tNULL\tcash\tNULL\tcompleted\tNULL\t1\t2025-12-25 11:59:38\t2025-12-25 11:59:38\n1200002\t6002462\tNULL\t1837.00\tNULL\tUSD\tNULL\tcash\tNULL\tcompleted\tNULL\t1\t2025-12-25 12:00:24\t2025-12-25 12:00:24\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

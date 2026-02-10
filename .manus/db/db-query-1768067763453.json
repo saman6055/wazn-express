@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, packageCode, trackingNumber, weightKg, calculatedCostUsd, customerId, status, batchId FROM packages WHERE status = 'delivered' ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, packageCode, trackingNumber, weightKg, calculatedCostUsd, customerId, status, batchId FROM packages WHERE status = 'delivered' ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "2580006",
+      "packageCode": "g000009",
+      "trackingNumber": "76",
+      "weightKg": "85.000",
+      "calculatedCostUsd": "NULL",
+      "customerId": "8430002",
+      "status": "delivered",
+      "batchId": "720001"
+    },
+    {
+      "id": "2580005",
+      "packageCode": "g000008",
+      "trackingNumber": "56",
+      "weightKg": "52.000",
+      "calculatedCostUsd": "NULL",
+      "customerId": "8430002",
+      "status": "delivered",
+      "batchId": "720001"
+    },
+    {
+      "id": "2580004",
+      "packageCode": "g000007",
+      "trackingNumber": "32",
+      "weightKg": "25.000",
+      "calculatedCostUsd": "NULL",
+      "customerId": "8430002",
+      "status": "delivered",
+      "batchId": "720001"
+    },
+    {
+      "id": "2580003",
+      "packageCode": "g000006",
+      "trackingNumber": "32",
+      "weightKg": "22.000",
+      "calculatedCostUsd": "NULL",
+      "customerId": "8430001",
+      "status": "delivered",
+      "batchId": "720001"
+    },
+    {
+      "id": "2580002",
+      "packageCode": "g000005",
+      "trackingNumber": "5",
+      "weightKg": "NULL",
+      "calculatedCostUsd": "NULL",
+      "customerId": "8430001",
+      "status": "delivered",
+      "batchId": "720001"
+    },
+    {
+      "id": "2580001",
+      "packageCode": "g000004",
+      "trackingNumber": "11",
+      "weightKg": "23.000",
+      "calculatedCostUsd": "NULL",
+      "customerId": "8430001",
+      "status": "delivered",
+      "batchId": "720001"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpackageCode\ttrackingNumber\tweightKg\tcalculatedCostUsd\tcustomerId\tstatus\tbatchId\n2580006\tg000009\t76\t85.000\tNULL\t8430002\tdelivered\t720001\n2580005\tg000008\t56\t52.000\tNULL\t8430002\tdelivered\t720001\n2580004\tg000007\t32\t25.000\tNULL\t8430002\tdelivered\t720001\n2580003\tg000006\t32\t22.000\tNULL\t8430001\tdelivered\t720001\n2580002\tg000005\t5\tNULL\tNULL\t8430001\tdelivered\t720001\n2580001\tg000004\t11\t23.000\tNULL\t8430001\tdelivered\t720001\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}

@@ -1,0 +1,28 @@
+{
+  "query": "SELECT id, packageCode, trackingNumber, createdAt FROM packages ORDER BY id DESC LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, packageCode, trackingNumber, createdAt FROM packages ORDER BY id DESC LIMIT 10",
+  "rows": [
+    {
+      "id": "3270013",
+      "packageCode": "UNC-000003",
+      "trackingNumber": "UNC-UNIQUE-2-1768996828181",
+      "createdAt": "2026-01-21 12:00:28"
+    },
+    {
+      "id": "3270012",
+      "packageCode": "UNC-000002",
+      "trackingNumber": "UNC-UNIQUE-1-1768996828123",
+      "createdAt": "2026-01-21 12:00:28"
+    },
+    {
+      "id": "3270011",
+      "packageCode": "UNC-000001",
+      "trackingNumber": "UNC-TEST-1768996828025",
+      "createdAt": "2026-01-21 12:00:28"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpackageCode\ttrackingNumber\tcreatedAt\n3270013\tUNC-000003\tUNC-UNIQUE-2-1768996828181\t2026-01-21 12:00:28\n3270012\tUNC-000002\tUNC-UNIQUE-1-1768996828123\t2026-01-21 12:00:28\n3270011\tUNC-000001\tUNC-TEST-1768996828025\t2026-01-21 12:00:28\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

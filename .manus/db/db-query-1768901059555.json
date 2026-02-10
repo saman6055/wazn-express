@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, requestCode, customerId, productName, status, totalPrice, sellingPriceUsd FROM purchaseRequests;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, requestCode, customerId, productName, status, totalPrice, sellingPriceUsd FROM purchaseRequests;",
+  "rows": [
+    {
+      "id": "240002",
+      "requestCode": "PR-2024-00001",
+      "customerId": "1",
+      "productName": "iPhone 15 Pro Case",
+      "status": "quoted",
+      "totalPrice": "25.00",
+      "sellingPriceUsd": "25.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\trequestCode\tcustomerId\tproductName\tstatus\ttotalPrice\tsellingPriceUsd\n240002\tPR-2024-00001\t1\tiPhone 15 Pro Case\tquoted\t25.00\t25.00\n",
+  "stderr": "",
+  "execution_time_ms": 90
+}

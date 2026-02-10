@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE batches \nADD COLUMN IF NOT EXISTS airlineName VARCHAR(100),\nADD COLUMN IF NOT EXISTS flightNumber VARCHAR(50),\nADD COLUMN IF NOT EXISTS shippingCompany VARCHAR(100),\nADD COLUMN IF NOT EXISTS containerNumber VARCHAR(50),\nADD COLUMN IF NOT EXISTS vesselName VARCHAR(100),\nADD COLUMN IF NOT EXISTS shippingCost DECIMAL(12,2);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute ALTER TABLE batches \nADD COLUMN IF NOT EXISTS airlineName VARCHAR(100),\nADD COLUMN IF NOT EXISTS flightNumber VARCHAR(50),\nADD COLUMN IF NOT EXISTS shippingCompany VARCHAR(100),\nADD COLUMN IF NOT EXISTS containerNumber VARCHAR(50),\nADD COLUMN IF NOT EXISTS vesselName VARCHAR(100),\nADD COLUMN IF NOT EXISTS shippingCost DECIMAL(12,2);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2336
+}

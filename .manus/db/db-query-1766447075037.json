@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, packageCode, customerId, status FROM packages WHERE packageCode = 'g000002';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, packageCode, customerId, status FROM packages WHERE packageCode = 'g000002';",
+  "rows": [
+    {
+      "id": "2",
+      "packageCode": "g000002",
+      "customerId": "30001",
+      "status": "registered"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpackageCode\tcustomerId\tstatus\n2\tg000002\t30001\tregistered\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

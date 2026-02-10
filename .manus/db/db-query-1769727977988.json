@@ -1,0 +1,25 @@
+{
+  "query": "SELECT COUNT(*) as customer_count FROM customers; SELECT COUNT(*) as package_count FROM packages; SELECT COUNT(*) as batch_count FROM batches;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT COUNT(*) as customer_count FROM customers; SELECT COUNT(*) as package_count FROM packages; SELECT COUNT(*) as batch_count FROM batches;",
+  "rows": [
+    {
+      "customer_count": "0"
+    },
+    {
+      "customer_count": "package_count"
+    },
+    {
+      "customer_count": "2"
+    },
+    {
+      "customer_count": "batch_count"
+    },
+    {
+      "customer_count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "customer_count\n0\npackage_count\n2\nbatch_count\n0\n",
+  "stderr": "",
+  "execution_time_ms": 97
+}

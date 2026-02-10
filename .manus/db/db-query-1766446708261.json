@@ -1,0 +1,28 @@
+{
+  "query": "SELECT id, packageCode, trackingNumber, status FROM packages WHERE customerId = 30001;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, packageCode, trackingNumber, status FROM packages WHERE customerId = 30001;",
+  "rows": [
+    {
+      "id": "1",
+      "packageCode": "g000001",
+      "trackingNumber": "111111",
+      "status": "delivered"
+    },
+    {
+      "id": "2",
+      "packageCode": "g000002",
+      "trackingNumber": "111112",
+      "status": "registered"
+    },
+    {
+      "id": "3",
+      "packageCode": "g000003",
+      "trackingNumber": "4555",
+      "status": "registered"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpackageCode\ttrackingNumber\tstatus\n1\tg000001\t111111\tdelivered\n2\tg000002\t111112\tregistered\n3\tg000003\t4555\tregistered\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

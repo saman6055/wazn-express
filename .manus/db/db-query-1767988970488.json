@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, name, customerCode, role FROM users WHERE role = 'customer' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, name, customerCode, role FROM users WHERE role = 'customer' LIMIT 5;",
+  "rows": [
+    {
+      "id": "6002462",
+      "name": "Xogr",
+      "customerCode": "AZ0001(Xogr)",
+      "role": "customer"
+    },
+    {
+      "id": "6002466",
+      "name": "Xamosh",
+      "customerCode": "AZ0002(Xamosh)",
+      "role": "customer"
+    },
+    {
+      "id": "6270004",
+      "name": "Test Customer",
+      "customerCode": "AZ0003(Test Customer)",
+      "role": "customer"
+    },
+    {
+      "id": "6270013",
+      "name": "Test Customer",
+      "customerCode": "AZ0004(Test Customer)",
+      "role": "customer"
+    },
+    {
+      "id": "6270019",
+      "name": "Test Customer",
+      "customerCode": "AZ0005(Test Customer)",
+      "role": "customer"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcustomerCode\trole\n6002462\tXogr\tAZ0001(Xogr)\tcustomer\n6002466\tXamosh\tAZ0002(Xamosh)\tcustomer\n6270004\tTest Customer\tAZ0003(Test Customer)\tcustomer\n6270013\tTest Customer\tAZ0004(Test Customer)\tcustomer\n6270019\tTest Customer\tAZ0005(Test Customer)\tcustomer\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

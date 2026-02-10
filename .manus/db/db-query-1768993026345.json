@@ -1,0 +1,14 @@
+{
+  "query": "SELECT DATE(FROM_UNIXTIME(createdAt/1000)) as date, COUNT(*) as count FROM packages GROUP BY DATE(FROM_UNIXTIME(createdAt/1000)) ORDER BY date DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT DATE(FROM_UNIXTIME(createdAt/1000)) as date, COUNT(*) as count FROM packages GROUP BY DATE(FROM_UNIXTIME(createdAt/1000)) ORDER BY date DESC LIMIT 10;",
+  "rows": [
+    {
+      "date": "2612-01-08",
+      "count": "266"
+    }
+  ],
+  "messages": [],
+  "stdout": "date\tcount\n2612-01-08\t266\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

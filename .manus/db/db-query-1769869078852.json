@@ -1,0 +1,45 @@
+{
+  "query": "SELECT id, username, name, role, email FROM users WHERE role = 'admin' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, username, name, role, email FROM users WHERE role = 'admin' LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "username": "NULL",
+      "name": "Xogr Xamosh",
+      "role": "admin",
+      "email": "waznexpress@gmail.com"
+    },
+    {
+      "id": "450006",
+      "username": "NULL",
+      "name": "NULL",
+      "role": "admin",
+      "email": "NULL"
+    },
+    {
+      "id": "450008",
+      "username": "NULL",
+      "name": "NULL",
+      "role": "admin",
+      "email": "NULL"
+    },
+    {
+      "id": "450011",
+      "username": "NULL",
+      "name": "NULL",
+      "role": "admin",
+      "email": "NULL"
+    },
+    {
+      "id": "450012",
+      "username": "NULL",
+      "name": "NULL",
+      "role": "admin",
+      "email": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tusername\tname\trole\temail\n1\tNULL\tXogr Xamosh\tadmin\twaznexpress@gmail.com\n450006\tNULL\tNULL\tadmin\tNULL\n450008\tNULL\tNULL\tadmin\tNULL\n450011\tNULL\tNULL\tadmin\tNULL\n450012\tNULL\tNULL\tadmin\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 1203
+}

@@ -1,0 +1,49 @@
+{
+  "query": "\n-- Update Full Package order with shipping cost\nUPDATE fullPackageOrders \nSET shippingCostUsd = '25.00',\n    profitUsd = ((sellingPriceUsd - purchasePriceUsd) * quantity - 25.00),\n    status = 'delivered'\nWHERE orderCode = 'FP-PROFIT-TEST-001';\n\n-- Update Purchase Request order with shipping cost  \nUPDATE fullPackageOrders \nSET shippingCostUsd = '15.00',\n    profitUsd = -15.00,\n    status = 'delivered'\nWHERE orderCode = 'PR-PROFIT-TEST-002';\n\n-- Update Commission order with shipping cost\nUPDATE fullPackageOrders \nSET shippingCostUsd = '30.00',\n    profitUsd = -30.00,\n    status = 'delivered'\nWHERE orderCode = 'COM-PROFIT-TEST-003';\n\n-- Verify results\nSELECT \n  orderCode,\n  orderType,\n  CAST(COALESCE(purchasePriceUsd, 0) AS DECIMAL(10,2)) as purchasePrice,\n  CAST(COALESCE(sellingPriceUsd, 0) AS DECIMAL(10,2)) as sellingPrice,\n  CAST(COALESCE(itemPriceUsd, 0) AS DECIMAL(10,2)) as itemPrice,\n  CAST(COALESCE(commissionFeeUsd, 0) AS DECIMAL(10,2)) as commission,\n  quantity,\n  CAST(COALESCE(shippingCostUsd, 0) AS DECIMAL(10,2)) as shippingCost,\n  CAST(COALESCE(profitUsd, 0) AS DECIMAL(10,2)) as actualProfit,\n  CASE \n    WHEN orderType = 'full_package' THEN CAST(((sellingPriceUsd - purchasePriceUsd) * quantity - COALESCE(shippingCostUsd, 0)) AS DECIMAL(10,2))\n    WHEN orderType = 'purchase_request' THEN CAST(-COALESCE(shippingCostUsd, 0) AS DECIMAL(10,2))\n    WHEN orderType = 'commission' THEN CAST(-COALESCE(shippingCostUsd, 0) AS DECIMAL(10,2))\n  END as expectedProfit,\n  status\nFROM fullPackageOrders \nWHERE orderCode IN ('FP-PROFIT-TEST-001', 'PR-PROFIT-TEST-002', 'COM-PROFIT-TEST-003')\nORDER BY orderCode;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \n-- Update Full Package order with shipping cost\nUPDATE fullPackageOrders \nSET shippingCostUsd = '25.00',\n    profitUsd = ((sellingPriceUsd - purchasePriceUsd) * quantity - 25.00),\n    status = 'delivered'\nWHERE orderCode = 'FP-PROFIT-TEST-001';\n\n-- Update Purchase Request order with shipping cost  \nUPDATE fullPackageOrders \nSET shippingCostUsd = '15.00',\n    profitUsd = -15.00,\n    status = 'delivered'\nWHERE orderCode = 'PR-PROFIT-TEST-002';\n\n-- Update Commission order with shipping cost\nUPDATE fullPackageOrders \nSET shippingCostUsd = '30.00',\n    profitUsd = -30.00,\n    status = 'delivered'\nWHERE orderCode = 'COM-PROFIT-TEST-003';\n\n-- Verify results\nSELECT \n  orderCode,\n  orderType,\n  CAST(COALESCE(purchasePriceUsd, 0) AS DECIMAL(10,2)) as purchasePrice,\n  CAST(COALESCE(sellingPriceUsd, 0) AS DECIMAL(10,2)) as sellingPrice,\n  CAST(COALESCE(itemPriceUsd, 0) AS DECIMAL(10,2)) as itemPrice,\n  CAST(COALESCE(commissionFeeUsd, 0) AS DECIMAL(10,2)) as commission,\n  quantity,\n  CAST(COALESCE(shippingCostUsd, 0) AS DECIMAL(10,2)) as shippingCost,\n  CAST(COALESCE(profitUsd, 0) AS DECIMAL(10,2)) as actualProfit,\n  CASE \n    WHEN orderType = 'full_package' THEN CAST(((sellingPriceUsd - purchasePriceUsd) * quantity - COALESCE(shippingCostUsd, 0)) AS DECIMAL(10,2))\n    WHEN orderType = 'purchase_request' THEN CAST(-COALESCE(shippingCostUsd, 0) AS DECIMAL(10,2))\n    WHEN orderType = 'commission' THEN CAST(-COALESCE(shippingCostUsd, 0) AS DECIMAL(10,2))\n  END as expectedProfit,\n  status\nFROM fullPackageOrders \nWHERE orderCode IN ('FP-PROFIT-TEST-001', 'PR-PROFIT-TEST-002', 'COM-PROFIT-TEST-003')\nORDER BY orderCode;\n",
+  "rows": [
+    {
+      "orderCode": "COM-PROFIT-TEST-003",
+      "orderType": "commission",
+      "purchasePrice": "0.00",
+      "sellingPrice": "0.00",
+      "itemPrice": "120.00",
+      "commission": "12.00",
+      "quantity": "1",
+      "shippingCost": "30.00",
+      "actualProfit": "-30.00",
+      "expectedProfit": "-30.00",
+      "status": "delivered"
+    },
+    {
+      "orderCode": "FP-PROFIT-TEST-001",
+      "orderType": "full_package",
+      "purchasePrice": "50.00",
+      "sellingPrice": "100.00",
+      "itemPrice": "0.00",
+      "commission": "0.00",
+      "quantity": "2",
+      "shippingCost": "25.00",
+      "actualProfit": "75.00",
+      "expectedProfit": "75.00",
+      "status": "delivered"
+    },
+    {
+      "orderCode": "PR-PROFIT-TEST-002",
+      "orderType": "purchase_request",
+      "purchasePrice": "0.00",
+      "sellingPrice": "0.00",
+      "itemPrice": "80.00",
+      "commission": "0.00",
+      "quantity": "1",
+      "shippingCost": "15.00",
+      "actualProfit": "-15.00",
+      "expectedProfit": "-15.00",
+      "status": "delivered"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderCode\torderType\tpurchasePrice\tsellingPrice\titemPrice\tcommission\tquantity\tshippingCost\tactualProfit\texpectedProfit\tstatus\nCOM-PROFIT-TEST-003\tcommission\t0.00\t0.00\t120.00\t12.00\t1\t30.00\t-30.00\t-30.00\tdelivered\nFP-PROFIT-TEST-001\tfull_package\t50.00\t100.00\t0.00\t0.00\t2\t25.00\t75.00\t75.00\tdelivered\nPR-PROFIT-TEST-002\tpurchase_request\t0.00\t0.00\t80.00\t0.00\t1\t15.00\t-15.00\t-15.00\tdelivered\n",
+  "stderr": "",
+  "execution_time_ms": 95
+}

@@ -1,0 +1,90 @@
+{
+  "query": "SELECT p.id, p.packageCode, p.trackingNumber, p.status, c.fullName, c.email \nFROM packages p \nJOIN customers c ON p.customerId = c.id \nWHERE c.email IS NOT NULL AND c.email != '' \nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT p.id, p.packageCode, p.trackingNumber, p.status, c.fullName, c.email \nFROM packages p \nJOIN customers c ON p.customerId = c.id \nWHERE c.email IS NOT NULL AND c.email != '' \nLIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "packageCode": "g000001",
+      "trackingNumber": "111111",
+      "status": "delivered",
+      "fullName": "saman",
+      "email": "saman6055@gmail.com"
+    },
+    {
+      "id": "2",
+      "packageCode": "g000002",
+      "trackingNumber": "111112",
+      "status": "registered",
+      "fullName": "saman",
+      "email": "saman6055@gmail.com"
+    },
+    {
+      "id": "3",
+      "packageCode": "g000003",
+      "trackingNumber": "4555",
+      "status": "registered",
+      "fullName": "saman",
+      "email": "saman6055@gmail.com"
+    },
+    {
+      "id": "60004",
+      "packageCode": "g000005",
+      "trackingNumber": "NULL",
+      "status": "registered",
+      "fullName": "sasa",
+      "email": "addmin@example.com"
+    },
+    {
+      "id": "60005",
+      "packageCode": "g000006",
+      "trackingNumber": "NULL",
+      "status": "registered",
+      "fullName": "sasa",
+      "email": "addmin@example.com"
+    },
+    {
+      "id": "60006",
+      "packageCode": "PRICE-TEST-1765995046997",
+      "trackingNumber": "NULL",
+      "status": "delivered",
+      "fullName": "sasa",
+      "email": "addmin@example.com"
+    },
+    {
+      "id": "90001",
+      "packageCode": "g000007",
+      "trackingNumber": "NULL",
+      "status": "registered",
+      "fullName": "sasa",
+      "email": "addmin@example.com"
+    },
+    {
+      "id": "90002",
+      "packageCode": "g000008",
+      "trackingNumber": "NULL",
+      "status": "registered",
+      "fullName": "sasa",
+      "email": "addmin@example.com"
+    },
+    {
+      "id": "90003",
+      "packageCode": "PRICE-TEST-1765999569721",
+      "trackingNumber": "NULL",
+      "status": "delivered",
+      "fullName": "sasa",
+      "email": "addmin@example.com"
+    },
+    {
+      "id": "120001",
+      "packageCode": "g000009",
+      "trackingNumber": "NULL",
+      "status": "registered",
+      "fullName": "sasa",
+      "email": "addmin@example.com"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpackageCode\ttrackingNumber\tstatus\tfullName\temail\n1\tg000001\t111111\tdelivered\tsaman\tsaman6055@gmail.com\n2\tg000002\t111112\tregistered\tsaman\tsaman6055@gmail.com\n3\tg000003\t4555\tregistered\tsaman\tsaman6055@gmail.com\n60004\tg000005\tNULL\tregistered\tsasa\taddmin@example.com\n60005\tg000006\tNULL\tregistered\tsasa\taddmin@example.com\n60006\tPRICE-TEST-1765995046997\tNULL\tdelivered\tsasa\taddmin@example.com\n90001\tg000007\tNULL\tregistered\tsasa\taddmin@example.com\n90002\tg000008\tNULL\tregistered\tsasa\taddmin@example.com\n90003\tPRICE-TEST-1765999569721\tNULL\tdelivered\tsasa\taddmin@example.com\n120001\tg000009\tNULL\tregistered\tsasa\taddmin@example.com\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

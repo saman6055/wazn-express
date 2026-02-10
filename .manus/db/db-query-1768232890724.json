@@ -1,0 +1,13 @@
+{
+  "query": "\n-- Create package for Full Package order\nINSERT INTO packages (\n  packageCode, customerId, trackingNumber, originWarehouseId,\n  shippingType, weightKg, status, calculatedCostUsd, isCharged,\n  registeredById, createdAt\n) VALUES (\n  'PKG-FP-TEST-001', 8730001, 'TRACK-FP-001', 1,\n  'air_regular', '3.5', 'delivered', '25.00', 1,\n  1, NOW()\n);\n\n-- Create package for Purchase Request order\nINSERT INTO packages (\n  packageCode, customerId, trackingNumber, originWarehouseId,\n  shippingType, weightKg, status, calculatedCostUsd, isCharged,\n  registeredById, createdAt\n) VALUES (\n  'PKG-PR-TEST-002', 8730001, 'TRACK-PR-002', 1,\n  'air_regular', '2.0', 'delivered', '15.00', 1,\n  1, NOW()\n);\n\n-- Create package for Commission order\nINSERT INTO packages (\n  packageCode, customerId, trackingNumber, originWarehouseId,\n  shippingType, weightKg, status, calculatedCostUsd, isCharged,\n  registeredById, createdAt\n) VALUES (\n  'PKG-COM-TEST-003', 8730001, 'TRACK-COM-003', 1,\n  'air_regular', '4.0', 'delivered', '30.00', 1,\n  1, NOW()\n);\n\nSELECT 'Packages created successfully' as result;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \n-- Create package for Full Package order\nINSERT INTO packages (\n  packageCode, customerId, trackingNumber, originWarehouseId,\n  shippingType, weightKg, status, calculatedCostUsd, isCharged,\n  registeredById, createdAt\n) VALUES (\n  'PKG-FP-TEST-001', 8730001, 'TRACK-FP-001', 1,\n  'air_regular', '3.5', 'delivered', '25.00', 1,\n  1, NOW()\n);\n\n-- Create package for Purchase Request order\nINSERT INTO packages (\n  packageCode, customerId, trackingNumber, originWarehouseId,\n  shippingType, weightKg, status, calculatedCostUsd, isCharged,\n  registeredById, createdAt\n) VALUES (\n  'PKG-PR-TEST-002', 8730001, 'TRACK-PR-002', 1,\n  'air_regular', '2.0', 'delivered', '15.00', 1,\n  1, NOW()\n);\n\n-- Create package for Commission order\nINSERT INTO packages (\n  packageCode, customerId, trackingNumber, originWarehouseId,\n  shippingType, weightKg, status, calculatedCostUsd, isCharged,\n  registeredById, createdAt\n) VALUES (\n  'PKG-COM-TEST-003', 8730001, 'TRACK-COM-003', 1,\n  'air_regular', '4.0', 'delivered', '30.00', 1,\n  1, NOW()\n);\n\nSELECT 'Packages created successfully' as result;\n",
+  "rows": [
+    {
+      "result": "Packages created successfully"
+    }
+  ],
+  "messages": [],
+  "stdout": "result\nPackages created successfully\n",
+  "stderr": "",
+  "execution_time_ms": 84
+}

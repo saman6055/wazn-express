@@ -1,0 +1,46 @@
+{
+  "query": "\n-- Update Purchase Request with selling price\nUPDATE fullPackageOrders \nSET sellingPriceUsd = '25.00',\n    itemPriceUsd = '10.00',\n    shippingCostUsd = '5.00',\n    profitUsd = ((25.00 - 10.00) * 1 - 5.00)\nWHERE orderCode = 'PR-PROFIT-TEST-002';\n\n-- Update Commission with commission fee only\nUPDATE fullPackageOrders \nSET itemPriceUsd = '10.00',\n    commissionFeeUsd = '3.00',\n    shippingCostUsd = '5.00',\n    profitUsd = 3.00\nWHERE orderCode = 'COM-PROFIT-TEST-003';\n\n-- Verify results\nSELECT \n  orderCode,\n  orderType,\n  CAST(COALESCE(purchasePriceUsd, 0) AS DECIMAL(10,2)) as purchasePrice,\n  CAST(COALESCE(sellingPriceUsd, 0) AS DECIMAL(10,2)) as sellingPrice,\n  CAST(COALESCE(itemPriceUsd, 0) AS DECIMAL(10,2)) as itemPrice,\n  CAST(COALESCE(commissionFeeUsd, 0) AS DECIMAL(10,2)) as commission,\n  quantity,\n  CAST(COALESCE(shippingCostUsd, 0) AS DECIMAL(10,2)) as shippingCost,\n  CAST(COALESCE(profitUsd, 0) AS DECIMAL(10,2)) as profit,\n  status\nFROM fullPackageOrders\nWHERE orderCode IN ('FP-PROFIT-TEST-001', 'PR-PROFIT-TEST-002', 'COM-PROFIT-TEST-003')\nORDER BY orderCode;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \n-- Update Purchase Request with selling price\nUPDATE fullPackageOrders \nSET sellingPriceUsd = '25.00',\n    itemPriceUsd = '10.00',\n    shippingCostUsd = '5.00',\n    profitUsd = ((25.00 - 10.00) * 1 - 5.00)\nWHERE orderCode = 'PR-PROFIT-TEST-002';\n\n-- Update Commission with commission fee only\nUPDATE fullPackageOrders \nSET itemPriceUsd = '10.00',\n    commissionFeeUsd = '3.00',\n    shippingCostUsd = '5.00',\n    profitUsd = 3.00\nWHERE orderCode = 'COM-PROFIT-TEST-003';\n\n-- Verify results\nSELECT \n  orderCode,\n  orderType,\n  CAST(COALESCE(purchasePriceUsd, 0) AS DECIMAL(10,2)) as purchasePrice,\n  CAST(COALESCE(sellingPriceUsd, 0) AS DECIMAL(10,2)) as sellingPrice,\n  CAST(COALESCE(itemPriceUsd, 0) AS DECIMAL(10,2)) as itemPrice,\n  CAST(COALESCE(commissionFeeUsd, 0) AS DECIMAL(10,2)) as commission,\n  quantity,\n  CAST(COALESCE(shippingCostUsd, 0) AS DECIMAL(10,2)) as shippingCost,\n  CAST(COALESCE(profitUsd, 0) AS DECIMAL(10,2)) as profit,\n  status\nFROM fullPackageOrders\nWHERE orderCode IN ('FP-PROFIT-TEST-001', 'PR-PROFIT-TEST-002', 'COM-PROFIT-TEST-003')\nORDER BY orderCode;\n",
+  "rows": [
+    {
+      "orderCode": "COM-PROFIT-TEST-003",
+      "orderType": "commission",
+      "purchasePrice": "0.00",
+      "sellingPrice": "0.00",
+      "itemPrice": "10.00",
+      "commission": "3.00",
+      "quantity": "1",
+      "shippingCost": "5.00",
+      "profit": "3.00",
+      "status": "delivered"
+    },
+    {
+      "orderCode": "FP-PROFIT-TEST-001",
+      "orderType": "full_package",
+      "purchasePrice": "50.00",
+      "sellingPrice": "100.00",
+      "itemPrice": "0.00",
+      "commission": "0.00",
+      "quantity": "2",
+      "shippingCost": "25.00",
+      "profit": "75.00",
+      "status": "delivered"
+    },
+    {
+      "orderCode": "PR-PROFIT-TEST-002",
+      "orderType": "purchase_request",
+      "purchasePrice": "0.00",
+      "sellingPrice": "25.00",
+      "itemPrice": "10.00",
+      "commission": "0.00",
+      "quantity": "1",
+      "shippingCost": "5.00",
+      "profit": "10.00",
+      "status": "delivered"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderCode\torderType\tpurchasePrice\tsellingPrice\titemPrice\tcommission\tquantity\tshippingCost\tprofit\tstatus\nCOM-PROFIT-TEST-003\tcommission\t0.00\t0.00\t10.00\t3.00\t1\t5.00\t3.00\tdelivered\nFP-PROFIT-TEST-001\tfull_package\t50.00\t100.00\t0.00\t0.00\t2\t25.00\t75.00\tdelivered\nPR-PROFIT-TEST-002\tpurchase_request\t0.00\t25.00\t10.00\t0.00\t1\t5.00\t10.00\tdelivered\n",
+  "stderr": "",
+  "execution_time_ms": 1358
+}

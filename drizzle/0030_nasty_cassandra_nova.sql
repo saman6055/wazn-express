@@ -1,0 +1,1 @@
+ALTER TABLE `customers` DROP INDEX `customers_sequenceNumber_unique`;

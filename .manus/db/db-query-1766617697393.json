@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `revenueRecords` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `revenue_type` varchar(50) NOT NULL,\n  `source_type` varchar(50) NOT NULL,\n  `source_id` int,\n  `customer_id` int,\n  `amount_usd` decimal(12,2) NOT NULL DEFAULT 0,\n  `amount_iqd` decimal(15,0) NOT NULL DEFAULT 0,\n  `exchange_rate` decimal(10,2) DEFAULT 1480,\n  `description` text,\n  `record_date` datetime NOT NULL,\n  `status` varchar(20) DEFAULT 'confirmed',\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `created_by` int\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute CREATE TABLE IF NOT EXISTS `revenueRecords` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `revenue_type` varchar(50) NOT NULL,\n  `source_type` varchar(50) NOT NULL,\n  `source_id` int,\n  `customer_id` int,\n  `amount_usd` decimal(12,2) NOT NULL DEFAULT 0,\n  `amount_iqd` decimal(15,0) NOT NULL DEFAULT 0,\n  `exchange_rate` decimal(10,2) DEFAULT 1480,\n  `description` text,\n  `record_date` datetime NOT NULL,\n  `status` varchar(20) DEFAULT 'confirmed',\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `created_by` int\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 55
+}

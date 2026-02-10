@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, fullName, customerCode, passportUrl, nationalIdUrl, contractUrl FROM users WHERE id = 5040562;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, fullName, customerCode, passportUrl, nationalIdUrl, contractUrl FROM users WHERE id = 5040562;",
+  "rows": [
+    {
+      "id": "5040562",
+      "fullName": "wer",
+      "customerCode": "AZ0069(wer)",
+      "passportUrl": "NULL",
+      "nationalIdUrl": "NULL",
+      "contractUrl": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfullName\tcustomerCode\tpassportUrl\tnationalIdUrl\tcontractUrl\n5040562\twer\tAZ0069(wer)\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

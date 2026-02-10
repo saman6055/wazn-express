@@ -1,0 +1,67 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'expenses';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'expenses';",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "categoryId"
+    },
+    {
+      "COLUMN_NAME": "amount"
+    },
+    {
+      "COLUMN_NAME": "currency"
+    },
+    {
+      "COLUMN_NAME": "exchangeRate"
+    },
+    {
+      "COLUMN_NAME": "amountUsd"
+    },
+    {
+      "COLUMN_NAME": "description"
+    },
+    {
+      "COLUMN_NAME": "expenseDate"
+    },
+    {
+      "COLUMN_NAME": "receiptUrl"
+    },
+    {
+      "COLUMN_NAME": "paymentMethod"
+    },
+    {
+      "COLUMN_NAME": "cashAccountId"
+    },
+    {
+      "COLUMN_NAME": "isRecurring"
+    },
+    {
+      "COLUMN_NAME": "recurringDay"
+    },
+    {
+      "COLUMN_NAME": "vendor"
+    },
+    {
+      "COLUMN_NAME": "referenceNumber"
+    },
+    {
+      "COLUMN_NAME": "notes"
+    },
+    {
+      "COLUMN_NAME": "createdById"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\ncategoryId\namount\ncurrency\nexchangeRate\namountUsd\ndescription\nexpenseDate\nreceiptUrl\npaymentMethod\ncashAccountId\nisRecurring\nrecurringDay\nvendor\nreferenceNumber\nnotes\ncreatedById\ncreatedAt\nupdatedAt\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

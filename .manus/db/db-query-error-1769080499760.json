@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE customers \nADD COLUMN gender ENUM('male', 'female') NULL AFTER fullNameKurdish,\nADD COLUMN nationality VARCHAR(100) NULL AFTER gender,\nADD COLUMN businessType VARCHAR(100) NULL AFTER nationality,\nADD COLUMN secondaryMobile VARCHAR(20) NULL AFTER mobileNumber,\nADD COLUMN district VARCHAR(100) NULL AFTER city,\nADD COLUMN passportUrl TEXT NULL AFTER address,\nADD COLUMN nationalIdUrl TEXT NULL AFTER passportUrl,\nADD COLUMN contractUrl TEXT NULL AFTER nationalIdUrl,\nADD COLUMN lastSignedIn TIMESTAMP NULL AFTER updatedAt;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute ALTER TABLE customers \nADD COLUMN gender ENUM('male', 'female') NULL AFTER fullNameKurdish,\nADD COLUMN nationality VARCHAR(100) NULL AFTER gender,\nADD COLUMN businessType VARCHAR(100) NULL AFTER nationality,\nADD COLUMN secondaryMobile VARCHAR(20) NULL AFTER mobileNumber,\nADD COLUMN district VARCHAR(100) NULL AFTER city,\nADD COLUMN passportUrl TEXT NULL AFTER address,\nADD COLUMN nationalIdUrl TEXT NULL AFTER passportUrl,\nADD COLUMN contractUrl TEXT NULL AFTER nationalIdUrl,\nADD COLUMN lastSignedIn TIMESTAMP NULL AFTER updatedAt;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'gender' in 'customers'"
+  ]
+}

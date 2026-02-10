@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS customer_code_prefixes (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  code VARCHAR(10) UNIQUE NOT NULL,\n  label VARCHAR(100) NOT NULL,\n  isActive BOOLEAN DEFAULT TRUE NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute CREATE TABLE IF NOT EXISTS customer_code_prefixes (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  code VARCHAR(10) UNIQUE NOT NULL,\n  label VARCHAR(100) NOT NULL,\n  isActive BOOLEAN DEFAULT TRUE NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 230
+}

@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(DISTINCT customerId) as customersWithLedger FROM ledgerEntries;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT COUNT(DISTINCT customerId) as customersWithLedger FROM ledgerEntries;",
+  "rows": [
+    {
+      "customersWithLedger": "18"
+    }
+  ],
+  "messages": [],
+  "stdout": "customersWithLedger\n18\n",
+  "stderr": "",
+  "execution_time_ms": 46
+}

@@ -1,0 +1,60 @@
+{
+  "query": "SELECT customerId, currentBalanceUsd, currentBalanceIqd FROM customerAccounts ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT customerId, currentBalanceUsd, currentBalanceIqd FROM customerAccounts ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "customerId": "5790066",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "customerId": "5790063",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "customerId": "5790053",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "customerId": "5610007",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "customerId": "5610006",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "customerId": "4560032",
+      "currentBalanceUsd": "-35.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "customerId": "4560031",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "customerId": "4560030",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "customerId": "4380036",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "customerId": "4260014",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "customerId\tcurrentBalanceUsd\tcurrentBalanceIqd\n5790066\t-100.00\t0\n5790063\t-100.00\t0\n5790053\t-100.00\t0\n5610007\t-100.00\t0\n5610006\t-100.00\t0\n4560032\t-35.00\t0\n4560031\t-100.00\t0\n4560030\t-100.00\t0\n4380036\t-100.00\t0\n4260014\t-100.00\t0\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

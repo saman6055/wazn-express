@@ -1,0 +1,37 @@
+{
+  "query": "SELECT c.id as customer_id, c.fullName, c.email, p.id as package_id, p.packageCode, p.trackingNumber, p.status FROM customers c LEFT JOIN packages p ON c.id = p.customerId WHERE c.fullName = 'saman' OR c.customerCode = 'AZ004';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT c.id as customer_id, c.fullName, c.email, p.id as package_id, p.packageCode, p.trackingNumber, p.status FROM customers c LEFT JOIN packages p ON c.id = p.customerId WHERE c.fullName = 'saman' OR c.customerCode = 'AZ004';",
+  "rows": [
+    {
+      "customer_id": "30001",
+      "fullName": "saman",
+      "email": "saman6055@gmail.com",
+      "package_id": "1",
+      "packageCode": "g000001",
+      "trackingNumber": "111111",
+      "status": "delivered"
+    },
+    {
+      "customer_id": "30001",
+      "fullName": "saman",
+      "email": "saman6055@gmail.com",
+      "package_id": "2",
+      "packageCode": "g000002",
+      "trackingNumber": "111112",
+      "status": "registered"
+    },
+    {
+      "customer_id": "30001",
+      "fullName": "saman",
+      "email": "saman6055@gmail.com",
+      "package_id": "3",
+      "packageCode": "g000003",
+      "trackingNumber": "4555",
+      "status": "registered"
+    }
+  ],
+  "messages": [],
+  "stdout": "customer_id\tfullName\temail\tpackage_id\tpackageCode\ttrackingNumber\tstatus\n30001\tsaman\tsaman6055@gmail.com\t1\tg000001\t111111\tdelivered\n30001\tsaman\tsaman6055@gmail.com\t2\tg000002\t111112\tregistered\n30001\tsaman\tsaman6055@gmail.com\t3\tg000003\t4555\tregistered\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

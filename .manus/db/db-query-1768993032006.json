@@ -1,0 +1,170 @@
+{
+  "query": "SELECT id, trackingNumber, status, batchId, customerId, FROM_UNIXTIME(createdAt/1000) as created FROM packages ORDER BY createdAt DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, trackingNumber, status, batchId, customerId, FROM_UNIXTIME(createdAt/1000) as created FROM packages ORDER BY createdAt DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "3240124",
+      "trackingNumber": "JT3149407821241",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10620001",
+      "created": "2612-01-08 03:25:02.4150"
+    },
+    {
+      "id": "3240123",
+      "trackingNumber": "YT7597156677362",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10620001",
+      "created": "2612-01-08 03:25:02.3550"
+    },
+    {
+      "id": "3240122",
+      "trackingNumber": "YT7596677699129",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10620001",
+      "created": "2612-01-08 03:25:02.3340"
+    },
+    {
+      "id": "3240121",
+      "trackingNumber": "YT8829747231143",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10620001",
+      "created": "2612-01-08 03:25:02.3110"
+    },
+    {
+      "id": "3240120",
+      "trackingNumber": "773400267642637",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10620001",
+      "created": "2612-01-08 03:25:02.2490"
+    },
+    {
+      "id": "3240119",
+      "trackingNumber": "773400241853276",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10620001",
+      "created": "2612-01-08 03:25:02.2070"
+    },
+    {
+      "id": "3240118",
+      "trackingNumber": "773400333489518",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10620001",
+      "created": "2612-01-08 03:25:02.1410"
+    },
+    {
+      "id": "3240117",
+      "trackingNumber": "78569484402828",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10620001",
+      "created": "2612-01-08 03:25:02.1110"
+    },
+    {
+      "id": "3240116",
+      "trackingNumber": "773400467549907",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10620001",
+      "created": "2612-01-08 03:25:02.1020"
+    },
+    {
+      "id": "3240115",
+      "trackingNumber": "78973191388017",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10620001",
+      "created": "2612-01-08 03:25:02.0460"
+    },
+    {
+      "id": "3240114",
+      "trackingNumber": "78569559096027",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10620001",
+      "created": "2612-01-08 03:25:02.0290"
+    },
+    {
+      "id": "3240113",
+      "trackingNumber": "777373327470467",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10470002",
+      "created": "2612-01-08 03:25:01.9250"
+    },
+    {
+      "id": "3240112",
+      "trackingNumber": "465001036662463",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10470002",
+      "created": "2612-01-08 03:25:01.9130"
+    },
+    {
+      "id": "3240111",
+      "trackingNumber": "JT3149923451491",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10470002",
+      "created": "2612-01-08 03:25:01.8450"
+    },
+    {
+      "id": "3240110",
+      "trackingNumber": "YT8830793189946",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10470002",
+      "created": "2612-01-08 03:25:01.4430"
+    },
+    {
+      "id": "3240109",
+      "trackingNumber": "YT8831024904970",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10470002",
+      "created": "2612-01-08 03:25:01.3570"
+    },
+    {
+      "id": "3240108",
+      "trackingNumber": "78568608705396",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10470002",
+      "created": "2612-01-08 03:25:01.3370"
+    },
+    {
+      "id": "3240107",
+      "trackingNumber": "465008334508456",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10470002",
+      "created": "2612-01-08 03:25:01.3260"
+    },
+    {
+      "id": "3240106",
+      "trackingNumber": "YT7596759376230",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10470002",
+      "created": "2612-01-08 03:25:01.3020"
+    },
+    {
+      "id": "3240105",
+      "trackingNumber": "JT5447646496213",
+      "status": "registered",
+      "batchId": "960003",
+      "customerId": "10470002",
+      "created": "2612-01-08 03:25:01.2470"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttrackingNumber\tstatus\tbatchId\tcustomerId\tcreated\n3240124\tJT3149407821241\tregistered\t960003\t10620001\t2612-01-08 03:25:02.4150\n3240123\tYT7597156677362\tregistered\t960003\t10620001\t2612-01-08 03:25:02.3550\n3240122\tYT7596677699129\tregistered\t960003\t10620001\t2612-01-08 03:25:02.3340\n3240121\tYT8829747231143\tregistered\t960003\t10620001\t2612-01-08 03:25:02.3110\n3240120\t773400267642637\tregistered\t960003\t10620001\t2612-01-08 03:25:02.2490\n3240119\t773400241853276\tregistered\t960003\t10620001\t2612-01-08 03:25:02.2070\n3240118\t773400333489518\tregistered\t960003\t10620001\t2612-01-08 03:25:02.1410\n3240117\t78569484402828\tregistered\t960003\t10620001\t2612-01-08 03:25:02.1110\n3240116\t773400467549907\tregistered\t960003\t10620001\t2612-01-08 03:25:02.1020\n3240115\t78973191388017\tregistered\t960003\t10620001\t2612-01-08 03:25:02.0460\n3240114\t78569559096027\tregistered\t960003\t10620001\t2612-01-08 03:25:02.0290\n3240113\t777373327470467\tregistered\t960003\t10470002\t2612-01-08 03:25:01.9250\n3240112\t465001036662463\tregistered\t960003\t10470002\t2612-01-08 03:25:01.9130\n3240111\tJT3149923451491\tregistered\t960003\t10470002\t2612-01-08 03:25:01.8450\n3240110\tYT8830793189946\tregistered\t960003\t10470002\t2612-01-08 03:25:01.4430\n3240109\tYT8831024904970\tregistered\t960003\t10470002\t2612-01-08 03:25:01.3570\n3240108\t78568608705396\tregistered\t960003\t10470002\t2612-01-08 03:25:01.3370\n3240107\t465008334508456\tregistered\t960003\t10470002\t2612-01-08 03:25:01.3260\n3240106\tYT7596759376230\tregistered\t960003\t10470002\t2612-01-08 03:25:01.3020\n3240105\tJT5447646496213\tregistered\t960003\t10470002\t2612-01-08 03:25:01.2470\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

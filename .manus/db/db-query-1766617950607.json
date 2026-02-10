@@ -1,0 +1,64 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'packages' AND COLUMN_NAME LIKE '%price%' OR COLUMN_NAME LIKE '%amount%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'packages' AND COLUMN_NAME LIKE '%price%' OR COLUMN_NAME LIKE '%amount%';",
+  "rows": [
+    {
+      "COLUMN_NAME": "amountUsd"
+    },
+    {
+      "COLUMN_NAME": "amountUsd"
+    },
+    {
+      "COLUMN_NAME": "amountLocal"
+    },
+    {
+      "COLUMN_NAME": "amountUsd"
+    },
+    {
+      "COLUMN_NAME": "amountIqd"
+    },
+    {
+      "COLUMN_NAME": "amountUsd"
+    },
+    {
+      "COLUMN_NAME": "amountIqd"
+    },
+    {
+      "COLUMN_NAME": "amountUsd"
+    },
+    {
+      "COLUMN_NAME": "amountIqd"
+    },
+    {
+      "COLUMN_NAME": "amount"
+    },
+    {
+      "COLUMN_NAME": "amount"
+    },
+    {
+      "COLUMN_NAME": "amountUsd"
+    },
+    {
+      "COLUMN_NAME": "amount"
+    },
+    {
+      "COLUMN_NAME": "amountUsd"
+    },
+    {
+      "COLUMN_NAME": "amount"
+    },
+    {
+      "COLUMN_NAME": "amountUsd"
+    },
+    {
+      "COLUMN_NAME": "amountUsd"
+    },
+    {
+      "COLUMN_NAME": "amountIqd"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\namountUsd\namountUsd\namountLocal\namountUsd\namountIqd\namountUsd\namountIqd\namountUsd\namountIqd\namount\namount\namountUsd\namount\namountUsd\namount\namountUsd\namountUsd\namountIqd\n",
+  "stderr": "",
+  "execution_time_ms": 68
+}

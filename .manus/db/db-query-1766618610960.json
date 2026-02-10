@@ -1,0 +1,16 @@
+{
+  "query": "SHOW TABLES LIKE '%ledger%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SHOW TABLES LIKE '%ledger%';",
+  "rows": [
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE (%ledger%)": "ledgerEntries"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE (%ledger%)": "ledgerTransactions"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_CB8XFpvgXqCGVxJN2CGtFE (%ledger%)\nledgerEntries\nledgerTransactions\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

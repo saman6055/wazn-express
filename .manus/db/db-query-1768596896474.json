@@ -1,0 +1,165 @@
+{
+  "query": "SELECT accountId, COUNT(*) as txCount, SUM(CAST(amountUsd AS DECIMAL(12,2))) as totalAmount FROM ledgerTransactions GROUP BY accountId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT accountId, COUNT(*) as txCount, SUM(CAST(amountUsd AS DECIMAL(12,2))) as totalAmount FROM ledgerTransactions GROUP BY accountId;",
+  "rows": [
+    {
+      "accountId": "1260001",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1500002",
+      "txCount": "18",
+      "totalAmount": "13304.00"
+    },
+    {
+      "accountId": "1050001",
+      "txCount": "12",
+      "totalAmount": "4227.00"
+    },
+    {
+      "accountId": "1170002",
+      "txCount": "1",
+      "totalAmount": "396.00"
+    },
+    {
+      "accountId": "1500001",
+      "txCount": "5",
+      "totalAmount": "5904.00"
+    },
+    {
+      "accountId": "1110003",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1200001",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1350002",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1110002",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1230001",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1530001",
+      "txCount": "7",
+      "totalAmount": "220.00"
+    },
+    {
+      "accountId": "1110007",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1080001",
+      "txCount": "4",
+      "totalAmount": "1837.00"
+    },
+    {
+      "accountId": "1350004",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1110001",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1410001",
+      "txCount": "2",
+      "totalAmount": "3248.00"
+    },
+    {
+      "accountId": "1470001",
+      "txCount": "1",
+      "totalAmount": "44.00"
+    },
+    {
+      "accountId": "1170003",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1440001",
+      "txCount": "5",
+      "totalAmount": "527.00"
+    },
+    {
+      "accountId": "1320001",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1290001",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1140001",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1110006",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1320002",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1350003",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1110004",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1350001",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1200002",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1170001",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1110005",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    },
+    {
+      "accountId": "1380001",
+      "txCount": "2",
+      "totalAmount": "150.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "accountId\ttxCount\ttotalAmount\n1260001\t2\t150.00\n1500002\t18\t13304.00\n1050001\t12\t4227.00\n1170002\t1\t396.00\n1500001\t5\t5904.00\n1110003\t2\t150.00\n1200001\t2\t150.00\n1350002\t2\t150.00\n1110002\t2\t150.00\n1230001\t2\t150.00\n1530001\t7\t220.00\n1110007\t2\t150.00\n1080001\t4\t1837.00\n1350004\t2\t150.00\n1110001\t2\t150.00\n1410001\t2\t3248.00\n1470001\t1\t44.00\n1170003\t2\t150.00\n1440001\t5\t527.00\n1320001\t2\t150.00\n1290001\t2\t150.00\n1140001\t2\t150.00\n1110006\t2\t150.00\n1320002\t2\t150.00\n1350003\t2\t150.00\n1110004\t2\t150.00\n1350001\t2\t150.00\n1200002\t2\t150.00\n1170001\t2\t150.00\n1110005\t2\t150.00\n1380001\t2\t150.00\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

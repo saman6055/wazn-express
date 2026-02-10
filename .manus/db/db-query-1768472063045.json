@@ -1,0 +1,70 @@
+{
+  "query": "\n-- First, check all super_admin accounts\nSELECT id, name, email, role FROM users WHERE role = 'super_admin';\n\n-- Delete test super admin accounts (keep only saman6055@gmail.com)\nDELETE FROM users WHERE email = 'superadmin@test.com';\nDELETE FROM users WHERE email LIKE 'super-admin-%@test.com';\n\n-- Verify saman6055@gmail.com is super_admin\nSELECT id, name, email, role FROM users WHERE email = 'saman6055@gmail.com';\n\n-- Show all super_admin accounts after cleanup\nSELECT id, name, email, role FROM users WHERE role = 'super_admin';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \n-- First, check all super_admin accounts\nSELECT id, name, email, role FROM users WHERE role = 'super_admin';\n\n-- Delete test super admin accounts (keep only saman6055@gmail.com)\nDELETE FROM users WHERE email = 'superadmin@test.com';\nDELETE FROM users WHERE email LIKE 'super-admin-%@test.com';\n\n-- Verify saman6055@gmail.com is super_admin\nSELECT id, name, email, role FROM users WHERE email = 'saman6055@gmail.com';\n\n-- Show all super_admin accounts after cleanup\nSELECT id, name, email, role FROM users WHERE role = 'super_admin';\n",
+  "rows": [
+    {
+      "id": "90043",
+      "name": "saman ibrahem",
+      "email": "saman6055@gmail.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9210014",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768466085003@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9210017",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768466111820@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9210020",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768466140646@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9270017",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768470463702@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9270040",
+      "name": "Test Super Admin",
+      "email": "superadmin@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "id",
+      "name": "name",
+      "email": "email",
+      "role": "role"
+    },
+    {
+      "id": "90043",
+      "name": "saman ibrahem",
+      "email": "saman6055@gmail.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "id",
+      "name": "name",
+      "email": "email",
+      "role": "role"
+    },
+    {
+      "id": "90043",
+      "name": "saman ibrahem",
+      "email": "saman6055@gmail.com",
+      "role": "super_admin"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\n90043\tsaman ibrahem\tsaman6055@gmail.com\tsuper_admin\n9210014\tSuper Admin Test\tsuper-admin-1768466085003@test.com\tsuper_admin\n9210017\tSuper Admin Test\tsuper-admin-1768466111820@test.com\tsuper_admin\n9210020\tSuper Admin Test\tsuper-admin-1768466140646@test.com\tsuper_admin\n9270017\tSuper Admin Test\tsuper-admin-1768470463702@test.com\tsuper_admin\n9270040\tTest Super Admin\tsuperadmin@test.com\tsuper_admin\nid\tname\temail\trole\n90043\tsaman ibrahem\tsaman6055@gmail.com\tsuper_admin\nid\tname\temail\trole\n90043\tsaman ibrahem\tsaman6055@gmail.com\tsuper_admin\n",
+  "stderr": "",
+  "execution_time_ms": 83
+}

@@ -1,0 +1,1 @@
+ALTER TABLE `ledgerTransactions` ADD `invoiceId` int;

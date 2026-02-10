@@ -1,0 +1,110 @@
+{
+  "query": "SELECT id, customerId, currentBalanceUsd FROM customerAccounts WHERE currentBalanceUsd IS NOT NULL ORDER BY id DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, customerId, currentBalanceUsd FROM customerAccounts WHERE currentBalanceUsd IS NOT NULL ORDER BY id DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "990003",
+      "customerId": "5790066",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "990002",
+      "customerId": "5790063",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "990001",
+      "customerId": "5790053",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "960002",
+      "customerId": "5610007",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "960001",
+      "customerId": "5610006",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "930003",
+      "customerId": "4560032",
+      "currentBalanceUsd": "-35.00"
+    },
+    {
+      "id": "930002",
+      "customerId": "4560031",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "930001",
+      "customerId": "4560030",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "900001",
+      "customerId": "4380036",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "870001",
+      "customerId": "4260014",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "840001",
+      "customerId": "4140012",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "810001",
+      "customerId": "3960032",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "780001",
+      "customerId": "3840006",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "750001",
+      "customerId": "3720006",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "720001",
+      "customerId": "3660014",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "690001",
+      "customerId": "3630012",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "660003",
+      "customerId": "3600024",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "660002",
+      "customerId": "3600023",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "660001",
+      "customerId": "3600022",
+      "currentBalanceUsd": "-100.00"
+    },
+    {
+      "id": "630002",
+      "customerId": "3390017",
+      "currentBalanceUsd": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcustomerId\tcurrentBalanceUsd\n990003\t5790066\t-100.00\n990002\t5790063\t-100.00\n990001\t5790053\t-100.00\n960002\t5610007\t-100.00\n960001\t5610006\t-100.00\n930003\t4560032\t-35.00\n930002\t4560031\t-100.00\n930001\t4560030\t-100.00\n900001\t4380036\t-100.00\n870001\t4260014\t-100.00\n840001\t4140012\t-100.00\n810001\t3960032\t-100.00\n780001\t3840006\t-100.00\n750001\t3720006\t-100.00\n720001\t3660014\t-100.00\n690001\t3630012\t-100.00\n660003\t3600024\t-100.00\n660002\t3600023\t-100.00\n660001\t3600022\t-100.00\n630002\t3390017\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

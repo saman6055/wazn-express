@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO users (name, email, role, password_hash, created_at, updated_at) \nVALUES ('Saman', 'Saman6055@gmail.com', 'admin', '$2b$10$UFajdsqZexSiHMv.WM.NLOeozVxKPFedVJkFPGWkhwPm.BM5wcsQy', NOW(), NOW())\nON DUPLICATE KEY UPDATE password_hash = '$2b$10$UFajdsqZexSiHMv.WM.NLOeozVxKPFedVJkFPGWkhwPm.BM5wcsQy', role = 'admin';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute INSERT INTO users (name, email, role, password_hash, created_at, updated_at) \nVALUES ('Saman', 'Saman6055@gmail.com', 'admin', '$2b$10$UFajdsqZexSiHMv.WM.NLOeozVxKPFedVJkFPGWkhwPm.BM5wcsQy', NOW(), NOW())\nON DUPLICATE KEY UPDATE password_hash = '$2b$10$UFajdsqZexSiHMv.WM.NLOeozVxKPFedVJkFPGWkhwPm.BM5wcsQy', role = 'admin';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'password_hash' in 'field list'"
+  ]
+}

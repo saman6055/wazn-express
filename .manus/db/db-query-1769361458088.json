@@ -1,0 +1,22 @@
+{
+  "query": "\nSELECT \n  status,\n  shippingType,\n  COUNT(*) as count,\n  SUM(totalPackages) as total_packages\nFROM batches\nGROUP BY status, shippingType\nORDER BY status\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \nSELECT \n  status,\n  shippingType,\n  COUNT(*) as count,\n  SUM(totalPackages) as total_packages\nFROM batches\nGROUP BY status, shippingType\nORDER BY status\n",
+  "rows": [
+    {
+      "status": "preparing",
+      "shippingType": "air_regular",
+      "count": "1",
+      "total_packages": "0"
+    },
+    {
+      "status": "delivered",
+      "shippingType": "air_regular",
+      "count": "5",
+      "total_packages": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "status\tshippingType\tcount\ttotal_packages\npreparing\tair_regular\t1\t0\ndelivered\tair_regular\t5\t0\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

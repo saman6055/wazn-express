@@ -1,0 +1,8 @@
+{
+  "query": "SELECT * FROM stock_products ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT * FROM stock_products ORDER BY id DESC LIMIT 10;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'cb8xfpvgxqcgvxjn2cgtfe.stock_products' doesn't exist"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, account_name, account_name_ku, account_type, status, current_balance FROM cash_accounts;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, account_name, account_name_ku, account_type, status, current_balance FROM cash_accounts;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'cb8xfpvgxqcgvxjn2cgtfe.cash_accounts' doesn't exist"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "query": "SELECT * FROM countries WHERE isDestination = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT * FROM countries WHERE isDestination = 1;",
+  "rows": [
+    {
+      "id": "2",
+      "nameEn": "erbil",
+      "nameAr": "NULL",
+      "nameKu": "NULL",
+      "nameZh": "NULL",
+      "nameTr": "NULL",
+      "nameFa": "NULL",
+      "isoCode": "erb",
+      "defaultCurrency": "NULL",
+      "isActive": "1",
+      "isOrigin": "0",
+      "isDestination": "1",
+      "createdAt": "2025-12-17 12:30:54",
+      "updatedAt": "2025-12-19 23:05:14"
+    },
+    {
+      "id": "90001",
+      "nameEn": "Iraq",
+      "nameAr": "NULL",
+      "nameKu": "NULL",
+      "nameZh": "NULL",
+      "nameTr": "NULL",
+      "nameFa": "NULL",
+      "isoCode": "iq",
+      "defaultCurrency": "Usd",
+      "isActive": "1",
+      "isOrigin": "1",
+      "isDestination": "1",
+      "createdAt": "2025-12-22 01:03:35",
+      "updatedAt": "2025-12-22 01:03:35"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnameEn\tnameAr\tnameKu\tnameZh\tnameTr\tnameFa\tisoCode\tdefaultCurrency\tisActive\tisOrigin\tisDestination\tcreatedAt\tupdatedAt\n2\terbil\tNULL\tNULL\tNULL\tNULL\tNULL\terb\tNULL\t1\t0\t1\t2025-12-17 12:30:54\t2025-12-19 23:05:14\n90001\tIraq\tNULL\tNULL\tNULL\tNULL\tNULL\tiq\tUsd\t1\t1\t1\t2025-12-22 01:03:35\t2025-12-22 01:03:35\n",
+  "stderr": "",
+  "execution_time_ms": 209
+}

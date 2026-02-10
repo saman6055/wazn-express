@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, batchCode, status FROM batches LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, batchCode, status FROM batches LIMIT 10;",
+  "rows": [
+    {
+      "id": "660001",
+      "batchCode": "Air 1 regular",
+      "status": "closed"
+    },
+    {
+      "id": "690001",
+      "batchCode": "Sea 1",
+      "status": "preparing"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbatchCode\tstatus\n660001\tAir 1 regular\tclosed\n690001\tSea 1\tpreparing\n",
+  "stderr": "",
+  "execution_time_ms": 122
+}

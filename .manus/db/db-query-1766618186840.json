@@ -1,0 +1,20 @@
+{
+  "query": "SELECT transactionType, SUM(amountUsd) as total, COUNT(*) as count FROM ledgerTransactions WHERE createdAt >= '2025-12-01' AND createdAt <= '2025-12-31' AND transactionType LIKE 'DEBIT_%' GROUP BY transactionType;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT transactionType, SUM(amountUsd) as total, COUNT(*) as count FROM ledgerTransactions WHERE createdAt >= '2025-12-01' AND createdAt <= '2025-12-31' AND transactionType LIKE 'DEBIT_%' GROUP BY transactionType;",
+  "rows": [
+    {
+      "transactionType": "DEBIT_SERVICE",
+      "total": "265.00",
+      "count": "4"
+    },
+    {
+      "transactionType": "DEBIT_PACKAGE",
+      "total": "2600.00",
+      "count": "52"
+    }
+  ],
+  "messages": [],
+  "stdout": "transactionType\ttotal\tcount\nDEBIT_SERVICE\t265.00\t4\nDEBIT_PACKAGE\t2600.00\t52\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

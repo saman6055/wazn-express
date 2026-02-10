@@ -1,0 +1,43 @@
+{
+  "query": "SELECT customerId, currentBalanceUsd, currentBalanceIqd, packageDebtUsd, fullPackageDebtUsd, purchaseRequestDebtUsd, commissionDebtUsd, serviceDebtUsd, creditBalanceUsd FROM customerAccounts WHERE CAST(currentBalanceUsd AS DECIMAL(12,2)) > 0 LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT customerId, currentBalanceUsd, currentBalanceIqd, packageDebtUsd, fullPackageDebtUsd, purchaseRequestDebtUsd, commissionDebtUsd, serviceDebtUsd, creditBalanceUsd FROM customerAccounts WHERE CAST(currentBalanceUsd AS DECIMAL(12,2)) > 0 LIMIT 10;",
+  "rows": [
+    {
+      "customerId": "7860033",
+      "currentBalanceUsd": "73.00",
+      "currentBalanceIqd": "0",
+      "packageDebtUsd": "0.00",
+      "fullPackageDebtUsd": "0.00",
+      "purchaseRequestDebtUsd": "0.00",
+      "commissionDebtUsd": "0.00",
+      "serviceDebtUsd": "0.00",
+      "creditBalanceUsd": "0.00"
+    },
+    {
+      "customerId": "6630007",
+      "currentBalanceUsd": "44.00",
+      "currentBalanceIqd": "0",
+      "packageDebtUsd": "0.00",
+      "fullPackageDebtUsd": "0.00",
+      "purchaseRequestDebtUsd": "0.00",
+      "commissionDebtUsd": "0.00",
+      "serviceDebtUsd": "0.00",
+      "creditBalanceUsd": "0.00"
+    },
+    {
+      "customerId": "8730001",
+      "currentBalanceUsd": "220.00",
+      "currentBalanceIqd": "0",
+      "packageDebtUsd": "0.00",
+      "fullPackageDebtUsd": "0.00",
+      "purchaseRequestDebtUsd": "0.00",
+      "commissionDebtUsd": "0.00",
+      "serviceDebtUsd": "0.00",
+      "creditBalanceUsd": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "customerId\tcurrentBalanceUsd\tcurrentBalanceIqd\tpackageDebtUsd\tfullPackageDebtUsd\tpurchaseRequestDebtUsd\tcommissionDebtUsd\tserviceDebtUsd\tcreditBalanceUsd\n7860033\t73.00\t0\t0.00\t0.00\t0.00\t0.00\t0.00\t0.00\n6630007\t44.00\t0\t0.00\t0.00\t0.00\t0.00\t0.00\t0.00\n8730001\t220.00\t0\t0.00\t0.00\t0.00\t0.00\t0.00\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 91
+}

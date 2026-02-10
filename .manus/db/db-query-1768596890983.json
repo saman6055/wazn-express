@@ -1,0 +1,70 @@
+{
+  "query": "SELECT accountId, transactionType, amountUsd, createdAt FROM ledgerTransactions ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT accountId, transactionType, amountUsd, createdAt FROM ledgerTransactions ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "accountId": "1500001",
+      "transactionType": "CREDIT_PAYMENT",
+      "amountUsd": "2952.00",
+      "createdAt": "2026-01-15 23:40:01"
+    },
+    {
+      "accountId": "1500002",
+      "transactionType": "CREDIT_PAYMENT",
+      "amountUsd": "6652.00",
+      "createdAt": "2026-01-15 22:02:18"
+    },
+    {
+      "accountId": "1530001",
+      "transactionType": "DEBIT_PACKAGE",
+      "amountUsd": "44.00",
+      "createdAt": "2026-01-12 22:31:14"
+    },
+    {
+      "accountId": "1530001",
+      "transactionType": "DEBIT_PACKAGE",
+      "amountUsd": "22.00",
+      "createdAt": "2026-01-12 22:31:14"
+    },
+    {
+      "accountId": "1500002",
+      "transactionType": "DEBIT_PACKAGE",
+      "amountUsd": "44.00",
+      "createdAt": "2026-01-12 22:31:14"
+    },
+    {
+      "accountId": "1500002",
+      "transactionType": "DEBIT_PACKAGE",
+      "amountUsd": "484.00",
+      "createdAt": "2026-01-12 22:31:14"
+    },
+    {
+      "accountId": "1500002",
+      "transactionType": "DEBIT_PACKAGE",
+      "amountUsd": "44.00",
+      "createdAt": "2026-01-12 22:31:14"
+    },
+    {
+      "accountId": "1500002",
+      "transactionType": "DEBIT_PACKAGE",
+      "amountUsd": "1020.00",
+      "createdAt": "2026-01-12 22:31:12"
+    },
+    {
+      "accountId": "1500001",
+      "transactionType": "DEBIT_PACKAGE",
+      "amountUsd": "264.00",
+      "createdAt": "2026-01-12 22:31:12"
+    },
+    {
+      "accountId": "1500002",
+      "transactionType": "DEBIT_PACKAGE",
+      "amountUsd": "300.00",
+      "createdAt": "2026-01-12 22:31:12"
+    }
+  ],
+  "messages": [],
+  "stdout": "accountId\ttransactionType\tamountUsd\tcreatedAt\n1500001\tCREDIT_PAYMENT\t2952.00\t2026-01-15 23:40:01\n1500002\tCREDIT_PAYMENT\t6652.00\t2026-01-15 22:02:18\n1530001\tDEBIT_PACKAGE\t44.00\t2026-01-12 22:31:14\n1530001\tDEBIT_PACKAGE\t22.00\t2026-01-12 22:31:14\n1500002\tDEBIT_PACKAGE\t44.00\t2026-01-12 22:31:14\n1500002\tDEBIT_PACKAGE\t484.00\t2026-01-12 22:31:14\n1500002\tDEBIT_PACKAGE\t44.00\t2026-01-12 22:31:14\n1500002\tDEBIT_PACKAGE\t1020.00\t2026-01-12 22:31:12\n1500001\tDEBIT_PACKAGE\t264.00\t2026-01-12 22:31:12\n1500002\tDEBIT_PACKAGE\t300.00\t2026-01-12 22:31:12\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

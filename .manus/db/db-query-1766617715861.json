@@ -1,0 +1,115 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'packages' LIMIT 40;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'packages' LIMIT 40;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "packageCode"
+    },
+    {
+      "COLUMN_NAME": "trackingNumber"
+    },
+    {
+      "COLUMN_NAME": "customerId"
+    },
+    {
+      "COLUMN_NAME": "originWarehouseId"
+    },
+    {
+      "COLUMN_NAME": "batchId"
+    },
+    {
+      "COLUMN_NAME": "qrCodeData"
+    },
+    {
+      "COLUMN_NAME": "qrCodeSignature"
+    },
+    {
+      "COLUMN_NAME": "weightKg"
+    },
+    {
+      "COLUMN_NAME": "lengthCm"
+    },
+    {
+      "COLUMN_NAME": "widthCm"
+    },
+    {
+      "COLUMN_NAME": "heightCm"
+    },
+    {
+      "COLUMN_NAME": "volumeCbm"
+    },
+    {
+      "COLUMN_NAME": "shippingType"
+    },
+    {
+      "COLUMN_NAME": "description"
+    },
+    {
+      "COLUMN_NAME": "photos"
+    },
+    {
+      "COLUMN_NAME": "calculatedCostUsd"
+    },
+    {
+      "COLUMN_NAME": "appliedPricingRuleId"
+    },
+    {
+      "COLUMN_NAME": "status"
+    },
+    {
+      "COLUMN_NAME": "registeredAt"
+    },
+    {
+      "COLUMN_NAME": "registeredById"
+    },
+    {
+      "COLUMN_NAME": "deliveredAt"
+    },
+    {
+      "COLUMN_NAME": "deliveredById"
+    },
+    {
+      "COLUMN_NAME": "recipientName"
+    },
+    {
+      "COLUMN_NAME": "recipientSignature"
+    },
+    {
+      "COLUMN_NAME": "deliveryPhoto"
+    },
+    {
+      "COLUMN_NAME": "notes"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "isCharged"
+    },
+    {
+      "COLUMN_NAME": "deliveryType"
+    },
+    {
+      "COLUMN_NAME": "categoryId"
+    },
+    {
+      "COLUMN_NAME": "isUnclaimed"
+    },
+    {
+      "COLUMN_NAME": "claimedAt"
+    },
+    {
+      "COLUMN_NAME": "claimedById"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\npackageCode\ntrackingNumber\ncustomerId\noriginWarehouseId\nbatchId\nqrCodeData\nqrCodeSignature\nweightKg\nlengthCm\nwidthCm\nheightCm\nvolumeCbm\nshippingType\ndescription\nphotos\ncalculatedCostUsd\nappliedPricingRuleId\nstatus\nregisteredAt\nregisteredById\ndeliveredAt\ndeliveredById\nrecipientName\nrecipientSignature\ndeliveryPhoto\nnotes\ncreatedAt\nupdatedAt\nisCharged\ndeliveryType\ncategoryId\nisUnclaimed\nclaimedAt\nclaimedById\n",
+  "stderr": "",
+  "execution_time_ms": 47
+}

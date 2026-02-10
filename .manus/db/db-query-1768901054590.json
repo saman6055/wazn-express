@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO purchaseRequests (requestCode, customerId, customerName, productUrl, productName, quantity, status, totalPrice, sellingPriceUsd, shippingCostUsd, quotedAt, createdAt, updatedAt) VALUES ('PR-2024-00001', 1, 'Test Customer', 'https://example.com/iphone-case', 'iPhone 15 Pro Case', 2, 'quoted', 25.00, 25.00, 5.00, NOW(), NOW(), NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute INSERT INTO purchaseRequests (requestCode, customerId, customerName, productUrl, productName, quantity, status, totalPrice, sellingPriceUsd, shippingCostUsd, quotedAt, createdAt, updatedAt) VALUES ('PR-2024-00001', 1, 'Test Customer', 'https://example.com/iphone-case', 'iPhone 15 Pro Case', 2, 'quoted', 25.00, 25.00, 5.00, NOW(), NOW(), NOW());",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 57
+}

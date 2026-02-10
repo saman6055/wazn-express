@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, sku, name FROM `stockProducts`;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, sku, name FROM `stockProducts`;",
+  "rows": [
+    {
+      "id": "30001",
+      "sku": "TEST-001",
+      "name": "Test Product"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsku\tname\n30001\tTEST-001\tTest Product\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

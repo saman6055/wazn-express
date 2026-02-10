@@ -1,0 +1,42 @@
+{
+  "query": "SELECT id, batchCode, status, shippingType, pricePerKg, pricePerCbm FROM batches ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, batchCode, status, shippingType, pricePerKg, pricePerCbm FROM batches ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "720002",
+      "batchCode": "13 air",
+      "status": "closed",
+      "shippingType": "air_regular",
+      "pricePerKg": "12.00",
+      "pricePerCbm": "NULL"
+    },
+    {
+      "id": "720001",
+      "batchCode": "12 air",
+      "status": "delivered",
+      "shippingType": "air_regular",
+      "pricePerKg": "12.00",
+      "pricePerCbm": "NULL"
+    },
+    {
+      "id": "690001",
+      "batchCode": "Sea 1",
+      "status": "preparing",
+      "shippingType": "sea",
+      "pricePerKg": "NULL",
+      "pricePerCbm": "NULL"
+    },
+    {
+      "id": "660001",
+      "batchCode": "Air 1 regular",
+      "status": "closed",
+      "shippingType": "air_regular",
+      "pricePerKg": "22.00",
+      "pricePerCbm": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbatchCode\tstatus\tshippingType\tpricePerKg\tpricePerCbm\n720002\t13 air\tclosed\tair_regular\t12.00\tNULL\n720001\t12 air\tdelivered\tair_regular\t12.00\tNULL\n690001\tSea 1\tpreparing\tsea\tNULL\tNULL\n660001\tAir 1 regular\tclosed\tair_regular\t22.00\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

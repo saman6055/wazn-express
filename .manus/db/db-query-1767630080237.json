@@ -1,0 +1,14 @@
+{
+  "query": "SELECT MAX(sequenceNumber) as maxSeq, COUNT(*) as totalCustomers FROM users WHERE role = 'customer';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT MAX(sequenceNumber) as maxSeq, COUNT(*) as totalCustomers FROM users WHERE role = 'customer';",
+  "rows": [
+    {
+      "maxSeq": "19",
+      "totalCustomers": "19"
+    }
+  ],
+  "messages": [],
+  "stdout": "maxSeq\ttotalCustomers\n19\t19\n",
+  "stderr": "",
+  "execution_time_ms": 180
+}

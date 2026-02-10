@@ -1,0 +1,49 @@
+{
+  "query": "\nSELECT \n  orderCode,\n  orderType,\n  COALESCE(purchasePriceUsd, 0) as purchasePrice,\n  COALESCE(sellingPriceUsd, 0) as sellingPrice,\n  COALESCE(itemPriceUsd, 0) as itemPrice,\n  COALESCE(commissionFeeUsd, 0) as commissionFee,\n  quantity,\n  COALESCE(shippingCostUsd, 0) as shippingCost,\n  COALESCE(profitUsd, 0) as profit,\n  status,\n  CASE \n    WHEN orderType = 'full_package' THEN CONCAT('Expected: (', sellingPriceUsd, ' - ', purchasePriceUsd, ') × ', quantity, ' - ', COALESCE(shippingCostUsd, 0), ' = ', ((sellingPriceUsd - purchasePriceUsd) * quantity - COALESCE(shippingCostUsd, 0)))\n    WHEN orderType = 'purchase_request' THEN CONCAT('Expected: -', COALESCE(shippingCostUsd, 0))\n    WHEN orderType = 'commission' THEN CONCAT('Expected: -', COALESCE(shippingCostUsd, 0))\n  END as expectedCalculation\nFROM fullPackageOrders \nWHERE orderCode IN ('FP-PROFIT-TEST-001', 'PR-PROFIT-TEST-002', 'COM-PROFIT-TEST-003')\nORDER BY orderCode;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \nSELECT \n  orderCode,\n  orderType,\n  COALESCE(purchasePriceUsd, 0) as purchasePrice,\n  COALESCE(sellingPriceUsd, 0) as sellingPrice,\n  COALESCE(itemPriceUsd, 0) as itemPrice,\n  COALESCE(commissionFeeUsd, 0) as commissionFee,\n  quantity,\n  COALESCE(shippingCostUsd, 0) as shippingCost,\n  COALESCE(profitUsd, 0) as profit,\n  status,\n  CASE \n    WHEN orderType = 'full_package' THEN CONCAT('Expected: (', sellingPriceUsd, ' - ', purchasePriceUsd, ') × ', quantity, ' - ', COALESCE(shippingCostUsd, 0), ' = ', ((sellingPriceUsd - purchasePriceUsd) * quantity - COALESCE(shippingCostUsd, 0)))\n    WHEN orderType = 'purchase_request' THEN CONCAT('Expected: -', COALESCE(shippingCostUsd, 0))\n    WHEN orderType = 'commission' THEN CONCAT('Expected: -', COALESCE(shippingCostUsd, 0))\n  END as expectedCalculation\nFROM fullPackageOrders \nWHERE orderCode IN ('FP-PROFIT-TEST-001', 'PR-PROFIT-TEST-002', 'COM-PROFIT-TEST-003')\nORDER BY orderCode;\n",
+  "rows": [
+    {
+      "orderCode": "COM-PROFIT-TEST-003",
+      "orderType": "commission",
+      "purchasePrice": "0",
+      "sellingPrice": "0",
+      "itemPrice": "120.00",
+      "commissionFee": "12.00",
+      "quantity": "1",
+      "shippingCost": "0.00",
+      "profit": "0",
+      "status": "ordered",
+      "expectedCalculation": "Expected: -0.00"
+    },
+    {
+      "orderCode": "FP-PROFIT-TEST-001",
+      "orderType": "full_package",
+      "purchasePrice": "50.00",
+      "sellingPrice": "100.00",
+      "itemPrice": "0",
+      "commissionFee": "0",
+      "quantity": "2",
+      "shippingCost": "0.00",
+      "profit": "0",
+      "status": "ordered",
+      "expectedCalculation": "Expected: (100.00 - 50.00) × 2 - 0.00 = 100.00"
+    },
+    {
+      "orderCode": "PR-PROFIT-TEST-002",
+      "orderType": "purchase_request",
+      "purchasePrice": "0",
+      "sellingPrice": "0",
+      "itemPrice": "80.00",
+      "commissionFee": "0",
+      "quantity": "1",
+      "shippingCost": "0.00",
+      "profit": "0",
+      "status": "ordered",
+      "expectedCalculation": "Expected: -0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderCode\torderType\tpurchasePrice\tsellingPrice\titemPrice\tcommissionFee\tquantity\tshippingCost\tprofit\tstatus\texpectedCalculation\nCOM-PROFIT-TEST-003\tcommission\t0\t0\t120.00\t12.00\t1\t0.00\t0\tordered\tExpected: -0.00\nFP-PROFIT-TEST-001\tfull_package\t50.00\t100.00\t0\t0\t2\t0.00\t0\tordered\tExpected: (100.00 - 50.00) × 2 - 0.00 = 100.00\nPR-PROFIT-TEST-002\tpurchase_request\t0\t0\t80.00\t0\t1\t0.00\t0\tordered\tExpected: -0.00\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

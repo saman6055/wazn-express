@@ -1,0 +1,15 @@
+{
+  "query": "SELECT DISTINCT le.customerId, c.fullName,\n       (SELECT le2.balanceAfterUsd FROM ledgerEntries le2 WHERE le2.customerId = le.customerId ORDER BY le2.createdAt DESC LIMIT 1) as latestBalance\nFROM ledgerEntries le \nJOIN customers c ON le.customerId = c.id \nHAVING CAST(latestBalance AS DECIMAL(12,2)) > 0\nORDER BY latestBalance DESC\nLIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT DISTINCT le.customerId, c.fullName,\n       (SELECT le2.balanceAfterUsd FROM ledgerEntries le2 WHERE le2.customerId = le.customerId ORDER BY le2.createdAt DESC LIMIT 1) as latestBalance\nFROM ledgerEntries le \nJOIN customers c ON le.customerId = c.id \nHAVING CAST(latestBalance AS DECIMAL(12,2)) > 0\nORDER BY latestBalance DESC\nLIMIT 30;",
+  "rows": [
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "latestBalance": "447.50"
+    }
+  ],
+  "messages": [],
+  "stdout": "customerId\tfullName\tlatestBalance\n120001\tsasa\t447.50\n",
+  "stderr": "",
+  "execution_time_ms": 121
+}

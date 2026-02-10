@@ -1,0 +1,35 @@
+{
+  "query": "SELECT sequenceNumber, customerCode, fullName FROM users WHERE role = 'customer' ORDER BY sequenceNumber DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT sequenceNumber, customerCode, fullName FROM users WHERE role = 'customer' ORDER BY sequenceNumber DESC LIMIT 5;",
+  "rows": [
+    {
+      "sequenceNumber": "19",
+      "customerCode": "AZ0019(Test Customer)",
+      "fullName": "Test Customer"
+    },
+    {
+      "sequenceNumber": "18",
+      "customerCode": "AZ0018(Test Customer)",
+      "fullName": "Test Customer"
+    },
+    {
+      "sequenceNumber": "17",
+      "customerCode": "AZ0017(Test Customer)",
+      "fullName": "Test Customer"
+    },
+    {
+      "sequenceNumber": "16",
+      "customerCode": "AZ0016(Test Customer)",
+      "fullName": "Test Customer"
+    },
+    {
+      "sequenceNumber": "15",
+      "customerCode": "AZ0015(Test Customer)",
+      "fullName": "Test Customer"
+    }
+  ],
+  "messages": [],
+  "stdout": "sequenceNumber\tcustomerCode\tfullName\n19\tAZ0019(Test Customer)\tTest Customer\n18\tAZ0018(Test Customer)\tTest Customer\n17\tAZ0017(Test Customer)\tTest Customer\n16\tAZ0016(Test Customer)\tTest Customer\n15\tAZ0015(Test Customer)\tTest Customer\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}

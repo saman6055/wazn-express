@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `chat_messages` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `chatId` int NOT NULL,\n  `senderType` enum('customer', 'staff', 'system', 'bot') NOT NULL,\n  `senderId` int,\n  `senderName` varchar(255),\n  `content` text NOT NULL,\n  `messageType` enum('text', 'image', 'file', 'system') DEFAULT 'text' NOT NULL,\n  `attachmentUrl` varchar(500),\n  `attachmentName` varchar(255),\n  `attachmentType` varchar(100),\n  `isRead` boolean DEFAULT false NOT NULL,\n  `readAt` timestamp,\n  `metadata` json,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY(`id`),\n  INDEX `idx_chat_id` (`chatId`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute CREATE TABLE IF NOT EXISTS `chat_messages` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `chatId` int NOT NULL,\n  `senderType` enum('customer', 'staff', 'system', 'bot') NOT NULL,\n  `senderId` int,\n  `senderName` varchar(255),\n  `content` text NOT NULL,\n  `messageType` enum('text', 'image', 'file', 'system') DEFAULT 'text' NOT NULL,\n  `attachmentUrl` varchar(500),\n  `attachmentName` varchar(255),\n  `attachmentType` varchar(100),\n  `isRead` boolean DEFAULT false NOT NULL,\n  `readAt` timestamp,\n  `metadata` json,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY(`id`),\n  INDEX `idx_chat_id` (`chatId`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 194
+}

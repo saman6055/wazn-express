@@ -1,0 +1,214 @@
+{
+  "query": "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME;",
+  "rows": [
+    {
+      "TABLE_NAME": "__drizzle_migrations"
+    },
+    {
+      "TABLE_NAME": "auditLogs"
+    },
+    {
+      "TABLE_NAME": "backups"
+    },
+    {
+      "TABLE_NAME": "batchCustomerPricing"
+    },
+    {
+      "TABLE_NAME": "batchPricingTiers"
+    },
+    {
+      "TABLE_NAME": "batches"
+    },
+    {
+      "TABLE_NAME": "blogPosts"
+    },
+    {
+      "TABLE_NAME": "cashAccounts"
+    },
+    {
+      "TABLE_NAME": "cashTransactions"
+    },
+    {
+      "TABLE_NAME": "chat_messages"
+    },
+    {
+      "TABLE_NAME": "companyDebts"
+    },
+    {
+      "TABLE_NAME": "countries"
+    },
+    {
+      "TABLE_NAME": "creditAdjustments"
+    },
+    {
+      "TABLE_NAME": "currencies"
+    },
+    {
+      "TABLE_NAME": "customerAccounts"
+    },
+    {
+      "TABLE_NAME": "customerAddresses"
+    },
+    {
+      "TABLE_NAME": "customerMessages"
+    },
+    {
+      "TABLE_NAME": "customerNotificationPrefs"
+    },
+    {
+      "TABLE_NAME": "customerNotifications"
+    },
+    {
+      "TABLE_NAME": "customer_code_prefixes"
+    },
+    {
+      "TABLE_NAME": "customers"
+    },
+    {
+      "TABLE_NAME": "dailyFinancialSummary"
+    },
+    {
+      "TABLE_NAME": "debtPayments"
+    },
+    {
+      "TABLE_NAME": "deletionLogs"
+    },
+    {
+      "TABLE_NAME": "errorLogs"
+    },
+    {
+      "TABLE_NAME": "exchangeRates"
+    },
+    {
+      "TABLE_NAME": "expenseCategories"
+    },
+    {
+      "TABLE_NAME": "expenses"
+    },
+    {
+      "TABLE_NAME": "extraServices"
+    },
+    {
+      "TABLE_NAME": "financialGoals"
+    },
+    {
+      "TABLE_NAME": "financialPeriods"
+    },
+    {
+      "TABLE_NAME": "fullPackageOrders"
+    },
+    {
+      "TABLE_NAME": "fullPackageStatusHistory"
+    },
+    {
+      "TABLE_NAME": "invoiceTemplates"
+    },
+    {
+      "TABLE_NAME": "invoices"
+    },
+    {
+      "TABLE_NAME": "ip_whitelist"
+    },
+    {
+      "TABLE_NAME": "labelTemplates"
+    },
+    {
+      "TABLE_NAME": "ledgerTransactions"
+    },
+    {
+      "TABLE_NAME": "notificationLogs"
+    },
+    {
+      "TABLE_NAME": "notificationSettings"
+    },
+    {
+      "TABLE_NAME": "notificationTemplates"
+    },
+    {
+      "TABLE_NAME": "packageClaimRequests"
+    },
+    {
+      "TABLE_NAME": "packageQrCodes"
+    },
+    {
+      "TABLE_NAME": "packageScans"
+    },
+    {
+      "TABLE_NAME": "packageStatusHistory"
+    },
+    {
+      "TABLE_NAME": "packages"
+    },
+    {
+      "TABLE_NAME": "partnerTransactions"
+    },
+    {
+      "TABLE_NAME": "partners"
+    },
+    {
+      "TABLE_NAME": "paymentRecords"
+    },
+    {
+      "TABLE_NAME": "paymentReminders"
+    },
+    {
+      "TABLE_NAME": "payments"
+    },
+    {
+      "TABLE_NAME": "permissions"
+    },
+    {
+      "TABLE_NAME": "pricingRules"
+    },
+    {
+      "TABLE_NAME": "productCategories"
+    },
+    {
+      "TABLE_NAME": "revenueRecords"
+    },
+    {
+      "TABLE_NAME": "scanDevices"
+    },
+    {
+      "TABLE_NAME": "scanHistory"
+    },
+    {
+      "TABLE_NAME": "scheduledTasksLog"
+    },
+    {
+      "TABLE_NAME": "serviceTypes"
+    },
+    {
+      "TABLE_NAME": "stockMovements"
+    },
+    {
+      "TABLE_NAME": "sub_permissions"
+    },
+    {
+      "TABLE_NAME": "suppliers"
+    },
+    {
+      "TABLE_NAME": "support_chats"
+    },
+    {
+      "TABLE_NAME": "systemSettings"
+    },
+    {
+      "TABLE_NAME": "tax_rates"
+    },
+    {
+      "TABLE_NAME": "users"
+    },
+    {
+      "TABLE_NAME": "vipCustomers"
+    },
+    {
+      "TABLE_NAME": "warehouses"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\n__drizzle_migrations\nauditLogs\nbackups\nbatchCustomerPricing\nbatchPricingTiers\nbatches\nblogPosts\ncashAccounts\ncashTransactions\nchat_messages\ncompanyDebts\ncountries\ncreditAdjustments\ncurrencies\ncustomerAccounts\ncustomerAddresses\ncustomerMessages\ncustomerNotificationPrefs\ncustomerNotifications\ncustomer_code_prefixes\ncustomers\ndailyFinancialSummary\ndebtPayments\ndeletionLogs\nerrorLogs\nexchangeRates\nexpenseCategories\nexpenses\nextraServices\nfinancialGoals\nfinancialPeriods\nfullPackageOrders\nfullPackageStatusHistory\ninvoiceTemplates\ninvoices\nip_whitelist\nlabelTemplates\nledgerTransactions\nnotificationLogs\nnotificationSettings\nnotificationTemplates\npackageClaimRequests\npackageQrCodes\npackageScans\npackageStatusHistory\npackages\npartnerTransactions\npartners\npaymentRecords\npaymentReminders\npayments\npermissions\npricingRules\nproductCategories\nrevenueRecords\nscanDevices\nscanHistory\nscheduledTasksLog\nserviceTypes\nstockMovements\nsub_permissions\nsuppliers\nsupport_chats\nsystemSettings\ntax_rates\nusers\nvipCustomers\nwarehouses\n",
+  "stderr": "",
+  "execution_time_ms": 80
+}

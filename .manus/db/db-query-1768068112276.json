@@ -1,0 +1,82 @@
+{
+  "query": "SELECT p.id, p.packageCode, p.trackingNumber, p.customerId, p.batchId, p.status, p.weightKg, p.volumeCbm, p.calculatedCostUsd, p.isCharged FROM packages p WHERE p.batchId IN (SELECT id FROM batches WHERE status = 'delivered') LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT p.id, p.packageCode, p.trackingNumber, p.customerId, p.batchId, p.status, p.weightKg, p.volumeCbm, p.calculatedCostUsd, p.isCharged FROM packages p WHERE p.batchId IN (SELECT id FROM batches WHERE status = 'delivered') LIMIT 20;",
+  "rows": [
+    {
+      "id": "2580001",
+      "packageCode": "g000004",
+      "trackingNumber": "11",
+      "customerId": "8430001",
+      "batchId": "720001",
+      "status": "delivered",
+      "weightKg": "23.000",
+      "volumeCbm": "NULL",
+      "calculatedCostUsd": "NULL",
+      "isCharged": "0"
+    },
+    {
+      "id": "2580002",
+      "packageCode": "g000005",
+      "trackingNumber": "5",
+      "customerId": "8430001",
+      "batchId": "720001",
+      "status": "delivered",
+      "weightKg": "NULL",
+      "volumeCbm": "0.424320",
+      "calculatedCostUsd": "NULL",
+      "isCharged": "0"
+    },
+    {
+      "id": "2580003",
+      "packageCode": "g000006",
+      "trackingNumber": "32",
+      "customerId": "8430001",
+      "batchId": "720001",
+      "status": "delivered",
+      "weightKg": "22.000",
+      "volumeCbm": "NULL",
+      "calculatedCostUsd": "NULL",
+      "isCharged": "0"
+    },
+    {
+      "id": "2580004",
+      "packageCode": "g000007",
+      "trackingNumber": "32",
+      "customerId": "8430002",
+      "batchId": "720001",
+      "status": "delivered",
+      "weightKg": "25.000",
+      "volumeCbm": "NULL",
+      "calculatedCostUsd": "NULL",
+      "isCharged": "0"
+    },
+    {
+      "id": "2580005",
+      "packageCode": "g000008",
+      "trackingNumber": "56",
+      "customerId": "8430002",
+      "batchId": "720001",
+      "status": "delivered",
+      "weightKg": "52.000",
+      "volumeCbm": "NULL",
+      "calculatedCostUsd": "NULL",
+      "isCharged": "0"
+    },
+    {
+      "id": "2580006",
+      "packageCode": "g000009",
+      "trackingNumber": "76",
+      "customerId": "8430002",
+      "batchId": "720001",
+      "status": "delivered",
+      "weightKg": "85.000",
+      "volumeCbm": "NULL",
+      "calculatedCostUsd": "NULL",
+      "isCharged": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpackageCode\ttrackingNumber\tcustomerId\tbatchId\tstatus\tweightKg\tvolumeCbm\tcalculatedCostUsd\tisCharged\n2580001\tg000004\t11\t8430001\t720001\tdelivered\t23.000\tNULL\tNULL\t0\n2580002\tg000005\t5\t8430001\t720001\tdelivered\tNULL\t0.424320\tNULL\t0\n2580003\tg000006\t32\t8430001\t720001\tdelivered\t22.000\tNULL\tNULL\t0\n2580004\tg000007\t32\t8430002\t720001\tdelivered\t25.000\tNULL\tNULL\t0\n2580005\tg000008\t56\t8430002\t720001\tdelivered\t52.000\tNULL\tNULL\t0\n2580006\tg000009\t76\t8430002\t720001\tdelivered\t85.000\tNULL\tNULL\t0\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}

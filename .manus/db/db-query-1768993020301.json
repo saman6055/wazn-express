@@ -1,0 +1,25 @@
+{
+  "query": "SELECT COUNT(*) as total_packages FROM packages; SELECT COUNT(*) as packages_yesterday FROM packages WHERE DATE(FROM_UNIXTIME(createdAt/1000)) = DATE_SUB(CURDATE(), INTERVAL 1 DAY); SELECT COUNT(*) as packages_today FROM packages WHERE DATE(FROM_UNIXTIME(createdAt/1000)) = CURDATE();",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT COUNT(*) as total_packages FROM packages; SELECT COUNT(*) as packages_yesterday FROM packages WHERE DATE(FROM_UNIXTIME(createdAt/1000)) = DATE_SUB(CURDATE(), INTERVAL 1 DAY); SELECT COUNT(*) as packages_today FROM packages WHERE DATE(FROM_UNIXTIME(createdAt/1000)) = CURDATE();",
+  "rows": [
+    {
+      "total_packages": "266"
+    },
+    {
+      "total_packages": "packages_yesterday"
+    },
+    {
+      "total_packages": "0"
+    },
+    {
+      "total_packages": "packages_today"
+    },
+    {
+      "total_packages": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_packages\n266\npackages_yesterday\n0\npackages_today\n0\n",
+  "stderr": "",
+  "execution_time_ms": 833
+}

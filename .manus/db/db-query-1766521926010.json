@@ -1,0 +1,446 @@
+{
+  "query": "SELECT id, orderCode FROM fullPackageOrders;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, orderCode FROM fullPackageOrders;",
+  "rows": [
+    {
+      "id": "2",
+      "orderCode": "FP-00002"
+    },
+    {
+      "id": "3",
+      "orderCode": "FP-00003"
+    },
+    {
+      "id": "5",
+      "orderCode": "FP-00005"
+    },
+    {
+      "id": "6",
+      "orderCode": "FP-00006"
+    },
+    {
+      "id": "30001",
+      "orderCode": "FP-30001"
+    },
+    {
+      "id": "30002",
+      "orderCode": "FP-30002"
+    },
+    {
+      "id": "60002",
+      "orderCode": "FP-60002"
+    },
+    {
+      "id": "60003",
+      "orderCode": "FP-60003"
+    },
+    {
+      "id": "90002",
+      "orderCode": "FP-90002"
+    },
+    {
+      "id": "90003",
+      "orderCode": "FP-90003"
+    },
+    {
+      "id": "120002",
+      "orderCode": "FP-12000"
+    },
+    {
+      "id": "120003",
+      "orderCode": "FP-12000"
+    },
+    {
+      "id": "150002",
+      "orderCode": "FP-15000"
+    },
+    {
+      "id": "150003",
+      "orderCode": "FP-15000"
+    },
+    {
+      "id": "180002",
+      "orderCode": "FP-18000"
+    },
+    {
+      "id": "180003",
+      "orderCode": "FP-18000"
+    },
+    {
+      "id": "180005",
+      "orderCode": "FP-18000"
+    },
+    {
+      "id": "180006",
+      "orderCode": "FP-18000"
+    },
+    {
+      "id": "210002",
+      "orderCode": "FP-21000"
+    },
+    {
+      "id": "210003",
+      "orderCode": "FP-21000"
+    },
+    {
+      "id": "210005",
+      "orderCode": "FP-21000"
+    },
+    {
+      "id": "210006",
+      "orderCode": "FP-21000"
+    },
+    {
+      "id": "240001",
+      "orderCode": "FP-24000"
+    },
+    {
+      "id": "270002",
+      "orderCode": "FP-27000"
+    },
+    {
+      "id": "270003",
+      "orderCode": "FP-27000"
+    },
+    {
+      "id": "300002",
+      "orderCode": "FP-30000"
+    },
+    {
+      "id": "300003",
+      "orderCode": "FP-30000"
+    },
+    {
+      "id": "330002",
+      "orderCode": "FP-33000"
+    },
+    {
+      "id": "330003",
+      "orderCode": "FP-33000"
+    },
+    {
+      "id": "330005",
+      "orderCode": "FP-33000"
+    },
+    {
+      "id": "330006",
+      "orderCode": "FP-33000"
+    },
+    {
+      "id": "360002",
+      "orderCode": "FP-36000"
+    },
+    {
+      "id": "360003",
+      "orderCode": "FP-36000"
+    },
+    {
+      "id": "390002",
+      "orderCode": "FP-39000"
+    },
+    {
+      "id": "390003",
+      "orderCode": "FP-39000"
+    },
+    {
+      "id": "420002",
+      "orderCode": "FP-42000"
+    },
+    {
+      "id": "420003",
+      "orderCode": "FP-42000"
+    },
+    {
+      "id": "450002",
+      "orderCode": "FP-45000"
+    },
+    {
+      "id": "450003",
+      "orderCode": "FP-45000"
+    },
+    {
+      "id": "480002",
+      "orderCode": "FP-48000"
+    },
+    {
+      "id": "480003",
+      "orderCode": "FP-48000"
+    },
+    {
+      "id": "510002",
+      "orderCode": "FP-51000"
+    },
+    {
+      "id": "510003",
+      "orderCode": "FP-51000"
+    },
+    {
+      "id": "510005",
+      "orderCode": "FP-51000"
+    },
+    {
+      "id": "510006",
+      "orderCode": "FP-51000"
+    },
+    {
+      "id": "510008",
+      "orderCode": "FP-51000"
+    },
+    {
+      "id": "510009",
+      "orderCode": "FP-51000"
+    },
+    {
+      "id": "540002",
+      "orderCode": "FP-54000"
+    },
+    {
+      "id": "540003",
+      "orderCode": "FP-54000"
+    },
+    {
+      "id": "540005",
+      "orderCode": "FP-54000"
+    },
+    {
+      "id": "540006",
+      "orderCode": "FP-54000"
+    },
+    {
+      "id": "570002",
+      "orderCode": "FP-57000"
+    },
+    {
+      "id": "570003",
+      "orderCode": "FP-57000"
+    },
+    {
+      "id": "600002",
+      "orderCode": "FP-60000"
+    },
+    {
+      "id": "600003",
+      "orderCode": "FP-60000"
+    },
+    {
+      "id": "600005",
+      "orderCode": "FP-60000"
+    },
+    {
+      "id": "600006",
+      "orderCode": "FP-60000"
+    },
+    {
+      "id": "630002",
+      "orderCode": "FP-63000"
+    },
+    {
+      "id": "630003",
+      "orderCode": "FP-63000"
+    },
+    {
+      "id": "660002",
+      "orderCode": "FP-66000"
+    },
+    {
+      "id": "660003",
+      "orderCode": "FP-66000"
+    },
+    {
+      "id": "690002",
+      "orderCode": "FP-69000"
+    },
+    {
+      "id": "690003",
+      "orderCode": "FP-69000"
+    },
+    {
+      "id": "720001",
+      "orderCode": "FP-72000"
+    },
+    {
+      "id": "750002",
+      "orderCode": "FP-75000"
+    },
+    {
+      "id": "750003",
+      "orderCode": "FP-75000"
+    },
+    {
+      "id": "750005",
+      "orderCode": "FP-75000"
+    },
+    {
+      "id": "750006",
+      "orderCode": "FP-75000"
+    },
+    {
+      "id": "750008",
+      "orderCode": "FP-75000"
+    },
+    {
+      "id": "750009",
+      "orderCode": "FP-75000"
+    },
+    {
+      "id": "780002",
+      "orderCode": "FP-78000"
+    },
+    {
+      "id": "780003",
+      "orderCode": "FP-78000"
+    },
+    {
+      "id": "780005",
+      "orderCode": "FP-78000"
+    },
+    {
+      "id": "780006",
+      "orderCode": "FP-78000"
+    },
+    {
+      "id": "810002",
+      "orderCode": "FP-81000"
+    },
+    {
+      "id": "810003",
+      "orderCode": "FP-81000"
+    },
+    {
+      "id": "840002",
+      "orderCode": "FP-84000"
+    },
+    {
+      "id": "840003",
+      "orderCode": "FP-84000"
+    },
+    {
+      "id": "840005",
+      "orderCode": "FP-84000"
+    },
+    {
+      "id": "840006",
+      "orderCode": "FP-84000"
+    },
+    {
+      "id": "870002",
+      "orderCode": "FP-87000"
+    },
+    {
+      "id": "870003",
+      "orderCode": "FP-87000"
+    },
+    {
+      "id": "870005",
+      "orderCode": "FP-87000"
+    },
+    {
+      "id": "870006",
+      "orderCode": "FP-87000"
+    },
+    {
+      "id": "870008",
+      "orderCode": "FP-87000"
+    },
+    {
+      "id": "870009",
+      "orderCode": "FP-87000"
+    },
+    {
+      "id": "900002",
+      "orderCode": "FP-90000"
+    },
+    {
+      "id": "900003",
+      "orderCode": "FP-90000"
+    },
+    {
+      "id": "930002",
+      "orderCode": "FP-93000"
+    },
+    {
+      "id": "930003",
+      "orderCode": "FP-93000"
+    },
+    {
+      "id": "960002",
+      "orderCode": "FP-96000"
+    },
+    {
+      "id": "960003",
+      "orderCode": "FP-96000"
+    },
+    {
+      "id": "990002",
+      "orderCode": "FP-99000"
+    },
+    {
+      "id": "990003",
+      "orderCode": "FP-99000"
+    },
+    {
+      "id": "1020001",
+      "orderCode": "FP-10200"
+    },
+    {
+      "id": "1050002",
+      "orderCode": "FP-10500"
+    },
+    {
+      "id": "1050003",
+      "orderCode": "FP-10500"
+    },
+    {
+      "id": "1080002",
+      "orderCode": "FP-10800"
+    },
+    {
+      "id": "1080003",
+      "orderCode": "FP-10800"
+    },
+    {
+      "id": "1110002",
+      "orderCode": "FP-11100"
+    },
+    {
+      "id": "1110003",
+      "orderCode": "FP-11100"
+    },
+    {
+      "id": "1140002",
+      "orderCode": "FP-11400"
+    },
+    {
+      "id": "1140003",
+      "orderCode": "FP-11400"
+    },
+    {
+      "id": "1170002",
+      "orderCode": "FP-11700"
+    },
+    {
+      "id": "1170003",
+      "orderCode": "FP-11700"
+    },
+    {
+      "id": "1170005",
+      "orderCode": "FP-11700"
+    },
+    {
+      "id": "1170006",
+      "orderCode": "FP-11700"
+    },
+    {
+      "id": "1170008",
+      "orderCode": "FP-11700"
+    },
+    {
+      "id": "1170009",
+      "orderCode": "FP-11700"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderCode\n2\tFP-00002\n3\tFP-00003\n5\tFP-00005\n6\tFP-00006\n30001\tFP-30001\n30002\tFP-30002\n60002\tFP-60002\n60003\tFP-60003\n90002\tFP-90002\n90003\tFP-90003\n120002\tFP-12000\n120003\tFP-12000\n150002\tFP-15000\n150003\tFP-15000\n180002\tFP-18000\n180003\tFP-18000\n180005\tFP-18000\n180006\tFP-18000\n210002\tFP-21000\n210003\tFP-21000\n210005\tFP-21000\n210006\tFP-21000\n240001\tFP-24000\n270002\tFP-27000\n270003\tFP-27000\n300002\tFP-30000\n300003\tFP-30000\n330002\tFP-33000\n330003\tFP-33000\n330005\tFP-33000\n330006\tFP-33000\n360002\tFP-36000\n360003\tFP-36000\n390002\tFP-39000\n390003\tFP-39000\n420002\tFP-42000\n420003\tFP-42000\n450002\tFP-45000\n450003\tFP-45000\n480002\tFP-48000\n480003\tFP-48000\n510002\tFP-51000\n510003\tFP-51000\n510005\tFP-51000\n510006\tFP-51000\n510008\tFP-51000\n510009\tFP-51000\n540002\tFP-54000\n540003\tFP-54000\n540005\tFP-54000\n540006\tFP-54000\n570002\tFP-57000\n570003\tFP-57000\n600002\tFP-60000\n600003\tFP-60000\n600005\tFP-60000\n600006\tFP-60000\n630002\tFP-63000\n630003\tFP-63000\n660002\tFP-66000\n660003\tFP-66000\n690002\tFP-69000\n690003\tFP-69000\n720001\tFP-72000\n750002\tFP-75000\n750003\tFP-75000\n750005\tFP-75000\n750006\tFP-75000\n750008\tFP-75000\n750009\tFP-75000\n780002\tFP-78000\n780003\tFP-78000\n780005\tFP-78000\n780006\tFP-78000\n810002\tFP-81000\n810003\tFP-81000\n840002\tFP-84000\n840003\tFP-84000\n840005\tFP-84000\n840006\tFP-84000\n870002\tFP-87000\n870003\tFP-87000\n870005\tFP-87000\n870006\tFP-87000\n870008\tFP-87000\n870009\tFP-87000\n900002\tFP-90000\n900003\tFP-90000\n930002\tFP-93000\n930003\tFP-93000\n960002\tFP-96000\n960003\tFP-96000\n990002\tFP-99000\n990003\tFP-99000\n1020001\tFP-10200\n1050002\tFP-10500\n1050003\tFP-10500\n1080002\tFP-10800\n1080003\tFP-10800\n1110002\tFP-11100\n1110003\tFP-11100\n1140002\tFP-11400\n1140003\tFP-11400\n1170002\tFP-11700\n1170003\tFP-11700\n1170005\tFP-11700\n1170006\tFP-11700\n1170008\tFP-11700\n1170009\tFP-11700\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

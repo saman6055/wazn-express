@@ -1,0 +1,310 @@
+{
+  "query": "SELECT le.customerId, c.fullName, le.balanceAfterUsd, le.createdAt \nFROM ledgerEntries le \nJOIN customers c ON le.customerId = c.id \nWHERE CAST(le.balanceAfterUsd AS DECIMAL(12,2)) > 0\nORDER BY le.createdAt DESC \nLIMIT 50;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT le.customerId, c.fullName, le.balanceAfterUsd, le.createdAt \nFROM ledgerEntries le \nJOIN customers c ON le.customerId = c.id \nWHERE CAST(le.balanceAfterUsd AS DECIMAL(12,2)) > 0\nORDER BY le.createdAt DESC \nLIMIT 50;",
+  "rows": [
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "462.50",
+      "createdAt": "2025-12-19 22:49:06"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "447.50",
+      "createdAt": "2025-12-19 22:49:06"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "455.00",
+      "createdAt": "2025-12-19 22:49:06"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "442.50",
+      "createdAt": "2025-12-19 21:46:00"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "450.00",
+      "createdAt": "2025-12-19 21:46:00"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "435.00",
+      "createdAt": "2025-12-19 21:46:00"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "437.50",
+      "createdAt": "2025-12-19 20:35:11"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "430.00",
+      "createdAt": "2025-12-19 20:35:11"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "422.50",
+      "createdAt": "2025-12-19 20:35:11"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "410.00",
+      "createdAt": "2025-12-19 20:18:49"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "417.50",
+      "createdAt": "2025-12-19 20:18:49"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "425.00",
+      "createdAt": "2025-12-19 20:18:49"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "397.50",
+      "createdAt": "2025-12-19 18:55:04"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "390.00",
+      "createdAt": "2025-12-19 18:55:03"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "382.50",
+      "createdAt": "2025-12-19 18:55:03"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "377.50",
+      "createdAt": "2025-12-19 18:37:07"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "370.00",
+      "createdAt": "2025-12-19 18:37:07"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "385.00",
+      "createdAt": "2025-12-19 18:37:07"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "372.50",
+      "createdAt": "2025-12-19 18:35:30"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "365.00",
+      "createdAt": "2025-12-19 18:35:30"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "357.50",
+      "createdAt": "2025-12-19 18:35:30"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "352.50",
+      "createdAt": "2025-12-19 17:57:00"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "360.00",
+      "createdAt": "2025-12-19 17:57:00"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "345.00",
+      "createdAt": "2025-12-19 17:57:00"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "332.50",
+      "createdAt": "2025-12-19 17:54:42"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "347.50",
+      "createdAt": "2025-12-19 17:54:42"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "340.00",
+      "createdAt": "2025-12-19 17:54:42"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "327.50",
+      "createdAt": "2025-12-19 17:48:49"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "335.00",
+      "createdAt": "2025-12-19 17:48:49"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "320.00",
+      "createdAt": "2025-12-19 17:48:49"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "307.50",
+      "createdAt": "2025-12-19 16:52:54"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "315.00",
+      "createdAt": "2025-12-19 16:52:54"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "322.50",
+      "createdAt": "2025-12-19 16:52:54"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "295.00",
+      "createdAt": "2025-12-19 15:23:12"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "310.00",
+      "createdAt": "2025-12-19 15:23:12"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "302.50",
+      "createdAt": "2025-12-19 15:23:12"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "297.50",
+      "createdAt": "2025-12-19 15:06:55"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "282.50",
+      "createdAt": "2025-12-19 15:06:55"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "290.00",
+      "createdAt": "2025-12-19 15:06:55"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "270.00",
+      "createdAt": "2025-12-19 10:18:45"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "285.00",
+      "createdAt": "2025-12-19 10:18:45"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "277.50",
+      "createdAt": "2025-12-19 10:18:45"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "257.50",
+      "createdAt": "2025-12-19 09:15:26"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "250.00",
+      "createdAt": "2025-12-19 09:15:25"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "242.50",
+      "createdAt": "2025-12-19 09:15:25"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "237.50",
+      "createdAt": "2025-12-19 00:07:21"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "230.00",
+      "createdAt": "2025-12-19 00:07:21"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "245.00",
+      "createdAt": "2025-12-19 00:07:21"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "225.00",
+      "createdAt": "2025-12-19 00:06:43"
+    },
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "balanceAfterUsd": "232.50",
+      "createdAt": "2025-12-19 00:06:43"
+    }
+  ],
+  "messages": [],
+  "stdout": "customerId\tfullName\tbalanceAfterUsd\tcreatedAt\n120001\tsasa\t462.50\t2025-12-19 22:49:06\n120001\tsasa\t447.50\t2025-12-19 22:49:06\n120001\tsasa\t455.00\t2025-12-19 22:49:06\n120001\tsasa\t442.50\t2025-12-19 21:46:00\n120001\tsasa\t450.00\t2025-12-19 21:46:00\n120001\tsasa\t435.00\t2025-12-19 21:46:00\n120001\tsasa\t437.50\t2025-12-19 20:35:11\n120001\tsasa\t430.00\t2025-12-19 20:35:11\n120001\tsasa\t422.50\t2025-12-19 20:35:11\n120001\tsasa\t410.00\t2025-12-19 20:18:49\n120001\tsasa\t417.50\t2025-12-19 20:18:49\n120001\tsasa\t425.00\t2025-12-19 20:18:49\n120001\tsasa\t397.50\t2025-12-19 18:55:04\n120001\tsasa\t390.00\t2025-12-19 18:55:03\n120001\tsasa\t382.50\t2025-12-19 18:55:03\n120001\tsasa\t377.50\t2025-12-19 18:37:07\n120001\tsasa\t370.00\t2025-12-19 18:37:07\n120001\tsasa\t385.00\t2025-12-19 18:37:07\n120001\tsasa\t372.50\t2025-12-19 18:35:30\n120001\tsasa\t365.00\t2025-12-19 18:35:30\n120001\tsasa\t357.50\t2025-12-19 18:35:30\n120001\tsasa\t352.50\t2025-12-19 17:57:00\n120001\tsasa\t360.00\t2025-12-19 17:57:00\n120001\tsasa\t345.00\t2025-12-19 17:57:00\n120001\tsasa\t332.50\t2025-12-19 17:54:42\n120001\tsasa\t347.50\t2025-12-19 17:54:42\n120001\tsasa\t340.00\t2025-12-19 17:54:42\n120001\tsasa\t327.50\t2025-12-19 17:48:49\n120001\tsasa\t335.00\t2025-12-19 17:48:49\n120001\tsasa\t320.00\t2025-12-19 17:48:49\n120001\tsasa\t307.50\t2025-12-19 16:52:54\n120001\tsasa\t315.00\t2025-12-19 16:52:54\n120001\tsasa\t322.50\t2025-12-19 16:52:54\n120001\tsasa\t295.00\t2025-12-19 15:23:12\n120001\tsasa\t310.00\t2025-12-19 15:23:12\n120001\tsasa\t302.50\t2025-12-19 15:23:12\n120001\tsasa\t297.50\t2025-12-19 15:06:55\n120001\tsasa\t282.50\t2025-12-19 15:06:55\n120001\tsasa\t290.00\t2025-12-19 15:06:55\n120001\tsasa\t270.00\t2025-12-19 10:18:45\n120001\tsasa\t285.00\t2025-12-19 10:18:45\n120001\tsasa\t277.50\t2025-12-19 10:18:45\n120001\tsasa\t257.50\t2025-12-19 09:15:26\n120001\tsasa\t250.00\t2025-12-19 09:15:25\n120001\tsasa\t242.50\t2025-12-19 09:15:25\n120001\tsasa\t237.50\t2025-12-19 00:07:21\n120001\tsasa\t230.00\t2025-12-19 00:07:21\n120001\tsasa\t245.00\t2025-12-19 00:07:21\n120001\tsasa\t225.00\t2025-12-19 00:06:43\n120001\tsasa\t232.50\t2025-12-19 00:06:43\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

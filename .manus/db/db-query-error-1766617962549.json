@@ -1,0 +1,8 @@
+{
+  "query": "SELECT SUM(totalUsd) as total_revenue, COUNT(*) as count FROM packages WHERE status = 'delivered';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT SUM(totalUsd) as total_revenue, COUNT(*) as count FROM packages WHERE status = 'delivered';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'totalusd' in 'where clause'"
+  ]
+}

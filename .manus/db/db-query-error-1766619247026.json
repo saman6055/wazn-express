@@ -1,0 +1,8 @@
+{
+  "query": "SELECT i.customerId, c.fullName, SUM(i.totalAmount - COALESCE(i.paidAmount, 0)) as unpaidAmount\nFROM invoices i\nJOIN customers c ON i.customerId = c.id\nWHERE i.status != 'paid' OR i.totalAmount > COALESCE(i.paidAmount, 0)\nGROUP BY i.customerId\nHAVING unpaidAmount > 0\nORDER BY unpaidAmount DESC\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT i.customerId, c.fullName, SUM(i.totalAmount - COALESCE(i.paidAmount, 0)) as unpaidAmount\nFROM invoices i\nJOIN customers c ON i.customerId = c.id\nWHERE i.status != 'paid' OR i.totalAmount > COALESCE(i.paidAmount, 0)\nGROUP BY i.customerId\nHAVING unpaidAmount > 0\nORDER BY unpaidAmount DESC\nLIMIT 20;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'i.totalamount' in 'where clause'"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as count FROM purchaseRequests; SELECT * FROM purchaseRequests ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT COUNT(*) as count FROM purchaseRequests; SELECT * FROM purchaseRequests ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "count": "1"
+    },
+    {
+      "count": "id\trequestCode\tcustomerId\tcustomerName\tcustomerCode\tproductUrl\tproductName\tproductDescription\tproductImages\tcolor\tsize\tquantity\tcustomerNotes\tdeliveryAddress\tdeliveryCity\tdeliveryPhone\tstatus\tproductPrice\tproductPriceCurrency\tshippingCost\tserviceFee\tlocalDeliveryCost\ttotalPrice\tadminNotes\tquotedById\tquotedByName\tquotedAt\tcustomerResponse\tcustomerResponseAt\tcustomerResponseNotes\tpaidFromWallet\tpaymentTransactionId\tpaidAt\tpurchaseOrderNumber\tpurchaseReceipt\tpurchasedAt\tpurchasedById\ttrackingNumber\ttrackingCarrier\testimatedDelivery\tlinkedPackageId\tcreatedAt\tupdatedAt\tisCharged\tchargedAt\tchargedAmount"
+    },
+    {
+      "count": "120001\tPR-2026-00001\t9870232\tSaman\tNULL\tWee.thh.com\tSaman\t\t[\"https://d2xsxph8kpxj0f.cloudfront.net/310519663250795692/CB8XFpvgXqCGVxJN2CGtFE/purchase-requests/PqQaJge1p8Qn.jpeg\"]\tRash\t\t1\t\t\t\t\tpending\tNULL\tUSD\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tpending\tNULL\tNULL\t0\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-01-18 21:38:26\t2026-01-18 21:38:26\t0\tNULL\tNULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "count\n1\nid\trequestCode\tcustomerId\tcustomerName\tcustomerCode\tproductUrl\tproductName\tproductDescription\tproductImages\tcolor\tsize\tquantity\tcustomerNotes\tdeliveryAddress\tdeliveryCity\tdeliveryPhone\tstatus\tproductPrice\tproductPriceCurrency\tshippingCost\tserviceFee\tlocalDeliveryCost\ttotalPrice\tadminNotes\tquotedById\tquotedByName\tquotedAt\tcustomerResponse\tcustomerResponseAt\tcustomerResponseNotes\tpaidFromWallet\tpaymentTransactionId\tpaidAt\tpurchaseOrderNumber\tpurchaseReceipt\tpurchasedAt\tpurchasedById\ttrackingNumber\ttrackingCarrier\testimatedDelivery\tlinkedPackageId\tcreatedAt\tupdatedAt\tisCharged\tchargedAt\tchargedAmount\n120001\tPR-2026-00001\t9870232\tSaman\tNULL\tWee.thh.com\tSaman\t\t[\"https://d2xsxph8kpxj0f.cloudfront.net/310519663250795692/CB8XFpvgXqCGVxJN2CGtFE/purchase-requests/PqQaJge1p8Qn.jpeg\"]\tRash\t\t1\t\t\t\t\tpending\tNULL\tUSD\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tpending\tNULL\tNULL\t0\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-01-18 21:38:26\t2026-01-18 21:38:26\t0\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 114
+}

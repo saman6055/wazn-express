@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, name, email, mobileNumber, customerCode, role, passwordHash, isActive FROM users WHERE role = 'customer' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, name, email, mobileNumber, customerCode, role, passwordHash, isActive FROM users WHERE role = 'customer' LIMIT 10;",
+  "rows": [
+    {
+      "id": "240024",
+      "name": "Test Customer",
+      "email": "NULL",
+      "mobileNumber": "+9647508275689",
+      "customerCode": "AZ001(Test Customer)",
+      "role": "customer",
+      "passwordHash": "$2b$10$z9oTDx2TrwbAp1rmZumoDOKzpO/oqjBD/fsMa7rVRSgcCImKXCjHW",
+      "isActive": "1"
+    },
+    {
+      "id": "300018",
+      "name": "saman",
+      "email": "NULL",
+      "mobileNumber": "1234567890",
+      "customerCode": "AZ002(saman)",
+      "role": "customer",
+      "passwordHash": "$2b$10$AQUB6kw.zzvkHnIqMWIcpOTOuTz4i36anPmou14v9GjBAvlWe83gK",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tmobileNumber\tcustomerCode\trole\tpasswordHash\tisActive\n240024\tTest Customer\tNULL\t+9647508275689\tAZ001(Test Customer)\tcustomer\t$2b$10$z9oTDx2TrwbAp1rmZumoDOKzpO/oqjBD/fsMa7rVRSgcCImKXCjHW\t1\n300018\tsaman\tNULL\t1234567890\tAZ002(saman)\tcustomer\t$2b$10$AQUB6kw.zzvkHnIqMWIcpOTOuTz4i36anPmou14v9GjBAvlWe83gK\t1\n",
+  "stderr": "",
+  "execution_time_ms": 129
+}

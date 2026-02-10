@@ -1,0 +1,14 @@
+# Nixpacks configuration for Coolify deployment
+# This tells Nixpacks how to build and run the application
+
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = ["npm install -g pnpm", "pnpm install"]
+
+[phases.build]
+cmds = ["pnpm build"]
+
+[start]
+cmd = "pnpm start"

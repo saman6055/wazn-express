@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, name, role, mobileNumber FROM users LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, name, role, mobileNumber FROM users LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Xogr Xamosh",
+      "role": "admin",
+      "mobileNumber": "NULL"
+    },
+    {
+      "id": "90043",
+      "name": "saman ibrahem",
+      "role": "super_admin",
+      "mobileNumber": "NULL"
+    },
+    {
+      "id": "450006",
+      "name": "NULL",
+      "role": "admin",
+      "mobileNumber": "8881765994"
+    },
+    {
+      "id": "450008",
+      "name": "NULL",
+      "role": "admin",
+      "mobileNumber": "9991765994"
+    },
+    {
+      "id": "450011",
+      "name": "NULL",
+      "role": "admin",
+      "mobileNumber": "9176599497"
+    },
+    {
+      "id": "450012",
+      "name": "NULL",
+      "role": "admin",
+      "mobileNumber": "7176599497"
+    },
+    {
+      "id": "840032",
+      "name": "Sssss",
+      "role": "admin",
+      "mobileNumber": "7502222222"
+    },
+    {
+      "id": "3030005",
+      "name": "Mustafa",
+      "role": "admin",
+      "mobileNumber": "7512408598"
+    },
+    {
+      "id": "7710050",
+      "name": "Shadan",
+      "role": "employee",
+      "mobileNumber": "NULL"
+    },
+    {
+      "id": "7710051",
+      "name": "Dlkhwaz",
+      "role": "accountant",
+      "mobileNumber": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\trole\tmobileNumber\n1\tXogr Xamosh\tadmin\tNULL\n90043\tsaman ibrahem\tsuper_admin\tNULL\n450006\tNULL\tadmin\t8881765994\n450008\tNULL\tadmin\t9991765994\n450011\tNULL\tadmin\t9176599497\n450012\tNULL\tadmin\t7176599497\n840032\tSssss\tadmin\t7502222222\n3030005\tMustafa\tadmin\t7512408598\n7710050\tShadan\temployee\tNULL\n7710051\tDlkhwaz\taccountant\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}

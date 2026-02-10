@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO customers (customerCode, sequenceNumber, fullName, fullNameKurdish, mobileNumber, passwordHash, isActive, createdById, linkedUserId) VALUES ('AZ001(Test)', 1, 'Test Customer', 'کڕیاری تاقیکردنەوە', '07501234567', 'test123', true, 1, 1);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute INSERT INTO customers (customerCode, sequenceNumber, fullName, fullNameKurdish, mobileNumber, passwordHash, isActive, createdById, linkedUserId) VALUES ('AZ001(Test)', 1, 'Test Customer', 'کڕیاری تاقیکردنەوە', '07501234567', 'test123', true, 1, 1);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 66
+}

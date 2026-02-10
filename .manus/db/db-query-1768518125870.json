@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE ledgerTransactions \nMODIFY COLUMN transactionType ENUM(\n  'DEBIT_PACKAGE',\n  'DEBIT_FULL_PACKAGE',\n  'DEBIT_PURCHASE_REQUEST',\n  'DEBIT_COMMISSION',\n  'DEBIT_SERVICE',\n  'DEBIT_PENALTY',\n  'DEBIT_OTHER',\n  'CREDIT_PAYMENT',\n  'CREDIT_DEPOSIT',\n  'CREDIT_REFUND',\n  'CREDIT_DISCOUNT',\n  'CREDIT_OTHER',\n  'ADJUSTMENT_DEBIT',\n  'ADJUSTMENT_CREDIT'\n) NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute ALTER TABLE ledgerTransactions \nMODIFY COLUMN transactionType ENUM(\n  'DEBIT_PACKAGE',\n  'DEBIT_FULL_PACKAGE',\n  'DEBIT_PURCHASE_REQUEST',\n  'DEBIT_COMMISSION',\n  'DEBIT_SERVICE',\n  'DEBIT_PENALTY',\n  'DEBIT_OTHER',\n  'CREDIT_PAYMENT',\n  'CREDIT_DEPOSIT',\n  'CREDIT_REFUND',\n  'CREDIT_DISCOUNT',\n  'CREDIT_OTHER',\n  'ADJUSTMENT_DEBIT',\n  'ADJUSTMENT_CREDIT'\n) NOT NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 627
+}

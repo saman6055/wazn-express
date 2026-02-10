@@ -1,0 +1,14 @@
+{
+  "query": "SELECT id, orderCode FROM fullPackageOrders WHERE orderType = 'purchase_request' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, orderCode FROM fullPackageOrders WHERE orderType = 'purchase_request' LIMIT 1;",
+  "rows": [
+    {
+      "id": "1800003",
+      "orderCode": "PR-MK8ZJV5R"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderCode\n1800003\tPR-MK8ZJV5R\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

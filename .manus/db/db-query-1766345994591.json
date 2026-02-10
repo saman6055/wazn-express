@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, packageCode, trackingNumber, isUnclaimed, customerId FROM packages WHERE trackingNumber LIKE 'UNC-UNIQUE-1-1766279693478%' LIMIT 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, packageCode, trackingNumber, isUnclaimed, customerId FROM packages WHERE trackingNumber LIKE 'UNC-UNIQUE-1-1766279693478%' LIMIT 1",
+  "rows": [
+    {
+      "id": "1320013",
+      "packageCode": "UNC-000050",
+      "trackingNumber": "UNC-UNIQUE-1-1766279693478",
+      "isUnclaimed": "1",
+      "customerId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpackageCode\ttrackingNumber\tisUnclaimed\tcustomerId\n1320013\tUNC-000050\tUNC-UNIQUE-1-1766279693478\t1\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 66
+}

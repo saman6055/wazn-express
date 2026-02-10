@@ -1,0 +1,26 @@
+{
+  "query": "SELECT * FROM cashAccounts;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT * FROM cashAccounts;",
+  "rows": [
+    {
+      "id": "1",
+      "accountName": "Fib",
+      "accountNameKu": "NULL",
+      "accountType": "mobile_wallet",
+      "bankName": "NULL",
+      "accountNumber": "NULL",
+      "currency": "USD",
+      "currentBalance": "27500.00",
+      "initialBalance": "0.00",
+      "description": "NULL",
+      "isActive": "1",
+      "isPrimary": "0",
+      "createdAt": "2026-02-06 11:09:57",
+      "updatedAt": "2026-02-06 11:31:42"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\taccountName\taccountNameKu\taccountType\tbankName\taccountNumber\tcurrency\tcurrentBalance\tinitialBalance\tdescription\tisActive\tisPrimary\tcreatedAt\tupdatedAt\n1\tFib\tNULL\tmobile_wallet\tNULL\tNULL\tUSD\t27500.00\t0.00\tNULL\t1\t0\t2026-02-06 11:09:57\t2026-02-06 11:31:42\n",
+  "stderr": "",
+  "execution_time_ms": 379
+}

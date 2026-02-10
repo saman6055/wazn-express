@@ -1,0 +1,8 @@
+{
+  "query": "\n-- First check if test super admin exists\nSELECT id, name, email, role FROM users WHERE email = 'superadmin@test.com';\n\n-- Create test super admin with password: 123456\nINSERT INTO users (name, email, password_hash, role, created_at, updated_at)\nVALUES ('Test Super Admin', 'superadmin@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'super_admin', NOW(), NOW())\nON DUPLICATE KEY UPDATE role = 'super_admin';\n\n-- Verify the account was created\nSELECT id, name, email, role FROM users WHERE email = 'superadmin@test.com';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \n-- First check if test super admin exists\nSELECT id, name, email, role FROM users WHERE email = 'superadmin@test.com';\n\n-- Create test super admin with password: 123456\nINSERT INTO users (name, email, password_hash, role, created_at, updated_at)\nVALUES ('Test Super Admin', 'superadmin@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'super_admin', NOW(), NOW())\nON DUPLICATE KEY UPDATE role = 'super_admin';\n\n-- Verify the account was created\nSELECT id, name, email, role FROM users WHERE email = 'superadmin@test.com';\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 6: Unknown column 'password_hash' in 'field list'"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, batchCode, shippingType, pricePerKg, pricePerCbm FROM batches",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, batchCode, shippingType, pricePerKg, pricePerCbm FROM batches",
+  "rows": [
+    {
+      "id": "300001",
+      "batchCode": "1 air",
+      "shippingType": "air_regular",
+      "pricePerKg": "11.00",
+      "pricePerCbm": "NULL"
+    },
+    {
+      "id": "300002",
+      "batchCode": "2 air iregular",
+      "shippingType": "air_irregular",
+      "pricePerKg": "15.00",
+      "pricePerCbm": "NULL"
+    },
+    {
+      "id": "300003",
+      "batchCode": "3 sea",
+      "shippingType": "sea",
+      "pricePerKg": "NULL",
+      "pricePerCbm": "150.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbatchCode\tshippingType\tpricePerKg\tpricePerCbm\n300001\t1 air\tair_regular\t11.00\tNULL\n300002\t2 air iregular\tair_irregular\t15.00\tNULL\n300003\t3 sea\tsea\tNULL\t150.00\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}

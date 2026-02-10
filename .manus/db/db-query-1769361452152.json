@@ -1,0 +1,20 @@
+{
+  "query": "\nSELECT \n  orderType,\n  status,\n  COUNT(*) as count\nFROM fullPackageOrders\nGROUP BY orderType, status\nORDER BY orderType, count DESC\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \nSELECT \n  orderType,\n  status,\n  COUNT(*) as count\nFROM fullPackageOrders\nGROUP BY orderType, status\nORDER BY orderType, count DESC\n",
+  "rows": [
+    {
+      "orderType": "full_package",
+      "status": "delivered",
+      "count": "2"
+    },
+    {
+      "orderType": "commission",
+      "status": "delivered",
+      "count": "4"
+    }
+  ],
+  "messages": [],
+  "stdout": "orderType\tstatus\tcount\nfull_package\tdelivered\t2\ncommission\tdelivered\t4\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, orderCode, orderType, trackingNumber, customerId FROM fullPackageOrders WHERE trackingNumber IS NOT NULL AND trackingNumber != '' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, orderCode, orderType, trackingNumber, customerId FROM fullPackageOrders WHERE trackingNumber IS NOT NULL AND trackingNumber != '' LIMIT 5;",
+  "rows": [
+    {
+      "id": "1800001",
+      "orderCode": "CM-MK8ZA68D",
+      "orderType": "commission",
+      "trackingNumber": "345678",
+      "customerId": "6002462"
+    },
+    {
+      "id": "1800002",
+      "orderCode": "FP-MK8ZIE8E",
+      "orderType": "full_package",
+      "trackingNumber": "09",
+      "customerId": "8430002"
+    },
+    {
+      "id": "1830001",
+      "orderCode": "FP-MK9SL3X2",
+      "orderType": "full_package",
+      "trackingNumber": "77",
+      "customerId": "8430002"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderCode\torderType\ttrackingNumber\tcustomerId\n1800001\tCM-MK8ZA68D\tcommission\t345678\t6002462\n1800002\tFP-MK8ZIE8E\tfull_package\t09\t8430002\n1830001\tFP-MK9SL3X2\tfull_package\t77\t8430002\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

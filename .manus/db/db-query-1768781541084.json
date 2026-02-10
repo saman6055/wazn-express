@@ -1,0 +1,55 @@
+{
+  "query": "SELECT * FROM systemSettings LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT * FROM systemSettings LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "settingKey": "notifications",
+      "settingValue": "{\"email\":true,\"whatsapp\":true}",
+      "settingType": "string",
+      "description": "NULL",
+      "updatedById": "90043",
+      "updatedAt": "2026-01-15 22:46:32"
+    },
+    {
+      "id": "30001",
+      "settingKey": "defaultCodePrefix",
+      "settingValue": "AZ",
+      "settingType": "string",
+      "description": "NULL",
+      "updatedById": "90043",
+      "updatedAt": "2026-01-09 19:52:52"
+    },
+    {
+      "id": "30002",
+      "settingKey": "emailRequired",
+      "settingValue": "true",
+      "settingType": "string",
+      "description": "NULL",
+      "updatedById": "90043",
+      "updatedAt": "2026-01-09 19:52:53"
+    },
+    {
+      "id": "30003",
+      "settingKey": "autoGeneratePassword",
+      "settingValue": "true",
+      "settingType": "string",
+      "description": "NULL",
+      "updatedById": "90043",
+      "updatedAt": "2026-01-09 19:52:54"
+    },
+    {
+      "id": "30004",
+      "settingKey": "nationalities",
+      "settingValue": "[{\"id\":\"kurdish\",\"nameEn\":\"Kurdish\",\"nameKu\":\"کورد\"},{\"id\":\"arab\",\"nameEn\":\"Arab\",\"nameKu\":\"عەرەب\"},{\"id\":\"turkmen\",\"nameEn\":\"Turkmen\",\"nameKu\":\"تورکمان\"},{\"id\":\"assyrian\",\"nameEn\":\"Assyrian\",\"nameKu\":\"ئاشووری\"},{\"id\":\"armenian\",\"nameEn\":\"Armenian\",\"nameKu\":\"ئەرمەنی\"},{\"id\":\"foreign\",\"nameEn\":\"Foreign\",\"nameKu\":\"بیانی\"},{\"id\":\"other\",\"nameEn\":\"Other\",\"nameKu\":\"تر\"}]",
+      "settingType": "string",
+      "description": "NULL",
+      "updatedById": "90043",
+      "updatedAt": "2026-01-09 19:52:54"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsettingKey\tsettingValue\tsettingType\tdescription\tupdatedById\tupdatedAt\n1\tnotifications\t{\"email\":true,\"whatsapp\":true}\tstring\tNULL\t90043\t2026-01-15 22:46:32\n30001\tdefaultCodePrefix\tAZ\tstring\tNULL\t90043\t2026-01-09 19:52:52\n30002\temailRequired\ttrue\tstring\tNULL\t90043\t2026-01-09 19:52:53\n30003\tautoGeneratePassword\ttrue\tstring\tNULL\t90043\t2026-01-09 19:52:54\n30004\tnationalities\t[{\"id\":\"kurdish\",\"nameEn\":\"Kurdish\",\"nameKu\":\"کورد\"},{\"id\":\"arab\",\"nameEn\":\"Arab\",\"nameKu\":\"عەرەب\"},{\"id\":\"turkmen\",\"nameEn\":\"Turkmen\",\"nameKu\":\"تورکمان\"},{\"id\":\"assyrian\",\"nameEn\":\"Assyrian\",\"nameKu\":\"ئاشووری\"},{\"id\":\"armenian\",\"nameEn\":\"Armenian\",\"nameKu\":\"ئەرمەنی\"},{\"id\":\"foreign\",\"nameEn\":\"Foreign\",\"nameKu\":\"بیانی\"},{\"id\":\"other\",\"nameEn\":\"Other\",\"nameKu\":\"تر\"}]\tstring\tNULL\t90043\t2026-01-09 19:52:54\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}

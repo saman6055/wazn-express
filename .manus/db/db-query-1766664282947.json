@@ -1,0 +1,181 @@
+{
+  "query": "SHOW TABLES",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SHOW TABLES",
+  "rows": [
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "auditLogs"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "batchCustomerPricing"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "batchPricingTiers"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "batches"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "cashAccounts"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "cashTransactions"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "companyDebts"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "countries"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "creditAdjustments"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "customerAccounts"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "customerAddresses"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "customerMessages"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "customerNotificationPrefs"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "customerNotifications"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "customers"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "dailyFinancialSummary"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "debtPayments"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "exchangeRates"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "expenseCategories"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "expenses"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "extraServices"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "financialGoals"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "financialPeriods"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "fullPackageOrders"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "fullPackageStatusHistory"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "invoiceTemplates"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "invoices"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "labelTemplates"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "ledgerEntries"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "ledgerTransactions"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "notificationLogs"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "notificationSettings"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "notificationTemplates"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "packageClaimRequests"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "packageQrCodes"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "packageScans"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "packageStatusHistory"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "packages"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "partnerTransactions"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "partners"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "paymentRecords"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "paymentReminders"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "payments"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "pricingRules"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "productCategories"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "revenueRecords"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "scanDevices"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "scanHistory"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "scheduledTasksLog"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "serviceTypes"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "stockMovements"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "suppliers"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "systemSettings"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "users"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "vipCustomers"
+    },
+    {
+      "Tables_in_CB8XFpvgXqCGVxJN2CGtFE": "warehouses"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_CB8XFpvgXqCGVxJN2CGtFE\n__drizzle_migrations\nauditLogs\nbatchCustomerPricing\nbatchPricingTiers\nbatches\ncashAccounts\ncashTransactions\ncompanyDebts\ncountries\ncreditAdjustments\ncustomerAccounts\ncustomerAddresses\ncustomerMessages\ncustomerNotificationPrefs\ncustomerNotifications\ncustomers\ndailyFinancialSummary\ndebtPayments\nexchangeRates\nexpenseCategories\nexpenses\nextraServices\nfinancialGoals\nfinancialPeriods\nfullPackageOrders\nfullPackageStatusHistory\ninvoiceTemplates\ninvoices\nlabelTemplates\nledgerEntries\nledgerTransactions\nnotificationLogs\nnotificationSettings\nnotificationTemplates\npackageClaimRequests\npackageQrCodes\npackageScans\npackageStatusHistory\npackages\npartnerTransactions\npartners\npaymentRecords\npaymentReminders\npayments\npricingRules\nproductCategories\nrevenueRecords\nscanDevices\nscanHistory\nscheduledTasksLog\nserviceTypes\nstockMovements\nsuppliers\nsystemSettings\nusers\nvipCustomers\nwarehouses\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}

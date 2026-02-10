@@ -1,0 +1,1 @@
+ALTER TABLE `fullPackageOrders` ADD `linkedPurchaseRequestId` int;

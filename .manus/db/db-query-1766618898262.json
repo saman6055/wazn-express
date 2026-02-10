@@ -1,0 +1,90 @@
+{
+  "query": "SELECT customerId, balanceAfterUsd FROM ledgerEntries WHERE CAST(balanceAfterUsd AS DECIMAL(12,2)) > 0 ORDER BY createdAt DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT customerId, balanceAfterUsd FROM ledgerEntries WHERE CAST(balanceAfterUsd AS DECIMAL(12,2)) > 0 ORDER BY createdAt DESC LIMIT 20;",
+  "rows": [
+    {
+      "customerId": "6001521",
+      "balanceAfterUsd": "132.00"
+    },
+    {
+      "customerId": "5430097",
+      "balanceAfterUsd": "154.00"
+    },
+    {
+      "customerId": "5430097",
+      "balanceAfterUsd": "132.00"
+    },
+    {
+      "customerId": "240024",
+      "balanceAfterUsd": "242.00"
+    },
+    {
+      "customerId": "3360023",
+      "balanceAfterUsd": "33.00"
+    },
+    {
+      "customerId": "3030005",
+      "balanceAfterUsd": "2222.00"
+    },
+    {
+      "customerId": "3030005",
+      "balanceAfterUsd": "44.00"
+    },
+    {
+      "customerId": "2190001",
+      "balanceAfterUsd": "22.00"
+    },
+    {
+      "customerId": "120001",
+      "balanceAfterUsd": "455.00"
+    },
+    {
+      "customerId": "2040028",
+      "balanceAfterUsd": "7.50"
+    },
+    {
+      "customerId": "120001",
+      "balanceAfterUsd": "462.50"
+    },
+    {
+      "customerId": "120001",
+      "balanceAfterUsd": "447.50"
+    },
+    {
+      "customerId": "1980029",
+      "balanceAfterUsd": "7.50"
+    },
+    {
+      "customerId": "120001",
+      "balanceAfterUsd": "442.50"
+    },
+    {
+      "customerId": "120001",
+      "balanceAfterUsd": "450.00"
+    },
+    {
+      "customerId": "120001",
+      "balanceAfterUsd": "435.00"
+    },
+    {
+      "customerId": "120001",
+      "balanceAfterUsd": "422.50"
+    },
+    {
+      "customerId": "120001",
+      "balanceAfterUsd": "437.50"
+    },
+    {
+      "customerId": "1980003",
+      "balanceAfterUsd": "7.50"
+    },
+    {
+      "customerId": "120001",
+      "balanceAfterUsd": "430.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "customerId\tbalanceAfterUsd\n6001521\t132.00\n5430097\t154.00\n5430097\t132.00\n240024\t242.00\n3360023\t33.00\n3030005\t2222.00\n3030005\t44.00\n2190001\t22.00\n120001\t455.00\n2040028\t7.50\n120001\t462.50\n120001\t447.50\n1980029\t7.50\n120001\t442.50\n120001\t450.00\n120001\t435.00\n120001\t422.50\n120001\t437.50\n1980003\t7.50\n120001\t430.00\n",
+  "stderr": "",
+  "execution_time_ms": 47
+}

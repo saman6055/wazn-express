@@ -1,0 +1,21 @@
+CREATE TABLE `activity_alerts` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`title` varchar(255) NOT NULL,
+	`message` text NOT NULL,
+	`category` enum('customer','package','batch','full_package','purchase_request','commission','finance','settings','user','system','security') NOT NULL,
+	`severity` enum('info','warning','critical') NOT NULL DEFAULT 'info',
+	`entityType` varchar(100),
+	`entityId` int,
+	`entityCode` varchar(100),
+	`auditLogId` int,
+	`action` varchar(100) NOT NULL,
+	`triggeredById` int,
+	`triggeredByName` varchar(255),
+	`isRead` boolean NOT NULL DEFAULT false,
+	`readAt` timestamp,
+	`readById` int,
+	`notificationSent` boolean NOT NULL DEFAULT false,
+	`notificationSentAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `activity_alerts_id` PRIMARY KEY(`id`)
+);

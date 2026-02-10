@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, customerCode, fullName, linkedUserId FROM customers WHERE customerCode = 'AZ001(Test)';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, customerCode, fullName, linkedUserId FROM customers WHERE customerCode = 'AZ001(Test)';",
+  "rows": [
+    {
+      "id": "210001",
+      "customerCode": "AZ001(Test)",
+      "fullName": "Test Customer",
+      "linkedUserId": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcustomerCode\tfullName\tlinkedUserId\n210001\tAZ001(Test)\tTest Customer\t1\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

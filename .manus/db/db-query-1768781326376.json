@@ -1,0 +1,19 @@
+{
+  "query": "SELECT * FROM systemSettings WHERE settingKey = 'portal_theme' OR settingKey = 'portalTheme';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT * FROM systemSettings WHERE settingKey = 'portal_theme' OR settingKey = 'portalTheme';",
+  "rows": [
+    {
+      "id": "120001",
+      "settingKey": "portal_theme",
+      "settingValue": "modern",
+      "settingType": "string",
+      "description": "NULL",
+      "updatedById": "1",
+      "updatedAt": "2026-01-19 00:04:56"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsettingKey\tsettingValue\tsettingType\tdescription\tupdatedById\tupdatedAt\n120001\tportal_theme\tmodern\tstring\tNULL\t1\t2026-01-19 00:04:56\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

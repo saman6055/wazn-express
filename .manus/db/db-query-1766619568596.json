@@ -1,0 +1,9 @@
+{
+  "query": "SELECT ca.customerId, c.fullName, ca.currentBalanceUsd, ca.currentBalanceIqd \nFROM customerAccounts ca \nJOIN customers c ON ca.customerId = c.id \nWHERE CAST(ca.currentBalanceUsd AS DECIMAL(12,2)) > 0 \nORDER BY CAST(ca.currentBalanceUsd AS DECIMAL(12,2)) DESC \nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT ca.customerId, c.fullName, ca.currentBalanceUsd, ca.currentBalanceIqd \nFROM customerAccounts ca \nJOIN customers c ON ca.customerId = c.id \nWHERE CAST(ca.currentBalanceUsd AS DECIMAL(12,2)) > 0 \nORDER BY CAST(ca.currentBalanceUsd AS DECIMAL(12,2)) DESC \nLIMIT 20;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 56
+}

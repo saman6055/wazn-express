@@ -1,0 +1,13 @@
+{
+  "query": "SELECT SUM(amountUsd) as total_revenue FROM ledgerTransactions WHERE transactionType LIKE 'DEBIT_%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT SUM(amountUsd) as total_revenue FROM ledgerTransactions WHERE transactionType LIKE 'DEBIT_%';",
+  "rows": [
+    {
+      "total_revenue": "2865.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_revenue\n2865.00\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

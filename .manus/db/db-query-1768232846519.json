@@ -1,0 +1,20 @@
+{
+  "query": "\n-- Create Full Package test order\nINSERT INTO fullPackageOrders (\n  orderCode, customerId, orderType, productName, quantity,\n  purchasePriceUsd, sellingPriceUsd, status, trackingNumber, createdById, createdAt\n) VALUES (\n  'FP-PROFIT-TEST-001', 8730001, 'full_package', 'Test Full Package Product', 2,\n  '50.00', '100.00', 'ordered', 'TRACK-FP-001', 1, NOW()\n);\n\n-- Get the order ID\nSELECT id, orderCode, orderType, purchasePriceUsd, sellingPriceUsd, quantity, profitUsd, shippingCostUsd \nFROM fullPackageOrders \nWHERE orderCode = 'FP-PROFIT-TEST-001';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \n-- Create Full Package test order\nINSERT INTO fullPackageOrders (\n  orderCode, customerId, orderType, productName, quantity,\n  purchasePriceUsd, sellingPriceUsd, status, trackingNumber, createdById, createdAt\n) VALUES (\n  'FP-PROFIT-TEST-001', 8730001, 'full_package', 'Test Full Package Product', 2,\n  '50.00', '100.00', 'ordered', 'TRACK-FP-001', 1, NOW()\n);\n\n-- Get the order ID\nSELECT id, orderCode, orderType, purchasePriceUsd, sellingPriceUsd, quantity, profitUsd, shippingCostUsd \nFROM fullPackageOrders \nWHERE orderCode = 'FP-PROFIT-TEST-001';\n",
+  "rows": [
+    {
+      "id": "1950002",
+      "orderCode": "FP-PROFIT-TEST-001",
+      "orderType": "full_package",
+      "purchasePriceUsd": "50.00",
+      "sellingPriceUsd": "100.00",
+      "quantity": "2",
+      "profitUsd": "NULL",
+      "shippingCostUsd": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderCode\torderType\tpurchasePriceUsd\tsellingPriceUsd\tquantity\tprofitUsd\tshippingCostUsd\n1950002\tFP-PROFIT-TEST-001\tfull_package\t50.00\t100.00\t2\tNULL\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 981
+}

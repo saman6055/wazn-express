@@ -1,0 +1,634 @@
+{
+  "query": "SELECT id, name, email, role FROM users;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, name, email, role FROM users;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Xogr Xamosh",
+      "email": "waznexpress@gmail.com",
+      "role": "admin"
+    },
+    {
+      "id": "90043",
+      "name": "saman ibrahem",
+      "email": "saman6055@gmail.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "450006",
+      "name": "NULL",
+      "email": "NULL",
+      "role": "admin"
+    },
+    {
+      "id": "450008",
+      "name": "NULL",
+      "email": "NULL",
+      "role": "admin"
+    },
+    {
+      "id": "450011",
+      "name": "NULL",
+      "email": "NULL",
+      "role": "admin"
+    },
+    {
+      "id": "450012",
+      "name": "NULL",
+      "email": "NULL",
+      "role": "admin"
+    },
+    {
+      "id": "840032",
+      "name": "Sssss",
+      "email": "NULL",
+      "role": "admin"
+    },
+    {
+      "id": "3030005",
+      "name": "Mustafa",
+      "email": "NULL",
+      "role": "admin"
+    },
+    {
+      "id": "7710050",
+      "name": "Shadan",
+      "email": "shadan@gmail.com",
+      "role": "employee"
+    },
+    {
+      "id": "7710051",
+      "name": "Dlkhwaz",
+      "email": "dlkhwaz@gmail.com",
+      "role": "accountant"
+    },
+    {
+      "id": "9210012",
+      "name": "Test Employee",
+      "email": "test-employee-1768466084666@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9210013",
+      "name": "Test Admin",
+      "email": "test-admin-1768466084823@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9210015",
+      "name": "Test Employee",
+      "email": "test-employee-1768466111556@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9210016",
+      "name": "Test Admin",
+      "email": "test-admin-1768466111684@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9210018",
+      "name": "Test Employee",
+      "email": "test-employee-1768466140135@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9210019",
+      "name": "Test Admin",
+      "email": "test-admin-1768466140269@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9270018",
+      "name": "Test Admin",
+      "email": "test-admin-1768470463840@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9270019",
+      "name": "Test Employee",
+      "email": "test-employee-1768470463857@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9270020",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768470463874@test.com",
+      "role": "accountant"
+    },
+    {
+      "id": "9600001",
+      "name": "Test Employee",
+      "email": "test-employee-1768643818740@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600002",
+      "name": "Test Admin",
+      "email": "test-admin-1768643818871@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600003",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768643819241@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600005",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768643822781@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600006",
+      "name": "Test Admin",
+      "email": "test-admin-1768643822928@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600007",
+      "name": "Test Employee",
+      "email": "test-employee-1768643822947@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600008",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768643822965@test.com",
+      "role": "accountant"
+    },
+    {
+      "id": "9600009",
+      "name": "Test Employee",
+      "email": "test-employee-1768643860879@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600010",
+      "name": "Test Admin",
+      "email": "test-admin-1768643860998@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600011",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768643861338@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600013",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768643864856@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600014",
+      "name": "Test Admin",
+      "email": "test-admin-1768643864988@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600015",
+      "name": "Test Employee",
+      "email": "test-employee-1768643865004@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600016",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768643865020@test.com",
+      "role": "accountant"
+    },
+    {
+      "id": "9600017",
+      "name": "Test Employee",
+      "email": "test-employee-1768643874269@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600018",
+      "name": "Test Admin",
+      "email": "test-admin-1768643874400@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600019",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768643874732@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600021",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768643878179@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600022",
+      "name": "Test Admin",
+      "email": "test-admin-1768643878302@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600023",
+      "name": "Test Employee",
+      "email": "test-employee-1768643878325@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600024",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768643878342@test.com",
+      "role": "accountant"
+    },
+    {
+      "id": "9600027",
+      "name": "Test Employee",
+      "email": "test-employee-1768644845162@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600028",
+      "name": "Test Admin",
+      "email": "test-admin-1768644845314@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600029",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768644845723@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600031",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768644850295@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600032",
+      "name": "Test Admin",
+      "email": "test-admin-1768644850440@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600033",
+      "name": "Test Employee",
+      "email": "test-employee-1768644850458@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600034",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768644850478@test.com",
+      "role": "accountant"
+    },
+    {
+      "id": "9600035",
+      "name": "Test Employee",
+      "email": "test-employee-1768644861295@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600036",
+      "name": "Test Admin",
+      "email": "test-admin-1768644861443@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600037",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768644861820@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600039",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768644865937@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600040",
+      "name": "Test Admin",
+      "email": "test-admin-1768644866075@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600041",
+      "name": "Test Employee",
+      "email": "test-employee-1768644866092@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600042",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768644866110@test.com",
+      "role": "accountant"
+    },
+    {
+      "id": "9600045",
+      "name": "Test Employee",
+      "email": "test-employee-1768645510927@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600046",
+      "name": "Test Admin",
+      "email": "test-admin-1768645511059@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600047",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768645511465@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600049",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768645515427@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9600050",
+      "name": "Test Admin",
+      "email": "test-admin-1768645515549@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9600051",
+      "name": "Test Employee",
+      "email": "test-employee-1768645515565@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9600052",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768645515583@test.com",
+      "role": "accountant"
+    },
+    {
+      "id": "9810001",
+      "name": "Test Employee",
+      "email": "test-employee-1768749953446@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "9810002",
+      "name": "Test Admin",
+      "email": "test-admin-1768749953585@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9810003",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768749953979@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9810005",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768749957804@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "9810006",
+      "name": "Test Admin",
+      "email": "test-admin-1768749957947@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "9810007",
+      "name": "Test Employee",
+      "email": "test-employee-1768749957966@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10110091",
+      "name": "Test Employee",
+      "email": "test-employee-1768810459178@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10110092",
+      "name": "Test Admin",
+      "email": "test-admin-1768810459358@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "10110093",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768810460743@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "10110095",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768810465522@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "10110096",
+      "name": "Test Admin",
+      "email": "test-admin-1768810465681@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "10110097",
+      "name": "Test Employee",
+      "email": "test-employee-1768810465698@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10110098",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768810465718@test.com",
+      "role": "accountant"
+    },
+    {
+      "id": "10140032",
+      "name": "Test Employee",
+      "email": "test-employee-1768824873759@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10140033",
+      "name": "Test Admin",
+      "email": "test-admin-1768824874016@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "10140034",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768824874435@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "10140036",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768824897675@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "10140037",
+      "name": "Test Admin",
+      "email": "test-admin-1768824897813@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "10140038",
+      "name": "Test Employee",
+      "email": "test-employee-1768824897831@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10140039",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768824897855@test.com",
+      "role": "accountant"
+    },
+    {
+      "id": "10230099",
+      "name": "Test Employee",
+      "email": "test-employee-1768855813804@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10230100",
+      "name": "Test Admin",
+      "email": "test-admin-1768855813958@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "10230101",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768855814392@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "10230103",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768855819415@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "10230104",
+      "name": "Test Admin",
+      "email": "test-admin-1768855819552@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "10230105",
+      "name": "Test Employee",
+      "email": "test-employee-1768855819570@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10230106",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768855819589@test.com",
+      "role": "accountant"
+    },
+    {
+      "id": "10230107",
+      "name": "Test Employee",
+      "email": "test-employee-1768856009369@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10230108",
+      "name": "Test Admin",
+      "email": "test-admin-1768856009497@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "10230109",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768856009941@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "10230111",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768856013120@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "10230112",
+      "name": "Test Admin",
+      "email": "test-admin-1768856013247@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "10230113",
+      "name": "Test Employee",
+      "email": "test-employee-1768856013263@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10230114",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768856013280@test.com",
+      "role": "accountant"
+    },
+    {
+      "id": "10290070",
+      "name": "Test Employee",
+      "email": "test-employee-1768861514788@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10290071",
+      "name": "Test Admin",
+      "email": "test-admin-1768861515247@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "10290072",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768861515830@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "10320013",
+      "name": "Test Employee",
+      "email": "test-employee-1768866374446@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10320014",
+      "name": "Test Admin",
+      "email": "test-admin-1768866394018@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "10320016",
+      "name": "Super Admin Test",
+      "email": "super-admin-1768866400490@test.com",
+      "role": "super_admin"
+    },
+    {
+      "id": "10320018",
+      "name": "Test Admin",
+      "email": "test-admin-1768866400641@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "10320019",
+      "name": "Test Employee",
+      "email": "test-employee-1768866400659@test.com",
+      "role": "employee"
+    },
+    {
+      "id": "10320020",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768866400677@test.com",
+      "role": "accountant"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\n1\tXogr Xamosh\twaznexpress@gmail.com\tadmin\n90043\tsaman ibrahem\tsaman6055@gmail.com\tsuper_admin\n450006\tNULL\tNULL\tadmin\n450008\tNULL\tNULL\tadmin\n450011\tNULL\tNULL\tadmin\n450012\tNULL\tNULL\tadmin\n840032\tSssss\tNULL\tadmin\n3030005\tMustafa\tNULL\tadmin\n7710050\tShadan\tshadan@gmail.com\temployee\n7710051\tDlkhwaz\tdlkhwaz@gmail.com\taccountant\n9210012\tTest Employee\ttest-employee-1768466084666@test.com\temployee\n9210013\tTest Admin\ttest-admin-1768466084823@test.com\tadmin\n9210015\tTest Employee\ttest-employee-1768466111556@test.com\temployee\n9210016\tTest Admin\ttest-admin-1768466111684@test.com\tadmin\n9210018\tTest Employee\ttest-employee-1768466140135@test.com\temployee\n9210019\tTest Admin\ttest-admin-1768466140269@test.com\tadmin\n9270018\tTest Admin\ttest-admin-1768470463840@test.com\tadmin\n9270019\tTest Employee\ttest-employee-1768470463857@test.com\temployee\n9270020\tTest Accountant\ttest-accountant-1768470463874@test.com\taccountant\n9600001\tTest Employee\ttest-employee-1768643818740@test.com\temployee\n9600002\tTest Admin\ttest-admin-1768643818871@test.com\tadmin\n9600003\tSuper Admin Test\tsuper-admin-1768643819241@test.com\tsuper_admin\n9600005\tSuper Admin Test\tsuper-admin-1768643822781@test.com\tsuper_admin\n9600006\tTest Admin\ttest-admin-1768643822928@test.com\tadmin\n9600007\tTest Employee\ttest-employee-1768643822947@test.com\temployee\n9600008\tTest Accountant\ttest-accountant-1768643822965@test.com\taccountant\n9600009\tTest Employee\ttest-employee-1768643860879@test.com\temployee\n9600010\tTest Admin\ttest-admin-1768643860998@test.com\tadmin\n9600011\tSuper Admin Test\tsuper-admin-1768643861338@test.com\tsuper_admin\n9600013\tSuper Admin Test\tsuper-admin-1768643864856@test.com\tsuper_admin\n9600014\tTest Admin\ttest-admin-1768643864988@test.com\tadmin\n9600015\tTest Employee\ttest-employee-1768643865004@test.com\temployee\n9600016\tTest Accountant\ttest-accountant-1768643865020@test.com\taccountant\n9600017\tTest Employee\ttest-employee-1768643874269@test.com\temployee\n9600018\tTest Admin\ttest-admin-1768643874400@test.com\tadmin\n9600019\tSuper Admin Test\tsuper-admin-1768643874732@test.com\tsuper_admin\n9600021\tSuper Admin Test\tsuper-admin-1768643878179@test.com\tsuper_admin\n9600022\tTest Admin\ttest-admin-1768643878302@test.com\tadmin\n9600023\tTest Employee\ttest-employee-1768643878325@test.com\temployee\n9600024\tTest Accountant\ttest-accountant-1768643878342@test.com\taccountant\n9600027\tTest Employee\ttest-employee-1768644845162@test.com\temployee\n9600028\tTest Admin\ttest-admin-1768644845314@test.com\tadmin\n9600029\tSuper Admin Test\tsuper-admin-1768644845723@test.com\tsuper_admin\n9600031\tSuper Admin Test\tsuper-admin-1768644850295@test.com\tsuper_admin\n9600032\tTest Admin\ttest-admin-1768644850440@test.com\tadmin\n9600033\tTest Employee\ttest-employee-1768644850458@test.com\temployee\n9600034\tTest Accountant\ttest-accountant-1768644850478@test.com\taccountant\n9600035\tTest Employee\ttest-employee-1768644861295@test.com\temployee\n9600036\tTest Admin\ttest-admin-1768644861443@test.com\tadmin\n9600037\tSuper Admin Test\tsuper-admin-1768644861820@test.com\tsuper_admin\n9600039\tSuper Admin Test\tsuper-admin-1768644865937@test.com\tsuper_admin\n9600040\tTest Admin\ttest-admin-1768644866075@test.com\tadmin\n9600041\tTest Employee\ttest-employee-1768644866092@test.com\temployee\n9600042\tTest Accountant\ttest-accountant-1768644866110@test.com\taccountant\n9600045\tTest Employee\ttest-employee-1768645510927@test.com\temployee\n9600046\tTest Admin\ttest-admin-1768645511059@test.com\tadmin\n9600047\tSuper Admin Test\tsuper-admin-1768645511465@test.com\tsuper_admin\n9600049\tSuper Admin Test\tsuper-admin-1768645515427@test.com\tsuper_admin\n9600050\tTest Admin\ttest-admin-1768645515549@test.com\tadmin\n9600051\tTest Employee\ttest-employee-1768645515565@test.com\temployee\n9600052\tTest Accountant\ttest-accountant-1768645515583@test.com\taccountant\n9810001\tTest Employee\ttest-employee-1768749953446@test.com\temployee\n9810002\tTest Admin\ttest-admin-1768749953585@test.com\tadmin\n9810003\tSuper Admin Test\tsuper-admin-1768749953979@test.com\tsuper_admin\n9810005\tSuper Admin Test\tsuper-admin-1768749957804@test.com\tsuper_admin\n9810006\tTest Admin\ttest-admin-1768749957947@test.com\tadmin\n9810007\tTest Employee\ttest-employee-1768749957966@test.com\temployee\n10110091\tTest Employee\ttest-employee-1768810459178@test.com\temployee\n10110092\tTest Admin\ttest-admin-1768810459358@test.com\tadmin\n10110093\tSuper Admin Test\tsuper-admin-1768810460743@test.com\tsuper_admin\n10110095\tSuper Admin Test\tsuper-admin-1768810465522@test.com\tsuper_admin\n10110096\tTest Admin\ttest-admin-1768810465681@test.com\tadmin\n10110097\tTest Employee\ttest-employee-1768810465698@test.com\temployee\n10110098\tTest Accountant\ttest-accountant-1768810465718@test.com\taccountant\n10140032\tTest Employee\ttest-employee-1768824873759@test.com\temployee\n10140033\tTest Admin\ttest-admin-1768824874016@test.com\tadmin\n10140034\tSuper Admin Test\tsuper-admin-1768824874435@test.com\tsuper_admin\n10140036\tSuper Admin Test\tsuper-admin-1768824897675@test.com\tsuper_admin\n10140037\tTest Admin\ttest-admin-1768824897813@test.com\tadmin\n10140038\tTest Employee\ttest-employee-1768824897831@test.com\temployee\n10140039\tTest Accountant\ttest-accountant-1768824897855@test.com\taccountant\n10230099\tTest Employee\ttest-employee-1768855813804@test.com\temployee\n10230100\tTest Admin\ttest-admin-1768855813958@test.com\tadmin\n10230101\tSuper Admin Test\tsuper-admin-1768855814392@test.com\tsuper_admin\n10230103\tSuper Admin Test\tsuper-admin-1768855819415@test.com\tsuper_admin\n10230104\tTest Admin\ttest-admin-1768855819552@test.com\tadmin\n10230105\tTest Employee\ttest-employee-1768855819570@test.com\temployee\n10230106\tTest Accountant\ttest-accountant-1768855819589@test.com\taccountant\n10230107\tTest Employee\ttest-employee-1768856009369@test.com\temployee\n10230108\tTest Admin\ttest-admin-1768856009497@test.com\tadmin\n10230109\tSuper Admin Test\tsuper-admin-1768856009941@test.com\tsuper_admin\n10230111\tSuper Admin Test\tsuper-admin-1768856013120@test.com\tsuper_admin\n10230112\tTest Admin\ttest-admin-1768856013247@test.com\tadmin\n10230113\tTest Employee\ttest-employee-1768856013263@test.com\temployee\n10230114\tTest Accountant\ttest-accountant-1768856013280@test.com\taccountant\n10290070\tTest Employee\ttest-employee-1768861514788@test.com\temployee\n10290071\tTest Admin\ttest-admin-1768861515247@test.com\tadmin\n10290072\tSuper Admin Test\tsuper-admin-1768861515830@test.com\tsuper_admin\n10320013\tTest Employee\ttest-employee-1768866374446@test.com\temployee\n10320014\tTest Admin\ttest-admin-1768866394018@test.com\tadmin\n10320016\tSuper Admin Test\tsuper-admin-1768866400490@test.com\tsuper_admin\n10320018\tTest Admin\ttest-admin-1768866400641@test.com\tadmin\n10320019\tTest Employee\ttest-employee-1768866400659@test.com\temployee\n10320020\tTest Accountant\ttest-accountant-1768866400677@test.com\taccountant\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

@@ -1,0 +1,146 @@
+{
+  "query": "DESCRIBE ledgerTransactions;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute DESCRIBE ledgerTransactions;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "accountId",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "transactionNumber",
+      "Type": "varchar(50)",
+      "Null": "NO",
+      "Key": "UNI",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "transactionType",
+      "Type": "enum('DEBIT_PACKAGE','DEBIT_SERVICE','DEBIT_PENALTY','DEBIT_OTHER','CREDIT_PAYMENT','CREDIT_REFUND','CREDIT_DISCOUNT','CREDIT_OTHER','ADJUSTMENT_DEBIT','ADJUSTMENT_CREDIT')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "amountUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "amountIqd",
+      "Type": "decimal(15,0)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "exchangeRate",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "balanceBeforeUsd",
+      "Type": "decimal(12,2)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "balanceAfterUsd",
+      "Type": "decimal(12,2)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "balanceBeforeIqd",
+      "Type": "decimal(15,0)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "balanceAfterIqd",
+      "Type": "decimal(15,0)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "referenceType",
+      "Type": "enum('package','payment','adjustment','service','manual')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "referenceId",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "description",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdById",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "approvedById",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint(11)\tNO\tPRI\tNULL\tauto_increment\naccountId\tint(11)\tNO\t\tNULL\t\ntransactionNumber\tvarchar(50)\tNO\tUNI\tNULL\t\ntransactionType\tenum('DEBIT_PACKAGE','DEBIT_SERVICE','DEBIT_PENALTY','DEBIT_OTHER','CREDIT_PAYMENT','CREDIT_REFUND','CREDIT_DISCOUNT','CREDIT_OTHER','ADJUSTMENT_DEBIT','ADJUSTMENT_CREDIT')\tNO\t\tNULL\t\namountUsd\tdecimal(10,2)\tYES\t\t0\t\namountIqd\tdecimal(15,0)\tYES\t\t0\t\nexchangeRate\tdecimal(10,2)\tYES\t\tNULL\t\nbalanceBeforeUsd\tdecimal(12,2)\tNO\t\tNULL\t\nbalanceAfterUsd\tdecimal(12,2)\tNO\t\tNULL\t\nbalanceBeforeIqd\tdecimal(15,0)\tNO\t\tNULL\t\nbalanceAfterIqd\tdecimal(15,0)\tNO\t\tNULL\t\nreferenceType\tenum('package','payment','adjustment','service','manual')\tYES\t\tNULL\t\nreferenceId\tint(11)\tYES\t\tNULL\t\ndescription\ttext\tYES\t\tNULL\t\ncreatedById\tint(11)\tNO\t\tNULL\t\napprovedById\tint(11)\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}

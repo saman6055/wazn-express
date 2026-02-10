@@ -1,0 +1,28 @@
+{
+  "query": "SELECT id, requestCode, status, paidFromWallet, totalPrice, customerId, paidAt FROM purchaseRequests;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, requestCode, status, paidFromWallet, totalPrice, customerId, paidAt FROM purchaseRequests;",
+  "rows": [
+    {
+      "id": "240002",
+      "requestCode": "PR-2024-00001",
+      "status": "approved",
+      "paidFromWallet": "0",
+      "totalPrice": "25.00",
+      "customerId": "1",
+      "paidAt": "NULL"
+    },
+    {
+      "id": "240003",
+      "requestCode": "PR-2026-00001",
+      "status": "quoted",
+      "paidFromWallet": "0",
+      "totalPrice": "22.00",
+      "customerId": "10410048",
+      "paidAt": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\trequestCode\tstatus\tpaidFromWallet\ttotalPrice\tcustomerId\tpaidAt\n240002\tPR-2024-00001\tapproved\t0\t25.00\t1\tNULL\n240003\tPR-2026-00001\tquoted\t0\t22.00\t10410048\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 79
+}

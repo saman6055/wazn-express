@@ -1,0 +1,26 @@
+{
+  "query": "SELECT 'customers' as tbl, COUNT(*) as cnt FROM customers UNION ALL SELECT 'packages', COUNT(*) FROM packages UNION ALL SELECT 'batches', COUNT(*) FROM batches UNION ALL SELECT 'users', COUNT(*) FROM users;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT 'customers' as tbl, COUNT(*) as cnt FROM customers UNION ALL SELECT 'packages', COUNT(*) FROM packages UNION ALL SELECT 'batches', COUNT(*) FROM batches UNION ALL SELECT 'users', COUNT(*) FROM users;",
+  "rows": [
+    {
+      "tbl": "users",
+      "cnt": "134"
+    },
+    {
+      "tbl": "packages",
+      "cnt": "2"
+    },
+    {
+      "tbl": "customers",
+      "cnt": "0"
+    },
+    {
+      "tbl": "batches",
+      "cnt": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tcnt\nusers\t134\npackages\t2\ncustomers\t0\nbatches\t0\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

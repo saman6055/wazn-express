@@ -1,0 +1,24 @@
+{
+  "query": "SELECT id, fullName, email, mobileNumber, customerCode FROM customers WHERE email IS NOT NULL AND email != '' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, fullName, email, mobileNumber, customerCode FROM customers WHERE email IS NOT NULL AND email != '' LIMIT 5;",
+  "rows": [
+    {
+      "id": "30001",
+      "fullName": "saman",
+      "email": "saman6055@gmail.com",
+      "mobileNumber": "07504066055",
+      "customerCode": "AZ004(saman)"
+    },
+    {
+      "id": "120001",
+      "fullName": "sasa",
+      "email": "addmin@example.com",
+      "mobileNumber": "07504444444",
+      "customerCode": "AZ009(sasa)"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfullName\temail\tmobileNumber\tcustomerCode\n30001\tsaman\tsaman6055@gmail.com\t07504066055\tAZ004(saman)\n120001\tsasa\taddmin@example.com\t07504444444\tAZ009(sasa)\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

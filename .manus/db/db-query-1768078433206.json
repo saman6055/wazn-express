@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE fullPackageOrders \nMODIFY COLUMN status ENUM(\n  'pending_quote',\n  'quoted',\n  'pending',\n  'approved',\n  'rejected',\n  'ordered',\n  'tracking_added',\n  'in_china_warehouse',\n  'quality_check',\n  'in_batch',\n  'in_transit',\n  'arrived',\n  'ready_for_delivery',\n  'delivered',\n  'cancelled',\n  'refunded',\n  'returned'\n) NOT NULL DEFAULT 'pending';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute ALTER TABLE fullPackageOrders \nMODIFY COLUMN status ENUM(\n  'pending_quote',\n  'quoted',\n  'pending',\n  'approved',\n  'rejected',\n  'ordered',\n  'tracking_added',\n  'in_china_warehouse',\n  'quality_check',\n  'in_batch',\n  'in_transit',\n  'arrived',\n  'ready_for_delivery',\n  'delivered',\n  'cancelled',\n  'refunded',\n  'returned'\n) NOT NULL DEFAULT 'pending';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 555
+}

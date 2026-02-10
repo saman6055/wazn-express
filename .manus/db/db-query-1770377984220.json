@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, accountName, accountNameKu, accountType, isActive, currentBalance FROM cashAccounts;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, accountName, accountNameKu, accountType, isActive, currentBalance FROM cashAccounts;",
+  "rows": [
+    {
+      "id": "1",
+      "accountName": "Fib",
+      "accountNameKu": "NULL",
+      "accountType": "mobile_wallet",
+      "isActive": "1",
+      "currentBalance": "27500.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\taccountName\taccountNameKu\taccountType\tisActive\tcurrentBalance\n1\tFib\tNULL\tmobile_wallet\t1\t27500.00\n",
+  "stderr": "",
+  "execution_time_ms": 342
+}

@@ -1,0 +1,22 @@
+{
+  "query": "SELECT id, batchCode FROM batches LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, batchCode FROM batches LIMIT 10",
+  "rows": [
+    {
+      "id": "300001",
+      "batchCode": "1 air"
+    },
+    {
+      "id": "300002",
+      "batchCode": "2 air iregular"
+    },
+    {
+      "id": "300003",
+      "batchCode": "3 sea"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbatchCode\n300001\t1 air\n300002\t2 air iregular\n300003\t3 sea\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}

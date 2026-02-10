@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, packageCode, status, isCharged, calculatedCostUsd FROM packages WHERE packageCode = 'g000001'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, packageCode, status, isCharged, calculatedCostUsd FROM packages WHERE packageCode = 'g000001'",
+  "rows": [
+    {
+      "id": "1890010",
+      "packageCode": "g000001",
+      "status": "ready_for_delivery",
+      "isCharged": "0",
+      "calculatedCostUsd": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpackageCode\tstatus\tisCharged\tcalculatedCostUsd\n1890010\tg000001\tready_for_delivery\t0\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

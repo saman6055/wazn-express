@@ -1,0 +1,34 @@
+{
+  "query": "SELECT id, customerId, status, createdAt FROM purchaseRequests ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, customerId, status, createdAt FROM purchaseRequests ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "4",
+      "customerId": "7860033",
+      "status": "completed",
+      "createdAt": "2026-01-09 12:41:00"
+    },
+    {
+      "id": "3",
+      "customerId": "7860033",
+      "status": "delivered",
+      "createdAt": "2026-01-09 12:31:50"
+    },
+    {
+      "id": "2",
+      "customerId": "7860033",
+      "status": "delivered",
+      "createdAt": "2026-01-09 12:31:14"
+    },
+    {
+      "id": "1",
+      "customerId": "7860033",
+      "status": "accepted",
+      "createdAt": "2026-01-09 12:30:54"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcustomerId\tstatus\tcreatedAt\n4\t7860033\tcompleted\t2026-01-09 12:41:00\n3\t7860033\tdelivered\t2026-01-09 12:31:50\n2\t7860033\tdelivered\t2026-01-09 12:31:14\n1\t7860033\taccepted\t2026-01-09 12:30:54\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

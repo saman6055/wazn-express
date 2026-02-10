@@ -1,0 +1,30 @@
+{
+  "query": "SELECT role, COUNT(*) as count FROM users GROUP BY role ORDER BY count DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT role, COUNT(*) as count FROM users GROUP BY role ORDER BY count DESC;",
+  "rows": [
+    {
+      "role": "customer",
+      "count": "34"
+    },
+    {
+      "role": "admin",
+      "count": "25"
+    },
+    {
+      "role": "employee",
+      "count": "19"
+    },
+    {
+      "role": "super_admin",
+      "count": "15"
+    },
+    {
+      "role": "accountant",
+      "count": "9"
+    }
+  ],
+  "messages": [],
+  "stdout": "role\tcount\ncustomer\t34\nadmin\t25\nemployee\t19\nsuper_admin\t15\naccountant\t9\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

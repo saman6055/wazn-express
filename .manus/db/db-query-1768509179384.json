@@ -1,0 +1,150 @@
+{
+  "query": "\n-- Check all users with staff roles\nSELECT id, name, email, role, createdAt \nFROM users \nWHERE role IN ('super_admin', 'admin', 'employee', 'accountant')\nORDER BY role, name\nLIMIT 50;\n\n-- Count by role\nSELECT role, COUNT(*) as count\nFROM users\nGROUP BY role\nORDER BY role;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \n-- Check all users with staff roles\nSELECT id, name, email, role, createdAt \nFROM users \nWHERE role IN ('super_admin', 'admin', 'employee', 'accountant')\nORDER BY role, name\nLIMIT 50;\n\n-- Count by role\nSELECT role, COUNT(*) as count\nFROM users\nGROUP BY role\nORDER BY role;\n",
+  "rows": [
+    {
+      "id": "90043",
+      "name": "saman ibrahem",
+      "email": "saman6055@gmail.com",
+      "role": "super_admin",
+      "createdAt": "2025-12-17 12:33:09"
+    },
+    {
+      "id": "450012",
+      "name": "NULL",
+      "email": "NULL",
+      "role": "admin",
+      "createdAt": "2025-12-17 18:09:38"
+    },
+    {
+      "id": "450006",
+      "name": "NULL",
+      "email": "NULL",
+      "role": "admin",
+      "createdAt": "2025-12-17 18:08:36"
+    },
+    {
+      "id": "450008",
+      "name": "NULL",
+      "email": "NULL",
+      "role": "admin",
+      "createdAt": "2025-12-17 18:09:10"
+    },
+    {
+      "id": "450011",
+      "name": "NULL",
+      "email": "NULL",
+      "role": "admin",
+      "createdAt": "2025-12-17 18:09:38"
+    },
+    {
+      "id": "3030005",
+      "name": "Mustafa",
+      "email": "NULL",
+      "role": "admin",
+      "createdAt": "2025-12-20 18:29:57"
+    },
+    {
+      "id": "840032",
+      "name": "Sssss",
+      "email": "NULL",
+      "role": "admin",
+      "createdAt": "2025-12-18 01:25:07"
+    },
+    {
+      "id": "9210013",
+      "name": "Test Admin",
+      "email": "test-admin-1768466084823@test.com",
+      "role": "admin",
+      "createdAt": "2026-01-15 08:34:44"
+    },
+    {
+      "id": "9210019",
+      "name": "Test Admin",
+      "email": "test-admin-1768466140269@test.com",
+      "role": "admin",
+      "createdAt": "2026-01-15 08:35:40"
+    },
+    {
+      "id": "9210016",
+      "name": "Test Admin",
+      "email": "test-admin-1768466111684@test.com",
+      "role": "admin",
+      "createdAt": "2026-01-15 08:35:11"
+    },
+    {
+      "id": "9270018",
+      "name": "Test Admin",
+      "email": "test-admin-1768470463840@test.com",
+      "role": "admin",
+      "createdAt": "2026-01-15 09:47:43"
+    },
+    {
+      "id": "1",
+      "name": "Xogr Xamosh",
+      "email": "waznexpress@gmail.com",
+      "role": "admin",
+      "createdAt": "2025-12-17 11:57:28"
+    },
+    {
+      "id": "7710050",
+      "name": "Shadan",
+      "email": "shadan@gmail.com",
+      "role": "employee",
+      "createdAt": "2026-01-05 17:22:01"
+    },
+    {
+      "id": "9210015",
+      "name": "Test Employee",
+      "email": "test-employee-1768466111556@test.com",
+      "role": "employee",
+      "createdAt": "2026-01-15 08:35:11"
+    },
+    {
+      "id": "9210012",
+      "name": "Test Employee",
+      "email": "test-employee-1768466084666@test.com",
+      "role": "employee",
+      "createdAt": "2026-01-15 08:34:44"
+    },
+    {
+      "id": "9210018",
+      "name": "Test Employee",
+      "email": "test-employee-1768466140135@test.com",
+      "role": "employee",
+      "createdAt": "2026-01-15 08:35:40"
+    },
+    {
+      "id": "9270019",
+      "name": "Test Employee",
+      "email": "test-employee-1768470463857@test.com",
+      "role": "employee",
+      "createdAt": "2026-01-15 09:47:43"
+    },
+    {
+      "id": "7710051",
+      "name": "Dlkhwaz",
+      "email": "dlkhwaz@gmail.com",
+      "role": "accountant",
+      "createdAt": "2026-01-05 17:22:32"
+    },
+    {
+      "id": "9270020",
+      "name": "Test Accountant",
+      "email": "test-accountant-1768470463874@test.com",
+      "role": "accountant",
+      "createdAt": "2026-01-15 09:47:43"
+    }
+  ],
+  "messages": [
+    "role\tcount",
+    "super_admin\t1",
+    "admin\t11",
+    "employee\t5",
+    "accountant\t2",
+    "customer\t27"
+  ],
+  "stdout": "id\tname\temail\trole\tcreatedAt\n90043\tsaman ibrahem\tsaman6055@gmail.com\tsuper_admin\t2025-12-17 12:33:09\n450012\tNULL\tNULL\tadmin\t2025-12-17 18:09:38\n450006\tNULL\tNULL\tadmin\t2025-12-17 18:08:36\n450008\tNULL\tNULL\tadmin\t2025-12-17 18:09:10\n450011\tNULL\tNULL\tadmin\t2025-12-17 18:09:38\n3030005\tMustafa\tNULL\tadmin\t2025-12-20 18:29:57\n840032\tSssss\tNULL\tadmin\t2025-12-18 01:25:07\n9210013\tTest Admin\ttest-admin-1768466084823@test.com\tadmin\t2026-01-15 08:34:44\n9210019\tTest Admin\ttest-admin-1768466140269@test.com\tadmin\t2026-01-15 08:35:40\n9210016\tTest Admin\ttest-admin-1768466111684@test.com\tadmin\t2026-01-15 08:35:11\n9270018\tTest Admin\ttest-admin-1768470463840@test.com\tadmin\t2026-01-15 09:47:43\n1\tXogr Xamosh\twaznexpress@gmail.com\tadmin\t2025-12-17 11:57:28\n7710050\tShadan\tshadan@gmail.com\temployee\t2026-01-05 17:22:01\n9210015\tTest Employee\ttest-employee-1768466111556@test.com\temployee\t2026-01-15 08:35:11\n9210012\tTest Employee\ttest-employee-1768466084666@test.com\temployee\t2026-01-15 08:34:44\n9210018\tTest Employee\ttest-employee-1768466140135@test.com\temployee\t2026-01-15 08:35:40\n9270019\tTest Employee\ttest-employee-1768470463857@test.com\temployee\t2026-01-15 09:47:43\n7710051\tDlkhwaz\tdlkhwaz@gmail.com\taccountant\t2026-01-05 17:22:32\n9270020\tTest Accountant\ttest-accountant-1768470463874@test.com\taccountant\t2026-01-15 09:47:43\nrole\tcount\nsuper_admin\t1\nadmin\t11\nemployee\t5\naccountant\t2\ncustomer\t27\n",
+  "stderr": "",
+  "execution_time_ms": 102
+}

@@ -1,0 +1,20 @@
+{
+  "query": "\n-- Create Commission test order\nINSERT INTO fullPackageOrders (\n  orderCode, customerId, orderType, productName, quantity,\n  itemPriceUsd, commissionFeeUsd, status, trackingNumber, createdById, createdAt\n) VALUES (\n  'COM-PROFIT-TEST-003', 8730001, 'commission', 'Test Commission Product', 1,\n  '120.00', '12.00', 'ordered', 'TRACK-COM-003', 1, NOW()\n);\n\n-- Get the order ID\nSELECT id, orderCode, orderType, itemPriceUsd, commissionFeeUsd, quantity, profitUsd, shippingCostUsd \nFROM fullPackageOrders \nWHERE orderCode = 'COM-PROFIT-TEST-003';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \n-- Create Commission test order\nINSERT INTO fullPackageOrders (\n  orderCode, customerId, orderType, productName, quantity,\n  itemPriceUsd, commissionFeeUsd, status, trackingNumber, createdById, createdAt\n) VALUES (\n  'COM-PROFIT-TEST-003', 8730001, 'commission', 'Test Commission Product', 1,\n  '120.00', '12.00', 'ordered', 'TRACK-COM-003', 1, NOW()\n);\n\n-- Get the order ID\nSELECT id, orderCode, orderType, itemPriceUsd, commissionFeeUsd, quantity, profitUsd, shippingCostUsd \nFROM fullPackageOrders \nWHERE orderCode = 'COM-PROFIT-TEST-003';\n",
+  "rows": [
+    {
+      "id": "1950004",
+      "orderCode": "COM-PROFIT-TEST-003",
+      "orderType": "commission",
+      "itemPriceUsd": "120.00",
+      "commissionFeeUsd": "12.00",
+      "quantity": "1",
+      "profitUsd": "NULL",
+      "shippingCostUsd": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderCode\torderType\titemPriceUsd\tcommissionFeeUsd\tquantity\tprofitUsd\tshippingCostUsd\n1950004\tCOM-PROFIT-TEST-003\tcommission\t120.00\t12.00\t1\tNULL\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 68
+}

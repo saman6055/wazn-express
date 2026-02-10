@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE fullPackageOrders SET orderCode = CONCAT('FP-', LPAD(id, 5, '0')) WHERE orderCode IS NULL OR orderCode = '';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute UPDATE fullPackageOrders SET orderCode = CONCAT('FP-', LPAD(id, 5, '0')) WHERE orderCode IS NULL OR orderCode = '';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 80
+}

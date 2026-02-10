@@ -1,0 +1,8 @@
+{
+  "query": "SELECT 'payments' as tbl, COUNT(*) as cnt FROM payments WHERE customerId = 6002462\nUNION ALL\nSELECT 'ledgerEntries' as tbl, COUNT(*) as cnt FROM ledger_entries WHERE customerId = 6002462\nUNION ALL\nSELECT 'ledgerTransactions' as tbl, COUNT(*) as cnt FROM ledger_transactions lt \nJOIN customer_accounts ca ON lt.accountId = ca.id WHERE ca.customerId = 6002462\nUNION ALL\nSELECT 'paymentRecords' as tbl, COUNT(*) as cnt FROM payment_records pr\nJOIN customer_accounts ca ON pr.accountId = ca.id WHERE ca.customerId = 6002462",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT 'payments' as tbl, COUNT(*) as cnt FROM payments WHERE customerId = 6002462\nUNION ALL\nSELECT 'ledgerEntries' as tbl, COUNT(*) as cnt FROM ledger_entries WHERE customerId = 6002462\nUNION ALL\nSELECT 'ledgerTransactions' as tbl, COUNT(*) as cnt FROM ledger_transactions lt \nJOIN customer_accounts ca ON lt.accountId = ca.id WHERE ca.customerId = 6002462\nUNION ALL\nSELECT 'paymentRecords' as tbl, COUNT(*) as cnt FROM payment_records pr\nJOIN customer_accounts ca ON pr.accountId = ca.id WHERE ca.customerId = 6002462",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'cb8xfpvgxqcgvxjn2cgtfe.ledger_entries' doesn't exist"
+  ]
+}

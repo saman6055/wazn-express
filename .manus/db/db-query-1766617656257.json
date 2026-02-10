@@ -1,0 +1,52 @@
+{
+  "query": "SELECT * FROM expenses LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT * FROM expenses LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "categoryId": "1",
+      "amount": "1200.00",
+      "currency": "USD",
+      "exchangeRate": "NULL",
+      "amountUsd": "1200.00",
+      "description": "NULL",
+      "expenseDate": "2025-12-20 00:00:00",
+      "receiptUrl": "NULL",
+      "paymentMethod": "cash",
+      "cashAccountId": "NULL",
+      "isRecurring": "0",
+      "recurringDay": "NULL",
+      "vendor": "NULL",
+      "referenceNumber": "NULL",
+      "notes": "NULL",
+      "createdById": "1",
+      "createdAt": "2025-12-20 03:01:28",
+      "updatedAt": "2025-12-20 03:01:28"
+    },
+    {
+      "id": "2",
+      "categoryId": "2",
+      "amount": "400.00",
+      "currency": "USD",
+      "exchangeRate": "NULL",
+      "amountUsd": "400.00",
+      "description": "NULL",
+      "expenseDate": "2025-12-20 00:00:00",
+      "receiptUrl": "NULL",
+      "paymentMethod": "cash",
+      "cashAccountId": "NULL",
+      "isRecurring": "0",
+      "recurringDay": "NULL",
+      "vendor": "NULL",
+      "referenceNumber": "NULL",
+      "notes": "NULL",
+      "createdById": "1",
+      "createdAt": "2025-12-20 03:02:11",
+      "updatedAt": "2025-12-20 03:02:11"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcategoryId\tamount\tcurrency\texchangeRate\tamountUsd\tdescription\texpenseDate\treceiptUrl\tpaymentMethod\tcashAccountId\tisRecurring\trecurringDay\tvendor\treferenceNumber\tnotes\tcreatedById\tcreatedAt\tupdatedAt\n1\t1\t1200.00\tUSD\tNULL\t1200.00\tNULL\t2025-12-20 00:00:00\tNULL\tcash\tNULL\t0\tNULL\tNULL\tNULL\tNULL\t1\t2025-12-20 03:01:28\t2025-12-20 03:01:28\n2\t2\t400.00\tUSD\tNULL\t400.00\tNULL\t2025-12-20 00:00:00\tNULL\tcash\tNULL\t0\tNULL\tNULL\tNULL\tNULL\t1\t2025-12-20 03:02:11\t2025-12-20 03:02:11\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}

@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE purchaseRequests \nADD COLUMN IF NOT EXISTS productType varchar(100),\nADD COLUMN IF NOT EXISTS costPerItemUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS costPerItemCny decimal(10,2),\nADD COLUMN IF NOT EXISTS totalCostUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS shippingCostUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS totalExpenseUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS sellingPriceUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS profitUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS profitMarginPercent decimal(5,2),\nADD COLUMN IF NOT EXISTS estimatedDeliveryDays int,\nADD COLUMN IF NOT EXISTS invoiceId int,\nADD COLUMN IF NOT EXISTS supplierTrackingNumber varchar(100),\nADD COLUMN IF NOT EXISTS supplierOrderNumber varchar(100),\nADD COLUMN IF NOT EXISTS linkedFullPackageId int;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute ALTER TABLE purchaseRequests \nADD COLUMN IF NOT EXISTS productType varchar(100),\nADD COLUMN IF NOT EXISTS costPerItemUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS costPerItemCny decimal(10,2),\nADD COLUMN IF NOT EXISTS totalCostUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS shippingCostUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS totalExpenseUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS sellingPriceUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS profitUsd decimal(10,2),\nADD COLUMN IF NOT EXISTS profitMarginPercent decimal(5,2),\nADD COLUMN IF NOT EXISTS estimatedDeliveryDays int,\nADD COLUMN IF NOT EXISTS invoiceId int,\nADD COLUMN IF NOT EXISTS supplierTrackingNumber varchar(100),\nADD COLUMN IF NOT EXISTS supplierOrderNumber varchar(100),\nADD COLUMN IF NOT EXISTS linkedFullPackageId int;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 4132
+}

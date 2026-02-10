@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, orderCode, productName FROM fullPackageOrders WHERE orderType = 'purchase_request';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, orderCode, productName FROM fullPackageOrders WHERE orderType = 'purchase_request';",
+  "rows": [
+    {
+      "id": "1800003",
+      "orderCode": "PR-MK8ZJV5R",
+      "productName": "Gg"
+    },
+    {
+      "id": "1950003",
+      "orderCode": "PR-PROFIT-TEST-002",
+      "productName": "Test Purchase Request Product"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderCode\tproductName\n1800003\tPR-MK8ZJV5R\tGg\n1950003\tPR-PROFIT-TEST-002\tTest Purchase Request Product\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

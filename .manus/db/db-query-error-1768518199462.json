@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE customerAccounts\nADD COLUMN packageDebtUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER currentBalanceIqd,\nADD COLUMN fullPackageDebtUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER packageDebtUsd,\nADD COLUMN purchaseRequestDebtUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER fullPackageDebtUsd,\nADD COLUMN commissionDebtUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER purchaseRequestDebtUsd,\nADD COLUMN serviceDebtUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER commissionDebtUsd,\nADD COLUMN creditBalanceUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER serviceDebtUsd,\nADD COLUMN creditBalanceIqd DECIMAL(15,0) DEFAULT 0 NOT NULL AFTER creditBalanceUsd;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute ALTER TABLE customerAccounts\nADD COLUMN packageDebtUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER currentBalanceIqd,\nADD COLUMN fullPackageDebtUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER packageDebtUsd,\nADD COLUMN purchaseRequestDebtUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER fullPackageDebtUsd,\nADD COLUMN commissionDebtUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER purchaseRequestDebtUsd,\nADD COLUMN serviceDebtUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER commissionDebtUsd,\nADD COLUMN creditBalanceUsd DECIMAL(12,2) DEFAULT 0 NOT NULL AFTER serviceDebtUsd,\nADD COLUMN creditBalanceIqd DECIMAL(15,0) DEFAULT 0 NOT NULL AFTER creditBalanceUsd;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'packagedebtusd' in 'customerAccounts'"
+  ]
+}

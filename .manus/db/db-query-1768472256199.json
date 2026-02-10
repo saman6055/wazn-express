@@ -1,0 +1,46 @@
+{
+  "query": "\n-- Find Xogr Xamosh account\nSELECT id, name, email, role FROM users WHERE name LIKE '%Xogr%' OR name LIKE '%Xamosh%';\n\n-- Update password for Xogr Xamosh\nUPDATE users \nSET passwordHash = '$2b$10$tqiRCUNcDomS31bsJ/nET.2X.6bopOD8TVbW1N4/2hH9ykFOCODTi', \n    updatedAt = NOW()\nWHERE name = 'Xogr Xamosh';\n\n-- Verify the update\nSELECT id, name, email, role FROM users WHERE name = 'Xogr Xamosh';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \n-- Find Xogr Xamosh account\nSELECT id, name, email, role FROM users WHERE name LIKE '%Xogr%' OR name LIKE '%Xamosh%';\n\n-- Update password for Xogr Xamosh\nUPDATE users \nSET passwordHash = '$2b$10$tqiRCUNcDomS31bsJ/nET.2X.6bopOD8TVbW1N4/2hH9ykFOCODTi', \n    updatedAt = NOW()\nWHERE name = 'Xogr Xamosh';\n\n-- Verify the update\nSELECT id, name, email, role FROM users WHERE name = 'Xogr Xamosh';\n",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Xogr Xamosh",
+      "email": "waznexpress@gmail.com",
+      "role": "admin"
+    },
+    {
+      "id": "6002462",
+      "name": "Xogr",
+      "email": "NULL",
+      "role": "customer"
+    },
+    {
+      "id": "6002466",
+      "name": "Xamosh",
+      "email": "NULL",
+      "role": "customer"
+    },
+    {
+      "id": "8430001",
+      "name": "Xogrr",
+      "email": "xogr@gmail.com",
+      "role": "customer"
+    },
+    {
+      "id": "id",
+      "name": "name",
+      "email": "email",
+      "role": "role"
+    },
+    {
+      "id": "1",
+      "name": "Xogr Xamosh",
+      "email": "waznexpress@gmail.com",
+      "role": "admin"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\n1\tXogr Xamosh\twaznexpress@gmail.com\tadmin\n6002462\tXogr\tNULL\tcustomer\n6002466\tXamosh\tNULL\tcustomer\n8430001\tXogrr\txogr@gmail.com\tcustomer\nid\tname\temail\trole\n1\tXogr Xamosh\twaznexpress@gmail.com\tadmin\n",
+  "stderr": "",
+  "execution_time_ms": 79
+}

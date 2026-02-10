@@ -1,0 +1,43 @@
+{
+  "query": "SELECT * FROM batches LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT * FROM batches LIMIT 1;",
+  "rows": [
+    {
+      "id": "660001",
+      "batchCode": "Air 1 regular",
+      "originWarehouseId": "60002",
+      "destinationCountryId": "2",
+      "shippingType": "air_regular",
+      "carrierInfo": "NULL",
+      "departureDate": "NULL",
+      "estimatedArrival": "NULL",
+      "actualArrival": "NULL",
+      "status": "closed",
+      "totalPackages": "0",
+      "totalWeight": "NULL",
+      "notes": "NULL",
+      "createdById": "90043",
+      "createdAt": "2026-01-05 22:40:05",
+      "updatedAt": "2026-01-09 16:32:01",
+      "pricePerKg": "22.00",
+      "pricePerCbm": "NULL",
+      "actualWeightKg": "NULL",
+      "actualCbm": "NULL",
+      "chargedWeightKg": "NULL",
+      "chargedCbm": "NULL",
+      "costPerKg": "8.00",
+      "costPerCbm": "NULL",
+      "useTieredPricing": "0",
+      "airlineName": "NULL",
+      "flightNumber": "NULL",
+      "shippingCompany": "NULL",
+      "containerNumber": "NULL",
+      "vesselName": "NULL",
+      "shippingCost": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbatchCode\toriginWarehouseId\tdestinationCountryId\tshippingType\tcarrierInfo\tdepartureDate\testimatedArrival\tactualArrival\tstatus\ttotalPackages\ttotalWeight\tnotes\tcreatedById\tcreatedAt\tupdatedAt\tpricePerKg\tpricePerCbm\tactualWeightKg\tactualCbm\tchargedWeightKg\tchargedCbm\tcostPerKg\tcostPerCbm\tuseTieredPricing\tairlineName\tflightNumber\tshippingCompany\tcontainerNumber\tvesselName\tshippingCost\n660001\tAir 1 regular\t60002\t2\tair_regular\tNULL\tNULL\tNULL\tNULL\tclosed\t0\tNULL\tNULL\t90043\t2026-01-05 22:40:05\t2026-01-09 16:32:01\t22.00\tNULL\tNULL\tNULL\tNULL\tNULL\t8.00\tNULL\t0\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as total_packages FROM packages; SELECT COUNT(*) as total_batches FROM batches;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT COUNT(*) as total_packages FROM packages; SELECT COUNT(*) as total_batches FROM batches;",
+  "rows": [
+    {
+      "total_packages": "3"
+    },
+    {
+      "total_packages": "total_batches"
+    },
+    {
+      "total_packages": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_packages\n3\ntotal_batches\n0\n",
+  "stderr": "",
+  "execution_time_ms": 113
+}

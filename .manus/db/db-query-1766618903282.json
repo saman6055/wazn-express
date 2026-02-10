@@ -1,0 +1,15 @@
+{
+  "query": "SELECT DISTINCT le.customerId, c.fullName, (SELECT balanceAfterUsd FROM ledgerEntries le2 WHERE le2.customerId = le.customerId ORDER BY le2.createdAt DESC LIMIT 1) as currentBalance FROM ledgerEntries le JOIN customers c ON le.customerId = c.id HAVING currentBalance > 0 LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT DISTINCT le.customerId, c.fullName, (SELECT balanceAfterUsd FROM ledgerEntries le2 WHERE le2.customerId = le.customerId ORDER BY le2.createdAt DESC LIMIT 1) as currentBalance FROM ledgerEntries le JOIN customers c ON le.customerId = c.id HAVING currentBalance > 0 LIMIT 20;",
+  "rows": [
+    {
+      "customerId": "120001",
+      "fullName": "sasa",
+      "currentBalance": "447.50"
+    }
+  ],
+  "messages": [],
+  "stdout": "customerId\tfullName\tcurrentBalance\n120001\tsasa\t447.50\n",
+  "stderr": "",
+  "execution_time_ms": 114
+}

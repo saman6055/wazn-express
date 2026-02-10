@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO customer_code_prefixes (code, label, isActive) VALUES \n('AZ', 'AZ - Default', TRUE),\n('WZ', 'WZ - Wazn', TRUE),\n('TR', 'TR - Turkey', TRUE),\n('IQ', 'IQ - Iraq', TRUE)\nON DUPLICATE KEY UPDATE label=VALUES(label);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute INSERT INTO customer_code_prefixes (code, label, isActive) VALUES \n('AZ', 'AZ - Default', TRUE),\n('WZ', 'WZ - Wazn', TRUE),\n('TR', 'TR - Turkey', TRUE),\n('IQ', 'IQ - Iraq', TRUE)\nON DUPLICATE KEY UPDATE label=VALUES(label);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 65
+}

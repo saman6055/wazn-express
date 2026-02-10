@@ -1,0 +1,1 @@
+ALTER TABLE `debtPayments` MODIFY COLUMN `remainingAfter` decimal(14,2);

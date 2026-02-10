@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO package_claim_requests (request_number, package_id, tracking_number, customer_id, customer_note, status, created_at, updated_at) \nSELECT 'CLM-2025-0001', p.id, p.tracking_number, 1, 'This is my package from Taobao', 'pending', NOW(), NOW()\nFROM packages p WHERE p.is_unclaimed = 1 LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute INSERT INTO package_claim_requests (request_number, package_id, tracking_number, customer_id, customer_note, status, created_at, updated_at) \nSELECT 'CLM-2025-0001', p.id, p.tracking_number, 1, 'This is my package from Taobao', 'pending', NOW(), NOW()\nFROM packages p WHERE p.is_unclaimed = 1 LIMIT 1;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'cb8xfpvgxqcgvxjn2cgtfe.package_claim_requests' doesn't exist"
+  ]
+}

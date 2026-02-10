@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, packageCode, batchId, shippingType, weightKg, isCharged FROM packages WHERE packageCode = 'g000001'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, packageCode, batchId, shippingType, weightKg, isCharged FROM packages WHERE packageCode = 'g000001'",
+  "rows": [
+    {
+      "id": "1890010",
+      "packageCode": "g000001",
+      "batchId": "300002",
+      "shippingType": "air_regular",
+      "weightKg": "22.000",
+      "isCharged": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpackageCode\tbatchId\tshippingType\tweightKg\tisCharged\n1890010\tg000001\t300002\tair_regular\t22.000\t0\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

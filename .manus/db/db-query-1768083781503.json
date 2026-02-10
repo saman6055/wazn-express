@@ -1,0 +1,690 @@
+{
+  "query": "DESCRIBE fullPackageOrders;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute DESCRIBE fullPackageOrders;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "customerId",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "productName",
+      "Type": "varchar(500)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "productLink",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "productImage",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "quantity",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "purchasePriceUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "sellingPriceUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "shippingCostUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "profitUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "orderNumber",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "trackingNumber",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "orderDate",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "trackingAddedDate",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "enum('pending_quote','quoted','pending','approved','rejected','ordered','tracking_added','in_china_warehouse','quality_check','in_batch','in_transit','arrived','ready_for_delivery','delivered','cancelled','refunded','returned')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "pending",
+      "Extra": ""
+    },
+    {
+      "Field": "batchId",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "trackingReminderSent",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "notes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdById",
+      "Type": "int(11)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "orderCode",
+      "Type": "varchar(50)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "orderType",
+      "Type": "enum('resale','purchase','full_package','purchase_request','commission')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "full_package",
+      "Extra": ""
+    },
+    {
+      "Field": "productDescription",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "estimatedPriceUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "actualPriceUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "purchaseFeeUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "shippingType",
+      "Type": "enum('air_regular','air_irregular','sea')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "weightKg",
+      "Type": "decimal(10,3)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "totalCostUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "paidFromBalanceUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "remainingBalanceUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "isPaid",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "arrivedDate",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "deliveredDate",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "packageId",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "priority",
+      "Type": "enum('low','normal','high','urgent')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "normal",
+      "Extra": ""
+    },
+    {
+      "Field": "internalNotes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "assignedToId",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "supplierId",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "productImages",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "color",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "size",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "supplierTrackingNumber",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "supplierOrderNumber",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "purchaseInvoiceUrl",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "purchasePriceCny",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "commissionRate",
+      "Type": "decimal(5,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "commissionAmount",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "volumeCbm",
+      "Type": "decimal(10,6)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "dimensionLength",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "dimensionWidth",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "dimensionHeight",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "expectedDeliveryDate",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "actualDeliveryDate",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "qualityCheckStatus",
+      "Type": "enum('pending','passed','failed','partial')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "qualityCheckNotes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "qualityCheckDate",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "qualityCheckById",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "isReturned",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "returnReason",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "returnDate",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "returnStatus",
+      "Type": "enum('requested','approved','rejected','completed')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "refundAmount",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "tags",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "customerNotes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "serviceType",
+      "Type": "enum('full_package','buying_agent')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "full_package",
+      "Extra": ""
+    },
+    {
+      "Field": "linkedBatchId",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "linkedPackageId",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "shippingCostPerKg",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "shippingCostPerCbm",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "totalShippingCost",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "alertLevel",
+      "Type": "enum('none','warning','urgent','critical')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "none",
+      "Extra": ""
+    },
+    {
+      "Field": "lastAlertSentAt",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "alertCount",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "itemPriceUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "itemPriceCny",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "commissionFeeUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "totalPrepaidUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "isPrepaid",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "prepaidAt",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "grossProfitUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "netProfitUsd",
+      "Type": "decimal(10,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "isChargedToCustomer",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "chargedAt",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint(11)\tNO\tPRI\tNULL\tauto_increment\ncustomerId\tint(11)\tNO\t\tNULL\t\nproductName\tvarchar(500)\tNO\t\tNULL\t\nproductLink\ttext\tYES\t\tNULL\t\nproductImage\ttext\tYES\t\tNULL\t\nquantity\tint(11)\tNO\t\t1\t\npurchasePriceUsd\tdecimal(10,2)\tYES\t\tNULL\t\nsellingPriceUsd\tdecimal(10,2)\tYES\t\tNULL\t\nshippingCostUsd\tdecimal(10,2)\tYES\t\t0\t\nprofitUsd\tdecimal(10,2)\tYES\t\tNULL\t\norderNumber\tvarchar(100)\tYES\t\tNULL\t\ntrackingNumber\tvarchar(100)\tYES\t\tNULL\t\norderDate\ttimestamp\tYES\t\tNULL\t\ntrackingAddedDate\ttimestamp\tYES\t\tNULL\t\nstatus\tenum('pending_quote','quoted','pending','approved','rejected','ordered','tracking_added','in_china_warehouse','quality_check','in_batch','in_transit','arrived','ready_for_delivery','delivered','cancelled','refunded','returned')\tNO\t\tpending\t\nbatchId\tint(11)\tYES\t\tNULL\t\ntrackingReminderSent\ttinyint(1)\tYES\t\t0\t\nnotes\ttext\tYES\t\tNULL\t\ncreatedById\tint(11)\tNO\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\norderCode\tvarchar(50)\tNO\t\tNULL\t\norderType\tenum('resale','purchase','full_package','purchase_request','commission')\tNO\t\tfull_package\t\nproductDescription\ttext\tYES\t\tNULL\t\nestimatedPriceUsd\tdecimal(10,2)\tYES\t\tNULL\t\nactualPriceUsd\tdecimal(10,2)\tYES\t\tNULL\t\npurchaseFeeUsd\tdecimal(10,2)\tYES\t\tNULL\t\nshippingType\tenum('air_regular','air_irregular','sea')\tYES\t\tNULL\t\nweightKg\tdecimal(10,3)\tYES\t\tNULL\t\ntotalCostUsd\tdecimal(10,2)\tYES\t\tNULL\t\npaidFromBalanceUsd\tdecimal(10,2)\tYES\t\t0\t\nremainingBalanceUsd\tdecimal(10,2)\tYES\t\t0\t\nisPaid\ttinyint(1)\tYES\t\t0\t\narrivedDate\ttimestamp\tYES\t\tNULL\t\ndeliveredDate\ttimestamp\tYES\t\tNULL\t\npackageId\tint(11)\tYES\t\tNULL\t\npriority\tenum('low','normal','high','urgent')\tYES\t\tnormal\t\ninternalNotes\ttext\tYES\t\tNULL\t\nassignedToId\tint(11)\tYES\t\tNULL\t\nsupplierId\tint(11)\tYES\t\tNULL\t\nproductImages\tjson\tYES\t\tNULL\t\ncolor\tvarchar(100)\tYES\t\tNULL\t\nsize\tvarchar(100)\tYES\t\tNULL\t\nsupplierTrackingNumber\tvarchar(100)\tYES\t\tNULL\t\nsupplierOrderNumber\tvarchar(100)\tYES\t\tNULL\t\npurchaseInvoiceUrl\ttext\tYES\t\tNULL\t\npurchasePriceCny\tdecimal(10,2)\tYES\t\tNULL\t\ncommissionRate\tdecimal(5,2)\tYES\t\tNULL\t\ncommissionAmount\tdecimal(10,2)\tYES\t\tNULL\t\nvolumeCbm\tdecimal(10,6)\tYES\t\tNULL\t\ndimensionLength\tdecimal(10,2)\tYES\t\tNULL\t\ndimensionWidth\tdecimal(10,2)\tYES\t\tNULL\t\ndimensionHeight\tdecimal(10,2)\tYES\t\tNULL\t\nexpectedDeliveryDate\ttimestamp\tYES\t\tNULL\t\nactualDeliveryDate\ttimestamp\tYES\t\tNULL\t\nqualityCheckStatus\tenum('pending','passed','failed','partial')\tYES\t\tNULL\t\nqualityCheckNotes\ttext\tYES\t\tNULL\t\nqualityCheckDate\ttimestamp\tYES\t\tNULL\t\nqualityCheckById\tint(11)\tYES\t\tNULL\t\nisReturned\ttinyint(1)\tYES\t\t0\t\nreturnReason\ttext\tYES\t\tNULL\t\nreturnDate\ttimestamp\tYES\t\tNULL\t\nreturnStatus\tenum('requested','approved','rejected','completed')\tYES\t\tNULL\t\nrefundAmount\tdecimal(10,2)\tYES\t\tNULL\t\ntags\tjson\tYES\t\tNULL\t\ncustomerNotes\ttext\tYES\t\tNULL\t\nserviceType\tenum('full_package','buying_agent')\tNO\t\tfull_package\t\nlinkedBatchId\tint(11)\tYES\t\tNULL\t\nlinkedPackageId\tint(11)\tYES\t\tNULL\t\nshippingCostPerKg\tdecimal(10,2)\tYES\t\tNULL\t\nshippingCostPerCbm\tdecimal(10,2)\tYES\t\tNULL\t\ntotalShippingCost\tdecimal(10,2)\tYES\t\tNULL\t\nalertLevel\tenum('none','warning','urgent','critical')\tYES\t\tnone\t\nlastAlertSentAt\ttimestamp\tYES\t\tNULL\t\nalertCount\tint(11)\tYES\t\t0\t\nitemPriceUsd\tdecimal(10,2)\tYES\t\tNULL\t\nitemPriceCny\tdecimal(10,2)\tYES\t\tNULL\t\ncommissionFeeUsd\tdecimal(10,2)\tYES\t\tNULL\t\ntotalPrepaidUsd\tdecimal(10,2)\tYES\t\tNULL\t\nisPrepaid\ttinyint(1)\tYES\t\t0\t\nprepaidAt\ttimestamp\tYES\t\tNULL\t\ngrossProfitUsd\tdecimal(10,2)\tYES\t\tNULL\t\nnetProfitUsd\tdecimal(10,2)\tYES\t\tNULL\t\nisChargedToCustomer\ttinyint(1)\tYES\t\t0\t\nchargedAt\ttimestamp\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

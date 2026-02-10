@@ -1,0 +1,128 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { trpc } from "@/lib/trpc";
+import { Package, Phone, Lock, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { toast } from "sonner";
+import { useTranslation } from "@/contexts/LanguageContext";
+
+export default function CustomerLogin() {
+    const { t } = useTranslation();
+const [, setLocation] = useLocation();
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [password, setPassword] = useState("");
+
+  const loginMutation = trpc.auth.customerLogin.useMutation({
+    onSuccess: (data) => {
+      toast.success(`بەخێربێیت ${data.customer.name || data.customer.customerCode}`);
+      // Redirect to customer portal - use window.location for full page reload to pick up new cookie
+      window.location.href = "/portal";
+    },
+    onError: (error) => {
+      toast.error(error.message || "چوونەژوورەوە سەرکەوتوو نەبوو");
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mobileNumber || !password) {
+      toast.error(t("messages.fillAllFields"));
+      return;
+    }
+    loginMutation.mutate({ mobileNumber, password });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500 rounded-2xl mb-4">
+            <Package className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-white">{t("common.appName")}</h1>
+          <p className="text-slate-400 mt-1">{t("home.customerPortal")}</p>
+        </div>
+
+        <Card className="border-0 shadow-2xl">
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">{t("auth.login")}</CardTitle>
+            <CardDescription>
+              {t("auto.text_e2ea3c")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="mobile">{t("customers.form.mobileNumber")}</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="mobile"
+                    type="tel"
+                    placeholder="+964 750 123 4567"
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value)}
+                    onInput={(e) => setMobileNumber((e.target as HTMLInputElement).value)}
+                    className="pl-10"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">{t("auth.password")}</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
+                    className="pl-10"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full bg-emerald-600 hover:bg-emerald-700"
+                disabled={loginMutation.isPending}
+              >
+                {loginMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t("auto.text_b6d29c")}
+                  </>
+                ) : (
+                  t("auto.text_12a620")
+                )}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center text-sm text-muted-foreground">
+              <p>{t("auto.text_c1178b")} </p>
+              <p className="mt-1">{t("auto.text_f081a9")} </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Staff login link */}
+        <div className="mt-6 text-center">
+          <a 
+            href="/" 
+            className="text-sm text-slate-400 hover:text-white transition-colors"
+          >
+            {t("auto.text_9b64a9")} →
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}

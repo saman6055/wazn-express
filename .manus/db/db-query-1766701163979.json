@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, orderCode, status, trackingNumber, orderDate, alertLevel FROM fullPackageOrders;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, orderCode, status, trackingNumber, orderDate, alertLevel FROM fullPackageOrders;",
+  "rows": [
+    {
+      "id": "1440005",
+      "orderCode": "FP-MJM0431Z",
+      "status": "pending",
+      "trackingNumber": "NULL",
+      "orderDate": "NULL",
+      "alertLevel": "none"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderCode\tstatus\ttrackingNumber\torderDate\talertLevel\n1440005\tFP-MJM0431Z\tpending\tNULL\tNULL\tnone\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

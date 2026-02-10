@@ -1,0 +1,53 @@
+{
+  "query": "SHOW CREATE TABLE users;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SHOW CREATE TABLE users;",
+  "rows": [
+    {
+      "Table": "users",
+      "Create Table": "CREATE TABLE `users` ("
+    }
+  ],
+  "messages": [
+    "  `id` int(11) NOT NULL AUTO_INCREMENT,",
+    "  `openId` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `name` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `email` varchar(320) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `loginMethod` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `role` enum('user','admin','employee','accountant','customer') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user',",
+    "  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,",
+    "  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,",
+    "  `lastSignedIn` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,",
+    "  `customerCode` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `sequenceNumber` int(11) DEFAULT NULL,",
+    "  `fullName` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `fullNameArabic` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `fullNameKurdish` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `mobileNumber` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `passwordHash` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `country` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `city` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `address` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `goodsTypePreferences` json DEFAULT NULL,",
+    "  `shippingTypePreferences` json DEFAULT NULL,",
+    "  `isActive` tinyint(1) NOT NULL DEFAULT '1',",
+    "  `notes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `createdById` int(11) DEFAULT NULL,",
+    "  `secondaryMobile` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `district` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `passportUrl` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `nationalIdUrl` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `contractUrl` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `gender` enum('male','female') COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `nationality` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `businessType` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,",
+    "  UNIQUE KEY `users_openId_unique` (`openId`),",
+    "  UNIQUE KEY `users_customerCode_unique` (`customerCode`),",
+    "  UNIQUE KEY `users_sequenceNumber_unique` (`sequenceNumber`),",
+    "  UNIQUE KEY `users_mobileNumber_unique` (`mobileNumber`)",
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=7710001"
+  ],
+  "stdout": "Table\tCreate Table\nusers\tCREATE TABLE `users` (\n  `id` int(11) NOT NULL AUTO_INCREMENT,\n  `openId` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `name` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `email` varchar(320) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `loginMethod` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `role` enum('user','admin','employee','accountant','customer') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user',\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  `lastSignedIn` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `customerCode` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `sequenceNumber` int(11) DEFAULT NULL,\n  `fullName` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `fullNameArabic` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `fullNameKurdish` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `mobileNumber` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `passwordHash` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `country` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `city` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `address` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `goodsTypePreferences` json DEFAULT NULL,\n  `shippingTypePreferences` json DEFAULT NULL,\n  `isActive` tinyint(1) NOT NULL DEFAULT '1',\n  `notes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `createdById` int(11) DEFAULT NULL,\n  `secondaryMobile` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `district` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `passportUrl` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `nationalIdUrl` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `contractUrl` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `gender` enum('male','female') COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `nationality` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `businessType` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,\n  UNIQUE KEY `users_openId_unique` (`openId`),\n  UNIQUE KEY `users_customerCode_unique` (`customerCode`),\n  UNIQUE KEY `users_sequenceNumber_unique` (`sequenceNumber`),\n  UNIQUE KEY `users_mobileNumber_unique` (`mobileNumber`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=7710001\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

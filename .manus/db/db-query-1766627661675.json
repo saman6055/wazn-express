@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, packageCode, trackingNumber, status, isCharged FROM packages",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, packageCode, trackingNumber, status, isCharged FROM packages",
+  "rows": [
+    {
+      "id": "1890010",
+      "packageCode": "g000001",
+      "trackingNumber": "0",
+      "status": "ready_for_delivery",
+      "isCharged": "0"
+    },
+    {
+      "id": "1890011",
+      "packageCode": "PKG-MJKRE661",
+      "trackingNumber": "5",
+      "status": "delivered",
+      "isCharged": "1"
+    },
+    {
+      "id": "1920001",
+      "packageCode": "PKG-MJKRN78R",
+      "trackingNumber": "7",
+      "status": "delivered",
+      "isCharged": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpackageCode\ttrackingNumber\tstatus\tisCharged\n1890010\tg000001\t0\tready_for_delivery\t0\n1890011\tPKG-MJKRE661\t5\tdelivered\t1\n1920001\tPKG-MJKRN78R\t7\tdelivered\t1\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

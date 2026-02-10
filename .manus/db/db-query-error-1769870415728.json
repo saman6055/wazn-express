@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO users (id, openId, username, name, email, loginMethod, role, mobileNumber, passwordHash, isActive, createdAt, updatedAt)\nVALUES (\n  'admin-001',\n  'admin-open-id',\n  'admin',\n  'Super Admin',\n  'admin@waznexpress.com',\n  'password',\n  'admin',\n  '07501234567',\n  '$2b$10$GBsSP9h7epZqfXEE0OYpL.7gcj4own.4dY50Lq1p/jscE85lC/C3q',\n  1,\n  NOW(),\n  NOW()\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute INSERT INTO users (id, openId, username, name, email, loginMethod, role, mobileNumber, passwordHash, isActive, createdAt, updatedAt)\nVALUES (\n  'admin-001',\n  'admin-open-id',\n  'admin',\n  'Super Admin',\n  'admin@waznexpress.com',\n  'password',\n  'admin',\n  '07501234567',\n  '$2b$10$GBsSP9h7epZqfXEE0OYpL.7gcj4own.4dY50Lq1p/jscE85lC/C3q',\n  1,\n  NOW(),\n  NOW()\n);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1366 (HY000) at line 1: Incorrect ? value: '?' for column 'id' at row 1"
+  ]
+}

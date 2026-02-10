@@ -1,0 +1,22 @@
+CREATE TABLE `scanHistory` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`packageId` int,
+	`fullPackageOrderId` int,
+	`trackingNumber` varchar(100) NOT NULL,
+	`scanType` enum('register','receive','ship','arrive','deliver','return','other') NOT NULL,
+	`status` enum('success','error','not_found') NOT NULL DEFAULT 'success',
+	`errorMessage` text,
+	`customerName` varchar(255),
+	`customerId` int,
+	`weightKg` decimal(10,3),
+	`shippingType` varchar(50),
+	`batchId` int,
+	`batchCode` varchar(50),
+	`calculatedCost` decimal(10,2),
+	`scannedById` int NOT NULL,
+	`scannedByName` varchar(255),
+	`deviceType` varchar(50),
+	`warehouseId` int,
+	`scannedAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `scanHistory_id` PRIMARY KEY(`id`)
+);

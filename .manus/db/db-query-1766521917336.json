@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, productName, orderCode FROM fullPackageOrders LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, productName, orderCode FROM fullPackageOrders LIMIT 10;",
+  "rows": [
+    {
+      "id": "2",
+      "productName": "Profit Test 1766005991088",
+      "orderCode": ""
+    },
+    {
+      "id": "3",
+      "productName": "Old Order 1766005991208",
+      "orderCode": ""
+    },
+    {
+      "id": "5",
+      "productName": "Profit Test 1766006008485",
+      "orderCode": ""
+    },
+    {
+      "id": "6",
+      "productName": "Old Order 1766006008583",
+      "orderCode": ""
+    },
+    {
+      "id": "30001",
+      "productName": "Cf",
+      "orderCode": ""
+    },
+    {
+      "id": "30002",
+      "productName": "Ggg",
+      "orderCode": ""
+    },
+    {
+      "id": "60002",
+      "productName": "Profit Test 1766010996305",
+      "orderCode": ""
+    },
+    {
+      "id": "60003",
+      "productName": "Old Order 1766010996385",
+      "orderCode": ""
+    },
+    {
+      "id": "90002",
+      "productName": "Profit Test 1766011849775",
+      "orderCode": ""
+    },
+    {
+      "id": "90003",
+      "productName": "Old Order 1766011849851",
+      "orderCode": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tproductName\torderCode\n2\tProfit Test 1766005991088\t\n3\tOld Order 1766005991208\t\n5\tProfit Test 1766006008485\t\n6\tOld Order 1766006008583\t\n30001\tCf\t\n30002\tGgg\t\n60002\tProfit Test 1766010996305\t\n60003\tOld Order 1766010996385\t\n90002\tProfit Test 1766011849775\t\n90003\tOld Order 1766011849851\t\n",
+  "stderr": "",
+  "execution_time_ms": 116
+}

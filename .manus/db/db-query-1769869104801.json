@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, username, name, role, loginMethod, passwordHash IS NOT NULL as hasPassword FROM users WHERE role = 'admin' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, username, name, role, loginMethod, passwordHash IS NOT NULL as hasPassword FROM users WHERE role = 'admin' LIMIT 1;",
+  "rows": [
+    {
+      "id": "1",
+      "username": "admin",
+      "name": "Xogr Xamosh",
+      "role": "admin",
+      "loginMethod": "username",
+      "hasPassword": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tusername\tname\trole\tloginMethod\thasPassword\n1\tadmin\tXogr Xamosh\tadmin\tusername\t1\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

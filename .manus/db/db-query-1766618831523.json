@@ -1,0 +1,18 @@
+{
+  "query": "SELECT ca.id, ca.customerId, ca.currentBalanceUsd, ca.currentBalanceIqd, c.fullName, c.id as cid FROM customerAccounts ca JOIN customers c ON ca.customerId = c.id WHERE ca.currentBalanceUsd != '0.00' OR ca.currentBalanceIqd != '0';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT ca.id, ca.customerId, ca.currentBalanceUsd, ca.currentBalanceIqd, c.fullName, c.id as cid FROM customerAccounts ca JOIN customers c ON ca.customerId = c.id WHERE ca.currentBalanceUsd != '0.00' OR ca.currentBalanceIqd != '0';",
+  "rows": [
+    {
+      "id": "510001",
+      "customerId": "1",
+      "currentBalanceUsd": "-1212.00",
+      "currentBalanceIqd": "0",
+      "fullName": "Test Customer",
+      "cid": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcustomerId\tcurrentBalanceUsd\tcurrentBalanceIqd\tfullName\tcid\n510001\t1\t-1212.00\t0\tTest Customer\t1\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

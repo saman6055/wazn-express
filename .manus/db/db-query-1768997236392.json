@@ -1,0 +1,16 @@
+{
+  "query": "SELECT COUNT(*) as total FROM packages UNION ALL SELECT COUNT(*) FROM batches",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT COUNT(*) as total FROM packages UNION ALL SELECT COUNT(*) FROM batches",
+  "rows": [
+    {
+      "total": "3"
+    },
+    {
+      "total": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\n3\n0\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}

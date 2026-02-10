@@ -1,0 +1,30 @@
+ALTER TABLE `users` DROP INDEX `users_customerCode_unique`;--> statement-breakpoint
+ALTER TABLE `users` DROP INDEX `users_sequenceNumber_unique`;--> statement-breakpoint
+ALTER TABLE `users` MODIFY COLUMN `role` enum('super_admin','admin','employee','accountant') NOT NULL DEFAULT 'employee';--> statement-breakpoint
+ALTER TABLE `customers` ADD `gender` enum('male','female');--> statement-breakpoint
+ALTER TABLE `customers` ADD `nationality` varchar(100);--> statement-breakpoint
+ALTER TABLE `customers` ADD `businessType` varchar(100);--> statement-breakpoint
+ALTER TABLE `customers` ADD `secondaryMobile` varchar(20);--> statement-breakpoint
+ALTER TABLE `customers` ADD `district` varchar(100);--> statement-breakpoint
+ALTER TABLE `customers` ADD `passportUrl` text;--> statement-breakpoint
+ALTER TABLE `customers` ADD `nationalIdUrl` text;--> statement-breakpoint
+ALTER TABLE `customers` ADD `contractUrl` text;--> statement-breakpoint
+ALTER TABLE `customers` ADD `lastSignedIn` timestamp;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `customerCode`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `sequenceNumber`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `fullName`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `fullNameArabic`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `fullNameKurdish`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `gender`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `nationality`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `businessType`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `secondaryMobile`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `country`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `city`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `district`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `address`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `passportUrl`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `nationalIdUrl`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `contractUrl`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `goodsTypePreferences`;--> statement-breakpoint
+ALTER TABLE `users` DROP COLUMN `shippingTypePreferences`;

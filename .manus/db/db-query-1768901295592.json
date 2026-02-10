@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, requestCode, status, linkedFullPackageId, paymentTransactionId FROM purchaseRequests;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, requestCode, status, linkedFullPackageId, paymentTransactionId FROM purchaseRequests;",
+  "rows": [
+    {
+      "id": "240002",
+      "requestCode": "PR-2024-00001",
+      "status": "approved",
+      "linkedFullPackageId": "NULL",
+      "paymentTransactionId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\trequestCode\tstatus\tlinkedFullPackageId\tpaymentTransactionId\n240002\tPR-2024-00001\tapproved\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

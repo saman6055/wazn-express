@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO packageClaimRequests (requestNumber, packageId, trackingNumber, customerId, customerNote, status, createdAt, updatedAt) \nSELECT 'CLM-2025-0001', p.id, p.trackingNumber, 1, 'This is my package from Taobao', 'pending', NOW(), NOW()\nFROM packages p WHERE p.isUnclaimed = 1 LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute INSERT INTO packageClaimRequests (requestNumber, packageId, trackingNumber, customerId, customerNote, status, createdAt, updatedAt) \nSELECT 'CLM-2025-0001', p.id, p.trackingNumber, 1, 'This is my package from Taobao', 'pending', NOW(), NOW()\nFROM packages p WHERE p.isUnclaimed = 1 LIMIT 1;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 72
+}

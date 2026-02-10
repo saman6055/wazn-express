@@ -1,0 +1,16 @@
+{
+  "query": "\nSELECT \n  SUM(creditBalanceUsd) as total_credit_balance_usd,\n  SUM(currentBalanceUsd) as total_current_balance_usd,\n  COUNT(CASE WHEN currentBalanceUsd > 0 THEN 1 END) as customers_with_debt,\n  COUNT(CASE WHEN creditBalanceUsd > 0 THEN 1 END) as customers_with_credit\nFROM customerAccounts\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \nSELECT \n  SUM(creditBalanceUsd) as total_credit_balance_usd,\n  SUM(currentBalanceUsd) as total_current_balance_usd,\n  COUNT(CASE WHEN currentBalanceUsd > 0 THEN 1 END) as customers_with_debt,\n  COUNT(CASE WHEN creditBalanceUsd > 0 THEN 1 END) as customers_with_credit\nFROM customerAccounts\n",
+  "rows": [
+    {
+      "total_credit_balance_usd": "0.00",
+      "total_current_balance_usd": "-510.00",
+      "customers_with_debt": "1",
+      "customers_with_credit": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_credit_balance_usd\ttotal_current_balance_usd\tcustomers_with_debt\tcustomers_with_credit\n0.00\t-510.00\t1\t0\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

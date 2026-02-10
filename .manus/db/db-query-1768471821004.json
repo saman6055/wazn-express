@@ -1,0 +1,16 @@
+{
+  "query": "\n-- Create test super admin with password: 123456\nINSERT INTO users (name, email, passwordHash, role, createdAt, updatedAt)\nVALUES ('Test Super Admin', 'superadmin@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'super_admin', NOW(), NOW());\n\n-- Verify the account was created\nSELECT id, name, email, role FROM users WHERE email = 'superadmin@test.com';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \n-- Create test super admin with password: 123456\nINSERT INTO users (name, email, passwordHash, role, createdAt, updatedAt)\nVALUES ('Test Super Admin', 'superadmin@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'super_admin', NOW(), NOW());\n\n-- Verify the account was created\nSELECT id, name, email, role FROM users WHERE email = 'superadmin@test.com';\n",
+  "rows": [
+    {
+      "id": "9270040",
+      "name": "Test Super Admin",
+      "email": "superadmin@test.com",
+      "role": "super_admin"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\n9270040\tTest Super Admin\tsuperadmin@test.com\tsuper_admin\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

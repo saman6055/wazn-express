@@ -1,0 +1,16 @@
+{
+  "query": "SELECT c.id, c.fullName, c.mobileNumber, \n       (SELECT le.balanceAfterUsd FROM ledgerEntries le WHERE le.customerId = c.id ORDER BY le.createdAt DESC LIMIT 1) as balance\nFROM customers c\nHAVING balance > 0\nORDER BY balance DESC\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT c.id, c.fullName, c.mobileNumber, \n       (SELECT le.balanceAfterUsd FROM ledgerEntries le WHERE le.customerId = c.id ORDER BY le.createdAt DESC LIMIT 1) as balance\nFROM customers c\nHAVING balance > 0\nORDER BY balance DESC\nLIMIT 20;",
+  "rows": [
+    {
+      "id": "120001",
+      "fullName": "sasa",
+      "mobileNumber": "07504444444",
+      "balance": "447.50"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfullName\tmobileNumber\tbalance\n120001\tsasa\t07504444444\t447.50\n",
+  "stderr": "",
+  "execution_time_ms": 61
+}

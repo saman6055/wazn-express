@@ -1,0 +1,19 @@
+{
+  "query": "\n-- Create Purchase Request test order\nINSERT INTO fullPackageOrders (\n  orderCode, customerId, orderType, productName, quantity,\n  itemPriceUsd, status, trackingNumber, createdById, createdAt\n) VALUES (\n  'PR-PROFIT-TEST-002', 8730001, 'purchase_request', 'Test Purchase Request Product', 1,\n  '80.00', 'ordered', 'TRACK-PR-002', 1, NOW()\n);\n\n-- Get the order ID\nSELECT id, orderCode, orderType, itemPriceUsd, quantity, profitUsd, shippingCostUsd \nFROM fullPackageOrders \nWHERE orderCode = 'PR-PROFIT-TEST-002';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \n-- Create Purchase Request test order\nINSERT INTO fullPackageOrders (\n  orderCode, customerId, orderType, productName, quantity,\n  itemPriceUsd, status, trackingNumber, createdById, createdAt\n) VALUES (\n  'PR-PROFIT-TEST-002', 8730001, 'purchase_request', 'Test Purchase Request Product', 1,\n  '80.00', 'ordered', 'TRACK-PR-002', 1, NOW()\n);\n\n-- Get the order ID\nSELECT id, orderCode, orderType, itemPriceUsd, quantity, profitUsd, shippingCostUsd \nFROM fullPackageOrders \nWHERE orderCode = 'PR-PROFIT-TEST-002';\n",
+  "rows": [
+    {
+      "id": "1950003",
+      "orderCode": "PR-PROFIT-TEST-002",
+      "orderType": "purchase_request",
+      "itemPriceUsd": "80.00",
+      "quantity": "1",
+      "profitUsd": "NULL",
+      "shippingCostUsd": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderCode\torderType\titemPriceUsd\tquantity\tprofitUsd\tshippingCostUsd\n1950003\tPR-PROFIT-TEST-002\tpurchase_request\t80.00\t1\tNULL\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 61
+}

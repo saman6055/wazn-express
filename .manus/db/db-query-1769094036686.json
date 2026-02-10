@@ -1,0 +1,30 @@
+{
+  "query": "SELECT trackingNumber, customerId FROM packages WHERE trackingNumber IS NOT NULL LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT trackingNumber, customerId FROM packages WHERE trackingNumber IS NOT NULL LIMIT 5;",
+  "rows": [
+    {
+      "trackingNumber": "1",
+      "customerId": "10770001"
+    },
+    {
+      "trackingNumber": "2",
+      "customerId": "10770002"
+    },
+    {
+      "trackingNumber": "3",
+      "customerId": "10770002"
+    },
+    {
+      "trackingNumber": "N/A",
+      "customerId": "10770002"
+    },
+    {
+      "trackingNumber": "22",
+      "customerId": "300001"
+    }
+  ],
+  "messages": [],
+  "stdout": "trackingNumber\tcustomerId\n1\t10770001\n2\t10770002\n3\t10770002\nN/A\t10770002\n22\t300001\n",
+  "stderr": "",
+  "execution_time_ms": 381
+}

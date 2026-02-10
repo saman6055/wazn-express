@@ -1,0 +1,26 @@
+{
+  "query": "\nSELECT \n  (SELECT COUNT(*) FROM users) as users_count,\n  (SELECT COUNT(*) FROM customers) as customers_count,\n  (SELECT COUNT(*) FROM packages) as packages_count,\n  (SELECT COUNT(*) FROM batches) as batches_count,\n  (SELECT COUNT(*) FROM fullPackageOrders) as full_package_orders_count,\n  (SELECT COUNT(*) FROM invoices) as invoices_count,\n  (SELECT COUNT(*) FROM customerAccounts) as customer_accounts_count,\n  (SELECT COUNT(*) FROM ledgerTransactions) as ledger_transactions_count,\n  (SELECT COUNT(*) FROM paymentRecords) as payment_records_count,\n  (SELECT COUNT(*) FROM suppliers) as suppliers_count,\n  (SELECT COUNT(*) FROM warehouses) as warehouses_count,\n  (SELECT COUNT(*) FROM countries) as countries_count,\n  (SELECT COUNT(*) FROM pricingRules) as pricing_rules_count,\n  (SELECT COUNT(*) FROM auditLogs) as audit_logs_count\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute \nSELECT \n  (SELECT COUNT(*) FROM users) as users_count,\n  (SELECT COUNT(*) FROM customers) as customers_count,\n  (SELECT COUNT(*) FROM packages) as packages_count,\n  (SELECT COUNT(*) FROM batches) as batches_count,\n  (SELECT COUNT(*) FROM fullPackageOrders) as full_package_orders_count,\n  (SELECT COUNT(*) FROM invoices) as invoices_count,\n  (SELECT COUNT(*) FROM customerAccounts) as customer_accounts_count,\n  (SELECT COUNT(*) FROM ledgerTransactions) as ledger_transactions_count,\n  (SELECT COUNT(*) FROM paymentRecords) as payment_records_count,\n  (SELECT COUNT(*) FROM suppliers) as suppliers_count,\n  (SELECT COUNT(*) FROM warehouses) as warehouses_count,\n  (SELECT COUNT(*) FROM countries) as countries_count,\n  (SELECT COUNT(*) FROM pricingRules) as pricing_rules_count,\n  (SELECT COUNT(*) FROM auditLogs) as audit_logs_count\n",
+  "rows": [
+    {
+      "users_count": "127",
+      "customers_count": "6",
+      "packages_count": "33",
+      "batches_count": "6",
+      "full_package_orders_count": "6",
+      "invoices_count": "30",
+      "customer_accounts_count": "7",
+      "ledger_transactions_count": "27",
+      "payment_records_count": "4",
+      "suppliers_count": "0",
+      "warehouses_count": "4",
+      "countries_count": "6",
+      "pricing_rules_count": "5",
+      "audit_logs_count": "70"
+    }
+  ],
+  "messages": [],
+  "stdout": "users_count\tcustomers_count\tpackages_count\tbatches_count\tfull_package_orders_count\tinvoices_count\tcustomer_accounts_count\tledger_transactions_count\tpayment_records_count\tsuppliers_count\twarehouses_count\tcountries_count\tpricing_rules_count\taudit_logs_count\n127\t6\t33\t6\t6\t30\t7\t27\t4\t0\t4\t6\t5\t70\n",
+  "stderr": "",
+  "execution_time_ms": 130
+}

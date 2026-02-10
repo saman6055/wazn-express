@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, nameEn, isDestination FROM countries WHERE isDestination = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, nameEn, isDestination FROM countries WHERE isDestination = 1;",
+  "rows": [
+    {
+      "id": "2",
+      "nameEn": "erbil",
+      "isDestination": "1"
+    },
+    {
+      "id": "90001",
+      "nameEn": "Iraq",
+      "isDestination": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnameEn\tisDestination\n2\terbil\t1\n90001\tIraq\t1\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

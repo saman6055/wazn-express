@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, name, mobileNumber, role, email FROM users WHERE mobileNumber LIKE '%1111%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, name, mobileNumber, role, email FROM users WHERE mobileNumber LIKE '%1111%';",
+  "rows": [
+    {
+      "id": "10770001",
+      "name": "Saman",
+      "mobileNumber": "1111111",
+      "role": "customer",
+      "email": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tmobileNumber\trole\temail\n10770001\tSaman\t1111111\tcustomer\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 357
+}

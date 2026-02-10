@@ -1,0 +1,9 @@
+{
+  "query": "SELECT orderType, COUNT(*) as cnt, SUM(CASE WHEN batchId IS NOT NULL THEN 1 ELSE 0 END) as withBatch FROM fullPackageOrders GROUP BY orderType;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT orderType, COUNT(*) as cnt, SUM(CASE WHEN batchId IS NOT NULL THEN 1 ELSE 0 END) as withBatch FROM fullPackageOrders GROUP BY orderType;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 340
+}

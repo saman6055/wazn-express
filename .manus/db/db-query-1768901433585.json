@@ -1,0 +1,22 @@
+{
+  "query": "SELECT id, customerId, currentBalanceUsd, creditBalanceUsd FROM customerAccounts;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, customerId, currentBalanceUsd, creditBalanceUsd FROM customerAccounts;",
+  "rows": [
+    {
+      "id": "1800001",
+      "customerId": "1",
+      "currentBalanceUsd": "-100.00",
+      "creditBalanceUsd": "100.00"
+    },
+    {
+      "id": "1800002",
+      "customerId": "10410048",
+      "currentBalanceUsd": "0.00",
+      "creditBalanceUsd": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcustomerId\tcurrentBalanceUsd\tcreditBalanceUsd\n1800001\t1\t-100.00\t100.00\n1800002\t10410048\t0.00\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}

@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, orderCode, productName, status, trackingNumber, orderDate FROM fullPackageOrders ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, orderCode, productName, status, trackingNumber, orderDate FROM fullPackageOrders ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "1440005",
+      "orderCode": "FP-MJM0431Z",
+      "productName": "گفف",
+      "status": "pending",
+      "trackingNumber": "NULL",
+      "orderDate": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderCode\tproductName\tstatus\ttrackingNumber\torderDate\n1440005\tFP-MJM0431Z\tگفف\tpending\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

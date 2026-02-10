@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `serviceTypes` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `nameEn` varchar(100) NOT NULL,\n  `nameKu` varchar(100),\n  `nameAr` varchar(100),\n  `icon` varchar(50),\n  `color` varchar(20),\n  `defaultCost` decimal(10,2),\n  `defaultPrice` decimal(10,2),\n  `requiresCustomer` boolean NOT NULL DEFAULT true,\n  `addToCustomerBalance` boolean NOT NULL DEFAULT true,\n  `sortOrder` int NOT NULL DEFAULT 0,\n  `isActive` boolean NOT NULL DEFAULT true,\n  `createdById` int,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute CREATE TABLE IF NOT EXISTS `serviceTypes` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `nameEn` varchar(100) NOT NULL,\n  `nameKu` varchar(100),\n  `nameAr` varchar(100),\n  `icon` varchar(50),\n  `color` varchar(20),\n  `defaultCost` decimal(10,2),\n  `defaultPrice` decimal(10,2),\n  `requiresCustomer` boolean NOT NULL DEFAULT true,\n  `addToCustomerBalance` boolean NOT NULL DEFAULT true,\n  `sortOrder` int NOT NULL DEFAULT 0,\n  `isActive` boolean NOT NULL DEFAULT true,\n  `createdById` int,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 54
+}

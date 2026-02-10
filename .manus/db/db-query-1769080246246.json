@@ -1,0 +1,70 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'customers' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'customers' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "customerCode"
+    },
+    {
+      "COLUMN_NAME": "sequenceNumber"
+    },
+    {
+      "COLUMN_NAME": "fullName"
+    },
+    {
+      "COLUMN_NAME": "fullNameArabic"
+    },
+    {
+      "COLUMN_NAME": "fullNameKurdish"
+    },
+    {
+      "COLUMN_NAME": "mobileNumber"
+    },
+    {
+      "COLUMN_NAME": "passwordHash"
+    },
+    {
+      "COLUMN_NAME": "email"
+    },
+    {
+      "COLUMN_NAME": "country"
+    },
+    {
+      "COLUMN_NAME": "city"
+    },
+    {
+      "COLUMN_NAME": "address"
+    },
+    {
+      "COLUMN_NAME": "goodsTypePreferences"
+    },
+    {
+      "COLUMN_NAME": "shippingTypePreferences"
+    },
+    {
+      "COLUMN_NAME": "isActive"
+    },
+    {
+      "COLUMN_NAME": "notes"
+    },
+    {
+      "COLUMN_NAME": "createdById"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "linkedUserId"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\ncustomerCode\nsequenceNumber\nfullName\nfullNameArabic\nfullNameKurdish\nmobileNumber\npasswordHash\nemail\ncountry\ncity\naddress\ngoodsTypePreferences\nshippingTypePreferences\nisActive\nnotes\ncreatedById\ncreatedAt\nupdatedAt\nlinkedUserId\n",
+  "stderr": "",
+  "execution_time_ms": 356
+}

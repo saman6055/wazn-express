@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, customerId, currentBalanceUsd, currentBalanceIqd FROM customerAccounts WHERE currentBalanceUsd IS NOT NULL LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, customerId, currentBalanceUsd, currentBalanceIqd FROM customerAccounts WHERE currentBalanceUsd IS NOT NULL LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "customerId": "840001",
+      "currentBalanceUsd": "-150.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "id": "2",
+      "customerId": "660003",
+      "currentBalanceUsd": "-1000.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "id": "30001",
+      "customerId": "840032",
+      "currentBalanceUsd": "-1111.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "id": "30002",
+      "customerId": "900010",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "id": "60001",
+      "customerId": "900015",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "id": "90001",
+      "customerId": "1110014",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "id": "120001",
+      "customerId": "1200007",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "id": "120002",
+      "customerId": "1260003",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "id": "150001",
+      "customerId": "1260004",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    },
+    {
+      "id": "180001",
+      "customerId": "1290013",
+      "currentBalanceUsd": "-100.00",
+      "currentBalanceIqd": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcustomerId\tcurrentBalanceUsd\tcurrentBalanceIqd\n1\t840001\t-150.00\t0\n2\t660003\t-1000.00\t0\n30001\t840032\t-1111.00\t0\n30002\t900010\t-100.00\t0\n60001\t900015\t-100.00\t0\n90001\t1110014\t-100.00\t0\n120001\t1200007\t-100.00\t0\n120002\t1260003\t-100.00\t0\n150001\t1260004\t-100.00\t0\n180001\t1290013\t-100.00\t0\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}

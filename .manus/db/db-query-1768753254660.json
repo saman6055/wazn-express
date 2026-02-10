@@ -1,0 +1,16 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM customers) as customers_count,\n  (SELECT COUNT(*) FROM ledgerEntries) as ledger_count,\n  (SELECT COUNT(*) FROM packages) as packages_count,\n  (SELECT COUNT(*) FROM batches) as batches_count;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT \n  (SELECT COUNT(*) FROM customers) as customers_count,\n  (SELECT COUNT(*) FROM ledgerEntries) as ledger_count,\n  (SELECT COUNT(*) FROM packages) as packages_count,\n  (SELECT COUNT(*) FROM batches) as batches_count;",
+  "rows": [
+    {
+      "customers_count": "0",
+      "ledger_count": "0",
+      "packages_count": "5",
+      "batches_count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "customers_count\tledger_count\tpackages_count\tbatches_count\n0\t0\t5\t0\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

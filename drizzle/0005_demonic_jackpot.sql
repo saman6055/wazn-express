@@ -1,0 +1,2 @@
+ALTER TABLE `fullPackageOrders` ADD CONSTRAINT `fullPackageOrders_trackingNumber_unique` UNIQUE(`trackingNumber`);--> statement-breakpoint
+ALTER TABLE `packages` ADD CONSTRAINT `packages_trackingNumber_unique` UNIQUE(`trackingNumber`);

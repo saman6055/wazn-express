@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, batchCode, pricePerKg, pricePerCbm FROM batches LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, batchCode, pricePerKg, pricePerCbm FROM batches LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "batchCode": "102",
+      "pricePerKg": "NULL",
+      "pricePerCbm": "NULL"
+    },
+    {
+      "id": "30001",
+      "batchCode": "TEST-1765994978250-Air",
+      "pricePerKg": "NULL",
+      "pricePerCbm": "NULL"
+    },
+    {
+      "id": "60001",
+      "batchCode": "103",
+      "pricePerKg": "NULL",
+      "pricePerCbm": "NULL"
+    },
+    {
+      "id": "90001",
+      "batchCode": "sea",
+      "pricePerKg": "NULL",
+      "pricePerCbm": "160.00"
+    },
+    {
+      "id": "120001",
+      "batchCode": "AIR222",
+      "pricePerKg": "11.00",
+      "pricePerCbm": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbatchCode\tpricePerKg\tpricePerCbm\n1\t102\tNULL\tNULL\n30001\tTEST-1765994978250-Air\tNULL\tNULL\n60001\t103\tNULL\tNULL\n90001\tsea\tNULL\t160.00\n120001\tAIR222\t11.00\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

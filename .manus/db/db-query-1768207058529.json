@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE packages p1 SET trackingNumber = NULL WHERE trackingNumber IS NOT NULL AND trackingNumber != '' AND EXISTS (SELECT 1 FROM (SELECT trackingNumber, MIN(id) as min_id FROM packages WHERE trackingNumber IS NOT NULL AND trackingNumber != '' GROUP BY trackingNumber HAVING COUNT(*) > 1) p2 WHERE p1.trackingNumber = p2.trackingNumber AND p1.id > p2.min_id);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute UPDATE packages p1 SET trackingNumber = NULL WHERE trackingNumber IS NOT NULL AND trackingNumber != '' AND EXISTS (SELECT 1 FROM (SELECT trackingNumber, MIN(id) as min_id FROM packages WHERE trackingNumber IS NOT NULL AND trackingNumber != '' GROUP BY trackingNumber HAVING COUNT(*) > 1) p2 WHERE p1.trackingNumber = p2.trackingNumber AND p1.id > p2.min_id);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 61
+}

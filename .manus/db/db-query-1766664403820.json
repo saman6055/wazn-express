@@ -1,0 +1,24 @@
+{
+  "query": "SELECT u.id, u.customerCode, u.mobileNumber, p.amountUsd, p.paymentDate \nFROM users u \nJOIN payments p ON p.customerId = u.id \nWHERE u.role = 'customer' \nLIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT u.id, u.customerCode, u.mobileNumber, p.amountUsd, p.paymentDate \nFROM users u \nJOIN payments p ON p.customerId = u.id \nWHERE u.role = 'customer' \nLIMIT 5",
+  "rows": [
+    {
+      "id": "6002462",
+      "customerCode": "AZ0001(Xogr)",
+      "mobileNumber": "1111111",
+      "amountUsd": "1837.00",
+      "paymentDate": "2025-12-25 11:59:38"
+    },
+    {
+      "id": "6002462",
+      "customerCode": "AZ0001(Xogr)",
+      "mobileNumber": "1111111",
+      "amountUsd": "1837.00",
+      "paymentDate": "2025-12-25 12:00:24"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcustomerCode\tmobileNumber\tamountUsd\tpaymentDate\n6002462\tAZ0001(Xogr)\t1111111\t1837.00\t2025-12-25 11:59:38\n6002462\tAZ0001(Xogr)\t1111111\t1837.00\t2025-12-25 12:00:24\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

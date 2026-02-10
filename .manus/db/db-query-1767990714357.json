@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, fullName, customerCode FROM users ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, fullName, customerCode FROM users ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "8040001",
+      "fullName": "Dlkhwaz",
+      "customerCode": "AZ0023(Dlkhwaz)"
+    },
+    {
+      "id": "7860033",
+      "fullName": "Saman",
+      "customerCode": "AZ0022(Saman)"
+    },
+    {
+      "id": "7710051",
+      "fullName": "NULL",
+      "customerCode": "NULL"
+    },
+    {
+      "id": "7710050",
+      "fullName": "NULL",
+      "customerCode": "NULL"
+    },
+    {
+      "id": "7710043",
+      "fullName": "Saman",
+      "customerCode": "AZ0021(Saman)"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfullName\tcustomerCode\n8040001\tDlkhwaz\tAZ0023(Dlkhwaz)\n7860033\tSaman\tAZ0022(Saman)\n7710051\tNULL\tNULL\n7710050\tNULL\tNULL\n7710043\tSaman\tAZ0021(Saman)\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

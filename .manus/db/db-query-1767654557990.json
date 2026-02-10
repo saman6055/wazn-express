@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `deletionLogs` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `category` varchar(100) NOT NULL,\n  `deletionType` enum('single_category','old_data','test_data','factory_reset') NOT NULL,\n  `recordCount` int NOT NULL,\n  `details` json,\n  `backupCreated` boolean NOT NULL DEFAULT false,\n  `backupFileUrl` varchar(500),\n  `backupFileName` varchar(255),\n  `deletedById` int NOT NULL,\n  `deletedByName` varchar(255),\n  `deletedAt` timestamp NOT NULL DEFAULT (now()),\n  `ipAddress` varchar(45),\n  `reason` text,\n  CONSTRAINT `deletionLogs_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute CREATE TABLE IF NOT EXISTS `deletionLogs` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `category` varchar(100) NOT NULL,\n  `deletionType` enum('single_category','old_data','test_data','factory_reset') NOT NULL,\n  `recordCount` int NOT NULL,\n  `details` json,\n  `backupCreated` boolean NOT NULL DEFAULT false,\n  `backupFileUrl` varchar(500),\n  `backupFileName` varchar(255),\n  `deletedById` int NOT NULL,\n  `deletedByName` varchar(255),\n  `deletedAt` timestamp NOT NULL DEFAULT (now()),\n  `ipAddress` varchar(45),\n  `reason` text,\n  CONSTRAINT `deletionLogs_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 780
+}

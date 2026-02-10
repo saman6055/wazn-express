@@ -1,0 +1,2 @@
+ALTER TABLE `ledgerTransactions` MODIFY COLUMN `transactionType` enum('DEBIT_PACKAGE','DEBIT_FULL_PACKAGE','DEBIT_PURCHASE_REQUEST','DEBIT_COMMISSION','DEBIT_SERVICE','DEBIT_PENALTY','DEBIT_OTHER','CREDIT_PAYMENT','CREDIT_DEPOSIT','CREDIT_REFUND','CREDIT_DISCOUNT','CREDIT_OTHER','ADJUSTMENT_DEBIT','ADJUSTMENT_CREDIT') NOT NULL;--> statement-breakpoint
+ALTER TABLE `ledgerTransactions` MODIFY COLUMN `referenceType` enum('package','full_package','purchase_request','commission','payment','adjustment','service','manual');

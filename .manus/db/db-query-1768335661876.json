@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `backups` (\n  `id` INT AUTO_INCREMENT PRIMARY KEY,\n  `filename` VARCHAR(255) NOT NULL,\n  `fileUrl` VARCHAR(500),\n  `fileSize` BIGINT,\n  `backupType` ENUM('manual', 'scheduled_daily', 'scheduled_weekly', 'scheduled_monthly') NOT NULL,\n  `status` ENUM('in_progress', 'completed', 'failed') NOT NULL DEFAULT 'in_progress',\n  `errorMessage` TEXT,\n  `createdById` INT,\n  `createdByName` VARCHAR(255),\n  `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `completedAt` TIMESTAMP NULL\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute CREATE TABLE IF NOT EXISTS `backups` (\n  `id` INT AUTO_INCREMENT PRIMARY KEY,\n  `filename` VARCHAR(255) NOT NULL,\n  `fileUrl` VARCHAR(500),\n  `fileSize` BIGINT,\n  `backupType` ENUM('manual', 'scheduled_daily', 'scheduled_weekly', 'scheduled_monthly') NOT NULL,\n  `status` ENUM('in_progress', 'completed', 'failed') NOT NULL DEFAULT 'in_progress',\n  `errorMessage` TEXT,\n  `createdById` INT,\n  `createdByName` VARCHAR(255),\n  `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `completedAt` TIMESTAMP NULL\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 416
+}

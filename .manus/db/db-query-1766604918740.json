@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO `stockProducts` (`sku`, `name`, `trackInventory`, `allowNegativeStock`, `isActive`, `isFeatured`) VALUES ('TEST-001', 'Test Product', true, false, true, false);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute INSERT INTO `stockProducts` (`sku`, `name`, `trackInventory`, `allowNegativeStock`, `isActive`, `isFeatured`) VALUES ('TEST-001', 'Test Product', true, false, true, false);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 199
+}

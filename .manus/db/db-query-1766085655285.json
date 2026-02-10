@@ -1,0 +1,13 @@
+{
+  "query": "SELECT trackingNumber FROM packages LIMIT 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT trackingNumber FROM packages LIMIT 1",
+  "rows": [
+    {
+      "trackingNumber": "111111"
+    }
+  ],
+  "messages": [],
+  "stdout": "trackingNumber\n111111\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

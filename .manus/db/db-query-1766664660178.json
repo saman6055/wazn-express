@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, customerId, amountUsd, paymentMethod, paymentDate, notes FROM payments WHERE customerId = 6002196 LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT id, customerId, amountUsd, paymentMethod, paymentDate, notes FROM payments WHERE customerId = 6002196 LIMIT 10;",
+  "rows": [
+    {
+      "id": "1170005",
+      "customerId": "6002196",
+      "amountUsd": "100.00",
+      "paymentMethod": "cash",
+      "paymentDate": "2025-12-25 00:01:02",
+      "notes": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcustomerId\tamountUsd\tpaymentMethod\tpaymentDate\tnotes\n1170005\t6002196\t100.00\tcash\t2025-12-25 00:01:02\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 124
+}

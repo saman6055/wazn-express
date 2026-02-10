@@ -1,0 +1,18 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM customers) as customers,\n  (SELECT COUNT(*) FROM packages) as packages,\n  (SELECT COUNT(*) FROM batches) as batches,\n  (SELECT COUNT(*) FROM invoices) as invoices,\n  (SELECT COUNT(*) FROM suppliers) as suppliers,\n  (SELECT COUNT(*) FROM fullPackageOrders) as fullPackageOrders;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user qE9QSVFuMdnFKvY.22ce2029925d --database CB8XFpvgXqCGVxJN2CGtFE --execute SELECT \n  (SELECT COUNT(*) FROM customers) as customers,\n  (SELECT COUNT(*) FROM packages) as packages,\n  (SELECT COUNT(*) FROM batches) as batches,\n  (SELECT COUNT(*) FROM invoices) as invoices,\n  (SELECT COUNT(*) FROM suppliers) as suppliers,\n  (SELECT COUNT(*) FROM fullPackageOrders) as fullPackageOrders;",
+  "rows": [
+    {
+      "customers": "0",
+      "packages": "0",
+      "batches": "0",
+      "invoices": "0",
+      "suppliers": "0",
+      "fullPackageOrders": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "customers\tpackages\tbatches\tinvoices\tsuppliers\tfullPackageOrders\n0\t0\t0\t0\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}
