@@ -8,6 +8,8 @@ import { createServer } from "http";
 import net from "net";
 import path from "path";
 import fs from "fs";
+import cors from "cors";
+import helmet from "helmet";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
@@ -15,6 +17,7 @@ import { createContext } from "./context";
 import { scheduleTrackingAlertNotifications } from "../trackingAlertNotifications";
 import { initializeScheduledBackups } from "../scheduledBackups";
 import { loadConfig } from "../config";
+import { globalLimiter, authLimiterMiddleware } from "../middleware/rateLimiter";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -59,23 +62,41 @@ async function startServer() {
   loadConfig(); // Validates required env vars (DATABASE_URL, JWT_SECRET, MIGRATION_SECRET); throws if missing
   const app = express();
   const server = createServer(app);
-  
+
+  // Security headers
+  app.use(helmet());
+
+  // CORS: only allow origins from ALLOWED_ORIGINS (comma-separated)
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+    : [];
+  app.use(
+    cors({
+      origin: allowedOrigins.length > 0 ? allowedOrigins : false,
+      credentials: true,
+    })
+  );
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-  
+
+  // Rate limiting: global first, then auth-specific for login on /api/trpc
+  app.use(globalLimiter);
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
-  
-  // tRPC API
+
+  // tRPC API (auth limiter applies strict limit to login procedures only)
   app.use(
     "/api/trpc",
+    authLimiterMiddleware,
     createExpressMiddleware({
       router: appRouter,
       createContext,
     })
   );
-  
+
   // Production mode: serve static files
   serveStatic(app);
 
