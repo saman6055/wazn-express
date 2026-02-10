@@ -38,7 +38,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, memo } from "react";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -133,6 +134,163 @@ const packageTypeConfig: Record<string, { color: string; label: string; labelKu:
   }
 };
 
+type PackageRowProps = {
+  pkg: Package;
+  getCustomerName: (id: number | null) => string;
+  getCustomerCode: (id: number | null) => string;
+  getBatchCode: (id: number) => string;
+  onStatusChange: (pkg: Package, newStatus: string) => void;
+  onView: (pkg: Package) => void;
+  onEdit: (pkg: Package) => void;
+  onPrintLabel: (pkg: Package) => void;
+  t: (key: string, opts?: Record<string, string | number>) => string;
+};
+
+const PackageTableRow = memo(function PackageTableRow({
+  pkg,
+  getCustomerName,
+  getCustomerCode,
+  getBatchCode,
+  onStatusChange,
+  onView,
+  onEdit,
+  onPrintLabel,
+  t,
+}: PackageRowProps) {
+  return (
+    <TableRow>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <QrCode className="h-4 w-4 text-muted-foreground" />
+          <span className="font-mono text-sm">{pkg.packageCode}</span>
+        </div>
+      </TableCell>
+      <TableCell>
+        {(() => {
+          const pkgType = (pkg as any).orderType || "regular";
+          const config = packageTypeConfig[pkgType] || packageTypeConfig.regular;
+          return (
+            <Badge variant="outline" className={`text-xs ${config.color}`}>
+              <span className="mr-1">{config.icon}</span>
+              {config.labelKu}
+            </Badge>
+          );
+        })()}
+      </TableCell>
+      <TableCell>
+        <div>
+          <p className="font-medium">{getCustomerName(pkg.customerId)}</p>
+          <p className="text-xs text-muted-foreground font-mono">{getCustomerCode(pkg.customerId)}</p>
+        </div>
+      </TableCell>
+      <TableCell className="font-mono text-sm">
+        {pkg.trackingNumber ? (
+          <span>{pkg.trackingNumber}</span>
+        ) : (
+          <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+            <Link2Off className="h-3 w-3 mr-1" />
+            بێ تراک
+          </Badge>
+        )}
+      </TableCell>
+      <TableCell>
+        <Badge variant="outline" className="capitalize text-xs">
+          {pkg.shippingType.replace(/_/g, " ")}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        {pkg.batchId ? (
+          <Badge variant="secondary" className="text-xs font-mono">
+            {getBatchCode(pkg.batchId)}
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+            <PackageX className="h-3 w-3 mr-1" />
+            بێ باچ
+          </Badge>
+        )}
+      </TableCell>
+      <TableCell>
+        {(() => {
+          const actualWeight = parseFloat(pkg.weightKg || "0");
+          const volumetricWeight =
+            pkg.lengthCm && pkg.widthCm && pkg.heightCm
+              ? (parseFloat(pkg.lengthCm) * parseFloat(pkg.widthCm) * parseFloat(pkg.heightCm)) / 6000
+              : 0;
+          const chargeableWeight = Math.max(actualWeight, volumetricWeight);
+          const isVolumetric = volumetricWeight > actualWeight && volumetricWeight > 0;
+          if (chargeableWeight === 0) return "-";
+          return (
+            <div className="flex items-center gap-1">
+              <span>{chargeableWeight.toFixed(2)} kg</span>
+              {isVolumetric && (
+                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 text-purple-700 border-purple-200">
+                  قەبارەیی
+                </Badge>
+              )}
+            </div>
+          );
+        })()}
+      </TableCell>
+      <TableCell className="font-mono">${pkg.calculatedCostUsd || "0.00"}</TableCell>
+      <TableCell>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all flex items-center gap-1 ${statusColors[pkg.status] || "bg-gray-100"}`}
+              title={t("packages.clickToChangeStatus")}
+            >
+              {pkg.status.replace(/_/g, " ")}
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            {statusOptions.map((option) => (
+              <DropdownMenuItem
+                key={option.value}
+                onClick={() => option.value !== pkg.status && onStatusChange(pkg, option.value)}
+                className={pkg.status === option.value ? "bg-accent" : ""}
+              >
+                <span className={`w-2 h-2 rounded-full mr-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
+                {option.label}
+                {pkg.status === option.value && " ✓"}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+      <TableCell>
+        {(() => {
+          const registeredAt = new Date(pkg.createdAt);
+          const now = new Date();
+          const daysSince = Math.floor((now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60 * 24));
+          const isDelivered = pkg.status === "delivered" || pkg.status === "cancelled" || pkg.status === "returned";
+          if (isDelivered) return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">✅ {t("packages.delivered")}</Badge>;
+          if (daysSince > 20) return <Badge variant="destructive" className="animate-pulse">🔴 {daysSince} {t("common.days")}</Badge>;
+          if (daysSince > 10) return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">⚠️ {daysSince} {t("common.days")}</Badge>;
+          return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">✅ {daysSince} {t("common.days")}</Badge>;
+        })()}
+      </TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        {new Date(pkg.createdAt).toLocaleDateString()}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-1">
+          <Button variant="ghost" size="icon" title={t("packages.viewDetails")} onClick={() => onView(pkg)}>
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" title={t("packages.editPackage")} onClick={() => onEdit(pkg)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" title={t("packages.printLabel")} onClick={() => onPrintLabel(pkg)}>
+            <Printer className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});
+
 export default function Packages() {
     const { t } = useTranslation();
 const [, setLocation] = useLocation();
@@ -185,14 +343,11 @@ const [, setLocation] = useLocation();
     setBatchId(v === "all" || v === "no_batch" ? undefined : parseInt(v, 10));
   };
 
-  // Debounce search input
+  const debouncedSearch = useDebouncedValue(searchInput, 300);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput);
-      setCurrentPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput, setSearch, setCurrentPage]);
+    setSearch(debouncedSearch);
+    setCurrentPage(1);
+  }, [debouncedSearch, setSearch, setCurrentPage]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -257,6 +412,18 @@ const [, setLocation] = useLocation();
     refetch();
   };
   const onMutationError = (error: { message: string }) => toast.error(error.message);
+
+  const onStatusChange = useCallback(
+    (pkg: Package, newStatus: string) => {
+      setSelectedPackage(pkg);
+      setNewStatus(newStatus);
+      updateStatusMutation.mutate(
+        { id: pkg.id, status: newStatus as any },
+        { onSuccess: onStatusSuccess, onError: onMutationError }
+      );
+    },
+    [updateStatusMutation, onStatusSuccess, onMutationError]
+  );
 
   const getCustomerName = (customerId: number | null) => {
     if (!customerId) return t("packages.unclaimed");
@@ -354,41 +521,28 @@ const [, setLocation] = useLocation();
     return 0;
   }, [batches, editBatchId, editShippingType, editWeightKg, editCbm]);
 
-  // Client-side filtering for filters not handled by server (batch no_batch, alert, weight, package type)
-  const filteredPackages = packages?.filter(pkg => {
-    // Batch filter - only client-side for "no_batch" option
-    const matchesBatch = batchFilter === "all" || 
-      batchFilter !== "no_batch" || 
-      (batchFilter === "no_batch" && !pkg.batchId);
-    
-    // Alert filter (by days since registration) - client-side only
-    const registeredAt = new Date(pkg.createdAt);
-    const now = new Date();
-    const daysSince = Math.floor((now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60 * 24));
-    const isDelivered = pkg.status === "delivered" || pkg.status === "cancelled" || pkg.status === "returned";
-    
-    let matchesAlert = true;
-    if (alertFilter === "delivered") {
-      matchesAlert = isDelivered;
-    } else if (alertFilter === "0-10") {
-      matchesAlert = !isDelivered && daysSince <= 10;
-    } else if (alertFilter === "10-20") {
-      matchesAlert = !isDelivered && daysSince > 10 && daysSince <= 20;
-    } else if (alertFilter === "20+") {
-      matchesAlert = !isDelivered && daysSince > 20;
-    }
-    
-    // Weight filter - client-side only
-    const weight = parseFloat(pkg.weightKg || "0");
-    const matchesMinWeight = !minWeight || weight >= parseFloat(minWeight);
-    const matchesMaxWeight = !maxWeight || weight <= parseFloat(maxWeight);
-    
-    // Package type filter - client-side
-    const pkgType = (pkg as any).orderType || 'regular';
-    const matchesPackageType = packageTypeFilter === "all" || pkgType === packageTypeFilter;
-    
-    return matchesBatch && matchesAlert && matchesMinWeight && matchesMaxWeight && matchesPackageType;
-  });
+  // Client-side filtering (memoized)
+  const filteredPackages = useMemo(() => {
+    if (!packages) return undefined;
+    return packages.filter(pkg => {
+      const matchesBatch = batchFilter === "all" || batchFilter !== "no_batch" || (batchFilter === "no_batch" && !pkg.batchId);
+      const registeredAt = new Date(pkg.createdAt);
+      const now = new Date();
+      const daysSince = Math.floor((now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60 * 24));
+      const isDelivered = pkg.status === "delivered" || pkg.status === "cancelled" || pkg.status === "returned";
+      let matchesAlert = true;
+      if (alertFilter === "delivered") matchesAlert = isDelivered;
+      else if (alertFilter === "0-10") matchesAlert = !isDelivered && daysSince <= 10;
+      else if (alertFilter === "10-20") matchesAlert = !isDelivered && daysSince > 10 && daysSince <= 20;
+      else if (alertFilter === "20+") matchesAlert = !isDelivered && daysSince > 20;
+      const weight = parseFloat(pkg.weightKg || "0");
+      const matchesMinWeight = !minWeight || weight >= parseFloat(minWeight);
+      const matchesMaxWeight = !maxWeight || weight <= parseFloat(maxWeight);
+      const pkgType = (pkg as any).orderType || 'regular';
+      const matchesPackageType = packageTypeFilter === "all" || pkgType === packageTypeFilter;
+      return matchesBatch && matchesAlert && matchesMinWeight && matchesMaxWeight && matchesPackageType;
+    });
+  }, [packages, batchFilter, alertFilter, minWeight, maxWeight, packageTypeFilter]);
 
   // Stats calculations - use totalPackages from server for total count
   const stats = useMemo(() => {
@@ -1063,167 +1217,18 @@ const [, setLocation] = useLocation();
               </TableHeader>
               <TableBody>
                 {tabFilteredPackages?.map((pkg) => (
-                  <TableRow key={pkg.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <QrCode className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-mono text-sm">{pkg.packageCode}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {(() => {
-                        const pkgType = (pkg as any).orderType || 'regular';
-                        const config = packageTypeConfig[pkgType] || packageTypeConfig.regular;
-                        return (
-                          <Badge variant="outline" className={`text-xs ${config.color}`}>
-                            <span className="mr-1">{config.icon}</span>
-                            {config.labelKu}
-                          </Badge>
-                        );
-                      })()}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{getCustomerName(pkg.customerId)}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{getCustomerCode(pkg.customerId)}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
-                      {pkg.trackingNumber ? (
-                        <span>{pkg.trackingNumber}</span>
-                      ) : (
-                        <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-                          <Link2Off className="h-3 w-3 mr-1" />
-                          بێ تراک
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize text-xs">
-                        {pkg.shippingType.replace(/_/g, " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {pkg.batchId ? (
-                        <Badge variant="secondary" className="text-xs font-mono">
-                          {getBatchCode(pkg.batchId)}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                          <PackageX className="h-3 w-3 mr-1" />
-                          بێ باچ
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {(() => {
-                        const actualWeight = parseFloat(pkg.weightKg || "0");
-                        const volumetricWeight = (pkg.lengthCm && pkg.widthCm && pkg.heightCm) 
-                          ? (parseFloat(pkg.lengthCm) * parseFloat(pkg.widthCm) * parseFloat(pkg.heightCm)) / 6000 
-                          : 0;
-                        const chargeableWeight = Math.max(actualWeight, volumetricWeight);
-                        const isVolumetric = volumetricWeight > actualWeight && volumetricWeight > 0;
-                        
-                        if (chargeableWeight === 0) return "-";
-                        
-                        return (
-                          <div className="flex items-center gap-1">
-                            <span>{chargeableWeight.toFixed(2)} kg</span>
-                            {isVolumetric && (
-                              <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 text-purple-700 border-purple-200">
-                                قەبارەیی
-                              </Badge>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </TableCell>
-                    <TableCell className="font-mono">${pkg.calculatedCostUsd || "0.00"}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all flex items-center gap-1 ${statusColors[pkg.status] || "bg-gray-100"}`}
-                            title={t("packages.clickToChangeStatus")}
-                          >
-                            {pkg.status.replace(/_/g, " ")}
-                            <ChevronDown className="h-3 w-3" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
-                          {statusOptions.map((option) => (
-                            <DropdownMenuItem
-                              key={option.value}
-                              onClick={() => {
-                                if (option.value !== pkg.status) {
-                                  setSelectedPackage(pkg as Package);
-                                  setNewStatus(option.value);
-                                  updateStatusMutation.mutate(
-                                    { id: pkg.id, status: option.value as any },
-                                    { onSuccess: onStatusSuccess, onError: onMutationError }
-                                  );
-                                }
-                              }}
-                              className={pkg.status === option.value ? "bg-accent" : ""}
-                            >
-                              <span className={`w-2 h-2 rounded-full mr-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
-                              {option.label}
-                              {pkg.status === option.value && " ✓"}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                    <TableCell>
-                      {(() => {
-                        const registeredAt = new Date(pkg.createdAt);
-                        const now = new Date();
-                        const daysSince = Math.floor((now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60 * 24));
-                        const isDelivered = pkg.status === "delivered" || pkg.status === "cancelled" || pkg.status === "returned";
-                        
-                        if (isDelivered) {
-                          return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">✅ {t("packages.delivered")}</Badge>;
-                        } else if (daysSince > 20) {
-                          return <Badge variant="destructive" className="animate-pulse">🔴 {daysSince} {t("common.days")}</Badge>;
-                        } else if (daysSince > 10) {
-                          return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">⚠️ {daysSince} {t("common.days")}</Badge>;
-                        } else {
-                          return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">✅ {daysSince} {t("common.days")}</Badge>;
-                        }
-                      })()}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(pkg.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          title={t("packages.viewDetails")}
-                          onClick={() => handleViewClick(pkg as Package)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          title={t("packages.editPackage")}
-                          onClick={() => handleEditClick(pkg as Package)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          title={t("packages.printLabel")}
-                          onClick={() => handlePrintLabel(pkg as Package)}
-                        >
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <PackageTableRow
+                    key={pkg.id}
+                    pkg={pkg as Package}
+                    getCustomerName={getCustomerName}
+                    getCustomerCode={getCustomerCode}
+                    getBatchCode={getBatchCode}
+                    onStatusChange={onStatusChange}
+                    onView={handleViewClick}
+                    onEdit={handleEditClick}
+                    onPrintLabel={handlePrintLabel}
+                    t={t}
+                  />
                 ))}
                 {(!filteredPackages || filteredPackages.length === 0) && (
                   <TableRow>

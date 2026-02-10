@@ -13,7 +13,7 @@ import { Link } from "wouter";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useMemo, memo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -125,25 +125,33 @@ export default function Dashboard() {
   const { data: alerts } = trpc.dashboard.alerts.useQuery();
   const { data: newCustomersCount } = trpc.dashboard.newCustomers.useQuery({ days: 7 });
 
-  const totalPackages = packageStats?.reduce((sum: number, s: { count: number | string }) => sum + Number(s.count), 0) || 0;
-  const deliveredPackages = Number(packageStats?.find((s: { status: string }) => s.status === "delivered")?.count || 0);
-  const inTransitPackages = Number(packageStats?.find((s: { status: string }) => s.status === "in_transit")?.count || 0);
-  const activeCustomers = customers?.filter(c => c.isActive).length || 0;
-  const deliveryRate = totalPackages > 0 ? Math.round((deliveredPackages / totalPackages) * 100) : 0;
+  const { totalPackages, deliveredPackages, inTransitPackages, activeCustomers, deliveryRate } = useMemo(() => {
+    const total = packageStats?.reduce((sum: number, s: { count: number | string }) => sum + Number(s.count), 0) || 0;
+    const delivered = Number(packageStats?.find((s: { status: string }) => s.status === "delivered")?.count || 0);
+    const inTransit = Number(packageStats?.find((s: { status: string }) => s.status === "in_transit")?.count || 0);
+    const active = customers?.filter(c => c.isActive).length || 0;
+    const rate = total > 0 ? Math.round((delivered / total) * 100) : 0;
+    return { totalPackages: total, deliveredPackages: delivered, inTransitPackages: inTransit, activeCustomers: active, deliveryRate: rate };
+  }, [packageStats, customers]);
 
-  // Prepare chart data
-  const chartData = revenueChart?.map(d => ({
-    date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    revenue: d.revenue,
-    packages: d.packages
-  })) || [];
+  const chartData = useMemo(
+    () =>
+      revenueChart?.map(d => ({
+        date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        revenue: d.revenue,
+        packages: d.packages
+      })) || [],
+    [revenueChart]
+  );
 
-  // Shipping type data for pie chart
-  const shippingTypeData = [
-    { name: 'Air Regular', value: packageStats?.find((s: any) => s.status === 'in_transit')?.count || 30, color: '#3b82f6' },
-    { name: 'Air Irregular', value: 15, color: '#f59e0b' },
-    { name: 'Sea', value: 10, color: '#10b981' },
-  ];
+  const shippingTypeData = useMemo(
+    () => [
+      { name: 'Air Regular', value: packageStats?.find((s: any) => s.status === 'in_transit')?.count || 30, color: '#3b82f6' },
+      { name: 'Air Irregular', value: 15, color: '#f59e0b' },
+      { name: 'Sea', value: 10, color: '#10b981' },
+    ],
+    [packageStats]
+  );
 
   return (
     <DashboardLayout>
@@ -718,7 +726,7 @@ export default function Dashboard() {
 }
 
 // Financial Card Component
-function FinancialCard({ 
+const FinancialCard = memo(function FinancialCard({ 
   title, 
   value, 
   change,
@@ -770,10 +778,10 @@ function FinancialCard({
       </CardContent>
     </Card>
   );
-}
+});
 
 // Animated Stats Card
-function AnimatedStatsCard({ 
+const AnimatedStatsCard = memo(function AnimatedStatsCard({ 
   title, 
   value, 
   description, 
@@ -810,10 +818,10 @@ function AnimatedStatsCard({
       </CardContent>
     </Card>
   );
-}
+});
 
 // Alert Card Component
-function AlertCard({ alert }: { alert: { id: string; type: string; title: string; description: string; count?: number; link?: string } }) {
+const AlertCard = memo(function AlertCard({ alert }: { alert: { id: string; type: string; title: string; description: string; count?: number; link?: string } }) {
   const typeStyles = {
     warning: { bg: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800', icon: <AlertTriangle className="h-5 w-5 text-amber-500" /> },
     info: { bg: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800', icon: <Info className="h-5 w-5 text-blue-500" /> },
@@ -839,7 +847,7 @@ function AlertCard({ alert }: { alert: { id: string; type: string; title: string
   );
 
   return alert.link ? <Link href={alert.link}>{content}</Link> : content;
-}
+});
 
 // Activity Item Component
 function ActivityItem({ activity, isLast }: { activity: { id: string; type: string; title: string; description: string; timestamp: Date; icon: string; color: string }; isLast: boolean }) {
@@ -917,7 +925,7 @@ function QuickActionButton({
 }
 
 // Status Bar Component
-function StatusBar({ status, count, total }: { status: string; count: number; total: number }) {
+const StatusBar = memo(function StatusBar({ status, count, total }: { status: string; count: number; total: number }) {
   const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
   
   const statusConfig: Record<string, { color: string; bg: string }> = {
@@ -944,8 +952,7 @@ function StatusBar({ status, count, total }: { status: string; count: number; to
       <span className="text-xs text-muted-foreground w-10 text-right">{percentage}%</span>
     </div>
   );
-}
-
+});
 
 // Alert Summary Section Component
 function AlertSummarySection() {

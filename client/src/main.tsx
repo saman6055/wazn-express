@@ -42,6 +42,8 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       throwOnError: true, // Let QueryErrorBoundary catch tRPC query errors
+      staleTime: 30 * 1000, // 30s for list/data queries
+      refetchOnWindowFocus: false,
     },
   },
 });

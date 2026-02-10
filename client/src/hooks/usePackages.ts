@@ -23,16 +23,19 @@ export function usePackages(initialFilters?: PackageFilters) {
   const [dateFrom, setDateFrom] = useState<string | undefined>(initialFilters?.dateFrom);
   const [dateTo, setDateTo] = useState<string | undefined>(initialFilters?.dateTo);
 
-  const listQuery = trpc.packages.list.useQuery({
-    page,
-    pageSize,
-    search: search || undefined,
-    status: status !== "all" ? status : undefined,
-    shippingType: shippingType !== "all" ? shippingType : undefined,
-    batchId,
-    dateFrom,
-    dateTo,
-  });
+  const listQuery = trpc.packages.list.useQuery(
+    {
+      page,
+      pageSize,
+      search: search || undefined,
+      status: status !== "all" ? status : undefined,
+      shippingType: shippingType !== "all" ? shippingType : undefined,
+      batchId,
+      dateFrom,
+      dateTo,
+    },
+    { staleTime: 30 * 1000, refetchOnWindowFocus: false }
+  );
 
   const updateStatusMutation = trpc.packages.updateStatus.useMutation();
   const updateMutation = trpc.packages.update.useMutation();
