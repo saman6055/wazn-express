@@ -105,7 +105,7 @@ export default function ModernPortalFinancial() {
                 "bg-white/10 backdrop-blur-xl border border-white/20"
               )}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <p className="text-white/70 text-sm mb-1">
                     {language === "ku" ? "باڵانسی ئێستا" : "Current Balance"}
@@ -113,9 +113,16 @@ export default function ModernPortalFinancial() {
                   {accountLoading ? (
                     <Skeleton className="h-10 w-32 bg-white/20" />
                   ) : (
-                    <h2 className="text-4xl font-bold text-white">
-                      ${(summary?.balanceUsd || 0).toFixed(2)}
-                    </h2>
+                    <>
+                      <h2 className="text-4xl font-bold text-white">
+                        ${(summary?.balanceUsd ?? 0).toFixed(2)} <span className="text-lg font-normal text-white/80">USD</span>
+                      </h2>
+                      {(summary?.balanceIqd ?? 0) !== 0 && (
+                        <p className="text-white/80 text-sm mt-1">
+                          {new Intl.NumberFormat("en-US").format(Number(summary?.balanceIqd ?? 0))} <span className="text-white/70">IQD</span>
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
                 <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">

@@ -1,24 +1,64 @@
 import { ReactNode, useState } from "react";
-import { useLocation, Link } from "wouter";
-import { Home, Package, Wallet, User, ShoppingBag } from "lucide-react";
+import { useLocation, Link, useSearch } from "wouter";
+import { Home, Package, Wallet, User, ShoppingBag, Search } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
+import { Input } from "@/components/ui/input";
+import { usePortalSSE } from "@/hooks/usePortalSSE";
+import { toast } from "sonner";
 
 interface CustomerPortalLayoutProps {
   children: ReactNode;
 }
 
 export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const searchString = useSearch();
   const { language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
   const { isInstalled } = usePWA();
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(() => {
+    const q = new URLSearchParams(searchString).get("q");
+    return q ?? "";
+  });
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = (e.target as HTMLFormElement).querySelector("input")?.value?.trim();
+    if (q) setLocation(`/portal/search?q=${encodeURIComponent(q)}`);
+  };
+
+  // Real-time notifications (SSE). Server must expose GET /api/portal/events for events to work.
+  usePortalSSE({
+    enabled: true,
+    onPackageStatus: (d) => {
+      toast.info(
+        language === "ku"
+          ? `بار نوێکراوە: ${d.trackingNumber || d.packageId} - ${d.status}`
+          : `Package updated: ${d.trackingNumber || d.packageId} - ${d.status}`
+      );
+    },
+    onNewInvoice: (d) => {
+      toast.info(
+        language === "ku"
+          ? `وەسڵی نوێ: ${d.invoiceNumber}`
+          : `New invoice: ${d.invoiceNumber}`
+      );
+    },
+    onPaymentConfirmation: (d) => {
+      toast.success(
+        language === "ku"
+          ? `پارەدان پشتڕاستکرایەوە: $${d.amount.toFixed(2)}`
+          : `Payment confirmed: $${d.amount.toFixed(2)}`
+      );
+    },
+  });
 
   // Left side items
   const leftItems = [
@@ -102,24 +142,51 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   );
 
   return (
-    <div className={cn(
-      "min-h-screen transition-colors duration-300",
-      isDark ? "bg-slate-900" : "bg-slate-50",
-      isRTL && "rtl",
-      isInstalled ? "pb-28" : "pb-24"
-    )}>
+    <div
+      dir={isRTL ? "rtl" : "ltr"}
+      className={cn(
+        "min-h-screen transition-colors duration-300",
+        isDark ? "bg-slate-900" : "bg-slate-50",
+        isRTL && "rtl",
+        isInstalled ? "pb-28" : "pb-24"
+      )}
+    >
       {/* PWA Status Bar Spacer for iOS */}
       {isInstalled && (
         <div className={cn("h-safe-area-top", isDark ? "bg-slate-950" : "bg-slate-900")} />
       )}
+      {/* Global search bar - sticky at top */}
+      <div className={cn(
+        "sticky top-0 z-40 border-b transition-colors duration-300",
+        isDark ? "bg-slate-900/95 border-slate-700/50 backdrop-blur-sm" : "bg-slate-50/95 border-slate-200/50 backdrop-blur-sm"
+      )}>
+        <form onSubmit={handleSearchSubmit} className="max-w-lg mx-auto px-3 py-2">
+          <div className="relative">
+            <Search className={cn(
+              "absolute top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground",
+              isRTL ? "right-3" : "left-3"
+            )} />
+            <Input
+              type="search"
+              placeholder={language === "ku" ? "گەڕان بە ژمارەی تراک یان نامە..." : "Search tracking, invoices..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={cn(
+                "h-10 rounded-xl border-0 bg-muted/50 text-sm",
+                isRTL ? "pr-9 pl-4" : "pl-9 pr-4"
+              )}
+            />
+          </div>
+        </form>
+      </div>
       {/* Main Content */}
       <main className="max-w-lg mx-auto">
         {children}
       </main>
 
-      {/* Bottom Navigation - Premium Design with Home in Center */}
+      {/* Bottom Navigation - fixed with smooth transitions */}
       <nav className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 transition-colors duration-300",
+        "fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-out",
         isInstalled && "pb-safe"
       )}>
         {/* Curved background effect */}

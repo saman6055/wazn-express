@@ -1,25 +1,33 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PackageTrackingTimeline } from "@/components/portal/PackageTrackingTimeline";
+import { PortalSearchSkeleton } from "@/components/portal/PortalListSkeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
-import { Search, Package, X, CheckCircle, Truck, Clock, AlertCircle, Scale, Ruler, Camera, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { Search, Package, X, CheckCircle, Truck, Clock, AlertCircle, Scale, Ruler, Camera, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
+function getInitialSearchQuery(): string {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("q") ?? "";
+}
+
 export default function PortalSearch() {
-const { t, language } = useLanguage();
+  const { t, language } = useLanguage();
   const isRTL = language === "ku" || language === "ar";
-  const [searchQuery, setSearchQuery] = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(getInitialSearchQuery);
+  const initialQ = getInitialSearchQuery();
+  const [hasSearched, setHasSearched] = useState(!!initialQ);
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  
+
   const { data: result, isLoading, refetch } = trpc.customerPortal.searchPackage.useQuery(
     { trackingNumber: searchQuery },
-    { enabled: false }
+    { enabled: hasSearched && !!searchQuery.trim() }
   );
 
   const photos = result?.photos as string[] | undefined;
@@ -66,14 +74,19 @@ const { t, language } = useLanguage();
   const getStatusColor = (status: string) => {
     switch (status) {
       case "delivered":
-        return "bg-green-100 text-green-800";
-      case "in_transit":
+        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300";
       case "out_for_delivery":
-        return "bg-blue-100 text-blue-800";
+        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300";
+      case "ready_for_delivery":
+        return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300";
+      case "in_transit":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300";
       case "customs_processing":
-        return "bg-orange-100 text-orange-800";
+        return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300";
+      case "in_batch":
+        return "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
     }
   };
 
@@ -148,24 +161,21 @@ const { t, language } = useLanguage();
             <p className="text-gray-500">{t("enterTrackingToSearch") || "Enter a tracking number to search"}</p>
           </div>
         ) : isLoading ? (
-          <div className="text-center py-12">
-            <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-500">{t("searching") || "Searching..."}</p>
-          </div>
+          <PortalSearchSkeleton />
         ) : result ? (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {/* Package Header */}
-            <div className="p-4 bg-slate-50 border-b">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden">
+            {/* Package Header with color-coded status */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center shrink-0">
                   <Package className="w-6 h-6 text-white" />
                 </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-800">{result.trackingNumber || result.packageCode}</p>
-                  <div className="flex items-center gap-2 mt-1">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-800 dark:text-slate-100">{result.trackingNumber || result.packageCode}</p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {getStatusIcon(result.status)}
                     <span className={cn(
-                      "text-xs px-2 py-0.5 rounded-full font-medium",
+                      "text-xs px-2.5 py-1 rounded-full font-medium border-0",
                       getStatusColor(result.status)
                     )}>
                       {getStatusText(result.status)}
@@ -221,6 +231,28 @@ const { t, language } = useLanguage();
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
                 </button>
+              </div>
+            )}
+
+            {/* Status Timeline */}
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3">
+                {language === "ku" ? "شوێنکەوتنی بار" : "Tracking progress"}
+              </p>
+              <PackageTrackingTimeline
+                currentStatus={result.status}
+                estimatedDelivery={(result as any).estimatedArrival ?? (result as any).batchEstimatedArrival ?? null}
+                language={language}
+              />
+            </div>
+
+            {/* Estimated delivery badge when in transit */}
+            {["in_transit", "customs_processing", "ready_for_delivery", "out_for_delivery"].includes(result.status) && (result as any).estimatedArrival && (
+              <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+                <Calendar className="w-4 h-4 shrink-0" />
+                <span>{language === "ku" ? "بەرواری چاوەڕوانکراوی گەیشتن: " : "Estimated delivery: "}
+                  {new Date((result as any).estimatedArrival).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                </span>
               </div>
             )}
 

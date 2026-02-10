@@ -10,7 +10,8 @@ import {
   ArrowUpDown, Download, Share2
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PortalListSkeleton } from "@/components/portal/PortalListSkeleton";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 type StatusFilter = "all" | "in_transit" | "delivered" | "preparing";
@@ -34,8 +35,12 @@ function ClassicPortalShipments() {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
   
-  const { data: batches, isLoading } = trpc.customerPortal.getMyBatches.useQuery();
-  const { data: unbatchedPackages } = trpc.customerPortal.getMyUnbatchedPackages.useQuery();
+  const { data: batches, isLoading, refetch } = trpc.customerPortal.getMyBatches.useQuery();
+  const { data: unbatchedPackages, refetch: refetchUnbatched } = trpc.customerPortal.getMyUnbatchedPackages.useQuery();
+  const handleRefresh = async () => {
+    await Promise.all([refetch(), refetchUnbatched()]);
+  };
+  const { pullToRefreshProps, pullDistance } = usePullToRefresh(handleRefresh);
 
   // Filter and sort batches
   const filteredBatches = useMemo(() => {
@@ -366,31 +371,46 @@ function ClassicPortalShipments() {
         </div>
       )}
 
-      {/* Results Count */}
-      <div className={cn(
-        "px-4 py-2 transition-colors duration-300",
-        isDark ? "bg-slate-900" : "bg-white"
-      )}>
-        <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
-          {language === "ku" 
-            ? `${filteredBatches.length} ئەنجام دۆزرایەوە` 
-            : language === "ar"
-            ? `${filteredBatches.length} نتيجة`
-            : `${filteredBatches.length} results found`}
-        </p>
-      </div>
-
-      {/* Batches List */}
-      <div className={cn(
-        "px-4 py-4 pb-24 transition-colors duration-300",
-        isDark ? "bg-slate-900" : "bg-slate-50"
-      )}>
-        {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className={cn("h-36 w-full rounded-2xl", isDark && "bg-slate-800")} />
-            ))}
+      {/* Scrollable area with pull-to-refresh (mobile) */}
+      <div
+        className={cn(
+          "overflow-y-auto overscroll-contain max-h-[calc(100vh-320px)] transition-colors duration-300",
+          isDark ? "bg-slate-900" : "bg-slate-50"
+        )}
+        {...pullToRefreshProps}
+      >
+        {/* Pull indicator */}
+        {pullDistance > 0 && (
+          <div className={cn(
+            "sticky top-0 z-10 flex items-center justify-center py-2 text-sm font-medium",
+            isDark ? "text-slate-400" : "text-slate-500"
+          )}>
+            {pullDistance >= 80
+              ? (language === "ku" ? "فڕێبدە بۆ نوێکردنەوە" : "Release to refresh")
+              : (language === "ku" ? "بڕێوە بۆ نوێکردنەوە" : "Pull to refresh")}
           </div>
+        )}
+        {/* Results Count */}
+        <div className={cn(
+          "px-4 py-2 transition-colors duration-300",
+          isDark ? "bg-slate-900" : "bg-white"
+        )}>
+          <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+            {language === "ku" 
+              ? `${filteredBatches.length} ئەنجام دۆزرایەوە` 
+              : language === "ar"
+              ? `${filteredBatches.length} نتيجة`
+              : `${filteredBatches.length} results found`}
+          </p>
+        </div>
+
+        {/* Batches List */}
+        <div className={cn(
+          "px-4 py-4 pb-24 transition-colors duration-300",
+          isDark ? "bg-slate-900" : "bg-slate-50"
+        )}>
+          {isLoading ? (
+          <PortalListSkeleton rows={4} />
         ) : filteredBatches.length === 0 ? (
           <div className={cn(
             "rounded-2xl p-10 text-center shadow-sm transition-colors duration-300",
@@ -583,6 +603,7 @@ function ClassicPortalShipments() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </CustomerPortalLayout>
   );
