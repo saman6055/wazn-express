@@ -12,7 +12,7 @@ import { PWAInstallPrompt, OfflineIndicator } from "./components/PWAInstallPromp
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
-import CustomerDetail from "./pages/CustomerDetail";
+import CustomerDetail from "./pages/customers/CustomerDetail";
 import Countries from "./pages/Countries";
 import Warehouses from "./pages/Warehouses";
 import Packages from "./pages/Packages";
@@ -101,7 +101,7 @@ import BalanceSheet from "./pages/BalanceSheet";
 import BankAccounts from "./pages/BankAccounts";
 import DebtReminders from "./pages/DebtReminders";
 // import FinancialGoals from "./pages/FinancialGoals"; // REMOVED
-import DataManagement from "./pages/DataManagement";
+import DataManagement from "./pages/admin/DataManagement";
 import StaffLogin from "./pages/StaffLogin";
 import StaffManagement from "./pages/StaffManagement";
 import PermissionsManagement from "./pages/PermissionsManagement";
