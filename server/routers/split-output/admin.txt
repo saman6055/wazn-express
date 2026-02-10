@@ -1,0 +1,1272 @@
+  // system: systemRouter (import from _core)
+
+  dataManagement: router({
+    // Get data counts
+    getCounts: adminProcedure.query(async () => {
+      return db.getDataCounts();
+    }),
+    
+    // Delete all customers
+    deleteAllCustomers: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllCustomers();
+      }),
+    
+    // Delete all packages
+    deleteAllPackages: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllPackages();
+      }),
+    
+    // Delete all batches
+    deleteAllBatches: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllBatches();
+      }),
+    
+    // Delete all invoices
+    deleteAllInvoices: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllInvoices();
+      }),
+    
+    // Delete all payments
+    deleteAllPayments: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllPayments();
+      }),
+    
+    // Delete all expenses
+    deleteAllExpenses: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllExpenses();
+      }),
+    
+    // Delete all ledger transactions (unified system)
+    deleteAllLedgerTransactions: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllLedgerTransactions();
+      }),
+    
+    // Delete all full packages
+    deleteAllFullPackages: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllFullPackages();
+      }),
+    
+    // Delete all suppliers
+    deleteAllSuppliers: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllSuppliers();
+      }),
+    
+    // Full system reset with automatic backup
+    resetAllData: adminProcedure
+      .input(z.object({ confirmation: z.literal('RESET ALL DATA') }))
+      .mutation(async ({ ctx }) => {
+        // Step 1: Create automatic backup before reset
+        let backupInfo: { success: boolean; backupId?: number; fileUrl?: string; fileName?: string } = { success: false };
+        try {
+          const exportResult = await db.exportAllData();
+          if (exportResult.success && exportResult.totalRecords > 0) {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const fileName = `pre-reset-backup-${timestamp}.json`;
+            const fileKey = `backups/pre-reset/${fileName}`;
+            const jsonData = JSON.stringify(exportResult.data, null, 2);
+            
+            const { storagePut } = await import('../storage');
+            const uploadResult = await storagePut(fileKey, jsonData, 'application/json');
+            
+            if (uploadResult.url) {
+              const backupResult = await db.createPreResetBackup({
+                filename: fileName,
+                fileKey: fileKey,
+                fileUrl: uploadResult.url,
+                fileSize: Buffer.byteLength(jsonData, 'utf8'),
+                recordsCount: exportResult.totalRecords,
+                createdById: ctx.user.id,
+                createdByName: ctx.user.name || 'Admin'
+              });
+              backupInfo = { success: true, backupId: backupResult.id, fileUrl: uploadResult.url, fileName };
+            }
+          }
+        } catch (e) {
+          console.error('Failed to create pre-reset backup:', e);
+        }
+        
+        // Step 2: Perform the reset
+        const result = await db.resetAllData();
+        
+        // Step 3: Log the reset
+        if (result.success) {
+          try {
+            await db.createDeletionLog({
+              category: 'all_data',
+              deletionType: 'factory_reset',
+              recordCount: 0,
+              details: { affectedTables: ['All tables'], backupCreated: backupInfo.success },
+              backupCreated: backupInfo.success,
+              backupFileUrl: backupInfo.fileUrl,
+              backupFileName: backupInfo.fileName,
+              deletedById: ctx.user.id,
+              deletedByName: ctx.user.name || 'Admin',
+              reason: 'Factory reset performed by admin'
+            });
+          } catch (e) {
+            console.error('Failed to create deletion log:', e);
+          }
+          
+          try {
+            const { notifyOwner } = await import('../_core/notification');
+            await notifyOwner({
+              title: '⚠️ Factory Reset Performed',
+              content: `All system data has been reset by ${ctx.user.name || 'Admin'}. ${backupInfo.success ? 'A backup was created before reset.' : 'No backup was created.'}`
+            });
+          } catch (e) {
+            console.error('Failed to send reset notification:', e);
+          }
+        }
+        
+        return { ...result, backupCreated: backupInfo.success, backupUrl: backupInfo.fileUrl, backupFileName: backupInfo.fileName };
+      }),
+    
+    // Get detailed data counts with stats
+    getDetailedCounts: adminProcedure.query(async () => {
+      return db.getDetailedDataCounts();
+    }),
+    
+    // Get reset history (factory resets only)
+    getResetHistory: adminProcedure
+      .input(z.object({ limit: z.number().optional(), offset: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getResetHistory(input);
+      }),
+    
+    // Delete old data
+    deleteOldData: adminProcedure
+      .input(z.object({
+        confirmation: z.literal('DELETE'),
+        daysOld: z.number().min(1),
+        dataType: z.enum(['packages', 'scans', 'ledger', 'invoices'])
+      }))
+      .mutation(async ({ input }) => {
+        return db.deleteOldData(input.daysOld, input.dataType);
+      }),
+    
+    // Delete all scans
+    deleteAllScans: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllScans();
+      }),
+    
+    // Delete all status history
+    deleteAllStatusHistory: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllStatusHistory();
+      }),
+    
+    // Delete all audit logs
+    deleteAllAuditLogs: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllAuditLogs();
+      }),
+    
+    // Delete all blog posts
+    deleteAllBlogPosts: adminProcedure
+      .input(z.object({ confirmation: z.literal('DELETE') }))
+      .mutation(async () => {
+        return db.deleteAllBlogPosts();
+      }),
+    
+    // Get deletion preview
+    getDeletionPreview: adminProcedure
+      .input(z.object({
+        dataType: z.string(),
+        daysOld: z.number().optional()
+      }))
+      .query(async ({ input }) => {
+        return db.getDeletionPreview(input.dataType, input.daysOld);
+      }),
+    
+    // ============ DELETION LOGS ============
+    
+    // Get deletion logs
+    getDeletionLogs: adminProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        deletionType: z.string().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional()
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getDeletionLogs(input);
+      }),
+    
+    // Create deletion log (internal use after deletions)
+    createDeletionLog: adminProcedure
+      .input(z.object({
+        category: z.string(),
+        deletionType: z.enum(['single_category', 'old_data', 'test_data', 'factory_reset']),
+        recordCount: z.number(),
+        details: z.record(z.string(), z.any()).optional(),
+        backupCreated: z.boolean().optional(),
+        backupFileUrl: z.string().optional(),
+        backupFileName: z.string().optional(),
+        reason: z.string().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.createDeletionLog({
+          ...input,
+          deletedById: ctx.user.id,
+          deletedByName: ctx.user.name || undefined
+        });
+      }),
+    
+    // ============ DATA EXPORT ============
+    
+    // Export category data
+    exportCategory: adminProcedure
+      .input(z.object({
+        category: z.string()
+      }))
+      .mutation(async ({ input }) => {
+        return db.exportCategoryData(input.category);
+      }),
+    
+    // Export all data
+    exportAllData: adminProcedure.mutation(async () => {
+      return db.exportAllData();
+    }),
+    
+    // ============ DATA IMPORT ============
+    
+    // Import category data
+    importCategory: adminProcedure
+      .input(z.object({
+        category: z.string(),
+        data: z.array(z.record(z.string(), z.any())),
+        overwrite: z.boolean().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.importCategoryData(input.category, input.data, input.overwrite);
+        // Notify owner about import
+        if (result.success && result.importedCount > 0) {
+          try {
+            const { notifyOwner } = await import('../_core/notification');
+            await notifyOwner({
+              title: `Data Import: ${input.category}`,
+              content: `${result.importedCount} records imported to ${input.category} by ${ctx.user.name || 'Admin'}`
+            });
+          } catch (e) {
+            console.error('Failed to send import notification:', e);
+          }
+        }
+        return result;
+      }),
+    
+    // Import all data (full restore)
+    importAllData: adminProcedure
+      .input(z.object({
+        data: z.record(z.string(), z.array(z.record(z.string(), z.any()))),
+        overwrite: z.boolean().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.importAllData(input.data, input.overwrite);
+        // Notify owner about full import
+        if (result.success && result.totalImported > 0) {
+          try {
+            const { notifyOwner } = await import('../_core/notification');
+            await notifyOwner({
+              title: 'Full Data Import',
+              content: `${result.totalImported} total records imported across ${Object.keys(input.data).length} categories by ${ctx.user.name || 'Admin'}`
+            });
+          } catch (e) {
+            console.error('Failed to send import notification:', e);
+          }
+        }
+        return result;
+      }),
+  }),
+
+  dashboard: router({
+    // Financial statistics
+    financialStats: staffProcedure.query(async () => {
+      return db.getDashboardFinancialStats();
+    }),
+    
+    // Revenue chart data (30 days)
+    revenueChart: staffProcedure
+      .input(z.object({ days: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getDashboardRevenueChart(input?.days || 30);
+      }),
+    
+    // Active batches
+    activeBatches: staffProcedure.query(async () => {
+      return db.getDashboardActiveBatches();
+    }),
+    
+    // Top debtors
+    topDebtors: staffProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getDashboardTopDebtors(input?.limit || 5);
+      }),
+    
+    // Recent activity
+    recentActivity: staffProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getDashboardRecentActivity(input?.limit || 10);
+      }),
+    
+    // Alerts
+    alerts: staffProcedure.query(async () => {
+      return db.getDashboardAlerts();
+    }),
+    
+    // New customers count
+    newCustomers: staffProcedure
+      .input(z.object({ days: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getDashboardNewCustomers(input?.days || 7);
+      }),
+    
+    // Export dashboard as PDF
+    exportPDF: staffProcedure.mutation(async () => {
+      const { getDashboardReportData, generateDashboardPDF } = await import('../pdfGenerator');
+      const data = await getDashboardReportData();
+      const pdfBuffer = await generateDashboardPDF(data);
+      return {
+        pdf: pdfBuffer.toString('base64'),
+        filename: `wazn-express-dashboard-${new Date().toISOString().split('T')[0]}.pdf`
+      };
+    }),
+    
+    // Export dashboard with date filter as PDF
+    exportFilteredPDF: staffProcedure
+      .input(z.object({
+        period: z.enum(['week', 'month', 'year', 'custom']),
+        customStart: z.date().optional(),
+        customEnd: z.date().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { getDateFilteredDashboardData, generateDateFilteredDashboardPDF } = await import('../pdfReports');
+        const data = await getDateFilteredDashboardData(input.period, input.customStart, input.customEnd);
+        const pdfBuffer = await generateDateFilteredDashboardPDF(data);
+        return {
+          pdf: pdfBuffer.toString('base64'),
+          filename: `wazn-express-report-${input.period}-${new Date().toISOString().split('T')[0]}.pdf`
+        };
+      }),
+    
+    // Export customer report as PDF
+    exportCustomerPDF: staffProcedure
+      .input(z.object({
+        customerId: z.number(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { getCustomerReportData, generateCustomerPDF } = await import('../pdfReports');
+        const data = await getCustomerReportData(input.customerId, input.startDate, input.endDate);
+        if (!data) throw new Error('Customer not found');
+        const pdfBuffer = await generateCustomerPDF(data);
+        return {
+          pdf: pdfBuffer.toString('base64'),
+          filename: `wazn-express-customer-${data.customer.customerCode}-${new Date().toISOString().split('T')[0]}.pdf`
+        };
+      }),
+    
+    // Export batch report as PDF
+    exportBatchPDF: staffProcedure
+      .input(z.object({ batchId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { getBatchReportData, generateBatchPDF } = await import('../pdfReports');
+        const data = await getBatchReportData(input.batchId);
+        if (!data) throw new Error('Batch not found');
+        const pdfBuffer = await generateBatchPDF(data);
+        return {
+          pdf: pdfBuffer.toString('base64'),
+          filename: `wazn-express-batch-${data.batch.batchCode}-${new Date().toISOString().split('T')[0]}.pdf`
+        };
+      }),
+  }),
+
+  users: router({
+    list: adminProcedure.query(async () => {
+      return db.getAllUsers();
+    }),
+    updateRole: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        role: z.enum(["super_admin", "admin", "employee", "accountant"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateUserRole(input.userId, input.role);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_role",
+          entityType: "user",
+          entityId: input.userId,
+          newValues: { role: input.role },
+        });
+        return { success: true };
+      }),
+  }),
+
+  auditLogs: router({
+    // Advanced list with filters
+    list: adminProcedure
+      .input(z.object({
+        limit: z.number().optional().default(100),
+        offset: z.number().optional().default(0),
+        category: z.string().optional(),
+        entityType: z.string().optional(),
+        action: z.string().optional(),
+        userId: z.number().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        // Convert string dates to Date objects if provided
+        let startDate = input?.startDate;
+        let endDate = input?.endDate;
+        
+        if (input?.dateFrom) {
+          startDate = new Date(input.dateFrom);
+          startDate.setHours(0, 0, 0, 0);
+        }
+        if (input?.dateTo) {
+          endDate = new Date(input.dateTo);
+          endDate.setHours(23, 59, 59, 999);
+        }
+        
+        return db.getAdvancedAuditLogs(
+          {
+            category: input?.category,
+            entityType: input?.entityType,
+            action: input?.action,
+            userId: input?.userId,
+            startDate,
+            endDate,
+            search: input?.search,
+          },
+          input?.limit || 100,
+          input?.offset || 0
+        );
+      }),
+    
+    // Get single audit log by ID
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getAuditLogById(input.id);
+      }),
+    
+    // Get audit logs for specific entity
+    getByEntity: adminProcedure
+      .input(z.object({
+        entityType: z.string(),
+        entityId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return db.getAuditLogsByEntity(input.entityType, input.entityId);
+      }),
+    
+    // Get audit logs for customer
+    getByCustomer: staffProcedure
+      .input(z.object({ customerId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getAuditLogsByEntity("customer", input.customerId);
+      }),
+    
+    // Get audit log statistics
+    getStats: adminProcedure.query(async () => {
+      return db.getAuditLogStats();
+    }),
+    
+    // Get available filters (for dropdowns)
+    getFilters: adminProcedure.query(async () => {
+      return {
+        categories: [
+          { value: 'customer', label: 'کڕیارەکان' },
+          { value: 'package', label: 'پاکەتەکان' },
+          { value: 'batch', label: 'باچەکان' },
+          { value: 'full_package', label: 'فول پاکیج' },
+          { value: 'purchase_request', label: 'داواکاری کڕین' },
+          { value: 'commission', label: 'کڕین بە عمولە' },
+          { value: 'finance', label: 'دارایی' },
+          { value: 'settings', label: 'ڕێکخستنەکان' },
+          { value: 'user', label: 'بەکارهێنەرەکان' },
+          { value: 'system', label: 'سیستەم' },
+        ],
+        actions: [
+          { value: 'create', label: 'دروستکردن' },
+          { value: 'update', label: 'نوێکردنەوە' },
+          { value: 'delete', label: 'سڕینەوە' },
+          { value: 'status_change', label: 'گۆڕینی بارودۆخ' },
+          { value: 'charge', label: 'چارج کردن' },
+          { value: 'payment', label: 'پارەدان' },
+        ],
+      };
+    }),
+  }),
+
+  activityAlerts: router({
+    // Get alerts list
+    list: adminProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        severity: z.string().optional(),
+        isRead: z.boolean().optional(),
+        limit: z.number().optional().default(50),
+        offset: z.number().optional().default(0),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getActivityAlerts({
+          category: input?.category,
+          severity: input?.severity,
+          isRead: input?.isRead,
+          limit: input?.limit || 50,
+          offset: input?.offset || 0,
+        });
+      }),
+    
+    // Get alert statistics
+    getStats: adminProcedure.query(async () => {
+      return db.getAlertStats();
+    }),
+    
+    // Mark alert as read
+    markAsRead: adminProcedure
+      .input(z.object({ alertId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.markAlertAsRead(input.alertId, ctx.user.id);
+        return { success: true };
+      }),
+    
+    // Mark all alerts as read
+    markAllAsRead: adminProcedure
+      .mutation(async ({ ctx }) => {
+        await db.markAllAlertsAsRead(ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
+  adminMessages: router({
+    // Get all conversations with customers
+    getConversations: adminProcedure.query(async () => {
+      return db.getAllConversations();
+    }),
+    
+    // Get messages for a specific customer
+    getMessages: adminProcedure
+      .input(z.object({ customerId: z.number() }))
+      .query(async ({ input }) => {
+        const messages = await db.getCustomerMessages(input.customerId, 100);
+        // Mark messages as read by admin
+        await db.markCustomerMessagesAsRead(input.customerId, 'admin');
+        return messages;
+      }),
+    
+    // Send reply to customer
+    sendReply: adminProcedure
+      .input(z.object({
+        customerId: z.number(),
+        message: z.string().min(1),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Get customer's conversation ID or create new one
+        const existingMessages = await db.getCustomerMessages(input.customerId, 1);
+        const conversationId = existingMessages.length > 0 
+          ? existingMessages[0].conversationId 
+          : `conv_${input.customerId}_${Date.now()}`;
+        
+        const message = await db.createCustomerMessage({
+          customerId: input.customerId,
+          conversationId,
+          senderType: 'admin',
+          senderId: ctx.user.id,
+          message: input.message,
+          isRead: false,
+        });
+        
+        return message;
+      }),
+    
+    // Get unread count for all customers
+    getUnreadCount: adminProcedure.query(async () => {
+      const conversations = await db.getAllConversations();
+      return conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
+    }),
+  }),
+
+  suppliers: router({
+    list: staffProcedure
+      .input(z.object({ activeOnly: z.boolean().default(true) }).optional())
+      .query(async ({ input }) => {
+        return db.getAllSuppliers(input?.activeOnly ?? true);
+      }),
+    
+    getById: staffProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getSupplierById(input.id);
+      }),
+    
+    create: staffProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        nameArabic: z.string().optional(),
+        nameChinese: z.string().optional(),
+        contactPerson: z.string().optional(),
+        phone: z.string().optional(),
+        wechatId: z.string().optional(),
+        email: z.string().email().optional(),
+        platform: z.enum(["1688", "taobao", "alibaba", "pinduoduo", "other"]).default("1688"),
+        platformShopUrl: z.string().optional(),
+        rating: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const supplier = await db.createSupplier({
+          ...input,
+          createdById: ctx.user.id,
+        });
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "create_supplier",
+          entityType: "supplier",
+          entityId: supplier.id,
+          newValues: input,
+        });
+        
+        return supplier;
+      }),
+    
+    update: staffProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        nameArabic: z.string().optional(),
+        nameChinese: z.string().optional(),
+        contactPerson: z.string().optional(),
+        phone: z.string().optional(),
+        wechatId: z.string().optional(),
+        email: z.string().email().optional(),
+        platform: z.enum(["1688", "taobao", "alibaba", "pinduoduo", "other"]).optional(),
+        platformShopUrl: z.string().optional(),
+        rating: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        const existing = await db.getSupplierById(id);
+        if (!existing) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Supplier not found" });
+        }
+        
+        await db.updateSupplier(id, data);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_supplier",
+          entityType: "supplier",
+          entityId: id,
+          oldValues: existing,
+          newValues: data,
+        });
+        
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteSupplier(input.id);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "delete_supplier",
+          entityType: "supplier",
+          entityId: input.id,
+        });
+        
+        return { success: true };
+      }),
+  }),
+
+  notifications: router({
+    getSettings: adminProcedure.query(async () => {
+      return await db.getNotificationSettings();
+    }),
+    
+    updateSetting: adminProcedure
+      .input(z.object({
+        eventType: z.string(),
+        emailEnabled: z.boolean(),
+        smsEnabled: z.boolean(),
+        whatsappEnabled: z.boolean(),
+        customSubject: z.string().optional(),
+        customBody: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await db.upsertNotificationSetting({
+          ...input,
+          updatedById: ctx.user.id,
+        });
+      }),
+    
+    saveWhatsappConfig: adminProcedure
+      .input(z.object({
+        apiKey: z.string(),
+        phoneNumberId: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Save WhatsApp config to all notification settings
+        await db.updateWhatsappConfig(input.apiKey, input.phoneNumberId, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
+  backup: router({
+    // Create a new backup
+    create: adminProcedure
+      .input(z.object({
+        backupType: z.enum(["manual", "scheduled"]).default("manual"),
+        backupContent: z.enum(["database_only", "files_only", "full"]).default("database_only"),
+        schedule: z.enum(["daily", "weekly", "monthly"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        console.log('[BACKUP] Create backup called:', input, 'User:', ctx.user.id, ctx.user.name);
+        
+        // Use new ZIP backup system for full backups
+        if (input.backupContent === "full") {
+          const { createZipBackup } = await import("../zipBackupService.js");
+          return await createZipBackup({
+            backupType: input.backupType,
+            schedule: input.schedule,
+            createdById: ctx.user.id,
+            createdByName: ctx.user.name || undefined,
+          });
+        }
+        
+        // Use original backup service for database-only and files-only
+        const { createBackup } = await import("../backupService.js");
+        return await createBackup({
+          backupType: input.backupType,
+          backupContent: input.backupContent,
+          schedule: input.schedule,
+          createdById: ctx.user.id,
+          createdByName: ctx.user.name || undefined,
+        });
+      }),
+
+    // List all backups
+    list: adminProcedure
+      .input(z.object({
+        status: z.enum(["in_progress", "completed", "failed"]).optional(),
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
+      }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("../db.js");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+        
+        const { backups } = await import("../../drizzle/schema.js");
+        const { eq, desc } = await import("drizzle-orm");
+        
+        let query = db.select().from(backups);
+        
+        if (input.status) {
+          query = query.where(eq(backups.status, input.status)) as any;
+        }
+        
+        const results = await query
+          .orderBy(desc(backups.createdAt))
+          .limit(input.limit)
+          .offset(input.offset);
+        
+        return results;
+      }),
+
+    // Get backup by ID
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("../db.js");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+        
+        const { backups } = await import("../../drizzle/schema.js");
+        const { eq } = await import("drizzle-orm");
+        
+        const [backup] = await db.select().from(backups).where(eq(backups.id, input.id));
+        
+        if (!backup) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Backup not found" });
+        }
+        
+        return backup;
+      }),
+
+    // Delete a backup
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("../db.js");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+        
+        const { backups } = await import("../../drizzle/schema.js");
+        const { eq } = await import("drizzle-orm");
+        
+        await db.delete(backups).where(eq(backups.id, input.id));
+        
+        return { success: true };
+      }),
+
+    // Restore from backup
+    restore: adminProcedure
+      .input(z.object({ 
+        id: z.number(),
+        clearExisting: z.boolean().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        // Get backup to check if it's a ZIP backup
+        const { getDb } = await import("../db.js");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+        
+        const { backups } = await import("../../drizzle/schema.js");
+        const { eq } = await import("drizzle-orm");
+        
+        const [backup] = await db.select().from(backups).where(eq(backups.id, input.id));
+        
+        if (!backup) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Backup not found" });
+        }
+        
+        // Check if it's a ZIP backup (filename ends with .zip)
+        if (backup.filename?.endsWith('.zip')) {
+          const { restoreFromZipBackup } = await import("../zipBackupService.js");
+          return await restoreFromZipBackup(input.id, input.clearExisting);
+        }
+        
+        // Use original restore for JSON backups
+        const { restoreBackup } = await import("../backupService.js");
+        return await restoreBackup(input.id);
+      }),
+
+    // Get schedule configuration
+    getScheduleConfig: adminProcedure.query(async () => {
+      const { getScheduleConfig } = await import("../scheduledBackups.js");
+      return getScheduleConfig();
+    }),
+
+    // Update schedule configuration
+    updateSchedule: adminProcedure
+      .input(z.object({
+        schedule: z.enum(["daily", "weekly", "monthly"]),
+        enabled: z.boolean(),
+      }))
+      .mutation(async ({ input }) => {
+        const { updateScheduleConfig } = await import("../scheduledBackups.js");
+        const success = updateScheduleConfig(input.schedule, input.enabled);
+        return { success };
+      }),
+  }),
+
+  permissions: router({
+    // Get user permissions
+    getUserPermissions: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        const perms = await db.getUserPermissions(input.userId);
+        const subPerms = await db.getUserSubPermissions(input.userId);
+        return {
+          permissions: perms,
+          subPermissions: subPerms,
+        };
+      }),
+
+    // Check if user has permission
+    checkPermission: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        module: z.string(),
+        action: z.enum(["view", "create", "edit", "delete"]),
+      }))
+      .query(async ({ input }) => {
+        const hasPermission = await db.checkUserPermission(
+          input.userId,
+          input.module,
+          input.action
+        );
+        return { hasPermission };
+      }),
+
+    // Check if user has sub-permission
+    checkSubPermission: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        module: z.string(),
+        permissionKey: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const hasPermission = await db.checkUserSubPermission(
+          input.userId,
+          input.module,
+          input.permissionKey
+        );
+        return { hasPermission };
+      }),
+
+    // Set module permission
+    setPermission: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        module: z.string(),
+        canView: z.boolean(),
+        canCreate: z.boolean(),
+        canEdit: z.boolean(),
+        canDelete: z.boolean(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const permission = await db.setUserPermission(input);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_permission",
+          entityType: "permission",
+          entityId: input.userId,
+        });
+        
+        return permission;
+      }),
+
+    // Set sub-permission
+    setSubPermission: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        module: z.string(),
+        permissionKey: z.string(),
+        isAllowed: z.boolean(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const subPermission = await db.setUserSubPermission(input);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_sub_permission",
+          entityType: "permission",
+          entityId: input.userId,
+        });
+        
+        return subPermission;
+      }),
+
+    // Bulk update permissions
+    bulkUpdate: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        permissions: z.array(z.object({
+          module: z.string(),
+          canView: z.boolean(),
+          canCreate: z.boolean(),
+          canEdit: z.boolean(),
+          canDelete: z.boolean(),
+        })),
+        subPermissions: z.array(z.object({
+          module: z.string(),
+          permissionKey: z.string(),
+          isAllowed: z.boolean(),
+        })),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Check role hierarchy
+        const targetUser = await db.getUserById(input.userId);
+        if (!targetUser) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+        
+        // Super Admin can manage all roles
+        if (ctx.user.role === "super_admin") {
+          // Allow
+        }
+        // Admin can only manage Employee and Accountant
+        else if (ctx.user.role === "admin") {
+          if (targetUser.role !== "employee" && targetUser.role !== "accountant") {
+            throw new TRPCError({ 
+              code: "FORBIDDEN", 
+              message: "Admin can only manage Employee and Accountant roles" 
+            });
+          }
+        }
+        // Employee and Accountant cannot manage anyone
+        else {
+          throw new TRPCError({ 
+            code: "FORBIDDEN", 
+            message: "You do not have permission to manage user permissions" 
+          });
+        }
+        
+        await db.bulkUpdateUserPermissions(input);
+        
+        // Create audit log
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_permissions",
+          entityType: "user",
+          entityId: input.userId,
+        });
+        
+        return { success: true };
+      }),
+
+    // Delete user permissions
+    deletePermissions: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteUserPermissions(input.userId);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "delete_permissions",
+          entityType: "user",
+          entityId: input.userId,
+        });
+        
+        return { success: true };
+      }),
+  }),
+
+  supportChat: router({
+    // Get or create a chat for the current customer
+    getOrCreateChat: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        if (!ctx.user.isCustomer) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Customer access required' });
+        }
+        
+        const chat = await db.getOrCreateCustomerChat(
+          ctx.user.id,
+          (ctx.user as any).fullName || (ctx.user as any).name || undefined,
+          (ctx.user as any).customerCode || undefined
+        );
+        
+        if (!chat) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create chat' });
+        }
+        
+        return chat;
+      }),
+
+    // Get customer's chats
+    getMyChats: protectedProcedure
+      .input(z.object({
+        status: z.enum(['open', 'pending', 'resolved', 'closed']).optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      }).optional())
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.isCustomer) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Customer access required' });
+        }
+        
+        return db.getSupportChats({
+          customerId: ctx.user.id,
+          status: input?.status,
+          limit: input?.limit,
+          offset: input?.offset,
+        });
+      }),
+
+    // Get all chats (staff only)
+    getAllChats: staffProcedure
+      .input(z.object({
+        status: z.enum(['open', 'pending', 'resolved', 'closed']).optional(),
+        assignedToId: z.number().optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getSupportChats({
+          status: input?.status,
+          assignedToId: input?.assignedToId,
+          limit: input?.limit,
+          offset: input?.offset,
+        });
+      }),
+
+    // Get chat by ID
+    getChatById: protectedProcedure
+      .input(z.object({ chatId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const chat = await db.getSupportChatById(input.chatId);
+        
+        if (!chat) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Chat not found' });
+        }
+        
+        // Customers can only see their own chats
+        if (ctx.user.isCustomer && chat.customerId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+        }
+        
+        return chat;
+      }),
+
+    // Send a message
+    sendMessage: protectedProcedure
+      .input(z.object({
+        chatId: z.number(),
+        content: z.string().min(1),
+        messageType: z.enum(['text', 'image', 'file']).optional(),
+        attachmentUrl: z.string().optional(),
+        attachmentName: z.string().optional(),
+        attachmentType: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const chat = await db.getSupportChatById(input.chatId);
+        
+        if (!chat) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Chat not found' });
+        }
+        
+        // Customers can only send to their own chats
+        if (ctx.user.isCustomer && chat.customerId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+        }
+        
+        const senderType = ctx.user.isCustomer ? 'customer' : 'staff';
+        
+        const messageId = await db.createChatMessage({
+          chatId: input.chatId,
+          senderType,
+          senderId: ctx.user.id,
+          senderName: (ctx.user as any).fullName || (ctx.user as any).name || undefined,
+          content: input.content,
+          messageType: input.messageType,
+          attachmentUrl: input.attachmentUrl,
+          attachmentName: input.attachmentName,
+          attachmentType: input.attachmentType,
+        });
+        
+        return { messageId };
+      }),
+
+    // Get messages for a chat
+    getMessages: protectedProcedure
+      .input(z.object({
+        chatId: z.number(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+        beforeId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const chat = await db.getSupportChatById(input.chatId);
+        
+        if (!chat) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Chat not found' });
+        }
+        
+        // Customers can only see their own chats
+        if (ctx.user.isCustomer && chat.customerId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+        }
+        
+        return db.getChatMessages(input.chatId, {
+          limit: input.limit,
+          offset: input.offset,
+          beforeId: input.beforeId,
+        });
+      }),
+
+    // Mark messages as read
+    markAsRead: protectedProcedure
+      .input(z.object({ chatId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const chat = await db.getSupportChatById(input.chatId);
+        
+        if (!chat) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Chat not found' });
+        }
+        
+        // Customers can only mark their own chats
+        if (ctx.user.isCustomer && chat.customerId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+        }
+        
+        const senderType = ctx.user.isCustomer ? 'customer' : 'staff';
+        await db.markMessagesAsRead(input.chatId, senderType);
+        
+        return { success: true };
+      }),
+
+    // Update chat status (staff only)
+    updateChatStatus: staffProcedure
+      .input(z.object({
+        chatId: z.number(),
+        status: z.enum(['open', 'pending', 'resolved', 'closed']),
+        assignedToId: z.number().optional(),
+        assignedToName: z.string().optional(),
+        priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateSupportChat(input.chatId, {
+          status: input.status,
+          assignedToId: input.assignedToId,
+          assignedToName: input.assignedToName,
+          priority: input.priority,
+        });
+        
+        return { success: true };
+      }),
+
+    // Get unread count for customer
+    getUnreadCount: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.isCustomer) {
+          return db.getUnreadChatCount(ctx.user.id);
+        }
+        return db.getStaffUnreadChatCount();
+      }),
+  }),
+
+  public: router({
+    // Get portal theme setting
+    getPortalTheme: publicProcedure
+      .query(async () => {
+        const theme = await db.getSetting('portalTheme');
+        return theme || 'classic';
+      }),
+  }),

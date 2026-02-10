@@ -1,0 +1,957 @@
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+import { eq } from "drizzle-orm";
+import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
+import * as db from "../db";
+import { notifyPackageStatusChange } from "../notifications";
+import { fullPackageOrders, packages } from "../../drizzle/schema";
+import { signQrData, verifyQrSignature } from "../utils/qr";
+import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
+
+export const packagesRouter = router({
+    list: staffProcedure
+      .input(z.object({
+        page: z.number().int().min(0).optional(),
+        pageSize: z.number().int().positive().max(500).optional(),
+        search: z.string().max(200).optional(),
+        status: z.string().max(50).optional(),
+        shippingType: z.string().max(50).optional(),
+        batchId: idSchema.optional(),
+        customerId: idSchema.optional(),
+        dateFrom: z.string().max(50).optional(),
+        dateTo: z.string().max(50).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getAllPackages({
+          page: input?.page,
+          pageSize: input?.pageSize,
+          search: input?.search,
+          status: input?.status,
+          shippingType: input?.shippingType,
+          batchId: input?.batchId,
+          customerId: input?.customerId,
+          dateFrom: input?.dateFrom ? new Date(input.dateFrom) : undefined,
+          dateTo: input?.dateTo ? new Date(input.dateTo) : undefined,
+        });
+      }),
+    stats: staffProcedure
+      .query(async () => {
+        return db.getPackagesStats();
+      }),
+    recentPackages: staffProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getRecentPackages(input?.limit || 10);
+      }),
+    getById: staffProcedure
+      .input(z.object({ id: idSchema }))
+      .query(async ({ input }) => {
+        return db.getPackageById(input.id);
+      }),
+    getByCode: staffProcedure
+      .input(z.object({ code: packageCodeSchema }))
+      .query(async ({ input }) => {
+        return db.getPackageByCode(input.code);
+      }),
+    getByCustomer: staffProcedure
+      .input(z.object({ customerId: idSchema }))
+      .query(async ({ input }) => {
+        return db.getPackagesByCustomer(input.customerId);
+      }),
+    getByStatus: staffProcedure
+      .input(z.object({ status: z.string().max(50) }))
+      .query(async ({ input }) => {
+        return db.getPackagesByStatus(input.status);
+      }),
+    // Lookup tracking number to identify package type (regular/full_package/commission)
+    lookupTracking: staffProcedure
+      .input(z.object({ trackingNumber: z.string().min(1).max(100) }))
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        
+        // Check if tracking exists in fullPackageOrders
+        const order = await database.select({
+          id: fullPackageOrders.id,
+          orderCode: fullPackageOrders.orderCode,
+          orderType: fullPackageOrders.orderType,
+          customerId: fullPackageOrders.customerId,
+          productName: fullPackageOrders.productName,
+          status: fullPackageOrders.status,
+        }).from(fullPackageOrders)
+          .where(eq(fullPackageOrders.trackingNumber, input.trackingNumber))
+          .limit(1);
+        
+        if (order.length > 0) {
+          // Get customer info
+          const customer = await db.getCustomerById(order[0].customerId);
+          return {
+            found: true as const,
+            type: order[0].orderType as 'full_package' | 'commission',
+            orderId: order[0].id,
+            orderCode: order[0].orderCode,
+            productName: order[0].productName,
+            status: order[0].status,
+            customerId: order[0].customerId,
+            customerCode: customer?.customerCode || '',
+            customerName: customer?.fullName || '',
+          };
+        }
+        
+        // Check if tracking already exists in packages (duplicate check)
+        const existingPkg = await database.select({
+          id: packages.id,
+          packageCode: packages.packageCode,
+        }).from(packages)
+          .where(eq(packages.trackingNumber, input.trackingNumber))
+          .limit(1);
+        
+        if (existingPkg.length > 0) {
+          return {
+            found: false as const,
+            type: 'duplicate' as const,
+            existingPackageCode: existingPkg[0].packageCode,
+          };
+        }
+        
+        return { found: false as const, type: 'regular' as const };
+      }),
+    
+    // Get CBM divisor setting
+    getCbmDivisor: staffProcedure
+      .query(async () => {
+        const value = await db.getSetting('cbm_divisor');
+        return { divisor: value ? parseInt(value) : 6000 };
+      }),
+    
+    // Set CBM divisor setting
+    setCbmDivisor: adminProcedure
+      .input(z.object({ divisor: z.number().min(1).max(99999) }))
+      .mutation(async ({ input, ctx }) => {
+        await db.setSystemSetting({
+          key: 'cbm_divisor',
+          value: input.divisor.toString(),
+          type: 'number',
+          description: 'CBM volumetric weight divisor for air shipping (default: 6000)',
+          updatedById: ctx.user.id,
+        });
+        return { divisor: input.divisor };
+      }),
+
+    register: staffProcedure
+      .input(z.object({
+        customerId: idSchema.optional(), // Optional for unclaimed packages
+        originWarehouseId: idSchema,
+        isUnclaimed: z.boolean().optional(), // True if registering without customer
+        trackingNumber: z.string().max(100).optional(),
+        weightKg: z.string().max(50).optional(),
+        lengthCm: z.string().max(50).optional(),
+        widthCm: z.string().max(50).optional(),
+        heightCm: z.string().max(50).optional(),
+        volumeCbm: z.string().max(50).optional(), // Direct CBM input for sea shipping
+        shippingType: z.enum(["air_regular", "air_irregular", "sea"]),
+        description: z.string().max(1000).optional(),
+        photos: z.array(z.string().max(2048)).optional(),
+        batchId: idSchema.optional(),
+        categoryId: idSchema.optional(),
+        fullPackageOrderId: idSchema.optional(), // Link to full package order if tracking matched
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const warehouse = await db.getWarehouseById(input.originWarehouseId);
+        if (!warehouse) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Warehouse not found" });
+        }
+
+        // For unclaimed packages, customer is optional
+        let customer = null;
+        if (input.customerId && !input.isUnclaimed) {
+          customer = await db.getCustomerById(input.customerId);
+          if (!customer) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+          }
+        }
+
+        // Generate package code - use UNC prefix for unclaimed
+        const packageCode = input.isUnclaimed 
+          ? await db.getNextUnclaimedPackageCode()
+          : await db.getNextPackageCode(warehouse.codePrefix);
+
+        // Calculate volume if dimensions provided, or use direct CBM input
+        let volumeCbm: string | undefined;
+        if (input.volumeCbm) {
+          // Use direct CBM input (for sea shipping)
+          volumeCbm = parseFloat(input.volumeCbm).toFixed(6);
+        } else if (input.lengthCm && input.widthCm && input.heightCm) {
+          // Calculate from dimensions
+          const vol = (parseFloat(input.lengthCm) * parseFloat(input.widthCm) * parseFloat(input.heightCm)) / 1000000;
+          volumeCbm = vol.toFixed(6);
+        }
+
+        // Get applicable pricing
+        const country = await db.getCountryById(warehouse.countryId);
+        const destCountries = await db.getDestinationCountries();
+        const destCountry = destCountries[0]; // Default to first destination (Iraq)
+        
+        let calculatedCostUsd: string | undefined;
+        let appliedPricingRuleId: number | undefined;
+        
+        if (country && destCountry) {
+          const pricingRule = await db.getApplicablePricingRule(
+            country.id,
+            destCountry.id,
+            input.shippingType
+          );
+          
+          if (pricingRule) {
+            appliedPricingRuleId = pricingRule.id;
+            const pricePerUnit = parseFloat(pricingRule.pricePerUnit);
+            
+            if (pricingRule.unit === "kg" && input.weightKg) {
+              calculatedCostUsd = (pricePerUnit * parseFloat(input.weightKg)).toFixed(2);
+            } else if (pricingRule.unit === "cbm" && volumeCbm) {
+              calculatedCostUsd = (pricePerUnit * parseFloat(volumeCbm)).toFixed(2);
+            }
+          }
+        }
+
+        // Generate QR data
+        const qrData = JSON.stringify({
+          customerCode: customer?.customerCode || "UNCLAIMED",
+          packageCode,
+          trackingNumber: input.trackingNumber,
+          timestamp: Date.now(),
+        });
+        const qrSignature = signQrData(qrData);
+
+        const pkg = await db.createPackage({
+          packageCode,
+          trackingNumber: input.trackingNumber,
+          customerId: input.isUnclaimed ? undefined : input.customerId,
+          originWarehouseId: input.originWarehouseId,
+          qrCodeData: qrData,
+          qrCodeSignature: qrSignature,
+          weightKg: input.weightKg,
+          lengthCm: input.lengthCm,
+          widthCm: input.widthCm,
+          heightCm: input.heightCm,
+          volumeCbm,
+          shippingType: input.shippingType,
+          description: input.description,
+          photos: input.photos,
+          calculatedCostUsd: input.isUnclaimed ? undefined : calculatedCostUsd,
+          appliedPricingRuleId: input.isUnclaimed ? undefined : appliedPricingRuleId,
+          registeredById: ctx.user.id,
+          batchId: input.batchId,
+          categoryId: input.categoryId,
+          isUnclaimed: input.isUnclaimed || false,
+          fullPackageOrderId: input.fullPackageOrderId,
+        });
+
+        // Create ledger transaction for charge (only for claimed packages)
+        if (calculatedCostUsd && input.customerId && !input.isUnclaimed) {
+          const customer = await db.getCustomerById(input.customerId);
+          if (customer) {
+            await db.applyCharge(
+              input.customerId,
+              customer.customerCode,
+              'PACKAGE',
+              pkg.id,
+              parseFloat(calculatedCostUsd),
+              `Package ${packageCode} - ${input.shippingType}`,
+              ctx.user.id
+            );
+          }
+        }
+
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "register_package",
+          entityType: "package",
+          entityId: pkg.id,
+          newValues: { packageCode, customerId: input.customerId },
+        });
+
+        return pkg;
+      }),
+    // Get unclaimed packages
+    getUnclaimed: staffProcedure
+      .query(async () => {
+        return db.getUnclaimedPackages();
+      }),
+    // Get unclaimed package count
+    getUnclaimedCount: staffProcedure
+      .query(async () => {
+        return db.getUnclaimedPackageCount();
+      }),
+    // ============ CLAIM REQUESTS MANAGEMENT ============
+    
+    // Get all claim requests (admin)
+    getClaimRequests: adminProcedure
+      .input(z.object({
+        status: z.enum(["pending", "approved", "rejected"]).optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getAllClaimRequests(input);
+      }),
+    
+    // Get pending claim requests count (for badge)
+    getPendingClaimRequestsCount: staffProcedure
+      .query(async () => {
+        return db.getPendingClaimRequestsCount();
+      }),
+    
+    // Approve a claim request
+    approveClaimRequest: adminProcedure
+      .input(z.object({
+        requestId: z.number(),
+        adminNote: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const request = await db.getClaimRequestById(input.requestId);
+        if (!request) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Claim request not found" });
+        }
+        if (request.status !== "pending") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Request has already been processed" });
+        }
+        
+        const result = await db.approveClaimRequest(input.requestId, ctx.user.id, input.adminNote);
+        
+        // Calculate and apply pricing if package is in a batch
+        const pkg = await db.getPackageById(request.packageId);
+        if (pkg && pkg.batchId) {
+          const batch = await db.getBatchById(pkg.batchId);
+          if (batch) {
+            let calculatedCost = 0;
+            if (batch.pricePerKg && pkg.weightKg) {
+              // Use chargeable weight (max of actual and volumetric)
+              const actualKg = parseFloat(pkg.weightKg?.toString() || "0");
+              const lengthCm = parseFloat(pkg.lengthCm?.toString() || "0");
+              const widthCm = parseFloat(pkg.widthCm?.toString() || "0");
+              const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
+              const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+              const chargeableKg = Math.max(actualKg, volumetricKg);
+              calculatedCost = parseFloat(batch.pricePerKg) * chargeableKg;
+            } else if (batch.pricePerCbm && pkg.volumeCbm) {
+              calculatedCost = parseFloat(batch.pricePerCbm) * parseFloat(pkg.volumeCbm);
+            }
+            
+            if (calculatedCost > 0) {
+              await db.updatePackage(request.packageId, {
+                calculatedCostUsd: calculatedCost.toFixed(2),
+              });
+              
+              // Create ledger transaction and invoice
+              const customer = await db.getCustomerById(request.customerId);
+              if (customer) {
+                // Get exchange rates for invoice
+                const iqdRate = await db.getCurrentExchangeRate("IQD");
+                const rmbRate = await db.getCurrentExchangeRate("RMB");
+                
+                // Create invoice for the claimed package
+                const invoiceNumber = `INV-CLM-${Date.now()}-${pkg.id}`;
+                const chargeableKg = pkg.weightKg ? Math.max(
+                  parseFloat(pkg.weightKg?.toString() || "0"),
+                  ((parseFloat(pkg.lengthCm?.toString() || "0") * parseFloat(pkg.widthCm?.toString() || "0") * parseFloat(pkg.heightCm?.toString() || "0")) / 6000)
+                ) : 0;
+                
+                const isAirShipment = batch.shippingType === 'air_regular' || batch.shippingType === 'air_irregular';
+                const lineItems = [{
+                  description: `پاکەتی داواکراو ${pkg.packageCode} - ${pkg.trackingNumber || ''} - باچ ${batch.batchCode}`,
+                  quantity: 1,
+                  unitPrice: calculatedCost,
+                  total: calculatedCost,
+                }];
+                
+                // Use applyCharge which automatically creates invoice
+                await db.applyCharge(
+                  request.customerId,
+                  customer.customerCode,
+                  'PACKAGE',
+                  pkg.id,
+                  calculatedCost,
+                  `پاکەتی داواکراو ${pkg.packageCode} - باچ ${batch.batchCode} - ${isAirShipment ? 'ئاسمانی' : 'دەریایی'}`,
+                  ctx.user.id,
+                  lineItems
+                );
+              }
+            }
+          }
+        }
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "approve_claim_request",
+          entityType: "claim_request",
+          entityId: input.requestId,
+          newValues: { status: "approved", customerId: request.customerId },
+        });
+        
+        return result;
+      }),
+    
+    // Reject a claim request
+    rejectClaimRequest: adminProcedure
+      .input(z.object({
+        requestId: z.number(),
+        adminNote: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const request = await db.getClaimRequestById(input.requestId);
+        if (!request) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Claim request not found" });
+        }
+        if (request.status !== "pending") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Request has already been processed" });
+        }
+        
+        const result = await db.rejectClaimRequest(input.requestId, ctx.user.id, input.adminNote);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "reject_claim_request",
+          entityType: "claim_request",
+          entityId: input.requestId,
+          newValues: { status: "rejected" },
+        });
+        
+        return result;
+      }),
+    
+    // Claim a package (assign customer)
+    claimPackage: staffProcedure
+      .input(z.object({
+        packageId: z.number(),
+        customerId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const pkg = await db.getPackageById(input.packageId);
+        if (!pkg) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Package not found" });
+        }
+        if (!pkg.isUnclaimed) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Package is already claimed" });
+        }
+        
+        const customer = await db.getCustomerById(input.customerId);
+        if (!customer) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+        }
+        
+        const updated = await db.claimPackage(input.packageId, input.customerId, ctx.user.id);
+        
+        // Calculate and apply pricing if batch has pricing
+        if (updated && updated.batchId) {
+          const batch = await db.getBatchById(updated.batchId);
+          if (batch) {
+            let calculatedCost = 0;
+            if (batch.pricePerKg && updated.weightKg) {
+              // Use chargeable weight (max of actual and volumetric)
+              const actualKg = parseFloat(updated.weightKg?.toString() || "0");
+              const lengthCm = parseFloat(updated.lengthCm?.toString() || "0");
+              const widthCm = parseFloat(updated.widthCm?.toString() || "0");
+              const heightCm = parseFloat(updated.heightCm?.toString() || "0");
+              const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+              const chargeableKg = Math.max(actualKg, volumetricKg);
+              calculatedCost = parseFloat(batch.pricePerKg) * chargeableKg;
+            } else if (batch.pricePerCbm && updated.volumeCbm) {
+              calculatedCost = parseFloat(batch.pricePerCbm) * parseFloat(updated.volumeCbm);
+            }
+            
+            if (calculatedCost > 0) {
+              await db.updatePackage(input.packageId, {
+                calculatedCostUsd: calculatedCost.toFixed(2),
+              });
+              
+               // Create ledger transaction
+              const customerData = await db.getCustomerById(input.customerId);
+              if (customerData) {
+                await db.applyCharge(
+                  input.customerId,
+                  customerData.customerCode,
+                  'PACKAGE',
+                  pkg.id,
+                  calculatedCost,
+                  `Package ${pkg.packageCode} claimed - ${pkg.shippingType}`,
+                  ctx.user.id
+                );
+              }
+            }
+          }
+        }
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "claim_package",
+          entityType: "package",
+          entityId: input.packageId,
+          newValues: { customerId: input.customerId },
+        });
+        
+        return updated;
+      }),
+    assignToBatch: staffProcedure
+      .input(z.object({
+        packageId: z.number(),
+        batchId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updatePackage(input.packageId, {
+          batchId: input.batchId,
+          status: "in_batch",
+        });
+        
+        // Update batch package count
+        const batch = await db.getBatchById(input.batchId);
+        if (batch) {
+          await db.updateBatch(input.batchId, {
+            totalPackages: batch.totalPackages + 1,
+          });
+        }
+
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "assign_package_to_batch",
+          entityType: "package",
+          entityId: input.packageId,
+          newValues: { batchId: input.batchId },
+        });
+        return { success: true };
+      }),
+    updateStatus: staffProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum([
+          "registered", "in_batch", "in_transit", "customs_processing",
+          "ready_for_delivery", "out_for_delivery", "delivered", "returned", "cancelled"
+        ]),
+        recipientName: z.string().optional(),
+        recipientSignature: z.string().optional(),
+        deliveryPhoto: z.string().optional(),
+        deliveryType: z.enum(["air_transit", "warehouse_pickup", "direct_delivery"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        
+        // Get package details before update
+        const pkg = await db.getPackageById(id);
+        if (!pkg) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Package not found" });
+        }
+        
+        const updateData: any = { ...data };
+        if (input.status === "delivered") {
+          updateData.deliveredAt = new Date();
+          updateData.deliveredById = ctx.user.id;
+          
+          // Check if this package is linked to a Full Package order
+          // If linked, DO NOT charge customer - shipping is our cost, not customer's
+          let isLinkedToFullPackage = false;
+          let linkedFullPackageOrder = null;
+          if (pkg.trackingNumber) {
+            linkedFullPackageOrder = await db.getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
+            if (linkedFullPackageOrder) {
+              isLinkedToFullPackage = true;
+              console.log(`[FullPackage] Package ${pkg.packageCode} is linked to Full Package ${linkedFullPackageOrder.orderCode} - shipping cost will NOT be charged to customer`);
+            }
+          }
+          
+          // Automatic pricing on delivery - only if not already charged and has customer
+          // SKIP charging if package is linked to Full Package (shipping is our cost)
+          if (!pkg.isCharged && pkg.customerId && !pkg.isUnclaimed && !isLinkedToFullPackage) {
+            let chargeAmount = 0;
+            let pricePerUnit = 0;
+            let unit: 'kg' | 'cbm' = 'kg';
+            let pricingSource = '';
+            
+            // First, try batch-based pricing if package is in a batch
+            if (pkg.batchId) {
+              const batch = await db.getBatchById(pkg.batchId);
+              if (batch) {
+                unit = batch.shippingType === 'sea' ? 'cbm' : 'kg';
+                const customerTotal = await db.getCustomerTotalInBatch(pkg.batchId, pkg.customerId, unit);
+                
+                // Check if batch uses tiered pricing
+                if (batch.useTieredPricing) {
+                  const tierPrice = await db.getApplicableTierPrice(pkg.batchId, customerTotal);
+                  if (tierPrice !== null) {
+                    pricePerUnit = tierPrice;
+                    pricingSource = 'batch_tiered';
+                  }
+                }
+                
+                // If no tiered price, use batch default price
+                if (pricePerUnit === 0) {
+                  pricePerUnit = unit === 'cbm' 
+                    ? Number(batch.pricePerCbm) || 0 
+                    : Number(batch.pricePerKg) || 0;
+                  pricingSource = 'batch_default';
+                }
+                
+                // Calculate charge based on unit
+                if (pricePerUnit > 0) {
+                  if (unit === 'cbm' && pkg.volumeCbm) {
+                    chargeAmount = pricePerUnit * parseFloat(pkg.volumeCbm);
+                  } else if (unit === 'kg') {
+                    // Use chargeable weight (max of actual weight and volumetric weight)
+                    const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
+                    const lengthCm = parseFloat(pkg.lengthCm?.toString() || '0');
+                    const widthCm = parseFloat(pkg.widthCm?.toString() || '0');
+                    const heightCm = parseFloat(pkg.heightCm?.toString() || '0');
+                    const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+                    const chargeableKg = Math.max(actualKg, volumetricKg);
+                    chargeAmount = pricePerUnit * chargeableKg;
+                  }
+                }
+              }
+            }
+            
+            // Fallback to global pricing rules if no batch pricing
+            if (chargeAmount === 0 && pkg.weightKg) {
+              const warehouse = await db.getWarehouseById(pkg.originWarehouseId);
+              const destCountries = await db.getDestinationCountries();
+              const destCountry = destCountries[0];
+              
+              if (warehouse && destCountry) {
+                const pricingRule = await db.getApplicablePricingRule(
+                  warehouse.countryId,
+                  destCountry.id,
+                  pkg.shippingType
+                );
+                
+                if (pricingRule) {
+                  pricePerUnit = parseFloat(pricingRule.pricePerUnit);
+                  unit = pricingRule.unit;
+                  pricingSource = 'global_rule';
+                  
+                  if (pricingRule.unit === "kg") {
+                    // Use chargeable weight (max of actual weight and volumetric weight)
+                    const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
+                    const lengthCm = parseFloat(pkg.lengthCm?.toString() || '0');
+                    const widthCm = parseFloat(pkg.widthCm?.toString() || '0');
+                    const heightCm = parseFloat(pkg.heightCm?.toString() || '0');
+                    const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+                    const chargeableKg = Math.max(actualKg, volumetricKg);
+                    chargeAmount = pricePerUnit * chargeableKg;
+                  } else if (pricingRule.unit === "cbm" && pkg.volumeCbm) {
+                    chargeAmount = pricePerUnit * parseFloat(pkg.volumeCbm);
+                  }
+                }
+              }
+            }
+            
+            if (chargeAmount > 0) {
+              // Create ledger transaction for charge
+              const customerForCharge = await db.getCustomerById(pkg.customerId);
+              // Calculate chargeable weight for description
+              let quantity: string | null;
+              if (unit === 'cbm') {
+                quantity = pkg.volumeCbm;
+              } else {
+                const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
+                const lengthCm = parseFloat(pkg.lengthCm?.toString() || '0');
+                const widthCm = parseFloat(pkg.widthCm?.toString() || '0');
+                const heightCm = parseFloat(pkg.heightCm?.toString() || '0');
+                const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+                const chargeableKg = Math.max(actualKg, volumetricKg);
+                quantity = chargeableKg.toFixed(2);
+              }
+              if (customerForCharge) {
+                await db.applyCharge(
+                  pkg.customerId,
+                  customerForCharge.customerCode,
+                  'PACKAGE',
+                  pkg.id,
+                  chargeAmount,
+                  `Delivery charge - Package ${pkg.packageCode} (${quantity}${unit} × $${pricePerUnit}/${unit})`,
+                  ctx.user.id
+                );
+              }
+              
+              // Mark package as charged
+              updateData.isCharged = true;
+              updateData.calculatedCostUsd = chargeAmount.toFixed(2);
+              
+              // Create revenue record for finance tracking
+              try {
+                await db.createRevenueRecord({
+                  recordDate: new Date(),
+                  revenueType: 'package_delivery',
+                  referenceType: 'package',
+                  referenceId: pkg.id,
+                  customerId: pkg.customerId,
+                  amountUsd: chargeAmount,
+                  description: `Package delivery - ${pkg.packageCode}`,
+                  createdById: ctx.user.id,
+                });
+                
+                // Update daily financial summary
+                await db.updateDailyFinancialSummary(new Date(), { addRevenue: chargeAmount, revenueType: 'package_delivery' });
+              } catch (e) {
+                console.error('[Finance] Failed to create revenue record:', e);
+              }
+              
+              // Create ledger transaction for new accounting system
+              try {
+                const customer = await db.getCustomerById(pkg.customerId);
+                if (customer) {
+                  await db.recordPackageCharge(
+                    pkg.customerId,
+                    customer.customerCode,
+                    pkg.id,
+                    chargeAmount,
+                    `Delivery charge - Package ${pkg.packageCode} (${quantity}${unit} × $${pricePerUnit}/${unit})`,
+                    ctx.user.id
+                  );
+                }
+              } catch (e) {
+                console.error('[Ledger] Failed to create ledger transaction:', e);
+              }
+              
+              // NOTE: Individual package delivery invoices are disabled
+              // Invoices are now created at batch level (one invoice per customer per batch)
+              // This provides cleaner accounting and fewer invoices for customers
+              // See batch.markArrived for consolidated invoice creation
+            }
+          }
+        }
+        
+        await db.updatePackage(id, updateData);
+        
+        // Sync status to fullPackageOrder if this package is linked to one
+        // Also calculate shipping cost for Full Package even though we don't charge customer
+        if (pkg.trackingNumber) {
+          try {
+            const fullPackageOrder = await db.getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
+            if (fullPackageOrder) {
+              // Map package status to fullPackageOrder status
+              const statusMap: Record<string, string> = {
+                'registered': 'ordered',
+                'in_batch': 'in_transit',
+                'in_transit': 'in_transit',
+                'customs_processing': 'in_transit',
+                'ready_for_delivery': 'arrived',
+                'out_for_delivery': 'arrived',
+                'delivered': 'delivered',
+                'returned': 'ordered',
+                'cancelled': 'cancelled'
+              };
+              
+              const newStatus = statusMap[input.status];
+              if (newStatus && newStatus !== fullPackageOrder.status) {
+                const fpUpdateData: any = { status: newStatus };
+                
+                // If delivered, calculate shipping cost for Full Package profit calculation
+                // This is OUR cost, not charged to customer
+                if (input.status === 'delivered') {
+                  // Calculate shipping cost based on batch pricing or global rules
+                  let shippingCost = 0;
+                  
+                  // If package already has calculated cost, use it
+                  if (pkg.calculatedCostUsd) {
+                    shippingCost = parseFloat(pkg.calculatedCostUsd);
+                  } else {
+                    // Calculate shipping cost based on pricing rules
+                    let pricePerUnit = 0;
+                    let unit: 'kg' | 'cbm' = 'kg';
+                    
+                    // Try batch-based pricing first
+                    if (pkg.batchId) {
+                      const batch = await db.getBatchById(pkg.batchId);
+                      if (batch) {
+                        unit = batch.shippingType === 'sea' ? 'cbm' : 'kg';
+                        const customerTotal = pkg.customerId ? await db.getCustomerTotalInBatch(pkg.batchId, pkg.customerId, unit) : 0;
+                        
+                        if (batch.useTieredPricing) {
+                          const tierPrice = await db.getApplicableTierPrice(pkg.batchId, customerTotal);
+                          if (tierPrice !== null) pricePerUnit = tierPrice;
+                        }
+                        
+                        if (pricePerUnit === 0) {
+                          pricePerUnit = unit === 'cbm' 
+                            ? Number(batch.pricePerCbm) || 0 
+                            : Number(batch.pricePerKg) || 0;
+                        }
+                      }
+                    }
+                    
+                    // Fallback to global pricing rules
+                    if (pricePerUnit === 0 && pkg.weightKg) {
+                      const warehouse = await db.getWarehouseById(pkg.originWarehouseId);
+                      const destCountries = await db.getDestinationCountries();
+                      const destCountry = destCountries[0];
+                      
+                      if (warehouse && destCountry) {
+                        const pricingRule = await db.getApplicablePricingRule(
+                          warehouse.countryId,
+                          destCountry.id,
+                          pkg.shippingType
+                        );
+                        
+                        if (pricingRule) {
+                          pricePerUnit = parseFloat(pricingRule.pricePerUnit);
+                          unit = pricingRule.unit;
+                        }
+                      }
+                    }
+                    
+                    // Calculate shipping cost
+                    if (pricePerUnit > 0) {
+                      if (unit === 'cbm' && pkg.volumeCbm) {
+                        shippingCost = pricePerUnit * parseFloat(pkg.volumeCbm);
+                      } else if (unit === 'kg') {
+                        // Use chargeable weight (max of actual weight and volumetric weight)
+                        const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
+                        const lengthCm = parseFloat(pkg.lengthCm?.toString() || '0');
+                        const widthCm = parseFloat(pkg.widthCm?.toString() || '0');
+                        const heightCm = parseFloat(pkg.heightCm?.toString() || '0');
+                        const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+                        const chargeableKg = Math.max(actualKg, volumetricKg);
+                        shippingCost = pricePerUnit * chargeableKg;
+                      }
+                    }
+                    
+                    // Save calculated cost to package for reference
+                    if (shippingCost > 0) {
+                      await db.updatePackage(pkg.id, { calculatedCostUsd: shippingCost.toFixed(2) });
+                    }
+                  }
+                  
+                  if (shippingCost > 0) {
+                    fpUpdateData.shippingCostUsd = shippingCost.toFixed(2);
+                    console.log(`[FullPackage] Updating order ${fullPackageOrder.id} with shipping cost: $${shippingCost} (OUR cost, not charged to customer)`);
+                  }
+                }
+                
+                await db.updateFullPackageOrder(fullPackageOrder.id, fpUpdateData, ctx.user.id);
+                console.log(`[FullPackage] Synced status from package ${pkg.packageCode} to order ${fullPackageOrder.id}: ${newStatus}`);
+              }
+            }
+          } catch (e) {
+            console.error('[FullPackage] Failed to sync status to fullPackageOrder:', e);
+          }
+        }
+        
+        // Send notification to customer about status change
+        try {
+          await notifyPackageStatusChange(id, input.status);
+        } catch (e) {
+          console.error("[Notification] Failed to send package status notification:", e);
+        }
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_package_status",
+          entityType: "package",
+          entityId: id,
+          newValues: data,
+        });
+        return { success: true };
+      }),
+    update: staffProcedure
+      .input(z.object({
+        id: z.number(),
+        customerId: z.number().optional(),
+        weightKg: z.string().optional(),
+        shippingType: z.enum(["air_regular", "air_irregular", "sea"]).optional(),
+        description: z.string().optional(),
+        lengthCm: z.string().optional(),
+        widthCm: z.string().optional(),
+        heightCm: z.string().optional(),
+        trackingNumber: z.string().optional(),
+        batchId: z.number().nullable().optional(),
+        categoryId: z.number().nullable().optional(),
+        volumeCbm: z.string().optional(),
+        photos: z.array(z.string()).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, volumeCbm: inputVolumeCbm, photos, ...data } = input;
+        
+        // Calculate volume if dimensions provided, or use direct input
+        const updateData: any = { ...data };
+        if (inputVolumeCbm) {
+          updateData.volumeCbm = inputVolumeCbm;
+        } else if (data.lengthCm && data.widthCm && data.heightCm) {
+          const volumeCbm = (parseFloat(data.lengthCm) * parseFloat(data.widthCm) * parseFloat(data.heightCm)) / 1000000;
+          updateData.volumeCbm = volumeCbm.toFixed(6);
+        }
+        
+        // Handle photos
+        if (photos) {
+          updateData.photos = JSON.stringify(photos);
+        }
+        
+        // Handle batch assignment status change
+        if (data.batchId !== undefined) {
+          if (data.batchId === null) {
+            updateData.status = 'registered';
+          } else {
+            const pkg = await db.getPackageById(id);
+            if (pkg && pkg.status === 'registered') {
+              updateData.status = 'in_batch';
+            }
+          }
+        }
+        
+        await db.updatePackage(id, updateData);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_package",
+          entityType: "package",
+          entityId: id,
+          newValues: data,
+        });
+        return { success: true };
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const pkg = await db.getPackageById(input.id);
+        if (!pkg) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Package not found" });
+        }
+        
+        await db.deletePackage(input.id);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "delete_package",
+          entityType: "package",
+          entityId: input.id,
+          oldValues: pkg,
+        });
+        return { success: true };
+      }),
+    verifyQr: staffProcedure
+      .input(z.object({
+        qrData: z.string(),
+        signature: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const isValid = verifyQrSignature(input.qrData, input.signature);
+        if (!isValid) {
+          return { valid: false, package: null };
+        }
+        
+        try {
+          const data = JSON.parse(input.qrData);
+          const pkg = await db.getPackageByCode(data.packageCode);
+          return { valid: true, package: pkg };
+        } catch {
+          return { valid: false, package: null };
+        }
+      }),
+});
+

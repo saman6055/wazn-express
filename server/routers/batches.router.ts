@@ -1,0 +1,714 @@
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
+import * as db from "../db";
+import { notifyBatchStatusChange } from "../notifications";
+import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
+
+export const batchesRouter = router({
+    list: staffProcedure.query(async () => {
+      const batches = await db.getAllBatches();
+      // Add hasCustomerPricing flag to each batch with error handling
+      const batchesWithPricingInfo = await Promise.all(
+        batches.map(async (batch) => {
+          try {
+            const customerPricing = await db.getBatchCustomerPricing(batch.id);
+            return {
+              ...batch,
+              hasCustomerPricing: customerPricing.length > 0,
+              customerPricingCount: customerPricing.length,
+            };
+          } catch (error) {
+            // If table doesn't exist or query fails, return batch without pricing info
+            console.error(`Error fetching customer pricing for batch ${batch.id}:`, error);
+            return {
+              ...batch,
+              hasCustomerPricing: false,
+              customerPricingCount: 0,
+            };
+          }
+        })
+      );
+      return batchesWithPricingInfo;
+    }),
+    getActive: staffProcedure.query(async () => {
+      return db.getActiveBatches();
+    }),
+    getById: staffProcedure
+      .input(z.object({ id: idSchema }))
+      .query(async ({ input }) => {
+        return db.getBatchById(input.id);
+      }),
+    getPackages: staffProcedure
+      .input(z.object({ batchId: idSchema }))
+      .query(async ({ input }) => {
+        return db.getPackagesByBatch(input.batchId);
+      }),
+    create: staffProcedure
+      .input(z.object({
+        batchCode: batchCodeSchema,
+        originWarehouseId: idSchema,
+        destinationCountryId: idSchema,
+        shippingType: z.enum(["air_regular", "air_irregular", "sea"]),
+        carrierInfo: z.string().max(500).optional(),
+        // Detailed shipping info
+        airlineName: z.string().max(100).optional(),
+        flightNumber: z.string().max(50).optional(),
+        shippingCompany: z.string().max(100).optional(),
+        containerNumber: z.string().max(50).optional(),
+        vesselName: z.string().max(100).optional(),
+        shippingCost: z.string().max(50).optional(),
+        departureDate: z.date().optional(),
+        estimatedArrival: z.date().optional(),
+        // Actual measurements
+        actualWeightKg: z.string().max(50).optional(),
+        actualCbm: z.string().max(50).optional(),
+        // Charged measurements (what we pay)
+        chargedWeightKg: z.string().max(50).optional(),
+        chargedCbm: z.string().max(50).optional(),
+        // Cost fields (our cost)
+        costPerKg: z.string().max(50).optional(),
+        costPerCbm: z.string().max(50).optional(),
+        // Selling price fields
+        pricePerKg: z.string().max(50).optional(),
+        pricePerCbm: z.string().max(50).optional(),
+        // Tiered pricing
+        useTieredPricing: z.boolean().optional(),
+        pricingTiers: z.array(z.object({
+          minValue: z.string().max(50),
+          maxValue: z.string().max(50).nullable(),
+          pricePerUnit: z.string().max(50),
+        })).optional(),
+        // Customer-specific pricing
+        customerPricing: z.array(z.object({
+          customerId: idSchema,
+          pricePerKg: z.string().max(50).optional(),
+          pricePerCbm: z.string().max(50).optional(),
+          notes: z.string().max(500).optional(),
+        })).optional(),
+        notes: z.string().max(2000).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { pricingTiers, customerPricing, ...batchData } = input;
+        const batch = await db.createBatch({
+          ...batchData,
+          createdById: ctx.user.id,
+        });
+        
+        // Create pricing tiers if provided
+        if (pricingTiers && pricingTiers.length > 0) {
+          await db.setBatchPricingTiers(batch.id, pricingTiers.map((tier, index) => ({
+            minValue: tier.minValue,
+            maxValue: tier.maxValue,
+            pricePerUnit: tier.pricePerUnit,
+            sortOrder: index,
+          })));
+        }
+        
+        // Create customer-specific pricing if provided
+        if (customerPricing && customerPricing.length > 0) {
+          await db.setBatchCustomerPricing(batch.id, customerPricing.map(cp => ({
+            customerId: cp.customerId,
+            pricePerKg: cp.pricePerKg,
+            pricePerCbm: cp.pricePerCbm,
+            notes: cp.notes,
+            createdById: ctx.user.id,
+          })));
+        }
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "create_batch",
+          entityType: "batch",
+          entityId: batch.id,
+          newValues: input,
+        });
+        return batch;
+      }),
+    updateStatus: staffProcedure
+      .input(z.object({
+        id: idSchema,
+        status: z.enum(["preparing", "in_transit", "arrived", "customs", "delivered", "closed"]),
+        actualArrival: z.date().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        await db.updateBatch(id, data);
+        
+        // Update all packages in batch if status changes
+        if (input.status === "in_transit") {
+          const packages = await db.getPackagesByBatch(id);
+          for (const pkg of packages) {
+            await db.updatePackage(pkg.id, { status: "in_transit" });
+          }
+          // Notify customers about batch departure
+          try {
+            await notifyBatchStatusChange(id, "batch_departed");
+          } catch (e) {
+            console.error("[Notification] Failed to send batch departure notification:", e);
+          }
+        } else if (input.status === "arrived" || input.status === "customs") {
+          const packages = await db.getPackagesByBatch(id);
+          for (const pkg of packages) {
+            await db.updatePackage(pkg.id, { status: "customs_processing" });
+          }
+          // Notify customers about batch arrival
+          try {
+            await notifyBatchStatusChange(id, "batch_arrived");
+          } catch (e) {
+            console.error("[Notification] Failed to send batch arrival notification:", e);
+          }
+        } else if (input.status === "delivered" || input.status === "closed") {
+          // When batch is delivered or closed:
+          // 1. Update all packages to delivered
+          // 2. Calculate and charge each package (EXCEPT those linked to Full Package)
+          // 3. Create invoices for each customer
+          const packages = await db.getPackagesByBatch(id);
+          const batch = await db.getBatchById(id);
+          
+          // Group packages by customer (only non-Full Package linked packages)
+          const packagesByCustomer = new Map<number, typeof packages>();
+          
+          for (const pkg of packages) {
+            // Update package status to delivered
+            await db.updatePackage(pkg.id, { 
+              status: "delivered",
+              deliveredAt: new Date()
+            });
+            
+            // Check if this package is linked to a Full Package order or Purchase Request
+            let isLinkedToFullPackage = false;
+
+            
+            if (pkg.trackingNumber) {
+              // Check Full Package first
+              const linkedFPOrder = await db.getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
+              if (linkedFPOrder) {
+                isLinkedToFullPackage = true;
+                // Update Full Package with shipping cost (our cost, not charged to customer)
+                const pricePerKg = batch ? parseFloat(batch.pricePerKg?.toString() || "0") : 0;
+                const pricePerCbm = batch ? parseFloat(batch.pricePerCbm?.toString() || "0") : 0;
+                const isSea = batch?.shippingType === 'sea';
+                
+                let shippingCost = 0;
+                if (isSea && pricePerCbm > 0) {
+                  const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
+                  shippingCost = cbm * pricePerCbm;
+                } else if (pricePerKg > 0) {
+                  // Use chargeable weight (max of actual weight and volumetric weight)
+                  const actualKg = parseFloat(pkg.weightKg?.toString() || "0");
+                  const lengthCm = parseFloat(pkg.lengthCm?.toString() || "0");
+                  const widthCm = parseFloat(pkg.widthCm?.toString() || "0");
+                  const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
+                  const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+                  const chargeableKg = Math.max(actualKg, volumetricKg);
+                  shippingCost = chargeableKg * pricePerKg;
+                }
+                
+                if (shippingCost > 0) {
+                  // Save calculated cost to package for reference
+                  await db.updatePackage(pkg.id, { calculatedCostUsd: shippingCost.toFixed(2) });
+                  
+                  // Update Full Package with shipping cost and recalculate profit
+                  await db.updateFullPackageOrder(linkedFPOrder.id, {
+                    status: 'delivered',
+                    shippingCostUsd: shippingCost.toFixed(2),
+                    deliveredDate: new Date(),
+                  }, ctx.user.id);
+                  console.log(`[FullPackage] Package ${pkg.packageCode} linked to FP ${linkedFPOrder.orderCode} - shipping cost $${shippingCost} (OUR cost, not charged to customer)`);
+                }
+                
+                // Auto-charge customer balance and create invoice for full package delivery
+                // IMPORTANT: Check BOTH isCharged (set by updateFullPackageOrder) and isChargedToCustomer to prevent double charging
+                // The updatePackage call above triggers updateFullPackageOrder which may have already charged the customer
+                const refreshedFPOrder = await db.getFullPackageOrderById(linkedFPOrder.id);
+                if (refreshedFPOrder && refreshedFPOrder.customerId && refreshedFPOrder.sellingPriceUsd && !refreshedFPOrder.isCharged && !refreshedFPOrder.isChargedToCustomer) {
+                  try {
+                    const customer = await db.getCustomerById(refreshedFPOrder.customerId);
+                    if (customer) {
+                      const sellingPrice = parseFloat(refreshedFPOrder.sellingPriceUsd?.toString() || '0');
+                      
+                      // Record charge to customer balance
+                      await db.recordPackageCharge(
+                        refreshedFPOrder.customerId,
+                        customer.customerCode,
+                        pkg.id,
+                        sellingPrice,
+                        `فول پاکێج ${refreshedFPOrder.orderCode} - ${refreshedFPOrder.productName} - گەیاندن`,
+                        ctx.user.id
+                      );
+                      
+                      // Create invoice for full package
+                      const invoiceNumber = `INV-FP-${Date.now()}-${refreshedFPOrder.id}`;
+                      await db.createInvoice({
+                        invoiceNumber,
+                        customerId: refreshedFPOrder.customerId,
+                        batchId: id,
+                        subtotalUsd: sellingPrice.toFixed(2),
+                        totalUsd: sellingPrice.toFixed(2),
+                        status: "issued",
+                        issuedAt: new Date(),
+                        lineItems: [{
+                          description: `فول پاکێج ${refreshedFPOrder.orderCode} - ${refreshedFPOrder.productName}`,
+                          quantity: refreshedFPOrder.quantity || 1,
+                          unitPrice: sellingPrice / (refreshedFPOrder.quantity || 1),
+                          total: sellingPrice
+                        }],
+                        notes: `پسووڵەی فول پاکێج ${refreshedFPOrder.orderCode} - باچ ${batch?.batchCode || ''} - کۆی $${sellingPrice.toFixed(2)}`,
+                        createdById: ctx.user.id,
+                      });
+                      
+                      // Mark as charged - also set isCharged for consistency
+                      await db.updateFullPackageOrder(refreshedFPOrder.id, {
+                        isCharged: true,
+                        isChargedToCustomer: true,
+                        chargedAt: new Date(),
+                        paidFromBalanceUsd: sellingPrice.toFixed(2),
+                      }, ctx.user.id);
+                      
+                      console.log(`[FullPackage] Charged customer ${customer.customerCode} $${sellingPrice} for FP ${refreshedFPOrder.orderCode}`);
+                    }
+                  } catch (chargeError) {
+                    console.error(`[FullPackage] Failed to charge customer for FP ${linkedFPOrder.orderCode}:`, chargeError);
+                  }
+                }
+                
+                // For commission orders: charge shipping cost to customer (separate from item+commission already charged)
+                // Re-fetch the order to check if shipping was already charged by updateFullPackageOrder
+                const refreshedForCommission = refreshedFPOrder || await db.getFullPackageOrderById(linkedFPOrder.id);
+                if (refreshedForCommission && refreshedForCommission.orderType === 'commission' && refreshedForCommission.customerId && shippingCost > 0 && !refreshedForCommission.isShippingCharged) {
+                  try {
+                    const customer = await db.getCustomerById(refreshedForCommission.customerId);
+                    if (customer) {
+                      // Calculate chargeable weight (max of actual weight and volumetric weight)
+                      const actualWeight = parseFloat(pkg.weightKg?.toString() || "0");
+                      // Calculate volumetric weight from dimensions if available
+                      const length = parseFloat(pkg.lengthCm?.toString() || "0");
+                      const width = parseFloat(pkg.widthCm?.toString() || "0");
+                      const height = parseFloat(pkg.heightCm?.toString() || "0");
+                      const volumetricWeight = (length * width * height) / 6000;
+                      const chargeableWeight = Math.max(actualWeight, volumetricWeight);
+                      const chargeableShippingCost = chargeableWeight * pricePerKg;
+                      
+                      // Record shipping charge to customer balance
+                      await db.recordPackageCharge(
+                        refreshedForCommission.customerId,
+                        customer.customerCode,
+                        pkg.id,
+                        chargeableShippingCost,
+                        `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە (${chargeableWeight.toFixed(2)} KG)`,
+                        ctx.user.id
+                      );
+                      
+                      // Create invoice for shipping charge
+                      const invoiceNumber = `INV-CM-SHIP-${Date.now()}-${refreshedForCommission.id}`;
+                      await db.createInvoice({
+                        invoiceNumber,
+                        customerId: refreshedForCommission.customerId,
+                        batchId: id,
+                        subtotalUsd: chargeableShippingCost.toFixed(2),
+                        totalUsd: chargeableShippingCost.toFixed(2),
+                        status: "issued",
+                        issuedAt: new Date(),
+                        lineItems: [{
+                          description: `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە`,
+                          quantity: 1,
+                          unitPrice: chargeableShippingCost,
+                          total: chargeableShippingCost,
+                          // Note: chargeable weight = max(actual, volumetric) = chargeableWeight KG
+                        }],
+                        notes: `پسووڵەی گواستنەوەی کڕین بە عمولە ${refreshedForCommission.orderCode} - باچ ${batch?.batchCode || ''} - کێشی کڕێیی ${chargeableWeight.toFixed(2)} KG - کۆی $${chargeableShippingCost.toFixed(2)}`,
+                        createdById: ctx.user.id,
+                      });
+                      
+                      // Mark shipping as charged and update net profit
+                      const grossProfit = parseFloat(refreshedForCommission.grossProfitUsd || '0');
+                      const netProfitUsd = (grossProfit - shippingCost).toFixed(2); // Our cost is actual shipping, not chargeable
+                      
+                      await db.updateFullPackageOrder(refreshedForCommission.id, {
+                        isShippingCharged: true,
+                        shippingChargedAt: new Date(),
+                        shippingChargedUsd: chargeableShippingCost.toFixed(2),
+                        netProfitUsd,
+                      }, ctx.user.id);
+                      
+                      console.log(`[Commission] Charged customer ${customer.customerCode} $${chargeableShippingCost} shipping for CM ${refreshedForCommission.orderCode} (chargeable: ${chargeableWeight}kg, our cost: $${shippingCost})`);
+                    }
+                  } catch (chargeError) {
+                    console.error(`[Commission] Failed to charge shipping for CM ${linkedFPOrder.orderCode}:`, chargeError);
+                  }
+                }
+              }
+              
+              // Purchase Request logic removed
+            }
+            
+            // Group by customer for invoice generation (only packages NOT linked to Full Package)
+            if (pkg.customerId && !isLinkedToFullPackage) {
+              const existing = packagesByCustomer.get(pkg.customerId) || [];
+              existing.push(pkg);
+              packagesByCustomer.set(pkg.customerId, existing);
+            }
+          }
+          
+          // Get batch pricing info
+          const pricePerKg = batch ? parseFloat(batch.pricePerKg?.toString() || "0") : 0;
+          const pricePerCbm = batch ? parseFloat(batch.pricePerCbm?.toString() || "0") : 0;
+          const isSea = batch?.shippingType === 'sea';
+          
+          // Create invoice for each customer with packages in this batch
+          for (const [customerId, customerPackages] of Array.from(packagesByCustomer.entries())) {
+            try {
+              // Calculate total for this customer's packages
+              let totalAmount = 0;
+              const lineItems = [];
+              
+              for (const pkg of customerPackages) {
+                // Calculate price from batch pricing
+                let pkgPrice = 0;
+                let quantity = 0;
+                let unit = 'KG';
+                
+                if (isSea && pricePerCbm > 0) {
+                  // Sea shipping - use CBM
+                  const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
+                  pkgPrice = cbm * pricePerCbm;
+                  quantity = cbm;
+                  unit = 'CBM';
+                } else if (pricePerKg > 0) {
+                  // Air shipping - use chargeable weight (max of actual weight and volumetric weight)
+                  const actualKg = parseFloat(pkg.weightKg?.toString() || "0");
+                  const lengthCm = parseFloat(pkg.lengthCm?.toString() || "0");
+                  const widthCm = parseFloat(pkg.widthCm?.toString() || "0");
+                  const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
+                  // Volumetric weight = (L × W × H) / 6000 for air shipping
+                  const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+                  // Chargeable weight is the higher of actual weight and volumetric weight
+                  const chargeableKg = Math.max(actualKg, volumetricKg);
+                  pkgPrice = chargeableKg * pricePerKg;
+                  quantity = chargeableKg;
+                  unit = 'KG';
+                }
+                
+                // Update package with calculated cost
+                if (pkgPrice > 0) {
+                  await db.updatePackage(pkg.id, { 
+                    calculatedCostUsd: pkgPrice.toFixed(2)
+                  });
+                }
+                
+                totalAmount += pkgPrice;
+                
+                lineItems.push({
+                  description: `پاکەت ${pkg.trackingNumber || pkg.packageCode} - ${quantity.toFixed(2)} ${unit} × $${isSea ? pricePerCbm : pricePerKg}`,
+                  quantity: 1,
+                  unitPrice: pkgPrice,
+                  total: pkgPrice
+                });
+              }
+              
+              if (totalAmount > 0) {
+                // Create ONE consolidated invoice for this customer's packages in this batch
+                const invoiceNumber = `INV-${Date.now()}-${customerId}`;
+                const invoice = await db.createInvoice({
+                  invoiceNumber,
+                  customerId,
+                  batchId: id,
+                  subtotalUsd: totalAmount.toFixed(2),
+                  totalUsd: totalAmount.toFixed(2),
+                  status: "issued",
+                  issuedAt: new Date(),
+                  lineItems: lineItems as { description: string; quantity: number; unitPrice: number; total: number; }[],
+                  notes: `پسووڵەی باچ ${batch?.batchCode || ''} - ${customerPackages.length} پاکەت - کۆی $${totalAmount.toFixed(2)}`,
+                  createdById: ctx.user.id,
+                });
+                
+                // Record charge for each package WITHOUT creating individual invoices
+                // Link all charges to the consolidated invoice
+                // IMPORTANT: Check isCharged to prevent double charging
+                const customer = await db.getCustomerById(customerId);
+                if (customer) {
+                  for (const pkg of customerPackages) {
+                    // Re-fetch package to get latest isCharged status
+                    const freshPkg = await db.getPackageById(pkg.id);
+                    
+                    // SKIP if package is already charged (prevents double charging)
+                    if (freshPkg?.isCharged) {
+                      console.log(`[Batch] Package ${pkg.packageCode} already charged, skipping`);
+                      continue;
+                    }
+                    
+                    let pkgPrice = 0;
+                    if (isSea && pricePerCbm > 0) {
+                      const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
+                      pkgPrice = cbm * pricePerCbm;
+                    } else if (pricePerKg > 0) {
+                      // Use chargeable weight (max of actual and volumetric)
+                      const actualKg = parseFloat(pkg.weightKg?.toString() || "0");
+                      const lengthCm = parseFloat(pkg.lengthCm?.toString() || "0");
+                      const widthCm = parseFloat(pkg.widthCm?.toString() || "0");
+                      const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
+                      const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+                      const chargeableKg = Math.max(actualKg, volumetricKg);
+                      pkgPrice = chargeableKg * pricePerKg;
+                    }
+                    
+                    if (pkgPrice > 0) {
+                      // Use recordPackageChargeWithoutInvoice to avoid creating duplicate invoices
+                      await db.recordPackageChargeWithoutInvoice(
+                        customerId,
+                        customer.customerCode,
+                        pkg.id,
+                        pkgPrice,
+                        `پاکەت ${pkg.trackingNumber || pkg.packageCode} - باچ ${batch?.batchCode || ''}`,
+                        ctx.user.id,
+                        invoice.id  // Link to the consolidated invoice
+                      );
+                      
+                      // Mark package as charged to prevent future double charging
+                      await db.updatePackage(pkg.id, { isCharged: true });
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              console.error(`[Invoice] Failed to create invoice for customer ${customerId}:`, e);
+            }
+          }
+          
+          // Notify customers about delivery
+          try {
+            await notifyBatchStatusChange(id, "batch_arrived"); // Use arrived notification for now
+          } catch (e) {
+            console.error("[Notification] Failed to send batch delivery notification:", e);
+          }
+        }
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_batch_status",
+          entityType: "batch",
+          entityId: id,
+          newValues: data,
+        });
+        return { success: true };
+      }),
+    update: staffProcedure
+      .input(z.object({
+        id: z.number(),
+        batchCode: z.string().optional(),
+        carrierInfo: z.string().optional(),
+        // Detailed shipping info
+        airlineName: z.string().optional(),
+        flightNumber: z.string().optional(),
+        shippingCompany: z.string().optional(),
+        containerNumber: z.string().optional(),
+        vesselName: z.string().optional(),
+        shippingCost: z.string().optional(),
+        departureDate: z.date().optional(),
+        estimatedArrival: z.date().optional(),
+        // Actual measurements
+        actualWeightKg: z.string().optional(),
+        actualCbm: z.string().optional(),
+        // Charged measurements (what we pay)
+        chargedWeightKg: z.string().optional(),
+        chargedCbm: z.string().optional(),
+        // Cost fields (our cost)
+        costPerKg: z.string().optional(),
+        costPerCbm: z.string().optional(),
+        // Selling price fields
+        pricePerKg: z.string().optional(),
+        pricePerCbm: z.string().optional(),
+        // Tiered pricing
+        useTieredPricing: z.boolean().optional(),
+        pricingTiers: z.array(z.object({
+          minValue: z.string(),
+          maxValue: z.string().nullable(),
+          pricePerUnit: z.string(),
+        })).optional(),
+        // Customer-specific pricing
+        customerPricing: z.array(z.object({
+          customerId: z.number(),
+          pricePerKg: z.string().optional(),
+          pricePerCbm: z.string().optional(),
+          notes: z.string().optional(),
+        })).optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, pricingTiers, customerPricing, ...data } = input;
+        await db.updateBatch(id, data);
+        
+        // Update pricing tiers if provided
+        if (pricingTiers !== undefined) {
+          await db.setBatchPricingTiers(id, pricingTiers.map((tier, index) => ({
+            minValue: tier.minValue,
+            maxValue: tier.maxValue,
+            pricePerUnit: tier.pricePerUnit,
+            sortOrder: index,
+          })));
+        }
+        
+        // Update customer-specific pricing if provided
+        if (customerPricing !== undefined) {
+          await db.setBatchCustomerPricing(id, customerPricing.map(cp => ({
+            customerId: cp.customerId,
+            pricePerKg: cp.pricePerKg,
+            pricePerCbm: cp.pricePerCbm,
+            notes: cp.notes,
+            createdById: ctx.user.id,
+          })));
+        }
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_batch",
+          entityType: "batch",
+          entityId: id,
+          newValues: data,
+        });
+        return { success: true };
+      }),
+    // Get batches filtered by shipping type
+    getByShippingType: staffProcedure
+      .input(z.object({ shippingType: z.enum(["air_regular", "air_irregular", "sea"]) }))
+      .query(async ({ input }) => {
+        return db.getBatchesByShippingType(input.shippingType);
+      }),
+    
+    // Get pricing tiers for a batch
+    getPricingTiers: staffProcedure
+      .input(z.object({ batchId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getBatchPricingTiers(input.batchId);
+      }),
+    
+    // Get customer-specific pricing for a batch
+    getCustomerPricing: staffProcedure
+      .input(z.object({ batchId: z.number() }))
+      .query(async ({ input }) => {
+        const pricing = await db.getBatchCustomerPricing(input.batchId);
+        // Get customer details for each pricing entry
+        const customers = await db.getAllCustomers();
+        const customerMap = new Map(customers.map(c => [c.id, c]));
+        return pricing.map(p => ({
+          ...p,
+          customer: customerMap.get(p.customerId),
+        }));
+      }),
+    
+    // List all customer-specific pricing across all batches
+    listAllCustomerPricing: staffProcedure.query(async () => {
+      const batches = await db.getAllBatches();
+      const allPricing: any[] = [];
+      
+      for (const batch of batches) {
+        const pricing = await db.getBatchCustomerPricing(batch.id);
+        allPricing.push(...pricing);
+      }
+      
+      return allPricing;
+    }),
+    
+    // Get financial summary for a batch
+    getFinancialSummary: staffProcedure
+      .input(z.object({ batchId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getBatchFinancialSummary(input.batchId);
+      }),
+    
+    // Get customer packages in a batch with Full Package detection
+    getCustomerPackages: staffProcedure
+      .input(z.object({ batchId: z.number(), customerId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getCustomerPackagesInBatch(input.customerId, input.batchId);
+      }),
+    
+    // Generate PDF report for batch financial summary
+    generateFinancialPDF: staffProcedure
+      .input(z.object({ batchId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { generateBatchFinancialPDF } = await import("../pdf-generator");
+        const batch = await db.getBatchById(input.batchId);
+        if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: "Batch not found" });
+        
+        const summary = await db.getBatchFinancialSummary(input.batchId);
+        if (!summary) throw new TRPCError({ code: "NOT_FOUND", message: "Financial summary not found" });
+        
+        const customers = await db.getAllCustomers();
+        const customerMap = new Map(customers.map(c => [c.id, c]));
+        
+        const pdfUrl = await generateBatchFinancialPDF({
+          batchCode: batch.batchCode,
+          shippingType: batch.shippingType,
+          status: batch.status,
+          departureDate: batch.departureDate ? new Date(batch.departureDate).toLocaleDateString() : undefined,
+          arrivalDate: batch.actualArrival ? new Date(batch.actualArrival).toLocaleDateString() : undefined,
+          actualVolume: summary.shippingType === 'sea' ? summary.actualCbm : summary.actualWeight,
+          chargedVolume: summary.shippingType === 'sea' ? summary.chargedCbm : summary.chargedWeight,
+          costPerUnit: summary.shippingType === 'sea' ? summary.costPerCbm : summary.costPerKg,
+          totalCost: summary.totalCost,
+          totalRevenue: summary.totalRevenue,
+          profit: summary.profit,
+          profitMargin: summary.profitMargin,
+          customerBreakdown: summary.customerBreakdown.map(cb => {
+            const customer = customerMap.get(cb.customerId);
+            return {
+              customerName: customer?.fullName || 'Unknown',
+              customerCode: customer?.customerCode || 'N/A',
+              packages: cb.packages,
+              volume: summary.shippingType === 'sea' ? cb.cbm : cb.weight,
+              revenue: cb.revenue,
+            };
+          }),
+        });
+        
+        return { url: pdfUrl };
+      }),
+    
+    // Calculate price for a customer in a batch
+    calculateCustomerPrice: staffProcedure
+      .input(z.object({
+        batchId: z.number(),
+        customerId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        const batch = await db.getBatchById(input.batchId);
+        if (!batch) return null;
+        
+        const unit = batch.shippingType === 'sea' ? 'cbm' : 'kg';
+        const customerTotal = await db.getCustomerTotalInBatch(input.batchId, input.customerId, unit);
+        
+        // Check if batch uses tiered pricing
+        if (batch.useTieredPricing) {
+          const tierPrice = await db.getApplicableTierPrice(input.batchId, customerTotal);
+          if (tierPrice !== null) {
+            return {
+              customerTotal,
+              unit,
+              pricePerUnit: tierPrice,
+              totalPrice: customerTotal * tierPrice,
+              isTiered: true,
+            };
+          }
+        }
+        
+        // Use default price
+        const defaultPrice = unit === 'cbm' 
+          ? Number(batch.pricePerCbm) || 0 
+          : Number(batch.pricePerKg) || 0;
+        
+        return {
+          customerTotal,
+          unit,
+          pricePerUnit: defaultPrice,
+          totalPrice: customerTotal * defaultPrice,
+          isTiered: false,
+        };
+      }),
+});
+

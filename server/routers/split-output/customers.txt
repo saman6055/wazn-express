@@ -1,0 +1,436 @@
+  customers: router({
+    list: staffProcedure.query(async () => {
+      return db.getAllCustomers();
+    }),
+    getById: staffProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const customer = await db.getCustomerById(input.id);
+        if (!customer) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Customer not found' });
+        }
+        return customer;
+      }),
+    create: staffProcedure
+      .input(z.object({
+        fullName: z.string().min(1).max(255),
+        fullNameArabic: z.string().max(255).optional(),
+        fullNameKurdish: z.string().max(255).optional(),
+        gender: z.enum(["male", "female"]).optional(),
+        nationality: z.string().max(100).optional(),
+        businessType: z.string().max(100).optional(),
+        mobileNumber: phoneSchema,
+        secondaryMobile: phoneSchema.optional(),
+        password: z.string().min(6).max(500),
+        email: emailSchema.optional(),
+        country: z.string().max(100).optional(),
+        city: z.string().max(100).optional(),
+        district: z.string().max(100).optional(),
+        address: z.string().max(500).optional(),
+        codePrefix: z.string().max(20).optional(), // Customer code prefix (AZ, WZ, etc.)
+        customCode: z.string().max(50).optional(), // Manual customer code (overrides auto-generation)
+        goodsTypePreferences: z.array(z.string().max(100)).optional(),
+        shippingTypePreferences: z.array(z.string().max(50)).optional(),
+        notes: z.string().max(2000).optional(),
+        // Document URLs (uploaded to S3)
+        passportUrl: z.string().max(2048).optional(),
+        nationalIdUrl: z.string().max(2048).optional(),
+        contractUrl: z.string().max(2048).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Check if mobile already exists in customers table
+        const existingCustomer = await db.getCustomerByMobile(input.mobileNumber);
+        if (existingCustomer) {
+          throw new TRPCError({ code: "CONFLICT", message: "ئەم ژمارە مۆبایلە پێشتر تۆمارکراوە" });
+        }
+
+        const passwordHash = await bcrypt.hash(input.password, 10);
+
+        // Retry logic for handling race conditions with sequenceNumber
+        let customer;
+        let lastError: Error | null = null;
+        
+        for (let retries = 0; retries < 3; retries++) {
+          try {
+            let customerCode: string;
+            let sequenceNumber: number;
+            
+            if (input.customCode) {
+              // Use manual customer code
+              customerCode = input.customCode;
+              // Check if code already exists
+              const existing = await db.getCustomerByCode(customerCode);
+              if (existing) {
+                throw new TRPCError({ code: "CONFLICT", message: "Customer code already exists" });
+              }
+              // Use a placeholder sequence number for manual codes
+              sequenceNumber = 0;
+            } else {
+              // Auto-generate customer code - sequence is per-prefix, not global
+              const prefix = input.codePrefix || "AZ";
+              sequenceNumber = await db.getNextSequenceForPrefix(prefix);
+              customerCode = generateCustomerCode(sequenceNumber, input.fullName, prefix);
+            }
+            
+            // Create customer in customers table
+            customer = await db.createCustomer({
+              customerCode,
+              sequenceNumber,
+              fullName: input.fullName,
+              fullNameArabic: input.fullNameArabic,
+              fullNameKurdish: input.fullNameKurdish,
+              gender: input.gender,
+              nationality: input.nationality,
+              businessType: input.businessType,
+              mobileNumber: input.mobileNumber,
+              secondaryMobile: input.secondaryMobile,
+              passwordHash,
+              email: input.email,
+              country: input.country,
+              city: input.city,
+              district: input.district,
+              address: input.address,
+              goodsTypePreferences: input.goodsTypePreferences,
+              shippingTypePreferences: input.shippingTypePreferences,
+              notes: input.notes,
+              passportUrl: input.passportUrl,
+              nationalIdUrl: input.nationalIdUrl,
+              contractUrl: input.contractUrl,
+              createdById: ctx.user.id,
+              isActive: true,
+            });
+            
+            // Success - break out of retry loop
+            break;
+          } catch (error: unknown) {
+            lastError = error as Error;
+            // Check if it's a duplicate key error (race condition)
+            const errorMessage = (error as Error).message || '';
+            if (errorMessage.includes('Duplicate') || errorMessage.includes('unique')) {
+              // Wait a bit and retry
+              await new Promise(resolve => setTimeout(resolve, 100 * (retries + 1)));
+              continue;
+            }
+            // For other errors, throw immediately
+            throw error;
+          }
+        }
+        
+        if (!customer) {
+          throw new TRPCError({ 
+            code: "INTERNAL_SERVER_ERROR", 
+            message: lastError?.message || "Failed to create customer after multiple retries" 
+          });
+        }
+
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "create_customer",
+          entityType: "user",
+          entityId: customer.id,
+          newValues: { customerCode: customer.customerCode, fullName: input.fullName },
+        });
+
+        // Send welcome notification to customer
+        if (input.email || input.mobileNumber) {
+          try {
+            await sendNotification({
+              customerId: customer.id,
+              eventType: "account_created",
+              variables: {},
+              channels: input.email ? ["email", "sms"] : ["sms"],
+            });
+          } catch (e) {
+            console.error("[Notification] Failed to send welcome notification:", e);
+          }
+        }
+
+        return customer;
+      }),
+    update: staffProcedure
+      .input(z.object({
+        id: idSchema,
+        customerCode: z.string().max(50).optional(),
+        fullName: z.string().max(255).optional(),
+        fullNameArabic: z.string().max(255).optional(),
+        fullNameKurdish: z.string().max(255).optional(),
+        gender: z.enum(["male", "female"]).optional(),
+        nationality: z.string().max(100).optional(),
+        businessType: z.string().max(100).optional(),
+        secondaryMobile: phoneSchema.optional(),
+        district: z.string().max(100).optional(),
+        email: emailSchema.optional(),
+        country: z.string().max(100).optional(),
+        city: z.string().max(100).optional(),
+        address: z.string().max(500).optional(),
+        passportUrl: z.string().max(2048).optional(),
+        nationalIdUrl: z.string().max(2048).optional(),
+        contractUrl: z.string().max(2048).optional(),
+        goodsTypePreferences: z.array(z.string().max(100)).optional(),
+        shippingTypePreferences: z.array(z.string().max(50)).optional(),
+        notes: z.string().max(2000).optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        
+        // If customerCode is being updated, check uniqueness
+        if (data.customerCode) {
+          const existing = await db.getCustomerByCode(data.customerCode);
+          if (existing && existing.id !== id) {
+            throw new TRPCError({ code: "CONFLICT", message: "Customer code already exists" });
+          }
+        }
+        
+        await db.updateCustomer(id, data);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_customer",
+          entityType: "customer",
+          entityId: id,
+          newValues: data,
+        });
+        return { success: true };
+      }),
+    resetPassword: staffProcedure
+      .input(z.object({
+        id: idSchema,
+        newPassword: z.string().min(6).max(500),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const passwordHash = await bcrypt.hash(input.newPassword, 10);
+        await db.updateCustomerPassword(input.id, passwordHash);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "reset_customer_password",
+          entityType: "customer",
+          entityId: input.id,
+        });
+        return { success: true };
+      }),
+    getBalance: staffProcedure
+      .input(z.object({ customerId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getCustomerBalance(input.customerId);
+      }),
+    getLedger: staffProcedure
+      .input(z.object({ customerId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getCustomerTransactionHistory(input.customerId);
+      }),
+    uploadDocument: staffProcedure
+      .input(z.object({
+        customerId: z.number(),
+        documentType: z.enum(["passport", "nationalId", "contract"]),
+        fileData: z.string(), // base64 encoded file data
+        fileName: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { storagePut } = await import("../storage");
+        const { nanoid } = await import("nanoid");
+        
+        // Decode base64 to buffer
+        const buffer = Buffer.from(input.fileData, "base64");
+        
+        // Generate unique filename
+        const ext = input.fileName.split(".").pop() || "pdf";
+        const uniqueFileName = `customer-${input.customerId}/${input.documentType}-${nanoid(8)}.${ext}`;
+        
+        // Upload to S3
+        const { url } = await storagePut(`documents/${uniqueFileName}`, buffer, input.mimeType);
+        
+        // Update customer record with document URL (skip if customerId is 0 - new customer being created)
+        if (input.customerId > 0) {
+          const updateData: Record<string, string> = {};
+          if (input.documentType === "passport") updateData.passportUrl = url;
+          if (input.documentType === "nationalId") updateData.nationalIdUrl = url;
+          if (input.documentType === "contract") updateData.contractUrl = url;
+          
+          await db.updateCustomer(input.customerId, updateData);
+        }
+        
+        // Only create audit log if updating existing customer
+        if (input.customerId > 0) {
+          await db.createAuditLog({
+            userId: ctx.user.id,
+            userRole: ctx.user.role,
+            action: "upload_customer_document",
+            entityType: "customer",
+            entityId: input.customerId,
+            newValues: { documentType: input.documentType, url },
+          });
+        }
+        
+        return { success: true, url };
+      }),
+    deleteDocument: staffProcedure
+      .input(z.object({
+        customerId: z.number(),
+        documentType: z.enum(["passport", "nationalId", "contract"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const updateData: Record<string, null> = {};
+        if (input.documentType === "passport") updateData.passportUrl = null;
+        if (input.documentType === "nationalId") updateData.nationalIdUrl = null;
+        if (input.documentType === "contract") updateData.contractUrl = null;
+        
+        await db.updateCustomer(input.customerId, updateData);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "delete_customer_document",
+          entityType: "customer",
+          entityId: input.customerId,
+          newValues: { documentType: input.documentType },
+        });
+        
+        return { success: true };
+      }),
+  }),
+
+  customerCodePrefixes: router({
+    list: staffProcedure
+      .input(z.object({ activeOnly: z.boolean().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getAllCustomerCodePrefixes(input?.activeOnly);
+      }),
+    create: staffProcedure
+      .input(z.object({
+        code: z.string().min(1).max(10),
+        label: z.string().min(1).max(100),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const prefix = await db.createCustomerCodePrefix(input);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "create_code_prefix",
+          entityType: "customer_code_prefix",
+          entityId: prefix.id,
+          newValues: input,
+        });
+        return prefix;
+      }),
+    update: staffProcedure
+      .input(z.object({
+        id: z.number(),
+        code: z.string().min(1).max(10).optional(),
+        label: z.string().min(1).max(100).optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        await db.updateCustomerCodePrefix(id, data);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_code_prefix",
+          entityType: "customer_code_prefix",
+          entityId: id,
+          newValues: data,
+        });
+        return { success: true };
+      }),
+    delete: staffProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteCustomerCodePrefix(input.id);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "delete_code_prefix",
+          entityType: "customer_code_prefix",
+          entityId: input.id,
+        });
+        return { success: true };
+      }),
+  }),
+
+  vip: router({
+    list: staffProcedure.query(async () => {
+      return db.getAllVipCustomers();
+    }),
+    
+    getByCustomer: staffProcedure
+      .input(z.object({ customerId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getVipCustomerByCustomerId(input.customerId);
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        customerId: z.number(),
+        tier: z.enum(["silver", "gold", "platinum"]),
+        discountPercent: z.string().optional(),
+        fixedPricePerKgAir: z.string().optional(),
+        fixedPricePerKgSea: z.string().optional(),
+        creditLimitUsd: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const vip = await db.createVipCustomer({
+          ...input,
+          createdById: ctx.user.id,
+        });
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "create_vip_customer",
+          entityType: "vip_customer",
+          entityId: vip.id,
+          newValues: input,
+        });
+        
+        return vip;
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        tier: z.enum(["silver", "gold", "platinum"]).optional(),
+        discountPercent: z.string().optional(),
+        fixedPricePerKgAir: z.string().optional(),
+        fixedPricePerKgSea: z.string().optional(),
+        creditLimitUsd: z.string().optional(),
+        notes: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        await db.updateVipCustomer(id, data);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_vip_customer",
+          entityType: "vip_customer",
+          entityId: id,
+          newValues: data,
+        });
+        
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteVipCustomer(input.id);
+        
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "delete_vip_customer",
+          entityType: "vip_customer",
+          entityId: input.id,
+        });
+        
+        return { success: true };
+      }),
+  }),
