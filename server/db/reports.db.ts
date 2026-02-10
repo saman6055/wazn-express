@@ -1741,12 +1741,21 @@ export async function checkExpenseThresholds(newExpenseAmount: number, newExpens
 export async function getBatchProfitByShippingType(startDate: Date, endDate: Date) {
   const db = await getDb();
   if (!db) return { air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 } };
-  const batchList = await db.select().from(batches).where(and(gte(batches.createdAt, startDate), lte(batches.createdAt, endDate)));
+  const batchList = await db.select({ id: batches.id, shippingType: batches.shippingType, shippingCost: batches.shippingCost, actualWeightKg: batches.actualWeightKg, chargedWeightKg: batches.chargedWeightKg, totalWeight: batches.totalWeight, actualCbm: batches.actualCbm, chargedCbm: batches.chargedCbm }).from(batches).where(and(gte(batches.createdAt, startDate), lte(batches.createdAt, endDate)));
   const result: Record<string, { revenue: number; cost: number; profit: number; count: number; totalWeight: number; totalCbm: number; batchCount: number }> = {
     air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
     air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
     sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
   };
+  if (batchList.length === 0) return result;
+  const batchIds = batchList.map(b => b.id);
+  const allPackages = await db.select({ batchId: packages.batchId, calculatedCostUsd: packages.calculatedCostUsd }).from(packages).where(inArray(packages.batchId, batchIds));
+  const packagesByBatch = new Map<number, { calculatedCostUsd: string | null }[]>();
+  for (const pkg of allPackages) {
+    if (pkg.batchId == null) continue;
+    if (!packagesByBatch.has(pkg.batchId)) packagesByBatch.set(pkg.batchId, []);
+    packagesByBatch.get(pkg.batchId)!.push({ calculatedCostUsd: pkg.calculatedCostUsd });
+  }
   for (const batch of batchList) {
     const type = batch.shippingType || 'air_regular';
     if (!result[type]) continue;
@@ -1754,7 +1763,7 @@ export async function getBatchProfitByShippingType(startDate: Date, endDate: Dat
     result[type].cost += Number(batch.shippingCost || 0);
     result[type].totalWeight += Number(batch.actualWeightKg || batch.chargedWeightKg || batch.totalWeight || 0);
     result[type].totalCbm += Number(batch.actualCbm || batch.chargedCbm || 0);
-    const batchPackages = await db.select().from(packages).where(eq(packages.batchId, batch.id));
+    const batchPackages = packagesByBatch.get(batch.id) ?? [];
     for (const pkg of batchPackages) {
       result[type].count++;
       result[type].revenue += Number(pkg.calculatedCostUsd || 0);

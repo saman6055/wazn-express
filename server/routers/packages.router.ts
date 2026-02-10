@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
+import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
 import { notifyPackageStatusChange } from "../notifications";
 import { fullPackageOrders, packages } from "../../drizzle/schema";
 import { signQrData, verifyQrSignature } from "../utils/qr";
@@ -37,7 +38,7 @@ export const packagesRouter = router({
       }),
     stats: staffProcedure
       .query(async () => {
-        return db.getPackagesStats();
+        return cacheGetOrSet("packages:stats", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getPackagesStats());
       }),
     recentPackages: staffProcedure
       .input(z.object({ limit: z.number().optional() }).optional())

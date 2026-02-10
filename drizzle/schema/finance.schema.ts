@@ -143,6 +143,7 @@ export const ledgerTransactions = mysqlTable("ledgerTransactions", {
   createdAtIdx: index("idx_ledger_created_at").on(table.createdAt),
   typeIdx: index("idx_ledger_transaction_type").on(table.transactionType),
   accountCreatedIdx: index("idx_ledger_account_created").on(table.accountId, table.createdAt),
+  accountCreatedTypeIdx: index("idx_ledger_account_created_type").on(table.accountId, table.createdAt, table.transactionType),
 }));
 
 export type LedgerTransaction = typeof ledgerTransactions.$inferSelect;

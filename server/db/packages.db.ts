@@ -116,9 +116,12 @@ export async function getPackageByCode(packageCode: string): Promise<Package | u
   return result[0];
 }
 
+const DEFAULT_PAGE_SIZE = 50;
+
 export async function getAllPackages(options: {
   page?: number;
   pageSize?: number;
+  cursor?: number;
   search?: string;
   status?: string;
   shippingType?: string;
@@ -128,9 +131,9 @@ export async function getAllPackages(options: {
   dateTo?: Date;
 } = {}) {
   const db = await getDb();
-  if (!db) return { data: [], total: 0, page: 1, pageSize: 50, totalPages: 0 };
+  if (!db) return { data: [], total: 0, page: 1, pageSize: DEFAULT_PAGE_SIZE, totalPages: 0, nextCursor: undefined as number | undefined };
   
-  const { page = 1, pageSize = 50, search, status, shippingType, batchId, customerId, dateFrom, dateTo } = options;
+  const { page = 1, pageSize = DEFAULT_PAGE_SIZE, cursor, search, status, shippingType, batchId, customerId, dateFrom, dateTo } = options;
   const offset = (page - 1) * pageSize;
   
   // Build where conditions
@@ -168,15 +171,20 @@ export async function getAllPackages(options: {
   if (dateTo) {
     conditions.push(lte(packages.createdAt, dateTo));
   }
-  
+
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  const dataConditions = [...conditions];
+  if (cursor != null) {
+    dataConditions.push(lt(packages.id, cursor));
+  }
+  const dataWhereClause = dataConditions.length > 0 ? and(...dataConditions) : undefined;
   
-  // Get total count
+  // Get total count (full set, not filtered by cursor)
   const countResult = await db.select({ count: count() }).from(packages).where(whereClause);
   const total = countResult[0]?.count || 0;
   const totalPages = Math.ceil(total / pageSize);
   
-  // Get paginated data with full package order info
+  // Get paginated data (explicit columns only)
   const data = await db.select({
     id: packages.id,
     packageCode: packages.packageCode,
@@ -205,12 +213,13 @@ export async function getAllPackages(options: {
   })
     .from(packages)
     .leftJoin(fullPackageOrders, eq(packages.fullPackageOrderId, fullPackageOrders.id))
-    .where(whereClause)
-    .orderBy(desc(packages.createdAt))
+    .where(dataWhereClause)
+    .orderBy(desc(packages.id))
     .limit(pageSize)
-    .offset(offset);
+    .offset(cursor != null ? 0 : offset);
   
-  return { data, total, page, pageSize, totalPages };
+  const nextCursor = cursor != null && data.length === pageSize && data.length > 0 ? (data[data.length - 1] as { id: number }).id : undefined;
+  return { data, total, page, pageSize, totalPages, nextCursor };
 }
 
 export async function getPackagesStats() {

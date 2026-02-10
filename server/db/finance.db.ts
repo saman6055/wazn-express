@@ -143,13 +143,15 @@ export async function getAllLedgerEntries(limit = 100) {
 
 const ALL_LEDGER_DEFAULT_LIMIT = 50;
 
-// Get all ledger transactions from unified system (paginated, explicit columns)
-export async function getAllLedgerTransactions(options: { limit?: number; page?: number } = {}) {
+// Get all ledger transactions from unified system (paginated, explicit columns; optional cursor)
+export async function getAllLedgerTransactions(options: { limit?: number; page?: number; cursor?: number } = {}) {
   const db = await getDb();
-  if (!db) return { data: [], total: 0, page: 1, pageSize: ALL_LEDGER_DEFAULT_LIMIT, totalPages: 0 };
+  if (!db) return { data: [], total: 0, page: 1, pageSize: ALL_LEDGER_DEFAULT_LIMIT, totalPages: 0, nextCursor: undefined as number | undefined };
   const pageSize = Math.min(100, options.limit ?? ALL_LEDGER_DEFAULT_LIMIT);
   const page = Math.max(1, options.page ?? 1);
   const offset = (page - 1) * pageSize;
+  const cursor = options.cursor;
+  const dataWhereClause = cursor != null ? lt(ledgerTransactions.id, cursor) : undefined;
   const countResult = await db.select({ count: count() }).from(ledgerTransactions);
   const total = countResult[0]?.count ?? 0;
   const totalPages = Math.ceil(total / pageSize);
@@ -167,10 +169,12 @@ export async function getAllLedgerTransactions(options: { limit?: number; page?:
     createdAt: ledgerTransactions.createdAt,
   })
     .from(ledgerTransactions)
-    .orderBy(desc(ledgerTransactions.createdAt))
+    .where(dataWhereClause)
+    .orderBy(desc(ledgerTransactions.id))
     .limit(pageSize)
-    .offset(offset);
-  return { data, total, page, pageSize, totalPages };
+    .offset(cursor != null ? 0 : offset);
+  const nextCursor = cursor != null && data.length === pageSize && data.length > 0 ? (data[data.length - 1] as { id: number }).id : undefined;
+  return { data, total, page, pageSize, totalPages, nextCursor };
 }
 
 
@@ -2084,30 +2088,37 @@ export async function validateAllAccounts(): Promise<{
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const accounts = await db.select().from(customerAccounts);
-  const issues: any[] = [];
+  const accounts = await db.select({ id: customerAccounts.id, customerId: customerAccounts.customerId, accountNumber: customerAccounts.accountNumber }).from(customerAccounts);
+  const issues: { accountId: number; accountNumber: string; customerCode: string; storedBalance: number; calculatedBalance: number; difference: number }[] = [];
+  const invalidCustomerIds: number[] = [];
   let validCount = 0;
   let invalidCount = 0;
-  
+
   for (const account of accounts) {
     const validation = await validateAccountBalance(account.id);
-    
     if (validation.isValid) {
       validCount++;
     } else {
       invalidCount++;
-      
-      // Get customer code
-      const [customer] = await db.select().from(customers).where(eq(customers.id, account.customerId));
-      
+      invalidCustomerIds.push(account.customerId);
       issues.push({
         accountId: account.id,
         accountNumber: account.accountNumber,
-        customerCode: customer?.customerCode || 'Unknown',
+        customerCode: '', // filled below via batch fetch
         storedBalance: validation.storedBalance,
         calculatedBalance: validation.calculatedBalance,
         difference: validation.difference
       });
+    }
+  }
+
+  if (invalidCustomerIds.length > 0) {
+    const customersList = await db.select({ id: customers.id, customerCode: customers.customerCode }).from(customers).where(inArray(customers.id, invalidCustomerIds));
+    const customerMap = new Map(customersList.map(c => [c.id, c.customerCode || 'Unknown']));
+    const customerIdByAccountId = new Map(accounts.map(a => [a.id, a.customerId]));
+    for (const issue of issues) {
+      const customerId = customerIdByAccountId.get(issue.accountId);
+      issue.customerCode = customerId != null ? (customerMap.get(customerId) ?? 'Unknown') : 'Unknown';
     }
   }
   

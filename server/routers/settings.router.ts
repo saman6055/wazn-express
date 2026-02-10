@@ -14,10 +14,10 @@ export const countriesRouter = router({
         return cacheGetOrSet(key, CACHE_TTL.REFERENCE_LISTS_MS, () => db.getAllCountries(input?.activeOnly));
       }),
     getOrigins: staffProcedure.query(async () => {
-      return db.getOriginCountries();
+      return cacheGetOrSet("countries:origins", CACHE_TTL.REFERENCE_LISTS_MS, () => db.getOriginCountries());
     }),
     getDestinations: staffProcedure.query(async () => {
-      return db.getDestinationCountries();
+      return cacheGetOrSet("countries:destinations", CACHE_TTL.REFERENCE_LISTS_MS, () => db.getDestinationCountries());
     }),
     create: adminProcedure
       .input(z.object({
@@ -83,7 +83,7 @@ export const warehousesRouter = router({
     getByCountry: staffProcedure
       .input(z.object({ countryId: z.number() }))
       .query(async ({ input }) => {
-        return db.getWarehousesByCountry(input.countryId);
+        return cacheGetOrSet(`warehouses:country:${input.countryId}`, CACHE_TTL.REFERENCE_LISTS_MS, () => db.getWarehousesByCountry(input.countryId));
       }),
     getById: staffProcedure
       .input(z.object({ id: z.number() }))
