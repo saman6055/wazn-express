@@ -48,13 +48,21 @@ function verifyQrSignature(data: string, signature: string): boolean {
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
 }
 
+// Reusable Zod schemas for validation (SQL-safe lengths, phone/email/code patterns)
+const phoneSchema = z.string().regex(/^[+]?[\d\s-]{7,20}$/).max(20);
+const emailSchema = z.string().email().max(255);
+const idSchema = z.number().int().positive();
+const amountSchema = z.number().min(0).max(999999999);
+const packageCodeSchema = z.string().regex(/^WZN-[A-Z]+-\d+$/).max(50);
+const batchCodeSchema = z.string().regex(/^(SEA|AIR)-\d+$/).max(20);
+
 export const appRouter = router({
   system: systemRouter,
   
   // Migration endpoint (Admin Only)
   migration: router({
     run: adminProcedure
-      .input(z.object({ secret: z.string() }))
+      .input(z.object({ secret: z.string().min(1).max(500) }))
       .mutation(async ({ input }) => {
         // Simple secret check for extra security
         if (input.secret !== getConfig().migrationSecret) {
@@ -377,8 +385,8 @@ export const appRouter = router({
     // Customer login with mobile + password (from customers table)
     customerLogin: publicProcedure
       .input(z.object({
-        mobileNumber: z.string().min(1),
-        password: z.string().min(1),
+        mobileNumber: phoneSchema,
+        password: z.string().min(1).max(500),
       }))
       .mutation(async ({ input, ctx }) => {
         // Find customer by mobile number from customers table
@@ -429,8 +437,8 @@ export const appRouter = router({
     // Staff login with email OR mobile + password
     staffLogin: publicProcedure
       .input(z.object({
-        identifier: z.string().min(1), // Can be email or mobile number
-        password: z.string().min(1),
+        identifier: z.string().min(1).max(255), // Can be email or mobile number
+        password: z.string().min(1).max(500),
       }))
       .mutation(async ({ input, ctx }) => {
         // Find staff user by username, email, or mobile number
@@ -494,11 +502,11 @@ export const appRouter = router({
     // Staff registration (admin only)
     registerStaff: adminProcedure
       .input(z.object({
-        name: z.string().min(1),
-        username: z.string().min(3).optional(),
-        email: z.string().optional(),
-        mobileNumber: z.string().optional(),
-        password: z.string().min(6),
+        name: z.string().min(1).max(255),
+        username: z.string().min(3).max(100).optional(),
+        email: emailSchema.optional(),
+        mobileNumber: phoneSchema.optional(),
+        password: z.string().min(6).max(500),
         role: z.enum(["admin", "employee", "accountant"]),
       }))
       .mutation(async ({ input }) => {
@@ -550,8 +558,8 @@ export const appRouter = router({
     // Reset staff password (admin only)
     resetStaffPassword: adminProcedure
       .input(z.object({
-        userId: z.number(),
-        newPassword: z.string().min(6),
+        userId: idSchema,
+        newPassword: z.string().min(6).max(500),
       }))
       .mutation(async ({ input }) => {
         const passwordHash = await bcrypt.hash(input.newPassword, 10);
@@ -562,8 +570,8 @@ export const appRouter = router({
     // Change own password (any logged in user)
     changePassword: protectedProcedure
       .input(z.object({
-        currentPassword: z.string().min(1),
-        newPassword: z.string().min(6),
+        currentPassword: z.string().min(1).max(500),
+        newPassword: z.string().min(6).max(500),
       }))
       .mutation(async ({ input, ctx }) => {
         const user = await db.getUserById(ctx.user.id);
@@ -792,29 +800,29 @@ export const appRouter = router({
       }),
     create: staffProcedure
       .input(z.object({
-        fullName: z.string().min(1),
-        fullNameArabic: z.string().optional(),
-        fullNameKurdish: z.string().optional(),
+        fullName: z.string().min(1).max(255),
+        fullNameArabic: z.string().max(255).optional(),
+        fullNameKurdish: z.string().max(255).optional(),
         gender: z.enum(["male", "female"]).optional(),
-        nationality: z.string().optional(),
-        businessType: z.string().optional(),
-        mobileNumber: z.string().min(1),
-        secondaryMobile: z.string().optional(),
-        password: z.string().min(6),
-        email: z.string().email().optional(),
-        country: z.string().optional(),
-        city: z.string().optional(),
-        district: z.string().optional(),
-        address: z.string().optional(),
-        codePrefix: z.string().optional(), // Customer code prefix (AZ, WZ, etc.)
-        customCode: z.string().optional(), // Manual customer code (overrides auto-generation)
-        goodsTypePreferences: z.array(z.string()).optional(),
-        shippingTypePreferences: z.array(z.string()).optional(),
-        notes: z.string().optional(),
+        nationality: z.string().max(100).optional(),
+        businessType: z.string().max(100).optional(),
+        mobileNumber: phoneSchema,
+        secondaryMobile: phoneSchema.optional(),
+        password: z.string().min(6).max(500),
+        email: emailSchema.optional(),
+        country: z.string().max(100).optional(),
+        city: z.string().max(100).optional(),
+        district: z.string().max(100).optional(),
+        address: z.string().max(500).optional(),
+        codePrefix: z.string().max(20).optional(), // Customer code prefix (AZ, WZ, etc.)
+        customCode: z.string().max(50).optional(), // Manual customer code (overrides auto-generation)
+        goodsTypePreferences: z.array(z.string().max(100)).optional(),
+        shippingTypePreferences: z.array(z.string().max(50)).optional(),
+        notes: z.string().max(2000).optional(),
         // Document URLs (uploaded to S3)
-        passportUrl: z.string().optional(),
-        nationalIdUrl: z.string().optional(),
-        contractUrl: z.string().optional(),
+        passportUrl: z.string().max(2048).optional(),
+        nationalIdUrl: z.string().max(2048).optional(),
+        contractUrl: z.string().max(2048).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         // Check if mobile already exists in customers table
@@ -929,26 +937,26 @@ export const appRouter = router({
       }),
     update: staffProcedure
       .input(z.object({
-        id: z.number(),
-        customerCode: z.string().optional(),
-        fullName: z.string().optional(),
-        fullNameArabic: z.string().optional(),
-        fullNameKurdish: z.string().optional(),
+        id: idSchema,
+        customerCode: z.string().max(50).optional(),
+        fullName: z.string().max(255).optional(),
+        fullNameArabic: z.string().max(255).optional(),
+        fullNameKurdish: z.string().max(255).optional(),
         gender: z.enum(["male", "female"]).optional(),
-        nationality: z.string().optional(),
-        businessType: z.string().optional(),
-        secondaryMobile: z.string().optional(),
-        district: z.string().optional(),
-        email: z.string().email().optional(),
-        country: z.string().optional(),
-        city: z.string().optional(),
-        address: z.string().optional(),
-        passportUrl: z.string().optional(),
-        nationalIdUrl: z.string().optional(),
-        contractUrl: z.string().optional(),
-        goodsTypePreferences: z.array(z.string()).optional(),
-        shippingTypePreferences: z.array(z.string()).optional(),
-        notes: z.string().optional(),
+        nationality: z.string().max(100).optional(),
+        businessType: z.string().max(100).optional(),
+        secondaryMobile: phoneSchema.optional(),
+        district: z.string().max(100).optional(),
+        email: emailSchema.optional(),
+        country: z.string().max(100).optional(),
+        city: z.string().max(100).optional(),
+        address: z.string().max(500).optional(),
+        passportUrl: z.string().max(2048).optional(),
+        nationalIdUrl: z.string().max(2048).optional(),
+        contractUrl: z.string().max(2048).optional(),
+        goodsTypePreferences: z.array(z.string().max(100)).optional(),
+        shippingTypePreferences: z.array(z.string().max(50)).optional(),
+        notes: z.string().max(2000).optional(),
         isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -975,8 +983,8 @@ export const appRouter = router({
       }),
     resetPassword: staffProcedure
       .input(z.object({
-        id: z.number(),
-        newPassword: z.string().min(6),
+        id: idSchema,
+        newPassword: z.string().min(6).max(500),
       }))
       .mutation(async ({ input, ctx }) => {
         const passwordHash = await bcrypt.hash(input.newPassword, 10);
@@ -1386,58 +1394,58 @@ export const appRouter = router({
       return db.getActiveBatches();
     }),
     getById: staffProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: idSchema }))
       .query(async ({ input }) => {
         return db.getBatchById(input.id);
       }),
     getPackages: staffProcedure
-      .input(z.object({ batchId: z.number() }))
+      .input(z.object({ batchId: idSchema }))
       .query(async ({ input }) => {
         return db.getPackagesByBatch(input.batchId);
       }),
     create: staffProcedure
       .input(z.object({
-        batchCode: z.string().min(1),
-        originWarehouseId: z.number(),
-        destinationCountryId: z.number(),
+        batchCode: batchCodeSchema,
+        originWarehouseId: idSchema,
+        destinationCountryId: idSchema,
         shippingType: z.enum(["air_regular", "air_irregular", "sea"]),
-        carrierInfo: z.string().optional(),
+        carrierInfo: z.string().max(500).optional(),
         // Detailed shipping info
-        airlineName: z.string().optional(),
-        flightNumber: z.string().optional(),
-        shippingCompany: z.string().optional(),
-        containerNumber: z.string().optional(),
-        vesselName: z.string().optional(),
-        shippingCost: z.string().optional(),
+        airlineName: z.string().max(100).optional(),
+        flightNumber: z.string().max(50).optional(),
+        shippingCompany: z.string().max(100).optional(),
+        containerNumber: z.string().max(50).optional(),
+        vesselName: z.string().max(100).optional(),
+        shippingCost: z.string().max(50).optional(),
         departureDate: z.date().optional(),
         estimatedArrival: z.date().optional(),
         // Actual measurements
-        actualWeightKg: z.string().optional(),
-        actualCbm: z.string().optional(),
+        actualWeightKg: z.string().max(50).optional(),
+        actualCbm: z.string().max(50).optional(),
         // Charged measurements (what we pay)
-        chargedWeightKg: z.string().optional(),
-        chargedCbm: z.string().optional(),
+        chargedWeightKg: z.string().max(50).optional(),
+        chargedCbm: z.string().max(50).optional(),
         // Cost fields (our cost)
-        costPerKg: z.string().optional(),
-        costPerCbm: z.string().optional(),
+        costPerKg: z.string().max(50).optional(),
+        costPerCbm: z.string().max(50).optional(),
         // Selling price fields
-        pricePerKg: z.string().optional(),
-        pricePerCbm: z.string().optional(),
+        pricePerKg: z.string().max(50).optional(),
+        pricePerCbm: z.string().max(50).optional(),
         // Tiered pricing
         useTieredPricing: z.boolean().optional(),
         pricingTiers: z.array(z.object({
-          minValue: z.string(),
-          maxValue: z.string().nullable(),
-          pricePerUnit: z.string(),
+          minValue: z.string().max(50),
+          maxValue: z.string().max(50).nullable(),
+          pricePerUnit: z.string().max(50),
         })).optional(),
         // Customer-specific pricing
         customerPricing: z.array(z.object({
-          customerId: z.number(),
-          pricePerKg: z.string().optional(),
-          pricePerCbm: z.string().optional(),
-          notes: z.string().optional(),
+          customerId: idSchema,
+          pricePerKg: z.string().max(50).optional(),
+          pricePerCbm: z.string().max(50).optional(),
+          notes: z.string().max(500).optional(),
         })).optional(),
-        notes: z.string().optional(),
+        notes: z.string().max(2000).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const { pricingTiers, customerPricing, ...batchData } = input;
@@ -1479,7 +1487,7 @@ export const appRouter = router({
       }),
     updateStatus: staffProcedure
       .input(z.object({
-        id: z.number(),
+        id: idSchema,
         status: z.enum(["preparing", "in_transit", "arrived", "customs", "delivered", "closed"]),
         actualArrival: z.date().optional(),
       }))
@@ -2066,15 +2074,15 @@ export const appRouter = router({
   packages: router({
     list: staffProcedure
       .input(z.object({
-        page: z.number().optional(),
-        pageSize: z.number().optional(),
-        search: z.string().optional(),
-        status: z.string().optional(),
-        shippingType: z.string().optional(),
-        batchId: z.number().optional(),
-        customerId: z.number().optional(),
-        dateFrom: z.string().optional(),
-        dateTo: z.string().optional(),
+        page: z.number().int().min(0).optional(),
+        pageSize: z.number().int().positive().max(500).optional(),
+        search: z.string().max(200).optional(),
+        status: z.string().max(50).optional(),
+        shippingType: z.string().max(50).optional(),
+        batchId: idSchema.optional(),
+        customerId: idSchema.optional(),
+        dateFrom: z.string().max(50).optional(),
+        dateTo: z.string().max(50).optional(),
       }).optional())
       .query(async ({ input }) => {
         return db.getAllPackages({
@@ -2099,28 +2107,28 @@ export const appRouter = router({
         return db.getRecentPackages(input?.limit || 10);
       }),
     getById: staffProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: idSchema }))
       .query(async ({ input }) => {
         return db.getPackageById(input.id);
       }),
     getByCode: staffProcedure
-      .input(z.object({ code: z.string() }))
+      .input(z.object({ code: packageCodeSchema }))
       .query(async ({ input }) => {
         return db.getPackageByCode(input.code);
       }),
     getByCustomer: staffProcedure
-      .input(z.object({ customerId: z.number() }))
+      .input(z.object({ customerId: idSchema }))
       .query(async ({ input }) => {
         return db.getPackagesByCustomer(input.customerId);
       }),
     getByStatus: staffProcedure
-      .input(z.object({ status: z.string() }))
+      .input(z.object({ status: z.string().max(50) }))
       .query(async ({ input }) => {
         return db.getPackagesByStatus(input.status);
       }),
     // Lookup tracking number to identify package type (regular/full_package/commission)
     lookupTracking: staffProcedure
-      .input(z.object({ trackingNumber: z.string() }))
+      .input(z.object({ trackingNumber: z.string().min(1).max(100) }))
       .query(async ({ input }) => {
         const database = await db.getDb();
         if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
@@ -2195,21 +2203,21 @@ export const appRouter = router({
 
     register: staffProcedure
       .input(z.object({
-        customerId: z.number().optional(), // Optional for unclaimed packages
-        originWarehouseId: z.number(),
+        customerId: idSchema.optional(), // Optional for unclaimed packages
+        originWarehouseId: idSchema,
         isUnclaimed: z.boolean().optional(), // True if registering without customer
-        trackingNumber: z.string().optional(),
-        weightKg: z.string().optional(),
-        lengthCm: z.string().optional(),
-        widthCm: z.string().optional(),
-        heightCm: z.string().optional(),
-        volumeCbm: z.string().optional(), // Direct CBM input for sea shipping
+        trackingNumber: z.string().max(100).optional(),
+        weightKg: z.string().max(50).optional(),
+        lengthCm: z.string().max(50).optional(),
+        widthCm: z.string().max(50).optional(),
+        heightCm: z.string().max(50).optional(),
+        volumeCbm: z.string().max(50).optional(), // Direct CBM input for sea shipping
         shippingType: z.enum(["air_regular", "air_irregular", "sea"]),
-        description: z.string().optional(),
-        photos: z.array(z.string()).optional(),
-        batchId: z.number().optional(),
-        categoryId: z.number().optional(),
-        fullPackageOrderId: z.number().optional(), // Link to full package order if tracking matched
+        description: z.string().max(1000).optional(),
+        photos: z.array(z.string().max(2048)).optional(),
+        batchId: idSchema.optional(),
+        categoryId: idSchema.optional(),
+        fullPackageOrderId: idSchema.optional(), // Link to full package order if tracking matched
       }))
       .mutation(async ({ input, ctx }) => {
         const warehouse = await db.getWarehouseById(input.originWarehouseId);
@@ -6317,14 +6325,14 @@ export const appRouter = router({
     // Record payment
     recordPayment: staffProcedure
       .input(z.object({
-        customerId: z.number(),
-        customerCode: z.string(),
-        amountUsd: z.number().default(0),
-        amountIqd: z.number().default(0),
+        customerId: idSchema,
+        customerCode: z.string().max(50),
+        amountUsd: amountSchema.default(0),
+        amountIqd: amountSchema.default(0),
         paymentMethod: z.enum(['CASH', 'BANK_TRANSFER', 'FIB', 'FASTPAY', 'ZAINCASH', 'ASIAHAWALA', 'CARD', 'OTHER']),
-        notes: z.string().optional(),
-        receiptNumber: z.string().optional(),
-        cashAccountId: z.number().optional(),
+        notes: z.string().max(1000).optional(),
+        receiptNumber: z.string().max(100).optional(),
+        cashAccountId: idSchema.optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const result = await db.recordPaymentReceived(
@@ -6363,11 +6371,11 @@ export const appRouter = router({
     // Record package charge (manual)
     recordCharge: staffProcedure
       .input(z.object({
-        customerId: z.number(),
-        customerCode: z.string(),
-        packageId: z.number(),
-        amountUsd: z.number(),
-        description: z.string(),
+        customerId: idSchema,
+        customerCode: z.string().max(50),
+        packageId: idSchema,
+        amountUsd: amountSchema,
+        description: z.string().min(1).max(1000),
       }))
       .mutation(async ({ input, ctx }) => {
         return db.recordPackageCharge(
@@ -6383,10 +6391,10 @@ export const appRouter = router({
     // Create payment reminder
     createReminder: staffProcedure
       .input(z.object({
-        accountId: z.number(),
+        accountId: idSchema,
         reminderType: z.enum(['sms', 'whatsapp', 'email', 'call']),
         scheduledAt: z.date(),
-        customMessage: z.string().optional(),
+        customMessage: z.string().max(1000).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         return db.createPaymentReminder({
@@ -6433,8 +6441,8 @@ export const appRouter = router({
     // Generate invoice for package
     generatePackageInvoice: staffProcedure
       .input(z.object({
-        packageId: z.number(),
-        customerId: z.number(),
+        packageId: idSchema,
+        customerId: idSchema,
       }))
       .mutation(async ({ input, ctx }) => {
         const pkg = await db.getPackageById(input.packageId);
