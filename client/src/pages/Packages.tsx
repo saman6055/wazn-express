@@ -11,6 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
+import { usePackages } from "@/hooks/usePackages";
 import { Plus, Search, QrCode, Eye, Zap, Layers, AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Printer, Trash2, Download, Filter, CalendarIcon, X, Package, Plane, Ship, User, CheckCircle2, Tags, FileText, Calculator, Clock, MapPin, Weight, Ruler, DollarSign, Hash, Calendar as CalendarIcon2, PackageX, Link2Off, Truck, BarChart3, ImagePlus, Loader2, Camera } from "lucide-react";
 import {
   DropdownMenu,
@@ -136,11 +137,6 @@ export default function Packages() {
     const { t } = useTranslation();
 const [, setLocation] = useLocation();
   const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [shippingTypeFilter, setShippingTypeFilter] = useState<string>("all");
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
-  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [minWeight, setMinWeight] = useState<string>("");
   const [maxWeight, setMaxWeight] = useState<string>("");
   const [batchFilter, setBatchFilter] = useState<string>("all");
@@ -148,24 +144,60 @@ const [, setLocation] = useLocation();
   const [packageTypeFilter, setPackageTypeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("all");
-  
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
-  
+
+  const {
+    packages: packagesFromHook,
+    total: totalPackages,
+    totalPages,
+    page: currentPage,
+    pageSize,
+    setPage: setCurrentPage,
+    setPageSize,
+    goToPage,
+    search,
+    setSearch,
+    status: statusFilter,
+    setStatus: setStatusFilter,
+    shippingType: shippingTypeFilter,
+    setShippingType: setShippingTypeFilter,
+    batchId,
+    setBatchId,
+    dateFrom: dateFromStr,
+    setDateFrom: setDateFromStr,
+    dateTo: dateToStr,
+    setDateTo: setDateToStr,
+    setFilters,
+    isLoading: isLoadingPackages,
+    refetch,
+    updateStatusMutation,
+    updatePackageMutation,
+    deletePackageMutation,
+  } = usePackages();
+
+  const dateFrom = dateFromStr ? new Date(dateFromStr) : undefined;
+  const dateTo = dateToStr ? new Date(dateToStr) : undefined;
+  const setDateFrom = (d: Date | undefined) => setDateFromStr(d?.toISOString());
+  const setDateTo = (d: Date | undefined) => setDateToStr(d?.toISOString());
+
+  // Sync batch filter UI to hook (batchId only sent to API when numeric)
+  const setBatchFilterWithHook = (v: string) => {
+    setBatchFilter(v);
+    setBatchId(v === "all" || v === "no_batch" ? undefined : parseInt(v, 10));
+  };
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput);
-      setCurrentPage(1); // Reset to first page on search
+      setCurrentPage(1);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchInput]);
-  
+  }, [searchInput, setSearch, setCurrentPage]);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, shippingTypeFilter, batchFilter, dateFrom, dateTo]);
+  }, [statusFilter, shippingTypeFilter, batchFilter, dateFromStr, dateToStr, setCurrentPage]);
   
   // Status update dialog
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
@@ -197,65 +229,34 @@ const [, setLocation] = useLocation();
   
   // Delete confirmation
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
-  // Server-side paginated query
-  const { data: packagesResponse, refetch, isLoading: isLoadingPackages } = trpc.packages.list.useQuery({
-    page: currentPage,
-    pageSize: pageSize,
-    search: search || undefined,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    shippingType: shippingTypeFilter !== 'all' ? shippingTypeFilter : undefined,
-    batchId: batchFilter !== 'all' && batchFilter !== 'no_batch' ? parseInt(batchFilter) : undefined,
-    dateFrom: dateFrom ? dateFrom.toISOString() : undefined,
-    dateTo: dateTo ? dateTo.toISOString() : undefined,
-  });
-  
-  // Extract data from response
-  const packages = packagesResponse?.data;
-  const totalPackages = packagesResponse?.total || 0;
-  const totalPages = packagesResponse?.totalPages || 0;
+
+  const packages = packagesFromHook;
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: batches } = trpc.batches.list.useQuery();
   const { data: categories } = trpc.productCategories.list.useQuery();
   const { data: labelTemplates } = trpc.labelTemplates.list.useQuery();
 
-  const updateStatusMutation = trpc.packages.updateStatus.useMutation({
-    onSuccess: () => {
-      toast.success(t("packages.statusUpdated"));
-      setShowStatusDialog(false);
-      setSelectedPackage(null);
-      setNewStatus("");
-      refetch();
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    }
-  });
-
-  const updatePackageMutation = trpc.packages.update.useMutation({
-    onSuccess: () => {
-      toast.success(t("packages.packageUpdated"));
-      setShowEditDialog(false);
-      setSelectedPackage(null);
-      refetch();
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    }
-  });
-
-  const deletePackageMutation = trpc.packages.delete.useMutation({
-    onSuccess: () => {
-      toast.success(t("packages.packageDeleted"));
-      setShowDeleteDialog(false);
-      setShowEditDialog(false);
-      setSelectedPackage(null);
-      refetch();
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    }
-  });
+  const onStatusSuccess = () => {
+    toast.success(t("packages.statusUpdated"));
+    setShowStatusDialog(false);
+    setSelectedPackage(null);
+    setNewStatus("");
+    refetch();
+  };
+  const onPackageUpdateSuccess = () => {
+    toast.success(t("packages.packageUpdated"));
+    setShowEditDialog(false);
+    setSelectedPackage(null);
+    refetch();
+  };
+  const onDeleteSuccess = () => {
+    toast.success(t("packages.packageDeleted"));
+    setShowDeleteDialog(false);
+    setShowEditDialog(false);
+    setSelectedPackage(null);
+    refetch();
+  };
+  const onMutationError = (error: { message: string }) => toast.error(error.message);
 
   const getCustomerName = (customerId: number | null) => {
     if (!customerId) return t("packages.unclaimed");
@@ -447,6 +448,7 @@ const [, setLocation] = useLocation();
     setStatusFilter("all");
     setShippingTypeFilter("all");
     setBatchFilter("all");
+    setBatchId(undefined);
     setAlertFilter("all");
     setPackageTypeFilter("all");
     setDateFrom(undefined);
@@ -455,15 +457,15 @@ const [, setLocation] = useLocation();
     setMaxWeight("");
     setSearchInput("");
     setSearch("");
-    setCurrentPage(1); // Reset to first page when clearing filters
+    setCurrentPage(1);
   };
 
   const handleStatusUpdate = () => {
     if (!selectedPackage || !newStatus) return;
-    updateStatusMutation.mutate({
-      id: selectedPackage.id,
-      status: newStatus as any,
-    });
+    updateStatusMutation.mutate(
+      { id: selectedPackage.id, status: newStatus as any },
+      { onSuccess: onStatusSuccess, onError: onMutationError }
+    );
   };
 
   const handleEditClick = (pkg: Package) => {
@@ -487,21 +489,24 @@ const [, setLocation] = useLocation();
 
   const handleEditSave = () => {
     if (!selectedPackage) return;
-    updatePackageMutation.mutate({
-      id: selectedPackage.id,
-      customerId: editCustomerId || undefined,
-      weightKg: editWeightKg || undefined,
-      shippingType: editShippingType,
-      description: editDescription || undefined,
-      lengthCm: editLengthCm || undefined,
-      widthCm: editWidthCm || undefined,
-      heightCm: editHeightCm || undefined,
-      trackingNumber: editTrackingNumber || undefined,
-      batchId: editBatchId && editBatchId !== "none" ? parseInt(editBatchId) : null,
-      categoryId: editCategoryId && editCategoryId !== "none" ? parseInt(editCategoryId) : null,
-      volumeCbm: editCbm > 0 ? editCbm.toString() : undefined,
-      photos: editPhotos.length > 0 ? editPhotos : undefined,
-    });
+    updatePackageMutation.mutate(
+      {
+        id: selectedPackage.id,
+        customerId: editCustomerId || undefined,
+        weightKg: editWeightKg || undefined,
+        shippingType: editShippingType,
+        description: editDescription || undefined,
+        lengthCm: editLengthCm || undefined,
+        widthCm: editWidthCm || undefined,
+        heightCm: editHeightCm || undefined,
+        trackingNumber: editTrackingNumber || undefined,
+        batchId: editBatchId && editBatchId !== "none" ? parseInt(editBatchId) : null,
+        categoryId: editCategoryId && editCategoryId !== "none" ? parseInt(editCategoryId) : null,
+        volumeCbm: editCbm > 0 ? editCbm.toString() : undefined,
+        photos: editPhotos.length > 0 ? editPhotos : undefined,
+      },
+      { onSuccess: onPackageUpdateSuccess, onError: onMutationError }
+    );
   };
 
   const handleViewClick = (pkg: Package) => {
@@ -515,7 +520,10 @@ const [, setLocation] = useLocation();
 
   const handleDeleteConfirm = () => {
     if (!selectedPackage) return;
-    deletePackageMutation.mutate({ id: selectedPackage.id });
+    deletePackageMutation.mutate(
+      { id: selectedPackage.id },
+      { onSuccess: onDeleteSuccess, onError: onMutationError }
+    );
   };
 
   const selectEditCustomer = (customer: NonNullable<typeof customers>[0]) => {
@@ -872,7 +880,7 @@ const [, setLocation] = useLocation();
                   {/* Batch Filter */}
                   <div className="space-y-2">
                     <Label className="text-sm">{t("batches.title")}</Label>
-                    <Select value={batchFilter} onValueChange={setBatchFilter}>
+                    <Select value={batchFilter} onValueChange={setBatchFilterWithHook}>
                       <SelectTrigger>
                         <SelectValue placeholder={t("batches.allBatches")} />
                       </SelectTrigger>
@@ -1150,10 +1158,10 @@ const [, setLocation] = useLocation();
                                 if (option.value !== pkg.status) {
                                   setSelectedPackage(pkg as Package);
                                   setNewStatus(option.value);
-                                  updateStatusMutation.mutate({
-                                    id: pkg.id,
-                                    status: option.value as any,
-                                  });
+                                  updateStatusMutation.mutate(
+                                    { id: pkg.id, status: option.value as any },
+                                    { onSuccess: onStatusSuccess, onError: onMutationError }
+                                  );
                                 }
                               }}
                               className={pkg.status === option.value ? "bg-accent" : ""}

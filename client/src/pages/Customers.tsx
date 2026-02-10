@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { trpc } from "@/lib/trpc";
+import { useCustomers, useFilteredCustomers } from "@/hooks/useCustomers";
 import { 
   Plus, Search, Eye, RotateCcw, Users, UserPlus, Crown, TrendingUp, 
   Phone, Mail, MapPin, Filter, X, ChevronDown, Upload, FileText, 
@@ -87,12 +88,22 @@ const initialFormData: CustomerFormData = {
 export default function Customers() {
     const { t } = useTranslation();
 const [, setLocation] = useLocation();
-  const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  const {
+    customers,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    refetch,
+    createMutation,
+    resetPasswordMutation,
+    uploadDocumentMutation,
+  } = useCustomers();
   
   // Advanced filters
   const [cityFilter, setCityFilter] = useState<string>("");
@@ -140,28 +151,19 @@ const [, setLocation] = useLocation();
     return DEFAULT_BUSINESS_TYPES;
   }, [settingsData]);
   
-  const { data: customers, refetch } = trpc.customers.list.useQuery();
   const { data: vipCustomers } = trpc.vip.list.useQuery();
-  const createMutation = trpc.customers.create.useMutation({
-    onSuccess: () => {
-      toast.success(t("customers.customerCreatedSuccess"));
-      setIsCreateOpen(false);
-      resetForm();
-      refetch();
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    }
-  });
-  const resetPasswordMutation = trpc.customers.resetPassword.useMutation({
-    onSuccess: () => {
-      toast.success(t("customers.passwordResetSuccess"));
-      setIsResetOpen(false);
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    }
-  });
+
+  const onCustomerCreateSuccess = () => {
+    toast.success(t("customers.customerCreatedSuccess"));
+    setIsCreateOpen(false);
+    resetForm();
+    refetch();
+  };
+  const onResetPasswordSuccess = () => {
+    toast.success(t("customers.passwordResetSuccess"));
+    setIsResetOpen(false);
+  };
+  const onMutationError = (error: { message: string }) => toast.error(error.message);
 
   const resetForm = () => {
     setFormData(initialFormData);
@@ -186,33 +188,14 @@ const [, setLocation] = useLocation();
     ? IRAQI_CITIES.filter(city => city.governorateId === governorateFilter)
     : IRAQI_CITIES;
 
-  const filteredCustomers = customers?.filter(c => {
-    // Search filter
-    const searchLower = search.toLowerCase();
-    const matchesSearch = !search || 
-      c.fullName?.toLowerCase().includes(searchLower) ||
-      c.customerCode?.toLowerCase().includes(searchLower) ||
-      c.mobileNumber?.includes(search);
-    
-    // Status filter
-    const matchesStatus = statusFilter === "all" || 
-      (statusFilter === "active" && c.isActive) ||
-      (statusFilter === "inactive" && !c.isActive);
-    
-    // City filter
-    const matchesCity = !cityFilter || c.city === cityFilter;
-    
-    // VIP filter
-    const customerIsVip = vipCustomers?.some(v => v.customerId === c.id);
-    const matchesVip = vipFilter === "all" || 
-      (vipFilter === "vip" && customerIsVip) ||
-      (vipFilter === "regular" && !customerIsVip);
-    
-    return matchesSearch && matchesStatus && matchesCity && matchesVip;
-  });
+  const filteredCustomers = useFilteredCustomers(
+    customers,
+    vipCustomers?.map((v) => v.customerId),
+    { search, statusFilter, cityFilter, governorateFilter, balanceFilter, vipFilter }
+  );
 
-  const activeCount = customers?.filter(c => c.isActive).length || 0;
-  const inactiveCount = customers?.filter(c => !c.isActive).length || 0;
+  const activeCount = customers.filter((c) => c.isActive).length;
+  const inactiveCount = customers.filter((c) => !c.isActive).length;
   const vipCount = vipCustomers?.length || 0;
 
   const hasActiveFilters = cityFilter || governorateFilter || balanceFilter !== "all" || vipFilter !== "all";
@@ -226,8 +209,7 @@ const [, setLocation] = useLocation();
     setSearch("");
   };
 
-  // Upload file to S3 via server
-  const uploadDocumentMutation = trpc.customers.uploadDocument.useMutation();
+  // uploadDocumentMutation from useCustomers
   
   const uploadFileToS3 = async (file: File, docType: string): Promise<string | null> => {
     try {
@@ -318,7 +300,8 @@ const [, setLocation] = useLocation();
       if (url) contractUrl = url;
     }
     
-    createMutation.mutate({
+    createMutation.mutate(
+      {
       fullName,
       fullNameArabic: fullNameArabic || undefined,
       fullNameKurdish: fullNameKurdish || undefined,
@@ -338,17 +321,22 @@ const [, setLocation] = useLocation();
       passportUrl,
       nationalIdUrl,
       contractUrl,
-    });
+    },
+    { onSuccess: onCustomerCreateSuccess, onError: onMutationError }
+    );
   };
 
   const handleResetPassword = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedCustomerId) return;
     const formDataEl = new FormData(e.currentTarget);
-    resetPasswordMutation.mutate({
-      id: selectedCustomerId,
-      newPassword: formDataEl.get("newPassword") as string,
-    });
+    resetPasswordMutation.mutate(
+      {
+        id: selectedCustomerId,
+        newPassword: formDataEl.get("newPassword") as string,
+      },
+      { onSuccess: onResetPasswordSuccess, onError: onMutationError }
+    );
   };
 
   const isVip = (customerId: number) => vipCustomers?.some(v => v.customerId === customerId);
@@ -835,7 +823,7 @@ const [, setLocation] = useLocation();
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t("customers.stats.total")}</p>
-                  <p className="text-3xl font-bold">{customers?.length || 0}</p>
+                  <p className="text-3xl font-bold">{customers.length}</p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/30">
                   <Users className="h-6 w-6" />
@@ -904,7 +892,7 @@ const [, setLocation] = useLocation();
                     size="sm"
                     onClick={() => setStatusFilter("all")}
                   >
-                    {t("common.all")} ({customers?.length || 0})
+                    {t("common.all")} ({customers.length})
                   </Button>
                   <Button
                     variant={statusFilter === "active" ? "default" : "outline"}
@@ -1045,7 +1033,7 @@ const [, setLocation] = useLocation();
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCustomers?.map((customer) => (
+                {filteredCustomers.map((customer) => (
                   <TableRow key={customer.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -1129,7 +1117,7 @@ const [, setLocation] = useLocation();
                     </TableCell>
                   </TableRow>
                 ))}
-                {(!filteredCustomers || filteredCustomers.length === 0) && (
+                {filteredCustomers.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-12">
                       <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />

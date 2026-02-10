@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
+import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
 import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
@@ -86,25 +87,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     exportBatchPDF.mutate({ batchId });
   };
   
-  const { data: batches, refetch } = trpc.batches.list.useQuery();
+  const { batches, refetch, createMutation, updateMutation, updateStatusMutation } = useBatches();
   const { data: warehouses } = trpc.warehouses.list.useQuery({ activeOnly: true });
   const { data: countries } = trpc.countries.list.useQuery({ activeOnly: true });
-  const { data: batchPackages } = trpc.batches.getPackages.useQuery(
-    { batchId: selectedBatch! },
-    { enabled: !!selectedBatch }
-  );
-  const { data: existingTiers } = trpc.batches.getPricingTiers.useQuery(
-    { batchId: editingBatch?.id },
-    { enabled: !!editingBatch?.id }
-  );
-  const { data: existingCustomerPricing } = trpc.batches.getCustomerPricing.useQuery(
-    { batchId: editingBatch?.id },
-    { enabled: !!editingBatch?.id }
-  );
-  const { data: financialSummary } = trpc.batches.getFinancialSummary.useQuery(
-    { batchId: financialBatchId! },
-    { enabled: !!financialBatchId }
-  );
+  const { packages: batchPackages } = useBatchPackages(selectedBatch);
+  const { tiers: existingTiers } = useBatchPricingTiers(editingBatch?.id ?? null);
+  const { customerPricing: existingCustomerPricing } = useBatchCustomerPricing(editingBatch?.id ?? null);
+  const { financialSummary } = useBatchFinancialSummary(financialBatchId);
   const { data: customers } = trpc.customers.list.useQuery();
   
   // Load existing tiers when editing
@@ -138,34 +127,24 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     }
   }, [existingCustomerPricing]);
   
-  const createMutation = trpc.batches.create.useMutation({
-    onSuccess: () => {
-      toast.success(t("batches.batchCreated"));
-      setIsCreateOpen(false);
-      resetForm();
-      refetch();
-    },
-    onError: (error) => toast.error(error.message)
-  });
-
-  const updateMutation = trpc.batches.update.useMutation({
-    onSuccess: () => {
-      toast.success(t("batches.batchUpdated"));
-      setIsEditOpen(false);
-      setEditingBatch(null);
-      resetForm();
-      refetch();
-    },
-    onError: (error) => toast.error(error.message)
-  });
-
-  const updateStatusMutation = trpc.batches.updateStatus.useMutation({
-    onSuccess: () => {
-      toast.success(t("batches.statusUpdated"));
-      refetch();
-    },
-    onError: (error) => toast.error(error.message)
-  });
+  const onBatchCreateSuccess = () => {
+    toast.success(t("batches.batchCreated"));
+    setIsCreateOpen(false);
+    resetForm();
+    refetch();
+  };
+  const onBatchUpdateSuccess = () => {
+    toast.success(t("batches.batchUpdated"));
+    setIsEditOpen(false);
+    setEditingBatch(null);
+    resetForm();
+    refetch();
+  };
+  const onBatchStatusSuccess = () => {
+    toast.success(t("batches.statusUpdated"));
+    refetch();
+  };
+  const onMutationError = (error: { message: string }) => toast.error(error.message);
 
   const resetForm = () => {
     setShippingType("");
@@ -248,7 +227,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // Customer-specific pricing
       customerPricing: customerPricing.length > 0 ? customerPricing : undefined,
       notes: formData.get("notes") as string || undefined,
-    });
+    }, { onSuccess: onBatchCreateSuccess, onError: onMutationError });
   };
 
   const handleEdit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -288,7 +267,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // Customer-specific pricing
       customerPricing: customerPricing,
       notes: formData.get("notes") as string || undefined,
-    });
+    }, { onSuccess: onBatchUpdateSuccess, onError: onMutationError });
   };
 
   const openEditDialog = (batch: any) => {
@@ -961,7 +940,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         {batch.status !== "closed" && (
                           <Select
                             value={batch.status}
-                            onValueChange={(value) => updateStatusMutation.mutate({ id: batch.id, status: value as any })}
+                            onValueChange={(value) => updateStatusMutation.mutate({ id: batch.id, status: value as any }, { onSuccess: onBatchStatusSuccess, onError: onMutationError })}
                           >
                             <SelectTrigger className="w-[110px] h-8">
                               <SelectValue />
