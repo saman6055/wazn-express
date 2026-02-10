@@ -1,6 +1,6 @@
 import { schedule } from "node-cron";
 import { createBackup } from "./backupService.js";
-import { getDb } from "./db.js";
+import { getDb } from "./db";
 import { backups } from "../drizzle/schema.js";
 import { eq, and } from "drizzle-orm";
 

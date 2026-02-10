@@ -813,7 +813,7 @@ export const backupRouter = router({
         offset: z.number().min(0).default(0),
       }))
       .query(async ({ input }) => {
-        const { getDb } = await import("../db.js");
+        const { getDb } = await import("../db");
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
         
@@ -838,7 +838,7 @@ export const backupRouter = router({
     getById: adminProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
-        const { getDb } = await import("../db.js");
+        const { getDb } = await import("../db");
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
         
@@ -858,7 +858,7 @@ export const backupRouter = router({
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
-        const { getDb } = await import("../db.js");
+        const { getDb } = await import("../db");
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
         
@@ -878,7 +878,7 @@ export const backupRouter = router({
       }))
       .mutation(async ({ input }) => {
         // Get backup to check if it's a ZIP backup
-        const { getDb } = await import("../db.js");
+        const { getDb } = await import("../db");
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
         

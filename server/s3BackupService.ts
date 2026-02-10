@@ -1,4 +1,4 @@
-import { getDb } from "./db.js";
+import { getDb } from "./db";
 import { packages, invoices, backups } from "../drizzle/schema.js";
 import { isNotNull } from "drizzle-orm";
 import archiver from "archiver";

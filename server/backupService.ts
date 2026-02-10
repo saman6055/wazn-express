@@ -1,8 +1,8 @@
 import { storagePut } from "./storage.js";
-import { getDb } from "./db.js";
+import { getDb } from "./db";
 import { backups } from "../drizzle/schema.js";
 import { eq } from "drizzle-orm";
-import * as dbHelpers from "./db.js";
+import * as dbHelpers from "./db";
 
 interface BackupOptions {
   backupType: "manual" | "scheduled";

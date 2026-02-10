@@ -1,9 +1,9 @@
 import archiver from "archiver";
 import { storagePut, storageGet } from "./storage.js";
-import { getDb } from "./db.js";
+import { getDb } from "./db";
 import { backups } from "../drizzle/schema.js";
 import { eq } from "drizzle-orm";
-import * as dbHelpers from "./db.js";
+import * as dbHelpers from "./db";
 import { Readable } from "stream";
 
 interface ZipBackupOptions {
