@@ -62,7 +62,8 @@ describe("Package Registration with Batch", () => {
     testWarehouseId = warehouses[0].id;
 
     // Get existing batch or create one
-    const batches = await db.getAllBatches();
+    const batchesResult = await db.getAllBatches();
+    const batches = batchesResult.data;
     if (batches.length > 0) {
       testBatchId = batches[0].id;
     } else {

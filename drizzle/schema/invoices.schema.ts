@@ -28,7 +28,11 @@ export const invoices = mysqlTable("invoices", {
   createdById: int("createdById").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  customerIdIdx: index("idx_invoices_customer_id").on(table.customerId),
+  batchIdIdx: index("idx_invoices_batch_id").on(table.batchId),
+  createdAtIdx: index("idx_invoices_created_at").on(table.createdAt),
+}));
 
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = typeof invoices.$inferInsert;

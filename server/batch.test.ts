@@ -44,7 +44,8 @@ describe('Batch Operations', () => {
   });
 
   it('should list all batches', async () => {
-    const batches = await db.getAllBatches();
+    const result = await db.getAllBatches();
+    const batches = result.data;
     
     expect(batches).toBeDefined();
     expect(Array.isArray(batches)).toBe(true);

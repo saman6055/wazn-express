@@ -90,16 +90,68 @@ export async function getInvoiceById(id: number): Promise<Invoice | undefined> {
   return result[0];
 }
 
-export async function getInvoicesByCustomer(customerId: number) {
+const INVOICE_DEFAULT_LIMIT = 50;
+
+export async function getInvoicesByCustomer(customerId: number, options: { limit?: number; page?: number } = {}) {
   const db = await getDb();
-  if (!db) return [];
-  return db.select().from(invoices).where(eq(invoices.customerId, customerId)).orderBy(desc(invoices.createdAt));
+  if (!db) return { data: [], total: 0, page: 1, pageSize: INVOICE_DEFAULT_LIMIT, totalPages: 0 };
+  const pageSize = Math.min(100, options.limit ?? INVOICE_DEFAULT_LIMIT);
+  const page = Math.max(1, options.page ?? 1);
+  const offset = (page - 1) * pageSize;
+  const where = eq(invoices.customerId, customerId);
+  const countResult = await db.select({ count: count() }).from(invoices).where(where);
+  const total = countResult[0]?.count ?? 0;
+  const totalPages = Math.ceil(total / pageSize);
+  const data = await db.select({
+    id: invoices.id,
+    invoiceNumber: invoices.invoiceNumber,
+    customerId: invoices.customerId,
+    packageId: invoices.packageId,
+    batchId: invoices.batchId,
+    subtotalUsd: invoices.subtotalUsd,
+    taxUsd: invoices.taxUsd,
+    totalUsd: invoices.totalUsd,
+    status: invoices.status,
+    issuedAt: invoices.issuedAt,
+    dueDate: invoices.dueDate,
+    paidAt: invoices.paidAt,
+    createdAt: invoices.createdAt,
+  })
+    .from(invoices)
+    .where(where)
+    .orderBy(desc(invoices.createdAt))
+    .limit(pageSize)
+    .offset(offset);
+  return { data, total, page, pageSize, totalPages };
 }
 
-export async function getAllInvoices(limit = 100) {
+export async function getAllInvoices(options: { limit?: number; page?: number } = {}) {
   const db = await getDb();
-  if (!db) return [];
-  return db.select().from(invoices).orderBy(desc(invoices.createdAt)).limit(limit);
+  if (!db) return { data: [], total: 0, page: 1, pageSize: INVOICE_DEFAULT_LIMIT, totalPages: 0 };
+  const pageSize = Math.min(100, options.limit ?? INVOICE_DEFAULT_LIMIT);
+  const page = Math.max(1, options.page ?? 1);
+  const offset = (page - 1) * pageSize;
+  const countResult = await db.select({ count: count() }).from(invoices);
+  const total = countResult[0]?.count ?? 0;
+  const totalPages = Math.ceil(total / pageSize);
+  const data = await db.select({
+    id: invoices.id,
+    invoiceNumber: invoices.invoiceNumber,
+    customerId: invoices.customerId,
+    packageId: invoices.packageId,
+    batchId: invoices.batchId,
+    subtotalUsd: invoices.subtotalUsd,
+    totalUsd: invoices.totalUsd,
+    status: invoices.status,
+    issuedAt: invoices.issuedAt,
+    paidAt: invoices.paidAt,
+    createdAt: invoices.createdAt,
+  })
+    .from(invoices)
+    .orderBy(desc(invoices.createdAt))
+    .limit(pageSize)
+    .offset(offset);
+  return { data, total, page, pageSize, totalPages };
 }
 
 export async function updateInvoice(id: number, data: Partial<InsertInvoice>) {

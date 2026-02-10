@@ -48,7 +48,13 @@ export const packages = mysqlTable("packages", {
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  customerIdIdx: index("idx_packages_customer_id").on(table.customerId),
+  batchIdIdx: index("idx_packages_batch_id").on(table.batchId),
+  statusIdx: index("idx_packages_status").on(table.status),
+  trackingNumberIdx: index("idx_packages_tracking_number").on(table.trackingNumber),
+  createdAtIdx: index("idx_packages_created_at").on(table.createdAt),
+}));
 
 export type Package = typeof packages.$inferSelect;
 export type InsertPackage = typeof packages.$inferInsert;

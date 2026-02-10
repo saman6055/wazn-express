@@ -7,31 +7,26 @@ import { notifyBatchStatusChange } from "../notifications";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const batchesRouter = router({
-    list: staffProcedure.query(async () => {
-      const batches = await db.getAllBatches();
-      // Add hasCustomerPricing flag to each batch with error handling
-      const batchesWithPricingInfo = await Promise.all(
-        batches.map(async (batch) => {
-          try {
-            const customerPricing = await db.getBatchCustomerPricing(batch.id);
-            return {
-              ...batch,
-              hasCustomerPricing: customerPricing.length > 0,
-              customerPricingCount: customerPricing.length,
-            };
-          } catch (error) {
-            // If table doesn't exist or query fails, return batch without pricing info
-            console.error(`Error fetching customer pricing for batch ${batch.id}:`, error);
-            return {
-              ...batch,
-              hasCustomerPricing: false,
-              customerPricingCount: 0,
-            };
-          }
-        })
-      );
-      return batchesWithPricingInfo;
-    }),
+    list: staffProcedure
+      .input(z.object({ page: z.number().min(1).optional(), pageSize: z.number().min(1).max(100).optional() }).optional())
+      .query(async ({ input }) => {
+        const result = await db.getAllBatches({ page: input?.page, pageSize: input?.pageSize });
+        const batchIds = result.data.map((b) => b.id);
+        const pricingByBatch = batchIds.length > 0 ? await db.getBatchCustomerPricingForBatches(batchIds) : new Map<number, { customerId: number; pricePerKg?: string; pricePerCbm?: string }[]>();
+        const batchesWithPricingInfo = result.data.map((batch) => {
+          const customerPricing = pricingByBatch.get(batch.id) ?? [];
+          return {
+            ...batch,
+            hasCustomerPricing: customerPricing.length > 0,
+            customerPricingCount: customerPricing.length,
+          };
+        });
+        // When pagination params provided, return full shape; otherwise return array for backward compat
+        if (input?.page !== undefined || input?.pageSize !== undefined) {
+          return { ...result, data: batchesWithPricingInfo };
+        }
+        return batchesWithPricingInfo;
+      }),
     getActive: staffProcedure.query(async () => {
       return db.getActiveBatches();
     }),
@@ -601,18 +596,23 @@ export const batchesRouter = router({
         }));
       }),
     
-    // List all customer-specific pricing across all batches
-    listAllCustomerPricing: staffProcedure.query(async () => {
-      const batches = await db.getAllBatches();
-      const allPricing: any[] = [];
-      
-      for (const batch of batches) {
-        const pricing = await db.getBatchCustomerPricing(batch.id);
-        allPricing.push(...pricing);
-      }
-      
-      return allPricing;
-    }),
+    // List all customer-specific pricing across all batches (paginated batch fetch)
+    listAllCustomerPricing: staffProcedure
+      .input(z.object({ page: z.number().min(1).optional(), pageSize: z.number().min(1).max(100).optional() }).optional())
+      .query(async ({ input }) => {
+        const result = await db.getAllBatches({ page: input?.page, pageSize: input?.pageSize ?? 50 });
+        const batchIds = result.data.map((b) => b.id);
+        if (batchIds.length === 0) return { data: [], total: 0, page: result.page, pageSize: result.pageSize, totalPages: 0 };
+        const pricingByBatch = await db.getBatchCustomerPricingForBatches(batchIds);
+        const allPricing: any[] = [];
+        for (const batchId of batchIds) {
+          const pricing = pricingByBatch.get(batchId) ?? [];
+          for (const p of pricing) {
+            allPricing.push({ batchId, ...p });
+          }
+        }
+        return { data: allPricing, total: allPricing.length, page: result.page, pageSize: result.pageSize, totalPages: result.totalPages };
+      }),
     
     // Get financial summary for a batch
     getFinancialSummary: staffProcedure

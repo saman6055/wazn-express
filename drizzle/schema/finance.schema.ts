@@ -138,7 +138,12 @@ export const ledgerTransactions = mysqlTable("ledgerTransactions", {
   approvedById: int("approvedById"), // For large transactions
   
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  accountIdIdx: index("idx_ledger_account_id").on(table.accountId),
+  createdAtIdx: index("idx_ledger_created_at").on(table.createdAt),
+  typeIdx: index("idx_ledger_transaction_type").on(table.transactionType),
+  accountCreatedIdx: index("idx_ledger_account_created").on(table.accountId, table.createdAt),
+}));
 
 export type LedgerTransaction = typeof ledgerTransactions.$inferSelect;
 export type InsertLedgerTransaction = typeof ledgerTransactions.$inferInsert;

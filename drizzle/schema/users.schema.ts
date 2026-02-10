@@ -57,7 +57,10 @@ export const customers = mysqlTable("customers", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn"),
-});
+}, (table) => ({
+  customerCodeIdx: index("idx_customers_customer_code").on(table.customerCode),
+  mobileNumberIdx: index("idx_customers_mobile_number").on(table.mobileNumber),
+}));
 
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = typeof customers.$inferInsert;

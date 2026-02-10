@@ -105,10 +105,11 @@ export default function CustomerFinance() {
   const { data: customer, isLoading: customerLoading } = trpc.customers.getById.useQuery({ id: customerId });
   const { data: activeCashAccounts } = trpc.cashAccounts.listActive.useQuery();
   const { data: account, isLoading: accountLoading } = trpc.ledger.getAccountByCustomer.useQuery({ customerId });
-  const { data: transactions, isLoading: transactionsLoading } = trpc.ledger.getTransactions.useQuery(
+  const { data: transactionsResponse, isLoading: transactionsLoading } = trpc.ledger.getTransactions.useQuery(
     { accountId: account?.id || 0, limit: 100 },
     { enabled: !!account?.id }
   );
+  const transactions = transactionsResponse?.data ?? [];
   const { data: payments } = trpc.ledger.getPayments.useQuery(
     { accountId: account?.id || 0, limit: 50 },
     { enabled: !!account?.id }

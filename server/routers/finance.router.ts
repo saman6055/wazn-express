@@ -3,16 +3,17 @@ import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
+import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const exchangeRatesRouter = router({
     list: staffProcedure.query(async () => {
-      return db.getAllExchangeRates();
+      return cacheGetOrSet("exchangeRates:all", CACHE_TTL.EXCHANGE_RATES_MS, () => db.getAllExchangeRates());
     }),
     getCurrent: staffProcedure
       .input(z.object({ currency: z.string() }))
       .query(async ({ input }) => {
-        return db.getCurrentExchangeRate(input.currency);
+        return cacheGetOrSet(`exchangeRate:${input.currency}`, CACHE_TTL.EXCHANGE_RATES_MS, () => db.getCurrentExchangeRate(input.currency));
       }),
     create: accountantProcedure
       .input(z.object({
@@ -66,11 +67,11 @@ export const ledgerRouter = router({
         return db.getOrCreateCustomerAccount(input.customerId, input.customerCode);
       }),
     
-    // Get account transactions
+    // Get account transactions (cursor-based pagination)
     getTransactions: staffProcedure
-      .input(z.object({ accountId: z.number(), limit: z.number().default(50) }))
+      .input(z.object({ accountId: z.number(), limit: z.number().min(1).max(100).default(50), cursor: z.number().optional() }))
       .query(async ({ input }) => {
-        return db.getAccountLedgerTransactions(input.accountId, input.limit);
+        return db.getAccountLedgerTransactions(input.accountId, { limit: input.limit, cursor: input.cursor });
       }),
     
     // Get account payments
@@ -337,7 +338,8 @@ export const ledgerRouter = router({
         offset: z.number().default(0),
       }))
       .query(async ({ input }) => {
-        return db.getAllInvoices(input.limit);
+        const page = input.limit > 0 ? Math.floor(input.offset / input.limit) + 1 : 1;
+        return db.getAllInvoices({ limit: input.limit, page });
       }),
     
     // Get invoice by ID

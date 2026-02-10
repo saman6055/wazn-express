@@ -28,10 +28,11 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     { customerId: parseInt(selectedCustomerId) },
     { enabled: !!selectedCustomerId }
   );
-  const { data: transactions, refetch: refetchTransactions } = trpc.ledger.getTransactions.useQuery(
+  const { data: transactionsResponse, refetch: refetchTransactions } = trpc.ledger.getTransactions.useQuery(
     { accountId: account?.id || 0, limit: 50 },
     { enabled: !!account?.id }
   );
+  const transactions = transactionsResponse?.data ?? [];
   
   const customerBalance = account ? parseFloat(account.currentBalanceUsd || '0') : 0;
   

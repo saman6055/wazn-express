@@ -36,12 +36,10 @@ export const customerPortalRouter = router({
       return db.getPackagesByCustomer(customer.id);
     }),
     getMyInvoices: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.isCustomer) {
-        return db.getInvoicesByCustomer(ctx.user.id);
-      }
-      const customer = await db.getCustomerByUserId(ctx.user.id);
-      if (!customer) return [];
-      return db.getInvoicesByCustomer(customer.id);
+      const customerId = ctx.user.isCustomer ? ctx.user.id : (await db.getCustomerByUserId(ctx.user.id))?.id;
+      if (!customerId) return [];
+      const result = await db.getInvoicesByCustomer(customerId, { limit: 50, page: 1 });
+      return result.data;
     }),
     getMyBalance: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.isCustomer) {

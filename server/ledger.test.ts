@@ -98,9 +98,9 @@ describe("Customer Ledger System", () => {
     });
 
     it("should get transactions for account", async () => {
-      const transactions = await db.getAccountLedgerTransactions(testAccountId, 50);
-      expect(Array.isArray(transactions)).toBe(true);
-      expect(transactions.length).toBeGreaterThanOrEqual(1);
+      const result = await db.getAccountLedgerTransactions(testAccountId, { limit: 50 });
+      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data.length).toBeGreaterThanOrEqual(1);
     });
 
     it("should get recent transactions", async () => {

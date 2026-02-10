@@ -137,17 +137,40 @@ export async function getCustomerBalance(customerId: number): Promise<number> {
 // DEPRECATED: Use getAllLedgerTransactions instead
 export async function getAllLedgerEntries(limit = 100) {
   console.warn('[DEPRECATED] getAllLedgerEntries is deprecated. Use getAllLedgerTransactions instead.');
-  const db = await getDb();
-  if (!db) return [];
-  // Return from unified ledgerTransactions table
-  return db.select().from(ledgerTransactions).orderBy(desc(ledgerTransactions.createdAt)).limit(limit);
+  const result = await getAllLedgerTransactions({ limit, page: 1 });
+  return result.data;
 }
 
-// Get all ledger transactions from unified system
-export async function getAllLedgerTransactions(limit = 100) {
+const ALL_LEDGER_DEFAULT_LIMIT = 50;
+
+// Get all ledger transactions from unified system (paginated, explicit columns)
+export async function getAllLedgerTransactions(options: { limit?: number; page?: number } = {}) {
   const db = await getDb();
-  if (!db) return [];
-  return db.select().from(ledgerTransactions).orderBy(desc(ledgerTransactions.createdAt)).limit(limit);
+  if (!db) return { data: [], total: 0, page: 1, pageSize: ALL_LEDGER_DEFAULT_LIMIT, totalPages: 0 };
+  const pageSize = Math.min(100, options.limit ?? ALL_LEDGER_DEFAULT_LIMIT);
+  const page = Math.max(1, options.page ?? 1);
+  const offset = (page - 1) * pageSize;
+  const countResult = await db.select({ count: count() }).from(ledgerTransactions);
+  const total = countResult[0]?.count ?? 0;
+  const totalPages = Math.ceil(total / pageSize);
+  const data = await db.select({
+    id: ledgerTransactions.id,
+    accountId: ledgerTransactions.accountId,
+    transactionNumber: ledgerTransactions.transactionNumber,
+    transactionType: ledgerTransactions.transactionType,
+    amountUsd: ledgerTransactions.amountUsd,
+    amountIqd: ledgerTransactions.amountIqd,
+    balanceAfterUsd: ledgerTransactions.balanceAfterUsd,
+    referenceType: ledgerTransactions.referenceType,
+    referenceId: ledgerTransactions.referenceId,
+    description: ledgerTransactions.description,
+    createdAt: ledgerTransactions.createdAt,
+  })
+    .from(ledgerTransactions)
+    .orderBy(desc(ledgerTransactions.createdAt))
+    .limit(pageSize)
+    .offset(offset);
+  return { data, total, page, pageSize, totalPages };
 }
 
 
@@ -263,16 +286,45 @@ export async function createLedgerTransaction(data: InsertLedgerTransaction): Pr
   return transaction;
 }
 
-// Get ledger transactions for account
-export async function getAccountLedgerTransactions(accountId: number, limit = 50): Promise<LedgerTransaction[]> {
+const LEDGER_DEFAULT_LIMIT = 50;
+
+// Get ledger transactions for account (cursor-based when cursor provided)
+export async function getAccountLedgerTransactions(
+  accountId: number,
+  options: { limit?: number; cursor?: number } = {}
+): Promise<{ data: LedgerTransaction[]; nextCursor: number | null }> {
   const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select()
+  if (!db) return { data: [], nextCursor: null };
+  const limit = Math.min(100, options.limit ?? LEDGER_DEFAULT_LIMIT);
+  const conditions = [eq(ledgerTransactions.accountId, accountId)];
+  if (options.cursor != null) {
+    conditions.push(lt(ledgerTransactions.id, options.cursor));
+  }
+  const data = await db.select({
+    id: ledgerTransactions.id,
+    accountId: ledgerTransactions.accountId,
+    transactionNumber: ledgerTransactions.transactionNumber,
+    transactionType: ledgerTransactions.transactionType,
+    amountUsd: ledgerTransactions.amountUsd,
+    amountIqd: ledgerTransactions.amountIqd,
+    balanceBeforeUsd: ledgerTransactions.balanceBeforeUsd,
+    balanceAfterUsd: ledgerTransactions.balanceAfterUsd,
+    balanceBeforeIqd: ledgerTransactions.balanceBeforeIqd,
+    balanceAfterIqd: ledgerTransactions.balanceAfterIqd,
+    referenceType: ledgerTransactions.referenceType,
+    referenceId: ledgerTransactions.referenceId,
+    description: ledgerTransactions.description,
+    invoiceId: ledgerTransactions.invoiceId,
+    createdAt: ledgerTransactions.createdAt,
+  })
     .from(ledgerTransactions)
-    .where(eq(ledgerTransactions.accountId, accountId))
+    .where(and(...conditions))
     .orderBy(desc(ledgerTransactions.createdAt))
-    .limit(limit);
+    .limit(limit + 1);
+  const hasMore = data.length > limit;
+  const items = hasMore ? data.slice(0, limit) : data;
+  const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].id : null;
+  return { data: items as LedgerTransaction[], nextCursor };
 }
 
 // Create payment record

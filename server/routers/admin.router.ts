@@ -3,6 +3,7 @@ import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
+import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 import { systemRouter } from "../_core/systemRouter";
@@ -323,47 +324,51 @@ export const dataManagementRouter = router({
 });
 
 export const dashboardRouter = router({
-    // Financial statistics
+    // Financial statistics (cached 30s)
     financialStats: staffProcedure.query(async () => {
-      return db.getDashboardFinancialStats();
+      return cacheGetOrSet("dashboard:financialStats", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardFinancialStats());
     }),
     
-    // Revenue chart data (30 days)
+    // Revenue chart data (30 days) (cached 30s)
     revenueChart: staffProcedure
       .input(z.object({ days: z.number().optional() }).optional())
       .query(async ({ input }) => {
-        return db.getDashboardRevenueChart(input?.days || 30);
+        const days = input?.days || 30;
+        return cacheGetOrSet(`dashboard:revenueChart:${days}`, CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardRevenueChart(days));
       }),
     
-    // Active batches
+    // Active batches (cached 30s)
     activeBatches: staffProcedure.query(async () => {
-      return db.getDashboardActiveBatches();
+      return cacheGetOrSet("dashboard:activeBatches", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardActiveBatches());
     }),
     
-    // Top debtors
+    // Top debtors (cached 30s)
     topDebtors: staffProcedure
       .input(z.object({ limit: z.number().optional() }).optional())
       .query(async ({ input }) => {
-        return db.getDashboardTopDebtors(input?.limit || 5);
+        const limit = input?.limit || 5;
+        return cacheGetOrSet(`dashboard:topDebtors:${limit}`, CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardTopDebtors(limit));
       }),
     
-    // Recent activity
+    // Recent activity (cached 30s)
     recentActivity: staffProcedure
       .input(z.object({ limit: z.number().optional() }).optional())
       .query(async ({ input }) => {
-        return db.getDashboardRecentActivity(input?.limit || 10);
+        const limit = input?.limit || 10;
+        return cacheGetOrSet(`dashboard:recentActivity:${limit}`, CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardRecentActivity(limit));
       }),
     
-    // Alerts
+    // Alerts (cached 30s)
     alerts: staffProcedure.query(async () => {
-      return db.getDashboardAlerts();
+      return cacheGetOrSet("dashboard:alerts", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardAlerts());
     }),
     
-    // New customers count
+    // New customers count (cached 30s)
     newCustomers: staffProcedure
       .input(z.object({ days: z.number().optional() }).optional())
       .query(async ({ input }) => {
-        return db.getDashboardNewCustomers(input?.days || 7);
+        const days = input?.days || 7;
+        return cacheGetOrSet(`dashboard:newCustomers:${days}`, CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardNewCustomers(days));
       }),
     
     // Export dashboard as PDF

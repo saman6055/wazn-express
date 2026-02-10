@@ -83,10 +83,45 @@ export async function createBatch(data: InsertBatch): Promise<Batch> {
   return inserted[0];
 }
 
-export async function getAllBatches() {
+const BATCH_LIST_DEFAULT_LIMIT = 50;
+
+export async function getAllBatches(options: { page?: number; pageSize?: number } = {}) {
   const db = await getDb();
-  if (!db) return [];
-  return db.select().from(batches).orderBy(desc(batches.createdAt));
+  if (!db) return { data: [], total: 0, page: 1, pageSize: BATCH_LIST_DEFAULT_LIMIT, totalPages: 0 };
+  const page = Math.max(1, options.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, options.pageSize ?? BATCH_LIST_DEFAULT_LIMIT));
+  const offset = (page - 1) * pageSize;
+
+  const countResult = await db.select({ count: count() }).from(batches);
+  const total = countResult[0]?.count ?? 0;
+  const totalPages = Math.ceil(total / pageSize);
+
+  const data = await db.select({
+    id: batches.id,
+    batchCode: batches.batchCode,
+    originWarehouseId: batches.originWarehouseId,
+    destinationCountryId: batches.destinationCountryId,
+    shippingType: batches.shippingType,
+    status: batches.status,
+    totalPackages: batches.totalPackages,
+    totalWeight: batches.totalWeight,
+    actualWeightKg: batches.actualWeightKg,
+    actualCbm: batches.actualCbm,
+    pricePerKg: batches.pricePerKg,
+    pricePerCbm: batches.pricePerCbm,
+    useTieredPricing: batches.useTieredPricing,
+    departureDate: batches.departureDate,
+    estimatedArrival: batches.estimatedArrival,
+    actualArrival: batches.actualArrival,
+    createdAt: batches.createdAt,
+    updatedAt: batches.updatedAt,
+  })
+    .from(batches)
+    .orderBy(desc(batches.createdAt))
+    .limit(pageSize)
+    .offset(offset);
+
+  return { data, total, page, pageSize, totalPages };
 }
 
 export async function getBatchById(id: number): Promise<Batch | undefined> {
@@ -246,6 +281,27 @@ export async function getBatchCustomerPricing(batchId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(batchCustomerPricing).where(eq(batchCustomerPricing.batchId, batchId));
+}
+
+/** Batch fetch customer pricing for multiple batches (avoids N+1). */
+export async function getBatchCustomerPricingForBatches(batchIds: number[]): Promise<Map<number, { customerId: number; pricePerKg?: string; pricePerCbm?: string }[]>> {
+  const db = await getDb();
+  const map = new Map<number, { customerId: number; pricePerKg?: string; pricePerCbm?: string }[]>();
+  if (!db || batchIds.length === 0) return map;
+  const rows = await db.select({
+    batchId: batchCustomerPricing.batchId,
+    customerId: batchCustomerPricing.customerId,
+    pricePerKg: batchCustomerPricing.pricePerKg,
+    pricePerCbm: batchCustomerPricing.pricePerCbm,
+  })
+    .from(batchCustomerPricing)
+    .where(inArray(batchCustomerPricing.batchId, batchIds));
+  for (const row of rows) {
+    const list = map.get(row.batchId) ?? [];
+    list.push({ customerId: row.customerId, pricePerKg: row.pricePerKg ?? undefined, pricePerCbm: row.pricePerCbm ?? undefined });
+    map.set(row.batchId, list);
+  }
+  return map;
 }
 
 export async function getCustomerPricingInBatch(batchId: number, customerId: number) {

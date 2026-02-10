@@ -43,7 +43,11 @@ export const batches = mysqlTable("batches", {
   createdById: int("createdById").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  statusIdx: index("idx_batches_status").on(table.status),
+  shippingTypeIdx: index("idx_batches_shipping_type").on(table.shippingType),
+  createdAtIdx: index("idx_batches_created_at").on(table.createdAt),
+}));
 
 export type Batch = typeof batches.$inferSelect;
 export type InsertBatch = typeof batches.$inferInsert;

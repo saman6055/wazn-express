@@ -3,13 +3,15 @@ import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
+import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const countriesRouter = router({
     list: staffProcedure
       .input(z.object({ activeOnly: z.boolean().optional() }).optional())
       .query(async ({ input }) => {
-        return db.getAllCountries(input?.activeOnly);
+        const key = `countries:${input?.activeOnly ?? "all"}`;
+        return cacheGetOrSet(key, CACHE_TTL.REFERENCE_LISTS_MS, () => db.getAllCountries(input?.activeOnly));
       }),
     getOrigins: staffProcedure.query(async () => {
       return db.getOriginCountries();
@@ -75,7 +77,8 @@ export const warehousesRouter = router({
     list: staffProcedure
       .input(z.object({ activeOnly: z.boolean().optional() }).optional())
       .query(async ({ input }) => {
-        return db.getAllWarehouses(input?.activeOnly);
+        const key = `warehouses:${input?.activeOnly ?? "all"}`;
+        return cacheGetOrSet(key, CACHE_TTL.REFERENCE_LISTS_MS, () => db.getAllWarehouses(input?.activeOnly));
       }),
     getByCountry: staffProcedure
       .input(z.object({ countryId: z.number() }))

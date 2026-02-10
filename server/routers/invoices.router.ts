@@ -7,9 +7,9 @@ import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, ba
 
 export const invoicesRouter = router({
     list: accountantProcedure
-      .input(z.object({ limit: z.number().optional() }).optional())
+      .input(z.object({ limit: z.number().min(1).max(100).optional(), page: z.number().min(1).optional() }).optional())
       .query(async ({ input }) => {
-        return db.getAllInvoices(input?.limit);
+        return db.getAllInvoices({ limit: input?.limit ?? 50, page: input?.page });
       }),
     getById: accountantProcedure
       .input(z.object({ id: z.number() }))
@@ -17,9 +17,9 @@ export const invoicesRouter = router({
         return db.getInvoiceById(input.id);
       }),
     getByCustomer: staffProcedure
-      .input(z.object({ customerId: z.number() }))
+      .input(z.object({ customerId: z.number(), limit: z.number().min(1).max(100).optional(), page: z.number().min(1).optional() }))
       .query(async ({ input }) => {
-        return db.getInvoicesByCustomer(input.customerId);
+        return db.getInvoicesByCustomer(input.customerId, { limit: input.limit ?? 50, page: input.page });
       }),
     create: accountantProcedure
       .input(z.object({

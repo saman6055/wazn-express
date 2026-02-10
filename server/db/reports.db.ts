@@ -557,21 +557,28 @@ export async function getDashboardActiveBatches(): Promise<{
     .orderBy(desc(batches.createdAt))
     .limit(5);
 
-  // Get package stats for each batch
-  const result = await Promise.all(activeBatches.map(async (batch) => {
-    const stats = await db.select({
-      count: count(),
-      totalWeight: sql<string>`COALESCE(SUM(CAST(${packages.weightKg} AS DECIMAL(10,2))), 0)`
-    }).from(packages).where(eq(packages.batchId, batch.id));
+  // Batch fetch package stats for all active batches (avoid N+1)
+  const batchIds = activeBatches.map((b) => b.id);
+  const statsRows = batchIds.length > 0
+    ? await db.select({
+        batchId: packages.batchId,
+        count: count(),
+        totalWeight: sql<string>`COALESCE(SUM(CAST(${packages.weightKg} AS DECIMAL(10,2))), 0)`
+      })
+        .from(packages)
+        .where(inArray(packages.batchId, batchIds))
+        .groupBy(packages.batchId)
+    : [];
+  const statsByBatchId = new Map(statsRows.map((r) => [r.batchId, { count: r.count, totalWeight: parseFloat(r.totalWeight || "0") }]));
 
+  return activeBatches.map((batch) => {
+    const stats = statsByBatchId.get(batch.id) ?? { count: 0, totalWeight: 0 };
     return {
       ...batch,
-      packageCount: stats[0]?.count || 0,
-      totalWeight: parseFloat(stats[0]?.totalWeight || '0')
+      packageCount: stats.count,
+      totalWeight: stats.totalWeight
     };
-  }));
-
-  return result;
+  });
 }
 
 export async function getDashboardTopDebtors(limit: number = 5): Promise<{
@@ -585,6 +592,7 @@ export async function getDashboardTopDebtors(limit: number = 5): Promise<{
   if (!db) return [];
 
   const debtors = await db.select({
+    accountId: customerAccounts.id,
     customerId: customerAccounts.customerId,
     debtUsd: sql<string>`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`
   }).from(customerAccounts)
@@ -592,28 +600,34 @@ export async function getDashboardTopDebtors(limit: number = 5): Promise<{
     .orderBy(desc(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`))
     .limit(limit);
 
-  // Get customer info and last payment for each debtor (from customers table)
-  const result = await Promise.all(debtors.map(async (debtor) => {
-    const [customer] = await db.select({
-      fullName: customers.fullName,
-      customerCode: customers.customerCode
-    }).from(customers).where(eq(customers.id, debtor.customerId));
+  if (debtors.length === 0) return [];
 
-    const [lastPayment] = await db.select({
-      paymentDate: paymentRecords.createdAt
-    }).from(paymentRecords)
-      .where(eq(paymentRecords.accountId, debtor.customerId))
-      .orderBy(desc(paymentRecords.createdAt))
-      .limit(1);
+  const customerIds = debtors.map((d) => d.customerId);
+  const accountIds = debtors.map((d) => d.accountId);
+  const customersList = await db.select({
+    id: customers.id,
+    fullName: customers.fullName,
+    customerCode: customers.customerCode
+  }).from(customers).where(inArray(customers.id, customerIds));
+  const customerMap = new Map(customersList.map((c) => [c.id, c]));
 
+  const lastPayments = await db.select({
+    accountId: paymentRecords.accountId,
+    paymentDate: sql<Date>`MAX(${paymentRecords.createdAt})`.as("paymentDate")
+  }).from(paymentRecords).where(inArray(paymentRecords.accountId, accountIds)).groupBy(paymentRecords.accountId);
+  const lastPaymentByAccount = new Map(lastPayments.map((p) => [p.accountId, p.paymentDate]));
+
+  const result = debtors.map((debtor) => {
+    const customer = customerMap.get(debtor.customerId);
+    const lastPaymentDate = lastPaymentByAccount.get(debtor.accountId) ?? null;
     return {
       customerId: debtor.customerId,
       customerName: customer?.fullName || 'Unknown',
       customerCode: customer?.customerCode || '',
       debtUsd: parseFloat(debtor.debtUsd),
-      lastPaymentDate: lastPayment?.paymentDate || null
+      lastPaymentDate
     };
-  }));
+  });
 
   return result;
 }
@@ -659,21 +673,30 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
     });
   });
 
-  // Recent payments
+  // Recent payments (join to get customerId, then batch fetch customer names to avoid N+1)
   const recentPayments = await db.select({
     id: paymentRecords.id,
     amountUsd: paymentRecords.amountUsd,
-    customerId: paymentRecords.accountId,
+    customerId: customerAccounts.customerId,
     paymentDate: paymentRecords.createdAt
-  }).from(paymentRecords).orderBy(desc(paymentRecords.createdAt)).limit(5);
+  })
+    .from(paymentRecords)
+    .innerJoin(customerAccounts, eq(paymentRecords.accountId, customerAccounts.id))
+    .orderBy(desc(paymentRecords.createdAt))
+    .limit(5);
+
+  const paymentCustomerIds = [...new Set(recentPayments.map((p) => p.customerId).filter((id): id is number => id != null))];
+  const customersList = paymentCustomerIds.length > 0
+    ? await db.select({ id: customers.id, fullName: customers.fullName }).from(customers).where(inArray(customers.id, paymentCustomerIds))
+    : [];
+  const customerMap = new Map(customersList.map((c) => [c.id, c.fullName ?? 'Unknown']));
 
   for (const payment of recentPayments) {
-    const [customer] = await db.select({ fullName: customers.fullName }).from(customers).where(eq(customers.id, payment.customerId));
     activities.push({
       id: `pay-${payment.id}`,
       type: 'payment',
       title: `$${payment.amountUsd} وەرگیرا`,
-      description: customer?.fullName || 'Unknown',
+      description: payment.customerId ? (customerMap.get(payment.customerId) ?? 'Unknown') : 'Unknown',
       timestamp: payment.paymentDate,
       icon: 'DollarSign',
       color: 'green'
