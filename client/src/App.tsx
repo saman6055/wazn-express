@@ -21,7 +21,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 // ---------------------------------------------------------------------------
 // Dashboard & Customers
 // ---------------------------------------------------------------------------
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+const DashboardWrapper = lazy(() => import("./pages/DashboardWrapper"));
 const Customers = lazy(() => import("./pages/Customers"));
 const CustomerDetail = lazy(() => import("./pages/customers/CustomerDetail"));
 const Countries = lazy(() => import("./pages/Countries"));
@@ -187,7 +187,7 @@ function Router() {
     <Suspense fallback={<LoadingSkeleton />}>
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/dashboard" component={DashboardWrapper} />
         <Route path="/customers" component={Customers} />
         <Route path="/customers/:id" component={CustomerDetail} />
         <Route path="/countries" component={Countries} />

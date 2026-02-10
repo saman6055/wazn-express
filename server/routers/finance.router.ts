@@ -100,7 +100,25 @@ export const ledgerRouter = router({
       .query(async ({ input }) => {
         return db.getRecentTransactions(input.limit);
       }),
-    
+
+    // Get recent payments with customer name (for accountant dashboard)
+    getRecentPayments: accountantProcedure
+      .input(z.object({ limit: z.number().default(20) }))
+      .query(async ({ input }) => {
+        return db.getRecentPayments(input.limit);
+      }),
+
+    // Balance distribution: debt / credit / zero counts (for accountant dashboard)
+    getBalanceDistribution: accountantProcedure.query(async () => {
+      return db.getBalanceDistribution();
+    }),
+
+    // Unpaid invoices summary (for accountant dashboard)
+    getUnpaidInvoicesSummary: accountantProcedure.query(async () => {
+      const summary = await db.getInvoiceSummary();
+      return { unpaidInvoices: summary.unpaidInvoices, unpaidAmountUsd: summary.unpaidAmountUsd };
+    }),
+
     // Record payment
     recordPayment: staffProcedure
       .input(z.object({

@@ -363,6 +363,50 @@ export async function getAccountPaymentRecords(accountId: number, limit = 50): P
     .limit(limit);
 }
 
+// Get recent payment records across all accounts (for accountant dashboard)
+export async function getRecentPayments(limit = 20): Promise<(PaymentRecord & { customerName?: string; customerCode?: string })[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select()
+    .from(paymentRecords)
+    .orderBy(desc(paymentRecords.createdAt))
+    .limit(limit);
+  const accountIds = [...new Set(rows.map((r) => r.accountId))];
+  const accounts = accountIds.length > 0
+    ? await db.select().from(customerAccounts).where(inArray(customerAccounts.id, accountIds))
+    : [];
+  const customerIds = [...new Set(accounts.map((a) => a.customerId))];
+  const customersList = customerIds.length > 0
+    ? await db.select({ id: customers.id, fullName: customers.fullName, customerCode: customers.customerCode }).from(customers).where(inArray(customers.id, customerIds))
+    : [];
+  const accountToCustomer = new Map<number, { fullName: string; customerCode: string }>();
+  for (const a of accounts) {
+    const c = customersList.find((x) => x.id === a.customerId);
+    if (c) accountToCustomer.set(a.id, { fullName: c.fullName || "", customerCode: c.customerCode || "" });
+  }
+  return rows.map((r) => {
+    const cust = accountToCustomer.get(r.accountId);
+    return { ...r, customerName: cust?.fullName, customerCode: cust?.customerCode };
+  });
+}
+
+// Get customer balance distribution (debt / credit / zero) for pie chart
+export async function getBalanceDistribution(): Promise<{ debtCount: number; creditCount: number; zeroCount: number }> {
+  const db = await getDb();
+  if (!db) return { debtCount: 0, creditCount: 0, zeroCount: 0 };
+  const accounts = await db.select({ balanceUsd: customerAccounts.currentBalanceUsd }).from(customerAccounts);
+  let debtCount = 0;
+  let creditCount = 0;
+  let zeroCount = 0;
+  for (const a of accounts) {
+    const b = parseFloat(String(a.balanceUsd ?? 0));
+    if (b > 0) debtCount++;
+    else if (b < 0) creditCount++;
+    else zeroCount++;
+  }
+  return { debtCount, creditCount, zeroCount };
+}
+
 // Get all customer accounts with customer info
 export async function getAllCustomerAccountsWithInfo(): Promise<(CustomerAccount & { customer?: Customer })[]> {
   const db = await getDb();

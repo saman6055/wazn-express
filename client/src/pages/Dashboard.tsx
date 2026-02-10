@@ -113,14 +113,14 @@ export default function Dashboard() {
   // Existing queries
   const { data: packageStats } = trpc.reports.packagesByStatus.useQuery();
   const { data: customers } = trpc.customers.list.useQuery();
-  const { data: topCustomers } = trpc.reports.topCustomers.useQuery({ limit: 5 });
+  const { data: topCustomers } = trpc.reports.topCustomers.useQuery({ limit: 10 });
   const { data: vipCustomers } = trpc.vip.list.useQuery();
   
   // New dashboard queries
   const { data: financialStats } = trpc.dashboard.financialStats.useQuery();
   const { data: revenueChart } = trpc.dashboard.revenueChart.useQuery({ days: 30 });
   const { data: activeBatches } = trpc.dashboard.activeBatches.useQuery();
-  const { data: topDebtors } = trpc.dashboard.topDebtors.useQuery({ limit: 5 });
+  const { data: topDebtors } = trpc.dashboard.topDebtors.useQuery({ limit: 10 });
   const { data: recentActivity } = trpc.dashboard.recentActivity.useQuery({ limit: 8 });
   const { data: alerts } = trpc.dashboard.alerts.useQuery();
   const { data: newCustomersCount } = trpc.dashboard.newCustomers.useQuery({ days: 7 });
@@ -228,7 +228,7 @@ export default function Dashboard() {
           <div className="absolute -right-20 -bottom-20 h-60 w-60 rounded-full bg-white/5 blur-3xl" />
         </div>
 
-        {/* Financial Stats Row */}
+        {/* Profit / Revenue Summary */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <FinancialCard
             title={t('dashboard.todayIncome')}
@@ -264,21 +264,21 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Secondary Stats Row */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Total customers, packages, active batches */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <AnimatedStatsCard
-            title={t('dashboard.todayPackages')}
-            value={financialStats?.todayPackages || 0}
+            title={t('dashboard.totalCustomers') ?? 'Total Customers'}
+            value={customers?.length ?? 0}
+            description={t('dashboard.activeCustomers') ?? 'Active customers'}
+            icon={<Users className="h-5 w-5" />}
+            color="emerald"
+          />
+          <AnimatedStatsCard
+            title={t('dashboard.totalPackages') ?? 'Total Packages'}
+            value={totalPackages}
             description={t('dashboard.registeredToday')}
             icon={<Package className="h-5 w-5" />}
             color="blue"
-          />
-          <AnimatedStatsCard
-            title={t('dashboard.newCustomers')}
-            value={newCustomersCount || 0}
-            description={t('dashboard.inLast7Days')}
-            icon={<Users className="h-5 w-5" />}
-            color="emerald"
           />
           <AnimatedStatsCard
             title={t('dashboard.activeBatches')}
@@ -308,9 +308,9 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Main Charts Row */}
+        {/* Main Charts Row: Revenue (line) + Package volume (bar) */}
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Revenue Chart */}
+          {/* Revenue Chart - Last 30 days income (line) */}
           <Card className="lg:col-span-2 overflow-hidden border-0 shadow-lg">
             <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
               <div className="flex items-center justify-between">
@@ -377,6 +377,35 @@ export default function Dashboard() {
                       <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
                       <p>{t('common.noData')}</p>
                     </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          {/* Package volume - packages per day (bar chart) */}
+          <Card className="overflow-hidden border-0 shadow-lg">
+            <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                {t('dashboard.packageVolume') ?? 'Package Volume'}
+              </CardTitle>
+              <CardDescription>{t('dashboard.packagesPerDay') ?? 'Packages per day (30 days)'}</CardDescription>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="h-[250px]">
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                      <Tooltip formatter={(value: number) => [value, t('common.package')]} />
+                      <Bar dataKey="packages" fill="#3b82f6" radius={[4, 4, 0, 0]} name={t('common.package')} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    <p className="text-sm">{t('common.noData')}</p>
                   </div>
                 )}
               </div>
@@ -467,34 +496,34 @@ export default function Dashboard() {
             <CardContent className="p-4">
               <div className="grid grid-cols-2 gap-3">
                 <QuickActionButton
-                  title={t('nav.scan')}
-                  icon={<Package className="h-5 w-5" />}
-                  href="/scanner"
-                  color="blue"
-                />
-                <QuickActionButton
-                  title={t('common.package')}
+                  title={t('dashboard.quickActionRegisterPackage') ?? 'Register Package'}
                   icon={<Package className="h-5 w-5" />}
                   href="/packages/register"
                   color="emerald"
+                />
+                <QuickActionButton
+                  title={t('dashboard.quickActionCreateBatch') ?? 'Create Batch'}
+                  icon={<Layers className="h-5 w-5" />}
+                  href="/batches"
+                  color="amber"
+                />
+                <QuickActionButton
+                  title={t('dashboard.quickActionRecordPayment') ?? 'Record Payment'}
+                  icon={<CreditCard className="h-5 w-5" />}
+                  href="/finance"
+                  color="green"
+                />
+                <QuickActionButton
+                  title={t('nav.scan')}
+                  icon={<Package className="h-5 w-5" />}
+                  href="/scan-dashboard"
+                  color="blue"
                 />
                 <QuickActionButton
                   title={t('common.customer')}
                   icon={<Users className="h-5 w-5" />}
                   href="/customers"
                   color="purple"
-                />
-                <QuickActionButton
-                  title={t('common.batch')}
-                  icon={<Layers className="h-5 w-5" />}
-                  href="/batches"
-                  color="amber"
-                />
-                <QuickActionButton
-                  title={t('common.payment')}
-                  icon={<CreditCard className="h-5 w-5" />}
-                  href="/finance"
-                  color="green"
                 />
                 <QuickActionButton
                   title={t('nav.reports')}
@@ -519,16 +548,16 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Bottom Row - Debtors & Active Batches */}
+        {/* Bottom Row - Overdue debt alerts & Active Batches */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Top Debtors */}
+          {/* Overdue debt alerts - customers with balance due */}
           <Card className="overflow-hidden border-0 shadow-lg ring-1 ring-red-200/50 dark:ring-red-800/30">
             <CardHeader className="border-b bg-gradient-to-r from-red-50/50 to-orange-50/50 dark:from-red-950/20 dark:to-orange-950/20">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-red-500" />
-                    {t('dashboard.topDebtors')}
+                    {t('dashboard.overdueDebtAlerts') ?? 'Overdue debt alerts'}
                   </CardTitle>
                   <CardDescription>{t('dashboard.customersWithHighDebt')}</CardDescription>
                 </div>
@@ -655,7 +684,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y">
-                {topCustomers?.slice(0, 5).map((customer: { customerId: number; totalCharges: string | number; packageCount: number }, index: number) => {
+                {topCustomers?.slice(0, 10).map((customer: { customerId: number; totalCharges: string | number; packageCount: number }, index: number) => {
                   const customerData = customers?.find(c => c.id === customer.customerId);
                   const isVip = vipCustomers?.some(v => v.customerId === customer.customerId);
                   return (
