@@ -1,7 +1,6 @@
 import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
-import net from "net";
 import cors from "cors";
 import helmet from "helmet";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -17,23 +16,15 @@ import { globalLimiter, authLimiterMiddleware } from "../middleware/rateLimiter"
 import { registerHealthRoutes } from "./health";
 import { appLogger, requestLoggingMiddleware } from "../utils/logger";
 
-function isPortAvailable(port: number): Promise<boolean> {
-  return new Promise(resolve => {
-    const server = net.createServer();
-    server.listen(port, () => {
-      server.close(() => resolve(true));
+function listenAsync(server: ReturnType<typeof createServer>, port: number, host: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, host, () => {
+      console.log("[DEBUG] INSIDE server.listen callback - Node says we are listening");
+      server.off("error", reject);
+      resolve();
     });
-    server.on("error", () => resolve(false));
   });
-}
-
-async function findAvailablePort(startPort: number = 3000): Promise<number> {
-  for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) {
-      return port;
-    }
-  }
-  throw new Error(`No available port found starting from ${startPort}`);
 }
 
 async function startServer() {
@@ -105,12 +96,8 @@ async function startServer() {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
-
-  if (port !== preferredPort) {
-    appLogger.info("Port in use, using alternate", { preferredPort, port });
-  }
+  const preferredPort = parseInt(process.env.PORT || "3000", 10) || 3000;
+  const host = "0.0.0.0";
 
   // Run database migration on startup
   try {
@@ -125,11 +112,7 @@ async function startServer() {
     appLogger.error("Migration failed", { error: error instanceof Error ? error.message : String(error) });
   }
 
-  server.listen(port, "0.0.0.0", () => {
-    appLogger.info("Server listening", { url: `http://0.0.0.0:${port}/` });
-  });
-
-  // Start tracking alert notification scheduler
+  // Start tracking alert notification scheduler (before listen so listen is last)
   try {
     await scheduleTrackingAlertNotifications();
     appLogger.info("Tracking alerts notification scheduler started");
@@ -143,6 +126,33 @@ async function startServer() {
     appLogger.info("Scheduled backups initialized");
   } catch (error) {
     appLogger.error("Failed to start backup scheduler", { error: error instanceof Error ? error.message : String(error) });
+  }
+
+  // Bind to port LAST - after all schedulers
+  server.on("error", (err) => {
+    appLogger.error("HTTP server error", { error: err instanceof Error ? err.message : String(err) });
+  });
+
+  console.log("[DEBUG] ABOUT TO CALL server.listen - if you see this, we reached the listen call");
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const port = preferredPort + attempt;
+    try {
+      await listenAsync(server, port, host);
+      console.log("[DEBUG] listenAsync resolved - server bound to port", port);
+      if (port !== preferredPort) {
+        appLogger.info("Port in use, using alternate", { preferredPort, port });
+      }
+      appLogger.info("Server listening", { url: `http://0.0.0.0:${port}/`, port });
+      break;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException)?.code;
+      if (code === "EADDRINUSE" && attempt < 19) {
+        appLogger.warn("Port in use, trying next", { port, nextPort: port + 1 });
+        continue;
+      }
+      appLogger.error("Server failed to bind", { port, error: err instanceof Error ? err.message : String(err), code });
+      throw err;
+    }
   }
 }
 

@@ -1,14 +1,27 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { eq, desc } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
-
+import { backups } from "../../drizzle/schema";
 import { systemRouter } from "../_core/systemRouter";
 import { getConfig } from "../config";
 import { runMigration } from "../runMigration";
+import { getDashboardReportData, generateDashboardPDF } from "../pdfGenerator";
+import {
+  getDateFilteredDashboardData,
+  generateDateFilteredDashboardPDF,
+  getCustomerReportData,
+  generateCustomerPDF,
+  getBatchReportData,
+  generateBatchPDF,
+} from "../pdfReports";
+import { createZipBackup, restoreFromZipBackup } from "../zipBackupService";
+import { createBackup, restoreBackup } from "../backupService";
+import { getScheduleConfig, updateScheduleConfig } from "../scheduledBackups";
 
 export const migrationRouter = router({
   run: adminProcedure
@@ -373,7 +386,6 @@ export const dashboardRouter = router({
     
     // Export dashboard as PDF
     exportPDF: staffProcedure.mutation(async () => {
-      const { getDashboardReportData, generateDashboardPDF } = await import('../pdfGenerator');
       const data = await getDashboardReportData();
       const pdfBuffer = await generateDashboardPDF(data);
       return {
@@ -390,7 +402,6 @@ export const dashboardRouter = router({
         customEnd: z.date().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { getDateFilteredDashboardData, generateDateFilteredDashboardPDF } = await import('../pdfReports');
         const data = await getDateFilteredDashboardData(input.period, input.customStart, input.customEnd);
         const pdfBuffer = await generateDateFilteredDashboardPDF(data);
         return {
@@ -407,7 +418,6 @@ export const dashboardRouter = router({
         endDate: z.date().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { getCustomerReportData, generateCustomerPDF } = await import('../pdfReports');
         const data = await getCustomerReportData(input.customerId, input.startDate, input.endDate);
         if (!data) throw new Error('Customer not found');
         const pdfBuffer = await generateCustomerPDF(data);
@@ -421,7 +431,6 @@ export const dashboardRouter = router({
     exportBatchPDF: staffProcedure
       .input(z.object({ batchId: z.number() }))
       .mutation(async ({ input }) => {
-        const { getBatchReportData, generateBatchPDF } = await import('../pdfReports');
         const data = await getBatchReportData(input.batchId);
         if (!data) throw new Error('Batch not found');
         const pdfBuffer = await generateBatchPDF(data);
@@ -790,7 +799,6 @@ export const backupRouter = router({
         
         // Use new ZIP backup system for full backups
         if (input.backupContent === "full") {
-          const { createZipBackup } = await import("../zipBackupService.js");
           return await createZipBackup({
             backupType: input.backupType,
             schedule: input.schedule,
@@ -800,7 +808,6 @@ export const backupRouter = router({
         }
         
         // Use original backup service for database-only and files-only
-        const { createBackup } = await import("../backupService.js");
         return await createBackup({
           backupType: input.backupType,
           backupContent: input.backupContent,
@@ -818,14 +825,10 @@ export const backupRouter = router({
         offset: z.number().min(0).default(0),
       }))
       .query(async ({ input }) => {
-        const { getDb } = await import("../db");
-        const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
         
-        const { backups } = await import("../../drizzle/schema.js");
-        const { eq, desc } = await import("drizzle-orm");
-        
-        let query = db.select().from(backups);
+        let query = database.select().from(backups);
         
         if (input.status) {
           query = query.where(eq(backups.status, input.status)) as any;
@@ -843,14 +846,10 @@ export const backupRouter = router({
     getById: adminProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
-        const { getDb } = await import("../db");
-        const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
         
-        const { backups } = await import("../../drizzle/schema.js");
-        const { eq } = await import("drizzle-orm");
-        
-        const [backup] = await db.select().from(backups).where(eq(backups.id, input.id));
+        const [backup] = await database.select().from(backups).where(eq(backups.id, input.id));
         
         if (!backup) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Backup not found" });
@@ -863,14 +862,10 @@ export const backupRouter = router({
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
-        const { getDb } = await import("../db");
-        const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
         
-        const { backups } = await import("../../drizzle/schema.js");
-        const { eq } = await import("drizzle-orm");
-        
-        await db.delete(backups).where(eq(backups.id, input.id));
+        await database.delete(backups).where(eq(backups.id, input.id));
         
         return { success: true };
       }),
@@ -883,14 +878,10 @@ export const backupRouter = router({
       }))
       .mutation(async ({ input }) => {
         // Get backup to check if it's a ZIP backup
-        const { getDb } = await import("../db");
-        const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
         
-        const { backups } = await import("../../drizzle/schema.js");
-        const { eq } = await import("drizzle-orm");
-        
-        const [backup] = await db.select().from(backups).where(eq(backups.id, input.id));
+        const [backup] = await database.select().from(backups).where(eq(backups.id, input.id));
         
         if (!backup) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Backup not found" });
@@ -898,20 +889,15 @@ export const backupRouter = router({
         
         // Check if it's a ZIP backup (filename ends with .zip)
         if (backup.filename?.endsWith('.zip')) {
-          const { restoreFromZipBackup } = await import("../zipBackupService.js");
           return await restoreFromZipBackup(input.id, input.clearExisting);
         }
         
         // Use original restore for JSON backups
-        const { restoreBackup } = await import("../backupService.js");
         return await restoreBackup(input.id);
       }),
 
     // Get schedule configuration
-    getScheduleConfig: adminProcedure.query(async () => {
-      const { getScheduleConfig } = await import("../scheduledBackups.js");
-      return getScheduleConfig();
-    }),
+    getScheduleConfig: adminProcedure.query(() => getScheduleConfig()),
 
     // Update schedule configuration
     updateSchedule: adminProcedure
@@ -920,7 +906,6 @@ export const backupRouter = router({
         enabled: z.boolean(),
       }))
       .mutation(async ({ input }) => {
-        const { updateScheduleConfig } = await import("../scheduledBackups.js");
         const success = updateScheduleConfig(input.schedule, input.enabled);
         return { success };
       }),
