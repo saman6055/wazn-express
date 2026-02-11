@@ -14,6 +14,8 @@ import { initializeScheduledBackups } from "../scheduledBackups";
 import { serveStatic } from "./static";
 import { loadConfig, getConfig } from "../config";
 import { globalLimiter, authLimiterMiddleware } from "../middleware/rateLimiter";
+import { registerHealthRoutes } from "./health";
+import { appLogger, requestLoggingMiddleware } from "../utils/logger";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -57,8 +59,14 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
+  // Request logging (method, url, status, duration)
+  app.use(requestLoggingMiddleware(appLogger));
+
   // Rate limiting: global first, then auth-specific for login on /api/trpc
   app.use(globalLimiter);
+
+  // Health checks (no auth, for load balancers / k8s)
+  registerHealthRoutes(app);
 
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
@@ -101,42 +109,41 @@ async function startServer() {
   const port = await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+    appLogger.info("Port in use, using alternate", { preferredPort, port });
   }
 
   // Run database migration on startup
   try {
-    console.log("[Migration] Running database migration on startup...");
+    appLogger.info("Running database migration on startup");
     const migrationResult = await runMigration();
     if (migrationResult.success) {
-      console.log("[Migration] " + migrationResult.message);
-      console.log("[Migration] Tables: " + migrationResult.tables.join(", "));
+      appLogger.info("Migration completed", { message: migrationResult.message, tables: migrationResult.tables });
     } else {
-      console.warn("[Migration] " + migrationResult.message);
+      appLogger.warn("Migration message", { message: migrationResult.message });
     }
   } catch (error) {
-    console.error("[Migration] Failed to run migration:", error);
+    appLogger.error("Migration failed", { error: error instanceof Error ? error.message : String(error) });
   }
 
   server.listen(port, "0.0.0.0", () => {
-    console.log(`Server running on http://0.0.0.0:${port}/`);
+    appLogger.info("Server listening", { url: `http://0.0.0.0:${port}/` });
   });
 
   // Start tracking alert notification scheduler
   try {
     await scheduleTrackingAlertNotifications();
-    console.log("[Tracking Alerts] Notification scheduler started");
+    appLogger.info("Tracking alerts notification scheduler started");
   } catch (error) {
-    console.error("[Tracking Alerts] Failed to start notification scheduler:", error);
+    appLogger.error("Failed to start tracking alert scheduler", { error: error instanceof Error ? error.message : String(error) });
   }
 
   // Start scheduled backups
   try {
     initializeScheduledBackups();
-    console.log("[Scheduled Backups] Backup scheduler started");
+    appLogger.info("Scheduled backups initialized");
   } catch (error) {
-    console.error("[Scheduled Backups] Failed to start backup scheduler:", error);
+    appLogger.error("Failed to start backup scheduler", { error: error instanceof Error ? error.message : String(error) });
   }
 }
 
-startServer().catch(console.error);
+startServer().catch((err) => appLogger.error("Server failed to start", { error: err instanceof Error ? err.message : String(err) }));

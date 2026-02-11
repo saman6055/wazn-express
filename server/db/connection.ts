@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/mysql2";
+import { appLogger } from "../utils/logger";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -7,7 +8,7 @@ export async function getDb() {
     try {
       _db = drizzle(process.env.DATABASE_URL);
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      appLogger.warn("Database connection failed", { error: error instanceof Error ? error.message : String(error) });
       _db = null;
     }
   }

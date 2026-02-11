@@ -44,5 +44,9 @@ EXPOSE 3000
 # Set environment
 ENV NODE_ENV=production
 
+# Health check: HTTP 200 from /api/health (node one-liner, no wget/curl needed)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://127.0.0.1:3000/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+
 # Start the application
 CMD ["node", "dist/index.js"]

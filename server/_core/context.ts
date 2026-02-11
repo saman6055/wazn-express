@@ -1,6 +1,8 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User, Customer } from "../../drizzle/schema";
 import { sdk } from "./sdk";
+import type { AppLogger } from "../utils/logger";
+import { appLogger } from "../utils/logger";
 
 // Common properties for both staff and customer
 type CommonUserProps = {
@@ -31,6 +33,7 @@ export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
   res: CreateExpressContextOptions["res"];
   user: ContextUser | null;
+  logger: AppLogger;
 };
 
 export async function createContext(
@@ -49,5 +52,6 @@ export async function createContext(
     req: opts.req,
     res: opts.res,
     user,
+    logger: appLogger,
   };
 }

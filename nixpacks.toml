@@ -12,3 +12,10 @@ cmds = ["pnpm build"]
 
 [start]
 cmd = "pnpm start"
+
+# Health check for Coolify/orchestration (optional)
+# GET /api/health returns { status: "ok", uptime, timestamp, version }
+# GET /api/health/db returns DB connectivity status
+[variables]
+NIXPACKS_HEALTHCHECK_PATH = "/api/health"
+NIXPACKS_HEALTHCHECK_TIMEOUT = "5"
