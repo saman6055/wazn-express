@@ -39,7 +39,7 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   // Use new ledger system for payment recording
   const recordPaymentMutation = trpc.ledger.recordPayment.useMutation({
     onSuccess: () => {
-      toast.success("Payment recorded successfully");
+      toast.success(t("toast.paymentRecorded"));
       setIsPaymentOpen(false);
       refetchTransactions();
     },
@@ -48,7 +48,7 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
   const createExchangeRateMutation = trpc.exchangeRates.create.useMutation({
     onSuccess: () => {
-      toast.success("Exchange rate created");
+      toast.success(t("toast.exchangeRateCreated"));
       setIsExchangeOpen(false);
       refetchRates();
     },
@@ -60,7 +60,7 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const formData = new FormData(e.currentTarget);
     const customer = customers?.find(c => c.id === parseInt(formData.get("customerId") as string));
     if (!customer || !customer.customerCode) {
-      toast.error("Customer not found or missing customer code");
+      toast.error(t("toast.customerNotFoundOrMissingCode"));
       return;
     }
     

@@ -35,7 +35,7 @@ const [search, setSearch] = useState("");
   
   const updateRoleMutation = trpc.users.updateRole.useMutation({
     onSuccess: () => {
-      toast.success("User role updated");
+      toast.success(t("toast.userRoleUpdated"));
       refetch();
     },
     onError: (error) => toast.error(error.message)

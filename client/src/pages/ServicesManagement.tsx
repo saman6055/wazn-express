@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useTranslation } from "@/contexts/LanguageContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,7 @@ import {
 import { toast } from "sonner";
 
 export default function ServicesManagement() {
-  
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   
   // Filters
@@ -133,11 +134,11 @@ export default function ServicesManagement() {
   const handleCreateService = async () => {
     if (isGroupMode) {
       if (selectedCustomerIds.length === 0) {
-        toast.error("تکایە لانیکەم یەک کڕیار هەڵبژێرە");
+        toast.error(t("toast.selectAtLeastOneCustomer"));
         return;
       }
       if (!newService.serviceTypeId || !newService.description || !newService.priceAmount) {
-        toast.error("تکایە هەموو خانەکان پڕبکەرەوە");
+        toast.error(t("toast.fillAllFields"));
         return;
       }
       
@@ -180,7 +181,7 @@ export default function ServicesManagement() {
       });
     } else {
       if (!newService.customerId || !newService.serviceTypeId || !newService.description || !newService.priceAmount) {
-        toast.error("تکایە هەموو خانەکان پڕبکەرەوە");
+        toast.error(t("toast.fillAllFields"));
         return;
       }
       

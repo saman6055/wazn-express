@@ -23,7 +23,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   
   const createMutation = trpc.warehouses.create.useMutation({
     onSuccess: () => {
-      toast.success("Warehouse created successfully");
+      toast.success(t("toast.warehouseCreated"));
       setIsCreateOpen(false);
       refetch();
     },
@@ -32,7 +32,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   
   const updateMutation = trpc.warehouses.update.useMutation({
     onSuccess: () => {
-      toast.success("Warehouse updated successfully");
+      toast.success(t("toast.warehouseUpdated"));
       setEditingWarehouse(null);
       refetch();
     },

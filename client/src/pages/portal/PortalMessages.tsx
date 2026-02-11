@@ -40,7 +40,7 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 
 export default function PortalMessages() {
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { user } = useAuth();
   const isKurdish = language === "ku";
@@ -84,7 +84,7 @@ export default function PortalMessages() {
       utils.supportChat.getMessages.invalidate({ chatId: chatId! });
     },
     onError: () => {
-      toast.error(isKurdish ? 'نەتوانرا نامەکە بنێردرێت' : 'Failed to send message');
+      toast.error(t('portal.sendMessageFailed'));
     }
   });
   

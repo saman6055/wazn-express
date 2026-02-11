@@ -1693,7 +1693,7 @@ const [, setLocation] = useLocation();
                                 }
                               }
                             } catch (error) {
-                              toast.error("هەڵە لە ئەپڵۆدکردنی وێنە");
+                              toast.error(t("toast.imageUploadError"));
                             } finally {
                               setEditIsUploading(false);
                             }

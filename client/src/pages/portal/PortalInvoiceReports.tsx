@@ -164,7 +164,7 @@ function ClassicPortalInvoiceReports() {
   // Export to CSV
   const exportToCSV = () => {
     if (!monthlyReport.length) {
-      toast.error(language === "ku" ? "هیچ داتایەک نییە بۆ ناردن" : "No data to export");
+      toast.error(t('portal.exportNoData'));
       return;
     }
 
@@ -188,7 +188,7 @@ function ClassicPortalInvoiceReports() {
     link.download = `my-invoice-report-${selectedYear}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
-    toast.success(language === "ku" ? "ڕاپۆرت دابەزێنرا" : "Report downloaded");
+    toast.success(t('portal.reportDownloaded'));
     setShowExportMenu(false);
   };
 
@@ -196,7 +196,7 @@ function ClassicPortalInvoiceReports() {
   const exportToPDF = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      toast.error(language === "ku" ? "تکایە ڕێگە بدە بە popup" : "Please allow popups");
+      toast.error(t('portal.allowPopupsForPrint'));
       return;
     }
 
@@ -269,7 +269,7 @@ function ClassicPortalInvoiceReports() {
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
-    toast.success(language === "ku" ? "ڕاپۆرت ئامادەیە بۆ چاپکردن" : "Report ready for printing");
+    toast.success(t('portal.reportReadyForPrint'));
     setShowExportMenu(false);
   };
 

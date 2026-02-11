@@ -24,7 +24,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   
   const createMutation = trpc.vip.create.useMutation({
     onSuccess: () => {
-      toast.success("VIP customer created successfully");
+      toast.success(t("toast.vipCustomerCreated"));
       setIsCreateOpen(false);
       setSelectedCustomerId("");
       refetch();
@@ -36,7 +36,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const updateMutation = trpc.vip.update.useMutation({
     onSuccess: () => {
-      toast.success("VIP customer updated successfully");
+      toast.success(t("toast.vipCustomerUpdated"));
       setIsEditOpen(false);
       setSelectedVip(null);
       refetch();
@@ -48,7 +48,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const deleteMutation = trpc.vip.delete.useMutation({
     onSuccess: () => {
-      toast.success("VIP status removed");
+      toast.success(t("toast.vipStatusRemoved"));
       refetch();
     },
     onError: (error) => {

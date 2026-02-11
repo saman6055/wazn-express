@@ -28,6 +28,7 @@ import {
   Download,
 } from "lucide-react";
 import { useLocation, useParams } from "wouter";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { useCustomerDetail } from "@/hooks/useCustomerDetail";
 import { CustomerInfoCard } from "@/components/customers/CustomerInfoCard";
 import { CustomerPackagesTab } from "@/components/customers/CustomerPackagesTab";
@@ -42,6 +43,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
 export default function CustomerDetail() {
+  const { t: tToast } = useTranslation();
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const customerId = parseInt(params.id ?? "0", 10);
@@ -417,7 +419,7 @@ export default function CustomerDetail() {
                             <Button
                               onClick={() => {
                                 if (!newService.serviceTypeId || !newService.description || !newService.priceAmount) {
-                                  toast.error("Please fill in all required fields");
+                                  toast.error(tToast("toast.fillRequiredFields"));
                                   return;
                                 }
                                 createServiceMutation.mutate({

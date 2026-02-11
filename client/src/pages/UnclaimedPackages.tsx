@@ -30,7 +30,7 @@ const [search, setSearch] = useState("");
   // Mutation
   const claimMutation = trpc.packages.claimPackage.useMutation({
     onSuccess: () => {
-      toast.success("Package claimed successfully!");
+      toast.success(t("toast.packageClaimedSuccessfully"));
       setClaimDialogOpen(false);
       setSelectedPackageId(null);
       setSelectedCustomerId(null);

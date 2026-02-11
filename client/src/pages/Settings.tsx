@@ -60,7 +60,7 @@ const [companyName, setCompanyName] = useState("Wazn Express");
   
   const updateSettingsMutation = trpc.settings.set.useMutation({
     onSuccess: () => {
-      toast.success("Settings updated");
+      toast.success(t("toast.settingsUpdated"));
       refetch();
     },
     onError: (error) => toast.error(error.message)
@@ -743,7 +743,7 @@ function PortalThemeSettings() {
   const { data: currentTheme, isLoading } = trpc.public.getPortalTheme.useQuery();
   const updateThemeMutation = trpc.settings.set.useMutation({
     onSuccess: () => {
-      toast.success("ڕووکار بە سەرکەوتوویی گۆڕا");
+      toast.success(t("toast.themeChangedSuccessfully"));
       window.location.reload(); // Reload to apply theme
     },
     onError: (error) => toast.error(error.message)

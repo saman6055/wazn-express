@@ -25,8 +25,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Percent, Plus, Pencil, Trash2, Star } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function TaxRatesManagement() {
+  const { t } = useTranslation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTaxRate, setSelectedTaxRate] = useState<any>(null);
@@ -46,7 +48,7 @@ export default function TaxRatesManagement() {
   // Mutations
   const createMutation = trpc.advancedSettings.createTaxRate.useMutation({
     onSuccess: () => {
-      toast.success("نرخی باج زیادکرا");
+      toast.success(t("toast.taxRateAdded"));
       refetch();
       setIsCreateDialogOpen(false);
       resetForm();
@@ -58,7 +60,7 @@ export default function TaxRatesManagement() {
 
   const updateMutation = trpc.advancedSettings.updateTaxRate.useMutation({
     onSuccess: () => {
-      toast.success("نرخی باج نوێکرایەوە");
+      toast.success(t("toast.taxRateUpdated"));
       refetch();
       setIsEditDialogOpen(false);
       setSelectedTaxRate(null);
@@ -71,7 +73,7 @@ export default function TaxRatesManagement() {
 
   const deleteMutation = trpc.advancedSettings.deleteTaxRate.useMutation({
     onSuccess: () => {
-      toast.success("نرخی باج سڕایەوە");
+      toast.success(t("toast.taxRateDeleted"));
       refetch();
     },
     onError: (error) => {

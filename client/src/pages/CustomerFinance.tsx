@@ -254,13 +254,13 @@ export default function CustomerFinance() {
   // Professional PDF Export
   const exportToPDF = () => {
     if (!filteredTransactions || filteredTransactions.length === 0) {
-      toast.error('هیچ داتایەک نییە بۆ داگرتن');
+      toast.error(t('toast.noDataToExport'));
       return;
     }
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      toast.error('تکایە ڕێگە بدە بە popup بۆ ئەم ماڵپەڕە');
+      toast.error(t('toast.allowPopupsForPrint'));
       return;
     }
 
@@ -786,13 +786,13 @@ export default function CustomerFinance() {
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
-    toast.success('PDF ئامادەیە بۆ داگرتن');
+    toast.success(t('toast.pdfReady'));
   };
 
   // Professional Excel Export
   const exportToExcel = () => {
     if (!filteredTransactions || filteredTransactions.length === 0) {
-      toast.error('هیچ داتایەک نییە بۆ داگرتن');
+      toast.error(t('toast.noDataToExport'));
       return;
     }
 
@@ -896,7 +896,7 @@ export default function CustomerFinance() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    toast.success('Excel ئامادەیە بۆ داگرتن');
+    toast.success(t('toast.excelReady'));
   };
 
   // Open transaction details

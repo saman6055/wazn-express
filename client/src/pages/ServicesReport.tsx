@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useTranslation } from "@/contexts/LanguageContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ import {
 import { toast } from "sonner";
 
 export default function ServicesReport() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   
   // Filters
@@ -340,7 +342,7 @@ export default function ServicesReport() {
     link.download = `services-financial-report-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("فایلی Excel داگیرا");
+    toast.success(t("toast.excelDownloaded"));
   };
 
   // Calculate max values for chart scaling

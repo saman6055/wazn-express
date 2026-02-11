@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useTranslation } from "@/contexts/LanguageContext";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import {
   Package,
@@ -86,6 +87,7 @@ const emptyItem = (): OrderItem => ({
 });
 
 export default function BulkOrderForm() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);
@@ -126,9 +128,9 @@ export default function BulkOrderForm() {
       setResultData({ created: data.created.length, errors: data.errors.length });
       setShowResult(true);
       utils.fullPackage.list.invalidate();
-      toast.success(`${data.created.length} پەت بە سەرکەوتوویی دروست کران`);
+      toast.success(t("toast.packagesCreatedCount", { count: data.created.length }));
       if (data.errors.length > 0) {
-        toast.warning(`${data.errors.length} پەت کێشەیان هەبوو`);
+        toast.warning(t("toast.packagesHadErrors", { count: data.errors.length }));
       }
     },
     onError: (error) => {
@@ -144,7 +146,7 @@ export default function BulkOrderForm() {
   const removeItem = useCallback((id: string) => {
     setItems(prev => {
       if (prev.length <= 1) {
-        toast.error("لانیکەم یەک پەت پێویستە");
+        toast.error(t("toast.atLeastOnePackageRequired"));
         return prev;
       }
       return prev.filter(item => item.id !== id);
@@ -234,13 +236,13 @@ export default function BulkOrderForm() {
 
   const handleSubmit = () => {
     if (!customerId) {
-      toast.error("تکایە کڕیارێک هەڵبژێرە");
+      toast.error(t("toast.selectCustomer"));
       return;
     }
 
     const validItems = items.filter(item => item.productName.trim());
     if (validItems.length === 0) {
-      toast.error("تکایە لانیکەم یەک پەت پڕ بکەرەوە");
+      toast.error(t("toast.fillAtLeastOnePackage"));
       return;
     }
 
@@ -248,7 +250,7 @@ export default function BulkOrderForm() {
     for (let i = 0; i < validItems.length; i++) {
       const item = validItems[i];
       if (isCommission && !item.itemPriceUsd) {
-        toast.error(`پەتی ${i + 1}: تکایە نرخی کاڵا دیاری بکە`);
+        toast.error(t("toast.packagePriceRequired", { index: i + 1 }));
         return;
       }
     }
