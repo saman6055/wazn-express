@@ -43,6 +43,7 @@ import {
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 
 // Format currency helper
 function formatCurrency(amount: number | null | undefined): string {
@@ -84,6 +85,7 @@ export default function BatchFinancialReportFull() {
   const params = useParams<{ id: string }>();
   const batchId = parseInt(params.id || '0');
   const { t } = useTranslation();
+  const company = useCompanyInfo();
   
   // State for customer modal
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -228,8 +230,8 @@ export default function BatchFinancialReportFull() {
               <div className="flex items-center gap-4">
                 <Building2 className="h-6 w-6 text-white/70" />
                 <div>
-                  <p className="text-white/70 text-sm">کۆمپانیای گواستنەوە</p>
-                  <p className="font-bold text-lg">Wazn Express</p>
+                  <p className="text-white/70 text-sm">{company.nameKu}</p>
+                  <p className="font-bold text-lg">{company.name}</p>
                 </div>
               </div>
               <div className="text-right">

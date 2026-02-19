@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { 
   FileText, Building, Palette, CreditCard, Image, Settings, 
   Save, Loader2, Eye, Plus, Trash2, Check, Upload
@@ -79,6 +80,7 @@ const [activeTab, setActiveTab] = useState("company");
 
   const { data: templates, refetch } = trpc.invoiceTemplates.list.useQuery();
   const { data: defaultTemplate, refetch: refetchDefault } = trpc.invoiceTemplates.getDefault.useQuery();
+  const { data: allSettings } = trpc.settings.list.useQuery();
   
   const createMutation = trpc.invoiceTemplates.create.useMutation({
     onSuccess: () => {
@@ -165,6 +167,27 @@ const [activeTab, setActiveTab] = useState("company");
       ensureDefaultMutation.mutate();
     }
   }, [defaultTemplate, templates]);
+
+  // Pre-fill from Settings → Company Info when no default template exists
+  useEffect(() => {
+    if (allSettings && !defaultTemplate) {
+      const company = getCompanyInfoFromSettings(allSettings);
+      setFormData(prev => ({
+        ...prev,
+        companyName: prev.companyName || company.name,
+        companyNameKu: prev.companyNameKu || company.nameKu,
+        companyNameAr: prev.companyNameAr || company.nameAr,
+        companyAddress: prev.companyAddress || company.address,
+        companyAddressKu: prev.companyAddressKu || company.addressKu,
+        companyAddressAr: prev.companyAddressAr || company.addressAr,
+        companyPhone: prev.companyPhone || company.phone,
+        companyPhone2: prev.companyPhone2 || company.phone2,
+        companyEmail: prev.companyEmail || company.email,
+        companyWebsite: prev.companyWebsite || company.website,
+        logoUrl: prev.logoUrl || company.logoUrl,
+      }));
+    }
+  }, [allSettings, defaultTemplate]);
 
   const handleSave = () => {
     setIsSaving(true);

@@ -2,10 +2,12 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
-import { notifyPackageStatusChange } from "../notifications";
+import { notifyPackageStatusChange } from "../services/notification.service";
+import type { InsertPackage, InsertFullPackageOrder } from "../../drizzle/schema";
 import { fullPackageOrders, packages } from "../../drizzle/schema";
 import { signQrData, verifyQrSignature } from "../utils/qr";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
@@ -14,7 +16,7 @@ export const packagesRouter = router({
     list: staffProcedure
       .input(z.object({
         page: z.number().int().min(0).optional(),
-        pageSize: z.number().int().positive().max(500).optional(),
+        pageSize: z.number().int().positive().max(10000).optional(),
         search: z.string().max(200).optional(),
         status: z.string().max(50).optional(),
         shippingType: z.string().max(50).optional(),
@@ -173,18 +175,11 @@ export const packagesRouter = router({
           }
         }
 
-        // Generate package code - use UNC prefix for unclaimed
-        const packageCode = input.isUnclaimed 
-          ? await db.getNextUnclaimedPackageCode()
-          : await db.getNextPackageCode(warehouse.codePrefix);
-
         // Calculate volume if dimensions provided, or use direct CBM input
         let volumeCbm: string | undefined;
         if (input.volumeCbm) {
-          // Use direct CBM input (for sea shipping)
           volumeCbm = parseFloat(input.volumeCbm).toFixed(6);
         } else if (input.lengthCm && input.widthCm && input.heightCm) {
-          // Calculate from dimensions
           const vol = (parseFloat(input.lengthCm) * parseFloat(input.widthCm) * parseFloat(input.heightCm)) / 1000000;
           volumeCbm = vol.toFixed(6);
         }
@@ -192,7 +187,7 @@ export const packagesRouter = router({
         // Get applicable pricing
         const country = await db.getCountryById(warehouse.countryId);
         const destCountries = await db.getDestinationCountries();
-        const destCountry = destCountries[0]; // Default to first destination (Iraq)
+        const destCountry = destCountries[0];
         
         let calculatedCostUsd: string | undefined;
         let appliedPricingRuleId: number | undefined;
@@ -216,54 +211,62 @@ export const packagesRouter = router({
           }
         }
 
-        // Generate QR data
-        const qrData = JSON.stringify({
-          customerCode: customer?.customerCode || "UNCLAIMED",
-          packageCode,
-          trackingNumber: input.trackingNumber,
-          timestamp: Date.now(),
-        });
-        const qrSignature = signQrData(qrData);
+        // Generate package code and insert; retry on duplicate key (concurrent quick-register)
+        const maxAttempts = 4;
+        let pkg: Awaited<ReturnType<typeof db.createPackage>> | undefined;
+        let packageCode = "";
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          packageCode = input.isUnclaimed 
+            ? await db.getNextUnclaimedPackageCode()
+            : await db.getNextPackageCode(warehouse.codePrefix);
 
-        const pkg = await db.createPackage({
-          packageCode,
-          trackingNumber: input.trackingNumber,
-          customerId: input.isUnclaimed ? undefined : input.customerId,
-          originWarehouseId: input.originWarehouseId,
-          qrCodeData: qrData,
-          qrCodeSignature: qrSignature,
-          weightKg: input.weightKg,
-          lengthCm: input.lengthCm,
-          widthCm: input.widthCm,
-          heightCm: input.heightCm,
-          volumeCbm,
-          shippingType: input.shippingType,
-          description: input.description,
-          photos: input.photos,
-          calculatedCostUsd: input.isUnclaimed ? undefined : calculatedCostUsd,
-          appliedPricingRuleId: input.isUnclaimed ? undefined : appliedPricingRuleId,
-          registeredById: ctx.user.id,
-          batchId: input.batchId,
-          categoryId: input.categoryId,
-          isUnclaimed: input.isUnclaimed || false,
-          fullPackageOrderId: input.fullPackageOrderId,
-        });
+          const qrData = JSON.stringify({
+            customerCode: customer?.customerCode || "UNCLAIMED",
+            packageCode,
+            trackingNumber: input.trackingNumber,
+            timestamp: Date.now(),
+          });
+          const qrSignature = signQrData(qrData);
 
-        // Create ledger transaction for charge (only for claimed packages)
-        if (calculatedCostUsd && input.customerId && !input.isUnclaimed) {
-          const customer = await db.getCustomerById(input.customerId);
-          if (customer) {
-            await db.applyCharge(
-              input.customerId,
-              customer.customerCode,
-              'PACKAGE',
-              pkg.id,
-              parseFloat(calculatedCostUsd),
-              `Package ${packageCode} - ${input.shippingType}`,
-              ctx.user.id
-            );
+          try {
+            pkg = await db.createPackage({
+              packageCode,
+              trackingNumber: input.trackingNumber,
+              customerId: input.isUnclaimed ? undefined : input.customerId,
+              originWarehouseId: input.originWarehouseId,
+              qrCodeData: qrData,
+              qrCodeSignature: qrSignature,
+              weightKg: input.weightKg,
+              lengthCm: input.lengthCm,
+              widthCm: input.widthCm,
+              heightCm: input.heightCm,
+              volumeCbm,
+              shippingType: input.shippingType,
+              description: input.description,
+              photos: input.photos,
+              calculatedCostUsd: input.isUnclaimed ? undefined : calculatedCostUsd,
+              appliedPricingRuleId: input.isUnclaimed ? undefined : appliedPricingRuleId,
+              registeredById: ctx.user.id,
+              batchId: input.batchId,
+              categoryId: input.categoryId,
+              isUnclaimed: input.isUnclaimed || false,
+              fullPackageOrderId: input.fullPackageOrderId,
+            });
+            break;
+          } catch (err: unknown) {
+            const msg = err && typeof err === "object" && "message" in err ? String((err as { message: unknown }).message) : "";
+            const code = err && typeof err === "object" && "code" in err ? (err as { code: unknown }).code : "";
+            const errno = err && typeof err === "object" && "errno" in err ? (err as { errno: unknown }).errno : "";
+            const isDuplicate = code === "ER_DUP_ENTRY" || errno === 1062 || /duplicate|unique/i.test(msg);
+            if (!isDuplicate || attempt === maxAttempts - 1) throw err;
           }
         }
+
+        if (!pkg) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create package" });
+        }
+
+        // Cost is already saved to package (calculatedCostUsd). Charge happens at batch delivery only.
 
         await db.createAuditLog({
           userId: ctx.user.id,
@@ -345,41 +348,7 @@ export const packagesRouter = router({
               await db.updatePackage(request.packageId, {
                 calculatedCostUsd: calculatedCost.toFixed(2),
               });
-              
-              // Create ledger transaction and invoice
-              const customer = await db.getCustomerById(request.customerId);
-              if (customer) {
-                // Get exchange rates for invoice
-                const iqdRate = await db.getCurrentExchangeRate("IQD");
-                const rmbRate = await db.getCurrentExchangeRate("RMB");
-                
-                // Create invoice for the claimed package
-                const invoiceNumber = `INV-CLM-${Date.now()}-${pkg.id}`;
-                const chargeableKg = pkg.weightKg ? Math.max(
-                  parseFloat(pkg.weightKg?.toString() || "0"),
-                  ((parseFloat(pkg.lengthCm?.toString() || "0") * parseFloat(pkg.widthCm?.toString() || "0") * parseFloat(pkg.heightCm?.toString() || "0")) / 6000)
-                ) : 0;
-                
-                const isAirShipment = batch.shippingType === 'air_regular' || batch.shippingType === 'air_irregular';
-                const lineItems = [{
-                  description: `پاکەتی داواکراو ${pkg.packageCode} - ${pkg.trackingNumber || ''} - باچ ${batch.batchCode}`,
-                  quantity: 1,
-                  unitPrice: calculatedCost,
-                  total: calculatedCost,
-                }];
-                
-                // Use applyCharge which automatically creates invoice
-                await db.applyCharge(
-                  request.customerId,
-                  customer.customerCode,
-                  'PACKAGE',
-                  pkg.id,
-                  calculatedCost,
-                  `پاکەتی داواکراو ${pkg.packageCode} - باچ ${batch.batchCode} - ${isAirShipment ? 'ئاسمانی' : 'دەریایی'}`,
-                  ctx.user.id,
-                  lineItems
-                );
-              }
+              // Charge happens when batch is delivered — NOT here
             }
           }
         }
@@ -469,20 +438,7 @@ export const packagesRouter = router({
               await db.updatePackage(input.packageId, {
                 calculatedCostUsd: calculatedCost.toFixed(2),
               });
-              
-               // Create ledger transaction
-              const customerData = await db.getCustomerById(input.customerId);
-              if (customerData) {
-                await db.applyCharge(
-                  input.customerId,
-                  customerData.customerCode,
-                  'PACKAGE',
-                  pkg.id,
-                  calculatedCost,
-                  `Package ${pkg.packageCode} claimed - ${pkg.shippingType}`,
-                  ctx.user.id
-                );
-              }
+              // Charge happens when batch is delivered — NOT here
             }
           }
         }
@@ -548,7 +504,7 @@ export const packagesRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Package not found" });
         }
         
-        const updateData: any = { ...data };
+        const updateData: Partial<InsertPackage> = { ...data };
         if (input.status === "delivered") {
           updateData.deliveredAt = new Date();
           updateData.deliveredById = ctx.user.id;
@@ -561,7 +517,7 @@ export const packagesRouter = router({
             linkedFullPackageOrder = await db.getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
             if (linkedFullPackageOrder) {
               isLinkedToFullPackage = true;
-              console.log(`[FullPackage] Package ${pkg.packageCode} is linked to Full Package ${linkedFullPackageOrder.orderCode} - shipping cost will NOT be charged to customer`);
+              appLogger.info("[FullPackage] Package linked to Full Package - shipping cost will NOT be charged to customer", { packageCode: pkg.packageCode, orderCode: linkedFullPackageOrder.orderCode });
             }
           }
           
@@ -650,77 +606,9 @@ export const packagesRouter = router({
             }
             
             if (chargeAmount > 0) {
-              // Create ledger transaction for charge
-              const customerForCharge = await db.getCustomerById(pkg.customerId);
-              // Calculate chargeable weight for description
-              let quantity: string | null;
-              if (unit === 'cbm') {
-                quantity = pkg.volumeCbm;
-              } else {
-                const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
-                const lengthCm = parseFloat(pkg.lengthCm?.toString() || '0');
-                const widthCm = parseFloat(pkg.widthCm?.toString() || '0');
-                const heightCm = parseFloat(pkg.heightCm?.toString() || '0');
-                const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-                const chargeableKg = Math.max(actualKg, volumetricKg);
-                quantity = chargeableKg.toFixed(2);
-              }
-              if (customerForCharge) {
-                await db.applyCharge(
-                  pkg.customerId,
-                  customerForCharge.customerCode,
-                  'PACKAGE',
-                  pkg.id,
-                  chargeAmount,
-                  `Delivery charge - Package ${pkg.packageCode} (${quantity}${unit} × $${pricePerUnit}/${unit})`,
-                  ctx.user.id
-                );
-              }
-              
-              // Mark package as charged
-              updateData.isCharged = true;
               updateData.calculatedCostUsd = chargeAmount.toFixed(2);
-              
-              // Create revenue record for finance tracking
-              try {
-                await db.createRevenueRecord({
-                  recordDate: new Date(),
-                  revenueType: 'package_delivery',
-                  referenceType: 'package',
-                  referenceId: pkg.id,
-                  customerId: pkg.customerId,
-                  amountUsd: chargeAmount,
-                  description: `Package delivery - ${pkg.packageCode}`,
-                  createdById: ctx.user.id,
-                });
-                
-                // Update daily financial summary
-                await db.updateDailyFinancialSummary(new Date(), { addRevenue: chargeAmount, revenueType: 'package_delivery' });
-              } catch (e) {
-                console.error('[Finance] Failed to create revenue record:', e);
-              }
-              
-              // Create ledger transaction for new accounting system
-              try {
-                const customer = await db.getCustomerById(pkg.customerId);
-                if (customer) {
-                  await db.recordPackageCharge(
-                    pkg.customerId,
-                    customer.customerCode,
-                    pkg.id,
-                    chargeAmount,
-                    `Delivery charge - Package ${pkg.packageCode} (${quantity}${unit} × $${pricePerUnit}/${unit})`,
-                    ctx.user.id
-                  );
-                }
-              } catch (e) {
-                console.error('[Ledger] Failed to create ledger transaction:', e);
-              }
-              
-              // NOTE: Individual package delivery invoices are disabled
-              // Invoices are now created at batch level (one invoice per customer per batch)
-              // This provides cleaner accounting and fewer invoices for customers
-              // See batch.markArrived for consolidated invoice creation
+              // Do NOT charge here — charge happens at batch delivery only.
+              // Do NOT set isCharged, create revenue record, or update daily summary here.
             }
           }
         }
@@ -748,7 +636,7 @@ export const packagesRouter = router({
               
               const newStatus = statusMap[input.status];
               if (newStatus && newStatus !== fullPackageOrder.status) {
-                const fpUpdateData: any = { status: newStatus };
+                const fpUpdateData: Partial<InsertFullPackageOrder> = { status: newStatus as InsertFullPackageOrder["status"] };
                 
                 // If delivered, calculate shipping cost for Full Package profit calculation
                 // This is OUR cost, not charged to customer
@@ -828,16 +716,16 @@ export const packagesRouter = router({
                   
                   if (shippingCost > 0) {
                     fpUpdateData.shippingCostUsd = shippingCost.toFixed(2);
-                    console.log(`[FullPackage] Updating order ${fullPackageOrder.id} with shipping cost: $${shippingCost} (OUR cost, not charged to customer)`);
+                    appLogger.info("[FullPackage] Updating order with shipping cost (OUR cost, not charged to customer)", { orderId: fullPackageOrder.id, shippingCost });
                   }
                 }
                 
                 await db.updateFullPackageOrder(fullPackageOrder.id, fpUpdateData, ctx.user.id);
-                console.log(`[FullPackage] Synced status from package ${pkg.packageCode} to order ${fullPackageOrder.id}: ${newStatus}`);
+                appLogger.info("[FullPackage] Synced status from package to order", { packageCode: pkg.packageCode, orderId: fullPackageOrder.id, newStatus });
               }
             }
           } catch (e) {
-            console.error('[FullPackage] Failed to sync status to fullPackageOrder:', e);
+            appLogger.error('[FullPackage] Failed to sync status to fullPackageOrder', { error: e instanceof Error ? e.message : String(e) });
           }
         }
         
@@ -845,7 +733,7 @@ export const packagesRouter = router({
         try {
           await notifyPackageStatusChange(id, input.status);
         } catch (e) {
-          console.error("[Notification] Failed to send package status notification:", e);
+          appLogger.error("[Notification] Failed to send package status notification", { error: e instanceof Error ? e.message : String(e) });
         }
         
         await db.createAuditLog({
@@ -878,7 +766,7 @@ export const packagesRouter = router({
         const { id, volumeCbm: inputVolumeCbm, photos, ...data } = input;
         
         // Calculate volume if dimensions provided, or use direct input
-        const updateData: any = { ...data };
+        const updateData: Partial<InsertPackage> = { ...data };
         if (inputVolumeCbm) {
           updateData.volumeCbm = inputVolumeCbm;
         } else if (data.lengthCm && data.widthCm && data.heightCm) {
@@ -888,7 +776,7 @@ export const packagesRouter = router({
         
         // Handle photos
         if (photos) {
-          updateData.photos = JSON.stringify(photos);
+          (updateData as Record<string, unknown>).photos = JSON.stringify(photos);
         }
         
         // Handle batch assignment status change

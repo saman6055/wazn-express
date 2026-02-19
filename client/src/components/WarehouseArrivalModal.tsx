@@ -20,6 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Calculator, Plane, Ship, AlertTriangle, Weight, Ruler, Layers } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface WarehouseArrivalModalProps {
   open: boolean;
@@ -47,6 +48,7 @@ export default function WarehouseArrivalModal({
   isLoading = false,
   batches = [],
 }: WarehouseArrivalModalProps) {
+  const { t } = useTranslation();
   const [trackingNumber, setTrackingNumber] = useState("");
   const [shippingType, setShippingType] = useState<"air_regular" | "air_irregular" | "sea">("air_regular");
   const [weightKg, setWeightKg] = useState("");
@@ -69,17 +71,17 @@ export default function WarehouseArrivalModal({
 
   const handleSubmit = () => {
     if (!trackingNumber.trim()) {
-      toast.error("تکایە تراکینگ نەمبەر داخڵ بکە");
+      toast.error(t('warehouse.enterTrackingNumber'));
       return;
     }
 
     if (shippingType !== "sea" && !weightKg.trim()) {
-      toast.error("تکایە کێش بە کیلۆ داخڵ بکە");
+      toast.error(t('warehouse.enterWeight'));
       return;
     }
 
     if (shippingType === "sea" && (!lengthCm.trim() || !widthCm.trim() || !heightCm.trim())) {
-      toast.error("تکایە هەموو ڕێکەکان داخڵ بکە");
+      toast.error(t('warehouse.enterAllDimensions'));
       return;
     }
 
@@ -123,19 +125,19 @@ export default function WarehouseArrivalModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>گەیشتنە مەخزەن</DialogTitle>
+          <DialogTitle>{t('warehouse.arrivalTitle')}</DialogTitle>
           <DialogDescription>
-            زانیاری پەتی کە گەیشتووە مەخزەنمان داخڵ بکە
+            {t('warehouse.arrivalDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Tracking Number */}
           <div className="space-y-2">
-            <Label htmlFor="tracking">تراکینگ نەمبەر *</Label>
+            <Label htmlFor="tracking">{t('warehouse.trackingNumberLabel')}</Label>
             <Input
               id="tracking"
-              placeholder="ژمارەی تراکینگ"
+              placeholder={t('warehouse.trackingNumberPlaceholder')}
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
               dir="ltr"
@@ -144,12 +146,12 @@ export default function WarehouseArrivalModal({
 
           {/* Shipping Type */}
           <div className="space-y-3">
-            <Label className="text-base font-semibold">جۆری گواستنەوە *</Label>
+            <Label className="text-base font-semibold">{t('warehouse.shippingTypeLabel')}</Label>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { value: "air_regular" as const, label: "ئاسمانی ئاسایی", icon: Plane, color: "text-blue-600", bg: "bg-blue-50" },
-                { value: "air_irregular" as const, label: "ئاسمانی مەترسیدار", icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
-                { value: "sea" as const, label: "دەریایی", icon: Ship, color: "text-cyan-600", bg: "bg-cyan-50" },
+                { value: "air_regular" as const, label: t('warehouse.airRegular'), icon: Plane, color: "text-blue-600", bg: "bg-blue-50" },
+                { value: "air_irregular" as const, label: t('warehouse.airIrregular'), icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
+                { value: "sea" as const, label: t('warehouse.sea'), icon: Ship, color: "text-cyan-600", bg: "bg-cyan-50" },
               ].map(type => (
                 <div
                   key={type.value}
@@ -174,14 +176,14 @@ export default function WarehouseArrivalModal({
             <div className="space-y-2">
               <Label htmlFor="weight" className="flex items-center gap-2">
                 <Weight className="h-4 w-4" />
-                کێش (کیلۆ) *
+                {t('warehouse.weightLabel')}
               </Label>
               <Input
                 id="weight"
                 type="number"
                 step="0.001"
                 min="0"
-                placeholder="مثال: 2.5"
+                placeholder={t('warehouse.weightPlaceholder')}
                 value={weightKg}
                 onChange={(e) => setWeightKg(e.target.value)}
               />
@@ -194,11 +196,11 @@ export default function WarehouseArrivalModal({
               <div className="space-y-3">
                 <Label className="text-base font-semibold flex items-center gap-2">
                   <Ruler className="h-4 w-4" />
-                  ڕێکەکان (سانتیمێتر) *
+                  {t('warehouse.dimensionsLabel')}
                 </Label>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="length" className="text-sm text-muted-foreground">درێژی</Label>
+                    <Label htmlFor="length" className="text-sm text-muted-foreground">{t('warehouse.length')}</Label>
                     <Input
                       id="length"
                       type="number"
@@ -210,7 +212,7 @@ export default function WarehouseArrivalModal({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="width" className="text-sm text-muted-foreground">پانی</Label>
+                    <Label htmlFor="width" className="text-sm text-muted-foreground">{t('warehouse.width')}</Label>
                     <Input
                       id="width"
                       type="number"
@@ -222,7 +224,7 @@ export default function WarehouseArrivalModal({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="height" className="text-sm text-muted-foreground">بەرزی</Label>
+                    <Label htmlFor="height" className="text-sm text-muted-foreground">{t('warehouse.height')}</Label>
                     <Input
                       id="height"
                       type="number"
@@ -241,7 +243,7 @@ export default function WarehouseArrivalModal({
                 <div className="p-4 rounded-lg bg-muted/50 border">
                   <div className="flex items-center gap-2 mb-2">
                     <Calculator className="h-4 w-4 text-primary" />
-                    <Label className="font-semibold">حەجمی حساب کراو</Label>
+                    <Label className="font-semibold">{t('warehouse.calculatedVolume')}</Label>
                   </div>
                   <p className="text-2xl font-bold">{calculatedCbm} CBM</p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -256,14 +258,14 @@ export default function WarehouseArrivalModal({
           <div className="space-y-2">
             <Label htmlFor="batch" className="flex items-center gap-2">
               <Layers className="h-4 w-4" />
-              باچ (ئارەزوومەندانە)
+              {t('warehouse.batchOptional')}
             </Label>
             <Select value={selectedBatchId} onValueChange={setSelectedBatchId}>
               <SelectTrigger id="batch">
-                <SelectValue placeholder="باچێک هەڵبژێرە" />
+                <SelectValue placeholder={t('warehouse.selectBatch')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">بێ باچ</SelectItem>
+                <SelectItem value="">{t('warehouse.noBatch')}</SelectItem>
                 {filteredBatches.map(batch => (
                   <SelectItem key={batch.id} value={batch.id.toString()}>
                     {batch.batchCode}
@@ -273,7 +275,7 @@ export default function WarehouseArrivalModal({
             </Select>
             {filteredBatches.length === 0 && (
               <p className="text-xs text-amber-600">
-                هیچ باچی ئامادە نیە بۆ ئەم جۆری گواستنەوەیە
+                {t('warehouse.noBatchesAvailable')}
               </p>
             )}
           </div>
@@ -281,10 +283,10 @@ export default function WarehouseArrivalModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            هەڵوەشاندن
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "چاوەڕوان..." : "تۆمار کردن"}
+            {isLoading ? t('common.loading') : t('warehouse.registerBtn')}
           </Button>
         </DialogFooter>
       </DialogContent>

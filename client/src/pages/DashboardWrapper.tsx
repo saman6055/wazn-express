@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { DashboardLayoutSkeleton } from "@/components/DashboardLayoutSkeleton";
 import Dashboard from "./Dashboard";
 import StaffDashboard from "./StaffDashboard";
 import AccountantDashboard from "./AccountantDashboard";
@@ -12,8 +14,17 @@ import AccountantDashboard from "./AccountantDashboard";
 export default function DashboardWrapper() {
   const { user, loading } = useAuth();
 
-  if (loading || !user) {
-    return null; // DashboardLayout parent will show skeleton or login
+  useEffect(() => {
+    if (!loading && !user) {
+      window.location.href = "/staff-login";
+    }
+  }, [loading, user]);
+
+  if (loading) {
+    return <DashboardLayoutSkeleton />;
+  }
+  if (!user) {
+    return <DashboardLayoutSkeleton />;
   }
 
   const role = (user as { role?: string }).role ?? "user";

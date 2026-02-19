@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { 
   Search, History, Eye, Filter, Calendar, User, Activity, 
   Package, Users, Settings, DollarSign, Truck, ShoppingCart,
@@ -194,13 +195,13 @@ export default function AuditLogs() {
       toast.error("هیچ داتایەک نییە بۆ هەناردەکردن");
       return;
     }
-    
+    const company = getCompanyInfoFromSettings(settings || []);
     const printContent = `
       <!DOCTYPE html>
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>تۆماری چالاکییەکان - Wazn Express</title>
+        <title>تۆماری چالاکییەکان - ${company.name}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap');
           * { font-family: 'Noto Sans Arabic', sans-serif; box-sizing: border-box; }
@@ -224,7 +225,7 @@ export default function AuditLogs() {
       <body>
         <div class="header">
           <h1>🔍 تۆماری چالاکییەکان</h1>
-          <p>Wazn Express - ${new Date().toLocaleDateString('ku')}</p>
+          <p>${company.name} - ${new Date().toLocaleDateString('ku')}</p>
         </div>
         <div class="filters">
           <strong>فلتەرەکان:</strong>
@@ -263,7 +264,7 @@ export default function AuditLogs() {
           </tbody>
         </table>
         <div class="footer">
-          چاپکرا لە ${new Date().toLocaleString('ku')} | Wazn Express Audit Logs
+          چاپکرا لە ${new Date().toLocaleString('ku')} | ${company.name} Audit Logs
         </div>
       </body>
       </html>
@@ -283,6 +284,7 @@ export default function AuditLogs() {
   const { data: stats } = trpc.auditLogs.getStats.useQuery();
   const { data: filters } = trpc.auditLogs.getFilters.useQuery();
   const { data: users } = trpc.users.list.useQuery();
+  const { data: settings } = trpc.settings.list.useQuery();
 
   const logs = logsData?.logs || [];
   const total = logsData?.total || 0;

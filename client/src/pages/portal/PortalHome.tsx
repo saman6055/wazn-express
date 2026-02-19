@@ -13,6 +13,7 @@ import {
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useState, useEffect } from "react";
 
 // Animated Counter Component
@@ -75,6 +76,7 @@ function GreetingIcon() {
 
 // Announcements Section Component
 function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; language: string; t: (key: string) => string }) {
+  const company = useCompanyInfo();
   const { data: blogPosts, isLoading } = trpc.blog.featured.useQuery();
   
   // Get title based on language
@@ -168,7 +170,7 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
                 {t("new") || "New"}
               </span>
             </div>
-            <p className="font-bold text-lg mb-2">{t("welcomeToWazn") || "Welcome to Wazn Express!"}</p>
+            <p className="font-bold text-lg mb-2">{t("welcomeToWazn") || `Welcome to ${company.name}!`}</p>
             <p className="text-sm text-blue-100 leading-relaxed">
               {t("trackPackagesEasily") || "Track your packages easily through this portal. Get real-time updates on your shipments."}
             </p>

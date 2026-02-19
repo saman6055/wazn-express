@@ -32,8 +32,8 @@ interface BackupItem {
   status: string;
   backupContent: string;
   backupType?: string;
-  fileSize?: number;
-  createdAt: string;
+  fileSize?: number | null;
+  createdAt: string | Date;
   createdByName?: string;
   fileUrl?: string;
   errorMessage?: string;
@@ -63,10 +63,10 @@ interface BackupSectionProps {
   handleCreateBackup: () => void;
   handleRestoreBackup: () => void;
   handleDeleteBackup: (id: number) => void;
-  updateScheduleMutation: { mutate: (opts: { schedule: string; enabled: boolean }) => void };
+  updateScheduleMutation: { mutate: (opts: { schedule: "daily" | "weekly" | "monthly"; enabled: boolean }) => void };
   restoreBackupMutation: { isPending: boolean };
   language: string;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 function getBackupStatusBadge(status: string, t: (key: string) => string) {
@@ -300,7 +300,11 @@ export function BackupSection({
                         </div>
                         <div className="flex items-center gap-2">
                           {backup.status === "completed" && backup.fileUrl && (
-                            <Button variant="outline" size="sm" onClick={() => window.open(backup.fileUrl, "_blank")}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(`${window.location.origin}/api/backup-file/${backup.id}`, "_blank")}
+                            >
                               <Download className="h-3 w-3 mr-1" />
                               {t("dataManagement.download")}
                             </Button>
@@ -375,7 +379,7 @@ export function BackupSection({
                   size="sm"
                   onClick={() =>
                     updateScheduleMutation.mutate({
-                      schedule: config.schedule,
+                      schedule: config.schedule as "daily" | "weekly" | "monthly",
                       enabled: !config.enabled,
                     })
                   }

@@ -48,6 +48,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<number | null>(null);
   const [financialBatchId, setFinancialBatchId] = useState<number | null>(null);
   const [shippingType, setShippingType] = useState<string>("");
+  const [createOriginWarehouseId, setCreateOriginWarehouseId] = useState<string>("");
+  const [createDestinationCountryId, setCreateDestinationCountryId] = useState<string>("");
   const [useTieredPricing, setUseTieredPricing] = useState(false);
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [customerPricing, setCustomerPricing] = useState<CustomerPricing[]>([]);
@@ -144,10 +146,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     toast.success(t("batches.statusUpdated"));
     refetch();
   };
-  const onMutationError = (error: { message: string }) => toast.error(error.message);
+  const onMutationError = (error: { message?: string; data?: { zodError?: { errors?: { message: string }[] } } }) => {
+    const msg = error.data?.zodError?.errors?.[0]?.message || error.message || t("common.error");
+    toast.error(msg);
+  };
 
   const resetForm = () => {
     setShippingType("");
+    setCreateOriginWarehouseId("");
+    setCreateDestinationCountryId("");
     setUseTieredPricing(false);
     setPricingTiers([]);
     setCustomerPricing([]);
@@ -192,13 +199,35 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const shippingTypeVal = formData.get("shippingType") as string;
-    
+    const originWarehouseId = parseInt(createOriginWarehouseId, 10);
+    const destinationCountryId = parseInt(createDestinationCountryId, 10);
+    if (!createOriginWarehouseId || isNaN(originWarehouseId)) {
+      toast.error(t("batches.selectWarehouse") || "Please select origin warehouse");
+      return;
+    }
+    if (!createDestinationCountryId || isNaN(destinationCountryId)) {
+      toast.error(t("batches.selectDestination") || "Please select destination country");
+      return;
+    }
+    if (!shippingType || !["air_regular", "air_irregular", "sea"].includes(shippingType)) {
+      toast.error(t("batches.selectType") || "Please select shipping type");
+      return;
+    }
+    const rawBatchCode = (formData.get("batchCode") as string)?.trim() || "";
+    const batchCodeRe = /^(SEA|AIR)-\d+(-\d+)*$/;
+    if (!rawBatchCode) {
+      toast.error(t("batches.batchCodeRequired") || "Batch code is required");
+      return;
+    }
+    if (!batchCodeRe.test(rawBatchCode)) {
+      toast.error(t("batches.batchCodeFormat") || "Batch code must be like SEA-123 or AIR-2024-001");
+      return;
+    }
     createMutation.mutate({
-      batchCode: formData.get("batchCode") as string,
-      originWarehouseId: parseInt(formData.get("originWarehouseId") as string),
-      destinationCountryId: parseInt(formData.get("destinationCountryId") as string),
-      shippingType: shippingTypeVal as "air_regular" | "air_irregular" | "sea",
+      batchCode: rawBatchCode,
+      originWarehouseId,
+      destinationCountryId,
+      shippingType: shippingType as "air_regular" | "air_irregular" | "sea",
       carrierInfo: formData.get("carrierInfo") as string || undefined,
       // Detailed shipping info
       airlineName: formData.get("airlineName") as string || undefined,
@@ -346,7 +375,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="originWarehouseId">Origin Warehouse *</Label>
-                        <Select name="originWarehouseId" required>
+                        <Select value={createOriginWarehouseId} onValueChange={setCreateOriginWarehouseId}>
                           <SelectTrigger><SelectValue placeholder={t("batches.selectWarehouse")} /></SelectTrigger>
                           <SelectContent>
                             {warehouses?.map(w => (
@@ -359,7 +388,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="destinationCountryId">Destination *</Label>
-                        <Select name="destinationCountryId" required>
+                        <Select value={createDestinationCountryId} onValueChange={setCreateDestinationCountryId}>
                           <SelectTrigger><SelectValue placeholder={t("batches.selectDestination")} /></SelectTrigger>
                           <SelectContent>
                             {countries?.filter(c => c.isDestination).map(c => (
@@ -371,7 +400,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="shippingType">{t("batches.shippingType")} *</Label>
-                      <Select name="shippingType" required onValueChange={setShippingType}>
+                      <Select value={shippingType} onValueChange={setShippingType}>
                         <SelectTrigger><SelectValue placeholder={t("batches.selectType")} /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="air_regular">{t("batches.airRegular")}</SelectItem>
@@ -386,23 +415,23 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
                             <Plane className="h-4 w-4 text-blue-600" />
-                            زانیاریی فڕۆکە
+                            {t('batches.flightInfo')}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                           <div className="grid grid-cols-2 gap-3">
                             <div className="grid gap-1.5">
-                              <Label className="text-xs">ناوی خەتی تەیارە</Label>
+                              <Label className="text-xs">{t('batches.flightName')}</Label>
                               <Input name="airlineName" placeholder="e.g., Turkish Airlines" className="h-9" />
                             </div>
                             <div className="grid gap-1.5">
-                              <Label className="text-xs">ژمارەی گەشت</Label>
+                              <Label className="text-xs">{t('batches.flightNumber')}</Label>
                               <Input name="flightNumber" placeholder="e.g., TK123" className="h-9" />
                             </div>
                           </div>
                           <div className="grid gap-1.5">
-                            <Label className="text-xs">کۆمپانیای گەیاندن</Label>
-                            <Input name="shippingCompany" placeholder="ناوی کۆمپانیا" className="h-9" />
+                            <Label className="text-xs">{t('batches.shippingCompany')}</Label>
+                            <Input name="shippingCompany" placeholder={t('batches.companyName')} className="h-9" />
                           </div>
                         </CardContent>
                       </Card>
@@ -413,23 +442,23 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
                             <Ship className="h-4 w-4 text-cyan-600" />
-                            زانیاریی کەشتی
+                            {t('batches.seaInfo')}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                           <div className="grid grid-cols-2 gap-3">
                             <div className="grid gap-1.5">
-                              <Label className="text-xs">ناوی کەشتی</Label>
+                              <Label className="text-xs">{t('batches.shipName')}</Label>
                               <Input name="vesselName" placeholder="e.g., MSC Oscar" className="h-9" />
                             </div>
                             <div className="grid gap-1.5">
-                              <Label className="text-xs">ژمارەی کۆنتێنەر</Label>
+                              <Label className="text-xs">{t('batches.containerNumber')}</Label>
                               <Input name="containerNumber" placeholder="e.g., MSCU1234567" className="h-9" />
                             </div>
                           </div>
                           <div className="grid gap-1.5">
-                            <Label className="text-xs">کۆمپانیای گەیاندن</Label>
-                            <Input name="shippingCompany" placeholder="ناوی کۆمپانیا" className="h-9" />
+                            <Label className="text-xs">{t('batches.shippingCompany')}</Label>
+                            <Input name="shippingCompany" placeholder={t('batches.companyName')} className="h-9" />
                           </div>
                         </CardContent>
                       </Card>
@@ -438,21 +467,21 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     {/* Shipping Cost */}
                     {shippingType && (
                       <div className="grid gap-2">
-                        <Label>کۆی کرێی گەیاندن (USD)</Label>
+                        <Label>{t('batches.totalShippingCost')}</Label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                          <Input name="shippingCost" type="number" step="0.01" className="pl-7" placeholder="کۆی پارەی دەدەین بە کۆمپانیا" />
+                          <Input name="shippingCost" type="number" step="0.01" className="pl-7" placeholder={t('batches.totalAmountToCompany')} />
                         </div>
                       </div>
                     )}
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="departureDate">بەرواری بەڕێکەوتن</Label>
+                        <Label htmlFor="departureDate">{t('batches.departureDate')}</Label>
                         <Input id="departureDate" name="departureDate" type="date" />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="estimatedArrival">بەرواری گەیشتنی چاوەڕوانکراو</Label>
+                        <Label htmlFor="estimatedArrival">{t('batches.estimatedArrival')}</Label>
                         <Input id="estimatedArrival" name="estimatedArrival" type="date" />
                       </div>
                     </div>
@@ -1011,7 +1040,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               <span>{chargeableWeight.toFixed(2)} kg</span>
                               {isVolumetric && (
                                 <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 text-purple-600 border-purple-200">
-                                  قەبارەیی
+                                  {t('batches.volumetric')}
                                 </Badge>
                               )}
                             </div>
@@ -1044,10 +1073,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-primary" />
-                ڕاپۆرتی دارایی
+                {t('batches.financialReport')}
               </DialogTitle>
               <DialogDescription>
-                شیکاریی قازانج و زیان بۆ باچ {batches?.find(b => b.id === financialBatchId)?.batchCode}
+                {t('batches.profitLossAnalysis')} {batches?.find(b => b.id === financialBatchId)?.batchCode}
               </DialogDescription>
             </DialogHeader>
             {financialSummary && (
@@ -1061,12 +1090,12 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <div>
                       <p className="font-semibold">{batches?.find(b => b.id === financialBatchId)?.batchCode}</p>
                       <p className="text-sm text-muted-foreground">
-                        {financialSummary.shippingType === 'sea' ? 'دەریایی' : 'ئاسمانی'} • {financialSummary.totalPackages} پاکەت
+                        {financialSummary.shippingType === 'sea' ? t('batches.sea') : t('batches.air')} • {financialSummary.totalPackages} {t('common.package')}
                       </p>
                     </div>
                   </div>
                   <Badge variant={financialSummary.profit >= 0 ? "default" : "destructive"} className="text-lg px-4 py-2">
-                    {financialSummary.profit >= 0 ? 'قازانج' : 'زیان'}: ${Math.abs(financialSummary.profit).toFixed(2)}
+                    {financialSummary.profit >= 0 ? t('batches.profit') : t('batches.loss')}: ${Math.abs(financialSummary.profit).toFixed(2)}
                   </Badge>
                 </div>
                 
@@ -1076,7 +1105,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm text-red-700 flex items-center gap-1">
                         <DollarSign className="h-4 w-4" />
-                        کۆی تێچوون
+                        {t('batches.totalCost')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -1093,19 +1122,19 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm text-green-700 flex items-center gap-1">
                         <TrendingUp className="h-4 w-4" />
-                        کۆی داهات
+                        {t('batches.totalRevenue')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-2xl font-bold text-green-700">${financialSummary.totalRevenue.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground mt-1">لە {financialSummary.totalPackages} پاکەت</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('batches.fromPackages', { count: financialSummary.totalPackages })}</p>
                     </CardContent>
                   </Card>
                   <Card className={`border-2 ${financialSummary.profit >= 0 ? 'border-green-500 bg-gradient-to-br from-green-100 to-emerald-100' : 'border-red-500 bg-gradient-to-br from-red-100 to-rose-100'}`}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-1">
                         <BarChart3 className="h-4 w-4" />
-                        {financialSummary.profit >= 0 ? 'قازانج' : 'زیان'}
+                        {financialSummary.profit >= 0 ? t('batches.profit') : t('batches.loss')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -1113,7 +1142,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         ${Math.abs(financialSummary.profit).toFixed(2)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {financialSummary.profitMargin.toFixed(1)}% ڕێژەی قازانج
+                        {financialSummary.profitMargin.toFixed(1)}% {t('batches.profitMargin')}
                       </p>
                     </CardContent>
                   </Card>
@@ -1121,7 +1150,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm text-blue-700 flex items-center gap-1">
                         <Package className="h-4 w-4" />
-                        {financialSummary.shippingType === 'sea' ? 'CBM' : 'کێش'}
+                        {financialSummary.shippingType === 'sea' ? t('batches.cbm') : t('batches.weight')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -1132,7 +1161,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         }
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {financialSummary.shippingType === 'sea' ? 'مەتری مکعەب' : 'کێشی کۆی'}
+                        {financialSummary.shippingType === 'sea' ? t('batches.cubicMeters') : t('batches.totalWeight')}
                       </p>
                     </CardContent>
                   </Card>
@@ -1143,18 +1172,18 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <CardHeader>
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Users className="h-4 w-4" />
-                      شیکاری بەپێی کڕیار
+                      {t('batches.analysisByCustomer')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>کڕیار</TableHead>
-                          <TableHead>پاکەت</TableHead>
-                          <TableHead>{financialSummary.shippingType === 'sea' ? 'CBM' : 'کێش'}</TableHead>
-                          <TableHead>داهات</TableHead>
-                          <TableHead className="text-right">ڕێژە</TableHead>
+                          <TableHead>{t('batches.customer')}</TableHead>
+                          <TableHead>{t('batches.packages')}</TableHead>
+                          <TableHead>{financialSummary.shippingType === 'sea' ? t('batches.cbm') : t('batches.weight')}</TableHead>
+                          <TableHead>{t('batches.revenue')}</TableHead>
+                          <TableHead className="text-right">{t('batches.profitMargin')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1188,7 +1217,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           <TableRow>
                             <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                               <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                              هیچ زانیارییەک بەردەست نییە
+                              {t('common.noData')}
                             </TableCell>
                           </TableRow>
                         )}

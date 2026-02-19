@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -52,7 +53,7 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-
+import { useTranslation } from "@/contexts/LanguageContext";
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -67,36 +68,11 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-red-100 text-red-800",
 };
 
-const statusLabels: Record<string, string> = {
-  pending: "چاوەڕوان",
-  approved: "پەسەندکراو",
-  ordered: "کڕدرا",
-  tracking_added: "تراکینگ زیادکرا",
-  in_china_warehouse: "لە کۆگای چین",
-  in_batch: "لە باچ",
-  in_transit: "لە ڕێگادا",
-  arrived: "گەیشتووە",
-  delivered: "گەیەندرا",
-  cancelled: "هەڵوەشاوە",
-};
-
-const statusOptions = [
-  { value: "pending", label: "چاوەڕوان" },
-  { value: "approved", label: "پەسەندکراو" },
-  { value: "ordered", label: "کڕدرا" },
-  { value: "tracking_added", label: "تراکینگ زیادکرا" },
-  { value: "in_china_warehouse", label: "لە کۆگای چین" },
-  { value: "in_batch", label: "لە باچ" },
-  { value: "in_transit", label: "لە ڕێگادا" },
-  { value: "arrived", label: "گەیشتووە" },
-  { value: "delivered", label: "گەیەندرا" },
-  { value: "cancelled", label: "هەڵوەشاوە" },
-];
-
 type SortField = "date" | "purchase" | "selling" | "profit" | "customer";
 type SortDirection = "asc" | "desc";
 
 export default function FullPackageDashboard() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -111,6 +87,31 @@ export default function FullPackageDashboard() {
   const [showFilters, setShowFilters] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
 
+  const statusLabels: Record<string, string> = {
+    pending: t("fullPackage.status.pending"),
+    approved: t("fullPackage.status.approved"),
+    ordered: t("fullPackage.status.ordered"),
+    tracking_added: t("fullPackage.status.tracking_added"),
+    in_china_warehouse: t("fullPackage.status.in_china_warehouse"),
+    in_batch: t("fullPackage.status.in_batch"),
+    in_transit: t("fullPackage.status.in_transit"),
+    arrived: t("fullPackage.status.arrived"),
+    delivered: t("fullPackage.status.delivered"),
+    cancelled: t("fullPackage.status.cancelled"),
+  };
+
+  const statusOptions = [
+    { value: "pending", label: t("fullPackage.status.pending") },
+    { value: "approved", label: t("fullPackage.status.approved") },
+    { value: "ordered", label: t("fullPackage.status.ordered") },
+    { value: "tracking_added", label: t("fullPackage.status.tracking_added") },
+    { value: "in_china_warehouse", label: t("fullPackage.status.in_china_warehouse") },
+    { value: "in_batch", label: t("fullPackage.status.in_batch") },
+    { value: "in_transit", label: t("fullPackage.status.in_transit") },
+    { value: "arrived", label: t("fullPackage.status.arrived") },
+    { value: "delivered", label: t("fullPackage.status.delivered") },
+    { value: "cancelled", label: t("fullPackage.status.cancelled") },
+  ];
 
   const { data: orders, isLoading, refetch } = trpc.fullPackage.list.useQuery({
     orderType: "full_package",
@@ -120,10 +121,11 @@ export default function FullPackageDashboard() {
 
   const { data: batches } = trpc.batches.list.useQuery();
   const { data: customers } = trpc.customers.list.useQuery();
+  const { data: settings } = trpc.settings.list.useQuery();
 
   const updateStatusMutation = trpc.fullPackage.updateStatus.useMutation({
     onSuccess: () => {
-      toast.success("بارودۆخ نوێکرایەوە");
+      toast.success(t("fullPackage.statusUpdated"));
       refetch();
     },
     onError: (error) => {
@@ -245,39 +247,41 @@ export default function FullPackageDashboard() {
   // Export to Excel
   const exportToExcel = () => {
     const data = filteredOrders.map(order => ({
-      "کۆدی پەت": order.orderCode,
-      "کڕیار": (order as any).customer?.fullName || "",
-      "کۆدی کڕیار": (order as any).customer?.customerCode || "",
-      "ناوی کاڵا": order.productName,
-      "ژمارە": order.quantity,
-      "باچ": (order as any).batch?.batchCode || "بێ باچ",
-      "نرخی کڕین ($)": (parseFloat(order.purchasePriceUsd || "0") * (order.quantity || 1)).toFixed(2),
-      "نرخی فرۆشتن ($)": (parseFloat(order.sellingPriceUsd || "0") * (order.quantity || 1)).toFixed(2),
-      "قازانج ($)": (parseFloat(order.grossProfitUsd || "0") * (order.quantity || 1)).toFixed(2),
-      "تراکینگ": order.trackingNumber || "",
-      "بارودۆخ": statusLabels[order.status] || order.status,
-      "بەروار": new Date(order.createdAt).toLocaleDateString("ku"),
+      [t("fullPackage.orderCode")]: order.orderCode,
+      "ئۆردەر نەمبەر": (order as any).orderNumber || "",
+      [t("fullPackage.customer")]: (order as any).customer?.fullName || "",
+      [t("fullPackage.customerCode")]: (order as any).customer?.customerCode || "",
+      [t("fullPackage.productName")]: order.productName,
+      [t("fullPackage.quantity")]: order.quantity,
+      [t("fullPackage.batchLabel")]: (order as any).batch?.batchCode || t("fullPackage.noBatch"),
+      [t("fullPackage.purchasePrice") + " ($)"]: (parseFloat(order.purchasePriceUsd || "0") * (order.quantity || 1)).toFixed(2),
+      [t("fullPackage.sellingPrice") + " ($)"]: (parseFloat(order.sellingPriceUsd || "0") * (order.quantity || 1)).toFixed(2),
+      [t("fullPackage.profit") + " ($)"]: (parseFloat(order.grossProfitUsd || "0") * (order.quantity || 1)).toFixed(2),
+      [t("fullPackage.tracking")]: order.trackingNumber || "",
+      [t("fullPackage.statusColumn")]: statusLabels[order.status] || order.status,
+      [t("fullPackage.dateColumn")]: new Date(order.createdAt).toLocaleDateString("ku"),
     }));
 
     // Add summary row
     data.push({
-      "کۆدی پەت": "کۆی گشتی",
-      "کڕیار": "",
-      "کۆدی کڕیار": "",
-      "ناوی کاڵا": `${totalOrders} پەت`,
-      "ژمارە": filteredOrders.reduce((sum, o) => sum + (o.quantity || 1), 0),
-      "باچ": "",
-      "نرخی کڕین ($)": totalPurchaseCost.toFixed(2),
-      "نرخی فرۆشتن ($)": totalSellingPrice.toFixed(2),
-      "قازانج ($)": totalGrossProfit.toFixed(2),
-      "تراکینگ": "",
-      "بارودۆخ": "",
-      "بەروار": "",
+      [t("fullPackage.orderCode")]: t("fullPackage.grandTotal"),
+      "ئۆردەر نەمبەر": "",
+      [t("fullPackage.customer")]: "",
+      [t("fullPackage.customerCode")]: "",
+      [t("fullPackage.productName")]: `${totalOrders} ${t("fullPackage.orders")}`,
+      [t("fullPackage.quantity")]: filteredOrders.reduce((sum, o) => sum + (o.quantity || 1), 0),
+      [t("fullPackage.batchLabel")]: "",
+      [t("fullPackage.purchasePrice") + " ($)"]: totalPurchaseCost.toFixed(2),
+      [t("fullPackage.sellingPrice") + " ($)"]: totalSellingPrice.toFixed(2),
+      [t("fullPackage.profit") + " ($)"]: totalGrossProfit.toFixed(2),
+      [t("fullPackage.tracking")]: "",
+      [t("fullPackage.statusColumn")]: "",
+      [t("fullPackage.dateColumn")]: "",
     });
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "فول پاکیج");
+    XLSX.utils.book_append_sheet(wb, ws, t("fullPackage.sheetName"));
     
     // Set column widths
     ws["!cols"] = [
@@ -287,18 +291,18 @@ export default function FullPackageDashboard() {
     ];
     
     XLSX.writeFile(wb, `full-package-report-${new Date().toISOString().split("T")[0]}.xlsx`);
-    toast.success("فایلی Excel داگیرا");
+    toast.success(t("fullPackage.excelDownloaded"));
   };
 
   // Export to PDF
   const exportToPDF = () => {
-    // Create a printable HTML
+    const company = getCompanyInfoFromSettings(settings || []);
     const printContent = `
       <!DOCTYPE html>
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>ڕاپۆرتی فول پاکیج</title>
+        <title>${t("fullPackage.reportTitle")}</title>
         <style>
           * { font-family: 'Segoe UI', Tahoma, sans-serif; }
           body { padding: 20px; direction: rtl; }
@@ -320,48 +324,50 @@ export default function FullPackageDashboard() {
       </head>
       <body>
         <div class="header">
-          <h1>🛍️ ڕاپۆرتی فول پاکیج</h1>
-          <p>Wazn Express - بەڕێوەبردنی کڕین و فرۆشتن</p>
-          <p>بەروار: ${new Date().toLocaleDateString("ku")}</p>
+          <h1>🛍️ ${t("fullPackage.reportTitle")}</h1>
+          <p>${company.name} - ${t("fullPackage.managementSubtitle")}</p>
+          <p>${t("fullPackage.dateColumn")}: ${new Date().toLocaleDateString("ku")}</p>
         </div>
         
         <div class="stats">
           <div class="stat-card">
             <div class="value">${totalOrders}</div>
-            <div class="label">کۆی پەتەکان</div>
+            <div class="label">${t("fullPackage.ordersCountLabel")}</div>
           </div>
           <div class="stat-card">
             <div class="value">$${totalPurchaseCost.toFixed(2)}</div>
-            <div class="label">کۆی کڕین</div>
+            <div class="label">${t("fullPackage.totalPurchaseCost")}</div>
           </div>
           <div class="stat-card">
             <div class="value">$${totalSellingPrice.toFixed(2)}</div>
-            <div class="label">کۆی فرۆشتن</div>
+            <div class="label">${t("fullPackage.totalSellingCost")}</div>
           </div>
           <div class="stat-card">
             <div class="value">$${totalGrossProfit.toFixed(2)}</div>
-            <div class="label">کۆی قازانج</div>
+            <div class="label">${t("fullPackage.grossProfitLabel")}</div>
           </div>
         </div>
         
         <table>
           <thead>
             <tr>
-              <th>کۆد</th>
-              <th>کڕیار</th>
-              <th>کاڵا</th>
-              <th>ژمارە</th>
-              <th>کڕین</th>
-              <th>فرۆشتن</th>
-              <th>قازانج</th>
-              <th>بارودۆخ</th>
-              <th>بەروار</th>
+              <th>${t("fullPackage.orderCode")}</th>
+              <th>ئۆردەر #</th>
+              <th>${t("fullPackage.customer")}</th>
+              <th>${t("fullPackage.productName")}</th>
+              <th>${t("fullPackage.quantity")}</th>
+              <th>${t("fullPackage.purchaseColumn")}</th>
+              <th>${t("fullPackage.sellingColumn")}</th>
+              <th>${t("fullPackage.profit")}</th>
+              <th>${t("fullPackage.statusColumn")}</th>
+              <th>${t("fullPackage.dateColumn")}</th>
             </tr>
           </thead>
           <tbody>
             ${filteredOrders.map(order => `
               <tr>
                 <td>${order.orderCode}</td>
+                <td>${(order as any).orderNumber || "-"}</td>
                 <td>${(order as any).customer?.fullName || "-"}</td>
                 <td>${order.productName}</td>
                 <td>${order.quantity}</td>
@@ -373,7 +379,8 @@ export default function FullPackageDashboard() {
               </tr>
             `).join("")}
             <tr class="total-row">
-              <td colspan="3">کۆی گشتی</td>
+              <td colspan="3">${t("fullPackage.grandTotal")}</td>
+              <td></td>
               <td>${filteredOrders.reduce((sum, o) => sum + (o.quantity || 1), 0)}</td>
               <td>$${totalPurchaseCost.toFixed(2)}</td>
               <td>$${totalSellingPrice.toFixed(2)}</td>
@@ -384,8 +391,8 @@ export default function FullPackageDashboard() {
         </table>
         
         <div class="footer">
-          <p>ئەم ڕاپۆرتە لە لایەن سیستەمی Wazn Express دروستکراوە</p>
-          <p>© ${new Date().getFullYear()} Wazn Express - هەموو مافەکان پارێزراون</p>
+          <p>${t("fullPackage.reportGeneratedBy")}</p>
+          <p>© ${new Date().getFullYear()} ${company.name} - ${t("fullPackage.copyright")}</p>
         </div>
       </body>
       </html>
@@ -399,7 +406,7 @@ export default function FullPackageDashboard() {
         printWindow.print();
       };
     }
-    toast.success("ڕاپۆرتی PDF ئامادەیە بۆ چاپکردن");
+    toast.success(t("fullPackage.pdfReadyForPrint"));
   };
 
   // Filtered customers for dropdown
@@ -424,8 +431,8 @@ export default function FullPackageDashboard() {
                 <ShoppingBag className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">فول پاکیج</h1>
-                <p className="text-emerald-100">کڕین و فرۆشتنەوە بە قازانج</p>
+                <h1 className="text-2xl font-bold">{t("fullPackage.title")}</h1>
+                <p className="text-emerald-100">{t("fullPackage.managementSubtitle")}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -434,17 +441,17 @@ export default function FullPackageDashboard() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-0">
                     <Download className="h-4 w-4 ml-2" />
-                    داگرتن
+                    {t("common.export")}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={exportToExcel}>
                     <FileSpreadsheet className="h-4 w-4 ml-2 text-green-600" />
-                    داگرتنی Excel
+                    {t("fullPackage.exportExcel")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={exportToPDF}>
                     <FileText className="h-4 w-4 ml-2 text-red-600" />
-                    داگرتنی PDF
+                    {t("fullPackage.exportPDF")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -452,13 +459,13 @@ export default function FullPackageDashboard() {
               <Link href="/full-package/bulk-create?type=full_package">
                 <Button variant="outline" className="bg-white/80 text-emerald-700 hover:bg-emerald-50 border-emerald-300">
                   <PackagePlus className="h-4 w-4 ml-2" />
-                  دروستکردن بە کۆمەڵ
+                  {t("fullPackage.bulkCreate")}
                 </Button>
               </Link>
               <Link href="/full-package/new">
                 <Button className="bg-white text-emerald-700 hover:bg-emerald-50">
                   <Plus className="h-4 w-4 ml-2" />
-                  پەتی نوێ
+                  {t("fullPackage.newOrder")}
                 </Button>
               </Link>
             </div>
@@ -471,7 +478,7 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-emerald-600 font-medium">کۆی پەتەکان</p>
+                  <p className="text-xs text-emerald-600 font-medium">{t("fullPackage.ordersCountLabel")}</p>
                   <p className="text-2xl font-bold text-emerald-700">{totalOrders}</p>
                 </div>
                 <div className="p-2 bg-emerald-100 rounded-xl">
@@ -485,7 +492,7 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-amber-600 font-medium">چاوەڕوان</p>
+                  <p className="text-xs text-amber-600 font-medium">{t("fullPackage.pendingLabel")}</p>
                   <p className="text-2xl font-bold text-amber-700">{pendingOrders}</p>
                 </div>
                 <div className="p-2 bg-amber-100 rounded-xl">
@@ -499,7 +506,7 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-blue-600 font-medium">لە ڕێگادا</p>
+                  <p className="text-xs text-blue-600 font-medium">{t("fullPackage.inTransitLabel")}</p>
                   <p className="text-2xl font-bold text-blue-700">{inTransitOrders}</p>
                 </div>
                 <div className="p-2 bg-blue-100 rounded-xl">
@@ -513,7 +520,7 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-red-600 font-medium">کۆی کڕین</p>
+                  <p className="text-xs text-red-600 font-medium">{t("fullPackage.totalPurchaseCost")}</p>
                   <p className="text-xl font-bold text-red-700">${totalPurchaseCost.toFixed(2)}</p>
                 </div>
                 <div className="p-2 bg-red-100 rounded-xl">
@@ -527,7 +534,7 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-green-600 font-medium">قازانجی خاو</p>
+                  <p className="text-xs text-green-600 font-medium">{t("fullPackage.grossProfitLabel")}</p>
                   <p className="text-xl font-bold text-green-700">${totalGrossProfit.toFixed(2)}</p>
                 </div>
                 <div className="p-2 bg-green-100 rounded-xl">
@@ -541,7 +548,7 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-purple-600 font-medium">قازانجی خاوێن</p>
+                  <p className="text-xs text-purple-600 font-medium">{t("fullPackage.netProfitLabel")}</p>
                   <p className="text-xl font-bold text-purple-700">${totalNetProfit.toFixed(2)}</p>
                 </div>
                 <div className="p-2 bg-purple-100 rounded-xl">
@@ -561,7 +568,7 @@ export default function FullPackageDashboard() {
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="گەڕان بە کۆد، ئۆردەر نەمبەر، تراکینگ، کڕیار..."
+                    placeholder={t("fullPackage.searchPlaceholder")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pr-10"
@@ -570,10 +577,10 @@ export default function FullPackageDashboard() {
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full sm:w-48">
                     <Filter className="h-4 w-4 ml-2" />
-                    <SelectValue placeholder="هەموو" />
+                    <SelectValue placeholder={t("common.all")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">هەموو</SelectItem>
+                    <SelectItem value="all">{t("common.all")}</SelectItem>
                     {statusOptions.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
@@ -585,7 +592,7 @@ export default function FullPackageDashboard() {
                   className="gap-2"
                 >
                   <Filter className="h-4 w-4" />
-                  فلتەری پێشکەوتوو
+                  {t("fullPackage.advancedFilter")}
                   {hasActiveFilters && (
                     <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
                       !
@@ -598,11 +605,11 @@ export default function FullPackageDashboard() {
               {showFilters && (
                 <div className="bg-muted/50 rounded-lg p-4 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-sm">فلتەرە پێشکەوتووەکان</h4>
+                    <h4 className="font-medium text-sm">{t("fullPackage.advancedFiltersTitle")}</h4>
                     {hasActiveFilters && (
                       <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-red-600 hover:text-red-700">
                         <X className="h-4 w-4 ml-1" />
-                        پاککردنەوەی هەموو
+                        {t("fullPackage.clearAllFilters")}
                       </Button>
                     )}
                   </div>
@@ -612,21 +619,21 @@ export default function FullPackageDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        کڕیار
+                        {t("fullPackage.customer")}
                       </label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="w-full justify-between">
                             {customerFilter !== "all" 
-                              ? customers?.find(c => c.id.toString() === customerFilter)?.fullName || "هەڵبژاردن"
-                              : "هەموو کڕیارەکان"
+                              ? customers?.find(c => c.id.toString() === customerFilter)?.fullName || t("fullPackage.selectCustomerPlaceholder")
+                              : t("fullPackage.allCustomers")
                             }
                             <ChevronDown className="h-4 w-4 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-64 p-2" align="start">
+                        <PopoverContent variant="compact" className="w-64" align="start">
                           <Input
-                            placeholder="گەڕان بە ناو یان کۆد..."
+                            placeholder={t("fullPackage.customerSearchPlaceholder")}
                             value={customerSearch}
                             onChange={(e) => setCustomerSearch(e.target.value)}
                             className="mb-2"
@@ -637,7 +644,7 @@ export default function FullPackageDashboard() {
                               className="w-full justify-start"
                               onClick={() => { setCustomerFilter("all"); setCustomerSearch(""); }}
                             >
-                              هەموو کڕیارەکان
+                              {t("fullPackage.allCustomers")}
                             </Button>
                             {filteredCustomers.map(customer => (
                               <Button
@@ -659,14 +666,14 @@ export default function FullPackageDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         <Layers className="h-4 w-4" />
-                        باچ
+                        {t("fullPackage.batchLabel")}
                       </label>
                       <Select value={batchFilter} onValueChange={setBatchFilter}>
                         <SelectTrigger>
-                          <SelectValue placeholder="هەموو باچەکان" />
+                          <SelectValue placeholder={t("fullPackage.allBatches")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">هەموو باچەکان</SelectItem>
+                          <SelectItem value="all">{t("fullPackage.allBatches")}</SelectItem>
                           {batches?.map(batch => (
                             <SelectItem key={batch.id} value={batch.id.toString()}>
                               {batch.batchCode}
@@ -680,7 +687,7 @@ export default function FullPackageDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        ماوەی بەروار
+                        {t("fullPackage.dateRangeLabel")}
                       </label>
                       <div className="flex gap-2">
                         <Input
@@ -688,14 +695,14 @@ export default function FullPackageDashboard() {
                           value={dateFrom}
                           onChange={(e) => setDateFrom(e.target.value)}
                           className="flex-1"
-                          placeholder="لە"
+                          placeholder={t("fullPackage.fromPlaceholder")}
                         />
                         <Input
                           type="date"
                           value={dateTo}
                           onChange={(e) => setDateTo(e.target.value)}
                           className="flex-1"
-                          placeholder="بۆ"
+                          placeholder={t("fullPackage.toPlaceholder")}
                         />
                       </div>
                     </div>
@@ -704,21 +711,21 @@ export default function FullPackageDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         <DollarSign className="h-4 w-4" />
-                        نرخی کڕین ($)
+                        {t("fullPackage.purchasePriceFilter")}
                       </label>
                       <div className="flex gap-2">
                         <Input
                           type="number"
                           value={minPrice}
                           onChange={(e) => setMinPrice(e.target.value)}
-                          placeholder="کەمترین"
+                          placeholder={t("fullPackage.minPricePlaceholder")}
                           className="flex-1"
                         />
                         <Input
                           type="number"
                           value={maxPrice}
                           onChange={(e) => setMaxPrice(e.target.value)}
-                          placeholder="زۆرترین"
+                          placeholder={t("fullPackage.maxPricePlaceholder")}
                           className="flex-1"
                         />
                       </div>
@@ -730,9 +737,9 @@ export default function FullPackageDashboard() {
               {/* Results count and active filters summary */}
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
-                  {filteredOrders.length} پەت دۆزرایەوە
+                  {t("fullPackage.ordersCountFound", { count: String(filteredOrders.length) })}
                   {hasActiveFilters && (
-                    <span className="text-emerald-600 mr-2">(فلتەرکراو)</span>
+                    <span className="text-emerald-600 mr-2">{t("fullPackage.filteredBadge")}</span>
                   )}
                 </div>
                 
@@ -741,24 +748,24 @@ export default function FullPackageDashboard() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-2">
                       <ArrowUpDown className="h-4 w-4" />
-                      ڕیزکردن
+                      {t("fullPackage.sort")}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => toggleSort("date")}>
-                      بەروار {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
+                      {t("fullPackage.sortByDate")} {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => toggleSort("purchase")}>
-                      نرخی کڕین {sortField === "purchase" && (sortDirection === "asc" ? "↑" : "↓")}
+                      {t("fullPackage.sortByPurchase")} {sortField === "purchase" && (sortDirection === "asc" ? "↑" : "↓")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => toggleSort("selling")}>
-                      نرخی فرۆشتن {sortField === "selling" && (sortDirection === "asc" ? "↑" : "↓")}
+                      {t("fullPackage.sortBySelling")} {sortField === "selling" && (sortDirection === "asc" ? "↑" : "↓")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => toggleSort("profit")}>
-                      قازانج {sortField === "profit" && (sortDirection === "asc" ? "↑" : "↓")}
+                      {t("fullPackage.sortByProfit")} {sortField === "profit" && (sortDirection === "asc" ? "↑" : "↓")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => toggleSort("customer")}>
-                      کڕیار {sortField === "customer" && (sortDirection === "asc" ? "↑" : "↓")}
+                      {t("fullPackage.sortByCustomer")} {sortField === "customer" && (sortDirection === "asc" ? "↑" : "↓")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -775,11 +782,11 @@ export default function FullPackageDashboard() {
             ) : filteredOrders.length === 0 ? (
               <div className="text-center py-12">
                 <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">هیچ پەتێک نییە</p>
+                <p className="text-muted-foreground">{t("fullPackage.noOrdersMessage")}</p>
                 <Link href="/full-package/new">
                   <Button className="mt-4" variant="outline">
                     <Plus className="h-4 w-4 ml-2" />
-                    پەتی نوێ زیاد بکە
+                    {t("fullPackage.addFirstOrderButton")}
                   </Button>
                 </Link>
               </div>
@@ -788,38 +795,45 @@ export default function FullPackageDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>کۆدی پەت</TableHead>
-                      <TableHead>کڕیار</TableHead>
-                      <TableHead>ناوی کاڵا</TableHead>
-                      <TableHead>باچ</TableHead>
+                      <TableHead>کۆدی ئۆردەر</TableHead>
+                      <TableHead>{t("fullPackage.customer")}</TableHead>
+                      <TableHead>{t("fullPackage.productName")}</TableHead>
+                      <TableHead>{t("fullPackage.batchLabel")}</TableHead>
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("purchase")}>
-                        کڕین {sortField === "purchase" && (sortDirection === "asc" ? "↑" : "↓")}
+                        {t("fullPackage.purchaseColumn")} {sortField === "purchase" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("selling")}>
-                        فرۆشتن {sortField === "selling" && (sortDirection === "asc" ? "↑" : "↓")}
+                        {t("fullPackage.sellingColumn")} {sortField === "selling" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("profit")}>
-                        قازانج {sortField === "profit" && (sortDirection === "asc" ? "↑" : "↓")}
+                        {t("fullPackage.profit")} {sortField === "profit" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead>تراکینگ</TableHead>
-                      <TableHead>بارودۆخ</TableHead>
+                      <TableHead>{t("fullPackage.tracking")}</TableHead>
+                      <TableHead>{t("fullPackage.statusColumn")}</TableHead>
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("date")}>
-                        بەروار {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
+                        {t("fullPackage.dateColumn")} {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead className="text-left">کردارەکان</TableHead>
+                      <TableHead className="text-left">{t("fullPackage.actionsColumn")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredOrders.map((order) => (
                       <TableRow key={order.id}>
                         <TableCell>
-                          <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300">
-                            {order.orderCode}
-                          </Badge>
+                          <div className="space-y-1">
+                            <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300">
+                              {order.orderCode}
+                            </Badge>
+                            {(order as any).orderNumber && (
+                              <p className="text-xs text-muted-foreground font-mono">
+                                #{(order as any).orderNumber}
+                              </p>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{(order as any).customer?.fullName || "کڕیار"}</p>
+                            <p className="font-medium">{(order as any).customer?.fullName || t("fullPackage.customer")}</p>
                             <p className="text-xs text-muted-foreground font-mono">
                               {(order as any).customer?.customerCode || ""}
                             </p>
@@ -841,7 +855,7 @@ export default function FullPackageDashboard() {
                             <div>
                               <p className="font-medium text-sm">{order.productName}</p>
                               {order.quantity > 1 && (
-                                <p className="text-xs text-muted-foreground">{order.quantity} دانە</p>
+                                <p className="text-xs text-muted-foreground">{order.quantity} {t("fullPackage.quantityUnit")}</p>
                               )}
                             </div>
                           </div>
@@ -854,7 +868,7 @@ export default function FullPackageDashboard() {
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                              بێ باچ
+                              {t("fullPackage.noBatch")}
                             </Badge>
                           )}
                         </TableCell>
@@ -877,7 +891,7 @@ export default function FullPackageDashboard() {
                             </div>
                           ) : (
                             <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                              بێ تراکینگ
+                              {t("fullPackage.noTracking")}
                             </Badge>
                           )}
                         </TableCell>
@@ -922,7 +936,7 @@ export default function FullPackageDashboard() {
                               variant="ghost" 
                               size="icon"
                               onClick={() => setLocation(`/full-package/${order.id}`)}
-                              title="سەیرکردن"
+                              title={t("fullPackage.viewAction")}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -930,7 +944,7 @@ export default function FullPackageDashboard() {
                               variant="ghost" 
                               size="icon"
                               onClick={() => setLocation(`/full-package/${order.id}/edit`)}
-                              title="دەستکاریکردن"
+                              title={t("fullPackage.editAction")}
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>

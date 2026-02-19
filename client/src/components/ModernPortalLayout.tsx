@@ -6,6 +6,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
+import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ModernPortalLayoutProps {
@@ -13,6 +14,7 @@ interface ModernPortalLayoutProps {
 }
 
 export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
+  useDynamicFavicon();
   const [location] = useLocation();
   const { language } = useLanguage();
   const { theme } = useTheme();

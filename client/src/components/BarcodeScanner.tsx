@@ -3,6 +3,8 @@ import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Camera, CameraOff, SwitchCamera, Loader2 } from "lucide-react";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { soundManager } from "@/lib/soundManager";
 
 interface BarcodeScannerProps {
   onScan: (result: string) => void;
@@ -11,6 +13,7 @@ interface BarcodeScannerProps {
 }
 
 export default function BarcodeScanner({ onScan, onError, isActive = true }: BarcodeScannerProps) {
+  const { t } = useTranslation();
   const [isScanning, setIsScanning] = useState(false);
   const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
   const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
@@ -53,7 +56,7 @@ export default function BarcodeScanner({ onScan, onError, isActive = true }: Bar
 
   const startScanning = async () => {
     if (!cameras.length) {
-      onError?.("هیچ کامێرایەک نەدۆزرایەوە");
+      onError?.(t("scan.noCameraFound"));
       return;
     }
 
@@ -83,8 +86,8 @@ export default function BarcodeScanner({ onScan, onError, isActive = true }: Bar
             navigator.vibrate(100);
           }
 
-          // Play beep sound
-          playBeep();
+          // Play beep sound (shared manager respects sound toggle)
+          soundManager.playBeep();
 
           onScan(decodedText);
         },
@@ -99,9 +102,9 @@ export default function BarcodeScanner({ onScan, onError, isActive = true }: Bar
       console.error("Error starting scanner:", err);
       if (err.toString().includes("Permission")) {
         setPermissionDenied(true);
-        onError?.("ڕێگەپێدان بۆ کامێرا نەدراوە");
+        onError?.(t("scan.cameraPermissionDenied"));
       } else {
-        onError?.(`هەڵە لە دەستپێکردنی سکانەر: ${err.message || err}`);
+        onError?.(`${t("scan.scannerStartError")}: ${err.message || err}`);
       }
     } finally {
       setIsLoading(false);
@@ -139,29 +142,6 @@ export default function BarcodeScanner({ onScan, onError, isActive = true }: Bar
     }
   };
 
-  const playBeep = () => {
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      oscillator.frequency.value = 1800;
-      oscillator.type = "sine";
-      gainNode.gain.value = 0.3;
-
-      oscillator.start();
-      setTimeout(() => {
-        oscillator.stop();
-        audioContext.close();
-      }, 100);
-    } catch (err) {
-      // Ignore audio errors
-    }
-  };
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -175,10 +155,10 @@ export default function BarcodeScanner({ onScan, onError, isActive = true }: Bar
         <CardContent className="p-6 text-center">
           <CameraOff className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground mb-4">
-            ڕێگەپێدان بۆ کامێرا نەدراوە. تکایە ڕێگەپێدان بدە لە ڕێکخستنەکانی براوزەر.
+            {t("scan.cameraPermissionMessage")}
           </p>
           <Button onClick={() => window.location.reload()}>
-            هەوڵبدەرەوە
+            {t("scan.retry")}
           </Button>
         </CardContent>
       </Card>
@@ -199,7 +179,7 @@ export default function BarcodeScanner({ onScan, onError, isActive = true }: Bar
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/50">
             <Camera className="h-16 w-16 text-muted-foreground mb-4" />
             <p className="text-muted-foreground text-sm mb-4">
-              کلیک بکە بۆ دەستپێکردنی سکانکردن بە کامێرا
+              {t("scan.clickToStartCamera")}
             </p>
             <Button
               onClick={startScanning}
@@ -209,12 +189,12 @@ export default function BarcodeScanner({ onScan, onError, isActive = true }: Bar
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  چاوەڕوان بە...
+                  {t("scan.waiting")}
                 </>
               ) : (
                 <>
                   <Camera className="mr-2 h-4 w-4" />
-                  دەستپێکردنی کامێرا
+                  {t("scan.startCamera")}
                 </>
               )}
             </Button>
@@ -227,12 +207,12 @@ export default function BarcodeScanner({ onScan, onError, isActive = true }: Bar
         <div className="flex items-center justify-center gap-2">
           <Button variant="outline" onClick={stopScanning}>
             <CameraOff className="mr-2 h-4 w-4" />
-            وەستان
+            {t("scan.stop")}
           </Button>
           {cameras.length > 1 && (
             <Button variant="outline" onClick={switchCamera}>
               <SwitchCamera className="mr-2 h-4 w-4" />
-              گۆڕینی کامێرا
+              {t("scan.switchCamera")}
             </Button>
           )}
         </div>
@@ -241,7 +221,7 @@ export default function BarcodeScanner({ onScan, onError, isActive = true }: Bar
       {/* Camera info */}
       {cameras.length > 0 && isScanning && (
         <p className="text-xs text-center text-muted-foreground">
-          کامێرا: {cameras[currentCameraIndex]?.label || "نەزانراو"}
+          {cameras[currentCameraIndex]?.label || t("scan.unknown")}
         </p>
       )}
     </div>

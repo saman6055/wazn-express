@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { extractCustomerCode, parseProductDescription } from './aiService';
+import { extractCustomerCode, parseProductDescription } from './services/ai.service';
 
 describe('AI Label Scanning Service', () => {
   describe('extractCustomerCode', () => {

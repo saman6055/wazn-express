@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
 import { Input } from "@/components/ui/input";
+import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 import { usePortalSSE } from "@/hooks/usePortalSSE";
 import { toast } from "sonner";
 
@@ -15,9 +16,10 @@ interface CustomerPortalLayoutProps {
 }
 
 export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
+  useDynamicFavicon();
   const [location, setLocation] = useLocation();
   const searchString = useSearch();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
@@ -39,23 +41,17 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     enabled: true,
     onPackageStatus: (d) => {
       toast.info(
-        language === "ku"
-          ? `بار نوێکراوە: ${d.trackingNumber || d.packageId} - ${d.status}`
-          : `Package updated: ${d.trackingNumber || d.packageId} - ${d.status}`
+        t('portal.packageUpdatedNotif', { tracking: d.trackingNumber || d.packageId, status: d.status })
       );
     },
     onNewInvoice: (d) => {
       toast.info(
-        language === "ku"
-          ? `وەسڵی نوێ: ${d.invoiceNumber}`
-          : `New invoice: ${d.invoiceNumber}`
+        t('portal.newInvoiceNotif', { invoiceNumber: d.invoiceNumber })
       );
     },
     onPaymentConfirmation: (d) => {
       toast.success(
-        language === "ku"
-          ? `پارەدان پشتڕاستکرایەوە: $${d.amount.toFixed(2)}`
-          : `Payment confirmed: $${d.amount.toFixed(2)}`
+        t('portal.paymentConfirmedNotif', { amount: d.amount.toFixed(2) })
       );
     },
   });
@@ -64,7 +60,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   const leftItems = [
     { 
       icon: Package, 
-      label: language === "ku" ? "بارەکان" : "Shipments", 
+      label: t('portal.shipments'), 
       path: "/portal/shipments",
       activeColor: "text-emerald-500",
       activeBg: "bg-emerald-500/10",
@@ -72,7 +68,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     },
     { 
       icon: ShoppingBag, 
-      label: language === "ku" ? "کڕین" : "Full Pack", 
+      label: t('portal.fullPack'), 
       path: "/portal/full-package",
       activeColor: "text-purple-500",
       activeBg: "bg-purple-500/10",
@@ -84,7 +80,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   const rightItems = [
     { 
       icon: Wallet, 
-      label: language === "ku" ? "دارایی" : "Financial", 
+      label: t('portal.financial'), 
       path: "/portal/financial",
       activeColor: "text-amber-500",
       activeBg: "bg-amber-500/10",
@@ -92,7 +88,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     },
     { 
       icon: User, 
-      label: language === "ku" ? "من" : "Me", 
+      label: t('portal.me'), 
       path: "/portal/profile",
       activeColor: "text-blue-500",
       activeBg: "bg-blue-500/10",
@@ -103,7 +99,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   // Home item (center)
   const homeItem = { 
     icon: Home, 
-    label: language === "ku" ? "سەرەکی" : "Home", 
+    label: t('portal.home'), 
     path: "/portal",
   };
 
@@ -168,7 +164,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
             )} />
             <Input
               type="search"
-              placeholder={language === "ku" ? "گەڕان بە ژمارەی تراک یان نامە..." : "Search tracking, invoices..."}
+              placeholder={t('portal.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn(

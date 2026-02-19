@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
@@ -122,7 +123,9 @@ export const fullPackageRouter = router({
           itemPrice = parseFloat(input.itemPriceUsd || '0');
           commissionFee = parseFloat(input.commissionFeeUsd || '0');
           if (!totalPrepaid && input.itemPriceUsd) {
-            totalPrepaid = (itemPrice + commissionFee).toFixed(2);
+            // itemPriceUsd is PER-UNIT — multiply by quantity for total
+            const qty = input.quantity || 1;
+            totalPrepaid = ((itemPrice * qty) + commissionFee).toFixed(2);
           }
           // Commission is our profit
           grossProfitUsd = commissionFee.toFixed(2);
@@ -177,7 +180,7 @@ export const fullPackageRouter = router({
               lineItems
             );
             
-            console.log(`[Commission] Auto-charged customer ${customer.customerCode} for order ${orderCode}: $${totalAmount}`);
+            appLogger.info("[Commission] Auto-charged customer for order", { customerCode: customer.customerCode, orderCode, totalAmount });
           }
         }
         
@@ -242,7 +245,7 @@ export const fullPackageRouter = router({
         })).min(1).max(50),
       }))
       .mutation(async ({ input, ctx }) => {
-        const results: any[] = [];
+        const results: Awaited<ReturnType<typeof db.createFullPackageOrder>>[] = [];
         const errors: { index: number; error: string }[] = [];
         
         for (let i = 0; i < input.items.length; i++) {
@@ -328,8 +331,8 @@ export const fullPackageRouter = router({
             }
             
             results.push(order);
-          } catch (err: any) {
-            errors.push({ index: i, error: err.message || 'Unknown error' });
+          } catch (err: unknown) {
+            errors.push({ index: i, error: err instanceof Error ? err.message : 'Unknown error' });
           }
         }
         
@@ -431,7 +434,7 @@ export const fullPackageRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
         }
         
-        const updateData: any = { status: input.status };
+        const updateData: Record<string, unknown> = { status: input.status };
         
         // If adding tracking number
         if (input.trackingNumber && !existing.trackingNumber) {
@@ -456,27 +459,31 @@ export const fullPackageRouter = router({
           updateData.actualDeliveryDate = new Date();
           
           // Create revenue record for finance tracking
+          // sellingPriceUsd and purchasePriceUsd are PER-UNIT — multiply by quantity
           try {
-            const sellingPrice = parseFloat(existing.sellingPriceUsd || '0');
-            const purchasePrice = parseFloat(existing.purchasePriceUsd || '0');
+            const sellingPricePerUnit = parseFloat(existing.sellingPriceUsd || '0');
+            const purchasePricePerUnit = parseFloat(existing.purchasePriceUsd || '0');
             const shippingCost = parseFloat(existing.shippingCostUsd || '0');
-            const profit = sellingPrice - purchasePrice - shippingCost;
+            const qty = existing.quantity || 1;
+            const totalRevenue = sellingPricePerUnit * qty;
+            const totalCost = (purchasePricePerUnit * qty) + shippingCost;
+            const profit = totalRevenue - totalCost;
             await db.createRevenueRecord({
               recordDate: new Date(),
               revenueType: 'full_package_sale',
               referenceType: 'fullPackageOrder',
               referenceId: existing.id,
               customerId: existing.customerId,
-              amountUsd: sellingPrice,
-              costUsd: purchasePrice + shippingCost,
+              amountUsd: totalRevenue,
+              costUsd: totalCost,
               description: `Full Package - ${existing.orderCode} (${existing.productName})`,
               createdById: ctx.user.id,
             });
             
             // Update daily financial summary with profit
-            await db.updateDailyFinancialSummary(new Date(), { addRevenue: sellingPrice, revenueType: 'full_package_sale', addFullPackagesSold: 1 });
+            await db.updateDailyFinancialSummary(new Date(), { addRevenue: totalRevenue, revenueType: 'full_package_sale', addFullPackagesSold: 1 });
           } catch (e) {
-            console.error('[Finance] Failed to create revenue record for full package:', e);
+            appLogger.error('[Finance] Failed to create revenue record for full package', { error: e instanceof Error ? e.message : String(e) });
           }
         }
         if (input.status === "arrived" && !existing.arrivedDate) {
@@ -800,7 +807,10 @@ export const fullPackageRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "Order is not quoted" });
         }
         
-        const sellingPrice = parseFloat(existing.sellingPriceUsd || '0');
+        // sellingPriceUsd is PER-UNIT price — multiply by quantity for total
+        const sellingPricePerUnit = parseFloat(existing.sellingPriceUsd || '0');
+        const quantity = existing.quantity || 1;
+        const totalSellingPrice = sellingPricePerUnit * quantity;
         
         // Charge customer account using unified applyCharge function
         const customerForOrder = await db.getCustomerById(existing.customerId);
@@ -814,14 +824,14 @@ export const fullPackageRouter = router({
           customerForOrder.customerCode,
           'FULL_PACKAGE',
           existing.id,
-          sellingPrice,
-          `Full Package Order - ${existing.orderCode} (${existing.productName})`,
+          totalSellingPrice,
+          `Full Package Order - ${existing.orderCode} (${existing.productName}) - ${quantity} pcs`,
           ctx.user.id,
           [{
             description: `${existing.productName} (${existing.orderCode})`,
-            quantity: existing.quantity || 1,
-            unitPrice: sellingPrice,
-            total: sellingPrice,
+            quantity: quantity,
+            unitPrice: sellingPricePerUnit,
+            total: totalSellingPrice,
           }]
         );
         
@@ -829,7 +839,7 @@ export const fullPackageRouter = router({
         await db.updateFullPackageOrder(input.id, {
           status: 'approved',
           isPaid: true,
-          paidFromBalanceUsd: sellingPrice.toFixed(2),
+          paidFromBalanceUsd: totalSellingPrice.toFixed(2),
         }, ctx.user.id);
         
         await db.createFullPackageStatusHistory({
@@ -838,7 +848,7 @@ export const fullPackageRouter = router({
           newStatus: 'approved',
           changedById: ctx.user.id,
           changedByName: ctx.user.name,
-          notes: `Customer approved and paid $${sellingPrice.toFixed(2)}`,
+          notes: `Customer approved and paid $${totalSellingPrice.toFixed(2)}`,
         });
         
         return { success: true };
@@ -933,9 +943,12 @@ export const fullPackageRouter = router({
       .mutation(async ({ input, ctx }) => {
         const orderCode = `CM-${Date.now().toString(36).toUpperCase()}`;
         
-        const itemPrice = parseFloat(input.itemPriceUsd);
+        // itemPriceUsd is PER-UNIT — multiply by quantity for total
+        const itemPricePerUnit = parseFloat(input.itemPriceUsd);
         const commission = parseFloat(input.commissionFeeUsd);
-        const totalPrepaid = itemPrice + commission;
+        const quantity = input.quantity || 1;
+        const itemTotal = itemPricePerUnit * quantity;
+        const totalPrepaid = itemTotal + commission;
         
         // Charge customer account using unified applyCharge function
         const customerForCommission = await db.getCustomerById(input.customerId);
@@ -955,14 +968,14 @@ export const fullPackageRouter = router({
           'COMMISSION',
           0, // Will be updated with actual order ID
           totalPrepaid,
-          `Commission Purchase - ${input.productName} (Item: $${itemPrice}, Commission: $${commission})`,
+          `Commission Purchase - ${input.productName} (Item: $${itemTotal}, Commission: $${commission})`,
           ctx.user.id,
           [
             {
               description: `${input.productName} - Item Price`,
-              quantity: input.quantity || 1,
-              unitPrice: itemPrice,
-              total: itemPrice,
+              quantity: quantity,
+              unitPrice: itemPricePerUnit,
+              total: itemTotal,
             },
             {
               description: 'Commission Fee',
@@ -1055,6 +1068,15 @@ export const fullPackageRouter = router({
       }).optional())
       .query(async ({ input }) => {
         return db.getProfitByOrderType(input?.startDate, input?.endDate);
+      }),
+
+    getAggregatedProfitAndExpenses: adminProcedure
+      .input(z.object({
+        year: z.number(),
+        month: z.number().min(1).max(12).optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getAggregatedProfitAndExpenses(input.year, input.month);
       }),
 });
 

@@ -10,6 +10,7 @@
  */
 
 import mysql from "mysql2/promise";
+import { appLogger } from "../utils/logger";
 import { runMigrations, getMigrationStatus, TABLE_DEFINITIONS } from "./migrations";
 
 // ============ CONFIGURATION ============
@@ -43,7 +44,9 @@ const createLogger = (verbose: boolean) => {
     }[level];
     
     if (verbose || level === 'error' || level === 'success') {
-      console.log(`[${timestamp}] ${prefix} [AutoMigrate] ${message}`);
+      if (level === 'error') appLogger.error(`[AutoMigrate] ${message}`);
+      else if (level === 'warn') appLogger.warn(`[AutoMigrate] ${message}`);
+      else appLogger.info(`[AutoMigrate] ${message}`);
     }
   };
 };
@@ -66,8 +69,8 @@ async function createConnection(databaseUrl: string, retryAttempts: number, retr
       log('Database connection established successfully', 'success');
       
       return connection;
-    } catch (error: any) {
-      const errorMsg = error.message || String(error);
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
       log(`Connection attempt ${attempt} failed: ${errorMsg}`, 'error');
       
       if (attempt < retryAttempts) {
@@ -143,8 +146,8 @@ export async function autoMigrate(config: AutoMigrateConfig): Promise<AutoMigrat
       log(`Migration completed with ${result.errors.length} errors`, 'error');
     }
     
-  } catch (error: any) {
-    const errorMsg = error.message || String(error);
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     result.errors.push(`Migration error: ${errorMsg}`);
     log(`Migration failed: ${errorMsg}`, 'error');
   } finally {
@@ -172,12 +175,12 @@ export async function runStandalone(): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL;
   
   if (!databaseUrl) {
-    console.error('❌ DATABASE_URL environment variable is not set');
+    appLogger.error('DATABASE_URL environment variable is not set');
     process.exit(1);
   }
   
-  console.log('🚀 Starting Wazn Express Auto-Migration v2.0');
-  console.log('='.repeat(50));
+  appLogger.info('Starting Wazn Express Auto-Migration v2.0');
+  appLogger.info('='.repeat(50));
   
   const result = await autoMigrate({
     databaseUrl,
@@ -186,20 +189,11 @@ export async function runStandalone(): Promise<void> {
     verbose: true
   });
   
-  console.log('='.repeat(50));
-  console.log('📊 Migration Summary:');
-  console.log(`   Total tables: ${result.totalTables}`);
-  console.log(`   Created: ${result.tablesCreated}`);
-  console.log(`   Skipped: ${result.tablesSkipped}`);
-  console.log(`   Errors: ${result.errors.length}`);
-  console.log(`   Duration: ${result.duration}ms`);
-  console.log(`   Status: ${result.success ? '✅ SUCCESS' : '❌ FAILED'}`);
+  appLogger.info('='.repeat(50));
+  appLogger.info('Migration Summary', { totalTables: result.totalTables, created: result.tablesCreated, skipped: result.tablesSkipped, errors: result.errors.length, duration: result.duration, success: result.success });
   
   if (result.errors.length > 0) {
-    console.log('\n❌ Errors:');
-    result.errors.forEach((err, i) => {
-      console.log(`   ${i + 1}. ${err}`);
-    });
+    appLogger.error('Migration errors', { errors: result.errors });
   }
   
   process.exit(result.success ? 0 : 1);

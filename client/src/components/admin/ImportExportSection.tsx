@@ -2,12 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Download, Upload, Eye, Database, AlertTriangle, RotateCcw, FileSpreadsheet } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Download, Upload, Eye, Database, RotateCcw, FileSpreadsheet } from "lucide-react";
 import type { DataCategory } from "@/hooks/useDataManagement";
 
 interface ImportExportSectionProps {
-  mode: "export" | "import";
   dataCategories: DataCategory[];
   isExporting: boolean;
   importFile: File | null;
@@ -26,7 +25,6 @@ interface ImportExportSectionProps {
 }
 
 export function ImportExportSection({
-  mode,
   dataCategories,
   isExporting,
   importFile,
@@ -44,8 +42,8 @@ export function ImportExportSection({
   t,
 }: ImportExportSectionProps) {
   return (
-    <>
-      {mode === "export" && (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* LEFT: Export */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -58,70 +56,48 @@ export function ImportExportSection({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {dataCategories.map((category) => (
-              <Card key={category.id} className={`${category.borderColor} border`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 ${category.bgColor} rounded-lg`}>
-                        <span className={category.color}>{category.icon}</span>
-                      </div>
-                      <div>
-                        <div className="font-medium">{t(category.titleKey)}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {getCount(category.id)} {t("dataManagement.records")}
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleExportCategory(category.id)}
-                      disabled={isExporting}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        <CardContent className="space-y-3">
+          <Button
+            className="w-full bg-green-600 hover:bg-green-700"
+            onClick={handleExportAll}
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            {t("dataManagement.exportAll")}
+          </Button>
           <Separator />
-          <Card className="border-green-200 bg-green-50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Database className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-green-800">{t("dataManagement.exportAll")}</div>
-                    <div className="text-sm text-green-700">{t("dataManagement.exportAllDesc")}</div>
-                  </div>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {dataCategories.map((category) => (
+              <div
+                key={category.id}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-2">
+                  <span className={category.color}>{category.icon}</span>
+                  <span className="text-sm font-medium">{t(category.titleKey)}</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {getCount(category.id)}
+                  </Badge>
                 </div>
                 <Button
-                  variant="default"
-                  className="bg-green-600 hover:bg-green-700"
-                  onClick={handleExportAll}
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleExportCategory(category.id)}
                   disabled={isExporting}
                 >
-                  {isExporting ? (
-                    <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4 mr-2" />
-                  )}
-                  {t("dataManagement.exportAll")}
+                  <Download className="h-3.5 w-3.5" />
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
         </CardContent>
       </Card>
-      )}
 
-      {mode === "import" && (
+      {/* RIGHT: Import */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -134,35 +110,39 @@ export function ImportExportSection({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <Alert className="border-amber-200 bg-amber-50">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="text-amber-800">{t("dataManagement.importWarningTitle")}</AlertTitle>
-            <AlertDescription className="text-amber-700">
-              {t("dataManagement.importWarningDesc")}
-            </AlertDescription>
-          </Alert>
-
-          <div className="space-y-4">
-            <Label>{t("dataManagement.selectBackupFile")}</Label>
-            <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-green-300 transition-colors">
-              <input
-                type="file"
-                accept=".json,.csv"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="import-file"
-              />
-              <label htmlFor="import-file" className="cursor-pointer">
-                <Upload className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                <p className="text-sm text-muted-foreground">
-                  {importFile ? importFile.name : t("dataManagement.clickToSelectFile")}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t("dataManagement.jsonAndCsvFiles") ?? "JSON or CSV"}
-                </p>
-              </label>
-            </div>
+        <CardContent className="space-y-4">
+          <div
+            className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-green-300 transition-colors cursor-pointer"
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.currentTarget.classList.add("border-green-400", "bg-green-50");
+            }}
+            onDragLeave={(e) => {
+              e.currentTarget.classList.remove("border-green-400", "bg-green-50");
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.currentTarget.classList.remove("border-green-400", "bg-green-50");
+              const file = e.dataTransfer.files?.[0];
+              if (file) {
+                const fakeEvent = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+                handleFileUpload(fakeEvent);
+              }
+            }}
+            onClick={() => document.getElementById("import-file-merged")?.click()}
+          >
+            <input
+              type="file"
+              accept=".json,.csv"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="import-file-merged"
+            />
+            <Upload className="h-10 w-10 mx-auto mb-2 text-gray-400" />
+            <p className="text-sm text-muted-foreground">
+              {importFile ? importFile.name : t("dataManagement.dragOrClick")}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">JSON, CSV</p>
           </div>
 
           {importPreview && (
@@ -176,7 +156,10 @@ export function ImportExportSection({
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {Object.entries(importPreview).map(([category, records]) => (
-                    <div key={category} className="flex items-center justify-between p-2 bg-white rounded border">
+                    <div
+                      key={category}
+                      className="flex items-center justify-between p-2 bg-white rounded border"
+                    >
                       <span className="text-sm font-medium">{t(`dataManagement.${category}`)}</span>
                       <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
                         {Array.isArray(records) ? records.length : 0}
@@ -188,12 +171,12 @@ export function ImportExportSection({
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      id="overwrite-mode"
+                      id="overwrite-mode-merged"
                       checked={importOverwrite}
                       onChange={(e) => setImportOverwrite(e.target.checked)}
                       className="rounded border-gray-300"
                     />
-                    <Label htmlFor="overwrite-mode" className="text-sm cursor-pointer">
+                    <Label htmlFor="overwrite-mode-merged" className="text-sm cursor-pointer">
                       {t("dataManagement.overwriteExisting")}
                     </Label>
                   </div>
@@ -217,56 +200,45 @@ export function ImportExportSection({
             </Card>
           )}
 
-          <div className="space-y-4">
-            <h3 className="font-medium flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              {t("dataManagement.importByCategory")}
-            </h3>
-            <p className="text-sm text-muted-foreground">{t("dataManagement.importByCategoryDesc") ?? ""}</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {dataCategories.slice(0, 10).map((category) => (
-                <Card key={category.id} className={`${category.borderColor} hover:shadow-md transition-shadow`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 ${category.bgColor} rounded-lg`}>
-                          <span className={category.color}>{category.icon}</span>
-                        </div>
-                        <span className="font-medium">{t(category.titleKey)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDownloadTemplate(category.id)}
-                          title={t("dataManagement.downloadTemplate") ?? ""}
-                        >
-                          <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                        </Button>
-                        <input
-                          type="file"
-                          accept=".json,.csv"
-                          onChange={(e) => handleCategoryFileUpload(category.id, e)}
-                          className="hidden"
-                          id={`import-${category.id}`}
-                        />
-                        <label htmlFor={`import-${category.id}`}>
-                          <Button variant="outline" size="sm" className="cursor-pointer" asChild>
-                            <span>
-                              <Upload className="h-3 w-3 mr-1" /> {t("dataManagement.import")}
-                            </span>
-                          </Button>
-                        </label>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          <Separator />
+          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            {dataCategories.slice(0, 10).map((category) => (
+              <div
+                key={category.id}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-2">
+                  <span className={category.color}>{category.icon}</span>
+                  <span className="text-sm font-medium">{t(category.titleKey)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDownloadTemplate(category.id)}
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-green-600" />
+                  </Button>
+                  <input
+                    type="file"
+                    accept=".json,.csv"
+                    onChange={(e) => handleCategoryFileUpload(category.id, e)}
+                    className="hidden"
+                    id={`import-merged-${category.id}`}
+                  />
+                  <label htmlFor={`import-merged-${category.id}`}>
+                    <Button variant="outline" size="sm" className="cursor-pointer" asChild>
+                      <span>
+                        <Upload className="h-3 w-3 mr-1" /> {t("dataManagement.import")}
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
-      )}
-    </>
+    </div>
   );
 }

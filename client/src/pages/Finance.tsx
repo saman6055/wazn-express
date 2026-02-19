@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -114,6 +115,7 @@ export default function Finance() {
   const { data: debtors } = trpc.ledger.getDebtors.useQuery({ minBalanceUsd: 0 });
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: activeCashAccounts } = trpc.cashAccounts.listActive.useQuery();
+  const { data: settings } = trpc.settings.list.useQuery();
   
   // Use ledger.recordPayment for recording payments (unified ledger system)
   const createPaymentMutation = trpc.ledger.recordPayment.useMutation({
@@ -294,6 +296,7 @@ export default function Finance() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
     
+    const company = getCompanyInfoFromSettings(settings || []);
     let tableRows = '';
     creditCustomers.forEach((account, index) => {
       const balance = Math.abs(parseFloat(account.currentBalanceUsd || '0'));
@@ -344,7 +347,7 @@ export default function Finance() {
       </head>
       <body>
         <div class="header">
-          <div class="company">Wazn Express</div>
+          <div class="company">${company.name}</div>
           <h1>\u0695\u0627\u067e\u06c6\u0631\u062a\u06cc \u06a9\u0695\u06cc\u0627\u0631\u0627\u0646\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a\u062f\u0627\u0631</h1>
           <div class="date">${new Date().toLocaleDateString('ku', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </div>
@@ -386,7 +389,7 @@ export default function Finance() {
         </table>
         
         <div class="footer">
-          <span>Wazn Express - \u0633\u06cc\u0633\u062a\u06d5\u0645\u06cc \u0628\u06d5\u0695\u06ce\u0648\u06d5\u0628\u0631\u062f\u0646\u06cc \u062f\u0627\u0631\u0627\u06cc\u06cc</span>
+          <span>${company.name} - \u0633\u06cc\u0633\u062a\u06d5\u0645\u06cc \u0628\u06d5\u0695\u06ce\u0648\u06d5\u0628\u0631\u062f\u0646\u06cc \u062f\u0627\u0631\u0627\u06cc\u06cc</span>
           <span>${new Date().toLocaleString('ku')}</span>
         </div>
         
@@ -551,6 +554,7 @@ export default function Finance() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
     
+    const company = getCompanyInfoFromSettings(settings || []);
     const totalDebt = filteredAndSortedAccounts.reduce((sum, a) => {
       const bal = parseFloat(a.currentBalanceUsd || '0');
       return sum + (bal > 0 ? bal : 0);
@@ -582,7 +586,7 @@ export default function Finance() {
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>ڕاپۆرتی حسابەکان - Wazn Express</title>
+        <title>ڕاپۆرتی حسابەکان - ${company.name}</title>
         <style>
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 40px; background: #f8fafc; }
@@ -612,7 +616,7 @@ export default function Finance() {
       <body>
         <div class="header">
           <h1>📊 ڕاپۆرتی حسابەکان</h1>
-          <p>Wazn Express - ${new Date().toLocaleDateString('ku-IQ')}</p>
+          <p>${company.name} - ${new Date().toLocaleDateString('ku-IQ')}</p>
         </div>
         
         <div class="stats">
@@ -744,7 +748,7 @@ export default function Finance() {
                               <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[400px] p-0" align="start">
+                          <PopoverContent variant="panel" className="w-[400px]" align="start">
                             <Command shouldFilter={false}>
                               <CommandInput
                                 placeholder={t("finance.searchCustomer") || "گەڕان بە ناو یان کۆد..."}
@@ -842,7 +846,7 @@ export default function Finance() {
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-full min-w-[300px] p-0" align="start">
+                          <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
                             <Command>
                               <CommandList>
                                 <CommandGroup>

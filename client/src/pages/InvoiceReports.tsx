@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { toast } from "sonner";
 import { 
   FileText, 
@@ -94,6 +95,7 @@ export default function InvoiceReports() {
     startDate,
     endDate
   });
+  const { data: settings } = trpc.settings.list.useQuery();
 
   const { data: recentInvoices, isLoading: recentLoading } = trpc.invoices.getRecent.useQuery({
     page: 1,
@@ -346,6 +348,7 @@ export default function InvoiceReports() {
       `;
     }
 
+    const company = getCompanyInfoFromSettings(settings || []);
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -420,7 +423,7 @@ export default function InvoiceReports() {
         </style>
       </head>
       <body>
-        <h1>Wazn Express</h1>
+        <h1>${company.name}</h1>
         <p class="subtitle">${title}</p>
         
         <div class="summary">
@@ -444,7 +447,7 @@ export default function InvoiceReports() {
         
         ${tableContent}
         
-        <p class="footer">Generated on ${new Date().toLocaleDateString()} | Wazn Express Invoice Reports</p>
+        <p class="footer">Generated on ${new Date().toLocaleDateString()} | ${company.name} Invoice Reports</p>
         
         <script>
           window.onload = function() {

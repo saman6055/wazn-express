@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { useTranslation } from "@/contexts/LanguageContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,6 +105,7 @@ export default function ServicesManagement() {
   const { data: services, isLoading: servicesLoading, refetch: refetchServices } = trpc.extraServices.list.useQuery({});
   const { data: serviceTypes } = trpc.extraServices.getActiveServiceTypes.useQuery();
   const { data: customers } = trpc.customers.list.useQuery();
+  const { data: settings } = trpc.settings.list.useQuery();
   
   // Mutation
   const createServiceMutation = trpc.extraServices.create.useMutation({
@@ -111,7 +113,7 @@ export default function ServicesManagement() {
       refetchServices();
     },
     onError: (error) => {
-      toast.error(error.message || "هەڵەیەک ڕوویدا");
+      toast.error(error.message || t('common.errorOccurred'));
     },
   });
   
@@ -162,10 +164,10 @@ export default function ServicesManagement() {
       }
       
       if (successCount > 0) {
-        toast.success(`${successCount} خزمەتگوزاری بە سەرکەوتوویی زیادکران`);
+        toast.success(t('services.bulkAddedSuccess', { count: successCount }));
       }
       if (errorCount > 0) {
-        toast.error(`${errorCount} خزمەتگوزاری زیاد نەکران`);
+        toast.error(t('services.bulkAddFailed', { count: errorCount }));
       }
       
       setIsAddServiceOpen(false);
@@ -194,7 +196,7 @@ export default function ServicesManagement() {
         notes: newService.notes,
       });
       
-      toast.success("خزمەتگوزاری بە سەرکەوتوویی زیادکرا");
+      toast.success(t('services.addedSuccess'));
       setIsAddServiceOpen(false);
       setNewService({
         serviceTypeId: 0,
@@ -261,9 +263,9 @@ export default function ServicesManagement() {
   
   // Get customer name helper
   const getCustomerName = (customerId: number | null) => {
-    if (!customerId) return "بەبێ کڕیار";
+    if (!customerId) return t('services.withoutCustomer');
     const customer = customers?.find((c: any) => c.id === customerId);
-    return customer?.fullName || `کڕیار #${customerId}`;
+    return customer?.fullName || t('services.customerNumber', { id: customerId });
   };
   
   // Generate years for filter
@@ -274,12 +276,13 @@ export default function ServicesManagement() {
   
   // Handle print
   const handlePrint = () => {
+    const company = getCompanyInfoFromSettings(settings || []);
     const printContent = `
       <!DOCTYPE html>
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>ڕاپۆرتی خزمەتگوزارییەکان</title>
+        <title>${t('services.servicesReport')}</title>
         <style>
           body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; direction: rtl; }
           .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #10b981; padding-bottom: 20px; }
@@ -298,38 +301,38 @@ export default function ServicesManagement() {
       </head>
       <body>
         <div class="header">
-          <h1>Wazn Express</h1>
-          <p>ڕاپۆرتی خزمەتگوزارییەکان</p>
-          <p>بەروار: ${new Date().toLocaleDateString('ku')}</p>
+          <h1>${company.name}</h1>
+          <p>${t('services.servicesReport')}</p>
+          <p>${t('services.date')}: ${new Date().toLocaleDateString('ku')}</p>
         </div>
         <div class="stats">
           <div class="stat">
             <div class="stat-value">${totals.total}</div>
-            <div class="stat-label">کۆی خزمەتگوزاری</div>
+            <div class="stat-label">${t('services.totalServices')}</div>
           </div>
           <div class="stat">
             <div class="stat-value">$${totals.totalRevenue.toFixed(2)}</div>
-            <div class="stat-label">کۆی داهات</div>
+            <div class="stat-label">${t('services.totalRevenue')}</div>
           </div>
           <div class="stat">
             <div class="stat-value">$${totals.totalCost.toFixed(2)}</div>
-            <div class="stat-label">کۆی تێچوون</div>
+            <div class="stat-label">${t('services.totalCost')}</div>
           </div>
           <div class="stat">
             <div class="stat-value">$${totals.totalProfit.toFixed(2)}</div>
-            <div class="stat-label">قازانجی خاوێن</div>
+            <div class="stat-label">${t('services.netProfit')}</div>
           </div>
         </div>
         <table>
           <thead>
             <tr>
-              <th>بەروار</th>
-              <th>کڕیار</th>
-              <th>جۆر</th>
-              <th>وەسف</th>
-              <th>تێچوون</th>
-              <th>نرخ</th>
-              <th>قازانج</th>
+              <th>${t('services.date')}</th>
+              <th>${t('services.customer')}</th>
+              <th>${t('services.type')}</th>
+              <th>${t('services.description')}</th>
+              <th>${t('services.cost')}</th>
+              <th>${t('services.price')}</th>
+              <th>${t('services.profit')}</th>
             </tr>
           </thead>
           <tbody>
@@ -363,7 +366,7 @@ export default function ServicesManagement() {
   
   // Handle CSV export
   const handleExportCSV = () => {
-    const headers = ["بەروار", "کڕیار", "جۆر", "وەسف", "تێچوون", "نرخ", "قازانج"];
+    const headers = [t('services.date'), t('services.customer'), t('services.type'), t('services.description'), t('services.cost'), t('services.price'), t('services.profit')];
     const rows = filteredServices.map((service: any) => {
       const profit = Number(service.priceAmount || 0) - Number(service.costAmount || 0);
       return [
@@ -385,7 +388,7 @@ export default function ServicesManagement() {
     link.download = `services-report-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("فایلی CSV داگیرا");
+    toast.success(t('services.csvExported'));
   };
 
   return (
@@ -399,8 +402,8 @@ export default function ServicesManagement() {
                 <Wrench className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">بەڕێوەبردنی خزمەتگوزارییەکان</h1>
-                <p className="text-emerald-100 mt-1">بەڕێوەبردن و چاودێری هەموو خزمەتگوزارییەکان</p>
+                <h1 className="text-2xl font-bold">{t('services.management')}</h1>
+                <p className="text-emerald-100 mt-1">{t('services.managementDescription')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -410,20 +413,20 @@ export default function ServicesManagement() {
                 onClick={() => navigate("/services/types")}
               >
                 <Settings className="h-4 w-4 ml-2" />
-                جۆرەکانی خزمەتگوزاری
+                {t('services.serviceTypes')}
               </Button>
               <Dialog open={isAddServiceOpen} onOpenChange={setIsAddServiceOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-white text-emerald-600 hover:bg-emerald-50">
                     <Plus className="h-4 w-4 ml-2" />
-                    زیادکردنی خزمەتگوزاری
+                    {t('services.addService')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle>زیادکردنی خزمەتگوزاری نوێ</DialogTitle>
+                    <DialogTitle>{t('services.addNewService')}</DialogTitle>
                     <DialogDescription>
-                      خزمەتگوزاری نوێ زیاد بکە. پارە ئۆتۆماتیک لە والیتی کڕیار دەبیتە خوار و ئینڤۆیس دروست دەبێت.
+                      {t('services.addNewServiceDescription')}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
@@ -440,7 +443,7 @@ export default function ServicesManagement() {
                         className="flex items-center gap-2"
                       >
                         <Users className="h-4 w-4" />
-                        کڕیارێک
+                        {t('services.singleCustomer')}
                       </Button>
                       <Button
                         type="button"
@@ -453,13 +456,13 @@ export default function ServicesManagement() {
                         className="flex items-center gap-2"
                       >
                         <UsersRound className="h-4 w-4" />
-                        چەند کڕیار (گروپ)
+                        {t('services.multipleCustomers')}
                       </Button>
                     </div>
                     
                     {/* Customer Selection */}
                     <div className="space-y-2">
-                      <Label>{isGroupMode ? "کڕیارەکان *" : "کڕیار *"}</Label>
+                      <Label>{isGroupMode ? t('services.customersRequired') : t('services.customerRequired')}</Label>
                       
                       {isGroupMode ? (
                         /* Multi-select for group mode */
@@ -473,21 +476,21 @@ export default function ServicesManagement() {
                               >
                                 <span className="text-muted-foreground">
                                   {selectedCustomerIds.length > 0 
-                                    ? `${selectedCustomerIds.length} کڕیار هەڵبژێردراو`
-                                    : "کڕیارەکان هەڵبژێرە..."}
+                                    ? t('services.customersSelected', { count: selectedCustomerIds.length })
+                                    : t('services.selectCustomers')}
                                 </span>
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-full p-0" align="start">
+                            <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
                               <Command>
                                 <CommandInput 
-                                  placeholder="گەڕان بە ناو یان کۆد..." 
+                                  placeholder={t('services.searchByNameOrCode')} 
                                   value={customerSearchQuery}
                                   onValueChange={setCustomerSearchQuery}
                                 />
                                 <CommandList>
-                                  <CommandEmpty>هیچ کڕیارێک نەدۆزرایەوە</CommandEmpty>
+                                  <CommandEmpty>{t('services.noCustomersFound')}</CommandEmpty>
                                   <CommandGroup className="max-h-64 overflow-auto">
                                     {filteredCustomers?.map((customer: any) => (
                                       <CommandItem
@@ -550,19 +553,19 @@ export default function ServicesManagement() {
                             >
                               {newService.customerId 
                                 ? getCustomerById(newService.customerId)?.fullName 
-                                : "کڕیار هەڵبژێرە..."}
+                                : t('services.selectCustomer')}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-full p-0" align="start">
+                          <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
                             <Command>
                               <CommandInput 
-                                placeholder="گەڕان بە ناو یان کۆد..." 
+                                placeholder={t('services.searchByNameOrCode')} 
                                 value={customerSearchQuery}
                                 onValueChange={setCustomerSearchQuery}
                               />
                               <CommandList>
-                                <CommandEmpty>هیچ کڕیارێک نەدۆزرایەوە</CommandEmpty>
+                                <CommandEmpty>{t('services.noCustomersFound')}</CommandEmpty>
                                 <CommandGroup className="max-h-64 overflow-auto">
                                   {filteredCustomers?.map((customer: any) => (
                                     <CommandItem
@@ -596,7 +599,7 @@ export default function ServicesManagement() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>جۆری خزمەتگوزاری *</Label>
+                      <Label>{t('services.serviceTypeRequired')}</Label>
                       <Select
                         value={newService.serviceTypeId.toString()}
                         onValueChange={(v) => {
@@ -611,7 +614,7 @@ export default function ServicesManagement() {
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="جۆر هەڵبژێرە..." />
+                          <SelectValue placeholder={t('services.selectType')} />
                         </SelectTrigger>
                         <SelectContent>
                           {serviceTypes?.map((type: any) => (
@@ -624,9 +627,9 @@ export default function ServicesManagement() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>وەسف *</Label>
+                      <Label>{t('services.descriptionRequired')}</Label>
                       <Textarea
-                        placeholder="وەسفی خزمەتگوزاری..."
+                        placeholder={t('services.descriptionPlaceholder')}
                         value={newService.description}
                         onChange={(e) => setNewService({ ...newService, description: e.target.value })}
                       />
@@ -634,7 +637,7 @@ export default function ServicesManagement() {
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>تێچوون</Label>
+                        <Label>{t('services.cost')}</Label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                           <Input
@@ -648,7 +651,7 @@ export default function ServicesManagement() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label>نرخی فرۆشتن *</Label>
+                        <Label>{t('services.sellingPriceRequired')}</Label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                           <Input
@@ -667,7 +670,7 @@ export default function ServicesManagement() {
                     {newService.costAmount && newService.priceAmount && (
                       <div className="p-3 rounded-lg bg-muted/50">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">قازانج:</span>
+                          <span className="text-sm text-muted-foreground">{t('services.profit')}:</span>
                           <span className={`font-bold ${
                             Number(newService.priceAmount) - Number(newService.costAmount) >= 0 
                               ? "text-green-600" 
@@ -680,9 +683,9 @@ export default function ServicesManagement() {
                     )}
                     
                     <div className="space-y-2">
-                      <Label>تێبینی</Label>
+                      <Label>{t('services.notes')}</Label>
                       <Textarea
-                        placeholder="تێبینی ئارەزوومەندانە..."
+                        placeholder={t('services.notesPlaceholder')}
                         value={newService.notes}
                         onChange={(e) => setNewService({ ...newService, notes: e.target.value })}
                       />
@@ -691,7 +694,7 @@ export default function ServicesManagement() {
                     {/* Auto payment notice */}
                     <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
                       <p className="text-sm text-amber-800 dark:text-amber-200">
-                        ⚡ کاتێک خزمەتگوزاری دروست دەکەیت، پارە ئۆتۆماتیک لە والیتی کڕیار دەبیتە خوار و ئینڤۆیس دروست دەبێت.
+                        {t('services.autoInvoiceNotice')}
                       </p>
                     </div>
                   </div>
@@ -702,7 +705,7 @@ export default function ServicesManagement() {
                       setSelectedCustomerIds([]);
                       setCustomerSearchQuery("");
                     }}>
-                      پاشگەزبوونەوە
+                      {t('common.cancel')}
                     </Button>
                     <Button
                       onClick={handleCreateService}
@@ -710,10 +713,10 @@ export default function ServicesManagement() {
                       className="bg-emerald-600 hover:bg-emerald-700"
                     >
                       {createServiceMutation.isPending 
-                        ? "چاوەڕوان بە..." 
+                        ? t('services.pleaseWait') 
                         : isGroupMode 
-                          ? `زیادکردن بۆ ${selectedCustomerIds.length} کڕیار`
-                          : "زیادکردن"}
+                          ? t('services.addForCustomers', { count: selectedCustomerIds.length })
+                          : t('common.add')}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -728,7 +731,7 @@ export default function ServicesManagement() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">کۆی خزمەتگوزاری</p>
+                  <p className="text-sm text-muted-foreground">{t('services.totalServices')}</p>
                   <p className="text-3xl font-bold text-blue-600 mt-1">{totals.total}</p>
                 </div>
                 <div className="p-3 bg-blue-500/10 rounded-xl">
@@ -742,7 +745,7 @@ export default function ServicesManagement() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">کۆی داهات</p>
+                  <p className="text-sm text-muted-foreground">{t('services.totalRevenue')}</p>
                   <p className="text-3xl font-bold text-green-600 mt-1">${totals.totalRevenue.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-green-500/10 rounded-xl">
@@ -756,7 +759,7 @@ export default function ServicesManagement() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">کۆی تێچوون</p>
+                  <p className="text-sm text-muted-foreground">{t('services.totalCost')}</p>
                   <p className="text-3xl font-bold text-red-600 mt-1">${totals.totalCost.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-red-500/10 rounded-xl">
@@ -770,12 +773,12 @@ export default function ServicesManagement() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">قازانجی خاوێن</p>
+                  <p className="text-sm text-muted-foreground">{t('services.netProfit')}</p>
                   <p className={`text-3xl font-bold mt-1 ${totals.totalProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     ${totals.totalProfit.toFixed(2)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {totals.profitMargin.toFixed(1)}% ڕێژەی قازانج
+                    {totals.profitMargin.toFixed(1)}% {t('services.profitMargin')}
                   </p>
                 </div>
                 <div className="p-3 bg-emerald-500/10 rounded-xl">
@@ -795,7 +798,7 @@ export default function ServicesManagement() {
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-lg">فیلتەرەکان</CardTitle>
+              <CardTitle className="text-lg">{t('common.filters')}</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -804,7 +807,7 @@ export default function ServicesManagement() {
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="گەڕان..."
+                  placeholder={t('common.search') + '...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pr-9"
@@ -814,10 +817,10 @@ export default function ServicesManagement() {
               {/* Service Type Filter */}
               <Select value={selectedServiceType} onValueChange={setSelectedServiceType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="جۆری خزمەتگوزاری" />
+                  <SelectValue placeholder={t('services.serviceTypeRequired')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">هەموو جۆرەکان</SelectItem>
+                  <SelectItem value="all">{t('services.allTypes')}</SelectItem>
                   {serviceTypes?.map((type: any) => (
                     <SelectItem key={type.id} value={type.id.toString()}>
                       {type.nameKu || type.nameEn}
@@ -829,10 +832,10 @@ export default function ServicesManagement() {
               {/* Customer Filter */}
               <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
                 <SelectTrigger>
-                  <SelectValue placeholder="کڕیار" />
+                  <SelectValue placeholder={t('services.customer')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">هەموو کڕیارەکان</SelectItem>
+                  <SelectItem value="all">{t('services.allCustomers')}</SelectItem>
                   {customers?.map((customer: any) => (
                     <SelectItem key={customer.id} value={customer.id.toString()}>
                       {customer.fullName}
@@ -844,13 +847,13 @@ export default function ServicesManagement() {
               {/* Date Filter Type */}
               <Select value={dateFilterType} onValueChange={(v: any) => setDateFilterType(v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="فیلتەری بەروار" />
+                  <SelectValue placeholder={t('services.dateFilter')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">هەموو کات</SelectItem>
-                  <SelectItem value="range">ماوەی دیاریکراو</SelectItem>
-                  <SelectItem value="month">مانگانە</SelectItem>
-                  <SelectItem value="year">ساڵانە</SelectItem>
+                  <SelectItem value="all">{t('services.allTime')}</SelectItem>
+                  <SelectItem value="range">{t('services.dateRange')}</SelectItem>
+                  <SelectItem value="month">{t('services.monthly')}</SelectItem>
+                  <SelectItem value="year">{t('services.yearly')}</SelectItem>
                 </SelectContent>
               </Select>
               
@@ -883,7 +886,7 @@ export default function ServicesManagement() {
               {dateFilterType === "year" && (
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
                   <SelectTrigger>
-                    <SelectValue placeholder="ساڵ هەڵبژێرە" />
+                    <SelectValue placeholder={t('services.selectYear')} />
                   </SelectTrigger>
                   <SelectContent>
                     {years.map((year) => (
@@ -900,11 +903,11 @@ export default function ServicesManagement() {
             <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
               <Button variant="outline" size="sm" onClick={handlePrint}>
                 <Printer className="h-4 w-4 ml-2" />
-                چاپکردن
+                {t('common.print')}
               </Button>
               <Button variant="outline" size="sm" onClick={handleExportCSV}>
                 <Download className="h-4 w-4 ml-2" />
-                داگرتنی Excel
+                {t('common.exportExcel')}
               </Button>
               <Button 
                 variant="outline" 
@@ -912,7 +915,7 @@ export default function ServicesManagement() {
                 onClick={() => navigate("/reports/services")}
               >
                 <FileText className="h-4 w-4 ml-2" />
-                ڕاپۆرتی تەواو
+                {t('services.fullReport')}
               </Button>
             </div>
           </CardContent>
@@ -923,8 +926,8 @@ export default function ServicesManagement() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg">لیستی خزمەتگوزارییەکان</CardTitle>
-                <CardDescription>{filteredServices.length} خزمەتگوزاری</CardDescription>
+                <CardTitle className="text-lg">{t('services.servicesList')}</CardTitle>
+                <CardDescription>{t('services.servicesCount', { count: filteredServices.length })}</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -932,14 +935,14 @@ export default function ServicesManagement() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30">
-                  <TableHead className="text-right">بەروار</TableHead>
-                  <TableHead className="text-right">کڕیار</TableHead>
-                  <TableHead className="text-right">جۆر</TableHead>
-                  <TableHead className="text-right">وەسف</TableHead>
-                  <TableHead className="text-right">تێچوون</TableHead>
-                  <TableHead className="text-right">نرخ</TableHead>
-                  <TableHead className="text-right">قازانج</TableHead>
-                  <TableHead className="text-right">کردار</TableHead>
+                  <TableHead className="text-right">{t('services.date')}</TableHead>
+                  <TableHead className="text-right">{t('services.customer')}</TableHead>
+                  <TableHead className="text-right">{t('services.type')}</TableHead>
+                  <TableHead className="text-right">{t('services.description')}</TableHead>
+                  <TableHead className="text-right">{t('services.cost')}</TableHead>
+                  <TableHead className="text-right">{t('services.price')}</TableHead>
+                  <TableHead className="text-right">{t('services.profit')}</TableHead>
+                  <TableHead className="text-right">{t('services.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -948,14 +951,14 @@ export default function ServicesManagement() {
                     <TableCell colSpan={8} className="text-center py-8">
                       <div className="flex items-center justify-center gap-2">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600"></div>
-                        <span>چاوەڕوان بە...</span>
+                        <span>{t('services.pleaseWait')}</span>
                       </div>
                     </TableCell>
                   </TableRow>
                 ) : filteredServices.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      هیچ خزمەتگوزارییەک نەدۆزرایەوە
+                      {t('services.noServicesFound')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -1013,15 +1016,15 @@ export default function ServicesManagement() {
               <div className="border-t bg-muted/30 p-4">
                 <div className="flex items-center justify-end gap-8">
                   <div className="text-sm">
-                    <span className="text-muted-foreground">کۆی تێچوون:</span>
+                    <span className="text-muted-foreground">{t('services.totalCost')}:</span>
                     <span className="font-bold mr-2">${totals.totalCost.toFixed(2)}</span>
                   </div>
                   <div className="text-sm">
-                    <span className="text-muted-foreground">کۆی داهات:</span>
+                    <span className="text-muted-foreground">{t('services.totalRevenue')}:</span>
                     <span className="font-bold mr-2">${totals.totalRevenue.toFixed(2)}</span>
                   </div>
                   <div className="text-sm">
-                    <span className="text-muted-foreground">کۆی قازانج:</span>
+                    <span className="text-muted-foreground">{t('services.totalProfit')}:</span>
                     <span className={`font-bold mr-2 ${totals.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       ${totals.totalProfit.toFixed(2)}
                     </span>

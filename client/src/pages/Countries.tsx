@@ -14,15 +14,22 @@ import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function Countries() {
-    const { t } = useTranslation();
-const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const { t } = useTranslation();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingCountry, setEditingCountry] = useState<any>(null);
-  
+  const [createIsOrigin, setCreateIsOrigin] = useState(false);
+  const [createIsDestination, setCreateIsDestination] = useState(false);
+  const [editIsOrigin, setEditIsOrigin] = useState(false);
+  const [editIsDestination, setEditIsDestination] = useState(false);
+  const [editIsActive, setEditIsActive] = useState(true);
+
   const { data: countries, refetch } = trpc.countries.list.useQuery();
   const createMutation = trpc.countries.create.useMutation({
     onSuccess: () => {
       toast.success("Country created successfully");
       setIsCreateOpen(false);
+      setCreateIsOrigin(false);
+      setCreateIsDestination(false);
       refetch();
     },
     onError: (error) => toast.error(error.message)
@@ -41,13 +48,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     const formData = new FormData(e.currentTarget);
     createMutation.mutate({
       nameEn: formData.get("nameEn") as string,
-      nameAr: formData.get("nameAr") as string || undefined,
-      nameKu: formData.get("nameKu") as string || undefined,
-      nameZh: formData.get("nameZh") as string || undefined,
+      nameAr: (formData.get("nameAr") as string) || undefined,
+      nameKu: (formData.get("nameKu") as string) || undefined,
+      nameZh: (formData.get("nameZh") as string) || undefined,
       isoCode: formData.get("isoCode") as string,
-      defaultCurrency: formData.get("defaultCurrency") as string || undefined,
-      isOrigin: formData.get("isOrigin") === "on",
-      isDestination: formData.get("isDestination") === "on",
+      defaultCurrency: (formData.get("defaultCurrency") as string) || undefined,
+      isOrigin: createIsOrigin,
+      isDestination: createIsDestination,
     });
   };
 
@@ -58,13 +65,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     updateMutation.mutate({
       id: editingCountry.id,
       nameEn: formData.get("nameEn") as string,
-      nameAr: formData.get("nameAr") as string || undefined,
-      nameKu: formData.get("nameKu") as string || undefined,
-      nameZh: formData.get("nameZh") as string || undefined,
-      defaultCurrency: formData.get("defaultCurrency") as string || undefined,
-      isOrigin: formData.get("isOrigin") === "on",
-      isDestination: formData.get("isDestination") === "on",
-      isActive: formData.get("isActive") === "on",
+      nameAr: (formData.get("nameAr") as string) || undefined,
+      nameKu: (formData.get("nameKu") as string) || undefined,
+      nameZh: (formData.get("nameZh") as string) || undefined,
+      defaultCurrency: (formData.get("defaultCurrency") as string) || undefined,
+      isOrigin: editIsOrigin,
+      isDestination: editIsDestination,
+      isActive: editIsActive,
     });
   };
 
@@ -119,11 +126,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   </div>
                   <div className="flex gap-6">
                     <div className="flex items-center gap-2">
-                      <Switch id="isOrigin" name="isOrigin" />
+                      <Switch id="isOrigin" checked={createIsOrigin} onCheckedChange={setCreateIsOrigin} />
                       <Label htmlFor="isOrigin">Origin Country</Label>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Switch id="isDestination" name="isDestination" />
+                      <Switch id="isDestination" checked={createIsDestination} onCheckedChange={setCreateIsDestination} />
                       <Label htmlFor="isDestination">Destination Country</Label>
                     </div>
                   </div>
@@ -175,7 +182,16 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => setEditingCountry(country)}>
+                      <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingCountry(country);
+                        setEditIsOrigin(country.isOrigin);
+                        setEditIsDestination(country.isDestination);
+                        setEditIsActive(country.isActive);
+                      }}
+                    >
                         <Edit className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -224,15 +240,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   </div>
                   <div className="flex gap-6">
                     <div className="flex items-center gap-2">
-                      <Switch id="edit-isOrigin" name="isOrigin" defaultChecked={editingCountry.isOrigin} />
+                      <Switch id="edit-isOrigin" checked={editIsOrigin} onCheckedChange={setEditIsOrigin} />
                       <Label htmlFor="edit-isOrigin">Origin</Label>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Switch id="edit-isDestination" name="isDestination" defaultChecked={editingCountry.isDestination} />
+                      <Switch id="edit-isDestination" checked={editIsDestination} onCheckedChange={setEditIsDestination} />
                       <Label htmlFor="edit-isDestination">Destination</Label>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Switch id="edit-isActive" name="isActive" defaultChecked={editingCountry.isActive} />
+                      <Switch id="edit-isActive" checked={editIsActive} onCheckedChange={setEditIsActive} />
                       <Label htmlFor="edit-isActive">Active</Label>
                     </div>
                   </div>

@@ -168,6 +168,38 @@ export const labelTemplates = mysqlTable("labelTemplates", {
 export type LabelTemplate = typeof labelTemplates.$inferSelect;
 export type InsertLabelTemplate = typeof labelTemplates.$inferInsert;
 
+// ============ BATCH LABEL TEMPLATES (لەیبڵی باچ - یەک لەیبڵ بۆ هەر کڕیار) ============
+export const batchLabelTemplates = mysqlTable("batchLabelTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  isDefault: boolean("isDefault").default(false).notNull(),
+  size: mysqlEnum("size", ["10x15", "10x10", "A6", "A5", "custom"]).default("10x15").notNull(),
+  widthMm: int("widthMm").default(100),
+  heightMm: int("heightMm").default(150),
+  showQrCode: boolean("showQrCode").default(true).notNull(),
+  qrCodeSize: int("qrCodeSize").default(80),
+  qrCodePosition: mysqlEnum("qrCodePosition", ["top-left", "top-right", "bottom-left", "bottom-right", "center"]).default("top-right"),
+  showBarcode: boolean("showBarcode").default(true).notNull(),
+  barcodeType: mysqlEnum("barcodeType", ["code128", "code39", "ean13", "qr"]).default("code128"),
+  showLogo: boolean("showLogo").default(true).notNull(),
+  logoUrl: varchar("logoUrl", { length: 500 }),
+  logoWidth: int("logoWidth").default(60),
+  showCustomerName: boolean("showCustomerName").default(true).notNull(),
+  showCustomerCode: boolean("showCustomerCode").default(true).notNull(),
+  showTotalPackages: boolean("showTotalPackages").default(true).notNull(),
+  showTotalWeight: boolean("showTotalWeight").default(true).notNull(),
+  showTotalVolume: boolean("showTotalVolume").default(true).notNull(),
+  showTotalPrice: boolean("showTotalPrice").default(true).notNull(),
+  showBatchNumber: boolean("showBatchNumber").default(true).notNull(),
+  showDate: boolean("showDate").default(true).notNull(),
+  primaryColor: varchar("primaryColor", { length: 7 }).default("#059669"),
+  fontFamily: varchar("fontFamily", { length: 100 }).default("Arial"),
+  fontSize: int("fontSize").default(12),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BatchLabelTemplate = typeof batchLabelTemplates.$inferSelect;
+export type InsertBatchLabelTemplate = typeof batchLabelTemplates.$inferInsert;
 
 // ============ STOCK/INVENTORY MANAGEMENT SYSTEM ============
 

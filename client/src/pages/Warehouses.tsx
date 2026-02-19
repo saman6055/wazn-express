@@ -14,10 +14,13 @@ import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function Warehouses() {
-    const { t } = useTranslation();
-const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const { t } = useTranslation();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingWarehouse, setEditingWarehouse] = useState<any>(null);
-  
+  const [createCountryId, setCreateCountryId] = useState<string>("");
+  const [createWarehouseType, setCreateWarehouseType] = useState<"air" | "sea" | "custom">("air");
+  const [createPricingModel, setCreatePricingModel] = useState<"per_kg" | "per_cbm">("per_kg");
+
   const { data: warehouses, refetch } = trpc.warehouses.list.useQuery();
   const { data: countries } = trpc.countries.list.useQuery({ activeOnly: true });
   
@@ -25,6 +28,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     onSuccess: () => {
       toast.success(t("toast.warehouseCreated"));
       setIsCreateOpen(false);
+      setCreateCountryId("");
+      setCreateWarehouseType("air");
+      setCreatePricingModel("per_kg");
       refetch();
     },
     onError: (error) => toast.error(error.message)
@@ -42,19 +48,24 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const countryId = parseInt(createCountryId, 10);
+    if (!createCountryId || isNaN(countryId)) {
+      toast.error("Please select a country");
+      return;
+    }
     createMutation.mutate({
       nameEn: formData.get("nameEn") as string,
-      nameAr: formData.get("nameAr") as string || undefined,
-      nameKu: formData.get("nameKu") as string || undefined,
-      countryId: parseInt(formData.get("countryId") as string),
+      nameAr: (formData.get("nameAr") as string) || undefined,
+      nameKu: (formData.get("nameKu") as string) || undefined,
       city: formData.get("city") as string,
-      addressEn: formData.get("addressEn") as string || undefined,
-      warehouseType: formData.get("warehouseType") as "air" | "sea" | "custom",
+      addressEn: (formData.get("addressEn") as string) || undefined,
+      countryId,
+      warehouseType: createWarehouseType,
       codePrefix: formData.get("codePrefix") as string,
       expectedDeliveryMin: parseInt(formData.get("expectedDeliveryMin") as string) || undefined,
       expectedDeliveryMax: parseInt(formData.get("expectedDeliveryMax") as string) || undefined,
-      pricingModel: formData.get("pricingModel") as "per_kg" | "per_cbm",
-      contactInfo: formData.get("contactInfo") as string || undefined,
+      pricingModel: createPricingModel,
+      contactInfo: (formData.get("contactInfo") as string) || undefined,
     });
   };
 
@@ -98,10 +109,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="countryId">Country *</Label>
-                      <Select name="countryId" required>
+                      <Select value={createCountryId} onValueChange={setCreateCountryId}>
                         <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
                         <SelectContent>
-                          {countries?.filter(c => c.isOrigin).map(country => (
+                          {(countries ?? []).filter(c => c.isOrigin || c.isDestination).map(country => (
                             <SelectItem key={country.id} value={country.id.toString()}>
                               {country.nameEn}
                             </SelectItem>
@@ -121,7 +132,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="warehouseType">Type *</Label>
-                      <Select name="warehouseType" required>
+                      <Select value={createWarehouseType} onValueChange={(v) => setCreateWarehouseType(v as "air" | "sea" | "custom")}>
                         <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="air">Air</SelectItem>
@@ -138,7 +149,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="pricingModel">Pricing Model *</Label>
-                      <Select name="pricingModel" required>
+                      <Select value={createPricingModel} onValueChange={(v) => setCreatePricingModel(v as "per_kg" | "per_cbm")}>
                         <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="per_kg">Per KG (Air)</SelectItem>

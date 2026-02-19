@@ -40,9 +40,11 @@ import {
   Building2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 
 export default function ServicesReport() {
   const { t } = useTranslation();
+  const company = useCompanyInfo();
   const [, navigate] = useLocation();
   
   // Filters
@@ -203,7 +205,7 @@ export default function ServicesReport() {
       <body>
         <div class="header">
           <h1>🔧 ڕاپۆرتی دارایی خزمەتگوزارییەکان</h1>
-          <div class="company">Wazn Express - کۆمپانیای گواستنەوە</div>
+          <div class="company">${company.name} - ${company.nameKu}</div>
           <div class="date">بەرواری دروستکردن: ${new Date().toLocaleDateString('ku')} - ${new Date().toLocaleTimeString('ku')}</div>
         </div>
         
@@ -368,7 +370,7 @@ export default function ServicesReport() {
                 <Building2 className="h-8 w-8" />
               </div>
               <div>
-                <p className="text-emerald-100 text-sm">Wazn Express</p>
+                <p className="text-emerald-100 text-sm">{company.name}</p>
                 <h1 className="text-2xl font-bold">ڕاپۆرتی دارایی خزمەتگوزارییەکان</h1>
                 <p className="text-emerald-100 mt-1">شیکاری تەواو بۆ داهات و قازانجی خزمەتگوزارییەکان</p>
               </div>

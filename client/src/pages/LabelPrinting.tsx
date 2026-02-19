@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,9 +59,11 @@ import {
 } from "@/components/ui/table";
 import QRCode from "qrcode";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { generateLabelsHtml, openLabelPrintWindow } from "@/lib/labelPrintUtils";
 
 export default function LabelPrinting() {
     const { t } = useTranslation();
+  const company = useCompanyInfo();
 const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -114,179 +117,49 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
       toast.error(t("auto.text_45b8fc"));
       return;
     }
-    
-    setIsPrinting(true);
-    
-    // Generate print content
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      toast.error(t("auto.text_2a65c7"));
-      setIsPrinting(false);
-      return;
-    }
 
-    const selectedPkgs = packages?.filter(p => selectedPackages.includes(p.id)) || [];
-    
-    // Generate QR codes for all packages
-    const qrCodes: Record<string, string> = {};
+    setIsPrinting(true);
+
+    const selectedPkgs = packages?.filter((p) => selectedPackages.includes(p.id)) || [];
+    const qrCodesMap: Record<string, string> = {};
     for (const pkg of selectedPkgs) {
       if (pkg.trackingNumber) {
-        qrCodes[pkg.trackingNumber] = await QRCode.toDataURL(pkg.trackingNumber, { width: 200, margin: 1 });
+        qrCodesMap[pkg.trackingNumber] = await QRCode.toDataURL(pkg.trackingNumber, { width: 200, margin: 1 });
       }
     }
 
-    const template = selectedTemplate || {
-      widthMm: 100,
-      heightMm: 150,
-      primaryColor: "#0ea5e9",
-      showQrCode: true,
-      qrCodeSize: 80,
-      qrCodePosition: "top-right",
-      showLogo: true,
-      showTrackingNumber: true,
-      showCustomerName: true,
-      showCustomerCode: true,
-      showCustomerPhone: true,
-      showDestinationCity: true,
-      showWeight: true,
-      showShippingType: true,
-      showBatchNumber: true,
-      showDate: true,
-    };
+    const template = selectedTemplate ?? undefined;
+    const firstPkg = selectedPkgs[0] as any;
+    const html = generateLabelsHtml({
+      template,
+      packages: selectedPkgs.map((p) => ({
+        trackingNumber: p.trackingNumber,
+        weightKg: p.weightKg,
+        volumeCbm: p.volumeCbm,
+        lengthCm: p.lengthCm,
+        widthCm: p.widthCm,
+        heightCm: p.heightCm,
+        calculatedCostUsd: p.calculatedCostUsd,
+        shippingType: p.shippingType,
+      })),
+      customer: selectedPkgs.map((p) => {
+        const a = p as any;
+        return {
+          name: a.customerName ?? "Unknown",
+          code: p.customerId?.toString() ?? a.customerCode ?? undefined,
+          phone: a.customerPhone ?? undefined,
+          city: a.destinationCity ?? undefined,
+        };
+      }),
+      batch: {
+        batchCode: firstPkg?.batchCode ?? undefined,
+        shippingType: firstPkg?.shippingType ?? undefined,
+      },
+      company: { name: company.name },
+      qrCodesMap,
+    });
 
-    const labelsHtml = selectedPkgs.map(pkg => `
-      <div class="label" style="
-        width: ${template.widthMm}mm;
-        height: ${template.heightMm}mm;
-        border: 1px solid #ccc;
-        padding: 4mm;
-        margin: 2mm;
-        page-break-inside: avoid;
-        display: inline-block;
-        vertical-align: top;
-        box-sizing: border-box;
-        font-family: Arial, sans-serif;
-        font-size: 10pt;
-        position: relative;
-      ">
-        ${template.showLogo ? `
-          <div style="display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${template.primaryColor}" stroke-width="2">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-            </svg>
-            <span style="font-weight: bold; color: ${template.primaryColor};">Wazn Express</span>
-          </div>
-        ` : ''}
-        
-        ${template.showQrCode && pkg.trackingNumber && qrCodes[pkg.trackingNumber] ? `
-          <div style="
-            position: absolute;
-            ${template.qrCodePosition === 'top-left' ? 'top: 4mm; left: 4mm;' : ''}
-            ${template.qrCodePosition === 'top-right' ? 'top: 4mm; right: 4mm;' : ''}
-            ${template.qrCodePosition === 'bottom-left' ? 'bottom: 4mm; left: 4mm;' : ''}
-            ${template.qrCodePosition === 'bottom-right' ? 'bottom: 4mm; right: 4mm;' : ''}
-            ${template.qrCodePosition === 'center' ? 'top: 50%; left: 50%; transform: translate(-50%, -50%);' : ''}
-          ">
-            <img src="${qrCodes[pkg.trackingNumber]}" style="width: ${template.qrCodeSize}px; height: ${template.qrCodeSize}px;" />
-          </div>
-        ` : ''}
-        
-        ${template.showTrackingNumber ? `
-          <div style="text-align: center; padding: 2mm 0; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; margin: 2mm 0;">
-            <div style="font-size: 8pt; color: #666;">Tracking Number</div>
-            <div style="font-weight: bold; font-size: 12pt; color: ${template.primaryColor};">${pkg.trackingNumber || 'N/A'}</div>
-          </div>
-        ` : ''}
-        
-        <div style="margin-top: 2mm;">
-          ${template.showCustomerName ? `
-            <div style="display: flex; align-items: center; gap: 1mm; margin-bottom: 1mm;">
-              <span style="color: #666;">👤</span>
-              <span style="font-weight: 500;">${(pkg as any).customerName || 'Unknown'}</span>
-            </div>
-          ` : ''}
-          
-          ${template.showCustomerCode ? `
-            <div style="display: flex; align-items: center; gap: 1mm; margin-bottom: 1mm;">
-              <span style="color: #666;">#</span>
-              <span>${pkg.customerId || 'N/A'}</span>
-            </div>
-          ` : ''}
-          
-          ${template.showCustomerPhone ? `
-            <div style="display: flex; align-items: center; gap: 1mm; margin-bottom: 1mm;">
-              <span style="color: #666;">📱</span>
-              <span>${(pkg as any).customerPhone || 'N/A'}</span>
-            </div>
-          ` : ''}
-          
-          ${template.showDestinationCity ? `
-            <div style="display: flex; align-items: center; gap: 1mm; margin-bottom: 1mm;">
-              <span style="color: #666;">📍</span>
-              <span style="font-weight: 500;">${(pkg as any).destinationCity || 'N/A'}</span>
-            </div>
-          ` : ''}
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1mm; font-size: 9pt; border-top: 1px solid #eee; padding-top: 2mm; margin-top: 2mm;">
-          ${template.showWeight ? `
-            <div>⚖️ ${pkg.weightKg || 0} kg</div>
-          ` : ''}
-          
-          ${template.showShippingType ? `
-            <div>🚚 ${pkg.shippingType === 'air_regular' ? 'Air' : pkg.shippingType === 'sea' ? 'Sea' : 'Air Irregular'}</div>
-          ` : ''}
-          
-          ${template.showBatchNumber ? `
-            <div>📦 ${(pkg as any).batchCode || 'N/A'}</div>
-          ` : ''}
-          
-          ${template.showDate ? `
-            <div>📅 ${new Date().toLocaleDateString()}</div>
-          ` : ''}
-        </div>
-      </div>
-    `).join('');
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Print Labels - Wazn Express</title>
-        <style>
-          @page {
-            size: A4;
-            margin: 5mm;
-          }
-          body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-          }
-          .labels-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-start;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="labels-container">
-          ${labelsHtml}
-        </div>
-        <script>
-          window.onload = function() {
-            window.print();
-            window.onafterprint = function() {
-              window.close();
-            };
-          };
-        </script>
-      </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
+    openLabelPrintWindow(html);
     setIsPrinting(false);
     toast.success(`${selectedPackages.length} لەیبڵ چاپ کرا`);
   };
@@ -327,7 +200,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
             <div className="flex items-center gap-1 mb-2">
               <Package className="h-6 w-6" style={{ color: template.primaryColor }} />
               <span className="font-bold text-sm" style={{ color: template.primaryColor }}>
-                Wazn Express
+                {company.name}
               </span>
             </div>
           )}

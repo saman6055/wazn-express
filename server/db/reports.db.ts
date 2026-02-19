@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getTotalDebtAmount } from './finance.db';
 import {
@@ -477,7 +478,7 @@ export async function getDashboardRevenueChart(days: number = 30): Promise<{ dat
       );
       revenueData = (Array.isArray(revenueResult) ? revenueResult[0] : revenueResult) as unknown as { date: string; revenue: string }[];
     } catch (e) {
-      console.error('Error fetching revenue data:', e);
+      appLogger.error('Error fetching revenue data', { error: e instanceof Error ? e.message : String(e) });
       revenueData = [];
     }
 
@@ -494,7 +495,7 @@ export async function getDashboardRevenueChart(days: number = 30): Promise<{ dat
       );
       packageData = (Array.isArray(packageResult) ? packageResult[0] : packageResult) as unknown as { date: string; count: number }[];
     } catch (e) {
-      console.error('Error fetching package data:', e);
+      appLogger.error('Error fetching package data', { error: e instanceof Error ? e.message : String(e) });
       packageData = [];
     }
 
@@ -529,7 +530,82 @@ export async function getDashboardRevenueChart(days: number = 30): Promise<{ dat
 
     return result;
   } catch (error) {
-    console.error('Error in getDashboardRevenueChart:', error);
+    appLogger.error('Error in getDashboardRevenueChart', { error: error instanceof Error ? error.message : String(error) });
+    return [];
+  }
+}
+
+/** Daily revenue, expenses, and profit for dashboard chart (داهات، خەرجی، قازانج) */
+export async function getDashboardProfitLossChart(days: number = 30): Promise<{ date: string; revenue: number; expenses: number; profit: number }[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+    const startDateStr = startDate.toISOString().slice(0, 10);
+
+    let revenueData: { date: string; revenue: string }[] = [];
+    try {
+      const revenueResult = await db.execute(
+        sql`SELECT DATE(createdAt) as date, COALESCE(SUM(CAST(amountUsd AS DECIMAL(12,2))), 0) as revenue 
+            FROM paymentRecords 
+            WHERE createdAt >= ${startDateStr} 
+            GROUP BY DATE(createdAt) 
+            ORDER BY date`
+      );
+      revenueData = (Array.isArray(revenueResult) ? revenueResult[0] : revenueResult) as unknown as { date: string; revenue: string }[];
+    } catch (e) {
+      appLogger.error('Error fetching revenue for P/L chart', { error: e instanceof Error ? e.message : String(e) });
+    }
+
+    let expenseData: { date: string; expenses: string }[] = [];
+    try {
+      const expenseResult = await db.execute(
+        sql`SELECT DATE(expenseDate) as date, COALESCE(SUM(CAST(amountUsd AS DECIMAL(12,2))), 0) as expenses 
+            FROM expenses 
+            WHERE expenseDate >= ${startDateStr} 
+            GROUP BY DATE(expenseDate) 
+            ORDER BY date`
+      );
+      expenseData = (Array.isArray(expenseResult) ? expenseResult[0] : expenseResult) as unknown as { date: string; expenses: string }[];
+    } catch (e) {
+      appLogger.error('Error fetching expenses for P/L chart', { error: e instanceof Error ? e.message : String(e) });
+    }
+
+    const revenueMap = new Map<string, number>();
+    for (const r of revenueData) {
+      const dateKey = typeof r.date === 'string' ? r.date.split('T')[0] : new Date(r.date).toISOString().split('T')[0];
+      revenueMap.set(dateKey, parseFloat(r.revenue) || 0);
+    }
+    const expenseMap = new Map<string, number>();
+    for (const e of expenseData) {
+      const dateKey = typeof e.date === 'string' ? e.date.split('T')[0] : new Date(e.date).toISOString().split('T')[0];
+      expenseMap.set(dateKey, parseFloat(e.expenses) || 0);
+    }
+
+    const result: { date: string; revenue: number; expenses: number; profit: number }[] = [];
+    const currentDate = new Date(startDate);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    while (currentDate <= today) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const revenue = revenueMap.get(dateStr) || 0;
+      const expenses = expenseMap.get(dateStr) || 0;
+      result.push({
+        date: dateStr,
+        revenue,
+        expenses,
+        profit: revenue - expenses,
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return result;
+  } catch (error) {
+    appLogger.error('Error in getDashboardProfitLossChart', { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }
@@ -685,7 +761,7 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
     .orderBy(desc(paymentRecords.createdAt))
     .limit(5);
 
-  const paymentCustomerIds = [...new Set(recentPayments.map((p) => p.customerId).filter((id): id is number => id != null))];
+  const paymentCustomerIds = Array.from(new Set(recentPayments.map((p) => p.customerId).filter((id): id is number => id != null)));
   const customersList = paymentCustomerIds.length > 0
     ? await db.select({ id: customers.id, fullName: customers.fullName }).from(customers).where(inArray(customers.id, paymentCustomerIds))
     : [];
@@ -1493,7 +1569,7 @@ export async function getProfitByOrderType(startDate?: Date, endDate?: Date): Pr
     packages: { count: 0, totalRevenue: 0 },
   };
   
-  const dateConditions: any[] = [];
+  const dateConditions: SQL[] = [];
   if (startDate) dateConditions.push(gte(fullPackageOrders.createdAt, startDate));
   if (endDate) dateConditions.push(lte(fullPackageOrders.createdAt, endDate));
   
@@ -1532,7 +1608,179 @@ export async function getProfitByOrderType(startDate?: Date, endDate?: Date): Pr
   };
 }
 
+/** Net profit from batches: for packages delivered in period, revenue minus allocated batch cost */
+async function getPackageNetProfitFromBatches(
+  db: Awaited<ReturnType<typeof getDb>>,
+  startDate: Date,
+  endDate: Date
+): Promise<number> {
+  if (!db) return 0;
+  const pkgInPeriod = await db
+    .select({
+      batchId: packages.batchId,
+      revenueInPeriod: sql<number>`COALESCE(SUM(${packages.calculatedCostUsd}), 0)`,
+    })
+    .from(packages)
+    .where(and(
+      eq(packages.isCharged, true),
+      gte(packages.deliveredAt, startDate),
+      lte(packages.deliveredAt, endDate),
+      isNotNull(packages.batchId)
+    ))
+    .groupBy(packages.batchId);
+  if (pkgInPeriod.length === 0) return 0;
+  const batchIds = pkgInPeriod.map((r) => r.batchId).filter((id): id is number => id != null);
+  if (batchIds.length === 0) return 0;
 
+  const batchTotals = await db
+    .select({
+      batchId: packages.batchId,
+      totalRevenue: sql<number>`COALESCE(SUM(${packages.calculatedCostUsd}), 0)`,
+    })
+    .from(packages)
+    .where(inArray(packages.batchId, batchIds))
+    .groupBy(packages.batchId);
+  const batchCosts = await db
+    .select({
+      id: batches.id,
+      totalCost: sql<number>`COALESCE(
+        CASE WHEN ${batches.shippingType} = 'sea'
+        THEN CAST(${batches.chargedCbm} AS DECIMAL(12,2)) * CAST(COALESCE(${batches.costPerCbm}, 0) AS DECIMAL(12,2))
+        ELSE CAST(${batches.chargedWeightKg} AS DECIMAL(12,2)) * CAST(COALESCE(${batches.costPerKg}, 0) AS DECIMAL(12,2))
+        END, 0
+      )`,
+    })
+    .from(batches)
+    .where(inArray(batches.id, batchIds));
+
+  const revenueByBatch = new Map<number, number>();
+  for (const r of pkgInPeriod) if (r.batchId != null) revenueByBatch.set(r.batchId, Number(r.revenueInPeriod ?? 0));
+  const totalRevenueByBatch = new Map<number, number>();
+  for (const r of batchTotals) if (r.batchId != null) totalRevenueByBatch.set(r.batchId, Number(r.totalRevenue ?? 0));
+  const costByBatch = new Map<number, number>();
+  for (const r of batchCosts) costByBatch.set(r.id, Number(r.totalCost ?? 0));
+
+  let netProfit = 0;
+  for (const batchId of batchIds) {
+    const revenueInPeriod = revenueByBatch.get(batchId) ?? 0;
+    const totalBatchRevenue = totalRevenueByBatch.get(batchId) ?? 0;
+    const totalBatchCost = costByBatch.get(batchId) ?? 0;
+    const allocatedCost = totalBatchRevenue > 0 ? totalBatchCost * (revenueInPeriod / totalBatchRevenue) : 0;
+    netProfit += revenueInPeriod - allocatedCost;
+  }
+  return netProfit;
+}
+
+/** Aggregated profit from all sources + company expenses for summary/expense tab */
+export async function getAggregatedProfitAndExpenses(
+  year: number,
+  month?: number
+): Promise<{
+  fullPackageProfit: number;
+  commissionProfit: number;
+  packageRevenue: number;
+  packageNetProfitFromBatch: number;
+  serviceProfit: number;
+  totalProfit: number;
+  totalExpenses: number;
+  netSurplus: number;
+  expensesByCategory: Array<{ categoryId: number; categoryName: string; amountUsd: number }>;
+}> {
+  const db = await getDb();
+  const empty = {
+    fullPackageProfit: 0,
+    commissionProfit: 0,
+    packageRevenue: 0,
+    packageNetProfitFromBatch: 0,
+    serviceProfit: 0,
+    totalProfit: 0,
+    totalExpenses: 0,
+    netSurplus: 0,
+    expensesByCategory: [],
+  };
+  if (!db) return empty;
+
+  const startDate = new Date(year, month ? month - 1 : 0, 1);
+  const endDate = month
+    ? new Date(year, month, 0, 23, 59, 59)
+    : new Date(year, 11, 31, 23, 59, 59);
+
+  const [fpResult, commResult, pkgResult, pkgNetResult, svcResult, expSumResult, expByCatResult] = await Promise.all([
+    db.select({ total: sql<number>`COALESCE(SUM(profitUsd), 0)` })
+      .from(fullPackageOrders)
+      .where(and(
+        eq(fullPackageOrders.orderType, 'full_package'),
+        gte(fullPackageOrders.createdAt, startDate),
+        lte(fullPackageOrders.createdAt, endDate)
+      )),
+    db.select({ total: sql<number>`COALESCE(SUM(profitUsd), 0)` })
+      .from(fullPackageOrders)
+      .where(and(
+        eq(fullPackageOrders.orderType, 'commission'),
+        gte(fullPackageOrders.createdAt, startDate),
+        lte(fullPackageOrders.createdAt, endDate)
+      )),
+    db.select({ total: sql<number>`COALESCE(SUM(calculatedCostUsd), 0)` })
+      .from(packages)
+      .where(and(
+        eq(packages.isCharged, true),
+        gte(packages.deliveredAt, startDate),
+        lte(packages.deliveredAt, endDate)
+      )),
+    getPackageNetProfitFromBatches(db, startDate, endDate),
+    db.select({ total: sql<number>`COALESCE(SUM(profitAmount), 0)` })
+      .from(extraServices)
+      .where(and(
+        gte(extraServices.createdAt, startDate),
+        lte(extraServices.createdAt, endDate)
+      )),
+    db.select({ total: sql<number>`COALESCE(SUM(amountUsd), 0)` })
+      .from(expenses)
+      .where(and(
+        gte(expenses.expenseDate, startDate),
+        lte(expenses.expenseDate, endDate)
+      )),
+    db.select({
+      categoryId: expenses.categoryId,
+      categoryName: expenseCategories.nameEn,
+      amountUsd: sql<number>`COALESCE(SUM(${expenses.amountUsd}), 0)`,
+    })
+      .from(expenses)
+      .innerJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+      .where(and(
+        gte(expenses.expenseDate, startDate),
+        lte(expenses.expenseDate, endDate)
+      ))
+      .groupBy(expenses.categoryId, expenseCategories.nameEn),
+  ]);
+
+  const fullPackageProfit = Number(fpResult[0]?.total ?? 0);
+  const commissionProfit = Number(commResult[0]?.total ?? 0);
+  const packageRevenue = Number(pkgResult[0]?.total ?? 0);
+  const packageNetProfitFromBatch = Number(pkgNetResult ?? 0);
+  const serviceProfit = Number(svcResult[0]?.total ?? 0);
+  const totalProfit = fullPackageProfit + commissionProfit + packageNetProfitFromBatch + serviceProfit;
+  const totalExpenses = Number(expSumResult[0]?.total ?? 0);
+  const netSurplus = totalProfit - totalExpenses;
+
+  const expensesByCategory = (expByCatResult ?? []).map((r) => ({
+    categoryId: r.categoryId,
+    categoryName: r.categoryName ?? '',
+    amountUsd: Number(r.amountUsd ?? 0),
+  }));
+
+  return {
+    fullPackageProfit,
+    commissionProfit,
+    packageRevenue,
+    packageNetProfitFromBatch,
+    serviceProfit,
+    totalProfit,
+    totalExpenses,
+    netSurplus,
+    expensesByCategory,
+  };
+}
 
 // ============ EXPENSE ALERT SYSTEM ============
 

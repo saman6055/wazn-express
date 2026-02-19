@@ -205,28 +205,33 @@ export const invoicesRouter = router({
     generatePDF: staffProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
-        const { generateInvoicePDF } = await import("../pdf-generator");
+        const { generateInvoicePDF } = await import("../services/pdf.service");
         const invoice = await db.getInvoiceById(input.id);
         if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Invoice not found" });
-        
+
         const customer = await db.getCustomerById(invoice.customerId);
         if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
-        
-        const lineItems = typeof invoice.lineItems === 'string' 
-          ? JSON.parse(invoice.lineItems) 
+
+        const template = await db.getDefaultInvoiceTemplate();
+        const customerBalance = await db.getCustomerBalance(invoice.customerId);
+
+        const lineItems = typeof invoice.lineItems === 'string'
+          ? JSON.parse(invoice.lineItems)
           : invoice.lineItems;
-        
+
         const pdfUrl = await generateInvoicePDF({
           invoiceNumber: invoice.invoiceNumber,
           date: new Date(invoice.createdAt).toLocaleDateString(),
           dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : undefined,
           customer: {
             name: customer.fullName,
+            nameKu: customer.fullNameKurdish || customer.fullName,
             code: customer.customerCode,
             phone: customer.mobileNumber || undefined,
             address: customer.address || undefined,
+            city: customer.city || undefined,
           },
-          items: lineItems.map((item: any) => ({
+          items: lineItems.map((item: { description: string; quantity: number; unitPrice: number; total: number }) => ({
             description: item.description,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
@@ -237,8 +242,19 @@ export const invoicesRouter = router({
           total: Number(invoice.totalUsd),
           notes: invoice.notes || undefined,
           isPaid: invoice.status === 'paid',
+          customerBalance,
+          company: template ? {
+            name: template.companyName || "Wazn Express",
+            nameKu: template.companyNameKu || "وەزن ئێکسپرێس",
+            address: template.companyAddress || "",
+            addressKu: template.companyAddressKu || "",
+            phone: template.companyPhone || "",
+            email: template.companyEmail || "",
+            website: template.companyWebsite || "",
+            primaryColor: template.primaryColor || "#0f766e",
+          } : undefined,
         });
-        
+
         return { url: pdfUrl };
       }),
 });
@@ -248,7 +264,7 @@ export const invoiceTemplatesRouter = router({
       return db.getInvoiceTemplates();
     }),
     
-    getDefault: adminProcedure.query(async () => {
+    getDefault: staffProcedure.query(async () => {
       return db.getDefaultInvoiceTemplate();
     }),
     

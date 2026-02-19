@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
@@ -119,7 +120,7 @@ export const ledgerRouter = router({
       return { unpaidInvoices: summary.unpaidInvoices, unpaidAmountUsd: summary.unpaidAmountUsd };
     }),
 
-    // Record payment
+    // Record payment (cash account deposit, when provided, is done inside the same transaction — no silent failure)
     recordPayment: staffProcedure
       .input(z.object({
         customerId: idSchema,
@@ -132,6 +133,15 @@ export const ledgerRouter = router({
         cashAccountId: idSchema.optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        if ((input.amountUsd ?? 0) <= 0 && (input.amountIqd ?? 0) <= 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Payment amount must be greater than zero",
+          });
+        }
+        const cashDescription = input.notes
+          ? `پارەدانی کڕیار: ${input.customerCode} - ${input.notes}`
+          : `پارەدانی کڕیار: ${input.customerCode}`;
         const result = await db.recordPaymentReceived(
           input.customerId,
           input.customerCode,
@@ -140,28 +150,10 @@ export const ledgerRouter = router({
           input.paymentMethod,
           ctx.user.id,
           input.notes,
-          input.receiptNumber
+          input.receiptNumber,
+          input.cashAccountId,
+          cashDescription
         );
-        
-        // If a cash account is selected, record the deposit to that account
-        if (input.cashAccountId && (input.amountUsd > 0 || input.amountIqd > 0)) {
-          try {
-            await db.createCashTransaction({
-              accountId: input.cashAccountId,
-              transactionType: 'customer_payment',
-              amount: (input.amountUsd || 0).toFixed(2),
-              relatedEntityType: 'customer',
-              relatedEntityId: input.customerId,
-              description: `پارەدانی کڕیار: ${input.customerCode}${input.notes ? ' - ' + input.notes : ''}`,
-              transactionDate: new Date(),
-              referenceNumber: input.receiptNumber,
-              createdById: ctx.user.id,
-            });
-          } catch (e) {
-            console.error('Failed to record cash transaction:', e);
-          }
-        }
-        
         return result;
       }),
     
@@ -252,7 +244,7 @@ export const ledgerRouter = router({
         const invoiceNumber = await db.getNextInvoiceNumber();
         
         // Generate PDF
-        const { generatePackageInvoice } = await import('../invoiceGenerator');
+        const { generatePackageInvoice } = await import('../services/invoice.service');
         const pdfBuffer = await generatePackageInvoice({
           invoiceNumber,
           customerName: customer.fullName || 'Unknown',
@@ -264,7 +256,7 @@ export const ledgerRouter = router({
         });
         
         // Upload to S3
-        const { storagePut } = await import('../storage');
+        const { storagePut } = await import('../services/storage.service');
         const fileKey = `invoices/${invoiceNumber}.pdf`;
         const { url: pdfUrl } = await storagePut(fileKey, pdfBuffer, 'application/pdf');
         
@@ -309,7 +301,7 @@ export const ledgerRouter = router({
         const invoiceNumber = await db.getNextInvoiceNumber();
         
         // Generate PDF
-        const { generatePaymentReceipt } = await import('../invoiceGenerator');
+        const { generatePaymentReceipt } = await import('../services/invoice.service');
         const pdfBuffer = await generatePaymentReceipt({
           invoiceNumber,
           customerName: customer.fullName || 'Unknown',
@@ -322,7 +314,7 @@ export const ledgerRouter = router({
         });
         
         // Upload to S3
-        const { storagePut } = await import('../storage');
+        const { storagePut } = await import('../services/storage.service');
         const fileKey = `receipts/${invoiceNumber}.pdf`;
         const { url: pdfUrl } = await storagePut(fileKey, pdfBuffer, 'application/pdf');
         
@@ -470,7 +462,7 @@ export const expensesRouter = router({
         try {
           await db.updateDailyFinancialSummary(input.expenseDate, { addExpense: parseFloat(input.amountUsd), expenseType: input.categoryId?.toString() || 'other' });
         } catch (e) {
-          console.error('[Finance] Failed to update daily summary for expense:', e);
+          appLogger.error('[Finance] Failed to update daily summary for expense', { error: e instanceof Error ? e.message : String(e) });
         }
         
         // Check expense alert thresholds
@@ -491,7 +483,7 @@ export const expensesRouter = router({
             }
           }
         } catch (e) {
-          console.error('[ExpenseAlert] Failed to check thresholds:', e);
+          appLogger.error('[ExpenseAlert] Failed to check thresholds', { error: e instanceof Error ? e.message : String(e) });
         }
         
         return expense;
@@ -849,6 +841,14 @@ export const financialReportsRouter = router({
       .query(async ({ input }) => {
         return db.getMonthlyProfitTrend(input.year);
       }),
+    getDetailedPnL: accountantProcedure
+      .input(z.object({
+        startDate: z.date(),
+        endDate: z.date(),
+      }))
+      .query(async ({ input }) => {
+        return db.getDetailedProfitAndLoss(input.startDate, input.endDate);
+      }),
     // PDF Generation endpoints
     generateProfitLossPDF: accountantProcedure
       .input(z.object({
@@ -856,7 +856,7 @@ export const financialReportsRouter = router({
         year: z.number(),
       }))
       .mutation(async ({ input }) => {
-        const { generateProfitLossPDF } = await import("../pdf-generator");
+        const { generateProfitLossPDF } = await import("../services/pdf.service");
         const startDate = new Date(input.year, getMonthNumber(input.month), 1);
         const endDate = new Date(input.year, getMonthNumber(input.month) + 1, 0);
         const pnlData = await db.getProfitAndLoss(startDate, endDate);
@@ -880,7 +880,7 @@ export const financialReportsRouter = router({
       }),
     generateBalanceSheetPDF: accountantProcedure
       .mutation(async () => {
-        const { generateBalanceSheetPDF } = await import("../pdf-generator");
+        const { generateBalanceSheetPDF } = await import("../services/pdf.service");
         const overview = await db.getCompanyFinancialOverview();
         const debts = await db.getAllCompanyDebts();
         const partners = await db.getAllPartners();
@@ -915,7 +915,7 @@ export const financialReportsRouter = router({
         endDate: z.date(),
       }))
       .mutation(async ({ input }) => {
-        const { generatePartnerReportPDF } = await import("../pdf-generator");
+        const { generatePartnerReportPDF } = await import("../services/pdf.service");
         const partner = await db.getPartnerById(input.partnerId);
         if (!partner) throw new TRPCError({ code: "NOT_FOUND", message: "Partner not found" });
         
@@ -958,7 +958,7 @@ export const financialReportsRouter = router({
         year: z.number(),
       }))
       .mutation(async ({ input }) => {
-        const { generateExpenseReportPDF } = await import("../pdf-generator");
+        const { generateExpenseReportPDF } = await import("../services/pdf.service");
         const startDate = new Date(input.year, getMonthNumber(input.month), 1);
         const endDate = new Date(input.year, getMonthNumber(input.month) + 1, 0);
         
@@ -999,7 +999,7 @@ export const financialReportsRouter = router({
       }),
     generateDebtSchedulePDF: accountantProcedure
       .mutation(async () => {
-        const { generateDebtSchedulePDF } = await import("../pdf-generator");
+        const { generateDebtSchedulePDF } = await import("../services/pdf.service");
         const debts = await db.getAllCompanyDebts();
         
         const pdfUrl = await generateDebtSchedulePDF({

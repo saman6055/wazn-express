@@ -36,7 +36,7 @@ export function QueryErrorFallback({
 
   return (
     <div
-      className="flex items-center justify-center min-h-[280px] p-6 bg-muted/30 rounded-lg"
+      className="flex min-h-screen items-center justify-center p-6 bg-muted/50"
       dir="rtl"
     >
       <div className="flex flex-col items-center w-full max-w-md text-center">

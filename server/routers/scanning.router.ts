@@ -1,9 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
-import { notifyPackageStatusChange } from "../notifications";
+import { notifyPackageStatusChange } from "../services/notification.service";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const qrCodesRouter = router({
@@ -161,81 +162,10 @@ export const scanningRouter = router({
                     'received_local': `پاکەتتان گەیشتە مەخزەنی هەولێر! کۆد: ${pkg.trackingNumber}`,
                     'delivered': `پاکەتتان گەیاندرا! سوپاس بۆ متمانەتان.`
                   };
-                  console.log(`[SMS] Would send to ${customer.mobileNumber}: ${messages[input.scanType]}`);
-                  
-                  // Charge customer and create invoice when package arrives locally or is delivered
-                  if (!pkg.isCharged) {
-                    try {
-                      // Get pricing
-                      // Get batch pricing first, then check for customer-specific pricing
-                      let pricePerKg = 15; // Default
-                      let pricePerCbm = 100; // Default
-                      
-                      if (pkg.batchId) {
-                        const batch = await db.getBatchById(pkg.batchId);
-                        if (batch) {
-                          // Check for customer-specific pricing
-                          const customerPricing = await db.getCustomerPricingInBatch(pkg.batchId, pkg.customerId!);
-                          if (customerPricing) {
-                            pricePerKg = parseFloat(customerPricing.pricePerKg || '0');
-                            pricePerCbm = parseFloat(customerPricing.pricePerCbm || '0');
-                          } else {
-                            pricePerKg = parseFloat(batch.pricePerKg || '0');
-                            pricePerCbm = parseFloat(batch.pricePerCbm || '0');
-                          }
-                        }
-                      }
-                      // Determine pricing based on shipping type
-                      const isSea = pkg.shippingType === 'sea';
-                      const pricePerUnit = isSea ? pricePerCbm : pricePerKg;
-                      const unit = isSea ? 'cbm' : 'kg';
-                      const quantity = isSea ? parseFloat(pkg.volumeCbm || '0') : parseFloat(pkg.weightKg || '0');
-                      
-                      const chargeAmount = quantity * pricePerUnit;
-                      
-                      if (chargeAmount > 0) {
-                        console.log(`[Scan] Charging customer ${customer.customerCode} for package ${pkg.packageCode}: $${chargeAmount}`);
-                        
-                        // Use unified applyCharge function
-                        await db.applyCharge(
-                          pkg.customerId!,
-                          customer.customerCode,
-                          'PACKAGE',
-                          pkg.id,
-                          chargeAmount,
-                          `Package charge - ${pkg.packageCode} (${quantity}${unit} × $${pricePerUnit}/${unit})`,
-                          ctx.user.id
-                        );
-                        
-                        // Mark package as charged
-                        await db.updatePackage(pkg.id, {
-                          isCharged: true,
-                          calculatedCostUsd: chargeAmount.toFixed(2),
-                        });
-                        
-                        // Create revenue record
-                        await db.createRevenueRecord({
-                          recordDate: new Date(),
-                          revenueType: 'package_delivery',
-                          referenceType: 'package',
-                          referenceId: pkg.id,
-                          customerId: pkg.customerId,
-                          amountUsd: chargeAmount,
-                          description: `Package ${input.scanType === 'delivered' ? 'delivery' : 'arrival'} - ${pkg.packageCode}`,
-                          createdById: ctx.user.id,
-                        });
-                        
-                        // Update daily financial summary
-                        await db.updateDailyFinancialSummary(new Date(), { addRevenue: chargeAmount, revenueType: 'package_delivery' });
-                        
-                        // Invoice is created at batch arrival, not individual delivery
-                        // This prevents duplicate invoices
-                        console.log(`[Scan] Package ${pkg.packageCode} charged - invoice already created at batch arrival`);
-                      }
-                    } catch (e) {
-                      console.error('[Scan] Failed to charge customer:', e);
-                    }
-                  }
+                  appLogger.info("[SMS] Would send to customer", { mobileNumber: customer.mobileNumber, message: messages[input.scanType] });
+                  // NOTE: Charging is handled at batch delivery (batches.router.ts)
+                  // Scanning should NEVER charge customers to prevent double-charging
+                  appLogger.info(`[Scan] ${input.scanType} scan for ${pkg.packageCode} - no charge (handled at batch delivery)`);
                 }
               }
             }
@@ -277,7 +207,7 @@ export const scanningRouter = router({
         // Calculate estimated price
         let estimatedPriceCalc: string | undefined;
         const pricingRules = await db.getAllPricingRules();
-        const rule = pricingRules.find((r: any) => r.shippingType === input.shippingType && r.isActive);
+        const rule = pricingRules.find((r) => r.shippingType === input.shippingType && r.isActive);
         if (rule) {
           const pricePerUnit = parseFloat(rule.pricePerUnit || '0');
           if (rule.unit === 'cbm' && volumeCbm) {
@@ -343,6 +273,16 @@ export const scanningRouter = router({
       .query(async ({ ctx }) => {
         const stats = await db.getTodayScanStats(ctx.user.id);
         return stats;
+      }),
+
+    // Scan analytics for dashboard
+    scanAnalytics: staffProcedure
+      .input(z.object({ days: z.number().default(7) }))
+      .query(async ({ input }) => {
+        const dailyScans = await db.getDailyScanCounts(input.days);
+        const scansByType = await db.getScanCountsByType(input.days);
+        const topScanners = await db.getTopScanners(input.days);
+        return { dailyScans, scansByType, topScanners };
       }),
     
     // Get all today's scans for warehouse
@@ -423,12 +363,11 @@ export const scanningRouter = router({
         volumeCbm: z.string().optional(),
         notes: z.string().optional(),
         warehouseId: z.number().optional(),
-        applyCharge: z.boolean().optional(), // For arrive workflow - calculate and charge price
         batchId: z.number().optional(), // For assigning package to batch during arrive
         shippingType: z.enum(['air_regular', 'air_irregular', 'sea']).optional(), // For updating shipping type
       }))
       .mutation(async ({ input, ctx }) => {
-        const { packageId, status, applyCharge, batchId, shippingType, ...updateData } = input;
+        const { packageId, status, batchId, shippingType, ...updateData } = input;
         
         // Update package fields including batchId and shippingType if provided
         const fieldsToUpdate = {
@@ -494,183 +433,13 @@ export const scanningRouter = router({
                   await notifyPackageStatusChange(packageId, notificationStatus);
                 }
               } catch (e) {
-                console.error('[Notification] Failed to send package status notification:', e);
+                appLogger.error('[Notification] Failed to send package status notification', { error: e instanceof Error ? e.message : String(e) });
               }
             }
             
-            // Apply charge on arrival (ready_for_delivery) if not already charged
-            if ((status === 'ready_for_delivery' || applyCharge) && !pkg.isCharged && pkg.customerId && !pkg.isUnclaimed) {
-              let chargeAmount = 0;
-              let pricePerUnit = 0;
-              let unit: 'kg' | 'cbm' = 'kg';
-              let pricingSource = '';
-              
-              // First, try batch-based pricing if package is in a batch
-              if (pkg.batchId) {
-                const batch = await db.getBatchById(pkg.batchId);
-                if (batch) {
-                  unit = batch.shippingType === 'sea' ? 'cbm' : 'kg';
-                  const customerTotal = await db.getCustomerTotalInBatch(pkg.batchId, pkg.customerId, unit);
-                  
-                  // Check if batch uses tiered pricing
-                  if (batch.useTieredPricing) {
-                    const tierPrice = await db.getApplicableTierPrice(pkg.batchId, customerTotal);
-                    if (tierPrice !== null) {
-                      pricePerUnit = tierPrice;
-                      pricingSource = 'batch_tiered';
-                    }
-                  }
-                  
-                  // Check for customer-specific pricing (takes priority over batch default)
-                  if (pricePerUnit === 0) {
-                    const customerPricing = await db.getCustomerPricingInBatch(pkg.batchId, pkg.customerId);
-                    if (customerPricing) {
-                      pricePerUnit = unit === 'cbm'
-                        ? Number(customerPricing.pricePerCbm) || 0
-                        : Number(customerPricing.pricePerKg) || 0;
-                      if (pricePerUnit > 0) {
-                        pricingSource = 'customer_specific';
-                      }
-                    }
-                  }
-                  
-                  // If no customer-specific price, use batch default price
-                  if (pricePerUnit === 0) {
-                    pricePerUnit = unit === 'cbm' 
-                      ? Number(batch.pricePerCbm) || 0 
-                      : Number(batch.pricePerKg) || 0;
-                    pricingSource = 'batch_default';
-                  }
-                  
-                  // Calculate charge based on unit
-                  if (pricePerUnit > 0) {
-                    if (unit === 'cbm' && pkg.volumeCbm) {
-                      chargeAmount = pricePerUnit * parseFloat(pkg.volumeCbm);
-                    } else if (unit === 'kg') {
-                      // Use chargeable weight (max of actual weight and volumetric weight)
-                      const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
-                      const lengthCm = parseFloat(pkg.lengthCm?.toString() || '0');
-                      const widthCm = parseFloat(pkg.widthCm?.toString() || '0');
-                      const heightCm = parseFloat(pkg.heightCm?.toString() || '0');
-                      const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-                      const chargeableKg = Math.max(actualKg, volumetricKg);
-                      chargeAmount = pricePerUnit * chargeableKg;
-                    }
-                  }
-                }
-              }
-              
-              // Fallback to global pricing rules if no batch pricing
-              if (chargeAmount === 0 && pkg.weightKg) {
-                const warehouse = await db.getWarehouseById(pkg.originWarehouseId);
-                const destCountries = await db.getDestinationCountries();
-                const destCountry = destCountries[0];
-                
-                if (warehouse && destCountry) {
-                  const pricingRule = await db.getApplicablePricingRule(
-                    warehouse.countryId,
-                    destCountry.id,
-                    pkg.shippingType
-                  );
-                  
-                  if (pricingRule) {
-                    pricePerUnit = parseFloat(pricingRule.pricePerUnit);
-                    unit = pricingRule.unit;
-                    pricingSource = 'global_rule';
-                    
-                    if (pricingRule.unit === "kg") {
-                      // Use chargeable weight (max of actual weight and volumetric weight)
-                      const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
-                      const lengthCm = parseFloat(pkg.lengthCm?.toString() || '0');
-                      const widthCm = parseFloat(pkg.widthCm?.toString() || '0');
-                      const heightCm = parseFloat(pkg.heightCm?.toString() || '0');
-                      const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-                      const chargeableKg = Math.max(actualKg, volumetricKg);
-                      chargeAmount = pricePerUnit * chargeableKg;
-                    } else if (pricingRule.unit === "cbm" && pkg.volumeCbm) {
-                      chargeAmount = pricePerUnit * parseFloat(pkg.volumeCbm);
-                    }
-                  }
-                }
-              }
-              
-              if (chargeAmount > 0) {
-                // Use unified applyCharge function - use chargeable weight for kg unit
-                let quantity: string | null;
-                if (unit === 'cbm') {
-                  quantity = pkg.volumeCbm;
-                } else {
-                  // Calculate chargeable weight for description
-                  const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
-                  const lengthCm = parseFloat(pkg.lengthCm?.toString() || '0');
-                  const widthCm = parseFloat(pkg.widthCm?.toString() || '0');
-                  const heightCm = parseFloat(pkg.heightCm?.toString() || '0');
-                  const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-                  const chargeableKg = Math.max(actualKg, volumetricKg);
-                  quantity = chargeableKg.toFixed(2);
-                }
-                const customerForCharge = await db.getCustomerById(pkg.customerId);
-                if (customerForCharge) {
-                  await db.applyCharge(
-                    pkg.customerId,
-                    customerForCharge.customerCode,
-                    'PACKAGE',
-                    pkg.id,
-                    chargeAmount,
-                    `Arrival charge - Package ${pkg.packageCode} (${quantity}${unit} × $${pricePerUnit}/${unit})`,
-                    ctx.user.id
-                  );
-                }
-                
-                // Mark package as charged
-                await db.updatePackage(pkg.id, {
-                  isCharged: true,
-                  calculatedCostUsd: chargeAmount.toFixed(2),
-                });
-                
-                // Create revenue record for finance tracking
-                try {
-                  await db.createRevenueRecord({
-                    recordDate: new Date(),
-                    revenueType: 'package_delivery',
-                    referenceType: 'package',
-                    referenceId: pkg.id,
-                    customerId: pkg.customerId,
-                    amountUsd: chargeAmount,
-                    description: `Package arrival - ${pkg.packageCode}`,
-                    createdById: ctx.user.id,
-                  });
-                  
-                  // Update daily financial summary
-                  await db.updateDailyFinancialSummary(new Date(), { addRevenue: chargeAmount, revenueType: 'package_delivery' });
-                } catch (e) {
-                  console.error('[Finance] Failed to create revenue record:', e);
-                }
-                
-                // Create ledger transaction for new accounting system
-                try {
-                  const customer = await db.getCustomerById(pkg.customerId);
-                  if (customer) {
-                    await db.recordPackageCharge(
-                      pkg.customerId,
-                      customer.customerCode,
-                      pkg.id,
-                      chargeAmount,
-                      `Arrival charge - Package ${pkg.packageCode} (${quantity}${unit} × $${pricePerUnit}/${unit})`,
-                      ctx.user.id
-                    );
-                  }
-                } catch (e) {
-                  console.error('[Ledger] Failed to create ledger transaction:', e);
-                }
-                
-                // Invoice is created at batch arrival, not individual package update
-                // This prevents duplicate invoices
-                console.log('[Invoice-WH] Package charged - invoice already created at batch arrival');
-                
-                return { ...updated, chargedAmount: chargeAmount.toFixed(2), pricingSource };
-              }
-            }
+            // NOTE: Charging is handled ONLY at batch delivery (batches.router.ts)
+            // This prevents double-charging. Scans only update status.
+            appLogger.info(`[Scan-Inline] Status updated to ${status} for package ${packageId} - no charge (handled at batch delivery)`);
           }
         }
         
@@ -693,11 +462,9 @@ export const scanningRouter = router({
       .mutation(async ({ input, ctx }) => {
         const { orderId, status, warehouseId, ...updateData } = input;
         
-        // Update full package order
-        const updated = await db.updateFullPackageOrder(orderId, {
-          ...updateData,
-          status: status as any,
-        }, ctx.user.id);
+        // Update full package order (status from input may be string; API accepts union)
+        const updatePayload = { ...updateData, ...(status !== undefined ? { status } : {}) };
+        const updated = await db.updateFullPackageOrder(orderId, updatePayload as Parameters<typeof db.updateFullPackageOrder>[1], ctx.user.id);
         
         // If status changed, create scan record
         if (status && updated && updated.trackingNumber) {
@@ -728,7 +495,7 @@ export const scanningRouter = router({
     aiOcr: staffProcedure
       .input(z.object({ imageUrl: z.string() }))
       .mutation(async ({ input }) => {
-        const { performOCR } = await import('../aiService');
+        const { performOCR } = await import('../services/ai.service');
         return performOCR(input.imageUrl);
       }),
     
@@ -736,7 +503,7 @@ export const scanningRouter = router({
     aiAnalyzePackage: staffProcedure
       .input(z.object({ imageUrl: z.string() }))
       .mutation(async ({ input }) => {
-        const { analyzePackageImage } = await import('../aiService');
+        const { analyzePackageImage } = await import('../services/ai.service');
         return analyzePackageImage(input.imageUrl);
       }),
     
@@ -744,7 +511,7 @@ export const scanningRouter = router({
     aiExtractPackageInfo: staffProcedure
       .input(z.object({ imageUrl: z.string() }))
       .mutation(async ({ input }) => {
-        const { extractPackageInfo } = await import('../aiService');
+        const { extractPackageInfo } = await import('../services/ai.service');
         return extractPackageInfo(input.imageUrl);
       }),
     
@@ -755,7 +522,7 @@ export const scanningRouter = router({
         targetLanguage: z.enum(['ku', 'ar', 'en']).default('ku')
       }))
       .mutation(async ({ input }) => {
-        const { translateText } = await import('../aiService');
+        const { translateText } = await import('../services/ai.service');
         return translateText(input.text, input.targetLanguage);
       }),
     
@@ -763,7 +530,7 @@ export const scanningRouter = router({
     detectCarrier: staffProcedure
       .input(z.object({ trackingNumber: z.string() }))
       .query(async ({ input }) => {
-        const { detectCarrier, validateTrackingNumber } = await import('../aiService');
+        const { detectCarrier, validateTrackingNumber } = await import('../services/ai.service');
         const carrier = detectCarrier(input.trackingNumber);
         const validation = validateTrackingNumber(input.trackingNumber);
         return { carrier, validation };
@@ -774,7 +541,7 @@ export const scanningRouter = router({
     aiScanLabel: staffProcedure
       .input(z.object({ imageUrl: z.string() }))
       .mutation(async ({ input }) => {
-        const { scanPackageLabel } = await import('../aiService');
+        const { scanPackageLabel } = await import('../services/ai.service');
         const scanResult = await scanPackageLabel(input.imageUrl);
         
         if (!scanResult.success) {
@@ -793,13 +560,13 @@ export const scanningRouter = router({
           const codeToFind = scanResult.customerCode.toUpperCase();
           
           // 1. Exact match on customer code
-          customer = customers.find((c: any) => 
+          customer = customers.find((c) => 
             c.customerCode?.toUpperCase() === codeToFind
           );
           
           // 2. Partial match on customer code (contains)
           if (!customer) {
-            customer = customers.find((c: any) => 
+            customer = customers.find((c) => 
               c.customerCode?.toUpperCase().includes(codeToFind) ||
               codeToFind.includes(c.customerCode?.toUpperCase() || '')
             );
@@ -809,7 +576,7 @@ export const scanningRouter = router({
         // 3. Search by customer name if code didn't match
         if (!customer && scanResult.customerName) {
           const nameToFind = scanResult.customerName.toLowerCase();
-          customer = customers.find((c: any) => 
+          customer = customers.find((c) => 
             c.fullName?.toLowerCase().includes(nameToFind) ||
             nameToFind.includes(c.fullName?.toLowerCase() || '')
           );
@@ -818,7 +585,7 @@ export const scanningRouter = router({
         // 4. Search by phone number if still not found
         if (!customer && scanResult.customerPhone) {
           const phoneToFind = scanResult.customerPhone.replace(/\D/g, '');
-          customer = customers.find((c: any) => {
+          customer = customers.find((c) => {
             const customerPhone = c.mobileNumber?.replace(/\D/g, '') || '';
             return customerPhone.includes(phoneToFind) || phoneToFind.includes(customerPhone);
           });
@@ -857,13 +624,13 @@ export const scanningRouter = router({
         const normalizedCode = input.code.toUpperCase();
         
         // Find exact match first
-        let customer = customers.find((c: any) => 
+        let customer = customers.find((c) => 
           c.customerCode?.toUpperCase() === normalizedCode
         );
         
         // If not found, try partial match
         if (!customer) {
-          customer = customers.find((c: any) => 
+          customer = customers.find((c) => 
             c.customerCode?.toUpperCase().includes(normalizedCode) ||
             normalizedCode.includes(c.customerCode?.toUpperCase() || '')
           );

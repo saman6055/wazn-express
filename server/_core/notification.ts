@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { ENV } from "./env";
+import { appLogger } from "../utils/logger";
 
 export type NotificationPayload = {
   title: string;
@@ -98,17 +99,13 @@ export async function notifyOwner(
 
     if (!response.ok) {
       const detail = await response.text().catch(() => "");
-      console.warn(
-        `[Notification] Failed to notify owner (${response.status} ${response.statusText})${
-          detail ? `: ${detail}` : ""
-        }`
-      );
+      appLogger.warn("[Notification] Failed to notify owner", { status: response.status, statusText: response.statusText, detail: detail || undefined });
       return false;
     }
 
     return true;
   } catch (error) {
-    console.warn("[Notification] Error calling notification service:", error);
+    appLogger.warn("[Notification] Error calling notification service", { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }

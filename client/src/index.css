@@ -585,3 +585,87 @@ body.pwa-mode {
   0%, 100% { ring-opacity: 1; }
   50% { ring-opacity: 0.5; }
 }
+
+/* ---------------------------------------------------------------------------
+   Landing (first) page theme variables – controlled from Settings
+   --------------------------------------------------------------------------- */
+.landing-page[data-theme="dark"] {
+  --landing-bg: #0f172a;
+  --landing-bg-header: rgba(15, 23, 42, 0.8);
+  --landing-bg-footer: #020617;
+  --landing-text: #ffffff;
+  --landing-text-muted: #94a3b8;
+  --landing-border: rgba(255, 255, 255, 0.1);
+  --landing-card: rgba(255, 255, 255, 0.05);
+  --landing-accent: #f59e0b;
+  --landing-accent-hover: #d97706;
+  --landing-stats-bg: rgba(255, 255, 255, 0.05);
+  --landing-features-bg-from: #0f172a;
+  --landing-features-bg-via: #1e293b;
+  --landing-features-bg-to: #0f172a;
+  --landing-cta-from: #f59e0b;
+  --landing-cta-to: #f97316;
+  --landing-blur-1: rgba(245, 158, 11, 0.2);
+  --landing-blur-2: rgba(59, 130, 246, 0.1);
+  --landing-blur-3: rgba(168, 85, 247, 0.1);
+  --landing-accent-subtle: rgba(245, 158, 11, 0.2);
+}
+
+.landing-page[data-theme="light"] {
+  --landing-bg: #f8fafc;
+  --landing-bg-header: rgba(248, 250, 252, 0.95);
+  --landing-bg-footer: #e2e8f0;
+  --landing-text: #0f172a;
+  --landing-text-muted: #64748b;
+  --landing-border: rgba(15, 23, 42, 0.1);
+  --landing-card: rgba(15, 23, 42, 0.04);
+  --landing-accent: #d97706;
+  --landing-accent-hover: #b45309;
+  --landing-stats-bg: rgba(15, 23, 42, 0.04);
+  --landing-features-bg-from: #e2e8f0;
+  --landing-features-bg-via: #cbd5e1;
+  --landing-features-bg-to: #e2e8f0;
+  --landing-cta-from: #d97706;
+  --landing-cta-to: #ea580c;
+  --landing-blur-1: rgba(217, 119, 6, 0.15);
+  --landing-blur-2: rgba(59, 130, 246, 0.12);
+  --landing-blur-3: rgba(168, 85, 247, 0.1);
+  --landing-accent-subtle: rgba(217, 119, 6, 0.15);
+}
+
+.landing-page[data-theme="ocean"] {
+  --landing-bg: #0c4a6e;
+  --landing-bg-header: rgba(12, 74, 110, 0.9);
+  --landing-bg-footer: #082f49;
+  --landing-text: #f0f9ff;
+  --landing-text-muted: #7dd3fc;
+  --landing-border: rgba(255, 255, 255, 0.15);
+  --landing-card: rgba(255, 255, 255, 0.08);
+  --landing-accent: #38bdf8;
+  --landing-accent-hover: #0ea5e9;
+  --landing-stats-bg: rgba(255, 255, 255, 0.08);
+  --landing-features-bg-from: #0c4a6e;
+  --landing-features-bg-via: #075985;
+  --landing-features-bg-to: #0c4a6e;
+  --landing-cta-from: #38bdf8;
+  --landing-cta-to: #0ea5e9;
+  --landing-blur-1: rgba(56, 189, 248, 0.2);
+  --landing-blur-2: rgba(14, 165, 233, 0.2);
+  --landing-blur-3: rgba(125, 211, 252, 0.15);
+  --landing-accent-subtle: rgba(56, 189, 248, 0.2);
+}
+
+.landing-page .landing-features-section {
+  background: linear-gradient(to bottom, var(--landing-features-bg-from), var(--landing-features-bg-via), var(--landing-features-bg-to));
+}
+
+/* Landing fade-in on scroll (no external lib) */
+.landing-fade-in {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.landing-fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

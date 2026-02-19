@@ -168,7 +168,7 @@ export default function CommissionForm() {
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
+                  <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
                     <Command>
                       <CommandInput
                         placeholder="گەڕان بە ناو یان کۆد..."

@@ -2,147 +2,24 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { 
-  Package, CheckCircle2, AlertTriangle, XCircle, 
-  Scale, Volume2, VolumeX, Zap, Camera, Keyboard,
-  Target, BarChart3, Box, RefreshCw, FileText,
-  Play, Pause, History, X, Info, AlertCircle,
-  TrendingUp, Clock, MapPin, Truck, Search,
-  Plus, Download, Printer, Eye, ChevronDown
+import {
+  Package, CheckCircle2, AlertTriangle, XCircle,
+  Target, BarChart3, RefreshCw, FileText,
+  Plus, Printer, Info, AlertCircle, Search, Zap
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import BarcodeScanner from "@/components/BarcodeScanner";
-import { useTranslation, useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
-
-// ==================== SOUND MANAGER ====================
-class SoundManager {
-  private audioContext: AudioContext | null = null;
-  private enabled: boolean = true;
-
-  setEnabled(enabled: boolean) {
-    this.enabled = enabled;
-  }
-
-  private getContext(): AudioContext | null {
-    if (!this.enabled) return null;
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    return this.audioContext;
-  }
-
-  playBeep() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 1800;
-    osc.type = "sine";
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.1);
-  }
-
-  playSuccess() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    [523, 659, 784].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = "sine";
-      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.08);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.08 + 0.12);
-      osc.start(ctx.currentTime + i * 0.08);
-      osc.stop(ctx.currentTime + i * 0.08 + 0.12);
-    });
-  }
-
-  playWarning() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    [440, 440].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = "triangle";
-      gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.15);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.15 + 0.1);
-      osc.start(ctx.currentTime + i * 0.15);
-      osc.stop(ctx.currentTime + i * 0.15 + 0.1);
-    });
-  }
-
-  playError() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 300;
-    osc.type = "sawtooth";
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.3);
-  }
-
-  playComplete() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    // Victory sound - ascending notes
-    [523, 659, 784, 1047].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = "sine";
-      gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.12);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.12 + 0.2);
-      osc.start(ctx.currentTime + i * 0.12);
-      osc.stop(ctx.currentTime + i * 0.12 + 0.2);
-    });
-  }
-
-  playDuplicate() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    [330, 330, 330].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = "square";
-      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.1);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.1 + 0.06);
-      osc.start(ctx.currentTime + i * 0.1);
-      osc.stop(ctx.currentTime + i * 0.1 + 0.06);
-    });
-  }
-}
-
-const soundManager = new SoundManager();
+import { soundManager } from "@/lib/soundManager";
+import { ScanInput } from "@/components/scanner/ScanInput";
+import { SessionStats } from "@/components/scanner/SessionStats";
 
 // ==================== TYPES ====================
 interface VerifiedPackage {
@@ -171,24 +48,19 @@ interface BatchPackage {
 }
 
 // ==================== MAIN COMPONENT ====================
+const SESSION_KEY = "scan-session-arrival-verification";
+
 export default function ArrivalVerificationScanner() {
   const { t } = useTranslation();
-  const { language } = useLanguage();
-  
+
   // Core state
-  const [scanMode, setScanMode] = useState<"manual" | "camera">("manual");
-  const [trackingNumber, setTrackingNumber] = useState("");
   const [selectedBatchIds, setSelectedBatchIds] = useState<number[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  
-  // Continuous mode
   const [continuousMode, setContinuousMode] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  
-  // Verification tracking
   const [verifiedPackages, setVerifiedPackages] = useState<VerifiedPackage[]>([]);
   const [batchPackages, setBatchPackages] = useState<Map<number, BatchPackage[]>>(new Map());
-  
+
   // Dialogs
   const [extraPackageDialog, setExtraPackageDialog] = useState<{
     open: boolean;
@@ -196,11 +68,43 @@ export default function ArrivalVerificationScanner() {
     trackingNumber: string;
   }>({ open: false, package: null, trackingNumber: "" });
   const [reportDialog, setReportDialog] = useState(false);
-  
-  // Refs
-  const inputRef = useRef<HTMLInputElement>(null);
-  const lastScanTime = useRef<number>(0);
-  
+
+  // Session persistence: load on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const restored = Array.isArray(parsed) ? parsed : parsed.packages || [];
+        setVerifiedPackages(
+          restored.map((p: any) => ({ ...p, verifiedAt: new Date(p.verifiedAt) }))
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Session persistence: save when verified packages change
+  useEffect(() => {
+    if (verifiedPackages.length > 0) {
+      try {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(verifiedPackages));
+      } catch {
+        // ignore
+      }
+    } else {
+      sessionStorage.removeItem(SESSION_KEY);
+    }
+  }, [verifiedPackages]);
+
+  const clearSession = () => {
+    setVerifiedPackages([]);
+    setBatchPackages(new Map());
+    setSelectedBatchIds([]);
+    sessionStorage.removeItem(SESSION_KEY);
+  };
+
   // Queries
   const { data: batches, refetch: refetchBatches } = trpc.batches.list.useQuery();
   const trpcUtils = trpc.useUtils();
@@ -313,18 +217,10 @@ export default function ArrivalVerificationScanner() {
     });
   }, [verifiedPackages]);
   
-  // Update sound manager
   useEffect(() => {
     soundManager.setEnabled(soundEnabled);
   }, [soundEnabled]);
-  
-  // Focus input on mount
-  useEffect(() => {
-    if (scanMode === "manual") {
-      inputRef.current?.focus();
-    }
-  }, [scanMode, selectedBatchIds]);
-  
+
   // Check for completion
   useEffect(() => {
     if (verificationStats.isComplete && verificationStats.totalExpected > 0) {
@@ -333,7 +229,7 @@ export default function ArrivalVerificationScanner() {
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-green-500" />
           <div>
-            <div className="font-medium">{language === "ku" ? "هەموو پاکەتەکان گەیشتن!" : "All packages arrived!"}</div>
+            <div className="font-medium">{t("scan.allPackagesArrived")}</div>
             <div className="text-sm text-muted-foreground">
               {verificationStats.totalVerified} / {verificationStats.totalExpected}
             </div>
@@ -353,135 +249,106 @@ export default function ArrivalVerificationScanner() {
     });
   };
   
-  // Handle scan
-  const handleScan = useCallback(async () => {
-    if (!trackingNumber.trim()) return;
-    if (selectedBatchIds.length === 0) {
-      soundManager.playError();
-      toast.error(language === "ku" ? "تکایە باچێک هەڵبژێرە" : "Please select a batch");
-      return;
-    }
-    
-    // Debounce rapid scans
-    const now = Date.now();
-    if (now - lastScanTime.current < 500) return;
-    lastScanTime.current = now;
-    
-    soundManager.playBeep();
-    setIsSearching(true);
-    
-    try {
-      // Search for the package
-      const result = await trpcUtils.scanning.searchByTracking.fetch({ 
-        trackingNumber: trackingNumber.trim() 
-      });
-      
-      if (!result?.found || !result.package) {
+  const handleScan = useCallback(
+    async (scannedValue: string) => {
+      if (!scannedValue.trim()) return;
+      if (selectedBatchIds.length === 0) {
         soundManager.playError();
-        toast.error(
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-500" />
-            <div>
-              <div className="font-medium">{language === "ku" ? "پاکەت نەدۆزرایەوە!" : "Package not found!"}</div>
-              <div className="text-sm text-muted-foreground">{trackingNumber}</div>
-            </div>
-          </div>
-        );
-        setTrackingNumber("");
-        inputRef.current?.focus();
+        toast.error(t("scan.selectBatchFirst"));
         return;
       }
-      
-      const pkg = result.package;
-      const customer = result.customer;
-      
-      // Check if already verified in this session
-      if (verifiedPackages.some(v => v.id === pkg.id)) {
-        soundManager.playDuplicate();
-        toast.warning(
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-500" />
-            <div>
-              <div className="font-medium">{language === "ku" ? "پێشتر پشکنینکراوە!" : "Already verified!"}</div>
-              <div className="text-sm text-muted-foreground">{trackingNumber}</div>
-            </div>
-          </div>
-        );
-        setTrackingNumber("");
-        inputRef.current?.focus();
-        return;
-      }
-      
-      // Check if package is in selected batches
-      const isInSelectedBatches = pkg.batchId ? selectedBatchIds.includes(pkg.batchId) : false;
-      
-      if (!isInSelectedBatches) {
-        // Package is not in selected batches - show dialog
-        soundManager.playWarning();
-        setExtraPackageDialog({
-          open: true,
-          package: pkg,
-          trackingNumber: trackingNumber,
+      soundManager.playBeep();
+      setIsSearching(true);
+      try {
+        const result = await trpcUtils.scanning.searchByTracking.fetch({
+          trackingNumber: scannedValue.trim(),
         });
-        return;
-      }
-      
-      // Package is in selected batches - verify it
-      const batch = batches?.find(b => b.id === pkg.batchId);
-      const hasCompleteData = !!(pkg.weightKg || (pkg.lengthCm && pkg.widthCm && pkg.heightCm));
-      
-      const verifiedPkg: VerifiedPackage = {
-        id: pkg.id,
-        trackingNumber: pkg.trackingNumber || trackingNumber,
-        customerCode: customer?.customerCode || "نەناسراو",
-        customerName: customer?.fullName || "",
-        weight: pkg.weightKg ? parseFloat(pkg.weightKg) : null,
-        cbm: pkg.volumeCbm ? parseFloat(pkg.volumeCbm) : null,
-        hasCompleteData,
-        batchId: pkg.batchId || 0,
-        batchNumber: batch?.batchCode || `#${pkg.batchId || 0}`,
-        verifiedAt: new Date(),
-        isExtra: false,
-      };
-      
-      setVerifiedPackages(prev => [verifiedPkg, ...prev]);
-      soundManager.playSuccess();
-      
-      // Show warning if incomplete data
-      if (!hasCompleteData) {
-        toast.warning(
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-500" />
-            <div>
-              <div className="font-medium">{language === "ku" ? "پشکنینکرا (زانیاری ناتەواو)" : "Verified (incomplete data)"}</div>
-              <div className="text-sm text-muted-foreground">{customer?.customerCode} - {trackingNumber}</div>
+        if (!result?.found || !result.package) {
+          soundManager.playError();
+          toast.error(
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              <div>
+                <div className="font-medium">{t("scan.packageNotFoundExcl")}</div>
+                <div className="text-sm text-muted-foreground">{scannedValue}</div>
+              </div>
             </div>
-          </div>
-        );
-      } else {
-        toast.success(
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
-            <div>
-              <div className="font-medium">{language === "ku" ? "پشکنینکرا!" : "Verified!"}</div>
-              <div className="text-sm text-muted-foreground">{customer?.customerCode} - {trackingNumber}</div>
+          );
+          return;
+        }
+        const pkg = result.package;
+        const customer = result.customer;
+        if (verifiedPackages.some((v) => v.id === pkg.id)) {
+          soundManager.playDuplicate();
+          toast.warning(
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <div>
+                <div className="font-medium">{t("scan.alreadyVerified")}</div>
+                <div className="text-sm text-muted-foreground">{scannedValue}</div>
+              </div>
             </div>
-          </div>
-        );
+          );
+          return;
+        }
+        const isInSelectedBatches = pkg.batchId ? selectedBatchIds.includes(pkg.batchId) : false;
+        if (!isInSelectedBatches) {
+          soundManager.playWarning();
+          setExtraPackageDialog({
+            open: true,
+            package: pkg,
+            trackingNumber: scannedValue,
+          });
+          return;
+        }
+        const batch = batches?.find((b) => b.id === pkg.batchId);
+        const hasCompleteData = !!(pkg.weightKg || (pkg.lengthCm && pkg.widthCm && pkg.heightCm));
+        const verifiedPkg: VerifiedPackage = {
+          id: pkg.id,
+          trackingNumber: pkg.trackingNumber || scannedValue,
+          customerCode: customer?.customerCode || "—",
+          customerName: customer?.fullName || "",
+          weight: pkg.weightKg ? parseFloat(pkg.weightKg) : null,
+          cbm: pkg.volumeCbm ? parseFloat(pkg.volumeCbm) : null,
+          hasCompleteData,
+          batchId: pkg.batchId || 0,
+          batchNumber: batch?.batchCode || `#${pkg.batchId || 0}`,
+          verifiedAt: new Date(),
+          isExtra: false,
+        };
+        setVerifiedPackages((prev) => [verifiedPkg, ...prev]);
+        soundManager.playSuccess();
+        if (!hasCompleteData) {
+          toast.warning(
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <div>
+                <div className="font-medium">{t("scan.verifiedIncomplete")}</div>
+                <div className="text-sm text-muted-foreground">{customer?.customerCode} - {scannedValue}</div>
+              </div>
+            </div>
+          );
+        } else {
+          toast.success(
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <div>
+                <div className="font-medium">{t("scan.verifiedExcl")}</div>
+                <div className="text-sm text-muted-foreground">{customer?.customerCode} - {scannedValue}</div>
+              </div>
+            </div>
+          );
+        }
+      } catch (error: any) {
+        soundManager.playError();
+        toast.error(error?.message || "Search failed");
+      } finally {
+        setIsSearching(false);
       }
-      
-      setTrackingNumber("");
-      inputRef.current?.focus();
-      
-    } catch (error: any) {
-      soundManager.playError();
-      toast.error(error?.message || "Search failed");
-    } finally {
-      setIsSearching(false);
-    }
-  }, [trackingNumber, selectedBatchIds, language, trpcUtils, batches, verifiedPackages]);
-  
-  // Handle extra package - add to batch
+    },
+    [selectedBatchIds, t, trpcUtils, batches, verifiedPackages]
+  );
+
   const handleAddExtraPackage = async () => {
     if (!extraPackageDialog.package) return;
     
@@ -511,31 +378,14 @@ export default function ArrivalVerificationScanner() {
       <div className="flex items-center gap-2">
         <Plus className="h-5 w-5 text-blue-500" />
         <div>
-          <div className="font-medium">{language === "ku" ? "پاکەتی زیادە تۆمارکرا!" : "Extra package recorded!"}</div>
+          <div className="font-medium">{t("scan.extraPackageRecorded")}</div>
           <div className="text-sm text-muted-foreground">{extraPackageDialog.trackingNumber}</div>
         </div>
       </div>
     );
-    
     setExtraPackageDialog({ open: false, package: null, trackingNumber: "" });
-    setTrackingNumber("");
-    inputRef.current?.focus();
   };
-  
-  // Handle keyboard
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && trackingNumber) {
-      e.preventDefault();
-      handleScan();
-    }
-  }, [trackingNumber, handleScan]);
-  
-  // Handle camera scan
-  const handleCameraScan = useCallback((result: string) => {
-    setTrackingNumber(result);
-    setTimeout(() => handleScan(), 100);
-  }, [handleScan]);
-  
+
   // Get status color
   const getProgressColor = (percentage: number) => {
     if (percentage === 100) return "bg-green-500";
@@ -558,16 +408,16 @@ export default function ArrivalVerificationScanner() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold flex items-center gap-2">
-                    {language === "ku" ? "پشکنینی گەیشتن" : "Arrival Verification"}
+                    {t("scan.arrivalVerification")}
                     {continuousMode && (
                       <Badge className="bg-white/20 text-white border-white/30 animate-pulse">
                         <Zap className="h-3 w-3 mr-1" />
-                        {language === "ku" ? "بەردەوام" : "Continuous"}
+                        {t("scan.continuousMode")}
                       </Badge>
                     )}
                   </h1>
                   <p className="text-emerald-100 text-sm">
-                    {language === "ku" ? "پشکنینی گەیشتنی پاکەتەکان بە شوێنی مەبەست" : "Verify package arrival at destination"}
+                    {t("scan.arrivalVerificationSubtitle")}
                   </p>
                 </div>
               </div>
@@ -577,20 +427,20 @@ export default function ArrivalVerificationScanner() {
                 <div className="hidden md:flex items-center gap-6">
                   <div className="text-center">
                     <div className="text-3xl font-bold">{verificationStats.percentage}%</div>
-                    <div className="text-xs text-emerald-200">{language === "ku" ? "تەواوبوون" : "Complete"}</div>
+                    <div className="text-xs text-emerald-200">{t("scan.percentage")}</div>
                   </div>
                   <div className="w-px h-12 bg-white/20" />
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-300">{verificationStats.totalVerified}</div>
-                    <div className="text-xs text-emerald-200">{language === "ku" ? "پشکنینکراو" : "Verified"}</div>
+                    <div className="text-xs text-emerald-200">{t("scan.verified")}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-yellow-300">{verificationStats.totalMissing}</div>
-                    <div className="text-xs text-emerald-200">{language === "ku" ? "ماوە" : "Missing"}</div>
+                    <div className="text-xs text-emerald-200">{t("scan.missing")}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-300">{verificationStats.totalExtra}</div>
-                    <div className="text-xs text-emerald-200">{language === "ku" ? "زیادە" : "Extra"}</div>
+                    <div className="text-xs text-emerald-200">{t("scan.extra")}</div>
                   </div>
                 </div>
               )}
@@ -623,9 +473,9 @@ export default function ArrivalVerificationScanner() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2">
                     <Package className="h-5 w-5 text-emerald-600" />
-                    {language === "ku" ? "هەڵبژاردنی باچەکان" : "Select Batches"}
+                    {t("scan.selectBatches")}
                     {selectedBatchIds.length > 0 && (
-                      <Badge variant="secondary">{selectedBatchIds.length} {language === "ku" ? "هەڵبژێردراو" : "selected"}</Badge>
+                      <Badge variant="secondary">{selectedBatchIds.length} {t("scan.selected")}</Badge>
                     )}
                   </CardTitle>
                 </CardHeader>
@@ -650,7 +500,7 @@ export default function ArrivalVerificationScanner() {
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm truncate">{batch.batchCode}</div>
                             <div className="text-xs text-muted-foreground">
-                              {batch.shippingType.includes("air") ? "هەوایی" : "دەریایی"}
+                              {batch.shippingType.includes("air") ? t("scan.air") : t("scan.sea")}
                             </div>
                           </div>
                         </div>
@@ -661,7 +511,7 @@ export default function ArrivalVerificationScanner() {
                   {availableBatches.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
                       <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>{language === "ku" ? "هیچ باچێکی ئامادە نییە" : "No batches available"}</p>
+                      <p>{t("scan.noBatchesAvailable")}</p>
                     </div>
                   )}
                 </CardContent>
@@ -677,38 +527,31 @@ export default function ArrivalVerificationScanner() {
                   continuousMode && selectedBatchIds.length > 0 ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 animate-pulse" : "bg-slate-200"
                 )} />
                 <CardContent className="p-6">
-                  <div className="flex flex-wrap items-center gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="continuous"
-                        checked={continuousMode}
-                        onCheckedChange={setContinuousMode}
-                        className="data-[state=checked]:bg-emerald-500"
-                      />
-                      <Label htmlFor="continuous" className="text-sm cursor-pointer">
-                        {language === "ku" ? "بەردەوام" : "Continuous"}
-                      </Label>
+                  <div className={cn("transition-all", selectedBatchIds.length === 0 && "pointer-events-none")}>
+                    <ScanInput
+                      onScan={handleScan}
+                      isProcessing={isSearching}
+                      continuousMode={continuousMode}
+                      onContinuousModeChange={setContinuousMode}
+                      soundEnabled={soundEnabled}
+                      onSoundEnabledChange={setSoundEnabled}
+                      disabled={selectedBatchIds.length === 0}
+                      placeholder={t("scan.trackingPlaceholder")}
+                      labels={{
+                        manualMode: t("scan.manualMode"),
+                        cameraMode: t("scan.cameraMode"),
+                        continuousMode: t("scan.continuousMode"),
+                        inputPlaceholder: t("scan.trackingPlaceholder"),
+                      }}
+                    />
+                  </div>
+                  {selectedBatchIds.length === 0 && (
+                    <div className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 mt-3">
+                      <AlertTriangle className="h-4 w-4" />
+                      {t("scan.selectBatchFirst")}
                     </div>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSoundEnabled(!soundEnabled)}
-                      className={cn(soundEnabled ? "text-emerald-600" : "text-slate-400")}
-                    >
-                      {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                    </Button>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setScanMode(scanMode === "manual" ? "camera" : "manual")}
-                    >
-                      {scanMode === "manual" ? <Camera className="h-4 w-4" /> : <Keyboard className="h-4 w-4" />}
-                    </Button>
-                    
-                    <div className="flex-1" />
-                    
+                  )}
+                  <div className="mt-3 flex justify-end">
                     <Button
                       variant="outline"
                       size="sm"
@@ -716,69 +559,12 @@ export default function ArrivalVerificationScanner() {
                       disabled={verifiedPackages.length === 0}
                     >
                       <FileText className="h-4 w-4 mr-2" />
-                      {language === "ku" ? "ڕاپۆرت" : "Report"}
+                      {t("scan.report")}
                     </Button>
                   </div>
-                  
-                  {scanMode === "manual" ? (
-                    <div className="space-y-4">
-                      <div className="flex gap-3">
-                        <div className="flex-1 relative">
-                          <Input
-                            ref={inputRef}
-                            placeholder={language === "ku" ? "ژمارەی تراکینگ بنووسە یان سکان بکە..." : "Type or scan tracking number..."}
-                            value={trackingNumber}
-                            onChange={(e) => setTrackingNumber(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            className="text-lg h-14 pr-12 font-mono"
-                            disabled={selectedBatchIds.length === 0}
-                            autoFocus
-                          />
-                          {trackingNumber && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="absolute right-2 top-1/2 -translate-y-1/2"
-                              onClick={() => { setTrackingNumber(""); inputRef.current?.focus(); }}
-                            >
-                              ✕
-                            </Button>
-                          )}
-                        </div>
-                        <Button 
-                          onClick={handleScan}
-                          disabled={isSearching || !trackingNumber || selectedBatchIds.length === 0}
-                          className="h-14 px-8 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
-                        >
-                          {isSearching ? (
-                            <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                          ) : (
-                            <>
-                              <Target className="h-5 w-5 mr-2" />
-                              {language === "ku" ? "پشکنین" : "Verify"}
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      
-                      {selectedBatchIds.length === 0 && (
-                        <div className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
-                          <AlertTriangle className="h-4 w-4" />
-                          {language === "ku" ? "تکایە سەرەتا باچێک هەڵبژێرە" : "Please select a batch first"}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <BarcodeScanner onScan={handleCameraScan} />
-                      <p className="text-center text-sm text-muted-foreground">
-                        {language === "ku" ? "بارکۆدەکە ببە بەرەو کامێرا" : "Point barcode at camera"}
-                      </p>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
-              
+
               {/* Tabs for Verified and Unverified */}
               {selectedBatchIds.length > 0 && (
                 <Card className="border-0 shadow-lg">
@@ -787,11 +573,11 @@ export default function ArrivalVerificationScanner() {
                       <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="unverified" className="gap-2">
                           <AlertTriangle className="h-4 w-4" />
-                          {language === "ku" ? "ماوە" : "Missing"} ({unverifiedPackages.length})
+                          {t("scan.missing")} ({unverifiedPackages.length})
                         </TabsTrigger>
                         <TabsTrigger value="verified" className="gap-2">
                           <CheckCircle2 className="h-4 w-4" />
-                          {language === "ku" ? "پشکنینکراو" : "Verified"} ({verifiedPackages.length})
+                          {t("scan.verified")} ({verifiedPackages.length})
                         </TabsTrigger>
                       </TabsList>
                     </CardHeader>
@@ -823,7 +609,7 @@ export default function ArrivalVerificationScanner() {
                           ) : (
                             <div className="text-center py-8 text-muted-foreground">
                               <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-green-500" />
-                              <p>{language === "ku" ? "هەموو پاکەتەکان پشکنینکراون!" : "All packages verified!"}</p>
+                              <p>{t("scan.allPackagesVerified")}</p>
                             </div>
                           )}
                         </ScrollArea>
@@ -850,13 +636,13 @@ export default function ArrivalVerificationScanner() {
                                       <span className="font-mono text-sm font-medium">{pkg.trackingNumber}</span>
                                       {pkg.isExtra && (
                                         <Badge className="text-xs bg-blue-100 text-blue-700">
-                                          {language === "ku" ? "زیادە" : "Extra"}
+                                          {t("scan.extra")}
                                         </Badge>
                                       )}
                                       {!pkg.hasCompleteData && (
                                         <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-300">
                                           <AlertTriangle className="h-3 w-3 mr-1" />
-                                          {language === "ku" ? "ناتەواو" : "Incomplete"}
+                                          {t("scan.incomplete")}
                                         </Badge>
                                       )}
                                     </div>
@@ -875,7 +661,7 @@ export default function ArrivalVerificationScanner() {
                           ) : (
                             <div className="text-center py-8 text-muted-foreground">
                               <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                              <p>{language === "ku" ? "هیچ پاکەتێک پشکنین نەکراوە" : "No packages verified yet"}</p>
+                              <p>{t("scan.noPackagesVerifiedYet")}</p>
                             </div>
                           )}
                         </ScrollArea>
@@ -896,7 +682,7 @@ export default function ArrivalVerificationScanner() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className={cn("h-5 w-5", verificationStats.isComplete ? "text-white" : "text-emerald-600")} />
-                    {language === "ku" ? "ئاماری پشکنین" : "Verification Stats"}
+                    {t("scan.verificationStats")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -915,7 +701,7 @@ export default function ArrivalVerificationScanner() {
                         "text-xs",
                         verificationStats.isComplete ? "text-white/80" : "text-muted-foreground"
                       )}>
-                        {language === "ku" ? "کۆی گشتی" : "Total"}
+                        {t("scan.total")}
                       </div>
                     </div>
                     <div className={cn(
@@ -932,7 +718,7 @@ export default function ArrivalVerificationScanner() {
                         "text-xs",
                         verificationStats.isComplete ? "text-white/80" : "text-muted-foreground"
                       )}>
-                        {language === "ku" ? "پشکنینکراو" : "Verified"}
+                        {t("scan.verified")}
                       </div>
                     </div>
                     <div className={cn(
@@ -949,7 +735,7 @@ export default function ArrivalVerificationScanner() {
                         "text-xs",
                         verificationStats.isComplete ? "text-white/80" : "text-muted-foreground"
                       )}>
-                        {language === "ku" ? "ماوە" : "Missing"}
+                        {t("scan.missing")}
                       </div>
                     </div>
                     <div className={cn(
@@ -966,7 +752,7 @@ export default function ArrivalVerificationScanner() {
                         "text-xs",
                         verificationStats.isComplete ? "text-white/80" : "text-muted-foreground"
                       )}>
-                        {language === "ku" ? "زیادە" : "Extra"}
+                        {t("scan.extra")}
                       </div>
                     </div>
                   </div>
@@ -974,8 +760,8 @@ export default function ArrivalVerificationScanner() {
                   {verificationStats.isComplete && (
                     <div className="mt-4 p-3 bg-white/20 rounded-lg text-center">
                       <CheckCircle2 className="h-8 w-8 mx-auto mb-2" />
-                      <div className="font-bold">{language === "ku" ? "تەواو بوو!" : "Complete!"}</div>
-                      <div className="text-sm opacity-80">{language === "ku" ? "هەموو پاکەتەکان گەیشتن" : "All packages arrived"}</div>
+                      <div className="font-bold">{t("scan.complete")}</div>
+                      <div className="text-sm opacity-80">{t("scan.allPackagesArrived")}</div>
                     </div>
                   )}
                 </CardContent>
@@ -985,7 +771,7 @@ export default function ArrivalVerificationScanner() {
               {selectedBatches.length > 0 && (
                 <Card className="border-0 shadow-lg">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">{language === "ku" ? "باچە هەڵبژێردراوەکان" : "Selected Batches"}</CardTitle>
+                    <CardTitle className="text-sm">{t("scan.selectedBatches")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
@@ -1013,20 +799,16 @@ export default function ArrivalVerificationScanner() {
               {/* Quick Actions */}
               <Card className="border-0 shadow-lg">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">{language === "ku" ? "کردارە خێراکان" : "Quick Actions"}</CardTitle>
+                  <CardTitle className="text-sm">{t("scan.quickActions")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <Button
                     variant="outline"
                     className="w-full justify-start"
-                    onClick={() => {
-                      setVerifiedPackages([]);
-                      setBatchPackages(new Map());
-                      setSelectedBatchIds([]);
-                    }}
+                    onClick={clearSession}
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    {language === "ku" ? "دەستپێکردنەوە" : "Reset Session"}
+                    {t("scan.resetSession")}
                   </Button>
                   <Button
                     variant="outline"
@@ -1034,7 +816,7 @@ export default function ArrivalVerificationScanner() {
                     onClick={() => refetchBatches()}
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    {language === "ku" ? "نوێکردنەوەی باچەکان" : "Refresh Batches"}
+                    {t("scan.refreshBatches")}
                   </Button>
                 </CardContent>
               </Card>
@@ -1048,12 +830,10 @@ export default function ArrivalVerificationScanner() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5 text-blue-500" />
-                {language === "ku" ? "پاکەتی زیادە!" : "Extra Package!"}
+                {t("scan.extraPackage")}
               </DialogTitle>
               <DialogDescription>
-                {language === "ku" 
-                  ? "ئەم پاکەتە لە باچە هەڵبژێردراوەکان نییە. دەتەوێت وەک زیادە تۆماری بکەیت؟"
-                  : "This package is not in the selected batches. Do you want to record it as extra?"}
+                {t("scan.extraPackageDesc")}
               </DialogDescription>
             </DialogHeader>
             
@@ -1061,27 +841,23 @@ export default function ArrivalVerificationScanner() {
               <div className="font-mono text-lg">{extraPackageDialog.trackingNumber}</div>
               <div className="text-sm text-blue-700 dark:text-blue-300 mt-2 flex items-center gap-2">
                 <Info className="h-4 w-4" />
-                {language === "ku" ? "ئەم پاکەتە لە باچی تردایە یان تۆمار نەکراوە" : "This package is in another batch or not registered"}
+                {t("scan.packageInAnotherBatch")}
               </div>
             </div>
             
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => {
-                  setExtraPackageDialog({ open: false, package: null, trackingNumber: "" });
-                  setTrackingNumber("");
-                  inputRef.current?.focus();
-                }}
+                onClick={() => setExtraPackageDialog({ open: false, package: null, trackingNumber: "" })}
               >
-                {language === "ku" ? "پاشگەزبوونەوە" : "Cancel"}
+                {t("scan.cancel")}
               </Button>
               <Button
                 onClick={handleAddExtraPackage}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                {language === "ku" ? "تۆمارکردن وەک زیادە" : "Record as Extra"}
+                {t("scan.recordAsExtra")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1093,7 +869,7 @@ export default function ArrivalVerificationScanner() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-emerald-600" />
-                {language === "ku" ? "ڕاپۆرتی پشکنین" : "Verification Report"}
+                {t("scan.verificationReport")}
               </DialogTitle>
             </DialogHeader>
             
@@ -1102,19 +878,19 @@ export default function ArrivalVerificationScanner() {
               <div className="grid grid-cols-4 gap-4">
                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg text-center">
                   <div className="text-2xl font-bold">{verificationStats.totalExpected}</div>
-                  <div className="text-xs text-muted-foreground">{language === "ku" ? "کۆی گشتی" : "Total"}</div>
+                  <div className="text-xs text-muted-foreground">{t("scan.total")}</div>
                 </div>
                 <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
                   <div className="text-2xl font-bold text-green-600">{verificationStats.totalVerified}</div>
-                  <div className="text-xs text-muted-foreground">{language === "ku" ? "پشکنینکراو" : "Verified"}</div>
+                  <div className="text-xs text-muted-foreground">{t("scan.verified")}</div>
                 </div>
                 <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-center">
                   <div className="text-2xl font-bold text-yellow-600">{verificationStats.totalMissing}</div>
-                  <div className="text-xs text-muted-foreground">{language === "ku" ? "ماوە" : "Missing"}</div>
+                  <div className="text-xs text-muted-foreground">{t("scan.missing")}</div>
                 </div>
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
                   <div className="text-2xl font-bold text-blue-600">{verificationStats.totalExtra}</div>
-                  <div className="text-xs text-muted-foreground">{language === "ku" ? "زیادە" : "Extra"}</div>
+                  <div className="text-xs text-muted-foreground">{t("scan.extra")}</div>
                 </div>
               </div>
               
@@ -1128,13 +904,13 @@ export default function ArrivalVerificationScanner() {
                 {verificationStats.isComplete ? (
                   <div className="flex items-center justify-center gap-2 text-green-700">
                     <CheckCircle2 className="h-6 w-6" />
-                    <span className="font-bold text-lg">{language === "ku" ? "هەموو پاکەتەکان گەیشتن!" : "All packages arrived!"}</span>
+                    <span className="font-bold text-lg">{t("scan.allPackagesArrived")}</span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-2 text-yellow-700">
                     <AlertTriangle className="h-6 w-6" />
                     <span className="font-bold text-lg">
-                      {language === "ku" ? `${verificationStats.totalMissing} پاکەت ماوە!` : `${verificationStats.totalMissing} packages missing!`}
+                      {`${verificationStats.totalMissing} ${t("scan.packagesRemaining")}`}
                     </span>
                   </div>
                 )}
@@ -1145,7 +921,7 @@ export default function ArrivalVerificationScanner() {
                 <div>
                   <h4 className="font-medium mb-2 flex items-center gap-2">
                     <XCircle className="h-4 w-4 text-yellow-500" />
-                    {language === "ku" ? "پاکەتە ماوەکان" : "Missing Packages"}
+                    {t("scan.missingPackages")}
                   </h4>
                   <ScrollArea className="h-[150px] border rounded-lg p-2">
                     <div className="space-y-1">
@@ -1165,7 +941,7 @@ export default function ArrivalVerificationScanner() {
                 <div>
                   <h4 className="font-medium mb-2 flex items-center gap-2">
                     <Plus className="h-4 w-4 text-blue-500" />
-                    {language === "ku" ? "پاکەتە زیادەکان" : "Extra Packages"}
+                    {t("scan.extraPackages")}
                   </h4>
                   <ScrollArea className="h-[100px] border rounded-lg p-2">
                     <div className="space-y-1">
@@ -1183,11 +959,11 @@ export default function ArrivalVerificationScanner() {
             
             <DialogFooter>
               <Button variant="outline" onClick={() => setReportDialog(false)}>
-                {language === "ku" ? "داخستن" : "Close"}
+                {t("scan.close")}
               </Button>
               <Button className="bg-emerald-600 hover:bg-emerald-700">
                 <Printer className="h-4 w-4 mr-2" />
-                {language === "ku" ? "چاپکردن" : "Print"}
+                {t("scan.print")}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -55,6 +56,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
   const { language } = useLanguage();
   const { theme } = useTheme();
   const { user } = useAuth();
+  const company = useCompanyInfo();
   const isKurdish = language === "ku";
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
@@ -148,8 +150,8 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
     if (isOpen && chatId && messages.length === 0 && !messagesQuery.isLoading) {
       // Send initial bot message
       const welcomeContent = isKurdish 
-        ? `سڵاو ${user?.name || 'خاوەنکار'}! 👋\n\nبەخێربێیت بۆ پشتگیری Wazn Express. چۆن دەتوانم یارمەتیت بدەم؟`
-        : `Hello ${user?.name || 'Customer'}! 👋\n\nWelcome to Wazn Express support. How can I help you today?`;
+        ? `سڵاو ${user?.name || 'خاوەنکار'}! 👋\n\nبەخێربێیت بۆ پشتگیری ${company.name}. چۆن دەتوانم یارمەتیت بدەم؟`
+        : `Hello ${user?.name || 'Customer'}! 👋\n\nWelcome to ${company.name} support. How can I help you today?`;
       
       // Only add welcome if no messages exist
       if (messagesQuery.data?.length === 0) {
@@ -160,7 +162,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
         });
       }
     }
-  }, [isOpen, chatId, messages.length, messagesQuery.isLoading, messagesQuery.data?.length]);
+  }, [isOpen, chatId, messages.length, messagesQuery.isLoading, messagesQuery.data?.length, company.name]);
   
   // Quick replies
   const quickReplies = [

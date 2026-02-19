@@ -7,17 +7,28 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { Settings as SettingsIcon, Building2, Bell, Globe, Mail, Shield, FileText, DollarSign, RefreshCw, TrendingUp, Palette, Code } from "lucide-react";
+import { Settings as SettingsIcon, Building2, Bell, Globe, Mail, Shield, FileText, DollarSign, RefreshCw, TrendingUp, Palette, Code, Upload, Loader2, LayoutGrid, Sparkles, Users, Plus, Trash2 } from "lucide-react";
 import { Link } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function Settings() {
     const { t } = useTranslation();
-const [companyName, setCompanyName] = useState("Wazn Express");
-  const [companyEmail, setCompanyEmail] = useState("");
-  const [companyPhone, setCompanyPhone] = useState("");
+const [companyData, setCompanyData] = useState({
+    name: "Wazn Express",
+    nameKu: "وازن ئێکسپرێس",
+    nameAr: "وزن اكسبرس",
+    address: "",
+    addressKu: "",
+    addressAr: "",
+    phone: "",
+    phone2: "",
+    email: "",
+    website: "",
+    logoUrl: "",
+  });
+  const [logoUploading, setLogoUploading] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [whatsappNotifications, setWhatsappNotifications] = useState(false);
   const [iqdRate, setIqdRate] = useState("");
@@ -25,7 +36,21 @@ const [companyName, setCompanyName] = useState("Wazn Express");
 
   const { data: settings, refetch } = trpc.settings.list.useQuery();
   const { data: exchangeRates, refetch: refetchRates } = trpc.exchangeRates.list.useQuery();
-  
+
+  useEffect(() => {
+    if (settings) {
+      const companySetting = settings.find((s: any) => s.settingKey === "company_info");
+      if (companySetting?.settingValue) {
+        try {
+          const parsed = JSON.parse(companySetting.settingValue);
+          setCompanyData(prev => ({ ...prev, ...parsed }));
+        } catch (e) {
+          console.error("Failed to parse company_info:", e);
+        }
+      }
+    }
+  }, [settings]);
+
   // Get current rates
   const currentIqdRate = exchangeRates?.find(r => r.targetCurrency === "IQD");
   const currentRmbRate = exchangeRates?.find(r => r.targetCurrency === "RMB");
@@ -69,8 +94,54 @@ const [companyName, setCompanyName] = useState("Wazn Express");
   const handleSaveCompany = () => {
     updateSettingsMutation.mutate({
       key: "company_info",
-      value: JSON.stringify({ name: companyName, email: companyEmail, phone: companyPhone })
+      value: JSON.stringify(companyData)
     });
+  };
+
+  const logoUploadMutation = trpc.storage.upload.useMutation();
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("settings.logoImageOnly") || "تکایە فایلی وێنە هەڵبژێرە (PNG, JPG, ...)");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error(t("settings.logoSizeLimit") || "قەبارەی فایل نابێت لە ٢ مێگابایت زیاتر بێت");
+      return;
+    }
+    setLogoUploading(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const dataUrl = reader.result as string;
+          const base64Data = dataUrl.includes(",") ? dataUrl.split(",")[1] : "";
+          resolve(base64Data || "");
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      if (!base64) throw new Error("Failed to read file");
+      const data = await logoUploadMutation.mutateAsync({
+        fileName: file.name,
+        contentType: file.type,
+        base64Data: base64,
+      });
+      if (data.success && data.url) {
+        setCompanyData((prev) => ({ ...prev, logoUrl: data.url! }));
+        toast.success(t("settings.logoUploaded") || "لۆگۆ ئەپلۆد کرا");
+      } else {
+        const msg = "error" in data ? data.error : (t("settings.logoUploadFailed") || "ئەپلۆدی لۆگۆ سەرنەگەیشت");
+        toast.error(msg);
+      }
+    } catch {
+      toast.error(t("settings.logoUploadFailed") || "ئەپلۆدی لۆگۆ سەرنەگەیشت");
+    } finally {
+      setLogoUploading(false);
+      e.target.value = "";
+    }
   };
 
   const handleSaveNotifications = () => {
@@ -114,7 +185,11 @@ const [companyName, setCompanyName] = useState("Wazn Express");
             </TabsTrigger>
             <TabsTrigger value="portal" className="gap-2">
               <Palette className="h-4 w-4" />
-              {"ڕووکاری پۆرتاڵ"}
+              {t("settings.portalThemeTab") || "ڕووکاری پۆرتاڵ"}
+            </TabsTrigger>
+            <TabsTrigger value="landing" className="gap-2">
+              <Palette className="h-4 w-4" />
+              {t("settings.landingThemeTab") || "ڕووکاری پەرەی یەکەم"}
             </TabsTrigger>
           </TabsList>
 
@@ -122,41 +197,179 @@ const [companyName, setCompanyName] = useState("Wazn Express");
             <Card>
               <CardHeader>
                 <CardTitle>{t("settings.companyInfo")}</CardTitle>
-                <CardDescription>{t("settings.companyInfoDesc") || "Basic information displayed on invoices and communications"}</CardDescription>
+                <CardDescription>
+                  ئەم زانیاریانە لە هەموو ڕاپۆرت و ئینڤۆیسەکاندا بەکاردێت
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="companyName">{t("settings.companyName")}</Label>
-                  <Input 
-                    id="companyName" 
-                    value={companyName} 
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="Your company name"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="companyEmail">{t("settings.companyEmail")}</Label>
-                    <Input 
-                      id="companyEmail" 
-                      type="email"
-                      value={companyEmail} 
-                      onChange={(e) => setCompanyEmail(e.target.value)}
-                      placeholder="contact@company.com"
-                    />
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    ناوی کۆمپانیا
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid gap-2">
+                      <Label>ئینگلیزی</Label>
+                      <Input
+                        value={companyData.name}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Wazn Express"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>کوردی</Label>
+                      <Input
+                        value={companyData.nameKu}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, nameKu: e.target.value }))}
+                        placeholder="وازن ئێکسپرێس"
+                        dir="rtl"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>عەرەبی</Label>
+                      <Input
+                        value={companyData.nameAr}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, nameAr: e.target.value }))}
+                        placeholder="وزن اكسبرس"
+                        dir="rtl"
+                      />
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="companyPhone">{t("settings.companyPhone")}</Label>
-                    <Input 
-                      id="companyPhone" 
-                      value={companyPhone} 
-                      onChange={(e) => setCompanyPhone(e.target.value)}
-                      placeholder="+1 234 567 890"
-                    />
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    ناونیشان
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid gap-2">
+                      <Label>ئینگلیزی</Label>
+                      <Input
+                        value={companyData.address}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, address: e.target.value }))}
+                        placeholder="Company address..."
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>کوردی</Label>
+                      <Input
+                        value={companyData.addressKu}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, addressKu: e.target.value }))}
+                        placeholder="ناونیشانی کۆمپانیا..."
+                        dir="rtl"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>عەرەبی</Label>
+                      <Input
+                        value={companyData.addressAr}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, addressAr: e.target.value }))}
+                        placeholder="عنوان الشركة..."
+                        dir="rtl"
+                      />
+                    </div>
                   </div>
                 </div>
-                <Button onClick={handleSaveCompany} disabled={updateSettingsMutation.isPending}>
-                  {t("common.save")}
+
+                <div>
+                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    زانیاری پەیوەندی
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label>ژمارەی مۆبایل ١</Label>
+                      <Input
+                        value={companyData.phone}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="+964 750 123 4567"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>ژمارەی مۆبایل ٢</Label>
+                      <Input
+                        value={companyData.phone2}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, phone2: e.target.value }))}
+                        placeholder="+964 770 123 4567"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>ئیمەیڵ</Label>
+                      <Input
+                        type="email"
+                        value={companyData.email}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="info@wazn.express"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>وێبسایت</Label>
+                      <Input
+                        value={companyData.website}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, website: e.target.value }))}
+                        placeholder="https://wazn.express"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    لۆگۆی کۆمپانیا
+                  </h3>
+                  <div className="grid gap-2">
+                    <Label>ئەپلۆدی لۆگۆ</Label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="company-logo-upload"
+                      onChange={handleLogoUpload}
+                      disabled={logoUploading}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Label
+                        htmlFor="company-logo-upload"
+                        className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border rounded-lg bg-muted hover:bg-muted/80 text-sm font-medium"
+                      >
+                        {logoUploading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4" />
+                        )}
+                        {logoUploading ? "چاوەڕوان بە..." : "هەڵبژێرە و ئەپلۆد بکە"}
+                      </Label>
+                      <span className="text-xs text-muted-foreground">PNG, JPG تا ٢MB</span>
+                    </div>
+                    {companyData.logoUrl && (
+                      <div className="mt-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center gap-4">
+                        <img
+                          src={companyData.logoUrl}
+                          alt="Company Logo"
+                          className="max-h-20 object-contain"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setCompanyData((prev) => ({ ...prev, logoUrl: "" }))}
+                        >
+                          {t("common.remove") || "لابردن"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Button onClick={handleSaveCompany} disabled={updateSettingsMutation.isPending} className="w-full">
+                  {updateSettingsMutation.isPending ? "چاوەڕوان بە..." : t("common.save")}
                 </Button>
               </CardContent>
             </Card>
@@ -731,9 +944,350 @@ const [companyName, setCompanyName] = useState("Wazn Express");
           <TabsContent value="portal" className="space-y-4 mt-4">
             <PortalThemeSettings />
           </TabsContent>
+          <TabsContent value="landing" className="space-y-4 mt-4">
+            <LandingPageVariantSettings />
+            <LandingWebsiteContentSettings />
+            <LandingThemeSettings />
+            <LandingTeamSettings />
+          </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
+  );
+}
+
+// Landing page variant (Classic vs Minimal)
+function LandingPageVariantSettings() {
+  const { t } = useTranslation();
+  const utils = trpc.useUtils();
+  const { data: currentVariant } = trpc.public.getLandingPageVariant.useQuery();
+  const updateMutation = trpc.settings.set.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.settingsUpdated"));
+      void utils.public.getLandingPageVariant.invalidate();
+      window.location.reload();
+    },
+    onError: (error) => toast.error(error.message)
+  });
+
+  const variants = [
+    { id: "classic", name: t("settings.landingVariantClassic") || "پەرەی پڕ (کلاسیک)", nameEn: "Classic", description: t("settings.landingVariantClassicDesc") || "هەموو بەشەکان - ئامار، خزمەتگوزاری، تایبەتمەندی، پەیوەندی", icon: LayoutGrid },
+    { id: "minimal", name: t("settings.landingVariantMinimal") || "پەرەی مینیماڵ", nameEn: "Minimal", description: t("settings.landingVariantMinimalDesc") || "پەرەی سادە و پرۆفیشناڵ - تراکینگ و دووگمەکانی سەرەکی", icon: Sparkles }
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <LayoutGrid className="h-5 w-5" />
+          {t("settings.landingPageVariantTitle") || "جۆری پەرەی سەرەکی"}
+        </CardTitle>
+        <CardDescription>
+          {t("settings.landingPageVariantDesc") || "هەڵبژاردنی پەرەی لاندینگ - کلاسیک (پڕ) یان مینیماڵ (سادە)"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {variants.map((v) => {
+            const Icon = v.icon;
+            return (
+              <div
+                key={v.id}
+                onClick={() => updateMutation.mutate({ key: "landingPageVariant", value: v.id })}
+                className={`relative cursor-pointer rounded-xl border-2 transition-all duration-300 overflow-hidden ${
+                  currentVariant === v.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50"
+                }`}
+              >
+                <div className="p-5 flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                    <Icon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg">{v.name}</h3>
+                    <span className="text-sm text-muted-foreground">{v.nameEn}</span>
+                    <p className="text-sm text-muted-foreground mt-1">{v.description}</p>
+                  </div>
+                </div>
+                {currentVariant === v.id && (
+                  <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium">
+                    {t("settings.active") || "فعاڵ"}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {updateMutation.isPending && (
+          <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            <span>{t("settings.applying") || "چاوەڕوان بە..."}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Website content (hero, about, social) — shown on landing page
+function LandingWebsiteContentSettings() {
+  const { t } = useTranslation();
+  const { data: siteInfo = {}, refetch } = trpc.settings.getPublicWebsiteInfo.useQuery();
+  const setMutation = trpc.settings.set.useMutation({
+    onSuccess: () => { toast.success(t("toast.settingsUpdated")); refetch(); },
+    onError: (e) => toast.error(e.message)
+  });
+  const [form, setForm] = useState({
+    website_hero_title: "",
+    website_hero_title_ku: "",
+    website_hero_subtitle: "",
+    website_hero_subtitle_ku: "",
+    website_about: "",
+    website_about_ku: "",
+    social_facebook: "",
+    social_instagram: "",
+    social_whatsapp: "",
+    social_tiktok: "",
+    social_telegram: "",
+  });
+
+  useEffect(() => {
+    if (typeof siteInfo === "object" && siteInfo !== null) {
+      const s = siteInfo as Record<string, string>;
+      setForm(prev => ({
+        ...prev,
+        website_hero_title: s.website_hero_title ?? "",
+        website_hero_title_ku: s.website_hero_title_ku ?? "",
+        website_hero_subtitle: s.website_hero_subtitle ?? "",
+        website_hero_subtitle_ku: s.website_hero_subtitle_ku ?? "",
+        website_about: s.website_about ?? "",
+        website_about_ku: s.website_about_ku ?? "",
+        social_facebook: s.social_facebook ?? "",
+        social_instagram: s.social_instagram ?? "",
+        social_whatsapp: s.social_whatsapp ?? "",
+        social_tiktok: s.social_tiktok ?? "",
+        social_telegram: s.social_telegram ?? "",
+      }));
+    }
+  }, [siteInfo]);
+
+  const handleSave = async () => {
+    const keys = Object.keys(form) as (keyof typeof form)[];
+    for (const key of keys) {
+      await setMutation.mutateAsync({ key, value: form[key] || "" });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          {t("settings.websiteContentTitle") || "ناوەڕۆکی پەرەی سەرەکی"}
+        </CardTitle>
+        <CardDescription>
+          {t("settings.websiteContentDesc") || "سەردێری هێڵۆ، دەربارەی کۆمپانیا، و لینکە سۆشیالەکان لە پەرەی لاندینگ دەردەکەون"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid gap-4">
+          <Label>{t("settings.heroTitle") || "سەردێری هێڵۆ"}</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input value={form.website_hero_title} onChange={(e) => setForm(f => ({ ...f, website_hero_title: e.target.value }))} placeholder="Wazn Express (EN)" />
+            <Input value={form.website_hero_title_ku} onChange={(e) => setForm(f => ({ ...f, website_hero_title_ku: e.target.value }))} placeholder="وازن ئێکسپرێس (کوردی)" dir="rtl" />
+          </div>
+        </div>
+        <div className="grid gap-4">
+          <Label>{t("settings.heroSubtitle") || "ژێرسەردێر"}</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input value={form.website_hero_subtitle} onChange={(e) => setForm(f => ({ ...f, website_hero_subtitle: e.target.value }))} placeholder="Fast and reliable shipping (EN)" />
+            <Input value={form.website_hero_subtitle_ku} onChange={(e) => setForm(f => ({ ...f, website_hero_subtitle_ku: e.target.value }))} placeholder="گواستنەوەی خێرا و متمانەپێکراو (کوردی)" dir="rtl" />
+          </div>
+        </div>
+        <div className="grid gap-4">
+          <Label>{t("settings.aboutText") || "دەربارەی کۆمپانیا"}</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <textarea className="flex min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.website_about} onChange={(e) => setForm(f => ({ ...f, website_about: e.target.value }))} placeholder="About company (EN)" />
+            <textarea className="flex min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.website_about_ku} onChange={(e) => setForm(f => ({ ...f, website_about_ku: e.target.value }))} placeholder="دەربارەی کۆمپانیا (کوردی)" dir="rtl" />
+          </div>
+        </div>
+        <div className="grid gap-4">
+          <Label>{t("settings.socialLinks") || "لینکە سۆشیالەکان"}</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input value={form.social_facebook} onChange={(e) => setForm(f => ({ ...f, social_facebook: e.target.value }))} placeholder="https://facebook.com/..." dir="ltr" />
+            <Input value={form.social_instagram} onChange={(e) => setForm(f => ({ ...f, social_instagram: e.target.value }))} placeholder="https://instagram.com/..." dir="ltr" />
+            <Input value={form.social_whatsapp} onChange={(e) => setForm(f => ({ ...f, social_whatsapp: e.target.value }))} placeholder="+9647501234567 or https://wa.me/..." dir="ltr" />
+            <Input value={form.social_tiktok} onChange={(e) => setForm(f => ({ ...f, social_tiktok: e.target.value }))} placeholder="https://tiktok.com/..." dir="ltr" />
+            <Input value={form.social_telegram} onChange={(e) => setForm(f => ({ ...f, social_telegram: e.target.value }))} placeholder="https://t.me/..." dir="ltr" />
+          </div>
+        </div>
+        <Button onClick={handleSave} disabled={setMutation.isPending}>
+          {setMutation.isPending ? (t("settings.saving") || "چاوەڕوان بە...") : t("settings.saveChanges")}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Landing team (for "Our Team" section on landing page)
+function LandingTeamSettings() {
+  const { t } = useTranslation();
+  const { data: team = [], refetch } = trpc.public.getLandingTeam.useQuery();
+  const updateMutation = trpc.settings.set.useMutation({
+    onSuccess: () => { toast.success(t("toast.settingsUpdated")); refetch(); },
+    onError: (error) => toast.error(error.message)
+  });
+  const [editing, setEditing] = useState<{ name: string; role: string; description: string; imageUrl: string }[]>([]);
+  const [newName, setNewName] = useState("");
+  const [newRole, setNewRole] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [newImage, setNewImage] = useState("");
+
+  useEffect(() => {
+    setEditing(team.map((m: { name: string; role: string; description: string; imageUrl: string | null }) => ({
+      name: m.name,
+      role: m.role,
+      description: m.description,
+      imageUrl: m.imageUrl || ""
+    })));
+  }, [team]);
+
+  const handleSave = () => {
+    const list = editing.map((e, i) => ({ id: `m-${i}`, name: e.name, role: e.role, description: e.description, imageUrl: e.imageUrl || undefined, order: i }));
+    updateMutation.mutate({ key: "landingTeamMembers", value: JSON.stringify(list) });
+  };
+
+  const handleAdd = () => {
+    if (!newName.trim()) return;
+    const next = [...editing, { name: newName.trim(), role: newRole.trim(), description: newDesc.trim(), imageUrl: newImage.trim() }];
+    setEditing(next);
+    setNewName(""); setNewRole(""); setNewDesc(""); setNewImage("");
+    updateMutation.mutate({ key: "landingTeamMembers", value: JSON.stringify(next.map((e, i) => ({ id: `m-${i}`, ...e, order: i }))) });
+  };
+
+  const handleRemove = (index: number) => {
+    const next = editing.filter((_, i) => i !== index);
+    setEditing(next);
+    updateMutation.mutate({ key: "landingTeamMembers", value: JSON.stringify(next.map((e, i) => ({ id: `m-${i}`, ...e, order: i }))) });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          {t("settings.landingTeamTitle") || "ستاف/تیمی پەرەی سەرەکی"}
+        </CardTitle>
+        <CardDescription>
+          {t("settings.landingTeamDesc") || "ئەم کەسانە لە بەشی «تیمی ئێمە» لە پەرەی لاندینگ نیشان دەدرێن"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {editing.map((m, i) => (
+          <div key={i} className="flex items-start gap-4 p-4 border rounded-lg">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
+              <Input value={m.name} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} placeholder={t("settings.teamMemberName") || "ناو"} />
+              <Input value={m.role} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, role: e.target.value } : x))} placeholder={t("settings.teamMemberRole") || "ڕۆڵ/ناونیشان"} />
+              <Input value={m.imageUrl} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, imageUrl: e.target.value } : x))} placeholder={t("settings.teamMemberImageUrl") || "URL وێنە (ئەگەر هەبێت)"} />
+              <Input className="md:col-span-3" value={m.description} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} placeholder={t("settings.teamMemberDescription") || "دیسکڕیپشن"} />
+            </div>
+            <Button type="button" variant="ghost" size="icon" onClick={() => handleRemove(i)} className="text-destructive hover:text-destructive">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+        <div className="flex flex-wrap gap-2 pt-2">
+          <Input className="max-w-[180px]" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t("settings.teamMemberName") || "ناو"} />
+          <Input className="max-w-[180px]" value={newRole} onChange={(e) => setNewRole(e.target.value)} placeholder={t("settings.teamMemberRole") || "ڕۆڵ"} />
+          <Input className="max-w-[200px]" value={newImage} onChange={(e) => setNewImage(e.target.value)} placeholder="URL وێنە" />
+          <Input className="min-w-[200px] flex-1" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t("settings.teamMemberDescription") || "دیسکڕیپشن"} />
+          <Button type="button" size="sm" onClick={handleAdd} disabled={!newName.trim() || updateMutation.isPending}>
+            <Plus className="h-4 w-4 mr-1" />
+            {t("settings.add") || "زیادکردن"}
+          </Button>
+        </div>
+        {editing.length > 0 && (
+          <Button onClick={handleSave} disabled={updateMutation.isPending}>
+            {t("settings.saveChanges")}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Landing (first) page theme settings
+function LandingThemeSettings() {
+  const { t } = useTranslation();
+  const utils = trpc.useUtils();
+  const { data: currentTheme, isLoading } = trpc.public.getLandingTheme.useQuery();
+  const updateThemeMutation = trpc.settings.set.useMutation({
+    onSuccess: () => {
+      toast.success(t("toast.themeChangedSuccessfully"));
+      void utils.public.getLandingTheme.invalidate();
+      window.location.reload();
+    },
+    onError: (error) => toast.error(error.message)
+  });
+
+  const handleThemeChange = (theme: string) => {
+    updateThemeMutation.mutate({ key: "landingTheme", value: theme });
+  };
+
+  const themes = [
+    { id: "dark", name: t("settings.landingThemeDark") || "تاریک", nameEn: "Dark", description: t("settings.landingThemeDarkDesc") || "ڕووکاری ئێستا - پسپۆڕی تاریک", preview: "bg-[#0f172a]", accent: "from-amber-500 to-orange-500" },
+    { id: "light", name: t("settings.landingThemeLight") || "ڕووناک", nameEn: "Light", description: t("settings.landingThemeLightDesc") || "پسپۆڕی ڕووناک - گونجاو بۆ ڕۆژ", preview: "bg-slate-50", accent: "from-amber-600 to-orange-600" },
+    { id: "ocean", name: t("settings.landingThemeOcean") || "ئۆشن", nameEn: "Ocean", description: t("settings.landingThemeOceanDesc") || "شین/تەڵاو - گونجاو بۆ لۆژستیک", preview: "bg-[#0c4a6e]", accent: "from-sky-400 to-cyan-500" }
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Palette className="h-5 w-5" />
+          {t("settings.landingThemeTitle") || "ڕووکاری پەرەی یەکەم (لاندینگ)"}
+        </CardTitle>
+        <CardDescription>
+          {t("settings.landingThemeDesc") || "هەڵبژاردنی ڕووکار بۆ پەرەی سەرەکی ویبسایت - ئەم ڕووکارە بۆ هەموو سەردانکەران دەردەکەوێت"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {themes.map((theme) => (
+            <div
+              key={theme.id}
+              onClick={() => handleThemeChange(theme.id)}
+              className={`relative cursor-pointer rounded-xl border-2 transition-all duration-300 overflow-hidden ${
+                currentTheme === theme.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50"
+              }`}
+            >
+              <div className={`h-32 ${theme.preview} p-4 relative`}>
+                <div className="absolute bottom-3 left-3 right-3">
+                  <div className={`h-10 rounded-xl bg-gradient-to-r ${theme.accent} opacity-80`} />
+                </div>
+                {currentTheme === theme.id && (
+                  <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium">
+                    {t("settings.active") || "فعاڵ"}
+                  </div>
+                )}
+              </div>
+              <div className="p-4 bg-card">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-bold text-lg">{theme.name}</h3>
+                  <span className="text-sm text-muted-foreground">{theme.nameEn}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">{theme.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {updateThemeMutation.isPending && (
+          <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            <span>{t("settings.applying") || "چاوەڕوان بە..."}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

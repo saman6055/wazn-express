@@ -14,66 +14,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Link } from "wouter";
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-
-// 4 Scanner Modules with Kurdish labels
-const SCANNER_MODULES = [
-  { 
-    id: "quick-register",
-    path: "/quick-register",
-    icon: QrCode,
-    labelKu: "تۆماری خێرا",
-    labelEn: "Quick Register",
-    descKu: "تۆمارکردنی پاکەتی نوێ",
-    descEn: "Register new packages",
-    color: "from-blue-500 to-blue-600",
-    lightColor: "bg-blue-50",
-    textColor: "text-blue-600",
-    borderColor: "border-blue-200",
-    statKey: "registered"
-  },
-  { 
-    id: "batch-assignment",
-    path: "/batch-assignment-scanner",
-    icon: Boxes,
-    labelKu: "خستنە ناو باچ",
-    labelEn: "Batch Assignment",
-    descKu: "زیادکردنی پاکەت بۆ باچ",
-    descEn: "Add packages to batch",
-    color: "from-purple-500 to-purple-600",
-    lightColor: "bg-purple-50",
-    textColor: "text-purple-600",
-    borderColor: "border-purple-200",
-    statKey: "inBatch"
-  },
-  { 
-    id: "arrival-verification",
-    path: "/arrival-verification-scanner",
-    icon: Truck,
-    labelKu: "پشکنینی گەیشتن",
-    labelEn: "Arrival Verification",
-    descKu: "پشکنینی پاکەتی گەیشتوو",
-    descEn: "Verify arrived packages",
-    color: "from-teal-500 to-teal-600",
-    lightColor: "bg-teal-50",
-    textColor: "text-teal-600",
-    borderColor: "border-teal-200",
-    statKey: "arrived"
-  },
-  { 
-    id: "customer-delivery",
-    path: "/customer-delivery-scanner",
-    icon: CreditCard,
-    labelKu: "گەیاندن بە کڕیار",
-    labelEn: "Customer Delivery",
-    descKu: "گەیاندنی پاکەت بە کڕیار",
-    descEn: "Deliver to customer",
-    color: "from-emerald-500 to-emerald-600",
-    lightColor: "bg-emerald-50",
-    textColor: "text-emerald-600",
-    borderColor: "border-emerald-200",
-    statKey: "delivered"
-  },
-];
+import { SCANNER_MODULES } from "@/constants/scannerModules";
 
 export default function ScanDashboard() {
   const { t, language } = useTranslation();
@@ -81,24 +22,40 @@ export default function ScanDashboard() {
   
   // Get today's stats
   const { data: todayStats } = trpc.scanning.todayStats.useQuery();
-  
+
+  // Real analytics from DB (last 7 days)
+  const { data: analytics } = trpc.scanning.scanAnalytics.useQuery({ days: 7 });
+
   // Get my recent scans
   const { data: recentScans, isLoading } = trpc.scanning.myRecentScans.useQuery({ limit: 50 });
-  
+
   // Get packages missing info
   const { data: missingInfo } = trpc.scanning.getMissingInfo.useQuery();
-  
-  // Calculate module stats from recent scans
-  const moduleStats = {
-    registered: recentScans?.filter((s: any) => s.scanType === "registered" || s.notes?.includes("register")).length || 0,
-    inBatch: recentScans?.filter((s: any) => s.scanType === "in_batch" || s.notes?.includes("batch")).length || 0,
-    arrived: recentScans?.filter((s: any) => s.scanType === "received_local" || s.notes?.includes("arrive")).length || 0,
-    delivered: recentScans?.filter((s: any) => s.scanType === "delivered" || s.notes?.includes("deliver")).length || 0,
-  };
-  
+
+  // Module stats from analytics (scansByType) or fallback to recent scans
+  const moduleStats: Record<string, number> = (() => {
+    const fallback = {
+      registered: recentScans?.filter((s: any) => s.scanType === "registered" || s.notes?.includes("register")).length || 0,
+      in_batch: recentScans?.filter((s: any) => s.scanType === "in_batch" || s.notes?.includes("batch")).length || 0,
+      received_local: recentScans?.filter((s: any) => s.scanType === "received_local" || s.notes?.includes("arrive")).length || 0,
+      delivered: recentScans?.filter((s: any) => s.scanType === "delivered" || s.notes?.includes("deliver")).length || 0,
+    };
+    if (analytics?.scansByType?.length) {
+      const byType: Record<string, number> = { registered: 0, in_batch: 0, received_local: 0, delivered: 0 };
+      analytics.scansByType.forEach((row: { scanType: string; count: number }) => {
+        byType[row.scanType] = row.count;
+      });
+      return byType;
+    }
+    return fallback;
+  })();
+
   const totalScans = recentScans?.length || 0;
   const todayTotal = todayStats?.reduce((sum: number, s: any) => sum + s.count, 0) || 0;
-  
+
+  // Daily scans for chart (from analytics)
+  const dailyScansForChart = analytics?.dailyScans ?? [];
+
   // Get recent 5 scans for quick view
   const latestScans = recentScans?.slice(0, 5) || [];
 
@@ -148,7 +105,7 @@ export default function ScanDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {SCANNER_MODULES.map((module) => {
               const Icon = module.icon;
-              const count = moduleStats[module.statKey as keyof typeof moduleStats] || 0;
+              const count = moduleStats[module.scanType] || 0;
               
               return (
                 <Link key={module.id} href={module.path}>
@@ -306,7 +263,7 @@ export default function ScanDashboard() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {SCANNER_MODULES.map((module) => {
                     const Icon = module.icon;
-                    const count = moduleStats[module.statKey as keyof typeof moduleStats] || 0;
+                    const count = moduleStats[module.scanType] || 0;
                     const percentage = totalScans > 0 ? Math.round((count / totalScans) * 100) : 0;
                     
                     return (

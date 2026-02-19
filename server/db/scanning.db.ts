@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getCustomerById } from './customers.db';
 import { getPackageById } from './packages.db';
@@ -261,7 +262,7 @@ export async function updatePackageStatusViaScan(
   newStatus: string, 
   userId: number,
   scanId: number,
-  metadata?: any
+  metadata?: Record<string, unknown> | null
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not connected");
@@ -388,11 +389,11 @@ export async function updatePackageFields(packageId: number, data: {
         const fullPackageOrder = await getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
         if (fullPackageOrder) {
           await updateFullPackageOrder(fullPackageOrder.id, { batchId: data.batchId });
-          console.log(`[FullPackage] Synced batchId ${data.batchId} from package fields update to order ${fullPackageOrder.id}`);
+          appLogger.info("[FullPackage] Synced batchId from package fields update to order", { batchId: data.batchId, orderId: fullPackageOrder.id });
         }
       }
     } catch (e) {
-      console.error('[FullPackage] Failed to sync batchId from updatePackageFields:', e);
+      appLogger.error('[FullPackage] Failed to sync batchId from updatePackageFields', { error: e instanceof Error ? e.message : String(e) });
     }
   }
   
@@ -738,5 +739,71 @@ export async function getScansByEmployee(startDate: Date, endDate: Date) {
     ))
     .groupBy(packageScans.scannedById, users.name, packageScans.scanType)
     .orderBy(users.name);
+}
+
+// ============ SCAN ANALYTICS (for dashboard) ============
+
+export async function getDailyScanCounts(days: number): Promise<{ date: string; count: number }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  const rows = await db
+    .select({
+      date: sql<string>`DATE(${packageScans.scannedAt})`.as("date"),
+      count: count().as("count"),
+    })
+    .from(packageScans)
+    .where(gte(packageScans.scannedAt, startDate))
+    .groupBy(sql`DATE(${packageScans.scannedAt})`)
+    .orderBy(asc(sql`DATE(${packageScans.scannedAt})`));
+
+  return rows.map((r) => ({ date: r.date, count: Number(r.count) }));
+}
+
+export async function getScanCountsByType(days: number): Promise<{ scanType: string; count: number }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const rows = await db
+    .select({
+      scanType: packageScans.scanType,
+      count: count().as("count"),
+    })
+    .from(packageScans)
+    .where(gte(packageScans.scannedAt, startDate))
+    .groupBy(packageScans.scanType);
+
+  return rows.map((r) => ({ scanType: String(r.scanType), count: Number(r.count) }));
+}
+
+export async function getTopScanners(days: number): Promise<{ userId: number; userName: string | null; count: number }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const rows = await db
+    .select({
+      userId: packageScans.scannedById,
+      userName: users.name,
+      count: count().as("count"),
+    })
+    .from(packageScans)
+    .leftJoin(users, eq(packageScans.scannedById, users.id))
+    .where(gte(packageScans.scannedAt, startDate))
+    .groupBy(packageScans.scannedById, users.name)
+    .orderBy(desc(sql`COUNT(*)`))
+    .limit(10);
+
+  return rows.map((r) => ({
+    userId: r.userId,
+    userName: r.userName ?? null,
+    count: Number(r.count),
+  }));
 }
 

@@ -79,8 +79,12 @@ export async function createCountry(data: InsertCountry): Promise<Country> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.insert(countries).values(data);
-  const inserted = await db.select().from(countries).where(eq(countries.id, Number(result[0].insertId))).limit(1);
-  return inserted[0];
+  const insertId = Array.isArray(result) ? result[0]?.insertId : (result as any)?.insertId;
+  if (insertId == null) throw new Error("Failed to get insert ID after country creation");
+  const inserted = await db.select().from(countries).where(eq(countries.id, Number(insertId))).limit(1);
+  const row = inserted[0];
+  if (!row) throw new Error("Country created but could not be retrieved");
+  return row;
 }
 
 export async function getAllCountries(activeOnly = false) {
@@ -124,8 +128,12 @@ export async function createWarehouse(data: InsertWarehouse): Promise<Warehouse>
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.insert(warehouses).values(data);
-  const inserted = await db.select().from(warehouses).where(eq(warehouses.id, Number(result[0].insertId))).limit(1);
-  return inserted[0];
+  const insertId = Array.isArray(result) ? result[0]?.insertId : (result as any)?.insertId;
+  if (insertId == null) throw new Error("Failed to get insert ID after warehouse creation");
+  const inserted = await db.select().from(warehouses).where(eq(warehouses.id, Number(insertId))).limit(1);
+  const row = inserted[0];
+  if (!row) throw new Error("Warehouse created but could not be retrieved");
+  return row;
 }
 
 export async function getAllWarehouses(activeOnly = false) {
@@ -209,10 +217,14 @@ export async function updatePricingRule(id: number, data: Partial<InsertPricingR
 // ============ SYSTEM SETTINGS OPERATIONS ============
 
 export async function getSetting(key: string): Promise<string | null> {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(systemSettings).where(eq(systemSettings.settingKey, key)).limit(1);
-  return result[0]?.settingValue ?? null;
+  try {
+    const db = await getDb();
+    if (!db) return null;
+    const result = await db.select().from(systemSettings).where(eq(systemSettings.settingKey, key)).limit(1);
+    return result[0]?.settingValue ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function setSetting(key: string, value: string, updatedById?: number) {

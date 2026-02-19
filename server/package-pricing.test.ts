@@ -210,12 +210,13 @@ describe("Automatic Pricing on Delivery", () => {
     expect(updatedPkg?.deliveredAt).toBeDefined();
   });
 
-  it("should mark package as charged after delivery if pricing rule exists", async () => {
+  it("should NOT mark package as charged when status is updated to delivered (charge is at batch delivery only)", async () => {
     const pkg = await db.getPackageById(testPackageId);
-    
-    // If there's a pricing rule and the package was charged
+    // Updating status to delivered does NOT charge; only batch delivery does.
+    expect(pkg?.isCharged).toBe(false);
+    // Cost may still be saved for reference
     if (pkg?.calculatedCostUsd) {
-      expect(pkg.isCharged).toBe(true);
+      expect(parseFloat(pkg.calculatedCostUsd)).toBeGreaterThan(0);
     }
   });
 

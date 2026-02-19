@@ -1,6 +1,7 @@
 import { getDb } from './connection';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { ENV } from '../_core/env';
+import { appLogger } from '../utils/logger';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -83,7 +84,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
+    appLogger.warn("[Database] Cannot upsert user: database not available");
     return;
   }
 
@@ -126,7 +127,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
     await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
   } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
+    appLogger.error("[Database] Failed to upsert user", { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -141,7 +142,7 @@ export async function getUserByOpenId(openId: string) {
 export async function getUserById(id: number) {
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
+    appLogger.warn("[Database] Cannot get user: database not available");
     return undefined;
   }
 
@@ -157,15 +158,14 @@ export async function getUserByMobile(mobileNumber: string) {
 }
 
 export async function getUserByUsername(usernameOrEmail: string) {
-  const db = await getDb();
-  if (!db) return undefined;
-  // Use raw SQL query to avoid Drizzle ORM quoting issues with MySQL
-  const result = await db.execute(
-    sql`SELECT id, openId, username, name, email, loginMethod, role, mobileNumber, passwordHash, isActive, notes, createdById, createdAt, updatedAt, lastSignedIn FROM users WHERE username = ${usernameOrEmail} OR email = ${usernameOrEmail} OR name = ${usernameOrEmail} LIMIT 1`
-  );
-  // MySQL2 returns [rows, fields], we need rows
-  const rows = Array.isArray(result) && Array.isArray(result[0]) ? result[0] : result;
-  return rows.length > 0 ? rows[0] as typeof users.$inferSelect : undefined;
+  try {
+    const db = await getDb();
+    if (!db) return undefined;
+    const result = await db.select().from(users).where(or(eq(users.username, usernameOrEmail), eq(users.email, usernameOrEmail), eq(users.name, usernameOrEmail))).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export async function updateUserLastSignIn(userId: number) {
@@ -255,9 +255,9 @@ export async function createCustomer(data: {
         totalDebitIqd: "0",
         totalCreditIqd: "0",
       });
-      console.log(`[Customer] Created account ${accountNumber} for customer ${data.customerCode}`);
+      appLogger.info(`[Customer] Created account ${accountNumber} for customer ${data.customerCode}`);
     } catch (err) {
-      console.error(`[Customer] Failed to create account for ${data.customerCode}:`, err);
+      appLogger.error(`[Customer] Failed to create account for ${data.customerCode}`, { error: err instanceof Error ? err.message : String(err) });
     }
   }
   
@@ -330,22 +330,40 @@ export async function createStaffUser(data: {
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  const result = await db.insert(users).values({
+
+  const username = data.username || null;
+  const values = {
     openId: `staff_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    username: data.username || null,
+    username,
     name: data.name,
-    email: data.email || null,
-    mobileNumber: data.mobileNumber || null,
+    email: data.email ?? null,
+    mobileNumber: data.mobileNumber ?? null,
     passwordHash: data.passwordHash,
     role: data.role,
     loginMethod: "username",
     isActive: true,
-  });
-  
-  const insertId = result[0].insertId;
-  const newUser = await db.select().from(users).where(eq(users.id, insertId)).limit(1);
-  return newUser[0];
+  };
+
+  try {
+    await db.insert(users).values(values);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const cause = err && typeof err === "object" && "cause" in err ? (err as { cause?: unknown }).cause : null;
+    const code = (cause && typeof cause === "object" && "code" in cause) ? (cause as { code: string }).code : (err as { code?: string }).code;
+    const errno = (cause && typeof cause === "object" && "errno" in cause) ? (cause as { errno: number }).errno : (err as { errno?: number }).errno;
+    const isDup = msg.includes("Duplicate") || msg.includes("ER_DUP_ENTRY") || code === "ER_DUP_ENTRY" || errno === 1062;
+    if (isDup && username) {
+      await db.update(users).set({ passwordHash: data.passwordHash }).where(eq(users.username, username));
+    } else {
+      throw err;
+    }
+  }
+
+  if (username) {
+    const rows = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    return rows[0];
+  }
+  return undefined;
 }
 
 export async function updateUserPassword(userId: number, passwordHash: string) {
@@ -389,6 +407,7 @@ const entityCategoryMap: Record<string, 'customer' | 'package' | 'batch' | 'full
   'User': 'user',
   'Package': 'package',
   'Batch': 'batch',
+  'batch': 'batch',
   'FullPackageOrder': 'full_package',
   'PurchaseRequest': 'purchase_request',
   'CommissionOrder': 'commission',
@@ -399,7 +418,9 @@ const entityCategoryMap: Record<string, 'customer' | 'package' | 'batch' | 'full
   'CustomerAccount': 'finance',
   'PricingRule': 'settings',
   'Warehouse': 'settings',
+  'warehouse': 'settings',
   'Country': 'settings',
+  'country': 'settings',
   'ExchangeRate': 'settings',
   'Permission': 'user',
   'System': 'system',
@@ -438,7 +459,7 @@ const actionLabels: Record<string, string> = {
 };
 
 // Get changed fields between old and new values
-function getChangedFields(oldValues: Record<string, any> | null, newValues: Record<string, any> | null): string[] {
+function getChangedFields(oldValues: Record<string, unknown> | null, newValues: Record<string, unknown> | null): string[] {
   if (!oldValues || !newValues) return [];
   const changed: string[] = [];
   const allKeys = Array.from(new Set([...Object.keys(oldValues), ...Object.keys(newValues)]));
@@ -471,9 +492,9 @@ export interface AdvancedAuditLogData {
   entityType: string;
   entityId?: number;
   entityCode?: string;
-  oldValues?: Record<string, any> | null;
-  newValues?: Record<string, any> | null;
-  metadata?: Record<string, any>;
+  oldValues?: Record<string, unknown> | null;
+  newValues?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
 }
@@ -537,16 +558,16 @@ export async function getAdvancedAuditLogs(filters: AuditLogFilters = {}, limit 
   const db = await getDb();
   if (!db) return { logs: [], total: 0 };
   
-  const conditions: any[] = [];
+  const conditions: SQL[] = [];
   
   if (filters.category) {
-    conditions.push(eq(auditLogs.category, filters.category as any));
+    conditions.push(eq(auditLogs.category, filters.category as never));
   }
   if (filters.entityType) {
-    conditions.push(eq(auditLogs.entityType, filters.entityType));
+    conditions.push(eq(auditLogs.entityType, filters.entityType as never));
   }
   if (filters.action) {
-    conditions.push(eq(auditLogs.action, filters.action));
+    conditions.push(eq(auditLogs.action, filters.action as never));
   }
   if (filters.userId) {
     conditions.push(eq(auditLogs.userId, filters.userId));
@@ -558,13 +579,12 @@ export async function getAdvancedAuditLogs(filters: AuditLogFilters = {}, limit 
     conditions.push(lte(auditLogs.createdAt, filters.endDate));
   }
   if (filters.search) {
-    conditions.push(
-      or(
-        like(auditLogs.entityCode, `%${filters.search}%`),
-        like(auditLogs.description, `%${filters.search}%`),
-        like(auditLogs.userName, `%${filters.search}%`)
-      )
+    const searchCond = or(
+      like(auditLogs.entityCode, `%${filters.search}%`),
+      like(auditLogs.description, `%${filters.search}%`),
+      like(auditLogs.userName, `%${filters.search}%`)
     );
+    if (searchCond) conditions.push(searchCond as SQL);
   }
   
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -738,18 +758,18 @@ export async function createStockProduct(data: InsertStockProduct): Promise<Stoc
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  console.log('[DB DEBUG] Input data.barcode:', JSON.stringify(data.barcode), 'Type:', typeof data.barcode);
+  appLogger.debug('[DB DEBUG] Input data.barcode', { barcode: data.barcode, type: typeof data.barcode });
   
   // Set available stock = current stock initially
   // Handle empty barcode as null to avoid unique constraint issues
   // Must explicitly check for empty string since empty string is falsy but still sent to DB
   const barcodeValue = (data.barcode && typeof data.barcode === 'string' && data.barcode.trim() !== '') ? data.barcode.trim() : null;
   
-  console.log('[DB DEBUG] Processed barcodeValue:', JSON.stringify(barcodeValue));
+  appLogger.debug('[DB DEBUG] Processed barcodeValue', { barcodeValue });
   
   // Create productData without barcode first, then add it only if it has a value
   const { barcode: _ignoredBarcode, ...dataWithoutBarcode } = data;
-  const productData: any = {
+  const productData: Record<string, unknown> = {
     ...dataWithoutBarcode,
     availableStock: data.currentStock || 0,
   };
@@ -758,10 +778,12 @@ export async function createStockProduct(data: InsertStockProduct): Promise<Stoc
     productData.barcode = barcodeValue;
   }
   
-  console.log('[DB DEBUG] Final productData.barcode:', JSON.stringify(productData.barcode));
+  appLogger.debug('[DB DEBUG] Final productData.barcode', { barcode: productData.barcode });
   
-  const result = await db.insert(stockProducts).values(productData);
-  const inserted = await db.select().from(stockProducts).where(eq(stockProducts.id, Number(result[0].insertId)));
+  const result = await db.insert(stockProducts).values(productData as InsertStockProduct);
+  const rawId = (result[0] as { insertId?: number }).insertId;
+  const id: number = typeof rawId === "number" && Number.isFinite(rawId) ? rawId : Number(rawId) || 0;
+  const inserted = await db.select().from(stockProducts).where(eq(stockProducts.id, id));
   return inserted[0];
 }
 
@@ -833,7 +855,7 @@ export async function updateStockProduct(id: number, data: Partial<InsertStockPr
   if (!db) return;
   
   // Recalculate available stock if current or reserved stock changes
-  const updateData: any = { ...data };
+  const updateData: Record<string, unknown> = { ...data };
   if (data.currentStock !== undefined || data.reservedStock !== undefined) {
     const product = await getStockProductById(id);
     if (product) {
@@ -896,7 +918,7 @@ export async function getAllStockPurchases(filters?: {
   const conditions = [];
   
   if (filters?.status) {
-    conditions.push(eq(stockPurchases.status, filters.status as any));
+    conditions.push(eq(stockPurchases.status, filters.status as never));
   }
   
   if (filters?.supplierId) {
@@ -1055,7 +1077,7 @@ export async function getAllStockSales(filters?: {
   }
   
   if (filters?.status) {
-    conditions.push(eq(stockSales.status, filters.status as any));
+    conditions.push(eq(stockSales.status, filters.status as never));
   }
   
   if (filters?.customerId) {
@@ -1233,7 +1255,7 @@ export async function getStockMovements(filters?: {
   }
   
   if (filters?.movementType) {
-    conditions.push(eq(stockMovements.movementType, filters.movementType as any));
+    conditions.push(eq(stockMovements.movementType, filters.movementType as never));
   }
   
   if (filters?.startDate) {
@@ -1247,13 +1269,13 @@ export async function getStockMovements(filters?: {
   let query = db.select().from(stockMovements);
   
   if (conditions.length > 0) {
-    query = query.where(and(...conditions)) as any;
+    query = query.where(and(...conditions)) as typeof query;
   }
   
-  query = query.orderBy(desc(stockMovements.createdAt)) as any;
+  query = query.orderBy(desc(stockMovements.createdAt)) as typeof query;
   
   if (filters?.limit) {
-    query = query.limit(filters.limit) as any;
+    query = query.limit(filters.limit) as typeof query;
   }
   
   return query;
@@ -1622,15 +1644,15 @@ export async function deleteOldData(daysOld: number, dataType: string): Promise<
             eq(packages.status, 'delivered')
           )
         );
-        deletedCount = (pkgResult[0] as any).affectedRows || 0;
+        deletedCount = (pkgResult[0] as { affectedRows?: number }).affectedRows || 0;
         break;
       case 'scans':
         const scanResult = await db.delete(packageScans).where(lt(packageScans.scannedAt, cutoffDate));
-        deletedCount = (scanResult[0] as any).affectedRows || 0;
+        deletedCount = (scanResult[0] as { affectedRows?: number }).affectedRows || 0;
         break;
       case 'ledger':
         const ledgerResult = await db.delete(ledgerTransactions).where(lt(ledgerTransactions.createdAt, cutoffDate));
-        deletedCount = (ledgerResult[0] as any).affectedRows || 0;
+        deletedCount = (ledgerResult[0] as { affectedRows?: number }).affectedRows || 0;
         break;
       case 'invoices':
         const invResult = await db.delete(invoices).where(
@@ -1639,7 +1661,7 @@ export async function deleteOldData(daysOld: number, dataType: string): Promise<
             eq(invoices.status, 'paid')
           )
         );
-        deletedCount = (invResult[0] as any).affectedRows || 0;
+        deletedCount = (invResult[0] as { affectedRows?: number }).affectedRows || 0;
         break;
       default:
         return { success: false, deletedCount: 0 };
@@ -1647,7 +1669,7 @@ export async function deleteOldData(daysOld: number, dataType: string): Promise<
 
     return { success: true, deletedCount };
   } catch (error) {
-    console.error('Error deleting old data:', error);
+    appLogger.error('Error deleting old data', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -1659,9 +1681,9 @@ export async function deleteAllScans(): Promise<{ success: boolean; deletedCount
 
   try {
     const result = await db.delete(packageScans);
-    return { success: true, deletedCount: (result[0] as any).affectedRows || 0 };
+    return { success: true, deletedCount: (result[0] as { affectedRows?: number }).affectedRows || 0 };
   } catch (error) {
-    console.error('Error deleting scans:', error);
+    appLogger.error('Error deleting scans', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -1673,9 +1695,9 @@ export async function deleteAllStatusHistory(): Promise<{ success: boolean; dele
 
   try {
     const result = await db.delete(packageStatusHistory);
-    return { success: true, deletedCount: (result[0] as any).affectedRows || 0 };
+    return { success: true, deletedCount: (result[0] as { affectedRows?: number }).affectedRows || 0 };
   } catch (error) {
-    console.error('Error deleting status history:', error);
+    appLogger.error('Error deleting status history', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -1687,9 +1709,9 @@ export async function deleteAllAuditLogs(): Promise<{ success: boolean; deletedC
 
   try {
     const result = await db.delete(auditLogs);
-    return { success: true, deletedCount: (result[0] as any).affectedRows || 0 };
+    return { success: true, deletedCount: (result[0] as { affectedRows?: number }).affectedRows || 0 };
   } catch (error) {
-    console.error('Error deleting audit logs:', error);
+    appLogger.error('Error deleting audit logs', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -1701,9 +1723,9 @@ export async function deleteAllBlogPosts(): Promise<{ success: boolean; deletedC
 
   try {
     const result = await db.delete(blogPosts);
-    return { success: true, deletedCount: (result[0] as any).affectedRows || 0 };
+    return { success: true, deletedCount: (result[0] as { affectedRows?: number }).affectedRows || 0 };
   } catch (error) {
-    console.error('Error deleting blog posts:', error);
+    appLogger.error('Error deleting blog posts', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -1711,7 +1733,7 @@ export async function deleteAllBlogPosts(): Promise<{ success: boolean; deletedC
 // Get deletion preview (what will be deleted)
 export async function getDeletionPreview(dataType: string, daysOld?: number): Promise<{
   count: number;
-  sampleItems: any[];
+  sampleItems: Record<string, unknown>[];
   estimatedSize: string;
 }> {
   const db = await getDb();
@@ -1719,7 +1741,7 @@ export async function getDeletionPreview(dataType: string, daysOld?: number): Pr
 
   try {
     let totalCount = 0;
-    let sampleItems: any[] = [];
+    let sampleItems: Record<string, unknown>[] = [];
 
     const cutoffDate = daysOld ? new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000) : null;
 
@@ -1762,7 +1784,7 @@ export async function getDeletionPreview(dataType: string, daysOld?: number): Pr
       estimatedSize: `${Math.round(totalCount * 0.5)} KB` // Rough estimate
     };
   } catch (error) {
-    console.error('Error getting deletion preview:', error);
+    appLogger.error('Error getting deletion preview', { error: error instanceof Error ? error.message : String(error) });
     return { count: 0, sampleItems: [], estimatedSize: '0 KB' };
   }
 }
@@ -1776,7 +1798,7 @@ export async function createDeletionLog(data: {
   category: string;
   deletionType: 'single_category' | 'old_data' | 'test_data' | 'factory_reset';
   recordCount: number;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   backupCreated?: boolean;
   backupFileUrl?: string;
   backupFileName?: string;
@@ -1802,9 +1824,9 @@ export async function createDeletionLog(data: {
       ipAddress: data.ipAddress || null,
       reason: data.reason || null,
     });
-    return { success: true, id: (result[0] as any).insertId };
+    return { success: true, id: (result[0] as { insertId?: number }).insertId };
   } catch (error) {
-    console.error('Error creating deletion log:', error);
+    appLogger.error('Error creating deletion log', { error: error instanceof Error ? error.message : String(error) });
     return { success: false };
   }
 }
@@ -1818,7 +1840,7 @@ export async function getDeletionLogs(options?: {
   limit?: number;
   offset?: number;
 }): Promise<{
-  logs: any[];
+  logs: DeletionLog[];
   total: number;
 }> {
   const db = await getDb();
@@ -1828,10 +1850,10 @@ export async function getDeletionLogs(options?: {
     const conditions: SQL[] = [];
     
     if (options?.category) {
-      conditions.push(eq(deletionLogs.category, options.category));
+      conditions.push(eq(deletionLogs.category, options.category as never));
     }
     if (options?.deletionType) {
-      conditions.push(eq(deletionLogs.deletionType, options.deletionType as any));
+      conditions.push(eq(deletionLogs.deletionType, options.deletionType as never));
     }
     if (options?.startDate) {
       conditions.push(gte(deletionLogs.deletedAt, options.startDate));
@@ -1859,7 +1881,7 @@ export async function getDeletionLogs(options?: {
       total: countResult[0]?.cnt || 0
     };
   } catch (error) {
-    console.error('Error getting deletion logs:', error);
+    appLogger.error('Error getting deletion logs', { error: error instanceof Error ? error.message : String(error) });
     return { logs: [], total: 0 };
   }
 }
@@ -1870,14 +1892,14 @@ export async function getDeletionLogs(options?: {
 // Export data for a specific category
 export async function exportCategoryData(category: string): Promise<{
   success: boolean;
-  data: any[];
+  data: Record<string, unknown>[];
   count: number;
 }> {
   const db = await getDb();
   if (!db) return { success: false, data: [], count: 0 };
 
   try {
-    let data: any[] = [];
+    let data: Record<string, unknown>[] = [];
 
     switch (category) {
       case 'customers':
@@ -1928,7 +1950,7 @@ export async function exportCategoryData(category: string): Promise<{
 
     return { success: true, data, count: data.length };
   } catch (error) {
-    console.error('Error exporting category data:', error);
+    appLogger.error('Error exporting category data', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, data: [], count: 0 };
   }
 }
@@ -1936,20 +1958,30 @@ export async function exportCategoryData(category: string): Promise<{
 // Export all data (for full backup) - COMPLETE DATABASE BACKUP
 export async function exportAllData(): Promise<{
   success: boolean;
-  data: Record<string, any[]>;
+  data: Record<string, unknown[]>;
   totalRecords: number;
   tableCount: number;
 }> {
   const db = await getDb();
   if (!db) return { success: false, data: {}, totalRecords: 0, tableCount: 0 };
+  const database = db;
 
   // Helper function to safely query a table (returns empty array if table doesn't exist)
-  async function safeSelect(table: any, tableName: string): Promise<any[]> {
+  // TODO: type this properly — Drizzle .from() accepts table refs; return type is table row[]
+  async function safeSelect(table: Parameters<ReturnType<typeof database.select>['from']>[0], tableName: string): Promise<Record<string, unknown>[]> {
     try {
-      return await db!.select().from(table);
-    } catch (error: any) {
-      if (error?.cause?.code === 'ER_NO_SUCH_TABLE' || error?.message?.includes("doesn't exist")) {
-        console.log(`[Backup] Table ${tableName} doesn't exist, skipping...`);
+      return (await database.select().from(table)) as Record<string, unknown>[];
+    } catch (error: unknown) {
+      const err = error as { cause?: { code?: string }; message?: string; code?: string };
+      const msg = err?.message ?? String(error);
+      const code = err?.cause?.code ?? err?.code;
+      // Skip tables that don't exist (MySQL: ER_NO_SUCH_TABLE, SQLite: SQLITE_ERROR + "no such table")
+      const isTableMissing =
+        code === 'ER_NO_SUCH_TABLE' ||
+        (code === 'SQLITE_ERROR' && /no such table/i.test(msg)) ||
+        /doesn't exist|no such table/i.test(msg);
+      if (isTableMissing) {
+        appLogger.info(`[Backup] Table ${tableName} doesn't exist, skipping...`);
         return [];
       }
       throw error;
@@ -1957,7 +1989,7 @@ export async function exportAllData(): Promise<{
   }
 
   try {
-    console.log('[Backup] Starting complete database export...');
+    appLogger.info('[Backup] Starting complete database export...');
     
     // Export ALL tables in parallel batches to avoid overwhelming the database
     // Batch 1: Core business data
@@ -1968,7 +2000,7 @@ export async function exportAllData(): Promise<{
       safeSelect(batches, 'batches'),
       safeSelect(invoices, 'invoices'),
     ]);
-    console.log('[Backup] Batch 1 complete: users, customers, packages, batches, invoices');
+    appLogger.info('[Backup] Batch 1 complete: users, customers, packages, batches, invoices');
 
     // Batch 2: Financial data
     const [paymentsData, expensesData, ledgerData, accountsData, creditAdjustmentsData] = await Promise.all([
@@ -1978,7 +2010,7 @@ export async function exportAllData(): Promise<{
       safeSelect(customerAccounts, 'customerAccounts'),
       safeSelect(creditAdjustments, 'creditAdjustments'),
     ]);
-    console.log('[Backup] Batch 2 complete: payments, expenses, ledger, accounts, creditAdjustments');
+    appLogger.info('[Backup] Batch 2 complete: payments, expenses, ledger, accounts, creditAdjustments');
 
     // Batch 3: Full package and suppliers
     const [fullPackageData, suppliersData, fpStatusHistoryData] = await Promise.all([
@@ -1986,7 +2018,7 @@ export async function exportAllData(): Promise<{
       safeSelect(suppliers, 'suppliers'),
       safeSelect(fullPackageStatusHistory, 'fullPackageStatusHistory'),
     ]);
-    console.log('[Backup] Batch 3 complete: fullPackageOrders, suppliers, fpStatusHistory');
+    appLogger.info('[Backup] Batch 3 complete: fullPackageOrders, suppliers, fpStatusHistory');
 
     // Batch 4: Package tracking data
     const [scansData, statusHistoryData, scanHistoryData, scanDevicesData, qrCodesData] = await Promise.all([
@@ -1996,7 +2028,7 @@ export async function exportAllData(): Promise<{
       safeSelect(scanDevices, 'scanDevices'),
       safeSelect(packageQrCodes, 'packageQrCodes'),
     ]);
-    console.log('[Backup] Batch 4 complete: scans, statusHistory, scanHistory, scanDevices, qrCodes');
+    appLogger.info('[Backup] Batch 4 complete: scans, statusHistory, scanHistory, scanDevices, qrCodes');
 
     // Batch 5: Configuration and settings
     const [countriesData, warehousesData, pricingRulesData, exchangeRatesData, systemSettingsData] = await Promise.all([
@@ -2006,7 +2038,7 @@ export async function exportAllData(): Promise<{
       safeSelect(exchangeRates, 'exchangeRates'),
       safeSelect(systemSettings, 'systemSettings'),
     ]);
-    console.log('[Backup] Batch 5 complete: countries, warehouses, pricingRules, exchangeRates, systemSettings');
+    appLogger.info('[Backup] Batch 5 complete: countries, warehouses, pricingRules, exchangeRates, systemSettings');
 
     // Batch 6: Customer related
     const [customerCodePrefixesData, customerAddressesData, customerMessagesData, customerNotifPrefsData, vipCustomersData] = await Promise.all([
@@ -2016,14 +2048,14 @@ export async function exportAllData(): Promise<{
       safeSelect(customerNotificationPrefs, 'customerNotificationPrefs'),
       safeSelect(vipCustomers, 'vipCustomers'),
     ]);
-    console.log('[Backup] Batch 6 complete: customerCodePrefixes, addresses, messages, notifPrefs, vipCustomers');
+    appLogger.info('[Backup] Batch 6 complete: customerCodePrefixes, addresses, messages, notifPrefs, vipCustomers');
 
     // Batch 7: Batch pricing
     const [batchPricingTiersData, batchCustomerPricingData] = await Promise.all([
       safeSelect(batchPricingTiers, 'batchPricingTiers'),
       safeSelect(batchCustomerPricing, 'batchCustomerPricing'),
     ]);
-    console.log('[Backup] Batch 7 complete: batchPricingTiers, batchCustomerPricing');
+    appLogger.info('[Backup] Batch 7 complete: batchPricingTiers, batchCustomerPricing');
 
     // Batch 8: Services
     const [serviceTypesData, extraServicesData, packageClaimRequestsData] = await Promise.all([
@@ -2031,7 +2063,7 @@ export async function exportAllData(): Promise<{
       safeSelect(extraServices, 'extraServices'),
       safeSelect(packageClaimRequests, 'packageClaimRequests'),
     ]);
-    console.log('[Backup] Batch 8 complete: serviceTypes, extraServices, packageClaimRequests');
+    appLogger.info('[Backup] Batch 8 complete: serviceTypes, extraServices, packageClaimRequests');
 
     // Batch 9: Stock management
     const [stockCategoriesData, stockProductsData, stockPurchasesData, stockPurchaseItemsData] = await Promise.all([
@@ -2040,7 +2072,7 @@ export async function exportAllData(): Promise<{
       safeSelect(stockPurchases, 'stockPurchases'),
       safeSelect(stockPurchaseItems, 'stockPurchaseItems'),
     ]);
-    console.log('[Backup] Batch 9 complete: stockCategories, stockProducts, stockPurchases, stockPurchaseItems');
+    appLogger.info('[Backup] Batch 9 complete: stockCategories, stockProducts, stockPurchases, stockPurchaseItems');
 
     // Batch 10: Stock sales and movements
     const [stockSalesData, stockSaleItemsData, stockMovementsData] = await Promise.all([
@@ -2048,7 +2080,7 @@ export async function exportAllData(): Promise<{
       safeSelect(stockSaleItems, 'stockSaleItems'),
       safeSelect(stockMovements, 'stockMovements'),
     ]);
-    console.log('[Backup] Batch 10 complete: stockSales, stockSaleItems, stockMovements');
+    appLogger.info('[Backup] Batch 10 complete: stockSales, stockSaleItems, stockMovements');
 
     // Batch 11: Company financial management
     const [expenseCategoriesData, partnersData, partnerTransactionsData, companyDebtsData, debtPaymentsData] = await Promise.all([
@@ -2058,7 +2090,7 @@ export async function exportAllData(): Promise<{
       safeSelect(companyDebts, 'companyDebts'),
       safeSelect(debtPayments, 'debtPayments'),
     ]);
-    console.log('[Backup] Batch 11 complete: expenseCategories, partners, partnerTransactions, companyDebts, debtPayments');
+    appLogger.info('[Backup] Batch 11 complete: expenseCategories, partners, partnerTransactions, companyDebts, debtPayments');
 
     // Batch 12: Cash and finance
     const [cashAccountsData, cashTransactionsData, financialPeriodsData, revenueRecordsData, dailyFinancialSummaryData] = await Promise.all([
@@ -2068,7 +2100,7 @@ export async function exportAllData(): Promise<{
       safeSelect(revenueRecords, 'revenueRecords'),
       safeSelect(dailyFinancialSummary, 'dailyFinancialSummary'),
     ]);
-    console.log('[Backup] Batch 12 complete: cashAccounts, cashTransactions, financialPeriods, revenueRecords, dailyFinancialSummary');
+    appLogger.info('[Backup] Batch 12 complete: cashAccounts, cashTransactions, financialPeriods, revenueRecords, dailyFinancialSummary');
 
     // Batch 13: Notifications and templates
     const [notificationLogsData, notificationSettingsData, notificationTemplatesData, customerNotificationsData] = await Promise.all([
@@ -2077,7 +2109,7 @@ export async function exportAllData(): Promise<{
       safeSelect(notificationTemplates, 'notificationTemplates'),
       safeSelect(customerNotifications, 'customerNotifications'),
     ]);
-    console.log('[Backup] Batch 13 complete: notificationLogs, notificationSettings, notificationTemplates, customerNotifications');
+    appLogger.info('[Backup] Batch 13 complete: notificationLogs, notificationSettings, notificationTemplates, customerNotifications');
 
     // Batch 14: Templates
     const [labelTemplatesData, invoiceTemplatesData, emailTemplatesData] = await Promise.all([
@@ -2085,7 +2117,7 @@ export async function exportAllData(): Promise<{
       safeSelect(invoiceTemplates, 'invoiceTemplates'),
       safeSelect(emailTemplates, 'emailTemplates'),
     ]);
-    console.log('[Backup] Batch 14 complete: labelTemplates, invoiceTemplates, emailTemplates');
+    appLogger.info('[Backup] Batch 14 complete: labelTemplates, invoiceTemplates, emailTemplates');
 
     // Batch 15: System and audit
     const [auditData, permissionsData, subPermissionsData, scheduledTasksLogData, paymentRemindersData] = await Promise.all([
@@ -2095,7 +2127,7 @@ export async function exportAllData(): Promise<{
       safeSelect(scheduledTasksLog, 'scheduledTasksLog'),
       safeSelect(paymentReminders, 'paymentReminders'),
     ]);
-    console.log('[Backup] Batch 15 complete: auditLogs, permissions, subPermissions, scheduledTasksLog, paymentReminders');
+    appLogger.info('[Backup] Batch 15 complete: auditLogs, permissions, subPermissions, scheduledTasksLog, paymentReminders');
 
     // Batch 16: Other tables
     const [currenciesData, taxRatesData, ipWhitelistData, productCategoriesData] = await Promise.all([
@@ -2104,7 +2136,7 @@ export async function exportAllData(): Promise<{
       safeSelect(ipWhitelist, 'ipWhitelist'),
       safeSelect(productCategories, 'productCategories'),
     ]);
-    console.log('[Backup] Batch 16 complete: currencies, taxRates, ipWhitelist, productCategories');
+    appLogger.info('[Backup] Batch 16 complete: currencies, taxRates, ipWhitelist, productCategories');
 
     // Batch 17: Blog and activity
     const [blogData, deletionLogsData, activityAlertsData] = await Promise.all([
@@ -2112,14 +2144,14 @@ export async function exportAllData(): Promise<{
       safeSelect(deletionLogs, 'deletionLogs'),
       safeSelect(activityAlerts, 'activityAlerts'),
     ]);
-    console.log('[Backup] Batch 17 complete: blogPosts, deletionLogs, activityAlerts');
+    appLogger.info('[Backup] Batch 17 complete: blogPosts, deletionLogs, activityAlerts');
 
     // Batch 18: Support chat
     const [supportChatsData, chatMessagesData] = await Promise.all([
       safeSelect(supportChats, 'supportChats'),
       safeSelect(chatMessages, 'chatMessages'),
     ]);
-    console.log('[Backup] Batch 18 complete: supportChats, chatMessages');
+    appLogger.info('[Backup] Batch 18 complete: supportChats, chatMessages');
 
     // Compile all data into a single object
     const data = {
@@ -2232,13 +2264,14 @@ export async function exportAllData(): Promise<{
     const totalRecords = Object.values(data).reduce((sum, arr) => sum + arr.length, 0);
     const tableCount = Object.keys(data).length;
 
-    console.log(`[Backup] Complete! Exported ${tableCount} tables with ${totalRecords} total records`);
+    appLogger.info(`[Backup] Complete! Exported ${tableCount} tables with ${totalRecords} total records`);
 
     return { success: true, data, totalRecords, tableCount };
-  } catch (error: any) {
-    console.error('[Backup] Error exporting all data:', error);
-    console.error('[Backup] Error message:', error?.message);
-    console.error('[Backup] Error stack:', error?.stack);
+  } catch (error: unknown) {
+    const err = error as { message?: string; stack?: string };
+    appLogger.error('[Backup] Error exporting all data', { error: error instanceof Error ? error.message : String(error) });
+    appLogger.error('[Backup] Error message', { message: err?.message });
+    appLogger.error('[Backup] Error stack', { stack: err?.stack });
     return { success: false, data: {}, totalRecords: 0, tableCount: 0 };
   }
 }
@@ -2250,7 +2283,7 @@ export async function exportAllData(): Promise<{
 // Import category data
 export async function importCategoryData(
   category: string,
-  data: Record<string, any>[],
+  data: Record<string, unknown>[],
   overwrite?: boolean
 ): Promise<{
   success: boolean;
@@ -2266,7 +2299,8 @@ export async function importCategoryData(
   let skippedCount = 0;
 
   // Map category names to table objects
-  const tableMap: Record<string, any> = {
+  // TODO: type this properly — table refs for db.insert
+  const tableMap: Record<string, unknown> = {
     users,
     customers,
     packages,
@@ -2346,10 +2380,10 @@ export async function importCategoryData(
     const table = tableMap[category];
     if (overwrite && table) {
       try {
-        await db.delete(table);
-        console.log(`[Import] Cleared table: ${category}`);
+        await db.delete(table as Parameters<typeof db.delete>[0]);
+        appLogger.info(`[Import] Cleared table: ${category}`);
       } catch (deleteError) {
-        console.warn(`[Import] Could not clear table ${category}:`, deleteError);
+        appLogger.warn(`[Import] Could not clear table ${category}`, { error: deleteError instanceof Error ? deleteError.message : String(deleteError) });
       }
     }
 
@@ -2357,38 +2391,39 @@ export async function importCategoryData(
     for (const record of data) {
       try {
         // Remove id field if present (let database generate new ones unless overwrite)
-        const cleanRecord = { ...record };
+        const cleanRecord: Record<string, unknown> = { ...record };
         if (!overwrite) {
           delete cleanRecord.id;
         }
 
         // Convert date strings back to Date objects
         for (const key of Object.keys(cleanRecord)) {
-          if (typeof cleanRecord[key] === 'string' && cleanRecord[key].match(/^\d{4}-\d{2}-\d{2}T/)) {
-            cleanRecord[key] = new Date(cleanRecord[key]);
+          const val = cleanRecord[key];
+          if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}T/)) {
+            cleanRecord[key] = new Date(val);
           }
         }
 
         switch (category) {
           case 'customers': {
             // Map CSV fields to customer table fields
-            const customerData: any = {};
+            const customerData: Record<string, unknown> = {};
             
             // Name field mapping
             customerData.fullName = cleanRecord.name || cleanRecord.Name || cleanRecord.fullName || cleanRecord.full_name || 'Unknown';
             
             // Phone field mapping - clean phone number
-            let phone = cleanRecord.phone || cleanRecord.Phone || cleanRecord['Phone 1'] || cleanRecord.phone1 || cleanRecord.mobileNumber || '';
-            phone = phone.toString().replace(/\s+/g, '').replace(/^0+/, ''); // Remove spaces and leading zeros
+            let phone = String(cleanRecord.phone ?? cleanRecord.Phone ?? cleanRecord['Phone 1'] ?? cleanRecord.phone1 ?? cleanRecord.mobileNumber ?? '');
+            phone = phone.replace(/\s+/g, '').replace(/^0+/, ''); // Remove spaces and leading zeros
             if (!phone.startsWith('7') && phone.length > 0) {
               phone = '7' + phone.replace(/^\d*7/, '7'); // Ensure starts with 7 for Iraqi numbers
             }
             customerData.mobileNumber = phone || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
             
             // Secondary phone
-            let phone2 = cleanRecord.phone2 || cleanRecord['Phone 2'] || cleanRecord.secondaryMobile || '';
+            let phone2 = String(cleanRecord.phone2 ?? cleanRecord['Phone 2'] ?? cleanRecord.secondaryMobile ?? '');
             if (phone2) {
-              phone2 = phone2.toString().replace(/\s+/g, '').replace(/^0+/, '');
+              phone2 = phone2.replace(/\s+/g, '').replace(/^0+/, '');
             }
             
             // Customer code - use existing or generate new
@@ -2425,7 +2460,7 @@ export async function importCategoryData(
             customerData.createdById = 1;
             
             // Check if customer with same phone already exists
-            const existingCustomer = await db.select().from(customers).where(eq(customers.mobileNumber, customerData.mobileNumber)).limit(1);
+            const existingCustomer = await db.select().from(customers).where(eq(customers.mobileNumber, customerData.mobileNumber as string)).limit(1);
             if (existingCustomer.length > 0) {
               skippedCount++;
               errors.push(`Customer with phone ${customerData.mobileNumber} already exists`);
@@ -2433,23 +2468,23 @@ export async function importCategoryData(
             }
             
             // Check if customer code already exists
-            const existingCodeCustomer = await db.select().from(customers).where(eq(customers.customerCode, customerData.customerCode)).limit(1);
+            const existingCodeCustomer = await db.select().from(customers).where(eq(customers.customerCode, customerData.customerCode as string)).limit(1);
             if (existingCodeCustomer.length > 0) {
               // Generate new unique code
               const randomSuffix = Math.random().toString(36).substr(2, 8).toUpperCase();
               customerData.customerCode = `IMP-${randomSuffix}`;
             }
             
-            await db.insert(customers).values(customerData);
+            await db.insert(customers).values(customerData as InsertCustomer);
             break;
           }
           default: {
             // Use tableMap for all other tables
             const targetTable = tableMap[category];
             if (targetTable) {
-              await db.insert(targetTable).values(cleanRecord as any);
+              await db.insert(targetTable as Parameters<typeof db.insert>[0]).values(cleanRecord as Record<string, unknown>);
             } else {
-              console.warn(`[Import] Unknown category: ${category}`);
+              appLogger.warn(`[Import] Unknown category: ${category}`);
               skippedCount++;
               continue;
             }
@@ -2457,22 +2492,22 @@ export async function importCategoryData(
           }
         }
         importedCount++;
-      } catch (recordError: any) {
-        errors.push(`Record error: ${recordError.message}`);
+      } catch (recordError: unknown) {
+        errors.push(`Record error: ${recordError instanceof Error ? recordError.message : String(recordError)}`);
         skippedCount++;
       }
     }
 
     return { success: true, importedCount, skippedCount, errors };
-  } catch (error: any) {
-    console.error('Error importing category data:', error);
-    return { success: false, importedCount, skippedCount, errors: [error.message] };
+  } catch (error: unknown) {
+    appLogger.error('Error importing category data', { error: error instanceof Error ? error.message : String(error) });
+    return { success: false, importedCount, skippedCount, errors: [error instanceof Error ? error.message : String(error)] };
   }
 }
 
 // Import all data (full restore) - COMPLETE DATABASE RESTORE
 export async function importAllData(
-  data: Record<string, Record<string, any>[]>,
+  data: Record<string, Record<string, unknown>[]>,
   overwrite?: boolean
 ): Promise<{
   success: boolean;
@@ -2484,8 +2519,8 @@ export async function importAllData(
   let totalImported = 0;
   let totalSkipped = 0;
 
-  console.log('[Restore] Starting complete database restore...');
-  console.log('[Restore] Tables to restore:', Object.keys(data).length);
+  appLogger.info('[Restore] Starting complete database restore...');
+  appLogger.info('[Restore] Tables to restore', { count: Object.keys(data).length });
 
   // Import order matters due to foreign key constraints
   // Order: Independent tables first, then dependent tables
@@ -2597,7 +2632,7 @@ export async function importAllData(
 
   for (const category of finalImportOrder) {
     if (data[category] && data[category].length > 0) {
-      console.log(`[Restore] Importing ${category}: ${data[category].length} records...`);
+      appLogger.info(`[Restore] Importing ${category}: ${data[category].length} records...`);
       try {
         const result = await importCategoryData(category, data[category], overwrite);
         categoryResults[category] = {
@@ -2607,9 +2642,9 @@ export async function importAllData(
         };
         totalImported += result.importedCount;
         totalSkipped += result.skippedCount;
-        console.log(`[Restore] ${category}: imported ${result.importedCount}, skipped ${result.skippedCount}`);
+        appLogger.info(`[Restore] ${category}: imported ${result.importedCount}, skipped ${result.skippedCount}`);
       } catch (error) {
-        console.error(`[Restore] Error importing ${category}:`, error);
+        appLogger.error(`[Restore] Error importing ${category}`, { error: error instanceof Error ? error.message : String(error) });
         categoryResults[category] = {
           imported: 0,
           skipped: data[category].length,
@@ -2619,7 +2654,7 @@ export async function importAllData(
     }
   }
 
-  console.log(`[Restore] Complete! Total imported: ${totalImported}, skipped: ${totalSkipped}`);
+  appLogger.info(`[Restore] Complete! Total imported: ${totalImported}, skipped: ${totalSkipped}`);
 
   return {
     success: totalImported > 0,
@@ -2686,18 +2721,18 @@ export async function createActivityAlert(data: {
     await db.insert(activityAlerts).values({
       title,
       message,
-      category: data.category as any,
+      category: data.category as string,
       severity,
-      entityType: data.entityType,
+      entityType: data.entityType as string,
       entityId: data.entityId,
-      entityCode: data.entityCode,
-      auditLogId: data.auditLogId,
-      action: data.action,
+      entityCode: data.entityCode as string | null,
+      auditLogId: data.auditLogId ?? null,
+      action: data.action as string | null,
       triggeredById: data.triggeredById,
-      triggeredByName: data.triggeredByName,
-    });
+      triggeredByName: data.triggeredByName as string | null,
+    } as InsertActivityAlert);
   } catch (error) {
-    console.error('Error creating activity alert:', error);
+    appLogger.error('Error creating activity alert', { error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -2707,13 +2742,13 @@ export async function getActivityAlerts(options: {
   isRead?: boolean;
   limit?: number;
   offset?: number;
-}): Promise<{ alerts: any[]; total: number; unreadCount: number }> {
+}): Promise<{ alerts: ActivityAlert[]; total: number; unreadCount: number }> {
   const db = await getDb();
   if (!db) return { alerts: [], total: 0, unreadCount: 0 };
   
-  const conditions: any[] = [];
-  if (options.category) conditions.push(eq(activityAlerts.category, options.category as any));
-  if (options.severity) conditions.push(eq(activityAlerts.severity, options.severity as any));
+  const conditions: SQL[] = [];
+  if (options.category) conditions.push(eq(activityAlerts.category, options.category as never));
+  if (options.severity) conditions.push(eq(activityAlerts.severity, options.severity as never));
   if (options.isRead !== undefined) conditions.push(eq(activityAlerts.isRead, options.isRead));
   
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -2825,7 +2860,7 @@ export async function getSupportChats(options: {
   const db = await getDb();
   if (!db) return { chats: [], total: 0 };
   
-  const conditions: any[] = [];
+  const conditions: SQL[] = [];
   if (options.customerId) conditions.push(eq(supportChats.customerId, options.customerId));
   if (options.status) conditions.push(eq(supportChats.status, options.status));
   if (options.assignedToId) conditions.push(eq(supportChats.assignedToId, options.assignedToId));
@@ -2871,7 +2906,7 @@ export async function updateSupportChat(chatId: number, data: {
   const db = await getDb();
   if (!db) return;
   
-  const updateData: any = { ...data };
+  const updateData: Record<string, unknown> = { ...data };
   if (data.status === 'resolved') updateData.resolvedAt = new Date();
   if (data.status === 'closed') updateData.closedAt = new Date();
   
@@ -2965,7 +3000,7 @@ export async function getChatMessages(chatId: number, options?: {
   const db = await getDb();
   if (!db) return [];
   
-  const conditions: any[] = [eq(chatMessages.chatId, chatId)];
+  const conditions: SQL[] = [eq(chatMessages.chatId, chatId)];
   if (options?.beforeId) conditions.push(sql`${chatMessages.id} < ${options.beforeId}`);
   
   const messages = await db.select()
@@ -3056,7 +3091,7 @@ export async function createPreResetBackup(data: {
     });
     return { success: true, id: result[0].insertId };
   } catch (error) {
-    console.error('Error creating pre-reset backup:', error);
+    appLogger.error('Error creating pre-reset backup', { error: error instanceof Error ? error.message : String(error) });
     return { success: false };
   }
 }
@@ -3093,7 +3128,7 @@ export async function getResetHistory(options?: {
       total: countResult[0]?.count || 0
     };
   } catch (error) {
-    console.error('Error getting reset history:', error);
+    appLogger.error('Error getting reset history', { error: error instanceof Error ? error.message : String(error) });
     return { resets: [], total: 0 };
   }
 }
@@ -3108,9 +3143,9 @@ export async function deleteAllCustomers(): Promise<{ success: boolean; deletedC
     await db.delete(customerAccounts);
     await db.delete(paymentRecords);
     const result = await db.delete(customers);
-    return { success: true, deletedCount: (result as any).rowsAffected || 0 };
+    return { success: true, deletedCount: (result as { rowsAffected?: number }).rowsAffected || 0 };
   } catch (error) {
-    console.error('Error deleting customers:', error);
+    appLogger.error('Error deleting customers', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -3120,9 +3155,9 @@ export async function deleteAllPackages(): Promise<{ success: boolean; deletedCo
   if (!db) return { success: false, deletedCount: 0 };
   try {
     const result = await db.delete(packages);
-    return { success: true, deletedCount: (result as any).rowsAffected || 0 };
+    return { success: true, deletedCount: (result as { rowsAffected?: number }).rowsAffected || 0 };
   } catch (error) {
-    console.error('Error deleting packages:', error);
+    appLogger.error('Error deleting packages', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -3133,9 +3168,9 @@ export async function deleteAllBatches(): Promise<{ success: boolean; deletedCou
   try {
     await db.update(packages).set({ batchId: null });
     const result = await db.delete(batches);
-    return { success: true, deletedCount: (result as any).rowsAffected || 0 };
+    return { success: true, deletedCount: (result as { rowsAffected?: number }).rowsAffected || 0 };
   } catch (error) {
-    console.error('Error deleting batches:', error);
+    appLogger.error('Error deleting batches', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -3145,9 +3180,9 @@ export async function deleteAllInvoices(): Promise<{ success: boolean; deletedCo
   if (!db) return { success: false, deletedCount: 0 };
   try {
     const result = await db.delete(invoices);
-    return { success: true, deletedCount: (result as any).rowsAffected || 0 };
+    return { success: true, deletedCount: (result as { rowsAffected?: number }).rowsAffected || 0 };
   } catch (error) {
-    console.error('Error deleting invoices:', error);
+    appLogger.error('Error deleting invoices', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -3157,9 +3192,9 @@ export async function deleteAllPayments(): Promise<{ success: boolean; deletedCo
   if (!db) return { success: false, deletedCount: 0 };
   try {
     const result = await db.delete(paymentRecords);
-    return { success: true, deletedCount: (result as any).rowsAffected || 0 };
+    return { success: true, deletedCount: (result as { rowsAffected?: number }).rowsAffected || 0 };
   } catch (error) {
-    console.error('Error deleting payments:', error);
+    appLogger.error('Error deleting payments', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -3169,9 +3204,9 @@ export async function deleteAllExpenses(): Promise<{ success: boolean; deletedCo
   if (!db) return { success: false, deletedCount: 0 };
   try {
     const result = await db.delete(expenses);
-    return { success: true, deletedCount: (result as any).rowsAffected || 0 };
+    return { success: true, deletedCount: (result as { rowsAffected?: number }).rowsAffected || 0 };
   } catch (error) {
-    console.error('Error deleting expenses:', error);
+    appLogger.error('Error deleting expenses', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -3181,9 +3216,9 @@ export async function deleteAllLedgerTransactions(): Promise<{ success: boolean;
   if (!db) return { success: false, deletedCount: 0 };
   try {
     const result = await db.delete(ledgerTransactions);
-    return { success: true, deletedCount: (result as any).rowsAffected || 0 };
+    return { success: true, deletedCount: (result as { rowsAffected?: number }).rowsAffected || 0 };
   } catch (error) {
-    console.error('Error deleting ledger transactions:', error);
+    appLogger.error('Error deleting ledger transactions', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -3193,9 +3228,9 @@ export async function deleteAllFullPackages(): Promise<{ success: boolean; delet
   if (!db) return { success: false, deletedCount: 0 };
   try {
     const result = await db.delete(fullPackageOrders);
-    return { success: true, deletedCount: (result as any).rowsAffected || 0 };
+    return { success: true, deletedCount: (result as { rowsAffected?: number }).rowsAffected || 0 };
   } catch (error) {
-    console.error('Error deleting full packages:', error);
+    appLogger.error('Error deleting full packages', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -3205,9 +3240,9 @@ export async function deleteAllSuppliers(): Promise<{ success: boolean; deletedC
   if (!db) return { success: false, deletedCount: 0 };
   try {
     const result = await db.delete(suppliers);
-    return { success: true, deletedCount: (result as any).rowsAffected || 0 };
+    return { success: true, deletedCount: (result as { rowsAffected?: number }).rowsAffected || 0 };
   } catch (error) {
-    console.error('Error deleting suppliers:', error);
+    appLogger.error('Error deleting suppliers', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, deletedCount: 0 };
   }
 }
@@ -3215,13 +3250,14 @@ export async function deleteAllSuppliers(): Promise<{ success: boolean; deletedC
 export async function resetAllData(): Promise<{ success: boolean; message: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: 'Database connection failed' };
-  const safeDelete = async (table: any) => {
+  const safeDelete = async (table: Parameters<typeof db.delete>[0]) => {
     try {
       await db.delete(table);
-    } catch (error: any) {
-      const errorMsg = error?.sqlMessage || error?.message || error?.cause?.message || error?.cause?.sqlMessage || '';
+    } catch (error: unknown) {
+      const e = error as { sqlMessage?: string; message?: string; cause?: { message?: string; sqlMessage?: string } };
+      const errorMsg = e?.sqlMessage || e?.message || e?.cause?.message || e?.cause?.sqlMessage || '';
       if (errorMsg.includes("doesn't exist") || JSON.stringify(error).includes("doesn't exist")) return;
-      console.error('Error deleting table:', errorMsg);
+      appLogger.error('Error deleting table', { error: errorMsg });
       throw error;
     }
   };
@@ -3279,7 +3315,7 @@ export async function resetAllData(): Promise<{ success: boolean; message: strin
     await safeDelete(subPermissions);
     return { success: true, message: 'All data has been deleted successfully' };
   } catch (error) {
-    console.error('Error resetting all data:', error);
+    appLogger.error('Error resetting all data', { error: error instanceof Error ? error.message : String(error) });
     return { success: false, message: 'Error occurred while deleting data' };
   }
 }

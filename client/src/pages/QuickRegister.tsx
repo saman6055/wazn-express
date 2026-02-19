@@ -12,50 +12,7 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useLocation } from "wouter";
 
-// Sound functions for different states
-const playSound = (frequency: number, duration: number = 0.2, type: OscillatorType = 'sine') => {
-  try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.value = frequency;
-    oscillator.type = type;
-    
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + duration);
-  } catch (e) {
-    console.log('Audio not supported');
-  }
-};
-
-// Success beep - high pitched pleasant sound
-const playSuccessBeep = () => playSound(880, 0.15, 'sine');
-
-// Found tracking beep - double beep
-const playFoundBeep = () => {
-  playSound(660, 0.1, 'sine');
-  setTimeout(() => playSound(880, 0.15, 'sine'), 120);
-};
-
-// Not found beep - lower tone
-const playNotFoundBeep = () => playSound(330, 0.25, 'triangle');
-
-// Error beep - warning sound
-const playErrorBeep = () => playSound(220, 0.3, 'sawtooth');
-
-// Duplicate warning beep - triple short beeps
-const playDuplicateBeep = () => {
-  playSound(440, 0.08, 'square');
-  setTimeout(() => playSound(440, 0.08, 'square'), 100);
-  setTimeout(() => playSound(440, 0.08, 'square'), 200);
-};
+import { soundManager } from "@/lib/soundManager";
 
 export default function QuickRegister() {
   const { t } = useTranslation();
@@ -98,7 +55,8 @@ export default function QuickRegister() {
   const trackingRef = useRef<HTMLInputElement>(null);
   const weightRef = useRef<HTMLInputElement>(null);
   const customerInputRef = useRef<HTMLInputElement>(null);
-  
+  const searchVersionRef = useRef(0);
+
   // Queries
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: batches } = trpc.batches.list.useQuery();
@@ -113,16 +71,23 @@ export default function QuickRegister() {
   const handleTrackingSearch = async () => {
     const currentTracking = trackingRef.current?.value || trackingNumber;
     if (currentTracking.trim().length < 1) return;
-    
+
+    const thisSearchVersion = ++searchVersionRef.current;
+
     setIsSearching(true);
     try {
-      const result = await trpcUtils.scanning.searchTrackingAllTypes.fetch({ 
-        trackingNumber: currentTracking.trim() 
+      const result = await trpcUtils.scanning.searchTrackingAllTypes.fetch({
+        trackingNumber: currentTracking.trim()
       });
+
+      if (searchVersionRef.current !== thisSearchVersion) {
+        console.log(`[QuickRegister] Stale search ignored: "${currentTracking}"`);
+        return;
+      }
+
       if (result) {
         setFoundOrder(result);
         if (result.found) {
-          // Only update customer info - preserve weight, dimensions, etc.
           if (result.customer) {
             setCustomerId(result.customer.id);
             setCustomerSearch(result.customer.customerCode || result.customer.fullName || "");
@@ -130,14 +95,12 @@ export default function QuickRegister() {
           }
           const sourceLabels: Record<string, string> = {
             full_package: "فول پاکێج",
-
             commission: "کڕین بە عموڵە",
             package: "پاکەت (پێشتر تۆمار کراوە)"
           };
-          
-          // Show warning for already registered packages - play duplicate sound
+
           if (result.source === "package") {
-            playDuplicateBeep();
+            soundManager.playDuplicate();
             toast.warning(
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-yellow-500" />
@@ -150,8 +113,7 @@ export default function QuickRegister() {
               </div>
             );
           } else {
-            // Found in order - play success sound
-            playFoundBeep();
+            soundManager.playFound();
             toast.success(
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -164,16 +126,13 @@ export default function QuickRegister() {
               </div>
             );
           }
-          // Auto-focus weight input after tracking is found
           setTimeout(() => {
             weightRef.current?.focus();
             weightRef.current?.select();
           }, 100);
         } else {
-          // Not found - play not found sound
-          playNotFoundBeep();
+          soundManager.playNotFound();
           toast.info("تراکینگ نەدۆزرایەوە - دەتوانیت بەردەوام بیت");
-          // Auto-focus weight even if not found - user can still register
           setTimeout(() => {
             weightRef.current?.focus();
             weightRef.current?.select();
@@ -181,15 +140,19 @@ export default function QuickRegister() {
         }
       }
     } catch (error: any) {
+      if (searchVersionRef.current !== thisSearchVersion) return;
+
       console.error("Search error:", error);
-      playErrorBeep();
+      soundManager.playError();
       if (error?.message?.includes("UNAUTHORIZED")) {
         toast.error("تکایە چوونەژوورەوە بکەرەوە");
       } else {
         toast.error("هەڵە لە گەڕاندا");
       }
     } finally {
-      setIsSearching(false);
+      if (searchVersionRef.current === thisSearchVersion) {
+        setIsSearching(false);
+      }
     }
   };
   
@@ -428,9 +391,10 @@ export default function QuickRegister() {
   const [lastRegistered, setLastRegistered] = useState<{ packageCode: string; trackingNumber: string; customerName: string; time: Date } | null>(null);
   
   const registerMutation = trpc.packages.register.useMutation({
+    meta: { skipGlobalToast: true },
     onSuccess: (data) => {
       // Play success beep sound
-      playSuccessBeep();
+      soundManager.playSuccess();
       
       // Save last registered package info
       setLastRegistered({
@@ -467,16 +431,18 @@ export default function QuickRegister() {
   });
   
   const resetForm = () => {
-    // Clear only tracking, weight, dimensions - keep customer, batch, shipping type sticky
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+      setSearchTimeout(null);
+    }
+    searchVersionRef.current++;
     setTrackingNumber("");
     setFoundOrder(null);
-    // Keep customerId, customerSearch, isUnclaimed sticky
+    setIsSearching(false);
     setWeightKg("");
     setLengthCm("");
     setWidthCm("");
     setHeightCm("");
-    // Keep batchId sticky
-    // Keep shippingType sticky
     setCategoryId("");
     setDescription("");
     setDirectCbm("");
@@ -486,8 +452,14 @@ export default function QuickRegister() {
   
   // Clear ALL form fields including sticky ones
   const clearAllForm = () => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+      setSearchTimeout(null);
+    }
+    searchVersionRef.current++;
     setTrackingNumber("");
     setFoundOrder(null);
+    setIsSearching(false);
     setCustomerId(null);
     setCustomerSearch("");
     setIsUnclaimed(false);
@@ -511,7 +483,7 @@ export default function QuickRegister() {
     
     // Require tracking number - cannot register without it
     if (!trackingNumber.trim()) {
-      playErrorBeep();
+      soundManager.playError();
       toast.error("تکایە تراکینگ نەمبەر داخل بکە");
       trackingRef.current?.focus();
       return;
@@ -519,7 +491,7 @@ export default function QuickRegister() {
     
     // Prevent duplicate registration - if tracking already exists as package
     if (foundOrder?.source === "package") {
-      playDuplicateBeep();
+      soundManager.playDuplicate();
       toast.error(
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-red-500" />
@@ -533,13 +505,13 @@ export default function QuickRegister() {
     }
     
     if (!customerId && !isUnclaimed) {
-      playErrorBeep();
+      soundManager.playError();
       toast.error("تکایە کڕیارێک هەڵبژێرە یان بێ خاوەن دیاری بکە");
       return;
     }
     
     if (!defaultWarehouse) {
-      playErrorBeep();
+      soundManager.playError();
       toast.error("هیچ کۆگایەک نەدۆزرایەوە");
       return;
     }

@@ -1,9 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
-import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
+import { cacheGetOrSet, cacheInvalidate, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const countriesRouter = router({
@@ -33,16 +34,30 @@ export const countriesRouter = router({
         isDestination: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const country = await db.createCountry(input);
-        await db.createAuditLog({
-          userId: ctx.user.id,
-          userRole: ctx.user.role,
-          action: "create_country",
-          entityType: "country",
-          entityId: country.id,
-          newValues: input,
-        });
-        return country;
+        try {
+          const country = await db.createCountry(input);
+          cacheInvalidate(["countries:all", "countries:true", "countries:false", "countries:origins", "countries:destinations"]);
+          try {
+            await db.createAuditLog({
+              userId: ctx.user.id,
+              userRole: ctx.user.role,
+              action: "create_country",
+              entityType: "country",
+              entityId: country.id,
+              newValues: input,
+            });
+          } catch (auditErr) {
+            // Don't fail the mutation if audit log fails
+            appLogger.warn("Audit log failed for country create", { error: auditErr instanceof Error ? auditErr.message : String(auditErr) });
+          }
+          return country;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes("Duplicate") || msg.includes("ER_DUP_ENTRY") || msg.includes("1062")) {
+            throw new TRPCError({ code: "CONFLICT", message: `ISO code "${input.isoCode}" already exists` });
+          }
+          throw err;
+        }
       }),
     update: adminProcedure
       .input(z.object({
@@ -112,16 +127,29 @@ export const warehousesRouter = router({
         notes: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const warehouse = await db.createWarehouse(input);
-        await db.createAuditLog({
-          userId: ctx.user.id,
-          userRole: ctx.user.role,
-          action: "create_warehouse",
-          entityType: "warehouse",
-          entityId: warehouse.id,
-          newValues: input,
-        });
-        return warehouse;
+        try {
+          const warehouse = await db.createWarehouse(input);
+          cacheInvalidate(["warehouses:all", "warehouses:true", "warehouses:false", `warehouses:country:${input.countryId}`]);
+          try {
+            await db.createAuditLog({
+              userId: ctx.user.id,
+              userRole: ctx.user.role,
+              action: "create_warehouse",
+              entityType: "warehouse",
+              entityId: warehouse.id,
+              newValues: input,
+            });
+          } catch (auditErr) {
+            appLogger.warn("Audit log failed for warehouse create", { error: auditErr instanceof Error ? auditErr.message : String(auditErr) });
+          }
+          return warehouse;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes("Duplicate") || msg.includes("ER_DUP_ENTRY") || msg.includes("1062")) {
+            throw new TRPCError({ code: "CONFLICT", message: `Code prefix "${input.codePrefix}" already exists` });
+          }
+          throw err;
+        }
       }),
     update: adminProcedure
       .input(z.object({
@@ -147,14 +175,19 @@ export const warehousesRouter = router({
       .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
         await db.updateWarehouse(id, data);
-        await db.createAuditLog({
-          userId: ctx.user.id,
-          userRole: ctx.user.role,
-          action: "update_warehouse",
-          entityType: "warehouse",
-          entityId: id,
-          newValues: data,
-        });
+        cacheInvalidate(["warehouses:all", "warehouses:true", "warehouses:false"]);
+        try {
+          await db.createAuditLog({
+            userId: ctx.user.id,
+            userRole: ctx.user.role,
+            action: "update_warehouse",
+            entityType: "warehouse",
+            entityId: id,
+            newValues: data,
+          });
+        } catch (auditErr) {
+          appLogger.warn("Audit log failed for warehouse update", { error: auditErr instanceof Error ? auditErr.message : String(auditErr) });
+        }
         return { success: true };
       }),
 });
@@ -252,6 +285,55 @@ export const settingsRouter = router({
       }),
     list: adminProcedure.query(async () => {
       return db.getAllSettings();
+    }),
+    /** Public: company name/logo/contact for login, home, and portal. No auth required. */
+    getCompanyInfo: publicProcedure.query(async () => {
+      try {
+        const raw = await db.getSetting("company_info");
+        if (!raw) return null;
+        return JSON.parse(raw) as Record<string, unknown>;
+      } catch (err) {
+        appLogger.warn("getCompanyInfo failed", { error: err instanceof Error ? err.message : String(err) });
+        return null;
+      }
+    }),
+    /** Public: website content for landing (hero, contact, social). Merges system_settings keys with company_info. */
+    getPublicWebsiteInfo: publicProcedure.query(async () => {
+      const keys = [
+        "company_name", "company_name_ku", "company_name_ar",
+        "company_phone", "company_phone2", "company_email",
+        "company_address", "company_address_ku", "company_address_ar",
+        "company_logo_url",
+        "social_facebook", "social_instagram", "social_whatsapp",
+        "social_tiktok", "social_telegram",
+        "website_hero_title", "website_hero_title_ku",
+        "website_hero_subtitle", "website_hero_subtitle_ku",
+        "website_about", "website_about_ku",
+      ];
+      const settings: Record<string, string> = {};
+      for (const key of keys) {
+        const row = await db.getSystemSetting(key);
+        if (row?.settingValue) settings[key] = row.settingValue;
+      }
+      try {
+        const raw = await db.getSetting("company_info");
+        if (raw) {
+          const info = JSON.parse(raw) as Record<string, unknown>;
+          if (!settings.company_name && (info.name as string)) settings.company_name = info.name as string;
+          if (!settings.company_name_ku && (info.nameKu as string)) settings.company_name_ku = info.nameKu as string;
+          if (!settings.company_name_ar && (info.nameAr as string)) settings.company_name_ar = info.nameAr as string;
+          if (!settings.company_phone && (info.phone as string)) settings.company_phone = info.phone as string;
+          if (!settings.company_phone2 && (info.phone2 as string)) settings.company_phone2 = info.phone2 as string;
+          if (!settings.company_email && (info.email as string)) settings.company_email = info.email as string;
+          if (!settings.company_address && (info.address as string)) settings.company_address = info.address as string;
+          if (!settings.company_address_ku && (info.addressKu as string)) settings.company_address_ku = info.addressKu as string;
+          if (!settings.company_address_ar && (info.addressAr as string)) settings.company_address_ar = info.addressAr as string;
+          if (!settings.company_logo_url && (info.logoUrl as string)) settings.company_logo_url = info.logoUrl as string;
+        }
+      } catch {
+        // ignore
+      }
+      return settings;
     }),
 });
 

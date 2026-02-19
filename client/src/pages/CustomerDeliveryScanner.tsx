@@ -2,146 +2,25 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { 
-  Package, CheckCircle2, AlertTriangle, XCircle, 
-  Scale, Volume2, VolumeX, Zap, Camera, Keyboard,
-  User, Wallet, DollarSign, Home, Building2, Truck,
-  FileText, Printer, PenTool, History, X, Info,
-  Phone, MapPin, Clock, CreditCard, AlertCircle,
-  HandCoins, Receipt, Send, Check, Loader2
+import {
+  Package, CheckCircle2, AlertTriangle,
+  HandCoins, User, Phone, Wallet, DollarSign,
+  Building2, Home, Truck, Send, PenTool,
+  History, X, Info, AlertCircle, Check, Receipt,
+  Printer, Loader2, Zap
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import BarcodeScanner from "@/components/BarcodeScanner";
-import { useTranslation, useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
-
-// ==================== SOUND MANAGER ====================
-class SoundManager {
-  private audioContext: AudioContext | null = null;
-  private enabled: boolean = true;
-
-  setEnabled(enabled: boolean) {
-    this.enabled = enabled;
-  }
-
-  private getContext(): AudioContext | null {
-    if (!this.enabled) return null;
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    return this.audioContext;
-  }
-
-  playBeep() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 1800;
-    osc.type = "sine";
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.1);
-  }
-
-  playSuccess() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    [523, 659, 784].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = "sine";
-      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.08);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.08 + 0.12);
-      osc.start(ctx.currentTime + i * 0.08);
-      osc.stop(ctx.currentTime + i * 0.08 + 0.12);
-    });
-  }
-
-  playWarning() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    [440, 440].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = "triangle";
-      gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.15);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.15 + 0.1);
-      osc.start(ctx.currentTime + i * 0.15);
-      osc.stop(ctx.currentTime + i * 0.15 + 0.1);
-    });
-  }
-
-  playError() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 300;
-    osc.type = "sawtooth";
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.3);
-  }
-
-  playComplete() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    [523, 659, 784, 1047].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = "sine";
-      gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.12);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.12 + 0.2);
-      osc.start(ctx.currentTime + i * 0.12);
-      osc.stop(ctx.currentTime + i * 0.12 + 0.2);
-    });
-  }
-
-  playDuplicate() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    [330, 330, 330].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = "square";
-      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.1);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.1 + 0.06);
-      osc.start(ctx.currentTime + i * 0.1);
-      osc.stop(ctx.currentTime + i * 0.1 + 0.06);
-    });
-  }
-}
-
-const soundManager = new SoundManager();
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { soundManager } from "@/lib/soundManager";
+import { ScanInput } from "@/components/scanner/ScanInput";
 
 // ==================== TYPES ====================
 interface DeliveredPackage {
@@ -169,12 +48,16 @@ interface CustomerInfo {
 }
 
 // ==================== SIGNATURE PAD ====================
-function SignaturePad({ 
-  onSave, 
-  onClear 
-}: { 
+function SignaturePad({
+  onSave,
+  onClear,
+  clearLabel = "Clear",
+  confirmLabel = "Confirm",
+}: {
   onSave: (signature: string) => void;
   onClear: () => void;
+  clearLabel?: string;
+  confirmLabel?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -257,11 +140,11 @@ function SignaturePad({
       <div className="flex gap-2">
         <Button variant="outline" size="sm" onClick={clear} className="flex-1">
           <X className="h-4 w-4 mr-1" />
-          پاککردنەوە
+          {clearLabel}
         </Button>
         <Button size="sm" onClick={save} disabled={!hasSignature} className="flex-1 bg-rose-600 hover:bg-rose-700">
           <Check className="h-4 w-4 mr-1" />
-          پەسەندکردن
+          {confirmLabel}
         </Button>
       </div>
     </div>
@@ -269,13 +152,13 @@ function SignaturePad({
 }
 
 // ==================== MAIN COMPONENT ====================
+const SESSION_KEY = "scan-session-customer-delivery";
+
 export default function CustomerDeliveryScanner() {
   const { t } = useTranslation();
-  const { language } = useLanguage();
+  const company = useCompanyInfo();
   
   // Core state
-  const [scanMode, setScanMode] = useState<"manual" | "camera">("manual");
-  const [trackingNumber, setTrackingNumber] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   
   // Continuous mode
@@ -306,10 +189,6 @@ export default function CustomerDeliveryScanner() {
     package: DeliveredPackage | null;
   }>({ open: false, package: null });
   
-  // Refs
-  const inputRef = useRef<HTMLInputElement>(null);
-  const lastScanTime = useRef<number>(0);
-  
   // Mutations
   const updateStatusMutation = trpc.packages.updateStatus.useMutation();
   const trpcUtils = trpc.useUtils();
@@ -331,29 +210,52 @@ export default function CustomerDeliveryScanner() {
     soundManager.setEnabled(soundEnabled);
   }, [soundEnabled]);
   
-  // Focus input on mount
+  // Session persistence: load on mount
   useEffect(() => {
-    if (scanMode === "manual") {
-      inputRef.current?.focus();
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const restored = parsed.map((p: any) => ({
+          ...p,
+          deliveredAt: new Date(p.deliveredAt),
+        }));
+        setDeliveredPackages(restored);
+      }
+    } catch (e) {
+      console.error("Failed to load delivery session:", e);
     }
-  }, [scanMode]);
+  }, []);
+  
+  // Session persistence: save when delivered packages change
+  useEffect(() => {
+    if (deliveredPackages.length > 0) {
+      try {
+        const toSave = deliveredPackages.map(({ signature: _s, ...rest }) => rest);
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(toSave));
+      } catch (e) {
+        console.error("Failed to save delivery session:", e);
+      }
+    }
+  }, [deliveredPackages]);
+  
+  const clearSession = () => {
+    setDeliveredPackages([]);
+    setCurrentPackage(null);
+    setCurrentCustomer(null);
+    sessionStorage.removeItem(SESSION_KEY);
+  };
   
   // Handle scan
-  const handleScan = useCallback(async () => {
-    if (!trackingNumber.trim()) return;
-    
-    // Debounce rapid scans
-    const now = Date.now();
-    if (now - lastScanTime.current < 500) return;
-    lastScanTime.current = now;
+  const handleScan = useCallback(async (scannedValue: string) => {
+    if (!scannedValue.trim()) return;
     
     soundManager.playBeep();
     setIsSearching(true);
     
     try {
-      // Search for the package
-      const result = await trpcUtils.scanning.searchByTracking.fetch({ 
-        trackingNumber: trackingNumber.trim() 
+      const result = await trpcUtils.scanning.searchByTracking.fetch({
+        trackingNumber: scannedValue.trim(),
       });
       
       if (!result?.found || !result.package) {
@@ -362,50 +264,42 @@ export default function CustomerDeliveryScanner() {
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-red-500" />
             <div>
-              <div className="font-medium">{language === "ku" ? "پاکەت نەدۆزرایەوە!" : "Package not found!"}</div>
-              <div className="text-sm text-muted-foreground">{trackingNumber}</div>
+              <div className="font-medium">{t("scan.packageNotFoundExcl")}</div>
+              <div className="text-sm text-muted-foreground">{scannedValue}</div>
             </div>
           </div>
         );
-        setTrackingNumber("");
-        inputRef.current?.focus();
         return;
       }
       
       const pkg = result.package;
       const customer = result.customer;
       
-      // Check if already delivered
       if (pkg.status === "delivered") {
         soundManager.playDuplicate();
         toast.warning(
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
             <div>
-              <div className="font-medium">{language === "ku" ? "پێشتر گەیەندراوە!" : "Already delivered!"}</div>
-              <div className="text-sm text-muted-foreground">{trackingNumber}</div>
+              <div className="font-medium">{t("scan.alreadyDelivered")}</div>
+              <div className="text-sm text-muted-foreground">{scannedValue}</div>
             </div>
           </div>
         );
-        setTrackingNumber("");
-        inputRef.current?.focus();
         return;
       }
       
-      // Check if already in this session
       if (deliveredPackages.some(p => p.id === pkg.id)) {
         soundManager.playDuplicate();
         toast.warning(
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
             <div>
-              <div className="font-medium">{language === "ku" ? "پێشتر لەم دانیشتنە گەیەندراوە!" : "Already delivered in this session!"}</div>
-              <div className="text-sm text-muted-foreground">{trackingNumber}</div>
+              <div className="font-medium">{t("scan.alreadyDeliveredSession")}</div>
+              <div className="text-sm text-muted-foreground">{scannedValue}</div>
             </div>
           </div>
         );
-        setTrackingNumber("");
-        inputRef.current?.focus();
         return;
       }
       
@@ -458,21 +352,18 @@ export default function CustomerDeliveryScanner() {
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-green-500" />
           <div>
-            <div className="font-medium">{language === "ku" ? "پاکەت دۆزرایەوە!" : "Package found!"}</div>
-            <div className="text-sm text-muted-foreground">{customer?.customerCode} - {trackingNumber}</div>
+            <div className="font-medium">{t("scan.packageFound")}</div>
+            <div className="text-sm text-muted-foreground">{customer?.customerCode} - {scannedValue}</div>
           </div>
         </div>
       );
-      
-      setTrackingNumber("");
-      
     } catch (error: any) {
       soundManager.playError();
       toast.error(error?.message || "Search failed");
     } finally {
       setIsSearching(false);
     }
-  }, [trackingNumber, language, trpcUtils, deliveredPackages]);
+  }, [t, trpcUtils, deliveredPackages]);
   
   // Handle delivery confirmation
   const handleDeliveryConfirm = async () => {
@@ -509,51 +400,26 @@ export default function CustomerDeliveryScanner() {
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-green-500" />
           <div>
-            <div className="font-medium">{language === "ku" ? "گەیەندرا!" : "Delivered!"}</div>
+            <div className="font-medium">{t("scan.deliveredExcl")}</div>
             <div className="text-sm text-muted-foreground">{currentCustomer.customerCode}</div>
           </div>
         </div>
       );
       
-      // Show receipt dialog
       setReceiptDialog({ open: true, package: deliveredPkg });
-      
-      // Reset state
       setCurrentPackage(null);
       setCurrentCustomer(null);
       setDeliveryType("warehouse");
       setDeliveryNotes("");
       setSignature(null);
       setDeliveryConfirmDialog(false);
-      
-      // Invalidate queries
       trpcUtils.packages.list.invalidate();
       trpcUtils.customers.getBalance.invalidate();
-      
-      // Focus input for next scan
-      if (continuousMode) {
-        inputRef.current?.focus();
-      }
-      
     } catch (error: any) {
       soundManager.playError();
       toast.error(error?.message || "Delivery failed");
     }
   };
-  
-  // Handle keyboard
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && trackingNumber) {
-      e.preventDefault();
-      handleScan();
-    }
-  }, [trackingNumber, handleScan]);
-  
-  // Handle camera scan
-  const handleCameraScan = useCallback((result: string) => {
-    setTrackingNumber(result);
-    setTimeout(() => handleScan(), 100);
-  }, [handleScan]);
   
   // Cancel current package
   const handleCancel = () => {
@@ -562,7 +428,6 @@ export default function CustomerDeliveryScanner() {
     setDeliveryType("warehouse");
     setDeliveryNotes("");
     setSignature(null);
-    inputRef.current?.focus();
   };
 
   return (
@@ -579,16 +444,16 @@ export default function CustomerDeliveryScanner() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold flex items-center gap-2">
-                    {language === "ku" ? "گەیاندن بە کڕیار" : "Customer Delivery"}
+                    {t("scan.customerDelivery")}
                     {continuousMode && (
                       <Badge className="bg-white/20 text-white border-white/30 animate-pulse">
                         <Zap className="h-3 w-3 mr-1" />
-                        {language === "ku" ? "بەردەوام" : "Continuous"}
+                        {t("scan.continuousMode")}
                       </Badge>
                     )}
                   </h1>
                   <p className="text-rose-100 text-sm">
-                    {language === "ku" ? "گەیاندنی پاکەت بە کڕیار و وەرگرتنی واژوو" : "Deliver packages to customers and collect signatures"}
+                    {t("scan.customerDeliverySubtitle")}
                   </p>
                 </div>
               </div>
@@ -597,12 +462,12 @@ export default function CustomerDeliveryScanner() {
               <div className="hidden md:flex items-center gap-6">
                 <div className="text-center">
                   <div className="text-3xl font-bold">{deliveryStats.totalDelivered}</div>
-                  <div className="text-xs text-rose-200">{language === "ku" ? "گەیەندراو" : "Delivered"}</div>
+                  <div className="text-xs text-rose-200">{t("scan.delivered")}</div>
                 </div>
                 <div className="w-px h-12 bg-white/20" />
                 <div className="text-center">
                   <div className="text-2xl font-bold">${deliveryStats.totalValue.toFixed(0)}</div>
-                  <div className="text-xs text-rose-200">{language === "ku" ? "کۆی بەها" : "Total Value"}</div>
+                  <div className="text-xs text-rose-200">{t("scan.totalValue")}</div>
                 </div>
               </div>
             </div>
@@ -614,94 +479,16 @@ export default function CustomerDeliveryScanner() {
             {/* Main Area */}
             <div className="lg:col-span-2 space-y-6">
               {/* Scanner Input */}
-              <Card className="border-0 shadow-lg overflow-hidden">
-                <div className={cn(
-                  "h-1 transition-all duration-300",
-                  continuousMode ? "bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 animate-pulse" : "bg-slate-200"
-                )} />
-                <CardContent className="p-6">
-                  <div className="flex flex-wrap items-center gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="continuous"
-                        checked={continuousMode}
-                        onCheckedChange={setContinuousMode}
-                        className="data-[state=checked]:bg-rose-500"
-                      />
-                      <Label htmlFor="continuous" className="text-sm cursor-pointer">
-                        {language === "ku" ? "بەردەوام" : "Continuous"}
-                      </Label>
-                    </div>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSoundEnabled(!soundEnabled)}
-                      className={cn(soundEnabled ? "text-rose-600" : "text-slate-400")}
-                    >
-                      {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                    </Button>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setScanMode(scanMode === "manual" ? "camera" : "manual")}
-                    >
-                      {scanMode === "manual" ? <Camera className="h-4 w-4" /> : <Keyboard className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  
-                  {scanMode === "manual" ? (
-                    <div className="space-y-4">
-                      <div className="flex gap-3">
-                        <div className="flex-1 relative">
-                          <Input
-                            ref={inputRef}
-                            placeholder={language === "ku" ? "ژمارەی تراکینگ بنووسە یان سکان بکە..." : "Type or scan tracking number..."}
-                            value={trackingNumber}
-                            onChange={(e) => setTrackingNumber(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            className="text-lg h-14 pr-12 font-mono"
-                            disabled={!!currentPackage}
-                            autoFocus
-                          />
-                          {trackingNumber && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="absolute right-2 top-1/2 -translate-y-1/2"
-                              onClick={() => { setTrackingNumber(""); inputRef.current?.focus(); }}
-                            >
-                              ✕
-                            </Button>
-                          )}
-                        </div>
-                        <Button 
-                          onClick={handleScan}
-                          disabled={isSearching || !trackingNumber || !!currentPackage}
-                          className="h-14 px-8 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700"
-                        >
-                          {isSearching ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                          ) : (
-                            <>
-                              <Package className="h-5 w-5 mr-2" />
-                              {language === "ku" ? "گەڕان" : "Search"}
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <BarcodeScanner onScan={handleCameraScan} />
-                      <p className="text-center text-sm text-muted-foreground">
-                        {language === "ku" ? "بارکۆدەکە ببە بەرەو کامێرا" : "Point barcode at camera"}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <ScanInput
+                onScan={handleScan}
+                isProcessing={isSearching || !!currentPackage}
+                continuousMode={continuousMode}
+                onContinuousModeChange={setContinuousMode}
+                soundEnabled={soundEnabled}
+                onSoundEnabledChange={setSoundEnabled}
+                disabled={!!currentPackage}
+                placeholder={t("scan.trackingPlaceholder")}
+              />
               
               {/* Current Package Details */}
               {currentPackage && currentCustomer && (
@@ -710,7 +497,7 @@ export default function CustomerDeliveryScanner() {
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2">
                         <Package className="h-5 w-5 text-rose-600" />
-                        {language === "ku" ? "زانیاری پاکەت" : "Package Details"}
+                        {t("scan.packageDetails")}
                       </CardTitle>
                       <Button variant="ghost" size="sm" onClick={handleCancel}>
                         <X className="h-4 w-4" />
@@ -721,11 +508,11 @@ export default function CustomerDeliveryScanner() {
                     {/* Package Info */}
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                        <div className="text-sm text-muted-foreground mb-1">{language === "ku" ? "تراکینگ" : "Tracking"}</div>
+                        <div className="text-sm text-muted-foreground mb-1">{t("scan.tracking")}</div>
                         <div className="font-mono text-lg font-bold">{currentPackage.trackingNumber}</div>
                       </div>
                       <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                        <div className="text-sm text-muted-foreground mb-1">{language === "ku" ? "کێش" : "Weight"}</div>
+                        <div className="text-sm text-muted-foreground mb-1">{t("scan.weight")}</div>
                         <div className="font-bold text-lg">
                           {currentPackage.weightKg ? `${currentPackage.weightKg} kg` : "-"}
                         </div>
@@ -765,7 +552,7 @@ export default function CustomerDeliveryScanner() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-5 w-5 text-amber-600" />
-                          <span className="font-medium">{language === "ku" ? "تێچووی پاکەت" : "Package Cost"}</span>
+                          <span className="font-medium">{t("scan.packageCost")}</span>
                         </div>
                         <span className="text-2xl font-bold text-amber-700">
                           ${currentPackage.costUsd ? parseFloat(currentPackage.costUsd).toFixed(2) : "0.00"}
@@ -775,7 +562,7 @@ export default function CustomerDeliveryScanner() {
                     
                     {/* Delivery Type Selection */}
                     <div className="space-y-3">
-                      <Label>{language === "ku" ? "جۆری گەیاندن" : "Delivery Type"}</Label>
+                      <Label>{t("scan.deliveryType")}</Label>
                       <div className="grid grid-cols-3 gap-3">
                         <Button
                           variant={deliveryType === "warehouse" ? "default" : "outline"}
@@ -786,7 +573,7 @@ export default function CustomerDeliveryScanner() {
                           onClick={() => setDeliveryType("warehouse")}
                         >
                           <Building2 className="h-6 w-6" />
-                          <span className="text-xs">{language === "ku" ? "کۆگا" : "Warehouse"}</span>
+                          <span className="text-xs">{t("scan.warehouse")}</span>
                         </Button>
                         <Button
                           variant={deliveryType === "home" ? "default" : "outline"}
@@ -797,7 +584,7 @@ export default function CustomerDeliveryScanner() {
                           onClick={() => setDeliveryType("home")}
                         >
                           <Home className="h-6 w-6" />
-                          <span className="text-xs">{language === "ku" ? "ماڵەوە" : "Home"}</span>
+                          <span className="text-xs">{t("scan.home")}</span>
                         </Button>
                         <Button
                           variant={deliveryType === "direct" ? "default" : "outline"}
@@ -808,7 +595,7 @@ export default function CustomerDeliveryScanner() {
                           onClick={() => setDeliveryType("direct")}
                         >
                           <Truck className="h-6 w-6" />
-                          <span className="text-xs">{language === "ku" ? "ڕاستەوخۆ" : "Direct"}</span>
+                          <span className="text-xs">{t("scan.direct")}</span>
                         </Button>
                       </div>
                     </div>
@@ -817,14 +604,14 @@ export default function CustomerDeliveryScanner() {
                     <div className="space-y-3">
                       <Label className="flex items-center gap-2">
                         <PenTool className="h-4 w-4" />
-                        {language === "ku" ? "واژووی کڕیار" : "Customer Signature"}
+                        {t("scan.customerSignature")}
                       </Label>
                       {signature ? (
                         <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-green-700">
                               <CheckCircle2 className="h-5 w-5" />
-                              <span className="font-medium">{language === "ku" ? "واژوو وەرگیرا" : "Signature captured"}</span>
+                              <span className="font-medium">{t("scan.signatureCaptured")}</span>
                             </div>
                             <Button variant="ghost" size="sm" onClick={() => setSignature(null)}>
                               <X className="h-4 w-4" />
@@ -832,18 +619,20 @@ export default function CustomerDeliveryScanner() {
                           </div>
                         </div>
                       ) : (
-                        <SignaturePad 
-                          onSave={setSignature} 
-                          onClear={() => setSignature(null)} 
+                        <SignaturePad
+                          onSave={setSignature}
+                          onClear={() => setSignature(null)}
+                          clearLabel={t("scan.clearSignature")}
+                          confirmLabel={t("scan.confirmSignature")} 
                         />
                       )}
                     </div>
                     
                     {/* Notes */}
                     <div className="space-y-3">
-                      <Label>{language === "ku" ? "تێبینی" : "Notes"}</Label>
+                      <Label>{t("scan.notes")}</Label>
                       <Textarea
-                        placeholder={language === "ku" ? "تێبینی ئارەزوومەندانە..." : "Optional notes..."}
+                        placeholder={t("scan.optionalNotes")}
                         value={deliveryNotes}
                         onChange={(e) => setDeliveryNotes(e.target.value)}
                         rows={2}
@@ -858,7 +647,7 @@ export default function CustomerDeliveryScanner() {
                         onClick={handleCancel}
                       >
                         <X className="h-4 w-4 mr-2" />
-                        {language === "ku" ? "هەڵوەشاندنەوە" : "Cancel"}
+                        {t("scan.cancel")}
                       </Button>
                       <Button
                         className="flex-1 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700"
@@ -870,7 +659,7 @@ export default function CustomerDeliveryScanner() {
                         ) : (
                           <Send className="h-4 w-4 mr-2" />
                         )}
-                        {language === "ku" ? "گەیاندن" : "Deliver"}
+                        {t("scan.deliver")}
                       </Button>
                     </div>
                   </CardContent>
@@ -882,7 +671,7 @@ export default function CustomerDeliveryScanner() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2">
                     <History className="h-5 w-5 text-rose-600" />
-                    {language === "ku" ? "مێژووی گەیاندن" : "Delivery History"}
+                    {t("scan.deliveryHistory")}
                     <Badge variant="secondary">{deliveredPackages.length}</Badge>
                   </CardTitle>
                 </CardHeader>
@@ -899,12 +688,12 @@ export default function CustomerDeliveryScanner() {
                               <div className="flex items-center gap-2">
                                 <span className="font-mono text-sm font-medium">{pkg.trackingNumber}</span>
                                 <Badge variant="outline" className="text-xs">
-                                  {pkg.deliveryType === "home" ? "ماڵەوە" : pkg.deliveryType === "warehouse" ? "کۆگا" : "ڕاستەوخۆ"}
+                                  {pkg.deliveryType === "home" ? t("scan.home") : pkg.deliveryType === "warehouse" ? t("scan.warehouse") : t("scan.direct")}
                                 </Badge>
                                 {pkg.signature && (
                                   <Badge className="text-xs bg-green-100 text-green-700">
                                     <PenTool className="h-3 w-3 mr-1" />
-                                    واژوو
+                                    {t("scan.signature")}
                                   </Badge>
                                 )}
                               </div>
@@ -932,7 +721,7 @@ export default function CustomerDeliveryScanner() {
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
                         <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                        <p>{language === "ku" ? "هیچ پاکەتێک گەیەندرانەوە" : "No packages delivered yet"}</p>
+                        <p>{t("scan.noPackagesDelivered")}</p>
                       </div>
                     )}
                   </ScrollArea>
@@ -947,18 +736,18 @@ export default function CustomerDeliveryScanner() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-white">
                     <HandCoins className="h-5 w-5" />
-                    {language === "ku" ? "ئاماری گەیاندن" : "Delivery Stats"}
+                    {t("scan.deliveryStats")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white/20 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold">{deliveryStats.totalDelivered}</div>
-                      <div className="text-xs text-white/80">{language === "ku" ? "گەیەندراو" : "Delivered"}</div>
+                      <div className="text-xs text-white/80">{t("scan.delivered")}</div>
                     </div>
                     <div className="bg-white/20 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold">${deliveryStats.totalValue.toFixed(0)}</div>
-                      <div className="text-xs text-white/80">{language === "ku" ? "کۆی بەها" : "Total Value"}</div>
+                      <div className="text-xs text-white/80">{t("scan.totalValue")}</div>
                     </div>
                   </div>
                   
@@ -966,21 +755,21 @@ export default function CustomerDeliveryScanner() {
                     <div className="flex justify-between text-sm">
                       <span className="text-white/80 flex items-center gap-1">
                         <Building2 className="h-3 w-3" />
-                        {language === "ku" ? "کۆگا" : "Warehouse"}
+                        {t("scan.warehouse")}
                       </span>
                       <span className="font-medium">{deliveryStats.byType.warehouse}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-white/80 flex items-center gap-1">
                         <Home className="h-3 w-3" />
-                        {language === "ku" ? "ماڵەوە" : "Home"}
+                        {t("scan.home")}
                       </span>
                       <span className="font-medium">{deliveryStats.byType.home}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-white/80 flex items-center gap-1">
                         <Truck className="h-3 w-3" />
-                        {language === "ku" ? "ڕاستەوخۆ" : "Direct"}
+                        {t("scan.direct")}
                       </span>
                       <span className="font-medium">{deliveryStats.byType.direct}</span>
                     </div>
@@ -993,14 +782,14 @@ export default function CustomerDeliveryScanner() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Info className="h-4 w-4 text-rose-600" />
-                    {language === "ku" ? "ڕێنمایی" : "Tips"}
+                    {t("scan.tips")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground space-y-2">
-                  <p>• {language === "ku" ? "پاکەت سکان بکە بۆ دەستپێکردن" : "Scan package to start"}</p>
-                  <p>• {language === "ku" ? "واژووی کڕیار وەربگرە" : "Collect customer signature"}</p>
-                  <p>• {language === "ku" ? "جۆری گەیاندن دیاری بکە" : "Select delivery type"}</p>
-                  <p>• {language === "ku" ? "پسووڵە چاپ بکە" : "Print receipt"}</p>
+                  <p>• {t("scan.tipScanPackage")}</p>
+                  <p>• {t("scan.tipCollectSignature")}</p>
+                  <p>• {t("scan.tipSelectDeliveryType")}</p>
+                  <p>• {t("scan.tipPrintReceipt")}</p>
                 </CardContent>
               </Card>
             </div>
@@ -1013,12 +802,10 @@ export default function CustomerDeliveryScanner() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-amber-600">
                 <AlertTriangle className="h-5 w-5" />
-                {language === "ku" ? "ئاگاداری باڵانس!" : "Balance Warning!"}
+                {t("scan.balanceWarning")}
               </DialogTitle>
               <DialogDescription>
-                {language === "ku" 
-                  ? "باڵانسی کڕیار کەمتر لە تێچووی پاکەتەکەیە"
-                  : "Customer balance is less than package cost"}
+                {t("scan.balanceWarningDesc")}
               </DialogDescription>
             </DialogHeader>
             
@@ -1026,11 +813,11 @@ export default function CustomerDeliveryScanner() {
               <div className="space-y-4">
                 <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200">
                   <div className="flex justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">{language === "ku" ? "کڕیار" : "Customer"}</span>
+                    <span className="text-sm text-muted-foreground">{t("scan.customer")}</span>
                     <span className="font-medium">{balanceWarningDialog.customer.customerCode}</span>
                   </div>
                   <div className="flex justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">{language === "ku" ? "باڵانس" : "Balance"}</span>
+                    <span className="text-sm text-muted-foreground">{t("scan.balance")}</span>
                     <span className={cn(
                       "font-medium",
                       balanceWarningDialog.customer.balance < 0 ? "text-red-600" : "text-green-600"
@@ -1039,7 +826,7 @@ export default function CustomerDeliveryScanner() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">{language === "ku" ? "تێچووی پاکەت" : "Package Cost"}</span>
+                    <span className="text-sm text-muted-foreground">{t("scan.packageCost")}</span>
                     <span className="font-medium text-amber-700">${balanceWarningDialog.packageCost.toFixed(2)}</span>
                   </div>
                 </div>
@@ -1048,7 +835,7 @@ export default function CustomerDeliveryScanner() {
             
             <DialogFooter>
               <Button variant="outline" onClick={() => setBalanceWarningDialog({ open: false, customer: null, packageCost: 0 })}>
-                {language === "ku" ? "تێگەیشتم" : "Understood"}
+                {t("scan.understood")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1060,12 +847,10 @@ export default function CustomerDeliveryScanner() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Send className="h-5 w-5 text-rose-600" />
-                {language === "ku" ? "دڵنیاکردنەوەی گەیاندن" : "Confirm Delivery"}
+                {t("scan.confirmDelivery")}
               </DialogTitle>
               <DialogDescription>
-                {language === "ku" 
-                  ? "دڵنیای لە گەیاندنی ئەم پاکەتە؟"
-                  : "Are you sure you want to deliver this package?"}
+                {t("scan.confirmDeliveryDesc")}
               </DialogDescription>
             </DialogHeader>
             
@@ -1073,23 +858,23 @@ export default function CustomerDeliveryScanner() {
               <div className="space-y-4">
                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
                   <div className="flex justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">{language === "ku" ? "تراکینگ" : "Tracking"}</span>
+                    <span className="text-sm text-muted-foreground">{t("scan.tracking")}</span>
                     <span className="font-mono font-medium">{currentPackage.trackingNumber}</span>
                   </div>
                   <div className="flex justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">{language === "ku" ? "کڕیار" : "Customer"}</span>
+                    <span className="text-sm text-muted-foreground">{t("scan.customer")}</span>
                     <span className="font-medium">{currentCustomer.customerCode}</span>
                   </div>
                   <div className="flex justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">{language === "ku" ? "جۆری گەیاندن" : "Delivery Type"}</span>
+                    <span className="text-sm text-muted-foreground">{t("scan.deliveryType")}</span>
                     <span className="font-medium">
-                      {deliveryType === "home" ? "ماڵەوە" : deliveryType === "warehouse" ? "کۆگا" : "ڕاستەوخۆ"}
+                      {deliveryType === "home" ? t("scan.home") : deliveryType === "warehouse" ? t("scan.warehouse") : t("scan.direct")}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">{language === "ku" ? "واژوو" : "Signature"}</span>
+                    <span className="text-sm text-muted-foreground">{t("scan.signature")}</span>
                     <span className={cn("font-medium", signature ? "text-green-600" : "text-amber-600")}>
-                      {signature ? "✓ هەیە" : "✗ نییە"}
+                      {signature ? t("scan.signatureYes") : t("scan.signatureNo")}
                     </span>
                   </div>
                 </div>
@@ -1098,7 +883,7 @@ export default function CustomerDeliveryScanner() {
             
             <DialogFooter>
               <Button variant="outline" onClick={() => setDeliveryConfirmDialog(false)}>
-                {language === "ku" ? "پاشگەزبوونەوە" : "Cancel"}
+                {t("scan.cancel")}
               </Button>
               <Button
                 onClick={handleDeliveryConfirm}
@@ -1110,7 +895,7 @@ export default function CustomerDeliveryScanner() {
                 ) : (
                   <Check className="h-4 w-4 mr-2" />
                 )}
-                {language === "ku" ? "دڵنیاکردنەوە" : "Confirm"}
+                {t("scan.confirm")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1122,7 +907,7 @@ export default function CustomerDeliveryScanner() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Receipt className="h-5 w-5 text-rose-600" />
-                {language === "ku" ? "پسووڵەی گەیاندن" : "Delivery Receipt"}
+                {t("scan.deliveryReceipt")}
               </DialogTitle>
             </DialogHeader>
             
@@ -1130,52 +915,52 @@ export default function CustomerDeliveryScanner() {
               <div className="space-y-4">
                 <div className="border-2 border-dashed border-slate-200 rounded-lg p-4">
                   <div className="text-center mb-4">
-                    <h3 className="font-bold text-lg">Wazn Express</h3>
-                    <p className="text-sm text-muted-foreground">{language === "ku" ? "پسووڵەی گەیاندن" : "Delivery Receipt"}</p>
+                    <h3 className="font-bold text-lg">{company.name}</h3>
+                    <p className="text-sm text-muted-foreground">{t("scan.deliveryReceipt")}</p>
                   </div>
                   
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{language === "ku" ? "تراکینگ" : "Tracking"}:</span>
+                      <span className="text-muted-foreground">{t("scan.tracking")}:</span>
                       <span className="font-mono font-medium">{receiptDialog.package.trackingNumber}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{language === "ku" ? "کڕیار" : "Customer"}:</span>
+                      <span className="text-muted-foreground">{t("scan.customer")}:</span>
                       <span className="font-medium">{receiptDialog.package.customerCode}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{language === "ku" ? "ناو" : "Name"}:</span>
+                      <span className="text-muted-foreground">{t("scan.name")}:</span>
                       <span className="font-medium">{receiptDialog.package.customerName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{language === "ku" ? "کێش" : "Weight"}:</span>
+                      <span className="text-muted-foreground">{t("scan.weight")}:</span>
                       <span className="font-medium">{receiptDialog.package.weight ? `${receiptDialog.package.weight} kg` : "-"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{language === "ku" ? "تێچوو" : "Cost"}:</span>
+                      <span className="text-muted-foreground">{t("scan.cost")}:</span>
                       <span className="font-bold text-lg">${receiptDialog.package.cost?.toFixed(2) || "0.00"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{language === "ku" ? "جۆر" : "Type"}:</span>
+                      <span className="text-muted-foreground">{t("scan.type")}:</span>
                       <span className="font-medium">
-                        {receiptDialog.package.deliveryType === "home" ? "ماڵەوە" : receiptDialog.package.deliveryType === "warehouse" ? "کۆگا" : "ڕاستەوخۆ"}
+                        {receiptDialog.package.deliveryType === "home" ? t("scan.home") : receiptDialog.package.deliveryType === "warehouse" ? t("scan.warehouse") : t("scan.direct")}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{language === "ku" ? "کات" : "Time"}:</span>
+                      <span className="text-muted-foreground">{t("scan.time")}:</span>
                       <span className="font-medium">{receiptDialog.package.deliveredAt.toLocaleString()}</span>
                     </div>
                   </div>
                   
                   {receiptDialog.package.signature && (
                     <div className="mt-4 pt-4 border-t">
-                      <p className="text-xs text-muted-foreground mb-2">{language === "ku" ? "واژووی کڕیار" : "Customer Signature"}:</p>
+                      <p className="text-xs text-muted-foreground mb-2">{t("scan.customerSignature")}:</p>
                       <img src={receiptDialog.package.signature} alt="Signature" className="h-16 mx-auto" />
                     </div>
                   )}
                   
                   <div className="mt-4 pt-4 border-t text-center text-xs text-muted-foreground">
-                    <p>{language === "ku" ? "سوپاس بۆ متمانەکەتان" : "Thank you for your trust"}</p>
+                    <p>{t("scan.thankYou")}</p>
                   </div>
                 </div>
               </div>
@@ -1183,11 +968,11 @@ export default function CustomerDeliveryScanner() {
             
             <DialogFooter>
               <Button variant="outline" onClick={() => setReceiptDialog({ open: false, package: null })}>
-                {language === "ku" ? "داخستن" : "Close"}
+                {t("scan.close")}
               </Button>
               <Button className="bg-rose-600 hover:bg-rose-700">
                 <Printer className="h-4 w-4 mr-2" />
-                {language === "ku" ? "چاپکردن" : "Print"}
+                {t("scan.print")}
               </Button>
             </DialogFooter>
           </DialogContent>

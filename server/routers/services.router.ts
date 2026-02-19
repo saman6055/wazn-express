@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
@@ -193,9 +194,9 @@ export const extraServicesRouter = router({
                 await db.linkExtraServiceToInvoice(service.id, invoice.id);
               }
               
-              console.log('[Invoice-SVC] Created invoice for extra service:', invoice?.id);
+              appLogger.info("[Invoice-SVC] Created invoice for extra service", { invoiceId: invoice?.id });
             } catch (e) {
-              console.error('[Invoice-SVC] Failed to create invoice for extra service:', e);
+              appLogger.error('[Invoice-SVC] Failed to create invoice for extra service', { error: e instanceof Error ? e.message : String(e) });
             }
           }
         }
@@ -447,6 +448,50 @@ export const labelTemplatesRouter = router({
     }),
 });
 
+const batchLabelTemplateInput = z.object({
+  name: z.string().min(1),
+  isDefault: z.boolean().optional(),
+  size: z.enum(["10x15", "10x10", "A6", "A5", "custom"]).optional(),
+  widthMm: z.number().optional(),
+  heightMm: z.number().optional(),
+  showQrCode: z.boolean().optional(),
+  qrCodeSize: z.number().optional(),
+  qrCodePosition: z.enum(["top-left", "top-right", "bottom-left", "bottom-right", "center"]).optional(),
+  showBarcode: z.boolean().optional(),
+  barcodeType: z.enum(["code128", "code39", "ean13", "qr"]).optional(),
+  showLogo: z.boolean().optional(),
+  logoUrl: z.string().optional(),
+  logoWidth: z.number().optional(),
+  showCustomerName: z.boolean().optional(),
+  showCustomerCode: z.boolean().optional(),
+  showTotalPackages: z.boolean().optional(),
+  showTotalWeight: z.boolean().optional(),
+  showTotalVolume: z.boolean().optional(),
+  showTotalPrice: z.boolean().optional(),
+  showBatchNumber: z.boolean().optional(),
+  showDate: z.boolean().optional(),
+  primaryColor: z.string().optional(),
+  fontFamily: z.string().optional(),
+  fontSize: z.number().optional(),
+});
+
+export const batchLabelTemplatesRouter = router({
+  list: adminProcedure.query(async () => db.getBatchLabelTemplates()),
+  getDefault: adminProcedure.query(async () => db.getDefaultBatchLabelTemplate()),
+  getById: adminProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => db.getBatchLabelTemplateById(input.id)),
+  create: adminProcedure.input(batchLabelTemplateInput).mutation(async ({ input }) => db.createBatchLabelTemplate(input)),
+  update: adminProcedure.input(batchLabelTemplateInput.extend({ id: z.number() })).mutation(async ({ input }) => {
+    const { id, ...data } = input;
+    return db.updateBatchLabelTemplate(id, data);
+  }),
+  delete: adminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    await db.deleteBatchLabelTemplate(input.id);
+    return { success: true };
+  }),
+  setDefault: adminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => db.setDefaultBatchLabelTemplate(input.id)),
+  ensureDefault: adminProcedure.mutation(async () => db.ensureDefaultBatchLabelTemplate()),
+});
+
 export const alertsRouter = router({
     // Get alert summary for dashboard
     getSummary: staffProcedure.query(async () => {
@@ -618,7 +663,7 @@ export const blogRouter = router({
         mimeType: z.string(),
       }))
       .mutation(async ({ input }) => {
-        const { storagePut } = await import("../storage");
+        const { storagePut } = await import("../services/storage.service");
         const { nanoid } = await import("nanoid");
         
         // Decode base64 to buffer
@@ -643,20 +688,32 @@ export const storageRouter = router({
         base64Data: z.string(),
       }))
       .mutation(async ({ input }) => {
-        const { storagePut } = await import("../storage");
-        const { nanoid } = await import("nanoid");
-        
-        // Decode base64 to buffer
         const buffer = Buffer.from(input.base64Data, "base64");
-        
-        // Generate unique filename
-        const ext = input.fileName.split(".").pop() || "jpg";
-        const uniqueFileName = `uploads/${nanoid(12)}.${ext}`;
-        
-        // Upload to S3
-        const { url } = await storagePut(uniqueFileName, buffer, input.contentType);
-        
-        return { success: true, url };
+        const { ENV } = await import("../_core/env");
+        const hasForge = Boolean(ENV.forgeApiUrl?.trim() && ENV.forgeApiKey?.trim());
+
+        if (hasForge) {
+          try {
+            const { storagePut } = await import("../services/storage.service");
+            const { nanoid } = await import("nanoid");
+            const ext = input.fileName.split(".").pop() || "jpg";
+            const uniqueFileName = `uploads/${nanoid(12)}.${ext}`;
+            const { url } = await storagePut(uniqueFileName, buffer, input.contentType);
+            return { success: true, url };
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return { success: false, url: null, error: message };
+          }
+        }
+
+        try {
+          const { localUpload } = await import("../services/localUpload");
+          const { url } = localUpload(input.fileName, buffer, input.contentType);
+          return { success: true, url };
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          return { success: false, url: null, error: message };
+        }
       }),
 });
 
@@ -664,6 +721,7 @@ export const servicesRouters = {
   extraServices: extraServicesRouter,
   notificationTemplates: notificationTemplatesRouter,
   labelTemplates: labelTemplatesRouter,
+  batchLabelTemplates: batchLabelTemplatesRouter,
   alerts: alertsRouter,
   blog: blogRouter,
   storage: storageRouter,

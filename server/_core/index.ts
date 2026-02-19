@@ -1,5 +1,7 @@
 import "dotenv/config";
 import express from "express";
+import fs from "fs";
+import path from "path";
 import { createServer } from "http";
 import cors from "cors";
 import helmet from "helmet";
@@ -7,20 +9,20 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-import { scheduleTrackingAlertNotifications } from "../trackingAlertNotifications";
-import { runMigration } from "../runMigration";
-import { initializeScheduledBackups } from "../scheduledBackups";
+import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
+import { runMigration } from "../services/migration.service";
+import { initializeScheduledBackups } from "../services/scheduledBackups.service";
 import { serveStatic } from "./static";
 import { loadConfig, getConfig } from "../config";
 import { globalLimiter, authLimiterMiddleware } from "../middleware/rateLimiter";
 import { registerHealthRoutes } from "./health";
 import { appLogger, requestLoggingMiddleware } from "../utils/logger";
+import { closeDb } from "../db/connection";
 
 function listenAsync(server: ReturnType<typeof createServer>, port: number, host: string): Promise<void> {
   return new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(port, host, () => {
-      console.log("[DEBUG] INSIDE server.listen callback - Node says we are listening");
       server.off("error", reject);
       resolve();
     });
@@ -32,8 +34,12 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Security headers
-  app.use(helmet());
+  // Security headers (CSP disabled in dev - Vite HMR and React Refresh need inline scripts)
+  app.use(
+    helmet({
+      contentSecurityPolicy: process.env.NODE_ENV === "development" ? false : undefined,
+    })
+  );
 
   // CORS: only allow origins from ALLOWED_ORIGINS (comma-separated)
   const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -75,6 +81,37 @@ async function startServer() {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Backup file download (admin only; serves local ZIP or redirects to remote URL)
+  app.get("/api/backup-file/:id", async (req, res) => {
+    try {
+      const { sdk } = await import("./sdk.js");
+      const user = await sdk.authenticateRequest(req);
+      if (!user || user.isCustomer || (user.role !== "super_admin" && user.role !== "admin")) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      const id = parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid backup id" });
+      const { getDb } = await import("../db/connection.js");
+      const { backups } = await import("../../drizzle/schema.js");
+      const { eq } = await import("drizzle-orm");
+      const db = await getDb();
+      if (!db) return res.status(503).json({ error: "Database unavailable" });
+      const [backup] = await db.select().from(backups).where(eq(backups.id, id));
+      if (!backup || !backup.fileUrl) return res.status(404).json({ error: "Backup not found" });
+      const { getLocalBackupFilePath, LOCAL_BACKUP_PREFIX } = await import("../services/zipBackup.service.js");
+      if (backup.fileUrl.startsWith(LOCAL_BACKUP_PREFIX)) {
+        const localPath = getLocalBackupFilePath(id);
+        return res.download(localPath, backup.filename || `backup-${id}.zip`, (err) => {
+          if (err && !res.headersSent) res.status(500).json({ error: "Download failed" });
+        });
+      }
+      return res.redirect(302, backup.fileUrl);
+    } catch {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  });
+
   // tRPC API (auth limiter applies strict limit to login procedures only)
   app.use(
     "/api/trpc",
@@ -84,6 +121,10 @@ async function startServer() {
       createContext,
     })
   );
+  // Local uploads (when Forge is not configured)
+  const uploadsDir = path.join(process.cwd(), "uploads");
+  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+  app.use("/uploads", express.static(uploadsDir));
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     // Dynamic import to avoid loading vite in production
@@ -96,7 +137,7 @@ async function startServer() {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000", 10) || 3000;
+  const preferredPort = parseInt(process.env.PORT || "3500", 10) || 3500;
   const host = "0.0.0.0";
 
   // Run database migration on startup
@@ -133,12 +174,10 @@ async function startServer() {
     appLogger.error("HTTP server error", { error: err instanceof Error ? err.message : String(err) });
   });
 
-  console.log("[DEBUG] ABOUT TO CALL server.listen - if you see this, we reached the listen call");
   for (let attempt = 0; attempt < 20; attempt++) {
     const port = preferredPort + attempt;
     try {
       await listenAsync(server, port, host);
-      console.log("[DEBUG] listenAsync resolved - server bound to port", port);
       if (port !== preferredPort) {
         appLogger.info("Port in use, using alternate", { preferredPort, port });
       }
@@ -157,3 +196,14 @@ async function startServer() {
 }
 
 startServer().catch((err) => appLogger.error("Server failed to start", { error: err instanceof Error ? err.message : String(err) }));
+
+process.on("SIGTERM", async () => {
+  appLogger.info("SIGTERM received, closing database pool");
+  await closeDb();
+  process.exit(0);
+});
+process.on("SIGINT", async () => {
+  appLogger.info("SIGINT received, closing database pool");
+  await closeDb();
+  process.exit(0);
+});

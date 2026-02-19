@@ -1,17 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
+import type { CompanyInfo } from "@/hooks/useCompanyInfo";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { 
-  ArrowLeft, 
-  DollarSign, 
-  TrendingUp, 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft,
+  DollarSign,
+  TrendingUp,
   TrendingDown,
-  Package, 
+  Package,
   Users,
   Scale,
   Box,
@@ -31,11 +40,16 @@ import {
   Eye,
   ShoppingBag,
   Printer,
-  Tag
+  Tag,
+  Settings2,
+  Layers,
 } from "lucide-react";
 import { toast } from "sonner";
+import QRCode from "qrcode";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { generateLabelsHtml, openLabelPrintWindow } from "@/lib/labelPrintUtils";
+import { generateBatchLabelsHtml, openBatchLabelPrintWindow } from "@/lib/batchLabelPrintUtils";
 
 function DownloadPDFButton({ batchId }: { batchId: number }) {
   const generatePDF = trpc.batches.generateFinancialPDF.useMutation({
@@ -81,7 +95,8 @@ function generatePrintContent(
     heightCm?: number | null;
   }>,
   batch: { batchCode?: string; shippingType?: string } | null | undefined,
-  customer: { name: string; code: string } | null
+  customer: { name: string; code: string } | null,
+  company: CompanyInfo
 ) {
   const unit = batch?.shippingType === 'sea' ? 'CBM' : 'KG';
   const totalActualWeight = batch?.shippingType === 'sea'
@@ -259,7 +274,7 @@ function generatePrintContent(
     </head>
     <body>
       <div class="header">
-        <h1>Wazn Express</h1>
+        <h1>${company.name}</h1>
         <div class="subtitle">ڕاپۆرتی ${title}</div>
         <div class="batch-code">باچ: ${batch?.batchCode || '-'}</div>
       </div>
@@ -327,7 +342,7 @@ function generatePrintContent(
       </table>
       
       <div class="footer">
-        <span class="company">Wazn Express - کۆمپانیای گواستنەوەی وازن</span>
+        <span class="company">${company.name} - ${company.nameKu}</span>
         <span>${new Date().toLocaleDateString('ku-IQ')} - ${new Date().toLocaleTimeString('ku-IQ')}</span>
       </div>
     </body>
@@ -347,7 +362,8 @@ function generateLabelContent(
     fullPackageOrderType?: string | null;
   }>,
   batch: { batchCode?: string; shippingType?: string; pricePerKg?: number | string | null; pricePerCbm?: number | string | null } | null | undefined,
-  customer: { name: string; code: string } | null
+  customer: { name: string; code: string } | null,
+  company: CompanyInfo
 ) {
   const isSea = batch?.shippingType === 'sea';
   const unit = isSea ? 'CBM' : 'KG';
@@ -671,7 +687,7 @@ function generateLabelContent(
     <body>
       <div class="label">
         <div class="label-header">
-          <span class="label-logo">WAZN EXPRESS</span>
+          <span class="label-logo">${company.name.toUpperCase()}</span>
           <div class="label-batch">
             <span class="label-batch-label">کۆدی باچ</span>
             <span class="label-batch-code">${batch?.batchCode || '-'}</span>
@@ -784,17 +800,47 @@ export default function BatchFinancialReport() {
   // Customer modal state
   const [selectedCustomer, setSelectedCustomer] = useState<{ id: number; name: string; code: string } | null>(null);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-  
+  const [selectedLabelTemplateId, setSelectedLabelTemplateId] = useState<number | null>(null);
+  const [selectedBatchLabelTemplateId, setSelectedBatchLabelTemplateId] = useState<number | null>(null);
+
   const { data: batch, isLoading: batchLoading } = trpc.batches.getById.useQuery({ id: batchId }, {
     enabled: batchId > 0
   });
-  
+
   const { data: financial, isLoading: financialLoading } = trpc.batches.getFinancialSummary.useQuery({ batchId }, {
     enabled: batchId > 0
   });
-  
+
   const { data: customers } = trpc.customers.list.useQuery();
-  
+  const { data: settings } = trpc.settings.list.useQuery();
+  const { data: labelTemplatesList } = trpc.labelTemplates.list.useQuery(undefined, { enabled: isCustomerModalOpen });
+  const defaultLabelTemplate = labelTemplatesList?.find((t) => t.isDefault) ?? labelTemplatesList?.[0] ?? null;
+
+  const { data: batchLabelTemplatesList } = trpc.batchLabelTemplates.list.useQuery(undefined, { enabled: batchId > 0 });
+  const defaultBatchLabelTemplate = batchLabelTemplatesList?.find((t) => t.isDefault) ?? batchLabelTemplatesList?.[0] ?? null;
+
+  useEffect(() => {
+    if (selectedLabelTemplateId == null && defaultLabelTemplate) {
+      setSelectedLabelTemplateId(defaultLabelTemplate.id);
+    }
+  }, [defaultLabelTemplate, selectedLabelTemplateId]);
+
+  useEffect(() => {
+    if (selectedBatchLabelTemplateId == null && defaultBatchLabelTemplate) {
+      setSelectedBatchLabelTemplateId(defaultBatchLabelTemplate.id);
+    }
+  }, [defaultBatchLabelTemplate, selectedBatchLabelTemplateId]);
+
+  const selectedLabelTemplate = selectedLabelTemplateId != null
+    ? (labelTemplatesList?.find((t) => t.id === selectedLabelTemplateId) ?? defaultLabelTemplate)
+    : defaultLabelTemplate;
+
+  const selectedBatchLabelTemplate = selectedBatchLabelTemplateId != null
+    ? (batchLabelTemplatesList?.find((t) => t.id === selectedBatchLabelTemplateId) ?? defaultBatchLabelTemplate)
+    : defaultBatchLabelTemplate;
+
+  const company = getCompanyInfoFromSettings(settings || []);
+
   // Fetch customer packages when modal is open
   const { data: customerPackages, isLoading: packagesLoading } = trpc.batches.getCustomerPackages.useQuery(
     { batchId, customerId: selectedCustomer?.id || 0 },
@@ -949,62 +995,61 @@ export default function BatchFinancialReport() {
         
 
         
-        {/* Details Section */}
+        {/* Details & Pricing — Professional cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Volume/Weight Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+          <Card className="border border-slate-200/80 shadow-sm overflow-hidden transition-shadow hover:shadow-md duration-200">
+            <CardHeader className="pb-3 border-b bg-slate-50/60">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
                 {batch.shippingType === 'sea' ? <Box className="h-5 w-5 text-cyan-600" /> : <Scale className="h-5 w-5 text-blue-600" />}
                 وردەکاری {batch.shippingType === 'sea' ? 'قەبارە' : 'کێش'}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center p-4 bg-amber-50 rounded-xl">
+            <CardContent className="pt-5">
+              <div className="flex justify-between items-center p-4 bg-amber-50/80 border border-amber-200/60 rounded-xl transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-amber-200 rounded-lg">
-                    <Calculator className="h-4 w-4 text-amber-600" />
+                  <div className="p-2.5 bg-amber-200/80 rounded-xl">
+                    <Calculator className="h-5 w-5 text-amber-700" />
                   </div>
-                  <span className="text-amber-700">{unit} حسابکراو</span>
+                  <span className="font-medium text-amber-800">{unit} حسابکراو</span>
                 </div>
-                <span className="font-bold text-lg text-amber-700">
-                  {batch.shippingType === 'sea' 
-                    ? financial.chargedCbm?.toFixed(3) 
-                    : financial.customerBreakdown?.reduce((sum, c) => sum + (c.chargeableWeight || 0), 0).toFixed(2)
-                  } {unit}
+                <span className="font-bold text-xl tabular-nums text-amber-800">
+                  {batch.shippingType === 'sea'
+                    ? financial.chargedCbm?.toFixed(3)
+                    : financial.customerBreakdown?.reduce((sum, c) => sum + (c.chargeableWeight || 0), 0).toFixed(2)}
+                  {" "}{unit}
                 </span>
               </div>
             </CardContent>
           </Card>
-          
-          {/* Pricing Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+
+          <Card className="border border-slate-200/80 shadow-sm overflow-hidden transition-shadow hover:shadow-md duration-200">
+            <CardHeader className="pb-3 border-b bg-slate-50/60">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
                 <DollarSign className="h-5 w-5 text-green-600" />
-                پوختەی نرخەکان
+                نرخەکان
               </CardTitle>
+              <CardDescription className="text-slate-500 text-sm">نرخی کڕین، فرۆشتن و قازانج بۆ هەر {unit}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center p-4 bg-red-50 rounded-xl">
+            <CardContent className="pt-5 space-y-3">
+              <div className="flex justify-between items-center p-4 bg-red-50/80 border border-red-200/50 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-200 rounded-lg">
-                    <TrendingDown className="h-4 w-4 text-red-600" />
+                  <div className="p-2.5 bg-red-200/80 rounded-xl">
+                    <TrendingDown className="h-5 w-5 text-red-700" />
                   </div>
-                  <span className="text-red-700">نرخی کڕین</span>
+                  <span className="font-medium text-red-800">نرخی کڕین</span>
                 </div>
-                <span className="font-bold text-lg text-red-600">
+                <span className="font-bold text-lg tabular-nums text-red-700">
                   ${batch.shippingType === 'sea' ? financial.costPerCbm : financial.costPerKg}/{unit}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-4 bg-green-50 rounded-xl">
+              <div className="flex justify-between items-center p-4 bg-green-50/80 border border-green-200/50 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-200 rounded-lg">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  <div className="p-2.5 bg-green-200/80 rounded-xl">
+                    <TrendingUp className="h-5 w-5 text-green-700" />
                   </div>
-                  <span className="text-green-700">نرخی فرۆشتن (تێکڕا)</span>
+                  <span className="font-medium text-green-800">نرخی فرۆشتن (تێکڕا)</span>
                 </div>
-                <span className="font-bold text-lg text-green-600">
+                <span className="font-bold text-lg tabular-nums text-green-700">
                   ${(() => {
                     const totalChargeableWeight = financial.customerBreakdown?.reduce((sum, c) => sum + (c.chargeableWeight || 0), 0) || 0;
                     const divisor = batch.shippingType === 'sea' ? financial.actualCbm : totalChargeableWeight;
@@ -1014,14 +1059,14 @@ export default function BatchFinancialReport() {
                   })()}/{unit}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl">
+              <div className={`flex justify-between items-center p-4 rounded-xl border ${isProfitable ? 'bg-blue-50/80 border-blue-200/50' : 'bg-red-50/80 border-red-200/50'}`}>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-200 rounded-lg">
-                    <Wallet className="h-4 w-4 text-blue-600" />
+                  <div className={`p-2.5 rounded-xl ${isProfitable ? 'bg-blue-200/80' : 'bg-red-200/80'}`}>
+                    <Wallet className={`h-5 w-5 ${isProfitable ? 'text-blue-700' : 'text-red-700'}`} />
                   </div>
-                  <span className="text-blue-700">قازانج بۆ هەر {unit}</span>
+                  <span className={`font-medium ${isProfitable ? 'text-blue-800' : 'text-red-800'}`}>قازانج بۆ هەر {unit}</span>
                 </div>
-                <span className={`font-bold text-lg ${isProfitable ? 'text-blue-600' : 'text-red-600'}`}>
+                <span className={`font-bold text-lg tabular-nums ${isProfitable ? 'text-blue-700' : 'text-red-700'}`}>
                   ${(() => {
                     const totalChargeableWeight = financial.customerBreakdown?.reduce((sum, c) => sum + (c.chargeableWeight || 0), 0) || 0;
                     const divisor = batch.shippingType === 'sea' ? financial.actualCbm : totalChargeableWeight;
@@ -1035,46 +1080,46 @@ export default function BatchFinancialReport() {
           </Card>
         </div>
         
-        {/* Customer Breakdown */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
+        {/* Customer Breakdown — Professional table */}
+        <Card className="border border-slate-200/80 shadow-sm overflow-hidden">
+          <CardHeader className="border-b bg-slate-50/60">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
               <Users className="h-5 w-5 text-indigo-600" />
               شیکاری بەپێی کڕیار
             </CardTitle>
-            <CardDescription>
-              داهات و وردەکاری هەر کڕیارێک لەم باچەدا
+            <CardDescription className="text-slate-500">
+              داهات و وردەکاری هەر کڕیارێک لەم باچەدا — کلیک بکە بۆ بینینی پاکەت و پرینتی لەیبڵ
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {financial.customerBreakdown?.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
+              <div className="text-center py-12 px-6 text-muted-foreground">
                 <Package className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg">هیچ زانیارییەک بەردەست نییە</p>
+                <p className="text-lg font-medium">هیچ زانیارییەک بەردەست نییە</p>
                 <p className="text-sm mt-2">هێشتا هیچ پاکەتێک لەم باچەدا نییە</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[640px]">
                   <thead>
-                    <tr className="border-b bg-slate-50">
-                      <th className="text-right py-4 px-4 font-semibold text-slate-700">کڕیار</th>
-                      <th className="text-center py-4 px-4 font-semibold text-slate-700">پاکەت</th>
-                      <th className="text-center py-4 px-4 font-semibold text-slate-700">
+                    <tr className="border-b border-slate-200 bg-slate-100/80">
+                      <th className="text-right py-4 px-4 font-semibold text-slate-700 text-sm">کڕیار</th>
+                      <th className="text-center py-4 px-4 font-semibold text-slate-700 text-sm">پاکەت</th>
+                      <th className="text-center py-4 px-4 font-semibold text-slate-700 text-sm">
                         {batch.shippingType === 'sea' ? 'CBM' : 'کێش حسابکراو'}
                       </th>
-                      <th className="text-center py-4 px-4 font-semibold text-slate-700">داهات</th>
-                      <th className="text-center py-4 px-4 font-semibold text-slate-700">ڕێژە</th>
-                      <th className="text-center py-4 px-4 font-semibold text-slate-700">وردەکاری</th>
+                      <th className="text-center py-4 px-4 font-semibold text-slate-700 text-sm">داهات</th>
+                      <th className="text-center py-4 px-4 font-semibold text-slate-700 text-sm">ڕێژە</th>
+                      <th className="text-center py-4 px-4 font-semibold text-slate-700 text-sm w-16">وردەکاری</th>
                     </tr>
                   </thead>
                   <tbody>
                     {financial.customerBreakdown
                       ?.sort((a, b) => b.revenue - a.revenue)
                       .map((item, index) => (
-                        <tr 
-                          key={item.customerId} 
-                          className="border-b last:border-0 hover:bg-slate-50 transition-colors cursor-pointer"
+                        <tr
+                          key={item.customerId}
+                          className="border-b border-slate-100 last:border-0 hover:bg-indigo-50/60 transition-colors duration-200 cursor-pointer"
                           onClick={() => {
                             setSelectedCustomer({
                               id: item.customerId,
@@ -1144,8 +1189,8 @@ export default function BatchFinancialReport() {
                       ))}
                   </tbody>
                   <tfoot>
-                    <tr className="bg-slate-100 font-bold">
-                      <td className="py-4 px-4 text-slate-700">کۆی گشتی</td>
+                    <tr className="bg-slate-100 border-t-2 border-slate-200 font-bold">
+                      <td className="py-4 px-4 text-slate-800">کۆی گشتی</td>
                       <td className="text-center py-4 px-4">
                         <Badge className="bg-indigo-600">{financial.totalPackages}</Badge>
                       </td>
@@ -1169,7 +1214,80 @@ export default function BatchFinancialReport() {
             )}
           </CardContent>
         </Card>
-        
+
+        {/* پرینتی لەیبڵی باچ — یەک لەیبڵ بۆ هەر کڕیار */}
+        <Card className="border border-slate-200/80 shadow-sm overflow-hidden">
+          <CardHeader className="border-b bg-slate-50/60">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+              <Layers className="h-5 w-5 text-emerald-600" />
+              پرینتی لەیبڵی باچ
+            </CardTitle>
+            <CardDescription className="text-slate-500">
+              یەک لەیبڵ بۆ هەر کڕیار — کۆی پاکەت، حەجم، کیلۆ، بارکۆد/QR، نرخ و ناوی کڕیار
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-5 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-700">تێمپلەیت:</span>
+              <Select
+                value={selectedBatchLabelTemplateId?.toString() ?? ""}
+                onValueChange={(v) => setSelectedBatchLabelTemplateId(v ? parseInt(v, 10) : null)}
+              >
+                <SelectTrigger className="w-[220px] border-slate-300">
+                  <SelectValue placeholder="هەڵبژێرە..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {batchLabelTemplatesList?.map((t) => (
+                    <SelectItem key={t.id} value={t.id.toString()}>
+                      {t.name} {t.isDefault ? "(بنەڕەت)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Link href="/settings/batch-label-template">
+              <Button variant="ghost" size="sm" className="gap-1.5 text-slate-600">
+                <Settings2 className="h-4 w-4" />
+                داڕشتەی تێمپلەیت
+              </Button>
+            </Link>
+            <Button
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              disabled={!financial?.customerBreakdown?.length || !batch}
+              onClick={async () => {
+                if (!batch || !financial?.customerBreakdown?.length) return;
+                const breakdown = financial.customerBreakdown!;
+                const qrCodesMap: Record<string, string> = {};
+                for (const item of breakdown) {
+                  const code = getCustomerCode(item.customerId);
+                  const key = `${batch.batchCode}-${code}`;
+                  qrCodesMap[item.customerId.toString()] = await QRCode.toDataURL(key, { width: 200, margin: 1 });
+                }
+                const customers = breakdown.map((item) => ({
+                  customerId: item.customerId,
+                  name: getCustomerName(item.customerId),
+                  code: getCustomerCode(item.customerId),
+                  totalPackages: item.packages,
+                  totalWeight: item.chargeableWeight ?? 0,
+                  totalVolume: item.cbm ?? 0,
+                  totalPrice: item.revenue,
+                }));
+                const html = generateBatchLabelsHtml({
+                  template: selectedBatchLabelTemplate ?? undefined,
+                  customers,
+                  batch: { batchCode: batch.batchCode, shippingType: batch.shippingType },
+                  company: { name: company.name },
+                  qrCodesMap,
+                });
+                openBatchLabelPrintWindow(html);
+                toast.success(`${customers.length} لەیبڵی باچ ئامادەن بۆ پرینت`);
+              }}
+            >
+              <Layers className="h-4 w-4" />
+              چاپکردنی لەیبڵی باچ ({financial?.customerBreakdown?.length ?? 0} کڕیار)
+            </Button>
+          </CardContent>
+        </Card>
 
       </div>
       
@@ -1342,169 +1460,225 @@ export default function BatchFinancialReport() {
                 </table>
               </div>
               
-              {/* Print Options Section */}
-              <div className="pt-4 border-t space-y-4">
-                <h4 className="font-semibold text-slate-700 flex items-center gap-2">
-                  <Printer className="h-4 w-4" />
-                  بژاردەکانی پرینت
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {/* Option 1: Regular + Commission Packages */}
-                  <Button
-                    variant="outline"
-                    className="h-auto py-3 flex flex-col items-center gap-2 hover:bg-blue-50 hover:border-blue-300"
-                    onClick={() => {
-                      const regularAndCommission = customerPackages?.filter(p => !p.isFullPackage || p.fullPackageOrderType === 'commission') || [];
-                      if (regularAndCommission.length === 0) {
-                        toast.error('هیچ پاکەتێکی ئاسایی یان عمولە نییە');
-                        return;
-                      }
-                      const printContent = generatePrintContent(
-                        'پاکەتی ئاسایی + کڕین بە عمولە',
-                        regularAndCommission,
-                        batch,
-                        selectedCustomer
-                      );
-                      openPrintWindow(printContent);
-                      toast.success('پرینت ئامادەیە');
-                    }}
-                  >
-                    <Package className="h-5 w-5 text-blue-600" />
-                    <span className="text-sm font-medium">پاکەتی ئاسایی + عمولە</span>
-                    <span className="text-xs text-muted-foreground">
-                      {(customerPackages?.filter(p => !p.isFullPackage || p.fullPackageOrderType === 'commission')?.length || 0)} پاکەت
-                    </span>
+              {/* Label template selection — uses settings */}
+              <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center gap-3">
+                <span className="text-sm font-medium text-slate-700">تێمپلەیتی لەیبڵ:</span>
+                <Select
+                  value={selectedLabelTemplateId?.toString() ?? ""}
+                  onValueChange={(v) => setSelectedLabelTemplateId(v ? parseInt(v, 10) : null)}
+                >
+                  <SelectTrigger className="w-[220px] border-slate-300">
+                    <SelectValue placeholder="هەڵبژێرە..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {labelTemplatesList?.map((t) => (
+                      <SelectItem key={t.id} value={t.id.toString()}>
+                        {t.name} {t.isDefault ? "(بنەڕەت)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Link href="/settings/label-templates">
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-slate-600">
+                    <Settings2 className="h-4 w-4" />
+                    داڕشتەی تێمپلەیتەکان
                   </Button>
-                  
-                  {/* Option 2: Full Package Only */}
-                  <Button
-                    variant="outline"
-                    className="h-auto py-3 flex flex-col items-center gap-2 hover:bg-purple-50 hover:border-purple-300"
-                    onClick={() => {
-                      const fullPackages = customerPackages?.filter(p => p.isFullPackage && p.fullPackageOrderType !== 'commission') || [];
-                      if (fullPackages.length === 0) {
-                        toast.error('هیچ فول پاکیجێک نییە');
-                        return;
-                      }
-                      const printContent = generatePrintContent(
-                        'فول پاکیج',
-                        fullPackages,
-                        batch,
-                        selectedCustomer
-                      );
-                      openPrintWindow(printContent);
-                      toast.success('پرینت ئامادەیە');
-                    }}
-                  >
-                    <ShoppingBag className="h-5 w-5 text-purple-600" />
-                    <span className="text-sm font-medium">فول پاکیج بەتەنیا</span>
-                    <span className="text-xs text-muted-foreground">
-                      {(customerPackages?.filter(p => p.isFullPackage && p.fullPackageOrderType !== 'commission')?.length || 0)} پاکەت
-                    </span>
-                  </Button>
-                  
-                  {/* Option 3: All Packages */}
-                  <Button
-                    variant="outline"
-                    className="h-auto py-3 flex flex-col items-center gap-2 hover:bg-emerald-50 hover:border-emerald-300"
-                    onClick={() => {
-                      if (!customerPackages || customerPackages.length === 0) {
-                        toast.error('هیچ پاکەتێک نییە');
-                        return;
-                      }
-                      const printContent = generatePrintContent(
-                        'هەموو پاکەتەکان',
-                        customerPackages,
-                        batch,
-                        selectedCustomer
-                      );
-                      openPrintWindow(printContent);
-                      toast.success('پرینت ئامادەیە');
-                    }}
-                  >
-                    <Box className="h-5 w-5 text-emerald-600" />
-                    <span className="text-sm font-medium">هەموو (هەرسێ شیواز)</span>
-                    <span className="text-xs text-muted-foreground">
-                      {customerPackages?.length || 0} پاکەت
-                    </span>
-                  </Button>
-                </div>
-                
-                {/* Label Print Section */}
-                <div className="pt-4 border-t">
-                  <h4 className="font-semibold text-slate-700 flex items-center gap-2 mb-3">
-                    <Tag className="h-4 w-4" />
-                    پرینتی لەیبڵ (بۆ چەسپاندن بە پاکەت)
+                </Link>
+              </div>
+
+              {/* Print & Label section — Professional layout */}
+              <div className="pt-4 border-t border-slate-200 space-y-6">
+                <div>
+                  <h4 className="font-semibold text-slate-800 flex items-center gap-2 mb-1">
+                    <Printer className="h-4 w-4 text-slate-600" />
+                    بژاردەکانی پرینت
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Label Option 1: Regular + Commission (Combined) */}
-                    <Button
-                      variant="outline"
-                      className="h-auto py-5 flex flex-col items-center gap-3 hover:bg-emerald-50 hover:border-emerald-400 border-2 border-dashed transition-all duration-200 group"
+                  <p className="text-sm text-slate-500 mb-4">ڕاپۆرتی پرینت بەپێی جۆری پاکەت هەڵبژێرە</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button
+                      type="button"
                       onClick={() => {
                         const regularAndCommission = customerPackages?.filter(p => !p.isFullPackage || p.fullPackageOrderType === 'commission') || [];
                         if (regularAndCommission.length === 0) {
                           toast.error('هیچ پاکەتێکی ئاسایی یان عمولە نییە');
                           return;
                         }
-                        const labelContent = generateLabelContent(
-                          regularAndCommission,
-                          batch,
-                          selectedCustomer
-                        );
-                        openPrintWindow(labelContent);
-                        toast.success('لەیبڵەکان ئامادەن بۆ پرینت');
+                        openPrintWindow(generatePrintContent('پاکەتی ئاسایی + کڕین بە عمولە', regularAndCommission, batch, selectedCustomer, company));
+                        toast.success('پرینت ئامادەیە');
                       }}
+                      className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 bg-slate-50/50 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 text-right min-h-[100px]"
                     >
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <Tag className="h-7 w-7 text-white" />
+                      <div className="p-2.5 rounded-xl bg-blue-100">
+                        <Package className="h-6 w-6 text-blue-600" />
                       </div>
-                      <div className="text-center">
-                        <span className="text-base font-bold text-slate-800 block">پاکەتی ئاسایی + کڕین بە عمولە</span>
-                        <span className="text-sm text-muted-foreground mt-1 block">
-                          {(customerPackages?.filter(p => !p.isFullPackage || p.fullPackageOrderType === 'commission')?.length || 0)} لەیبڵ
-                        </span>
-                      </div>
-                    </Button>
-                    
-                    {/* Label Option 2: Full Package Only */}
-                    <Button
-                      variant="outline"
-                      className="h-auto py-5 flex flex-col items-center gap-3 hover:bg-violet-50 hover:border-violet-400 border-2 border-dashed transition-all duration-200 group"
+                      <span className="text-sm font-semibold text-slate-800">پاکەتی ئاسایی + عمولە</span>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 font-medium">
+                        {(customerPackages?.filter(p => !p.isFullPackage || p.fullPackageOrderType === 'commission')?.length || 0)} پاکەت
+                      </Badge>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => {
                         const fullPackages = customerPackages?.filter(p => p.isFullPackage && p.fullPackageOrderType !== 'commission') || [];
                         if (fullPackages.length === 0) {
                           toast.error('هیچ فول پاکیجێک نییە');
                           return;
                         }
-                        const labelContent = generateLabelContent(
-                          fullPackages,
-                          batch,
-                          selectedCustomer
-                        );
-                        openPrintWindow(labelContent);
+                        openPrintWindow(generatePrintContent('فول پاکیج', fullPackages, batch, selectedCustomer, company));
+                        toast.success('پرینت ئامادەیە');
+                      }}
+                      className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 bg-slate-50/50 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 text-right min-h-[100px]"
+                    >
+                      <div className="p-2.5 rounded-xl bg-purple-100">
+                        <ShoppingBag className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-800">فول پاکیج بەتەنیا</span>
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-700 font-medium">
+                        {(customerPackages?.filter(p => p.isFullPackage && p.fullPackageOrderType !== 'commission')?.length || 0)} پاکەت
+                      </Badge>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!customerPackages || customerPackages.length === 0) {
+                          toast.error('هیچ پاکەتێک نییە');
+                          return;
+                        }
+                        openPrintWindow(generatePrintContent('هەموو پاکەتەکان', customerPackages, batch, selectedCustomer, company));
+                        toast.success('پرینت ئامادەیە');
+                      }}
+                      className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 bg-slate-50/50 hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 text-right min-h-[100px]"
+                    >
+                      <div className="p-2.5 rounded-xl bg-emerald-100">
+                        <Box className="h-6 w-6 text-emerald-600" />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-800">هەموو (هەرسێ شیواز)</span>
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 font-medium">
+                        {customerPackages?.length || 0} پاکەت
+                      </Badge>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-200">
+                  <h4 className="font-semibold text-slate-800 flex items-center gap-2 mb-1">
+                    <Tag className="h-4 w-4 text-slate-600" />
+                    پرینتی لەیبڵ (بەپێی تێمپلەیتی سیتینگ)
+                  </h4>
+                  <p className="text-sm text-slate-500 mb-4">هەر پاکەتێک لەیبڵێکی تاک بە تێمپلەیتی هەڵبژێردراو</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const regularAndCommission = customerPackages?.filter(p => !p.isFullPackage || p.fullPackageOrderType === 'commission') || [];
+                        if (regularAndCommission.length === 0) {
+                          toast.error('هیچ پاکەتێکی ئاسایی یان عمولە نییە');
+                          return;
+                        }
+                        const fullCustomer = customers?.find(c => c.id === selectedCustomer?.id);
+                        const qrCodesMap: Record<string, string> = {};
+                        for (const p of regularAndCommission) {
+                          if (p.trackingNumber) {
+                            qrCodesMap[p.trackingNumber] = await QRCode.toDataURL(p.trackingNumber, { width: 200, margin: 1 });
+                          }
+                        }
+                        const html = generateLabelsHtml({
+                          template: selectedLabelTemplate ?? undefined,
+                          packages: regularAndCommission.map((p) => ({
+                            trackingNumber: p.trackingNumber,
+                            weightKg: p.weightKg,
+                            volumeCbm: p.volumeCbm,
+                            lengthCm: p.lengthCm,
+                            widthCm: p.widthCm,
+                            heightCm: p.heightCm,
+                            calculatedCostUsd: p.calculatedCostUsd,
+                            shippingType: batch?.shippingType,
+                          })),
+                          customer: {
+                            name: selectedCustomer?.name ?? fullCustomer?.fullNameKurdish ?? fullCustomer?.fullName ?? '',
+                            code: selectedCustomer?.code ?? fullCustomer?.customerCode ?? undefined,
+                            phone: fullCustomer?.phone ?? undefined,
+                            city: fullCustomer?.city ?? undefined,
+                          },
+                          batch: { batchCode: batch?.batchCode, shippingType: batch?.shippingType },
+                          company: { name: company.name },
+                          qrCodesMap,
+                        });
+                        openLabelPrintWindow(html);
                         toast.success('لەیبڵەکان ئامادەن بۆ پرینت');
                       }}
+                      className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-emerald-200 bg-gradient-to-b from-emerald-50 to-white hover:border-emerald-400 hover:shadow-lg transition-all duration-200 text-right min-h-[120px] group"
                     >
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <Tag className="h-7 w-7 text-white" />
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                        <Tag className="h-8 w-8 text-white" />
+                      </div>
+                      <div className="text-center">
+                        <span className="text-base font-bold text-slate-800 block">پاکەتی ئاسایی + کڕین بە عمولە</span>
+                        <span className="text-sm text-emerald-700 font-medium mt-1 block">
+                          {(customerPackages?.filter(p => !p.isFullPackage || p.fullPackageOrderType === 'commission')?.length || 0)} لەیبڵ
+                        </span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const fullPackages = customerPackages?.filter(p => p.isFullPackage && p.fullPackageOrderType !== 'commission') || [];
+                        if (fullPackages.length === 0) {
+                          toast.error('هیچ فول پاکیجێک نییە');
+                          return;
+                        }
+                        const fullCustomer = customers?.find(c => c.id === selectedCustomer?.id);
+                        const qrCodesMap: Record<string, string> = {};
+                        for (const p of fullPackages) {
+                          if (p.trackingNumber) {
+                            qrCodesMap[p.trackingNumber] = await QRCode.toDataURL(p.trackingNumber, { width: 200, margin: 1 });
+                          }
+                        }
+                        const html = generateLabelsHtml({
+                          template: selectedLabelTemplate ?? undefined,
+                          packages: fullPackages.map((p) => ({
+                            trackingNumber: p.trackingNumber,
+                            weightKg: p.weightKg,
+                            volumeCbm: p.volumeCbm,
+                            lengthCm: p.lengthCm,
+                            widthCm: p.widthCm,
+                            heightCm: p.heightCm,
+                            calculatedCostUsd: p.calculatedCostUsd,
+                            shippingType: batch?.shippingType,
+                          })),
+                          customer: {
+                            name: selectedCustomer?.name ?? fullCustomer?.fullNameKurdish ?? fullCustomer?.fullName ?? '',
+                            code: selectedCustomer?.code ?? fullCustomer?.customerCode ?? undefined,
+                            phone: fullCustomer?.phone ?? undefined,
+                            city: fullCustomer?.city ?? undefined,
+                          },
+                          batch: { batchCode: batch?.batchCode, shippingType: batch?.shippingType },
+                          company: { name: company.name },
+                          qrCodesMap,
+                        });
+                        openLabelPrintWindow(html);
+                        toast.success('لەیبڵەکان ئامادەن بۆ پرینت');
+                      }}
+                      className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-violet-200 bg-gradient-to-b from-violet-50 to-white hover:border-violet-400 hover:shadow-lg transition-all duration-200 text-right min-h-[120px] group"
+                    >
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                        <Tag className="h-8 w-8 text-white" />
                       </div>
                       <div className="text-center">
                         <span className="text-base font-bold text-slate-800 block">فول پاکیج</span>
-                        <span className="text-sm text-muted-foreground mt-1 block">
+                        <span className="text-sm text-violet-700 font-medium mt-1 block">
                           {(customerPackages?.filter(p => p.isFullPackage && p.fullPackageOrderType !== 'commission')?.length || 0)} لەیبڵ
                         </span>
                       </div>
-                    </Button>
+                    </button>
                   </div>
                 </div>
-                
-                {/* Excel Export */}
-                <div className="flex justify-end">
+
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-2"
+                    className="gap-2 border-slate-300 hover:bg-slate-100"
                     onClick={() => {
                       const headers = ['#', 'تراک نەمبەر', batch?.shippingType === 'sea' ? 'CBM' : 'کێش (KG)', 'نرخ ($)', 'جۆر'];
                       const rows = customerPackages?.map((pkg, idx) => [

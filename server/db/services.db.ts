@@ -59,6 +59,7 @@ import {
   customerAddresses, InsertCustomerAddress, CustomerAddress,
   notificationTemplates, InsertNotificationTemplate, NotificationTemplate,
   labelTemplates, InsertLabelTemplate, LabelTemplate,
+  batchLabelTemplates, InsertBatchLabelTemplate, BatchLabelTemplate,
   invoiceTemplates, InsertInvoiceTemplate, InvoiceTemplate,
   customerNotifications, InsertCustomerNotification, CustomerNotification,
   revenueRecords, InsertRevenueRecord, RevenueRecord,
@@ -267,7 +268,7 @@ export async function updateExtraService(id: number, data: Partial<InsertExtraSe
   if (!db) return null;
   
   // Recalculate profit if cost or price changed
-  const updateData: any = { ...data };
+  const updateData: Record<string, unknown> = { ...data };
   if (data.costAmount !== undefined || data.priceAmount !== undefined) {
     const existing = await getExtraServiceById(id);
     if (existing) {
@@ -811,7 +812,85 @@ export async function ensureDefaultLabelTemplate(): Promise<LabelTemplate> {
   });
 }
 
+// ============ BATCH LABEL TEMPLATES (تێمپلەیتی لەیبڵی باچ) ============
+export async function getBatchLabelTemplates(): Promise<BatchLabelTemplate[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(batchLabelTemplates).orderBy(batchLabelTemplates.name);
+}
 
+export async function getBatchLabelTemplateById(id: number): Promise<BatchLabelTemplate | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(batchLabelTemplates).where(eq(batchLabelTemplates.id, id));
+  return result[0] || null;
+}
+
+export async function getDefaultBatchLabelTemplate(): Promise<BatchLabelTemplate | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(batchLabelTemplates).where(eq(batchLabelTemplates.isDefault, true));
+  return result[0] || null;
+}
+
+export async function createBatchLabelTemplate(data: InsertBatchLabelTemplate): Promise<BatchLabelTemplate> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(batchLabelTemplates).values(data);
+  return getBatchLabelTemplateById(result.insertId) as Promise<BatchLabelTemplate>;
+}
+
+export async function updateBatchLabelTemplate(id: number, data: Partial<InsertBatchLabelTemplate>): Promise<BatchLabelTemplate | null> {
+  const db = await getDb();
+  if (!db) return null;
+  await db.update(batchLabelTemplates).set({ ...data, updatedAt: new Date() }).where(eq(batchLabelTemplates.id, id));
+  return getBatchLabelTemplateById(id);
+}
+
+export async function deleteBatchLabelTemplate(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  await db.delete(batchLabelTemplates).where(eq(batchLabelTemplates.id, id));
+  return true;
+}
+
+export async function setDefaultBatchLabelTemplate(id: number): Promise<BatchLabelTemplate | null> {
+  const db = await getDb();
+  if (!db) return null;
+  await db.update(batchLabelTemplates).set({ isDefault: false }).where(eq(batchLabelTemplates.isDefault, true));
+  await db.update(batchLabelTemplates).set({ isDefault: true, updatedAt: new Date() }).where(eq(batchLabelTemplates.id, id));
+  return getBatchLabelTemplateById(id);
+}
+
+export async function ensureDefaultBatchLabelTemplate(): Promise<BatchLabelTemplate> {
+  const existing = await getDefaultBatchLabelTemplate();
+  if (existing) return existing;
+  return createBatchLabelTemplate({
+    name: "تێمپلەیتی بنەڕەتی لەیبڵی باچ",
+    isDefault: true,
+    size: "10x15",
+    widthMm: 100,
+    heightMm: 150,
+    showQrCode: true,
+    qrCodeSize: 80,
+    qrCodePosition: "top-right",
+    showBarcode: true,
+    barcodeType: "code128",
+    showLogo: true,
+    logoWidth: 60,
+    showCustomerName: true,
+    showCustomerCode: true,
+    showTotalPackages: true,
+    showTotalWeight: true,
+    showTotalVolume: true,
+    showTotalPrice: true,
+    showBatchNumber: true,
+    showDate: true,
+    primaryColor: "#059669",
+    fontFamily: "Arial",
+    fontSize: 12,
+  });
+}
 
 // ============ BLOG POSTS (بلۆگ و ڕاگەیاندنەکان) ============
 

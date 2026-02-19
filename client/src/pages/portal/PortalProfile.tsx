@@ -13,10 +13,12 @@ import {
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 function ClassicPortalProfile() {
 const { t, language, setLanguage } = useLanguage();
+  const company = useCompanyInfo();
   const isRTL = language === "ku" || language === "ar";
   const { logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -472,7 +474,7 @@ const { t, language, setLanguage } = useLanguage();
             </a>
           </div>
           <p className={cn("text-xs", isDark ? "text-slate-600" : "text-slate-400")}>
-            Wazn Express v1.0.0
+            {company.name} v1.0.0
           </p>
         </div>
       </div>

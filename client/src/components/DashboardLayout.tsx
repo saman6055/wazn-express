@@ -7,8 +7,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import CompanyLogo from "@/components/CompanyLogo";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 import {
   LayoutDashboard, 
   Users, 
@@ -107,6 +110,7 @@ export default function DashboardLayout({
 }) {
   const { loading, user } = useAuth();
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
 
   // Redirect customers to portal
   useEffect(() => {
@@ -123,10 +127,10 @@ export default function DashboardLayout({
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold">Access Required</h1>
-          <p className="text-muted-foreground">Please sign in to continue</p>
+          <h1 className="text-2xl font-bold">{t("auth.accessRequired") || "Access Required"}</h1>
+          <p className="text-muted-foreground">{t("auth.pleaseSignIn") || "Please sign in to continue"}</p>
           <Button asChild>
-            <a href={getLoginUrl()}>Sign In</a>
+            <a href={getLoginUrl()}>{t("auth.signIn") || "Sign In"}</a>
           </Button>
         </div>
       </div>
@@ -146,6 +150,8 @@ function DashboardLayoutContent({
   const isMobile = useIsMobile();
   const { language, setLanguage, t, isRTL } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const company = useCompanyInfo();
+  useDynamicFavicon();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["main"]);
   const { canViewPath } = usePermissions();
@@ -271,7 +277,7 @@ function DashboardLayoutContent({
           { icon: Wallet, label: t("nav.financeManagement") || "بەڕێوەبردنی دارایی", path: "/finance" },
           { icon: Receipt, label: t("nav.invoices") || "پسووڵەکان", path: "/invoices" },
           { icon: Users, label: t("nav.debtorsReport") || "ڕاپۆرتی قەرزداران", path: "/finance/debtors" },
-          { icon: Clock, label: t("nav.debtReminders") || "بیرهێنەرەوەی قەرز", path: "/debt-reminders" },
+          { icon: Clock, label: t("nav.debtReminders") || "بیرهێنەرەوەی قەرز", path: "/finance/debt-reminders" },
         ]
       });
     }
@@ -300,12 +306,12 @@ function DashboardLayoutContent({
     if (isEmployee) {
       groups.push({
         id: "services",
-        title: "خزمەتگوزارییەکان",
+        title: t("nav.servicesSection") || "Services",
         icon: Wrench,
         color: "cyan",
         items: [
-          { icon: Wrench, label: "هەموو خزمەتگوزارییەکان", path: "/services" },
-          { icon: Tags, label: "جۆرەکانی خزمەتگوزاری", path: "/services/types" },
+          { icon: Wrench, label: t("nav.allServices") || "All Services", path: "/services" },
+          { icon: Tags, label: t("nav.serviceTypes") || "Service Types", path: "/services/types" },
         ]
       });
     }
@@ -320,7 +326,7 @@ function DashboardLayoutContent({
         items: [
           { icon: BarChart3, label: t("nav.reportsOverview") || "پوختەی ڕاپۆرت", path: "/reports" },
           { icon: Boxes, label: t("nav.batchReports") || "ڕاپۆرتی باچەکان", path: "/reports/batches" },
-          { icon: Wrench, label: "ڕاپۆرتی خزمەتگوزارییەکان", path: "/reports/services" },
+          { icon: Wrench, label: t("nav.serviceProfitReport") || "Service Report", path: "/reports/services" },
           { icon: TrendingUp, label: t("nav.profitDashboard") || "داشبۆردی قازانج", path: "/reports/profit" },
           { icon: Calendar, label: t("nav.monthlyProfitReport") || "ڕاپۆرتی مانگانە", path: "/reports/monthly-profit" },
           { icon: CircleDollarSign, label: t("nav.profitByType") || "قازانج بە جۆری پەت", path: "/profit-by-type" },
@@ -375,6 +381,7 @@ function DashboardLayoutContent({
         color: "teal",
         items: [
           { icon: QrCode, label: t("nav.labelTemplates") || "داڕشتەی لەیبڵ", path: "/settings/label-templates" },
+          { icon: Boxes, label: t("nav.batchLabelTemplate") || "داڕشتەی لەیبڵی باچ", path: "/settings/batch-label-template" },
           { icon: Printer, label: t("nav.labelPrinting") || "چاپکردنی لەیبڵ", path: "/label-printing" },
           { icon: FileSignature, label: t("nav.invoiceTemplate") || "داڕشتەی پسووڵە", path: "/settings/invoice-template" },
           { icon: Bell, label: t("nav.notificationSettings") || "ئاگادارکردنەوەکان", path: "/settings/notifications" },
@@ -432,8 +439,12 @@ function DashboardLayoutContent({
           <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
         </button>
         <div className="flex items-center gap-2">
-          <Package className="h-5 w-5 text-emerald-600" />
-          <span className="font-semibold text-gray-900 dark:text-white">Wazn Express</span>
+          <CompanyLogo
+            size={24}
+            iconClassName="h-4 w-4 text-white"
+            fallbackBg="bg-emerald-600"
+          />
+          <span className="font-semibold text-gray-900 dark:text-white">{company.name}</span>
         </div>
         <div className="w-9" />
       </header>
@@ -462,12 +473,16 @@ function DashboardLayoutContent({
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
-              <Package className="h-5 w-5 text-white" />
-            </div>
+            <CompanyLogo
+              size={40}
+              className="shadow-lg shadow-emerald-500/25"
+              iconClassName="h-5 w-5 text-white"
+              fallbackBg="bg-gradient-to-br from-emerald-500 to-emerald-600"
+            />
             <div>
-              <span className="font-bold text-lg text-gray-900 dark:text-white block leading-tight">Wazn</span>
-              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Express</span>
+              <span className="font-bold text-lg text-gray-900 dark:text-white block leading-tight">
+                {company.name}
+              </span>
             </div>
           </div>
           {isMobile && (
@@ -592,7 +607,7 @@ function DashboardLayoutContent({
                     {user?.name || "User"}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {userRole === "admin" ? "ئەدمین" : userRole === "employee" ? "کارمەند" : userRole === "accountant" ? "ژمێریار" : userRole}
+                    {userRole === "admin" ? t("roles.admin") : userRole === "employee" ? t("roles.employee") : userRole === "accountant" ? t("roles.accountant") : userRole === "super_admin" ? t("roles.superAdmin") || "Super Admin" : userRole}
                   </p>
                 </div>
               </button>

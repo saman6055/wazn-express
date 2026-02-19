@@ -1,520 +1,274 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useParams, useLocation } from "wouter";
-import { 
-  Printer, 
-  Download, 
-  ArrowRight, 
-  Building2, 
-  Phone, 
-  Mail, 
-  Globe, 
-  MapPin,
-  FileText,
-  Calendar,
-  User,
-  Package,
-  CheckCircle2,
-  XCircle
-} from "lucide-react";
+import { Printer, Download, ArrowRight, ArrowLeft, FileText, Loader2 } from "lucide-react";
 import { useRef } from "react";
-
-// Company Information
-const COMPANY_INFO = {
-  name: "Wazn Express",
-  nameKu: "وەزن ئێکسپرێس",
-  address: "Erbil, Kurdistan Region, Iraq",
-  addressKu: "هەولێر، هەرێمی کوردستان، عێراق",
-  phone: "+964 750 XXX XXXX",
-  email: "info@waznexpress.com",
-  website: "www.waznexpress.com",
-};
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function InvoiceView() {
+  const { t, direction, isRTL, language } = useTranslation();
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const printRef = useRef<HTMLDivElement>(null);
-  
+
   const invoiceId = parseInt(params.id || "0");
-  
-  const { data: invoice, isLoading } = trpc.invoices.getById.useQuery(
-    { id: invoiceId },
-    { enabled: invoiceId > 0 }
-  );
-  
+
+  const { data: invoice, isLoading } = trpc.invoices.getById.useQuery({ id: invoiceId }, { enabled: invoiceId > 0 });
   const { data: customers } = trpc.customers.list.useQuery();
+  const { data: template } = trpc.invoiceTemplates.getDefault.useQuery();
   const generatePdfMutation = trpc.invoices.generatePDF.useMutation();
-  
   const customer = customers?.find(c => c.id === invoice?.customerId);
-  
-  const lineItems = invoice?.lineItems 
-    ? (typeof invoice.lineItems === 'string' 
-        ? JSON.parse(invoice.lineItems) 
-        : invoice.lineItems)
-    : [];
+  const { data: customerBalance } = trpc.customers.getBalance.useQuery(
+    { customerId: invoice?.customerId || 0 }, { enabled: !!invoice?.customerId }
+  );
+
+  const lineItems = invoice?.lineItems
+    ? (typeof invoice.lineItems === 'string' ? JSON.parse(invoice.lineItems) : invoice.lineItems) : [];
+
+  // Dynamic company info from template — language-aware
+  const templateAny = template as { companyNameAr?: string; companyAddressAr?: string; footerTextAr?: string; termsTextAr?: string } | null | undefined;
+  const company = {
+    name: template?.companyName || "Wazn Express",
+    nameKu: template?.companyNameKu || "وەزن ئێکسپرێس",
+    nameAr: templateAny?.companyNameAr || "وزن اكسبرس",
+    address: template?.companyAddress || "Erbil, Kurdistan Region, Iraq",
+    addressKu: template?.companyAddressKu || "هەولێر، هەرێمی کوردستان، عێراق",
+    addressAr: templateAny?.companyAddressAr || "أربيل، إقليم كردستان، العراق",
+    phone: template?.companyPhone || "", phone2: template?.companyPhone2 || "",
+    email: template?.companyEmail || "", website: template?.companyWebsite || "",
+    logoUrl: template?.logoUrl || "",
+    primaryColor: template?.primaryColor || "#0f766e",
+    secondaryColor: template?.secondaryColor || "#14b8a6",
+    footerTextKu: template?.footerTextKu || "", footerText: template?.footerText || "", footerTextAr: templateAny?.footerTextAr || "",
+    termsTextKu: template?.termsTextKu || "", termsText: template?.termsText || "", termsTextAr: templateAny?.termsTextAr || "",
+    bankName: template?.bankName || "", bankAccountName: template?.bankAccountName || "",
+    bankAccountNumber: template?.bankAccountNumber || "", bankIban: template?.bankIban || "",
+  };
+
+  const companyDisplayName = language === 'ar' ? company.nameAr : language === 'ku' ? company.nameKu : company.name;
+  const companySecondaryName = (language === 'ku' || language === 'ar') ? company.name : company.nameKu;
+  const companyDisplayAddress = language === 'ar' ? company.addressAr : language === 'ku' ? company.addressKu : company.address;
+  const footerDisplay = language === 'ar' ? (company.footerTextAr || company.footerText) : language === 'ku' ? (company.footerTextKu || company.footerText) : company.footerText;
+  const termsDisplay = language === 'ar' ? (company.termsTextAr || company.termsText) : language === 'ku' ? (company.termsTextKu || company.termsText) : company.termsText;
+
+  const primaryColor = company.primaryColor;
+  const secondaryColor = company.secondaryColor;
+  const textStart = isRTL ? 'right' : 'left';
+  const textEnd = isRTL ? 'left' : 'right';
 
   const handlePrint = () => {
-    const printContent = printRef.current;
-    if (!printContent) return;
-    
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html dir="rtl">
-      <head>
-        <title>Invoice ${invoice?.invoiceNumber}</title>
-        <meta charset="utf-8">
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
-          
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
-          body {
-            font-family: 'Noto Sans Arabic', Arial, sans-serif;
-            direction: rtl;
-            background: white;
-            color: #1e293b;
-            padding: 20px;
-          }
-          
-          .invoice-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-          }
-          
-          .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding-bottom: 20px;
-            border-bottom: 3px solid #0f766e;
-            margin-bottom: 30px;
-          }
-          
-          .company-info h1 {
-            font-size: 28px;
-            color: #0f766e;
-            margin-bottom: 5px;
-          }
-          
-          .company-info h2 {
-            font-size: 16px;
-            color: #64748b;
-            font-weight: normal;
-            margin-bottom: 10px;
-          }
-          
-          .company-info p {
-            font-size: 12px;
-            color: #64748b;
-            margin: 3px 0;
-          }
-          
-          .invoice-title {
-            text-align: left;
-          }
-          
-          .invoice-title h3 {
-            font-size: 32px;
-            color: #0f766e;
-            margin-bottom: 10px;
-          }
-          
-          .invoice-title p {
-            font-size: 12px;
-            color: #64748b;
-            margin: 3px 0;
-          }
-          
-          .status-badge {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 10px;
-          }
-          
-          .status-paid {
-            background: #dcfce7;
-            color: #166534;
-          }
-          
-          .status-unpaid {
-            background: #fee2e2;
-            color: #991b1b;
-          }
-          
-          .customer-section {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-          }
-          
-          .customer-section h4 {
-            color: #0f766e;
-            font-size: 14px;
-            margin-bottom: 10px;
-          }
-          
-          .customer-section .name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 5px;
-          }
-          
-          .customer-section .code {
-            font-size: 14px;
-            color: #64748b;
-            font-family: monospace;
-          }
-          
-          .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-          }
-          
-          .items-table th {
-            background: #0f766e;
-            color: white;
-            padding: 12px 15px;
-            text-align: right;
-            font-weight: 600;
-            font-size: 13px;
-          }
-          
-          .items-table th:last-child {
-            text-align: left;
-          }
-          
-          .items-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 13px;
-          }
-          
-          .items-table td:last-child {
-            text-align: left;
-            font-family: monospace;
-          }
-          
-          .items-table tr:nth-child(even) {
-            background: #f8fafc;
-          }
-          
-          .totals-section {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 30px;
-          }
-          
-          .totals-box {
-            width: 300px;
-          }
-          
-          .totals-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
-          }
-          
-          .totals-row.total {
-            background: #0f766e;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 18px;
-            font-weight: 700;
-          }
-          
-          .footer {
-            text-align: center;
-            padding-top: 30px;
-            border-top: 1px solid #e2e8f0;
-            color: #64748b;
-            font-size: 12px;
-          }
-          
-          .footer p {
-            margin: 5px 0;
-          }
-          
-          @media print {
-            body {
-              padding: 0;
-            }
-            
-            .invoice-container {
-              max-width: 100%;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        ${printContent.innerHTML}
-      </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
-    printWindow.focus();
-    
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
+    const el = printRef.current;
+    if (!el) return;
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html dir="${direction}" lang="${language}"><head>
+      <title>${t('invoiceView.invoice')} ${invoice?.invoiceNumber}</title><meta charset="utf-8">
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Noto Sans Arabic','Noto Sans SC',Arial,sans-serif;direction:${direction};background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        @media print{body{padding:0}@page{margin:15mm;size:A4}}
+      </style></head><body>${el.innerHTML}</body></html>`);
+    w.document.close(); w.focus();
+    setTimeout(() => { w.print(); w.close(); }, 500);
   };
 
   const handleDownloadPDF = async () => {
     if (!invoice) return;
-    
     try {
-      const result = await generatePdfMutation.mutateAsync({ id: invoice.id });
-      if (result?.url) {
-        window.open(result.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Failed to generate PDF:', error);
-    }
+      const r = await generatePdfMutation.mutateAsync({ id: invoice.id });
+      if (r?.url) window.open(r.url, '_blank');
+    } catch (e) { console.error('PDF error:', e); }
   };
 
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  if (isLoading) return (
+    <DashboardLayout><div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div></DashboardLayout>
+  );
 
-  if (!invoice) {
-    return (
-      <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <FileText className="h-16 w-16 text-muted-foreground" />
-          <p className="text-muted-foreground">پسوولە نەدۆزرایەوە</p>
-          <Button onClick={() => navigate('/invoices')}>گەڕانەوە بۆ پسوولەکان</Button>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  if (!invoice) return (
+    <DashboardLayout><div className="flex flex-col items-center justify-center h-64 gap-4">
+      <FileText className="h-16 w-16 text-muted-foreground" /><p className="text-muted-foreground">{t('invoiceView.notFound')}</p>
+      <Button onClick={() => navigate('/invoices')}>{t('invoiceView.backToInvoices')}</Button>
+    </div></DashboardLayout>
+  );
 
-  const isPaid = invoice.status === 'paid';
   const subtotal = Number(invoice.subtotalUsd) || 0;
   const tax = Number(invoice.taxUsd) || 0;
   const total = Number(invoice.totalUsd) || 0;
+  const balance = customerBalance ?? 0;
+  const isDebt = balance > 0;
+  const isCredit = balance < 0;
+
+  const statusLabel = invoice.status === 'paid' ? t('invoiceView.paid')
+    : invoice.status === 'issued' ? t('invoiceView.issued')
+    : invoice.status === 'draft' ? t('invoiceView.draft')
+    : invoice.status === 'cancelled' ? t('invoiceView.cancelled') : invoice.status;
+
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header Actions */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <FileText className="h-6 w-6 text-primary" />
-              پسوولە #{invoice.invoiceNumber}
-            </h1>
-            <p className="text-muted-foreground">بینینی پسوولە بە شێوەیەکی پڕۆفیشناڵ</p>
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/invoices')}><BackArrow className="h-5 w-5" /></Button>
+            <div>
+              <h1 className="text-xl font-bold flex items-center gap-2">
+                <FileText className="h-5 w-5 text-teal-600" />{t('invoiceView.invoice')} #{invoice.invoiceNumber}
+              </h1>
+              <p className="text-sm text-muted-foreground">{t('invoiceView.viewAndPrint')}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="h-4 w-4 ml-2" />
-              چاپکردن
-            </Button>
-            <Button 
-              onClick={handleDownloadPDF}
-              disabled={generatePdfMutation.isPending}
-            >
-              <Download className="h-4 w-4 ml-2" />
-              {generatePdfMutation.isPending ? 'چاوەڕوان بە...' : 'داگرتنی PDF'}
+            <Button variant="outline" onClick={handlePrint} className="gap-2"><Printer className="h-4 w-4" />{t('invoiceView.print')}</Button>
+            <Button onClick={handleDownloadPDF} disabled={generatePdfMutation.isPending} className="gap-2 bg-teal-600 hover:bg-teal-700">
+              <Download className="h-4 w-4" />{generatePdfMutation.isPending ? t('invoiceView.generating') : t('invoiceView.downloadPdf')}
             </Button>
           </div>
         </div>
 
-        {/* Invoice Preview Card */}
-        <Card className="overflow-hidden">
+        {/* Invoice Preview — ALL INLINE STYLES for print compatibility */}
+        <Card className="overflow-hidden shadow-lg">
           <CardContent className="p-0">
-            <div ref={printRef} className="invoice-container bg-white p-8" dir="rtl">
-              {/* Header with Gradient */}
-              <div className="flex justify-between items-start pb-6 border-b-4 border-emerald-600 mb-8">
-                {/* Company Info */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <Package className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h1 className="text-2xl font-bold text-emerald-700">{COMPANY_INFO.name}</h1>
-                      <h2 className="text-lg text-slate-500">{COMPANY_INFO.nameKu}</h2>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <MapPin className="h-4 w-4" />
-                    <span>{COMPANY_INFO.addressKu}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <Phone className="h-4 w-4" />
-                    <span dir="ltr">{COMPANY_INFO.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <Mail className="h-4 w-4" />
-                    <span dir="ltr">{COMPANY_INFO.email}</span>
+            <div ref={printRef} style={{ maxWidth:'800px',margin:'0 auto',padding:'40px',background:'white',fontFamily:"'Noto Sans Arabic','Noto Sans SC',Arial,sans-serif",direction:direction,color:'#1e293b' }}>
+
+              {/* HEADER */}
+              <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',paddingBottom:'24px',borderBottom:`3px solid ${primaryColor}`,marginBottom:'28px' }}>
+                <div>
+                  {company.logoUrl && <img src={company.logoUrl} alt={company.name} style={{ height:'50px',marginBottom:'8px',objectFit:'contain' }} />}
+                  <h1 style={{ fontSize:'24px',fontWeight:700,color:primaryColor,marginBottom:'2px' }}>{companyDisplayName}</h1>
+                  <p style={{ fontSize:'14px',color:'#94a3b8',marginBottom:'10px' }}>{companySecondaryName}</p>
+                  <div style={{ fontSize:'11px',color:'#64748b',lineHeight:'1.8' }}>
+                    {companyDisplayAddress && <p>{companyDisplayAddress}</p>}
+                    {company.phone && <p style={{ direction:'ltr',textAlign:textStart as "left" | "right" }}>{company.phone}{company.phone2 ? ` | ${company.phone2}` : ''}</p>}
+                    {company.email && <p style={{ direction:'ltr',textAlign:textStart as "left" | "right" }}>{company.email}</p>}
+                    {company.website && <p style={{ direction:'ltr',textAlign:textStart as "left" | "right" }}>{company.website}</p>}
                   </div>
                 </div>
-
-                {/* Invoice Info */}
-                <div className="text-left space-y-2">
-                  <h3 className="text-3xl font-bold text-emerald-700">پسوولە</h3>
-                  <p className="text-sm text-slate-500">
-                    <span className="font-medium">ژمارەی پسوولە:</span>{' '}
-                    <span className="font-mono">{invoice.invoiceNumber}</span>
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    <span className="font-medium">بەروار:</span>{' '}
-                    {new Date(invoice.createdAt).toLocaleDateString('ku-Arab')}
-                  </p>
-                  {invoice.dueDate && (
-                    <p className="text-sm text-slate-500">
-                      <span className="font-medium">دوا وادە:</span>{' '}
-                      {new Date(invoice.dueDate).toLocaleDateString('ku-Arab')}
-                    </p>
-                  )}
-                  <div className={`inline-flex items-center gap-1 px-4 py-2 rounded-full text-sm font-semibold mt-2 ${
-                    isPaid 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-red-100 text-red-700'
-                  }`}>
-                    {isPaid ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4" />
-                        پارەدراو
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="h-4 w-4" />
-                        پارەنەدراو
-                      </>
-                    )}
+                <div style={{ textAlign:textEnd as "left" | "right",minWidth:'200px' }}>
+                  <h2 style={{ fontSize:'28px',fontWeight:700,color:primaryColor,marginBottom:'4px' }}>{t('invoiceView.invoice')}</h2>
+                  <p style={{ fontSize:'11px',color:'#94a3b8',marginBottom:'12px' }}>INVOICE</p>
+                  <div style={{ fontSize:'12px',color:'#64748b',lineHeight:'2' }}>
+                    <p><span style={{ fontWeight:600 }}>{t('invoiceView.invoiceNumber')}: </span><span style={{ fontFamily:'monospace' }}>{invoice.invoiceNumber}</span></p>
+                    <p><span style={{ fontWeight:600 }}>{t('invoiceView.date')}: </span>{new Date(invoice.createdAt).toLocaleDateString('en-GB')}</p>
+                    {invoice.dueDate && <p><span style={{ fontWeight:600 }}>{t('invoiceView.dueDate')}: </span>{new Date(invoice.dueDate).toLocaleDateString('en-GB')}</p>}
+                  </div>
+                  <div style={{ display:'inline-block',marginTop:'10px',padding:'5px 16px',borderRadius:'20px',fontSize:'12px',fontWeight:600,
+                    background:invoice.status==='paid'?'#dcfce7':'#dbeafe',color:invoice.status==='paid'?'#166534':'#1e40af' }}>
+                    {statusLabel}
                   </div>
                 </div>
               </div>
 
-              {/* Customer Info */}
-              <div className="bg-slate-50 rounded-xl p-6 mb-8">
-                <h4 className="text-emerald-700 font-semibold mb-3 flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  زانیاری کڕیار
-                </h4>
-                <div className="grid grid-cols-2 gap-4">
+              {/* CUSTOMER */}
+              <div style={{ background:'#f8fafc',borderRadius:'10px',padding:'20px',marginBottom:'28px',border:'1px solid #e2e8f0' }}>
+                <p style={{ fontSize:'11px',fontWeight:600,color:primaryColor,marginBottom:'10px',letterSpacing:'0.5px' }}>{t('invoiceView.customerInfo')}</p>
+                <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start' }}>
                   <div>
-                    <p className="text-lg font-semibold text-slate-800">
-                      {customer?.fullNameKurdish || customer?.fullName || 'نەناسراو'}
-                    </p>
-                    <p className="text-slate-500 font-mono text-sm">
-                      {customer?.customerCode || '-'}
-                    </p>
+                    <p style={{ fontSize:'16px',fontWeight:700,color:'#1e293b' }}>{customer?.fullNameKurdish || customer?.fullName || t('invoiceView.unknown')}</p>
+                    <p style={{ fontSize:'13px',color:'#64748b',fontFamily:'monospace',marginTop:'2px' }}>{customer?.customerCode || '-'}</p>
                   </div>
-                  <div className="text-left">
-                    {customer?.mobileNumber && (
-                      <p className="text-sm text-slate-500" dir="ltr">
-                        <Phone className="h-3 w-3 inline ml-1" />
-                        {customer.mobileNumber}
-                      </p>
-                    )}
-                    {customer?.city && (
-                      <p className="text-sm text-slate-500">
-                        <MapPin className="h-3 w-3 inline ml-1" />
-                        {customer.city}
-                      </p>
-                    )}
+                  <div style={{ textAlign:textEnd as "left" | "right",fontSize:'12px',color:'#64748b',lineHeight:'1.8' }}>
+                    {customer?.mobileNumber && <p style={{ direction:'ltr' }}>📞 {customer.mobileNumber}</p>}
+                    {customer?.city && <p>📍 {customer.city}</p>}
                   </div>
                 </div>
               </div>
 
-              {/* Line Items Table */}
-              <div className="mb-8">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gradient-to-l from-emerald-600 to-teal-600 text-white">
-                      <th className="py-3 px-4 text-right font-semibold rounded-tr-lg">#</th>
-                      <th className="py-3 px-4 text-right font-semibold">وەسف</th>
-                      <th className="py-3 px-4 text-center font-semibold">بڕ</th>
-                      <th className="py-3 px-4 text-center font-semibold">نرخی یەکە</th>
-                      <th className="py-3 px-4 text-left font-semibold rounded-tl-lg">کۆ</th>
+              {/* TABLE */}
+              <table style={{ width:'100%',borderCollapse:'collapse',marginBottom:'24px',fontSize:'13px' }}>
+                <thead>
+                  <tr style={{ background:primaryColor }}>
+                    <th style={{ padding:'10px 14px',textAlign:textStart as "left" | "right",color:'white',fontWeight:600 }}>#</th>
+                    <th style={{ padding:'10px 14px',textAlign:textStart as "left" | "right",color:'white',fontWeight:600 }}>{t('invoiceView.description')}</th>
+                    <th style={{ padding:'10px 14px',textAlign:'center',color:'white',fontWeight:600 }}>{t('invoiceView.qty')}</th>
+                    <th style={{ padding:'10px 14px',textAlign:'center',color:'white',fontWeight:600 }}>{t('invoiceView.unitPrice')}</th>
+                    <th style={{ padding:'10px 14px',textAlign:textEnd as "left" | "right",color:'white',fontWeight:600 }}>{t('invoiceView.lineTotal')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lineItems.length > 0 ? lineItems.map((item: { description?: string; quantity?: number; unitPrice?: number; total?: number }, i: number) => (
+                    <tr key={i} style={{ background:i%2===0?'#fff':'#f8fafc',borderBottom:'1px solid #e2e8f0' }}>
+                      <td style={{ padding:'10px 14px',color:'#94a3b8' }}>{i+1}</td>
+                      <td style={{ padding:'10px 14px',color:'#334155' }}>{item.description}</td>
+                      <td style={{ padding:'10px 14px',textAlign:'center',color:'#64748b' }}>{item.quantity}</td>
+                      <td style={{ padding:'10px 14px',textAlign:'center',fontFamily:'monospace',color:'#64748b' }}>${Number(item.unitPrice || 0).toFixed(2)}</td>
+                      <td style={{ padding:'10px 14px',textAlign:textEnd as "left" | "right",fontFamily:'monospace',fontWeight:600,color:'#1e293b' }}>${Number(item.total || 0).toFixed(2)}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {lineItems.length > 0 ? (
-                      lineItems.map((item: any, index: number) => (
-                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                          <td className="py-3 px-4 text-slate-500">{index + 1}</td>
-                          <td className="py-3 px-4 text-slate-800">{item.description}</td>
-                          <td className="py-3 px-4 text-center text-slate-600">{item.quantity}</td>
-                          <td className="py-3 px-4 text-center font-mono text-slate-600">${item.unitPrice?.toFixed(2)}</td>
-                          <td className="py-3 px-4 text-left font-mono font-semibold text-slate-800">${item.total?.toFixed(2)}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="py-8 text-center text-slate-400">
-                          هیچ بابەتێک نییە
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Totals Section */}
-              <div className="flex justify-end mb-8">
-                <div className="w-80 space-y-2">
-                  <div className="flex justify-between py-2 border-b border-slate-200">
-                    <span className="text-slate-600">کۆی ناوەکی:</span>
-                    <span className="font-mono">${subtotal.toFixed(2)}</span>
-                  </div>
-                  {tax > 0 && (
-                    <div className="flex justify-between py-2 border-b border-slate-200">
-                      <span className="text-slate-600">باج:</span>
-                      <span className="font-mono">${tax.toFixed(2)}</span>
-                    </div>
+                  )) : (
+                    <tr><td colSpan={5} style={{ padding:'32px',textAlign:'center',color:'#94a3b8' }}>{t('invoiceView.noItems')}</td></tr>
                   )}
-                  <div className="flex justify-between items-center bg-gradient-to-l from-emerald-600 to-teal-600 text-white p-4 rounded-xl mt-4">
-                    <span className="font-semibold text-lg">کۆی گشتی:</span>
-                    <span className="font-mono text-2xl font-bold">${total.toFixed(2)}</span>
+                </tbody>
+              </table>
+
+              {/* TOTALS */}
+              <div style={{ display:'flex',justifyContent:isRTL?'flex-start':'flex-end',marginBottom:'28px' }}>
+                <div style={{ width:'280px' }}>
+                  <div style={{ display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid #e2e8f0' }}>
+                    <span style={{ color:'#64748b',fontSize:'13px' }}>{t('invoiceView.subtotal')}:</span>
+                    <span style={{ fontFamily:'monospace',fontSize:'13px' }}>${subtotal.toFixed(2)}</span>
+                  </div>
+                  {tax > 0 && <div style={{ display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid #e2e8f0' }}>
+                    <span style={{ color:'#64748b',fontSize:'13px' }}>{t('invoiceView.tax')}:</span>
+                    <span style={{ fontFamily:'monospace',fontSize:'13px' }}>${tax.toFixed(2)}</span>
+                  </div>}
+                  <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',
+                    background:`linear-gradient(135deg,${primaryColor},${secondaryColor})`,
+                    color:'white',padding:'14px 18px',borderRadius:'10px',marginTop:'12px' }}>
+                    <span style={{ fontWeight:600,fontSize:'15px' }}>{t('invoiceView.grandTotal')}:</span>
+                    <span style={{ fontFamily:'monospace',fontSize:'22px',fontWeight:700 }}>${total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Notes */}
-              {invoice.notes && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8">
-                  <h4 className="font-semibold text-amber-800 mb-2">تێبینی:</h4>
-                  <p className="text-amber-700 text-sm">{invoice.notes}</p>
-                </div>
-              )}
+              {/* NOTES */}
+              {invoice.notes && <div style={{ background:'#fffbeb',border:'1px solid #fde68a',borderRadius:'8px',padding:'14px 18px',marginBottom:'24px' }}>
+                <p style={{ fontWeight:600,color:'#92400e',fontSize:'12px',marginBottom:'4px' }}>{t('invoiceView.notes')}:</p>
+                <p style={{ color:'#a16207',fontSize:'12px',lineHeight:'1.6' }}>{invoice.notes}</p>
+              </div>}
 
-              {/* Footer */}
-              <div className="text-center pt-6 border-t border-slate-200">
-                <p className="text-slate-500 text-sm mb-1">سوپاس بۆ کارکردنتان لەگەڵمان!</p>
-                <p className="text-slate-400 text-xs">
-                  {COMPANY_INFO.name} • {COMPANY_INFO.website}
-                </p>
+              {/* BALANCE */}
+              <div style={{ border:'1px solid #e2e8f0',borderRadius:'10px',overflow:'hidden',marginBottom:'24px' }}>
+                <div style={{ background:'#f1f5f9',padding:'10px 18px',fontSize:'12px',fontWeight:600,color:'#475569' }}>{t('invoiceView.customerBalance')}</div>
+                <div style={{ padding:'16px 18px',display:'flex',justifyContent:'space-between',alignItems:'center' }}>
+                  <div>
+                    <p style={{ fontSize:'13px',color:'#64748b' }}>{t('invoiceView.currentBalance')}</p>
+                    <p style={{ fontSize:'11px',color:'#94a3b8',marginTop:'2px' }}>
+                      {customer?.fullNameKurdish || customer?.fullName || t('invoiceView.unknown')} — {customer?.customerCode || ''}
+                    </p>
+                  </div>
+                  <div style={{ textAlign:textEnd as "left" | "right" }}>
+                    <p style={{ fontFamily:'monospace',fontSize:'20px',fontWeight:700,color:isDebt?'#dc2626':isCredit?'#059669':'#64748b' }}>
+                      ${Math.abs(balance).toFixed(2)}
+                    </p>
+                    <p style={{ fontSize:'11px',fontWeight:500,marginTop:'2px',color:isDebt?'#ef4444':isCredit?'#10b981':'#94a3b8' }}>
+                      {isDebt ? t('invoiceView.debt') : isCredit ? t('invoiceView.credit') : t('invoiceView.settled')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* BANK */}
+              {company.bankName && <div style={{ background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'8px',padding:'14px 18px',marginBottom:'24px',fontSize:'12px' }}>
+                <p style={{ fontWeight:600,color:'#166534',marginBottom:'6px' }}>{t('invoiceView.bankInfo')}:</p>
+                <p style={{ color:'#15803d' }}>{t('invoiceView.bankName')}: {company.bankName}</p>
+                {company.bankAccountName && <p style={{ color:'#15803d' }}>{t('invoiceView.accountName')}: {company.bankAccountName}</p>}
+                {company.bankAccountNumber && <p style={{ color:'#15803d',fontFamily:'monospace' }}>{t('invoiceView.accountNumber')}: {company.bankAccountNumber}</p>}
+                {company.bankIban && <p style={{ color:'#15803d',fontFamily:'monospace' }}>IBAN: {company.bankIban}</p>}
+              </div>}
+
+              {/* TERMS */}
+              {termsDisplay && <div style={{ fontSize:'11px',color:'#94a3b8',marginBottom:'20px',lineHeight:'1.6',borderTop:'1px dashed #e2e8f0',paddingTop:'12px' }}>
+                <p style={{ fontWeight:600,color:'#64748b',marginBottom:'4px' }}>{t('invoiceView.terms')}:</p>
+                <p>{termsDisplay}</p>
+              </div>}
+
+              {/* FOOTER */}
+              <div style={{ textAlign:'center',paddingTop:'20px',borderTop:`2px solid ${primaryColor}20` }}>
+                <p style={{ color:'#64748b',fontSize:'12px',marginBottom:'4px' }}>{footerDisplay || t('invoiceView.thankYou')}</p>
+                <p style={{ color:'#94a3b8',fontSize:'10px' }}>{companyDisplayName} • {companySecondaryName}{company.website ? ` • ${company.website}` : ''}</p>
               </div>
             </div>
           </CardContent>

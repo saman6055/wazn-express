@@ -18,59 +18,7 @@ import {
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import * as XLSX from 'xlsx';
-
-// 4 Scanner Modules matching the dashboard
-const SCANNER_MODULES = [
-  { 
-    id: "quick-register",
-    value: "registered",
-    icon: QrCode,
-    labelKu: "تۆماری خێرا",
-    labelEn: "Quick Register",
-    color: "bg-blue-500",
-    lightColor: "bg-blue-50",
-    textColor: "text-blue-600",
-    borderColor: "border-blue-200",
-  },
-  { 
-    id: "batch-assignment",
-    value: "in_batch",
-    icon: Boxes,
-    labelKu: "خستنە ناو باچ",
-    labelEn: "Batch Assignment",
-    color: "bg-purple-500",
-    lightColor: "bg-purple-50",
-    textColor: "text-purple-600",
-    borderColor: "border-purple-200",
-  },
-  { 
-    id: "arrival-verification",
-    value: "received_local",
-    icon: Truck,
-    labelKu: "پشکنینی گەیشتن",
-    labelEn: "Arrival Verification",
-    color: "bg-teal-500",
-    lightColor: "bg-teal-50",
-    textColor: "text-teal-600",
-    borderColor: "border-teal-200",
-  },
-  { 
-    id: "customer-delivery",
-    value: "delivered",
-    icon: CreditCard,
-    labelKu: "گەیاندن بە کڕیار",
-    labelEn: "Customer Delivery",
-    color: "bg-emerald-500",
-    lightColor: "bg-emerald-50",
-    textColor: "text-emerald-600",
-    borderColor: "border-emerald-200",
-  },
-];
-
-// Get module info by scan type
-function getModuleInfo(scanType: string) {
-  return SCANNER_MODULES.find(m => m.value === scanType) || SCANNER_MODULES[0];
-}
+import { SCANNER_MODULES, getModuleByType } from "@/constants/scannerModules";
 
 // Format date for display
 function formatDate(date: Date | string) {
@@ -113,7 +61,7 @@ export default function ScanReports() {
     if (!scansByDateRange) return [];
     
     return SCANNER_MODULES.map(module => {
-      const scans = scansByDateRange.filter((s: any) => s.scanType === module.value);
+      const scans = scansByDateRange.filter((s: any) => s.scanType === module.scanType);
       return {
         ...module,
         count: scans.length,
@@ -270,7 +218,7 @@ export default function ScanReports() {
                       {isKurdish ? "هەموو" : "All"}
                     </SelectItem>
                     {SCANNER_MODULES.map((module) => (
-                      <SelectItem key={module.id} value={module.value}>
+                      <SelectItem key={module.id} value={module.scanType}>
                         {isKurdish ? module.labelKu : module.labelEn}
                       </SelectItem>
                     ))}
@@ -284,7 +232,7 @@ export default function ScanReports() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {moduleStats.map((module) => {
               const Icon = module.icon;
-              const isActive = filterModule === module.value;
+              const isActive = filterModule === module.scanType;
               
               return (
                 <Card 
@@ -294,7 +242,7 @@ export default function ScanReports() {
                       ? `${module.borderColor} ${module.lightColor}` 
                       : 'border-transparent hover:border-slate-200'
                   }`}
-                  onClick={() => setFilterModule(isActive ? "all" : module.value)}
+                  onClick={() => setFilterModule(isActive ? "all" : module.scanType)}
                 >
                   <CardContent className="pt-4 pb-4">
                     <div className="flex items-center gap-3">
@@ -463,7 +411,7 @@ export default function ScanReports() {
                           {SCANNER_MODULES.map((module) => (
                             <TableCell key={module.id} className="text-center">
                               <Badge variant="secondary" className={`${module.lightColor} ${module.textColor}`}>
-                                {day.modules[module.value] || 0}
+                                {day.modules[module.scanType] || 0}
                               </Badge>
                             </TableCell>
                           ))}
@@ -516,7 +464,7 @@ export default function ScanReports() {
                     </TableHeader>
                     <TableBody>
                       {filteredScans.slice(0, 50).map((scan: any, index: number) => {
-                        const module = getModuleInfo(scan.scanType);
+                        const module = getModuleByType(scan.scanType) ?? SCANNER_MODULES[0];
                         const Icon = module.icon;
                         return (
                           <TableRow key={scan.id || index}>

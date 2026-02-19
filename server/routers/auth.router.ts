@@ -5,10 +5,11 @@ import { getSessionCookieOptions } from "../_core/cookies";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { adminProcedure } from "../middleware/auth";
 import * as db from "../db";
-import { runMigration } from "../runMigration";
+import { runMigration } from "../services/migration.service";
 import { getConfig } from "../config";
 import { phoneSchema, emailSchema, idSchema } from "./schemas";
 import * as bcrypt from "bcryptjs";
+import { appLogger } from "../utils/logger";
 
 export const authRouter = router({
   me: publicProcedure.query(opts => opts.ctx.user),
@@ -61,37 +62,47 @@ export const authRouter = router({
       password: z.string().min(1).max(500),
     }))
     .mutation(async ({ input, ctx }) => {
-      const isMobile = /^[0-9+\-\s]+$/.test(input.identifier) && input.identifier.length >= 10;
-      let user = await db.getUserByUsername(input.identifier);
-      if (!user && isMobile) user = await db.getUserByMobile(input.identifier);
-      if (!user) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "ئیمەیڵ/ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە" });
+      try {
+        const isMobile = /^[0-9+\-\s]+$/.test(input.identifier) && input.identifier.length >= 10;
+        let user = await db.getUserByUsername(input.identifier);
+        if (!user && isMobile) user = await db.getUserByMobile(input.identifier);
+        if (!user) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "ئیمەیڵ/ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە" });
+        }
+        if (!user.isActive) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "ئەکاونتەکە ناچالاکە" });
+        }
+        if (!user.passwordHash) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "وشەی نهێنی دانەنراوە. تکایە پەیوەندی بکە بە ئەدمین" });
+        }
+        const isValid = await bcrypt.compare(input.password, user.passwordHash);
+        if (!isValid) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە" });
+        }
+        const { SignJWT } = await import("jose");
+        const secret = new TextEncoder().encode(getConfig().jwtSecret);
+        const token = await new SignJWT({
+          userId: user.id,
+          openId: user.openId || `staff_${user.id}`,
+          role: user.role,
+          isStaff: true,
+        })
+          .setProtectedHeader({ alg: "HS256" })
+          .setExpirationTime("24h")
+          .sign(secret);
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 24 * 60 * 60 * 1000 });
+        try {
+          await db.updateUserLastSignIn(user.id);
+        } catch (_) {
+          // Non-critical: don't fail login if lastSignIn update fails
+        }
+        return { success: true, user: { id: user.id, name: user.name, role: user.role } };
+      } catch (err) {
+        if (err instanceof TRPCError) throw err;
+        appLogger.error("staffLogin failed", { error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined });
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "هەڵەیەک ڕوویدا. دووبارە هەوڵ بدەرەوە یان پەیوەندی بکە بە بەڕێوەبەر." });
       }
-      if (!user.isActive) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "ئەکاونتەکە ناچالاکە" });
-      }
-      if (!user.passwordHash) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "وشەی نهێنی دانەنراوە. تکایە پەیوەندی بکە بە ئەدمین" });
-      }
-      const isValid = await bcrypt.compare(input.password, user.passwordHash);
-      if (!isValid) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە" });
-      }
-      const { SignJWT } = await import("jose");
-      const secret = new TextEncoder().encode(getConfig().jwtSecret);
-      const token = await new SignJWT({
-        userId: user.id,
-        openId: user.openId || `staff_${user.id}`,
-        role: user.role,
-        isStaff: true,
-      })
-        .setProtectedHeader({ alg: "HS256" })
-        .setExpirationTime("7d")
-        .sign(secret);
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
-      await db.updateUserLastSignIn(user.id);
-      return { success: true, user: { id: user.id, name: user.name, role: user.role } };
     }),
   registerStaff: adminProcedure
     .input(z.object({
@@ -118,7 +129,7 @@ export const authRouter = router({
         const existingByMobile = await db.getUserByMobile(input.mobileNumber);
         if (existingByMobile) throw new TRPCError({ code: "CONFLICT", message: "بەکارهێنەرێک بەم ژمارەی مۆبایلە پێشتر هەیە" });
       }
-      const passwordHash = await bcrypt.hash(input.password, 10);
+      const passwordHash = await bcrypt.hash(input.password, 12);
       const user = await db.createStaffUser({
         name: input.name,
         username: input.username,
@@ -132,7 +143,7 @@ export const authRouter = router({
   resetStaffPassword: adminProcedure
     .input(z.object({ userId: idSchema, newPassword: z.string().min(6).max(500) }))
     .mutation(async ({ input }) => {
-      const passwordHash = await bcrypt.hash(input.newPassword, 10);
+      const passwordHash = await bcrypt.hash(input.newPassword, 12);
       await db.updateUserPassword(input.userId, passwordHash);
       return { success: true };
     }),
@@ -150,7 +161,7 @@ export const authRouter = router({
       if (!isValid) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Current password is incorrect" });
       }
-      const passwordHash = await bcrypt.hash(input.newPassword, 10);
+      const passwordHash = await bcrypt.hash(input.newPassword, 12);
       await db.updateUserPassword(ctx.user.id, passwordHash);
       return { success: true };
     }),

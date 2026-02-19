@@ -1,7 +1,7 @@
 import { getDb } from './connection';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { appLogger } from '../utils/logger';
 import { generateAccountNumber, generateTransactionNumber, generatePaymentNumber } from './utils.db';
-import { createInvoice } from './invoices.db';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -116,13 +116,13 @@ export async function getCustomerBalance(customerId: number): Promise<number> {
           totalDebitIqd: "0",
           totalCreditIqd: "0",
         });
-        console.log(`[Balance] Auto-created account for customer ${customerId}`);
+        appLogger.info("[Balance] Auto-created account for customer", { customerId });
         // Re-fetch the account
         accountResult = await db.select().from(customerAccounts)
           .where(eq(customerAccounts.customerId, customerId))
           .limit(1);
       } catch (err) {
-        console.error(`[Balance] Failed to auto-create account:`, err);
+        appLogger.error("[Balance] Failed to auto-create account", { error: err instanceof Error ? err.message : String(err) });
       }
     }
   }
@@ -136,7 +136,7 @@ export async function getCustomerBalance(customerId: number): Promise<number> {
 
 // DEPRECATED: Use getAllLedgerTransactions instead
 export async function getAllLedgerEntries(limit = 100) {
-  console.warn('[DEPRECATED] getAllLedgerEntries is deprecated. Use getAllLedgerTransactions instead.');
+  appLogger.warn('[DEPRECATED] getAllLedgerEntries is deprecated. Use getAllLedgerTransactions instead.');
   const result = await getAllLedgerTransactions({ limit, page: 1 });
   return result.data;
 }
@@ -263,7 +263,7 @@ export async function updateCustomerAccountBalance(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const updateData: any = {
+  const updateData: Record<string, unknown> = {
     currentBalanceUsd: newBalanceUsd,
     currentBalanceIqd: newBalanceIqd,
     lastTransactionAt: new Date(),
@@ -371,11 +371,11 @@ export async function getRecentPayments(limit = 20): Promise<(PaymentRecord & { 
     .from(paymentRecords)
     .orderBy(desc(paymentRecords.createdAt))
     .limit(limit);
-  const accountIds = [...new Set(rows.map((r) => r.accountId))];
+  const accountIds = Array.from(new Set(rows.map((r) => r.accountId)));
   const accounts = accountIds.length > 0
     ? await db.select().from(customerAccounts).where(inArray(customerAccounts.id, accountIds))
     : [];
-  const customerIds = [...new Set(accounts.map((a) => a.customerId))];
+  const customerIds = Array.from(new Set(accounts.map((a) => a.customerId)));
   const customersList = customerIds.length > 0
     ? await db.select({ id: customers.id, fullName: customers.fullName, customerCode: customers.customerCode }).from(customers).where(inArray(customers.id, customerIds))
     : [];
@@ -451,18 +451,21 @@ export async function getDebtors(minBalanceUsd = 0): Promise<{ customerId: numbe
   }));
 }
 
-// Get total debt amount
+// Get total debt amount (SQL aggregation — no parseFloat accumulation)
 export async function getTotalDebtAmount(): Promise<{ totalUsd: number; totalIqd: number; count: number }> {
-  // Use getDebtors to get accurate debt calculation from all sources
-  const debtors = await getDebtors(0);
-  
-  const totalUsd = debtors.reduce((sum, d) => sum + d.balanceUsd, 0);
-  const totalIqd = debtors.reduce((sum, d) => sum + d.balanceIqd, 0);
-  
+  const db = await getDb();
+  if (!db) return { totalUsd: 0, totalIqd: 0, count: 0 };
+
+  const [result] = await db.select({
+    totalUsd: sql<string>`COALESCE(SUM(CASE WHEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(14,2)) > 0 THEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    totalIqd: sql<string>`COALESCE(SUM(CASE WHEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(14,2)) > 0 THEN CAST(${customerAccounts.currentBalanceIqd} AS DECIMAL(15,0)) ELSE 0 END), 0)`,
+    count: sql<number>`COUNT(CASE WHEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(14,2)) > 0 THEN 1 END)`,
+  }).from(customerAccounts);
+
   return {
-    totalUsd,
-    totalIqd,
-    count: debtors.length
+    totalUsd: Number(result?.totalUsd ?? 0),
+    totalIqd: Number(result?.totalIqd ?? 0),
+    count: result?.count ?? 0,
   };
 }
 
@@ -526,7 +529,7 @@ function getChargeTypeDisplayName(chargeType: string, language: 'en' | 'ku' | 'a
 }
 
 // Unified charge function for all transaction types
-// Automatically creates an invoice for every DEBIT transaction
+// Automatically creates an invoice for every DEBIT transaction (all inside one transaction with row lock)
 export async function applyCharge(
   customerId: number,
   customerCode: string,
@@ -537,73 +540,110 @@ export async function applyCharge(
   createdById: number,
   lineItems?: { description: string; quantity: number; unitPrice: number; total: number }[]
 ): Promise<{ transaction: LedgerTransaction; invoice: Invoice }> {
+  if (amountUsd < 0) throw new Error("Amount cannot be negative");
+  if (amountUsd === 0) throw new Error("Amount must be greater than zero");
+
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  const account = await getOrCreateCustomerAccount(customerId, customerCode);
-  
-  const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
-  const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
-  const newBalanceUsd = currentBalanceUsd + amountUsd;
-  
-  // Map charge type to transaction type and reference type
-  const typeMapping: Record<typeof chargeType, { transactionType: string, referenceType: string }> = {
-    'PACKAGE': { transactionType: 'DEBIT_PACKAGE', referenceType: 'package' },
-    'FULL_PACKAGE': { transactionType: 'DEBIT_FULL_PACKAGE', referenceType: 'full_package' },
-    'PURCHASE_REQUEST': { transactionType: 'DEBIT_PURCHASE_REQUEST', referenceType: 'purchase_request' },
-    'COMMISSION': { transactionType: 'DEBIT_COMMISSION', referenceType: 'commission' },
-    'SERVICE': { transactionType: 'DEBIT_SERVICE', referenceType: 'service' }
-  };
-  
-  const { transactionType, referenceType } = typeMapping[chargeType];
-  const chargeTypeNames = getChargeTypeDisplayName(chargeType);
-  
-  // Create invoice first
-  const invoiceNumber = generateInvoiceNumber();
-  const defaultLineItems = lineItems || [{
-    description: `${chargeTypeNames.nameKu} / ${chargeTypeNames.name}`,
-    quantity: 1,
-    unitPrice: amountUsd,
-    total: amountUsd
-  }];
-  
-  const invoice = await createInvoice({
-    invoiceNumber,
-    customerId,
-    packageId: referenceType === 'package' ? referenceId : null,
-    batchId: null,
-    subtotalUsd: amountUsd.toFixed(2),
-    taxUsd: '0',
-    totalUsd: amountUsd.toFixed(2),
-    status: 'issued',
-    issuedAt: new Date(),
-    lineItems: defaultLineItems,
-    notes: description,
-    createdById
+
+  return await db.transaction(async (tx) => {
+    // 1. Get or create account with row lock
+    let accountRows = await tx.select().from(customerAccounts)
+      .where(eq(customerAccounts.customerId, customerId))
+      .for('update')
+      .limit(1);
+
+    let account = accountRows[0];
+    if (!account) {
+      const accountNumber = generateAccountNumber(customerCode);
+      await tx.insert(customerAccounts).values({
+        customerId,
+        accountNumber,
+        currentBalanceUsd: "0",
+        currentBalanceIqd: "0",
+      });
+      accountRows = await tx.select().from(customerAccounts)
+        .where(eq(customerAccounts.customerId, customerId))
+        .for('update')
+        .limit(1);
+      account = accountRows[0];
+      if (!account) throw new Error("Failed to create or lock customer account");
+    }
+
+    const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
+    const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
+    const newBalanceUsd = currentBalanceUsd + amountUsd;
+
+    const creditLimit = parseFloat(account.creditLimitUsd ?? '500');
+    if (newBalanceUsd > creditLimit) {
+      appLogger.warn(`[Finance] Customer ${customerCode} exceeded credit limit: balance $${newBalanceUsd} > limit $${creditLimit}`);
+    }
+
+    const typeMapping: Record<typeof chargeType, { transactionType: string; referenceType: string }> = {
+      'PACKAGE': { transactionType: 'DEBIT_PACKAGE', referenceType: 'package' },
+      'FULL_PACKAGE': { transactionType: 'DEBIT_FULL_PACKAGE', referenceType: 'full_package' },
+      'PURCHASE_REQUEST': { transactionType: 'DEBIT_PURCHASE_REQUEST', referenceType: 'purchase_request' },
+      'COMMISSION': { transactionType: 'DEBIT_COMMISSION', referenceType: 'commission' },
+      'SERVICE': { transactionType: 'DEBIT_SERVICE', referenceType: 'service' }
+    };
+    const { transactionType, referenceType } = typeMapping[chargeType];
+    const chargeTypeNames = getChargeTypeDisplayName(chargeType);
+    const defaultLineItems = lineItems || [{
+      description: `${chargeTypeNames.nameKu} / ${chargeTypeNames.name}`,
+      quantity: 1,
+      unitPrice: amountUsd,
+      total: amountUsd
+    }];
+
+    // 2. Create invoice (inside transaction)
+    const invoiceNumber = generateInvoiceNumber();
+    const invoiceResult = await tx.insert(invoices).values({
+      invoiceNumber,
+      customerId,
+      packageId: referenceType === 'package' ? referenceId : null,
+      batchId: null,
+      subtotalUsd: amountUsd.toFixed(2),
+      taxUsd: '0',
+      totalUsd: amountUsd.toFixed(2),
+      status: 'issued',
+      issuedAt: new Date(),
+      lineItems: defaultLineItems,
+      notes: description,
+      createdById
+    });
+    const invoiceInsertId = Number(invoiceResult[0].insertId);
+    const [invoice] = await tx.select().from(invoices).where(eq(invoices.id, invoiceInsertId));
+    if (!invoice) throw new Error("Failed to read back created invoice");
+
+    // 3. Create ledger transaction (inside transaction)
+    const txnResult = await tx.insert(ledgerTransactions).values({
+      accountId: account.id,
+      transactionNumber: generateTransactionNumber(),
+      transactionType: transactionType as any,
+      amountUsd: amountUsd.toFixed(2),
+      amountIqd: '0',
+      balanceBeforeUsd: currentBalanceUsd.toFixed(2),
+      balanceAfterUsd: newBalanceUsd.toFixed(2),
+      balanceBeforeIqd: currentBalanceIqd.toFixed(0),
+      balanceAfterIqd: currentBalanceIqd.toFixed(0),
+      referenceType: referenceType as any,
+      referenceId,
+      description,
+      invoiceId: invoice.id,
+      createdById
+    });
+    const txnInsertId = Number(txnResult[0].insertId);
+    const [transaction] = await tx.select().from(ledgerTransactions).where(eq(ledgerTransactions.id, txnInsertId));
+    if (!transaction) throw new Error("Failed to read back created ledger transaction");
+
+    // 4. Update account balance (inside transaction)
+    await tx.update(customerAccounts).set({
+      currentBalanceUsd: newBalanceUsd.toFixed(2),
+      lastTransactionAt: new Date(),
+    }).where(eq(customerAccounts.id, account.id));
+
+    return { transaction, invoice };
   });
-  
-  // Create ledger transaction with invoice link
-  const transaction = await createLedgerTransaction({
-    accountId: account.id,
-    transactionNumber: generateTransactionNumber(),
-    transactionType: transactionType as any,
-    amountUsd: amountUsd.toFixed(2),
-    amountIqd: '0',
-    balanceBeforeUsd: currentBalanceUsd.toFixed(2),
-    balanceAfterUsd: newBalanceUsd.toFixed(2),
-    balanceBeforeIqd: currentBalanceIqd.toFixed(0),
-    balanceAfterIqd: currentBalanceIqd.toFixed(0),
-    referenceType: referenceType as any,
-    referenceId,
-    description,
-    invoiceId: invoice.id,
-    createdById
-  });
-  
-  // Update account balance
-  await updateCustomerAccountBalance(account.id, newBalanceUsd.toFixed(2), currentBalanceIqd.toFixed(0));
-  
-  return { transaction, invoice };
 }
 
 // Record package charge (when package is delivered)
@@ -621,7 +661,7 @@ export async function recordPackageCharge(
 }
 
 // Record package charge WITHOUT creating an invoice (for batch processing)
-// Use this when you want to create a consolidated invoice separately
+// Use this when you want to create a consolidated invoice separately (inside transaction with row lock)
 export async function recordPackageChargeWithoutInvoice(
   customerId: number,
   customerCode: string,
@@ -631,40 +671,69 @@ export async function recordPackageChargeWithoutInvoice(
   createdById: number,
   invoiceId?: number
 ): Promise<LedgerTransaction> {
+  if (amountUsd < 0) throw new Error("Amount cannot be negative");
+  if (amountUsd === 0) throw new Error("Amount must be greater than zero");
+
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  const account = await getOrCreateCustomerAccount(customerId, customerCode);
-  
-  const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
-  const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
-  const newBalanceUsd = currentBalanceUsd + amountUsd;
-  
-  // Create ledger transaction (without creating invoice)
-  const transaction = await createLedgerTransaction({
-    accountId: account.id,
-    transactionNumber: generateTransactionNumber(),
-    transactionType: 'DEBIT_PACKAGE' as any,
-    amountUsd: amountUsd.toFixed(2),
-    amountIqd: '0',
-    balanceBeforeUsd: currentBalanceUsd.toFixed(2),
-    balanceAfterUsd: newBalanceUsd.toFixed(2),
-    balanceBeforeIqd: currentBalanceIqd.toFixed(0),
-    balanceAfterIqd: currentBalanceIqd.toFixed(0),
-    referenceType: 'package' as any,
-    referenceId: packageId,
-    description,
-    invoiceId: invoiceId || null,
-    createdById
+
+  return await db.transaction(async (tx) => {
+    let accountRows = await tx.select().from(customerAccounts)
+      .where(eq(customerAccounts.customerId, customerId))
+      .for('update')
+      .limit(1);
+
+    let account = accountRows[0];
+    if (!account) {
+      const accountNumber = generateAccountNumber(customerCode);
+      await tx.insert(customerAccounts).values({
+        customerId,
+        accountNumber,
+        currentBalanceUsd: "0",
+        currentBalanceIqd: "0",
+      });
+      accountRows = await tx.select().from(customerAccounts)
+        .where(eq(customerAccounts.customerId, customerId))
+        .for('update')
+        .limit(1);
+      account = accountRows[0];
+      if (!account) throw new Error("Failed to create or lock customer account");
+    }
+
+    const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
+    const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
+    const newBalanceUsd = currentBalanceUsd + amountUsd;
+
+    const txnResult = await tx.insert(ledgerTransactions).values({
+      accountId: account.id,
+      transactionNumber: generateTransactionNumber(),
+      transactionType: 'DEBIT_PACKAGE' as any,
+      amountUsd: amountUsd.toFixed(2),
+      amountIqd: '0',
+      balanceBeforeUsd: currentBalanceUsd.toFixed(2),
+      balanceAfterUsd: newBalanceUsd.toFixed(2),
+      balanceBeforeIqd: currentBalanceIqd.toFixed(0),
+      balanceAfterIqd: currentBalanceIqd.toFixed(0),
+      referenceType: 'package' as any,
+      referenceId: packageId,
+      description,
+      invoiceId: invoiceId ?? null,
+      createdById
+    });
+    const txnInsertId = Number(txnResult[0].insertId);
+
+    await tx.update(customerAccounts).set({
+      currentBalanceUsd: newBalanceUsd.toFixed(2),
+      lastTransactionAt: new Date(),
+    }).where(eq(customerAccounts.id, account.id));
+
+    const [transaction] = await tx.select().from(ledgerTransactions).where(eq(ledgerTransactions.id, txnInsertId));
+    if (!transaction) throw new Error("Failed to read back created ledger transaction");
+    return transaction;
   });
-  
-  // Update account balance
-  await updateCustomerAccountBalance(account.id, newBalanceUsd.toFixed(2), currentBalanceIqd.toFixed(0));
-  
-  return transaction;
 }
 
-// Record payment received
+// Record payment received (optionally record cash account deposit in same transaction)
 export async function recordPaymentReceived(
   customerId: number,
   customerCode: string,
@@ -673,59 +742,115 @@ export async function recordPaymentReceived(
   paymentMethod: InsertPaymentRecord['paymentMethod'],
   receivedById: number,
   notes?: string,
-  receiptNumber?: string
+  receiptNumber?: string,
+  cashAccountId?: number,
+  cashDescription?: string
 ): Promise<{ transaction: LedgerTransaction; payment: PaymentRecord }> {
-  const account = await getOrCreateCustomerAccount(customerId, customerCode);
-  
-  const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
-  const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
-  const newBalanceUsd = currentBalanceUsd - amountUsd;
-  const newBalanceIqd = currentBalanceIqd - amountIqd;
-  
-  // Create ledger transaction
-  const transaction = await createLedgerTransaction({
-    accountId: account.id,
-    transactionNumber: generateTransactionNumber(),
-    transactionType: 'CREDIT_PAYMENT',
-    amountUsd: amountUsd.toFixed(2),
-    amountIqd: amountIqd.toFixed(0),
-    balanceBeforeUsd: currentBalanceUsd.toFixed(2),
-    balanceAfterUsd: newBalanceUsd.toFixed(2),
-    balanceBeforeIqd: currentBalanceIqd.toFixed(0),
-    balanceAfterIqd: newBalanceIqd.toFixed(0),
-    referenceType: 'payment',
-    description: notes || 'Payment received',
-    createdById: receivedById
-  });
-  
-  // Create payment record
-  const payment = await createPaymentRecord({
-    accountId: account.id,
-    transactionId: transaction.id,
-    paymentNumber: generatePaymentNumber(),
-    amountUsd: amountUsd.toFixed(2),
-    amountIqd: amountIqd.toFixed(0),
-    paymentMethod,
-    paymentStatus: 'confirmed',
-    receiptNumber,
-    notes,
-    receivedById,
-    confirmedById: receivedById,
-    confirmedAt: new Date()
-  });
-  
-  // Update account balance and last payment
+  if (amountUsd < 0 || amountIqd < 0) throw new Error("Amount cannot be negative");
+  if (amountUsd === 0 && amountIqd === 0) throw new Error("Amount must be greater than zero");
+
   const db = await getDb();
-  if (db) {
-    await db.update(customerAccounts).set({
+  if (!db) throw new Error("Database not available");
+
+  return await db.transaction(async (tx) => {
+    let accountRows = await tx.select().from(customerAccounts)
+      .where(eq(customerAccounts.customerId, customerId))
+      .for('update')
+      .limit(1);
+
+    let account = accountRows[0];
+    if (!account) {
+      const accountNumber = `ACC-${customerCode}-${new Date().getFullYear()}`;
+      await tx.insert(customerAccounts).values({
+        customerId,
+        accountNumber,
+        currentBalanceUsd: "0",
+        currentBalanceIqd: "0",
+      });
+      accountRows = await tx.select().from(customerAccounts)
+        .where(eq(customerAccounts.customerId, customerId))
+        .for('update')
+        .limit(1);
+      account = accountRows[0];
+      if (!account) throw new Error("Failed to create or lock customer account");
+    }
+
+    const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
+    const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
+    const newBalanceUsd = currentBalanceUsd - amountUsd;
+    const newBalanceIqd = currentBalanceIqd - amountIqd;
+
+    const txnResult = await tx.insert(ledgerTransactions).values({
+      accountId: account.id,
+      transactionNumber: generateTransactionNumber(),
+      transactionType: 'CREDIT_PAYMENT',
+      amountUsd: amountUsd.toFixed(2),
+      amountIqd: amountIqd.toFixed(0),
+      balanceBeforeUsd: currentBalanceUsd.toFixed(2),
+      balanceAfterUsd: newBalanceUsd.toFixed(2),
+      balanceBeforeIqd: currentBalanceIqd.toFixed(0),
+      balanceAfterIqd: newBalanceIqd.toFixed(0),
+      referenceType: 'payment',
+      description: notes || 'Payment received',
+      createdById: receivedById
+    });
+    const txnInsertId = Number(txnResult[0].insertId);
+    const [transaction] = await tx.select().from(ledgerTransactions).where(eq(ledgerTransactions.id, txnInsertId));
+    if (!transaction) throw new Error("Failed to read back created ledger transaction");
+
+    const payResult = await tx.insert(paymentRecords).values({
+      accountId: account.id,
+      transactionId: transaction.id,
+      paymentNumber: generatePaymentNumber(),
+      amountUsd: amountUsd.toFixed(2),
+      amountIqd: amountIqd.toFixed(0),
+      paymentMethod,
+      paymentStatus: 'confirmed',
+      receiptNumber,
+      notes,
+      receivedById,
+      confirmedById: receivedById,
+      confirmedAt: new Date()
+    });
+    const payInsertId = Number(payResult[0].insertId);
+    const [payment] = await tx.select().from(paymentRecords).where(eq(paymentRecords.id, payInsertId));
+    if (!payment) throw new Error("Failed to read back created payment record");
+
+    await tx.update(customerAccounts).set({
       currentBalanceUsd: newBalanceUsd.toFixed(2),
       currentBalanceIqd: newBalanceIqd.toFixed(0),
       lastTransactionAt: new Date(),
       lastPaymentAt: new Date()
     }).where(eq(customerAccounts.id, account.id));
-  }
-  
-  return { transaction, payment };
+
+    // If cash account specified, record deposit in same transaction (no silent failure)
+    if (cashAccountId != null && (amountUsd > 0 || amountIqd > 0)) {
+      const cashRows = await tx.select().from(cashAccounts)
+        .where(eq(cashAccounts.id, cashAccountId))
+        .for('update')
+        .limit(1);
+      const cashAccount = cashRows[0];
+      if (!cashAccount) throw new Error(`Cash account ${cashAccountId} not found`);
+      const cashBalance = Number(cashAccount.currentBalance);
+      const cashNewBalance = cashBalance + amountUsd;
+      await tx.insert(cashTransactions).values({
+        accountId: cashAccountId,
+        transactionType: 'customer_payment',
+        amount: amountUsd.toFixed(2),
+        balanceBefore: cashBalance.toFixed(2),
+        balanceAfter: cashNewBalance.toFixed(2),
+        relatedEntityType: 'customer',
+        relatedEntityId: customerId,
+        description: cashDescription ?? `پارەدانی کڕیار: ${customerCode}${notes ? ' - ' + notes : ''}`,
+        transactionDate: new Date(),
+        referenceNumber: receiptNumber,
+        createdById: receivedById,
+      });
+      await tx.update(cashAccounts).set({ currentBalance: cashNewBalance.toFixed(2) }).where(eq(cashAccounts.id, cashAccountId));
+    }
+
+    return { transaction, payment };
+  });
 }
 
 // Get recent transactions across all accounts
@@ -818,6 +943,15 @@ export async function updateExpenseCategory(id: number, data: Partial<InsertExpe
 export async function deleteExpenseCategory(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+
+  const [countResult] = await db.select({
+    count: sql<number>`COUNT(*)`,
+  }).from(expenses).where(eq(expenses.categoryId, id));
+
+  if ((countResult?.count ?? 0) > 0) {
+    throw new Error(`Cannot delete expense category ${id}: it has ${countResult!.count} expenses. Remove or reassign them first.`);
+  }
+
   await db.delete(expenseCategories).where(eq(expenseCategories.id, id));
 }
 
@@ -895,25 +1029,27 @@ export async function getExpensesSummary(startDate: Date, endDate: Date): Promis
 }> {
   const db = await getDb();
   if (!db) return { totalAmount: 0, byCategory: [] };
-  
-  const expensesList = await db.select().from(expenses)
+
+  const byCategoryRows = await db.select({
+    categoryId: expenses.categoryId,
+    categoryName: expenseCategories.nameEn,
+    total: sql<string>`COALESCE(SUM(CAST(${expenses.amountUsd} AS DECIMAL(14,2))), 0)`,
+  })
+    .from(expenses)
+    .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
     .where(and(
       gte(expenses.expenseDate, startDate),
       lte(expenses.expenseDate, endDate)
-    ));
-  
-  const categories = await db.select().from(expenseCategories);
-  
-  const totalAmount = expensesList.reduce((sum, e) => sum + Number(e.amountUsd), 0);
-  
-  const byCategory = categories.map(cat => ({
-    categoryId: cat.id,
-    categoryName: cat.nameEn,
-    total: expensesList
-      .filter(e => e.categoryId === cat.id)
-      .reduce((sum, e) => sum + Number(e.amountUsd), 0)
-  })).filter(c => c.total > 0);
-  
+    ))
+    .groupBy(expenses.categoryId, expenseCategories.nameEn);
+
+  const byCategory = byCategoryRows.map((r) => ({
+    categoryId: r.categoryId,
+    categoryName: r.categoryName ?? "Other",
+    total: Number(r.total),
+  })).filter((c) => c.total > 0);
+
+  const totalAmount = byCategory.reduce((sum, c) => sum + c.total, 0);
   return { totalAmount, byCategory };
 }
 
@@ -961,6 +1097,15 @@ export async function updatePartner(id: number, data: Partial<InsertPartner>): P
 export async function deletePartner(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+
+  const [countResult] = await db.select({
+    count: sql<number>`COUNT(*)`,
+  }).from(partnerTransactions).where(eq(partnerTransactions.partnerId, id));
+
+  if ((countResult?.count ?? 0) > 0) {
+    throw new Error(`Cannot delete partner ${id}: they have ${countResult!.count} transactions. Deactivate instead.`);
+  }
+
   await db.delete(partners).where(eq(partners.id, id));
 }
 
@@ -1007,46 +1152,48 @@ export async function getAllPartnerTransactions(filters?: {
 export async function createPartnerTransaction(data: Omit<InsertPartnerTransaction, 'balanceBefore' | 'balanceAfter'>): Promise<PartnerTransaction> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  // Get current partner balance
-  const partner = await getPartnerById(data.partnerId);
-  if (!partner) throw new Error("Partner not found");
-  
-  const currentBalance = Number(partner.currentBalance);
-  let newBalance = currentBalance;
-  
-  // Calculate new balance based on transaction type
-  switch (data.transactionType) {
-    case 'capital_contribution':
-    case 'profit_share':
-    case 'loan_to_company':
-      newBalance = currentBalance + Number(data.amountUsd);
-      break;
-    case 'withdrawal':
-    case 'loan_repayment':
-      newBalance = currentBalance - Number(data.amountUsd);
-      break;
-    case 'adjustment':
-      // For adjustments, amount can be positive or negative
-      newBalance = currentBalance + Number(data.amountUsd);
-      break;
-  }
-  
-  // Create transaction with balance info
-  const transactionData = {
-    ...data,
-    balanceBefore: currentBalance.toFixed(2),
-    balanceAfter: newBalance.toFixed(2)
-  };
-  
-  const result = await db.insert(partnerTransactions).values(transactionData);
-  const insertId = Number(result[0].insertId);
-  
-  // Update partner balance
-  await db.update(partners).set({ currentBalance: newBalance.toFixed(2) }).where(eq(partners.id, data.partnerId));
-  
-  const [transaction] = await db.select().from(partnerTransactions).where(eq(partnerTransactions.id, insertId));
-  return transaction;
+
+  return await db.transaction(async (tx) => {
+    const partnerRows = await tx.select().from(partners)
+      .where(eq(partners.id, data.partnerId))
+      .for('update')
+      .limit(1);
+    const partner = partnerRows[0];
+    if (!partner) throw new Error("Partner not found");
+
+    const currentBalance = Number(partner.currentBalance);
+    let newBalance = currentBalance;
+
+    switch (data.transactionType) {
+      case 'capital_contribution':
+      case 'profit_share':
+      case 'loan_to_company':
+        newBalance = currentBalance + Number(data.amountUsd);
+        break;
+      case 'withdrawal':
+      case 'loan_repayment':
+        newBalance = currentBalance - Number(data.amountUsd);
+        break;
+      case 'adjustment':
+        newBalance = currentBalance + Number(data.amountUsd);
+        break;
+    }
+
+    const transactionData = {
+      ...data,
+      balanceBefore: currentBalance.toFixed(2),
+      balanceAfter: newBalance.toFixed(2)
+    };
+
+    const result = await tx.insert(partnerTransactions).values(transactionData);
+    const insertId = Number(result[0].insertId);
+
+    await tx.update(partners).set({ currentBalance: newBalance.toFixed(2) }).where(eq(partners.id, data.partnerId));
+
+    const [transaction] = await tx.select().from(partnerTransactions).where(eq(partnerTransactions.id, insertId));
+    if (!transaction) throw new Error("Failed to read back created partner transaction");
+    return transaction;
+  });
 }
 
 
@@ -1093,6 +1240,15 @@ export async function updateCompanyDebt(id: number, data: Partial<InsertCompanyD
 export async function deleteCompanyDebt(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+
+  const [countResult] = await db.select({
+    count: sql<number>`COUNT(*)`,
+  }).from(debtPayments).where(eq(debtPayments.debtId, id));
+
+  if ((countResult?.count ?? 0) > 0) {
+    throw new Error(`Cannot delete company debt ${id}: it has ${countResult!.count} payments. Mark as paid or archive instead.`);
+  }
+
   await db.delete(companyDebts).where(eq(companyDebts.id, id));
 }
 
@@ -1110,34 +1266,38 @@ export async function getDebtPayments(debtId: number): Promise<DebtPayment[]> {
 export async function createDebtPayment(data: InsertDebtPayment): Promise<DebtPayment> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  // Get current debt
-  const debt = await getCompanyDebtById(data.debtId);
-  if (!debt) throw new Error("Debt not found");
-  
-  const currentPaid = Number(debt.paidAmount);
-  const newPaid = currentPaid + Number(data.amountUsd);
-  const newRemaining = Number(debt.totalAmount) - newPaid;
-  
-  // Create payment with remaining balance
-  const paymentData = {
-    ...data,
-    remainingAfter: newRemaining.toFixed(2)
-  };
-  
-  const result = await db.insert(debtPayments).values(paymentData);
-  const insertId = Number(result[0].insertId);
-  
-  // Update debt
-  const newStatus = newRemaining <= 0 ? 'paid' : 'active';
-  await db.update(companyDebts).set({
-    paidAmount: newPaid.toFixed(2),
-    remainingAmount: Math.max(0, newRemaining).toFixed(2),
-    status: newStatus
-  }).where(eq(companyDebts.id, data.debtId));
-  
-  const [payment] = await db.select().from(debtPayments).where(eq(debtPayments.id, insertId));
-  return payment;
+
+  return await db.transaction(async (tx) => {
+    const debtRows = await tx.select().from(companyDebts)
+      .where(eq(companyDebts.id, data.debtId))
+      .for('update')
+      .limit(1);
+    const debt = debtRows[0];
+    if (!debt) throw new Error("Debt not found");
+
+    const currentPaid = Number(debt.paidAmount);
+    const newPaid = currentPaid + Number(data.amountUsd);
+    const newRemaining = Number(debt.totalAmount) - newPaid;
+
+    const paymentData = {
+      ...data,
+      remainingAfter: newRemaining.toFixed(2)
+    };
+
+    const result = await tx.insert(debtPayments).values(paymentData);
+    const insertId = Number(result[0].insertId);
+
+    const newStatus = newRemaining <= 0 ? 'paid' : 'active';
+    await tx.update(companyDebts).set({
+      paidAmount: newPaid.toFixed(2),
+      remainingAmount: Math.max(0, newRemaining).toFixed(2),
+      status: newStatus
+    }).where(eq(companyDebts.id, data.debtId));
+
+    const [payment] = await tx.select().from(debtPayments).where(eq(debtPayments.id, insertId));
+    if (!payment) throw new Error("Failed to read back created debt payment");
+    return payment;
+  });
 }
 
 
@@ -1187,6 +1347,15 @@ export async function updateCashAccount(id: number, data: Partial<InsertCashAcco
 export async function deleteCashAccount(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+
+  const [countResult] = await db.select({
+    count: sql<number>`COUNT(*)`,
+  }).from(cashTransactions).where(eq(cashTransactions.accountId, id));
+
+  if ((countResult?.count ?? 0) > 0) {
+    throw new Error(`Cannot delete cash account ${id}: it has ${countResult!.count} transactions. Deactivate it instead.`);
+  }
+
   await db.delete(cashAccounts).where(eq(cashAccounts.id, id));
 }
 
@@ -1198,22 +1367,20 @@ export async function getCashAccountsSummary(): Promise<{
 }> {
   const db = await getDb();
   if (!db) return { totalCash: 0, totalBank: 0, totalBalance: 0, accounts: [] };
-  
+
+  const [summary] = await db.select({
+    totalCash: sql<string>`COALESCE(SUM(CASE WHEN ${cashAccounts.accountType} = 'cash' THEN CAST(${cashAccounts.currentBalance} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    totalBank: sql<string>`COALESCE(SUM(CASE WHEN ${cashAccounts.accountType} = 'bank' THEN CAST(${cashAccounts.currentBalance} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    totalBalance: sql<string>`COALESCE(SUM(CAST(${cashAccounts.currentBalance} AS DECIMAL(14,2))), 0)`,
+  }).from(cashAccounts).where(eq(cashAccounts.isActive, true));
+
   const accounts = await db.select().from(cashAccounts).where(eq(cashAccounts.isActive, true));
-  
-  const totalCash = accounts
-    .filter(a => a.accountType === 'cash')
-    .reduce((sum, a) => sum + Number(a.currentBalance), 0);
-  
-  const totalBank = accounts
-    .filter(a => a.accountType === 'bank')
-    .reduce((sum, a) => sum + Number(a.currentBalance), 0);
-  
+
   return {
-    totalCash,
-    totalBank,
-    totalBalance: totalCash + totalBank,
-    accounts
+    totalCash: Number(summary?.totalCash ?? 0),
+    totalBank: Number(summary?.totalBank ?? 0),
+    totalBalance: Number(summary?.totalBalance ?? 0),
+    accounts,
   };
 }
 
@@ -1271,52 +1438,65 @@ export async function getAllCashTransactions(filters?: {
 export async function createCashTransaction(data: Omit<InsertCashTransaction, 'balanceBefore' | 'balanceAfter'>): Promise<CashTransaction> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  // Get current account balance
-  const account = await getCashAccountById(data.accountId);
-  if (!account) throw new Error("Cash account not found");
-  
-  const currentBalance = Number(account.currentBalance);
-  let newBalance = currentBalance;
-  
-  // Calculate new balance based on transaction type
-  switch (data.transactionType) {
-    case 'deposit':
-    case 'transfer_in':
-    case 'customer_payment':
-    case 'partner_deposit':
-      newBalance = currentBalance + Number(data.amount);
-      break;
-    case 'withdrawal':
-    case 'transfer_out':
-    case 'expense':
-    case 'debt_payment':
-    case 'partner_withdrawal':
-      newBalance = currentBalance - Number(data.amount);
-      break;
-    case 'adjustment':
-      newBalance = currentBalance + Number(data.amount);
-      break;
-  }
-  
-  // Create transaction with balance info
-  const transactionData = {
-    ...data,
-    balanceBefore: currentBalance.toFixed(2),
-    balanceAfter: newBalance.toFixed(2)
-  };
-  
-  const result = await db.insert(cashTransactions).values(transactionData);
-  const insertId = Number(result[0].insertId);
-  
-  // Update account balance
-  await db.update(cashAccounts).set({ currentBalance: newBalance.toFixed(2) }).where(eq(cashAccounts.id, data.accountId));
-  
-  const [transaction] = await db.select().from(cashTransactions).where(eq(cashTransactions.id, insertId));
-  return transaction;
+
+  return await db.transaction(async (tx) => {
+    const accountRows = await tx.select().from(cashAccounts)
+      .where(eq(cashAccounts.id, data.accountId))
+      .for('update')
+      .limit(1);
+    const account = accountRows[0];
+    if (!account) throw new Error("Cash account not found");
+
+    const currentBalance = Number(account.currentBalance);
+    const amountNum = Number(data.amount);
+    let newBalance = currentBalance;
+
+    const debitTypes = ['withdrawal', 'transfer_out', 'expense', 'debt_payment', 'partner_withdrawal'];
+    if (debitTypes.includes(data.transactionType)) {
+      if (currentBalance < amountNum) {
+        throw new Error(
+          `Insufficient balance in cash account ${data.accountId}: balance ${currentBalance}, attempted ${data.amount}`
+        );
+      }
+    }
+
+    switch (data.transactionType) {
+      case 'deposit':
+      case 'transfer_in':
+      case 'customer_payment':
+      case 'partner_deposit':
+        newBalance = currentBalance + amountNum;
+        break;
+      case 'withdrawal':
+      case 'transfer_out':
+      case 'expense':
+      case 'debt_payment':
+      case 'partner_withdrawal':
+        newBalance = currentBalance - amountNum;
+        break;
+      case 'adjustment':
+        newBalance = currentBalance + amountNum;
+        break;
+    }
+
+    const transactionData = {
+      ...data,
+      balanceBefore: currentBalance.toFixed(2),
+      balanceAfter: newBalance.toFixed(2)
+    };
+
+    const result = await tx.insert(cashTransactions).values(transactionData);
+    const insertId = Number(result[0].insertId);
+
+    await tx.update(cashAccounts).set({ currentBalance: newBalance.toFixed(2) }).where(eq(cashAccounts.id, data.accountId));
+
+    const [transaction] = await tx.select().from(cashTransactions).where(eq(cashTransactions.id, insertId));
+    if (!transaction) throw new Error("Failed to read back created cash transaction");
+    return transaction;
+  });
 }
 
-// Transfer between accounts
+// Transfer between accounts (single atomic transaction; locks both accounts in consistent order to avoid deadlock)
 export async function transferBetweenAccounts(
   fromAccountId: number,
   toAccountId: number,
@@ -1326,32 +1506,64 @@ export async function transferBetweenAccounts(
 ): Promise<{ fromTransaction: CashTransaction; toTransaction: CashTransaction }> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  const now = new Date();
-  
-  // Create outgoing transaction
-  const fromTransaction = await createCashTransaction({
-    accountId: fromAccountId,
-    transactionType: 'transfer_out',
-    amount: amount.toFixed(2),
-    relatedAccountId: toAccountId,
-    description,
-    transactionDate: now,
-    createdById
+
+  return await db.transaction(async (tx) => {
+    const [id1, id2] = fromAccountId < toAccountId ? [fromAccountId, toAccountId] : [toAccountId, fromAccountId];
+
+    const accounts = await tx.select().from(cashAccounts)
+      .where(inArray(cashAccounts.id, [id1, id2]))
+      .for('update');
+
+    const fromAccount = accounts.find(a => a.id === fromAccountId);
+    const toAccount = accounts.find(a => a.id === toAccountId);
+    if (!fromAccount || !toAccount) throw new Error("Account not found");
+
+    const fromBalance = Number(fromAccount.currentBalance);
+    const toBalance = Number(toAccount.currentBalance);
+    const now = new Date();
+
+    if (fromBalance < amount) {
+      throw new Error(`Insufficient balance: ${fromBalance} < ${amount}`);
+    }
+
+    const fromResult = await tx.insert(cashTransactions).values({
+      accountId: fromAccountId,
+      transactionType: 'transfer_out',
+      amount: amount.toFixed(2),
+      balanceBefore: fromBalance.toFixed(2),
+      balanceAfter: (fromBalance - amount).toFixed(2),
+      relatedAccountId: toAccountId,
+      description,
+      transactionDate: now,
+      createdById
+    });
+
+    const toResult = await tx.insert(cashTransactions).values({
+      accountId: toAccountId,
+      transactionType: 'transfer_in',
+      amount: amount.toFixed(2),
+      balanceBefore: toBalance.toFixed(2),
+      balanceAfter: (toBalance + amount).toFixed(2),
+      relatedAccountId: fromAccountId,
+      description,
+      transactionDate: now,
+      createdById
+    });
+
+    await tx.update(cashAccounts)
+      .set({ currentBalance: (fromBalance - amount).toFixed(2) })
+      .where(eq(cashAccounts.id, fromAccountId));
+
+    await tx.update(cashAccounts)
+      .set({ currentBalance: (toBalance + amount).toFixed(2) })
+      .where(eq(cashAccounts.id, toAccountId));
+
+    const [fromTx] = await tx.select().from(cashTransactions).where(eq(cashTransactions.id, Number(fromResult[0].insertId)));
+    const [toTx] = await tx.select().from(cashTransactions).where(eq(cashTransactions.id, Number(toResult[0].insertId)));
+
+    if (!fromTx || !toTx) throw new Error("Failed to read back cash transactions");
+    return { fromTransaction: fromTx, toTransaction: toTx };
   });
-  
-  // Create incoming transaction
-  const toTransaction = await createCashTransaction({
-    accountId: toAccountId,
-    transactionType: 'transfer_in',
-    amount: amount.toFixed(2),
-    relatedAccountId: fromAccountId,
-    description,
-    transactionDate: now,
-    createdById
-  });
-  
-  return { fromTransaction, toTransaction };
 }
 
 
@@ -1365,25 +1577,26 @@ export async function getCompanyFinancialOverview(): Promise<{
 }> {
   const db = await getDb();
   if (!db) return { totalCash: 0, totalDebt: 0, totalPartnerEquity: 0, netPosition: 0 };
-  
-  // Get total cash
+
   const cashSummary = await getCashAccountsSummary();
   const totalCash = cashSummary.totalBalance;
-  
-  // Get total active debt
-  const debts = await getActiveCompanyDebts();
-  const totalDebt = debts.reduce((sum, d) => sum + Number(d.remainingAmount), 0);
-  
-  // Get total partner equity (initial capital + retained earnings)
-  const partnersList = await getActivePartners();
-  const totalPartnerEquity = partnersList.reduce((sum, p) => 
-    sum + Number(p.initialCapital) + Number(p.currentBalance), 0);
-  
+
+  const [debtResult] = await db.select({
+    totalDebt: sql<string>`COALESCE(SUM(CAST(${companyDebts.remainingAmount} AS DECIMAL(14,2))), 0)`,
+  }).from(companyDebts).where(eq(companyDebts.status, "active"));
+
+  const [equityResult] = await db.select({
+    totalPartnerEquity: sql<string>`COALESCE(SUM(CAST(${partners.initialCapital} AS DECIMAL(14,2)) + CAST(${partners.currentBalance} AS DECIMAL(14,2))), 0)`,
+  }).from(partners).where(eq(partners.isActive, true));
+
+  const totalDebt = Number(debtResult?.totalDebt ?? 0);
+  const totalPartnerEquity = Number(equityResult?.totalPartnerEquity ?? 0);
+
   return {
     totalCash,
     totalDebt,
     totalPartnerEquity,
-    netPosition: totalCash - totalDebt
+    netPosition: totalCash - totalDebt,
   };
 }
 
@@ -1480,6 +1693,148 @@ export async function getMonthlyProfitTrend(year: number): Promise<{
   return results;
 }
 
+
+
+// ============ DETAILED PROFIT & LOSS ============
+
+export async function getDetailedProfitAndLoss(startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return {
+    revenue: { packageShipping: 0, fullPackageProfit: 0, commissionProfit: 0, serviceRevenue: 0, totalRevenue: 0 },
+    costOfRevenue: { fullPackageCost: 0, commissionCost: 0, serviceCost: 0, totalCost: 0 },
+    grossProfit: 0,
+    expenses: { byCategory: [] as { categoryId: number; categoryName: string; categoryNameKu: string; total: number }[], totalExpenses: 0 },
+    netProfit: 0,
+    profitMargin: 0,
+    orderCounts: { packages: 0, fullPackage: 0, commission: 0, services: 0 },
+  };
+
+  // 1. Package shipping revenue (from confirmed payments)
+  const packageResult = await db.select({
+    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(14,2))), 0)`,
+    cnt: sql<number>`COUNT(DISTINCT ${paymentRecords.id})`,
+  }).from(paymentRecords)
+    .where(and(
+      gte(paymentRecords.createdAt, startDate),
+      lte(paymentRecords.createdAt, endDate),
+    ));
+
+  const packageShipping = parseFloat(packageResult[0]?.total || '0');
+  const packageCount = Number(packageResult[0]?.cnt || 0);
+
+  // 2. Full Package profit (orderType = 'full_package', delivered)
+  const fpResult = await db.select({
+    profit: sql<string>`COALESCE(SUM(CAST(${fullPackageOrders.profitUsd} AS DECIMAL(14,2))), 0)`,
+    cost: sql<string>`COALESCE(SUM(
+      CAST(COALESCE(${fullPackageOrders.purchasePriceUsd}, 0) AS DECIMAL(14,2)) +
+      CAST(COALESCE(${fullPackageOrders.shippingCostUsd}, 0) AS DECIMAL(14,2))
+    ), 0)`,
+    revenue: sql<string>`COALESCE(SUM(CAST(COALESCE(${fullPackageOrders.sellingPriceUsd}, 0) AS DECIMAL(14,2))), 0)`,
+    cnt: sql<number>`COUNT(*)`,
+  }).from(fullPackageOrders)
+    .where(and(
+      gte(fullPackageOrders.createdAt, startDate),
+      lte(fullPackageOrders.createdAt, endDate),
+      eq(fullPackageOrders.status, 'delivered'),
+      eq(fullPackageOrders.orderType, 'full_package'),
+    ));
+
+  const fullPackageProfit = parseFloat(fpResult[0]?.profit || '0');
+  const fullPackageCost = parseFloat(fpResult[0]?.cost || '0');
+  const fullPackageRevenue = parseFloat(fpResult[0]?.revenue || '0');
+  const fpCount = Number(fpResult[0]?.cnt || 0);
+
+  // 3. Commission profit (orderType = 'commission', delivered)
+  const commResult = await db.select({
+    profit: sql<string>`COALESCE(SUM(CAST(${fullPackageOrders.profitUsd} AS DECIMAL(14,2))), 0)`,
+    cost: sql<string>`COALESCE(SUM(CAST(COALESCE(${fullPackageOrders.shippingCostUsd}, 0) AS DECIMAL(14,2))), 0)`,
+    revenue: sql<string>`COALESCE(SUM(CAST(COALESCE(${fullPackageOrders.sellingPriceUsd}, 0) AS DECIMAL(14,2))), 0)`,
+    cnt: sql<number>`COUNT(*)`,
+  }).from(fullPackageOrders)
+    .where(and(
+      gte(fullPackageOrders.createdAt, startDate),
+      lte(fullPackageOrders.createdAt, endDate),
+      eq(fullPackageOrders.status, 'delivered'),
+      eq(fullPackageOrders.orderType, 'commission'),
+    ));
+
+  const commissionProfit = parseFloat(commResult[0]?.profit || '0');
+  const commissionCost = parseFloat(commResult[0]?.cost || '0');
+  const commCount = Number(commResult[0]?.cnt || 0);
+
+  // 4. Service revenue & cost (paid extra services)
+  const serviceResult = await db.select({
+    revenue: sql<string>`COALESCE(SUM(CAST(${extraServices.priceAmount} AS DECIMAL(14,2))), 0)`,
+    cost: sql<string>`COALESCE(SUM(CAST(${extraServices.costAmount} AS DECIMAL(14,2))), 0)`,
+    cnt: sql<number>`COUNT(*)`,
+  }).from(extraServices)
+    .where(and(
+      gte(extraServices.createdAt, startDate),
+      lte(extraServices.createdAt, endDate),
+      eq(extraServices.isPaid, true),
+    ));
+
+  const serviceRevenue = parseFloat(serviceResult[0]?.revenue || '0');
+  const serviceCost = parseFloat(serviceResult[0]?.cost || '0');
+  const serviceCount = Number(serviceResult[0]?.cnt || 0);
+
+  // 5. Expenses with Kurdish category names
+  const byCategoryRows = await db.select({
+    categoryId: expenses.categoryId,
+    categoryName: expenseCategories.nameEn,
+    categoryNameKu: expenseCategories.nameKu,
+    total: sql<string>`COALESCE(SUM(CAST(${expenses.amountUsd} AS DECIMAL(14,2))), 0)`,
+  })
+    .from(expenses)
+    .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+    .where(and(
+      gte(expenses.expenseDate, startDate),
+      lte(expenses.expenseDate, endDate),
+    ))
+    .groupBy(expenses.categoryId, expenseCategories.nameEn, expenseCategories.nameKu);
+
+  const byCategory = byCategoryRows.map((r) => ({
+    categoryId: r.categoryId,
+    categoryName: r.categoryName ?? "Other",
+    categoryNameKu: r.categoryNameKu ?? r.categoryName ?? "تر",
+    total: Number(r.total),
+  })).filter((c) => c.total > 0);
+
+  const totalExpenses = byCategory.reduce((sum, c) => sum + c.total, 0);
+
+  // Calculate totals
+  const totalRevenue = packageShipping + fullPackageRevenue + commissionProfit + serviceRevenue;
+  const totalCost = fullPackageCost + commissionCost + serviceCost;
+  const grossProfit = totalRevenue - totalCost;
+  const netProfit = grossProfit - totalExpenses;
+  const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
+  return {
+    revenue: {
+      packageShipping,
+      fullPackageProfit: fullPackageRevenue,
+      commissionProfit,
+      serviceRevenue,
+      totalRevenue,
+    },
+    costOfRevenue: {
+      fullPackageCost,
+      commissionCost,
+      serviceCost,
+      totalCost,
+    },
+    grossProfit,
+    expenses: { byCategory, totalExpenses },
+    netProfit,
+    profitMargin: Math.round(profitMargin * 10) / 10,
+    orderCounts: {
+      packages: packageCount,
+      fullPackage: fpCount,
+      commission: commCount,
+      services: serviceCount,
+    },
+  };
+}
 
 
 // ============ FINANCE INTEGRATION ============
@@ -1848,7 +2203,7 @@ export async function getRevenueByType(startDate: Date, endDate: Date): Promise<
       });
     }
   } catch (e) {
-    console.error('[Revenue] Failed to get ledgerTransactions:', e);
+    appLogger.error('[Revenue] Failed to get ledgerTransactions', { error: e instanceof Error ? e.message : String(e) });
   }
   
   // Note: ledgerEntries removed - using unified ledgerTransactions only
@@ -1884,7 +2239,7 @@ export async function getRevenueByType(startDate: Date, endDate: Date): Promise<
       }
     }
   } catch (e) {
-    console.error('[Revenue] Failed to get revenueRecords:', e);
+    appLogger.error('[Revenue] Failed to get revenueRecords', { error: e instanceof Error ? e.message : String(e) });
   }
   
   // Convert map to array
@@ -2030,7 +2385,7 @@ export async function calculateProfitLoss(startDate: Date, endDate: Date): Promi
 
 // ============ BALANCE VALIDATION & REPAIR ============
 
-// Validate account balance matches sum of transactions
+// Validate account balance matches sum of transactions (SQL aggregation for sums)
 export async function validateAccountBalance(accountId: number): Promise<{
   isValid: boolean;
   storedBalance: number;
@@ -2043,41 +2398,29 @@ export async function validateAccountBalance(accountId: number): Promise<{
 }> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  // Get account
+
   const [account] = await db.select().from(customerAccounts).where(eq(customerAccounts.id, accountId));
   if (!account) throw new Error("Account not found");
-  
-  const storedBalance = parseFloat(account.currentBalanceUsd || '0');
-  
-  // Calculate balance from transactions
-  const transactions = await db.select().from(ledgerTransactions).where(eq(ledgerTransactions.accountId, accountId));
-  
-  let totalDebits = 0;
-  let totalCredits = 0;
-  
-  for (const txn of transactions) {
-    const amount = parseFloat(txn.amountUsd || '0');
-    if (txn.transactionType.startsWith('DEBIT')) {
-      totalDebits += amount;
-    } else if (txn.transactionType.startsWith('CREDIT')) {
-      totalCredits += amount;
-    }
-  }
-  
+
+  const storedBalance = Number(account.currentBalanceUsd ?? 0);
+
+  const [sums] = await db.select({
+    totalDebits: sql<string>`COALESCE(SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'DEBIT%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    totalCredits: sql<string>`COALESCE(SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'CREDIT%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+  }).from(ledgerTransactions).where(eq(ledgerTransactions.accountId, accountId));
+
+  const totalDebits = Number(sums?.totalDebits ?? 0);
+  const totalCredits = Number(sums?.totalCredits ?? 0);
   const calculatedBalance = totalDebits - totalCredits;
   const difference = Math.abs(storedBalance - calculatedBalance);
-  const isValid = difference < 0.01; // Allow 1 cent tolerance for rounding
-  
+  const isValid = difference < 0.01;
+
   return {
     isValid,
     storedBalance,
     calculatedBalance,
     difference,
-    details: {
-      totalDebits,
-      totalCredits
-    }
+    details: { totalDebits, totalCredits },
   };
 }
 
@@ -2095,23 +2438,56 @@ export async function repairAccountBalance(accountId: number): Promise<{
       success: true,
       oldBalance: validation.storedBalance,
       newBalance: validation.storedBalance,
-      difference: 0
+      difference: 0,
     };
   }
-  
-  // Update stored balance to match calculated balance
+
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  await db.update(customerAccounts)
-    .set({ currentBalanceUsd: validation.calculatedBalance.toFixed(2) })
-    .where(eq(customerAccounts.id, accountId));
-  
+
+  const SYSTEM_USER_ID = 1;
+
+  await db.transaction(async (tx) => {
+    await tx.update(customerAccounts)
+      .set({ currentBalanceUsd: validation.calculatedBalance.toFixed(2) })
+      .where(eq(customerAccounts.id, accountId));
+
+    const adjType = validation.calculatedBalance > validation.storedBalance ? 'ADJUSTMENT_DEBIT' : 'ADJUSTMENT_CREDIT';
+    const adjAmount = Math.abs(validation.difference);
+
+    await tx.insert(ledgerTransactions).values({
+      accountId,
+      transactionNumber: generateTransactionNumber(),
+      transactionType: adjType as any,
+      amountUsd: adjAmount.toFixed(2),
+      amountIqd: '0',
+      balanceBeforeUsd: validation.storedBalance.toFixed(2),
+      balanceAfterUsd: validation.calculatedBalance.toFixed(2),
+      balanceBeforeIqd: '0',
+      balanceAfterIqd: '0',
+      referenceType: 'adjustment',
+      description: `Balance repair: stored ${validation.storedBalance} → calculated ${validation.calculatedBalance}`,
+      createdById: SYSTEM_USER_ID,
+    });
+
+    await tx.insert(auditLogs).values({
+      userId: SYSTEM_USER_ID,
+      userRole: 'admin',
+      action: 'repair_account_balance',
+      category: 'finance',
+      entityType: 'customer_account',
+      entityId: accountId,
+      oldValues: { balance: validation.storedBalance },
+      newValues: { balance: validation.calculatedBalance },
+      description: `Balance repair: stored ${validation.storedBalance} → calculated ${validation.calculatedBalance}`,
+    });
+  });
+
   return {
     success: true,
     oldBalance: validation.storedBalance,
     newBalance: validation.calculatedBalance,
-    difference: validation.difference
+    difference: validation.difference,
   };
 }
 
@@ -2174,7 +2550,7 @@ export async function validateAllAccounts(): Promise<{
   };
 }
 
-// Calculate breakdown by transaction type for an account
+// Calculate breakdown by transaction type for an account (SQL GROUP BY)
 export async function calculateAccountBreakdown(accountId: number): Promise<{
   packageDebt: number;
   fullPackageDebt: number;
@@ -2187,50 +2563,55 @@ export async function calculateAccountBreakdown(accountId: number): Promise<{
 }> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  const transactions = await db.select().from(ledgerTransactions).where(eq(ledgerTransactions.accountId, accountId));
-  
+
+  const results = await db.select({
+    transactionType: ledgerTransactions.transactionType,
+    total: sql<string>`COALESCE(SUM(CAST(${ledgerTransactions.amountUsd} AS DECIMAL(14,2))), 0)`,
+  })
+    .from(ledgerTransactions)
+    .where(eq(ledgerTransactions.accountId, accountId))
+    .groupBy(ledgerTransactions.transactionType);
+
   let packageDebt = 0;
   let fullPackageDebt = 0;
   let purchaseRequestDebt = 0;
   let commissionDebt = 0;
   let serviceDebt = 0;
   let creditBalance = 0;
-  
-  for (const txn of transactions) {
-    const amount = parseFloat(txn.amountUsd || '0');
-    
-    switch (txn.transactionType) {
-      case 'DEBIT_PACKAGE':
-        packageDebt += amount;
+
+  for (const r of results) {
+    const amount = Number(r.total);
+    switch (r.transactionType) {
+      case "DEBIT_PACKAGE":
+        packageDebt = amount;
         break;
-      case 'DEBIT_FULL_PACKAGE':
-        fullPackageDebt += amount;
+      case "DEBIT_FULL_PACKAGE":
+        fullPackageDebt = amount;
         break;
-      case 'DEBIT_PURCHASE_REQUEST':
-        purchaseRequestDebt += amount;
+      case "DEBIT_PURCHASE_REQUEST":
+        purchaseRequestDebt = amount;
         break;
-      case 'DEBIT_COMMISSION':
-        commissionDebt += amount;
+      case "DEBIT_COMMISSION":
+        commissionDebt = amount;
         break;
-      case 'DEBIT_SERVICE':
-      case 'DEBIT_PENALTY':
-      case 'DEBIT_OTHER':
+      case "DEBIT_SERVICE":
+      case "DEBIT_PENALTY":
+      case "DEBIT_OTHER":
         serviceDebt += amount;
         break;
-      case 'CREDIT_DEPOSIT':
-      case 'CREDIT_PAYMENT':
-      case 'CREDIT_REFUND':
-      case 'CREDIT_DISCOUNT':
-      case 'CREDIT_OTHER':
+      case "CREDIT_DEPOSIT":
+      case "CREDIT_PAYMENT":
+      case "CREDIT_REFUND":
+      case "CREDIT_DISCOUNT":
+      case "CREDIT_OTHER":
         creditBalance += amount;
         break;
     }
   }
-  
+
   const totalDebt = packageDebt + fullPackageDebt + purchaseRequestDebt + commissionDebt + serviceDebt;
   const netBalance = totalDebt - creditBalance;
-  
+
   return {
     packageDebt,
     fullPackageDebt,
@@ -2239,7 +2620,7 @@ export async function calculateAccountBreakdown(accountId: number): Promise<{
     serviceDebt,
     creditBalance,
     totalDebt,
-    netBalance
+    netBalance,
   };
 }
 

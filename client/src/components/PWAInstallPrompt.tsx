@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { X, Download, Smartphone } from 'lucide-react';
 import { useOffline } from '@/contexts/OfflineContext';
 import { useTranslation } from '@/contexts/LanguageContext';
+import { useCompanyInfo } from '@/hooks/useCompanyInfo';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -10,6 +11,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PWAInstallPrompt() {
+  const company = useCompanyInfo();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -92,7 +94,7 @@ export function PWAInstallPrompt() {
               دابەزاندنی ئەپ
             </h3>
             <p className="text-slate-400 text-sm mb-3">
-              Wazn Express وەک ئەپ دابەزێنە بۆ ئەزموونی باشتر
+              {company.name} وەک ئەپ دابەزێنە بۆ ئەزموونی باشتر
             </p>
 
             {isIOS ? (

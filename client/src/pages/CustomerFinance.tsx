@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -118,6 +119,7 @@ export default function CustomerFinance() {
     { accountId: account?.id || 0 },
     { enabled: !!account?.id }
   );
+  const { data: settings } = trpc.settings.list.useQuery();
   
   const getOrCreateAccount = trpc.ledger.getOrCreateAccount.useMutation({
     onSuccess: () => {
@@ -272,6 +274,7 @@ export default function CustomerFinance() {
       .filter(t => t.transactionType.startsWith('CREDIT'))
       .reduce((sum, t) => sum + parseFloat(t.amountUsd || '0'), 0);
 
+    const company = getCompanyInfoFromSettings(settings || []);
     const htmlContent = `
       <!DOCTYPE html>
       <html dir="rtl" lang="ku">
@@ -637,7 +640,7 @@ export default function CustomerFinance() {
           <!-- Header -->
           <div class="header">
             <div class="header-content">
-              <div class="company-name">Wazn Express</div>
+              <div class="company-name">${company.name}</div>
               <div class="report-title">ڕاپۆرتی دارایی کڕیار</div>
             </div>
             <div class="header-date">
@@ -768,7 +771,7 @@ export default function CustomerFinance() {
           <!-- Footer -->
           <div class="footer">
             <p class="footer-text">
-              ئەم ڕاپۆرتە لەلایەن <span class="footer-brand">Wazn Express</span> دروستکراوە
+              ئەم ڕاپۆرتە لەلایەن <span class="footer-brand">${company.name}</span> دروستکراوە
               <br>
               ${new Date().toLocaleString('ku-IQ')}
             </p>
@@ -809,7 +812,7 @@ export default function CustomerFinance() {
     
     // Header info
     const headerInfo = [
-      ['ڕاپۆرتی دارایی کڕیار - Wazn Express'],
+      [`ڕاپۆرتی دارایی کڕیار - ${getCompanyInfoFromSettings(settings || []).name}`],
       [''],
       ['زانیاری کڕیار'],
       [`کۆدی کڕیار:,${customer?.customerCode || '-'}`],
@@ -1037,7 +1040,7 @@ export default function CustomerFinance() {
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-full min-w-[300px] p-0" align="start">
+                          <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
                             <Command>
                               <CommandList>
                                 <CommandGroup>

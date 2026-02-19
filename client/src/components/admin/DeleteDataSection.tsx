@@ -16,7 +16,6 @@ import { Trash2, Clock, AlertTriangle, RotateCcw } from "lucide-react";
 import type { DataCategory } from "@/hooks/useDataManagement";
 
 interface DeleteDataSectionProps {
-  tab: "categories" | "advanced";
   dataCategories: DataCategory[];
   selectedCategory: DataCategory | null;
   setSelectedCategory: (c: DataCategory | null) => void;
@@ -38,11 +37,10 @@ interface DeleteDataSectionProps {
   handleDelete: () => void;
   handleDeleteOldData: () => void;
   handleResetAll: () => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 export function DeleteDataSection({
-  tab,
   dataCategories,
   selectedCategory,
   setSelectedCategory,
@@ -68,43 +66,52 @@ export function DeleteDataSection({
 }: DeleteDataSectionProps) {
   return (
     <>
-      {tab === "categories" && (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {dataCategories.map((category) => (
-          <Card
-            key={category.id}
-            className={`${category.borderColor} hover:shadow-md transition-all cursor-pointer group`}
-            onClick={() => setSelectedCategory(category)}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 ${category.bgColor} rounded-lg group-hover:scale-110 transition-transform`}>
-                    <span className={category.color}>{category.icon}</span>
+      <div className="space-y-8">
+        {/* Section 1: Delete by Category */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Trash2 className="h-5 w-5 text-slate-600" />
+            <h3 className="text-lg font-semibold">{t("dataManagement.deleteByCategory")}</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {dataCategories.map((category) => (
+              <Card
+                key={category.id}
+                className={`${category.borderColor} hover:shadow-md transition-all cursor-pointer group`}
+                onClick={() => setSelectedCategory(category)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 ${category.bgColor} rounded-lg group-hover:scale-110 transition-transform`}>
+                        <span className={category.color}>{category.icon}</span>
+                      </div>
+                      <div>
+                        <div className="font-medium">{t(category.titleKey)}</div>
+                        <div className="text-sm text-muted-foreground mt-1">{t(category.descKey)}</div>
+                      </div>
+                    </div>
+                    <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                      {getCount(category.id)}
+                    </span>
                   </div>
-                  <div>
-                    <div className="font-medium">{t(category.titleKey)}</div>
-                    <div className="text-sm text-muted-foreground mt-1">{t(category.descKey)}</div>
+                  <div className="mt-4 flex items-center justify-end">
+                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      {t("dataManagement.delete")}
+                    </Button>
                   </div>
-                </div>
-                <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-                  {getCount(category.id)}
-                </span>
-              </div>
-              <div className="mt-4 flex items-center justify-end">
-                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  {t("dataManagement.delete")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
 
-      {tab === "advanced" && (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Divider */}
+        <div className="border-t" />
+
+        {/* Section 2: Advanced — Old Data + Factory Reset side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-amber-200">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -186,8 +193,8 @@ export function DeleteDataSection({
             </Button>
           </CardContent>
         </Card>
+        </div>
       </div>
-      )}
 
       {/* Delete Category Dialog */}
       <Dialog

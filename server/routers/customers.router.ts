@@ -1,11 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { generateCustomerCode } from "@shared/types";
 import * as bcrypt from "bcryptjs";
-import { sendNotification } from "../notifications";
+import { sendNotification } from "../services/notification.service";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const customersRouter = router({
@@ -54,7 +55,7 @@ export const customersRouter = router({
           throw new TRPCError({ code: "CONFLICT", message: "ئەم ژمارە مۆبایلە پێشتر تۆمارکراوە" });
         }
 
-        const passwordHash = await bcrypt.hash(input.password, 10);
+        const passwordHash = await bcrypt.hash(input.password, 12);
 
         // Retry logic for handling race conditions with sequenceNumber
         let customer;
@@ -152,7 +153,7 @@ export const customersRouter = router({
               channels: input.email ? ["email", "sms"] : ["sms"],
             });
           } catch (e) {
-            console.error("[Notification] Failed to send welcome notification:", e);
+            appLogger.error("[Notification] Failed to send welcome notification", { error: e instanceof Error ? e.message : String(e) });
           }
         }
 
@@ -210,7 +211,7 @@ export const customersRouter = router({
         newPassword: z.string().min(6).max(500),
       }))
       .mutation(async ({ input, ctx }) => {
-        const passwordHash = await bcrypt.hash(input.newPassword, 10);
+        const passwordHash = await bcrypt.hash(input.newPassword, 12);
         await db.updateCustomerPassword(input.id, passwordHash);
         await db.createAuditLog({
           userId: ctx.user.id,
@@ -240,7 +241,7 @@ export const customersRouter = router({
         mimeType: z.string(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { storagePut } = await import("../storage");
+        const { storagePut } = await import("../services/storage.service");
         const { nanoid } = await import("nanoid");
         
         // Decode base64 to buffer

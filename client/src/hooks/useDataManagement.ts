@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { parseCSV, convertCSVToImportFormat, detectFileFormat, generateCSVTemplate } from "@/lib/csvParser";
@@ -25,7 +26,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
   const [resetConfirmation, setResetConfirmation] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState(0);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [showOldDataDialog, setShowOldDataDialog] = useState(false);
   const [oldDataType, setOldDataType] = useState("packages");
   const [oldDataDays, setOldDataDays] = useState("30");
@@ -45,6 +46,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
   const { data: resetHistory, refetch: refetchResetHistory, isLoading: resetHistoryLoading } = trpc.dataManagement.getResetHistory.useQuery({ limit: 20 });
   const { data: backupsList, refetch: refetchBackups, isLoading: backupsLoading } = trpc.backup.list.useQuery({ limit: 20, offset: 0 });
   const { data: scheduleConfig } = trpc.backup.getScheduleConfig.useQuery();
+  const { data: settings } = trpc.settings.list.useQuery();
 
   const deleteCustomers = trpc.dataManagement.deleteAllCustomers.useMutation();
   const deletePackages = trpc.dataManagement.deleteAllPackages.useMutation();
@@ -379,13 +381,14 @@ export function useDataManagement(dataCategories: DataCategory[]) {
 
   const handleExportStatisticsPDF = () => {
     try {
+      const company = getCompanyInfoFromSettings(settings || []);
       const currentDate = new Date().toLocaleDateString(language === "ku" ? "ckb-IQ" : "en-US");
       const categories = dataCategories.slice(0, 8).map((cat) => ({
         name: t(cat.titleKey),
         count: getCount(cat.id),
         percentage: totalRecords > 0 ? ((getCount(cat.id) / totalRecords) * 100).toFixed(1) : "0",
       }));
-      const totalBackupSize = backupsList?.reduce((acc: number, b: { fileSize?: number }) => acc + (b.fileSize || 0), 0) || 0;
+      const totalBackupSize = (backupsList?.reduce((acc, b) => acc + (b.fileSize ?? 0), 0 as number) ?? 0) as number;
       const completedBackups = backupsList?.filter((b: { status?: string }) => b.status === "completed").length || 0;
       const lastBackupDate = backupsList?.[0]?.createdAt
         ? new Date(backupsList[0].createdAt).toLocaleDateString(language === "ku" ? "ckb-IQ" : "en-US")
@@ -420,7 +423,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
         <body>
           <div class="header">
             <h1>${t("dataManagement.statisticsReport")}</h1>
-            <p>Wazn Express - ${currentDate}</p>
+            <p>${company.name} - ${currentDate}</p>
           </div>
           <div class="stats-grid">
             <div class="stat-card"><h3>${t("dataManagement.totalRecords")}</h3><div class="value">${totalRecords.toLocaleString()}</div></div>
@@ -467,6 +470,55 @@ export function useDataManagement(dataCategories: DataCategory[]) {
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
   };
+
+  // ─── Health Score Calculation ───
+  const calculateHealthScore = (): {
+    score: number;
+    status: "good" | "warning" | "critical";
+    issues: string[];
+  } => {
+    const issues: string[] = [];
+    let score = 100;
+
+    const lastBackupTime =
+      backupsList?.[0]?.createdAt
+        ? new Date().getTime() - new Date(backupsList[0].createdAt).getTime()
+        : Infinity;
+
+    if (!backupsList || backupsList.length === 0) {
+      score -= 40;
+      issues.push(t("dataManagement.healthNoBackup"));
+    } else if (lastBackupTime > 7 * 24 * 60 * 60 * 1000) {
+      score -= 25;
+      issues.push(t("dataManagement.healthOldBackup"));
+    }
+
+    if (totalRecords > 50000) {
+      score -= 15;
+      issues.push(t("dataManagement.healthLargeDB"));
+    } else if (totalRecords > 20000) {
+      score -= 5;
+    }
+
+    const deliveredPackages = (detailedCounts as { packages?: { delivered?: number } })?.packages?.delivered ?? 0;
+    if (deliveredPackages > 1000) {
+      score -= 10;
+      issues.push(t("dataManagement.healthCleanupNeeded"));
+    }
+
+    const failedBackups = backupsList?.filter((b) => b.status === "failed").length ?? 0;
+    if (failedBackups > 0) {
+      score -= 10;
+      issues.push(t("dataManagement.healthFailedBackups"));
+    }
+
+    score = Math.max(0, Math.min(100, score));
+    const status = score >= 80 ? "good" : score >= 50 ? "warning" : "critical";
+
+    return { score, status, issues };
+  };
+
+  const healthScore = calculateHealthScore();
 
   return {
     t,
@@ -545,5 +597,6 @@ export function useDataManagement(dataCategories: DataCategory[]) {
     restoreBackupMutation,
     deleteBackupMutation,
     updateScheduleMutation,
+    healthScore,
   };
 }

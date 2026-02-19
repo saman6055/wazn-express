@@ -1,9 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
-import { notifyBatchStatusChange } from "../notifications";
+import { notifyBatchStatusChange } from "../services/notification.service";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const batchesRouter = router({
@@ -142,7 +143,7 @@ export const batchesRouter = router({
           try {
             await notifyBatchStatusChange(id, "batch_departed");
           } catch (e) {
-            console.error("[Notification] Failed to send batch departure notification:", e);
+            appLogger.error("[Notification] Failed to send batch departure notification", { error: e instanceof Error ? e.message : String(e) });
           }
         } else if (input.status === "arrived" || input.status === "customs") {
           const packages = await db.getPackagesByBatch(id);
@@ -153,7 +154,7 @@ export const batchesRouter = router({
           try {
             await notifyBatchStatusChange(id, "batch_arrived");
           } catch (e) {
-            console.error("[Notification] Failed to send batch arrival notification:", e);
+            appLogger.error("[Notification] Failed to send batch arrival notification", { error: e instanceof Error ? e.message : String(e) });
           }
         } else if (input.status === "delivered" || input.status === "closed") {
           // When batch is delivered or closed:
@@ -211,8 +212,9 @@ export const batchesRouter = router({
                     status: 'delivered',
                     shippingCostUsd: shippingCost.toFixed(2),
                     deliveredDate: new Date(),
+                    batchId: id,
                   }, ctx.user.id);
-                  console.log(`[FullPackage] Package ${pkg.packageCode} linked to FP ${linkedFPOrder.orderCode} - shipping cost $${shippingCost} (OUR cost, not charged to customer)`);
+                  appLogger.info("[FullPackage] Package linked to FP - shipping cost (OUR cost, not charged to customer)", { packageCode: pkg.packageCode, orderCode: linkedFPOrder.orderCode, shippingCost });
                 }
                 
                 // Auto-charge customer balance and create invoice for full package delivery
@@ -223,50 +225,42 @@ export const batchesRouter = router({
                   try {
                     const customer = await db.getCustomerById(refreshedFPOrder.customerId);
                     if (customer) {
-                      const sellingPrice = parseFloat(refreshedFPOrder.sellingPriceUsd?.toString() || '0');
-                      
-                      // Record charge to customer balance
-                      await db.recordPackageCharge(
+                      // sellingPriceUsd is PER-UNIT — multiply by quantity for total charge
+                      const sellingPricePerUnit = parseFloat(refreshedFPOrder.sellingPriceUsd?.toString() || '0');
+                      const fpQuantity = refreshedFPOrder.quantity || 1;
+                      const totalCharge = sellingPricePerUnit * fpQuantity;
+
+                      // Use applyCharge directly (not recordPackageCharge) to use correct charge type FULL_PACKAGE
+                      // This creates both the ledger transaction AND the invoice in one step
+                      await db.applyCharge(
                         refreshedFPOrder.customerId,
                         customer.customerCode,
-                        pkg.id,
-                        sellingPrice,
+                        'FULL_PACKAGE',
+                        refreshedFPOrder.id,
+                        totalCharge,
                         `فول پاکێج ${refreshedFPOrder.orderCode} - ${refreshedFPOrder.productName} - گەیاندن`,
-                        ctx.user.id
-                      );
-                      
-                      // Create invoice for full package
-                      const invoiceNumber = `INV-FP-${Date.now()}-${refreshedFPOrder.id}`;
-                      await db.createInvoice({
-                        invoiceNumber,
-                        customerId: refreshedFPOrder.customerId,
-                        batchId: id,
-                        subtotalUsd: sellingPrice.toFixed(2),
-                        totalUsd: sellingPrice.toFixed(2),
-                        status: "issued",
-                        issuedAt: new Date(),
-                        lineItems: [{
+                        ctx.user.id,
+                        [{
                           description: `فول پاکێج ${refreshedFPOrder.orderCode} - ${refreshedFPOrder.productName}`,
-                          quantity: refreshedFPOrder.quantity || 1,
-                          unitPrice: sellingPrice / (refreshedFPOrder.quantity || 1),
-                          total: sellingPrice
-                        }],
-                        notes: `پسووڵەی فول پاکێج ${refreshedFPOrder.orderCode} - باچ ${batch?.batchCode || ''} - کۆی $${sellingPrice.toFixed(2)}`,
-                        createdById: ctx.user.id,
-                      });
+                          quantity: fpQuantity,
+                          unitPrice: sellingPricePerUnit,
+                          total: totalCharge
+                        }]
+                      );
                       
                       // Mark as charged - also set isCharged for consistency
                       await db.updateFullPackageOrder(refreshedFPOrder.id, {
                         isCharged: true,
                         isChargedToCustomer: true,
                         chargedAt: new Date(),
-                        paidFromBalanceUsd: sellingPrice.toFixed(2),
+                        paidFromBalanceUsd: totalCharge.toFixed(2),
+                        batchId: id,
                       }, ctx.user.id);
                       
-                      console.log(`[FullPackage] Charged customer ${customer.customerCode} $${sellingPrice} for FP ${refreshedFPOrder.orderCode}`);
+                      appLogger.info("[FullPackage] Charged customer for FP", { customerCode: customer.customerCode, totalCharge, orderCode: refreshedFPOrder.orderCode });
                     }
                   } catch (chargeError) {
-                    console.error(`[FullPackage] Failed to charge customer for FP ${linkedFPOrder.orderCode}:`, chargeError);
+                    appLogger.error("[FullPackage] Failed to charge customer for FP", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
                   }
                 }
                 
@@ -327,12 +321,13 @@ export const batchesRouter = router({
                         shippingChargedAt: new Date(),
                         shippingChargedUsd: chargeableShippingCost.toFixed(2),
                         netProfitUsd,
+                        batchId: id,
                       }, ctx.user.id);
                       
-                      console.log(`[Commission] Charged customer ${customer.customerCode} $${chargeableShippingCost} shipping for CM ${refreshedForCommission.orderCode} (chargeable: ${chargeableWeight}kg, our cost: $${shippingCost})`);
+                      appLogger.info("[Commission] Charged customer shipping for CM", { customerCode: customer.customerCode, chargeableShippingCost, orderCode: refreshedForCommission.orderCode, chargeableWeight, shippingCost });
                     }
                   } catch (chargeError) {
-                    console.error(`[Commission] Failed to charge shipping for CM ${linkedFPOrder.orderCode}:`, chargeError);
+                    appLogger.error("[Commission] Failed to charge shipping for CM", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
                   }
                 }
               }
@@ -431,7 +426,7 @@ export const batchesRouter = router({
                     
                     // SKIP if package is already charged (prevents double charging)
                     if (freshPkg?.isCharged) {
-                      console.log(`[Batch] Package ${pkg.packageCode} already charged, skipping`);
+                      appLogger.info("[Batch] Package already charged, skipping", { packageCode: pkg.packageCode });
                       continue;
                     }
                     
@@ -464,12 +459,28 @@ export const batchesRouter = router({
                       
                       // Mark package as charged to prevent future double charging
                       await db.updatePackage(pkg.id, { isCharged: true });
+                      
+                      // Create revenue record and update daily summary (correct charge point)
+                      try {
+                        await db.createRevenueRecord({
+                          recordDate: new Date(),
+                          revenueType: 'package_delivery',
+                          referenceType: 'package',
+                          referenceId: pkg.id,
+                          customerId,
+                          amountUsd: pkgPrice,
+                          description: `Package delivery - ${pkg.packageCode}`,
+                          createdById: ctx.user.id,
+                        });
+                      } catch (e) {
+                        appLogger.error("[Finance] Failed to create revenue record for package delivery", { packageId: pkg.id, error: e instanceof Error ? e.message : String(e) });
+                      }
                     }
                   }
                 }
               }
             } catch (e) {
-              console.error(`[Invoice] Failed to create invoice for customer ${customerId}:`, e);
+              appLogger.error("[Invoice] Failed to create invoice for customer", { customerId, error: e instanceof Error ? e.message : String(e) });
             }
           }
           
@@ -477,7 +488,7 @@ export const batchesRouter = router({
           try {
             await notifyBatchStatusChange(id, "batch_arrived"); // Use arrived notification for now
           } catch (e) {
-            console.error("[Notification] Failed to send batch delivery notification:", e);
+            appLogger.error("[Notification] Failed to send batch delivery notification", { error: e instanceof Error ? e.message : String(e) });
           }
         }
         
@@ -604,7 +615,7 @@ export const batchesRouter = router({
         const batchIds = result.data.map((b) => b.id);
         if (batchIds.length === 0) return { data: [], total: 0, page: result.page, pageSize: result.pageSize, totalPages: 0 };
         const pricingByBatch = await db.getBatchCustomerPricingForBatches(batchIds);
-        const allPricing: any[] = [];
+        const allPricing: { batchId: number; customerId: number; pricePerKg?: string; pricePerCbm?: string }[] = [];
         for (const batchId of batchIds) {
           const pricing = pricingByBatch.get(batchId) ?? [];
           for (const p of pricing) {
@@ -632,7 +643,7 @@ export const batchesRouter = router({
     generateFinancialPDF: staffProcedure
       .input(z.object({ batchId: z.number() }))
       .mutation(async ({ input }) => {
-        const { generateBatchFinancialPDF } = await import("../pdf-generator");
+        const { generateBatchFinancialPDF } = await import("../services/pdf.service");
         const batch = await db.getBatchById(input.batchId);
         if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: "Batch not found" });
         

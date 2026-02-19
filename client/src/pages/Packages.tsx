@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useState, useMemo, useEffect, useCallback, memo } from "react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -112,25 +113,28 @@ type Package = {
 };
 
 // Package type colors and labels
-const packageTypeConfig: Record<string, { color: string; label: string; labelKu: string; icon: string }> = {
+const packageTypeConfig: Record<string, { color: string; label: string; labelKu: string; icon: string; tKey: string }> = {
   regular: {
     color: "bg-slate-100 text-slate-700 border-slate-200",
     label: "Regular",
     labelKu: "ئاسایی",
-    icon: "📦"
+    icon: "📦",
+    tKey: "packages.regular"
   },
   full_package: {
     color: "bg-purple-100 text-purple-700 border-purple-200",
     label: "Full Package",
     labelKu: "فول پاکێج",
-    icon: "📦"
+    icon: "📦",
+    tKey: "packages.fullPackage"
   },
 
   commission: {
     color: "bg-orange-100 text-orange-700 border-orange-200",
     label: "Commission",
     labelKu: "کڕین بە عمولە",
-    icon: "💰"
+    icon: "💰",
+    tKey: "packages.commission"
   }
 };
 
@@ -172,7 +176,7 @@ const PackageTableRow = memo(function PackageTableRow({
           return (
             <Badge variant="outline" className={`text-xs ${config.color}`}>
               <span className="mr-1">{config.icon}</span>
-              {config.labelKu}
+              {t(config.tKey)}
             </Badge>
           );
         })()}
@@ -189,7 +193,7 @@ const PackageTableRow = memo(function PackageTableRow({
         ) : (
           <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
             <Link2Off className="h-3 w-3 mr-1" />
-            بێ تراک
+            {t('packages.noTracking')}
           </Badge>
         )}
       </TableCell>
@@ -206,7 +210,7 @@ const PackageTableRow = memo(function PackageTableRow({
         ) : (
           <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
             <PackageX className="h-3 w-3 mr-1" />
-            بێ باچ
+            {t('packages.noBatch')}
           </Badge>
         )}
       </TableCell>
@@ -225,7 +229,7 @@ const PackageTableRow = memo(function PackageTableRow({
               <span>{chargeableWeight.toFixed(2)} kg</span>
               {isVolumetric && (
                 <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 text-purple-700 border-purple-200">
-                  قەبارەیی
+                  {t('packages.volumetric')}
                 </Badge>
               )}
             </div>
@@ -331,6 +335,8 @@ const [, setLocation] = useLocation();
     updatePackageMutation,
     deletePackageMutation,
   } = usePackages();
+
+  const { data: settings } = trpc.settings.list.useQuery();
 
   const dateFrom = dateFromStr ? new Date(dateFromStr) : undefined;
   const dateTo = dateToStr ? new Date(dateToStr) : undefined;
@@ -693,6 +699,7 @@ const [, setLocation] = useLocation();
       return;
     }
 
+    const company = getCompanyInfoFromSettings(settings || []);
     const customer = customers?.find(c => c.id === pkg.customerId);
     const template = labelTemplates?.[0];
 
@@ -735,7 +742,7 @@ const [, setLocation] = useLocation();
       <body>
         <div class="label">
           <div class="header">
-            <div class="logo">Wazn Express</div>
+            <div class="logo">${company.name}</div>
             <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(pkg.trackingNumber || pkg.packageCode)}" />
           </div>
           <div class="tracking">${pkg.trackingNumber || pkg.packageCode}</div>
@@ -824,20 +831,20 @@ const [, setLocation] = useLocation();
                 <Package className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">پاکەتەکان</h1>
-                <p className="text-white/80">بەڕێوەبردنی هەموو پاکەتەکان</p>
+                <h1 className="text-2xl font-bold">{t('packages.title')}</h1>
+                <p className="text-white/80">{t('packages.subtitle')}</p>
               </div>
             </div>
             <div className="flex gap-2">
               <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0" onClick={exportToExcel}>
                 <Download className="h-4 w-4 mr-2" />
-                هەناردەکردنی ئێکسڵ
+                {t('common.exportExcel')}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button className="bg-white text-blue-600 hover:bg-white/90">
                     <Plus className="h-4 w-4 mr-2" />
-                    تۆمارکردنی پاکەت
+                    {t('packages.registerPackage')}
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -845,23 +852,23 @@ const [, setLocation] = useLocation();
                   <DropdownMenuItem onClick={() => setLocation("/packages/quick-register")}>
                     <Zap className="h-4 w-4 mr-2 text-amber-500" />
                     <div>
-                      <div className="font-medium">تۆماری خێرا</div>
-                      <div className="text-xs text-muted-foreground">تۆمارکردنی خێرای پاکەت</div>
+                      <div className="font-medium">{t('packages.quickRegister')}</div>
+                      <div className="text-xs text-muted-foreground">{t('packages.quickRegisterDescription')}</div>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setLocation("/packages/bulk-register")}>
                     <Layers className="h-4 w-4 mr-2 text-purple-500" />
                     <div>
-                      <div className="font-medium">تۆماری کۆمەڵە</div>
-                      <div className="text-xs text-muted-foreground">تۆمارکردنی چەند پاکەت</div>
+                      <div className="font-medium">{t('packages.bulkRegister')}</div>
+                      <div className="text-xs text-muted-foreground">{t('packages.bulkRegisterDescription')}</div>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setLocation("/packages/unclaimed")}>
                     <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
                     <div>
-                      <div className="font-medium">پاکەتە بێ خاوەنەکان</div>
-                      <div className="text-xs text-muted-foreground">پاکەتە نەناسراوەکان</div>
+                      <div className="font-medium">{t('packages.unclaimedPackages')}</div>
+                      <div className="text-xs text-muted-foreground">{t('packages.unclaimedDescription')}</div>
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -877,7 +884,7 @@ const [, setLocation] = useLocation();
             >
               <div className="flex items-center gap-2 mb-1">
                 <Package className="h-4 w-4 text-white/70" />
-                <p className="text-white/70 text-sm">هەموو</p>
+                <p className="text-white/70 text-sm">{t('common.all')}</p>
               </div>
               <p className="text-2xl font-bold">{stats.total}</p>
             </div>
@@ -887,10 +894,10 @@ const [, setLocation] = useLocation();
             >
               <div className="flex items-center gap-2 mb-1">
                 <PackageX className="h-4 w-4 text-amber-300" />
-                <p className="text-white/70 text-sm">بێ باچ</p>
+                <p className="text-white/70 text-sm">{t('packages.noBatch')}</p>
               </div>
               <p className="text-2xl font-bold">{stats.noBatch}</p>
-              {stats.noBatch > 0 && <p className="text-xs text-amber-300 mt-1">⚠️ پێویستی بە باچە</p>}
+              {stats.noBatch > 0 && <p className="text-xs text-amber-300 mt-1">⚠️ {t('packages.needsBatch')}</p>}
             </div>
             <div 
               className={`bg-white/10 backdrop-blur rounded-xl p-4 cursor-pointer transition-all hover:bg-white/20 ${activeTab === 'no_tracking' ? 'ring-2 ring-white' : ''}`}
@@ -898,10 +905,10 @@ const [, setLocation] = useLocation();
             >
               <div className="flex items-center gap-2 mb-1">
                 <Link2Off className="h-4 w-4 text-red-300" />
-                <p className="text-white/70 text-sm">بێ تراک</p>
+                <p className="text-white/70 text-sm">{t('packages.noTracking')}</p>
               </div>
               <p className="text-2xl font-bold">{stats.noTracking}</p>
-              {stats.noTracking > 0 && <p className="text-xs text-red-300 mt-1">❓ تراکینگ نییە</p>}
+              {stats.noTracking > 0 && <p className="text-xs text-red-300 mt-1">❓ {t('packages.noTrackingWarning')}</p>}
             </div>
             <div 
               className={`bg-white/10 backdrop-blur rounded-xl p-4 cursor-pointer transition-all hover:bg-white/20 ${activeTab === 'pending_delivery' ? 'ring-2 ring-white' : ''}`}
@@ -909,7 +916,7 @@ const [, setLocation] = useLocation();
             >
               <div className="flex items-center gap-2 mb-1">
                 <Truck className="h-4 w-4 text-cyan-300" />
-                <p className="text-white/70 text-sm">چاوەڕوانی گەیاندن</p>
+                <p className="text-white/70 text-sm">{t('packages.pendingDelivery')}</p>
               </div>
               <p className="text-2xl font-bold">{stats.pendingDelivery}</p>
             </div>
@@ -919,7 +926,7 @@ const [, setLocation] = useLocation();
             >
               <div className="flex items-center gap-2 mb-1">
                 <CheckCircle2 className="h-4 w-4 text-green-300" />
-                <p className="text-white/70 text-sm">گەیەندراو</p>
+                <p className="text-white/70 text-sm">{t('packages.delivered')}</p>
               </div>
               <p className="text-2xl font-bold">{stats.delivered}</p>
             </div>
@@ -933,7 +940,7 @@ const [, setLocation] = useLocation();
             >
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">📦</span>
-                <p className="text-white/70 text-xs">ئاسایی</p>
+                <p className="text-white/70 text-xs">{t('packages.regular')}</p>
               </div>
               <p className="text-xl font-bold">{stats.regular}</p>
             </div>
@@ -943,7 +950,7 @@ const [, setLocation] = useLocation();
             >
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">📦</span>
-                <p className="text-white/70 text-xs">فول پاکێج</p>
+                <p className="text-white/70 text-xs">{t('packages.fullPackage')}</p>
               </div>
               <p className="text-xl font-bold">{stats.fullPackage}</p>
             </div>
@@ -954,7 +961,7 @@ const [, setLocation] = useLocation();
             >
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">💰</span>
-                <p className="text-white/70 text-xs">کڕین بە عمولە</p>
+                <p className="text-white/70 text-xs">{t('packages.commission')}</p>
               </div>
               <p className="text-xl font-bold">{stats.commission}</p>
             </div>
@@ -1052,30 +1059,30 @@ const [, setLocation] = useLocation();
 
                   {/* Package Type Filter */}
                   <div className="space-y-2">
-                    <Label className="text-sm">جۆری پاکەت</Label>
+                    <Label className="text-sm">{t('packages.packageType')}</Label>
                     <Select value={packageTypeFilter} onValueChange={setPackageTypeFilter}>
                       <SelectTrigger>
-                        <SelectValue placeholder="هەموو جۆرەکان" />
+                        <SelectValue placeholder={t('packages.allTypes')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">{t("common.all")}</SelectItem>
                         <SelectItem value="regular">
                           <span className="flex items-center gap-2">
                             <span>📦</span>
-                            <span>ئاسایی</span>
+                            <span>{t('packages.regular')}</span>
                           </span>
                         </SelectItem>
                         <SelectItem value="full_package">
                           <span className="flex items-center gap-2">
                             <span>📦</span>
-                            <span>فول پاکێج</span>
+                            <span>{t('packages.fullPackage')}</span>
                           </span>
                         </SelectItem>
 
                         <SelectItem value="commission">
                           <span className="flex items-center gap-2">
                             <span>💰</span>
-                            <span>کڕین بە عمولە</span>
+                            <span>{t('packages.commission')}</span>
                           </span>
                         </SelectItem>
                       </SelectContent>
@@ -1109,7 +1116,7 @@ const [, setLocation] = useLocation();
                           {dateFrom ? format(dateFrom, "yyyy-MM-dd") : t("common.select")}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent variant="compact" className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={dateFrom}
@@ -1130,7 +1137,7 @@ const [, setLocation] = useLocation();
                           {dateTo ? format(dateTo, "yyyy-MM-dd") : t("common.select")}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent variant="compact" className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={dateTo}
@@ -1173,7 +1180,7 @@ const [, setLocation] = useLocation();
                   {isLoadingPackages ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      چاوەڕوان بە...
+                      {t('common.loading')}
                     </span>
                   ) : (
                     <span>
@@ -1182,7 +1189,7 @@ const [, setLocation] = useLocation();
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">ژمارەی ڕیز:</span>
+                  <span className="text-sm text-muted-foreground">{t('packages.itemsPerPage')}</span>
                   <Select value={pageSize.toString()} onValueChange={(v) => { setPageSize(parseInt(v)); setCurrentPage(1); }}>
                     <SelectTrigger className="w-20 h-8">
                       <SelectValue />
@@ -1202,7 +1209,7 @@ const [, setLocation] = useLocation();
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("packages.packageCode")}</TableHead>
-                  <TableHead>جۆری پاکەت</TableHead>
+                  <TableHead>{t('packages.packageType')}</TableHead>
                   <TableHead>{t("customers.title")}</TableHead>
                   <TableHead>{t("packages.trackingNumber")}</TableHead>
                   <TableHead>{t("common.type")}</TableHead>
@@ -1519,7 +1526,7 @@ const [, setLocation] = useLocation();
                   {/* Dimensions Section */}
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <Label>درێژی ({t("common.cm")})</Label>
+                      <Label>{t('packages.length')} ({t("common.cm")})</Label>
                       <Input
                         type="number"
                         step="0.1"
@@ -1529,7 +1536,7 @@ const [, setLocation] = useLocation();
                       />
                     </div>
                     <div>
-                      <Label>پانی ({t("common.cm")})</Label>
+                      <Label>{t('packages.width')} ({t("common.cm")})</Label>
                       <Input
                         type="number"
                         step="0.1"
@@ -1539,7 +1546,7 @@ const [, setLocation] = useLocation();
                       />
                     </div>
                     <div>
-                      <Label>بەرزی ({t("common.cm")})</Label>
+                      <Label>{t('packages.height')} ({t("common.cm")})</Label>
                       <Input
                         type="number"
                         step="0.1"
@@ -1555,11 +1562,11 @@ const [, setLocation] = useLocation();
                     <div className="p-4 bg-cyan-50 dark:bg-cyan-950 rounded-lg border border-cyan-200 dark:border-cyan-800">
                       <Label className="text-cyan-700 dark:text-cyan-300 flex items-center gap-2 mb-2">
                         <Ship className="h-4 w-4" />
-                        قەبارەی سیبی (CBM)
+                        {t('packages.cbmVolume')}
                       </Label>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label className="text-xs text-muted-foreground">ڕاستەوخۆ بنووسە</Label>
+                          <Label className="text-xs text-muted-foreground">{t('packages.enterDirectly')}</Label>
                           <Input
                             type="number"
                             step="0.0001"
@@ -1569,14 +1576,14 @@ const [, setLocation] = useLocation();
                           />
                         </div>
                         <div>
-                          <Label className="text-xs text-muted-foreground">حسابکراو لە قەبارە</Label>
+                          <Label className="text-xs text-muted-foreground">{t('packages.calculatedFromDimensions')}</Label>
                           <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center font-mono">
                             {editCalculatedCbm.toFixed(4)} m³
                           </div>
                         </div>
                       </div>
                       <p className="text-xs text-cyan-600 dark:text-cyan-400 mt-2">
-                        CBM کۆتایی: <span className="font-bold">{editCbm.toFixed(4)} m³</span>
+                        {t('packages.finalCbm')} <span className="font-bold">{editCbm.toFixed(4)} m³</span>
                       </p>
                     </div>
                   )}
@@ -1586,24 +1593,24 @@ const [, setLocation] = useLocation();
                     <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                       <Label className="text-blue-700 dark:text-blue-300 flex items-center gap-2 mb-2">
                         <Plane className="h-4 w-4" />
-                        کێشی قەبارەیی (Volumetric Weight)
+                        {t('packages.volumetricWeight')}
                       </Label>
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
-                          <span className="text-muted-foreground">کێشی ڕاستەقینە:</span>
+                          <span className="text-muted-foreground">{t('packages.actualWeight')}:</span>
                           <p className="font-bold">{editWeightKg || "0"} kg</p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">کێشی قەبارەیی:</span>
+                          <span className="text-muted-foreground">{t('packages.volumetricWeight')}:</span>
                           <p className="font-bold">{editVolumetricWeight.toFixed(2)} kg</p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">کێشی کرێ:</span>
+                          <span className="text-muted-foreground">{t('packages.chargeableWeight')}:</span>
                           <p className="font-bold text-primary">{editChargeableWeight.toFixed(2)} kg</p>
                         </div>
                       </div>
                       <div className="mt-2 flex items-center gap-2">
-                        <Label className="text-xs">دابەشکەر:</Label>
+                        <Label className="text-xs">{t('packages.divisor')}</Label>
                         <Input
                           type="number"
                           className="w-20 h-7 text-xs"
@@ -1650,7 +1657,7 @@ const [, setLocation] = useLocation();
                   <div>
                     <Label className="flex items-center gap-2 mb-2">
                       <ImagePlus className="h-3 w-3" />
-                      وێنەکانی پاکەت
+                      {t('packages.packagePhotos')}
                     </Label>
                     <div className="flex flex-wrap gap-2">
                       {editPhotos.map((photo, index) => (
@@ -1824,7 +1831,7 @@ const [, setLocation] = useLocation();
                     return (
                       <Badge variant="outline" className={`text-xs ${config.color}`}>
                         <span className="mr-1">{config.icon}</span>
-                        {config.labelKu}
+                        {t(config.tKey)}
                       </Badge>
                     );
                   })()}

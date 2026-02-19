@@ -1,4 +1,7 @@
+import { useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+
+const EMPTY_ARRAY: never[] = [];
 
 export function useBatches() {
   const listQuery = trpc.batches.list.useQuery();
@@ -38,19 +41,22 @@ export function useBatchById(batchId: number | null) {
 export function useBatchPackages(batchId: number | null) {
   const enabled = batchId != null;
   const query = trpc.batches.getPackages.useQuery({ batchId: batchId ?? 0 }, { enabled });
-  return { packages: query.data ?? [], isLoading: query.isLoading, refetch: query.refetch };
+  const packages = useMemo(() => query.data ?? EMPTY_ARRAY, [query.data]);
+  return { packages, isLoading: query.isLoading, refetch: query.refetch };
 }
 
 export function useBatchPricingTiers(batchId: number | null) {
   const enabled = batchId != null;
   const query = trpc.batches.getPricingTiers.useQuery({ batchId: batchId ?? 0 }, { enabled });
-  return { tiers: query.data ?? [], isLoading: query.isLoading, refetch: query.refetch };
+  const tiers = useMemo(() => query.data ?? EMPTY_ARRAY, [query.data]);
+  return { tiers, isLoading: query.isLoading, refetch: query.refetch };
 }
 
 export function useBatchCustomerPricing(batchId: number | null) {
   const enabled = batchId != null;
   const query = trpc.batches.getCustomerPricing.useQuery({ batchId: batchId ?? 0 }, { enabled });
-  return { customerPricing: query.data ?? [], isLoading: query.isLoading, refetch: query.refetch };
+  const customerPricing = useMemo(() => query.data ?? EMPTY_ARRAY, [query.data]);
+  return { customerPricing, isLoading: query.isLoading, refetch: query.refetch };
 }
 
 export function useBatchFinancialSummary(batchId: number | null) {

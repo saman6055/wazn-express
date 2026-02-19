@@ -9,19 +9,21 @@ import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, ba
 import { backups } from "../../drizzle/schema";
 import { systemRouter } from "../_core/systemRouter";
 import { getConfig } from "../config";
-import { runMigration } from "../runMigration";
-import { getDashboardReportData, generateDashboardPDF } from "../pdfGenerator";
+import { appLogger } from "../utils/logger";
+import { runMigration } from "../services/migration.service";
 import {
+  getDashboardReportData,
+  generateDashboardPDF,
   getDateFilteredDashboardData,
   generateDateFilteredDashboardPDF,
   getCustomerReportData,
   generateCustomerPDF,
   getBatchReportData,
   generateBatchPDF,
-} from "../pdfReports";
-import { createZipBackup, restoreFromZipBackup } from "../zipBackupService";
-import { createBackup, restoreBackup } from "../backupService";
-import { getScheduleConfig, updateScheduleConfig } from "../scheduledBackups";
+} from "../services/pdf.service";
+import { createZipBackup, restoreFromZipBackup } from "../services/zipBackup.service";
+import { createBackup, restoreBackup } from "../services/backup.service";
+import { getScheduleConfig, updateScheduleConfig } from "../services/scheduledBackups.service";
 
 export const migrationRouter = router({
   run: adminProcedure
@@ -117,7 +119,7 @@ export const dataManagementRouter = router({
             const fileKey = `backups/pre-reset/${fileName}`;
             const jsonData = JSON.stringify(exportResult.data, null, 2);
             
-            const { storagePut } = await import('../storage');
+            const { storagePut } = await import('../services/storage.service');
             const uploadResult = await storagePut(fileKey, jsonData, 'application/json');
             
             if (uploadResult.url) {
@@ -134,7 +136,7 @@ export const dataManagementRouter = router({
             }
           }
         } catch (e) {
-          console.error('Failed to create pre-reset backup:', e);
+          appLogger.error('Failed to create pre-reset backup', { error: e instanceof Error ? e.message : String(e) });
         }
         
         // Step 2: Perform the reset
@@ -156,7 +158,7 @@ export const dataManagementRouter = router({
               reason: 'Factory reset performed by admin'
             });
           } catch (e) {
-            console.error('Failed to create deletion log:', e);
+            appLogger.error('Failed to create deletion log', { error: e instanceof Error ? e.message : String(e) });
           }
           
           try {
@@ -166,7 +168,7 @@ export const dataManagementRouter = router({
               content: `All system data has been reset by ${ctx.user.name || 'Admin'}. ${backupInfo.success ? 'A backup was created before reset.' : 'No backup was created.'}`
             });
           } catch (e) {
-            console.error('Failed to send reset notification:', e);
+            appLogger.error('Failed to send reset notification', { error: e instanceof Error ? e.message : String(e) });
           }
         }
         
@@ -306,7 +308,7 @@ export const dataManagementRouter = router({
               content: `${result.importedCount} records imported to ${input.category} by ${ctx.user.name || 'Admin'}`
             });
           } catch (e) {
-            console.error('Failed to send import notification:', e);
+            appLogger.error('Failed to send import notification', { error: e instanceof Error ? e.message : String(e) });
           }
         }
         return result;
@@ -329,7 +331,7 @@ export const dataManagementRouter = router({
               content: `${result.totalImported} total records imported across ${Object.keys(input.data).length} categories by ${ctx.user.name || 'Admin'}`
             });
           } catch (e) {
-            console.error('Failed to send import notification:', e);
+            appLogger.error('Failed to send import notification', { error: e instanceof Error ? e.message : String(e) });
           }
         }
         return result;
@@ -349,7 +351,15 @@ export const dashboardRouter = router({
         const days = input?.days || 30;
         return cacheGetOrSet(`dashboard:revenueChart:${days}`, CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardRevenueChart(days));
       }),
-    
+
+    // Profit/Loss chart: daily revenue, expenses, profit (داهات، خەرجی، قازانج) (cached 30s)
+    profitLossChart: staffProcedure
+      .input(z.object({ days: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        const days = input?.days || 30;
+        return cacheGetOrSet(`dashboard:profitLossChart:${days}`, CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardProfitLossChart(days));
+      }),
+
     // Active batches (cached 30s)
     activeBatches: staffProcedure.query(async () => {
       return cacheGetOrSet("dashboard:activeBatches", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardActiveBatches());
@@ -795,16 +805,25 @@ export const backupRouter = router({
         schedule: z.enum(["daily", "weekly", "monthly"]).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        console.log('[BACKUP] Create backup called:', input, 'User:', ctx.user.id, ctx.user.name);
+        appLogger.info('[BACKUP] Create backup called', { input, userId: ctx.user.id, userName: ctx.user.name });
         
         // Use new ZIP backup system for full backups
         if (input.backupContent === "full") {
-          return await createZipBackup({
-            backupType: input.backupType,
-            schedule: input.schedule,
-            createdById: ctx.user.id,
-            createdByName: ctx.user.name || undefined,
-          });
+          try {
+            return await createZipBackup({
+              backupType: input.backupType,
+              schedule: input.schedule,
+              createdById: ctx.user.id,
+              createdByName: ctx.user.name || undefined,
+            });
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            appLogger.error("[BACKUP] Full ZIP backup failed", { error: msg });
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: msg || "پاشەکەوتی ZIP شکستی هێنا / ZIP backup failed",
+            });
+          }
         }
         
         // Use original backup service for database-only and files-only
@@ -1279,7 +1298,35 @@ export const publicRouter = router({
         const theme = await db.getSetting('portalTheme');
         return theme || 'classic';
       }),
-});
+    // Get landing (first) page theme setting
+    getLandingTheme: publicProcedure
+      .query(async () => {
+        const theme = await db.getSetting('landingTheme');
+        return theme || 'dark';
+      }),
+    // Get landing page variant (classic | minimal)
+    getLandingPageVariant: publicProcedure
+      .query(async () => {
+        const v = await db.getSetting('landingPageVariant');
+        return (v === 'minimal' ? 'minimal' : 'classic') as 'classic' | 'minimal';
+      }),
+    // Get landing team members (for "Our Team" section)
+    getLandingTeam: publicProcedure
+      .query(async () => {
+        const raw = await db.getSetting('landingTeamMembers');
+        if (!raw) return [];
+        try {
+          const arr = JSON.parse(raw) as Array<{ id?: string; name: string; role: string; description: string; imageUrl?: string; order?: number }>;
+          if (!Array.isArray(arr)) return [];
+          return arr
+            .filter((m) => m && typeof m.name === 'string')
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .map((m, i) => ({ id: m.id ?? `member-${i}`, name: m.name, role: m.role ?? '', description: m.description ?? '', imageUrl: m.imageUrl ?? null }));
+        } catch {
+          return [];
+        }
+      }),
+  });
 
 export const adminRouters = {
   system: systemRouter,

@@ -213,7 +213,7 @@ export interface ServiceTypeInvoiceSummary {
   averageAmountUsd: number;
 }
 
-// Get invoice summary for a date range
+// Get invoice summary for a date range (SQL aggregation — no parseFloat accumulation)
 export async function getInvoiceSummary(startDate?: Date, endDate?: Date): Promise<InvoiceReportSummary> {
   const db = await getDb();
   if (!db) {
@@ -226,59 +226,45 @@ export async function getInvoiceSummary(startDate?: Date, endDate?: Date): Promi
       unpaidInvoices: 0,
       unpaidAmountUsd: 0,
       cancelledInvoices: 0,
-      averageInvoiceUsd: 0
+      averageInvoiceUsd: 0,
     };
   }
 
+  const conditions: SQL[] = [];
+  if (startDate) conditions.push(gte(invoices.createdAt, startDate));
+  if (endDate) conditions.push(lte(invoices.createdAt, endDate));
+
   let query = db.select({
-    id: invoices.id,
-    totalUsd: invoices.totalUsd,
-    totalIqd: invoices.totalIqd,
-    status: invoices.status,
+    totalInvoices: sql<number>`COUNT(*)`,
+    totalAmountUsd: sql<string>`COALESCE(SUM(CAST(${invoices.totalUsd} AS DECIMAL(14,2))), 0)`,
+    totalAmountIqd: sql<string>`COALESCE(SUM(CAST(${invoices.totalIqd} AS DECIMAL(15,0))), 0)`,
+    paidInvoices: sql<number>`COUNT(CASE WHEN ${invoices.status} = 'paid' THEN 1 END)`,
+    paidAmountUsd: sql<string>`COALESCE(SUM(CASE WHEN ${invoices.status} = 'paid' THEN CAST(${invoices.totalUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    unpaidInvoices: sql<number>`COUNT(CASE WHEN ${invoices.status} IN ('issued', 'draft') THEN 1 END)`,
+    unpaidAmountUsd: sql<string>`COALESCE(SUM(CASE WHEN ${invoices.status} IN ('issued', 'draft') THEN CAST(${invoices.totalUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    cancelledInvoices: sql<number>`COUNT(CASE WHEN ${invoices.status} = 'cancelled' THEN 1 END)`,
   }).from(invoices);
 
-  // Apply date filters
-  const conditions: any[] = [];
-  if (startDate) {
-    conditions.push(gte(invoices.createdAt, startDate));
-  }
-  if (endDate) {
-    conditions.push(lte(invoices.createdAt, endDate));
-  }
-
   if (conditions.length > 0) {
-    query = query.where(and(...conditions)) as any;
+    query = query.where(and(...conditions)) as typeof query;
   }
 
-  const allInvoices = await query;
-
-  const totalInvoices = allInvoices.length;
-  const totalAmountUsd = allInvoices.reduce((sum, inv) => sum + parseFloat(inv.totalUsd || '0'), 0);
-  const totalAmountIqd = allInvoices.reduce((sum, inv) => sum + parseFloat(inv.totalIqd || '0'), 0);
-  
-  const paidInvoices = allInvoices.filter(inv => inv.status === 'paid').length;
-  const paidAmountUsd = allInvoices
-    .filter(inv => inv.status === 'paid')
-    .reduce((sum, inv) => sum + parseFloat(inv.totalUsd || '0'), 0);
-  
-  const unpaidInvoices = allInvoices.filter(inv => inv.status === 'issued' || inv.status === 'draft').length;
-  const unpaidAmountUsd = allInvoices
-    .filter(inv => inv.status === 'issued' || inv.status === 'draft')
-    .reduce((sum, inv) => sum + parseFloat(inv.totalUsd || '0'), 0);
-  
-  const cancelledInvoices = allInvoices.filter(inv => inv.status === 'cancelled').length;
+  const [row] = await query;
+  const totalInvoices = row?.totalInvoices ?? 0;
+  const totalAmountUsd = Number(row?.totalAmountUsd ?? 0);
+  const totalAmountIqd = Number(row?.totalAmountIqd ?? 0);
   const averageInvoiceUsd = totalInvoices > 0 ? totalAmountUsd / totalInvoices : 0;
 
   return {
     totalInvoices,
     totalAmountUsd,
     totalAmountIqd,
-    paidInvoices,
-    paidAmountUsd,
-    unpaidInvoices,
-    unpaidAmountUsd,
-    cancelledInvoices,
-    averageInvoiceUsd
+    paidInvoices: row?.paidInvoices ?? 0,
+    paidAmountUsd: Number(row?.paidAmountUsd ?? 0),
+    unpaidInvoices: row?.unpaidInvoices ?? 0,
+    unpaidAmountUsd: Number(row?.unpaidAmountUsd ?? 0),
+    cancelledInvoices: row?.cancelledInvoices ?? 0,
+    averageInvoiceUsd,
   };
 }
 
@@ -370,12 +356,12 @@ export async function getInvoicesByCustomerReport(startDate?: Date, endDate?: Da
     createdAt: invoices.createdAt,
   }).from(invoices);
 
-  const conditions: any[] = [];
+  const conditions: SQL[] = [];
   if (startDate) conditions.push(gte(invoices.createdAt, startDate));
   if (endDate) conditions.push(lte(invoices.createdAt, endDate));
   
   if (conditions.length > 0) {
-    query = query.where(and(...conditions)) as any;
+    query = query.where(and(...conditions)) as typeof query;
   }
 
   const allInvoices = await query;
@@ -453,12 +439,12 @@ export async function getInvoicesByServiceTypeReport(startDate?: Date, endDate?:
     createdAt: invoices.createdAt,
   }).from(invoices);
 
-  const conditions: any[] = [];
+  const conditions: SQL[] = [];
   if (startDate) conditions.push(gte(invoices.createdAt, startDate));
   if (endDate) conditions.push(lte(invoices.createdAt, endDate));
   
   if (conditions.length > 0) {
-    query = query.where(and(...conditions)) as any;
+    query = query.where(and(...conditions)) as typeof query;
   }
 
   const allInvoices = await query;
@@ -519,8 +505,8 @@ export async function getRecentInvoices(page = 1, pageSize = 20, status?: string
   const db = await getDb();
   if (!db) return { invoices: [], total: 0 };
 
-  const conditions: any[] = [];
-  if (status) conditions.push(eq(invoices.status, status as any));
+  const conditions: SQL[] = [];
+  if (status) conditions.push(eq(invoices.status, status as "paid" | "issued" | "draft" | "cancelled"));
   if (customerId) conditions.push(eq(invoices.customerId, customerId));
 
   const offset = (page - 1) * pageSize;
@@ -529,8 +515,8 @@ export async function getRecentInvoices(page = 1, pageSize = 20, status?: string
   let countQuery = db.select({ count: count() }).from(invoices);
 
   if (conditions.length > 0) {
-    query = query.where(and(...conditions)) as any;
-    countQuery = countQuery.where(and(...conditions)) as any;
+    query = query.where(and(...conditions)) as typeof query;
+    countQuery = countQuery.where(and(...conditions)) as typeof countQuery;
   }
 
   const [invoiceList, countResult] = await Promise.all([

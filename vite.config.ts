@@ -26,6 +26,9 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    port: 3500,
+    strictPort: false,
+    hmr: { port: 3500, clientPort: 3500, host: "localhost" },
     host: true,
     allowedHosts: [
       ".manuspre.computer",

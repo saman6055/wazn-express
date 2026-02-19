@@ -130,28 +130,28 @@ describe('Notification System', () => {
   // Test that notification functions exist and are callable
   describe('notifyPackageStatusChange', () => {
     it('should be a function', async () => {
-      const { notifyPackageStatusChange } = await import('./notifications');
+      const { notifyPackageStatusChange } = await import('./services/notification.service');
       expect(typeof notifyPackageStatusChange).toBe('function');
     });
   });
   
   describe('notifyBatchStatusChange', () => {
     it('should be a function', async () => {
-      const { notifyBatchStatusChange } = await import('./notifications');
+      const { notifyBatchStatusChange } = await import('./services/notification.service');
       expect(typeof notifyBatchStatusChange).toBe('function');
     });
   });
   
   describe('sendNotification', () => {
     it('should be a function', async () => {
-      const { sendNotification } = await import('./notifications');
+      const { sendNotification } = await import('./services/notification.service');
       expect(typeof sendNotification).toBe('function');
     });
   });
   
   describe('statusToEventType mapping', () => {
     it('should map package statuses to notification event types', async () => {
-      const { statusToEventType } = await import('./notifications');
+      const { statusToEventType } = await import('./services/notification.service');
       
       expect(statusToEventType['registered']).toBe('package_registered');
       expect(statusToEventType['in_batch']).toBe('package_in_batch');

@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getFullPackageOrderByTrackingNumber, updateFullPackageOrder } from './fullPackage.db';
 import { createCustomerNotification } from './portal.db';
@@ -321,10 +322,10 @@ export async function updatePackage(id: number, data: Partial<InsertPackage>) {
       const fullPackageOrder = await getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
       if (fullPackageOrder) {
         await updateFullPackageOrder(fullPackageOrder.id, { batchId: data.batchId });
-        console.log(`[FullPackage] Synced batchId ${data.batchId} from package ${pkg.packageCode} to order ${fullPackageOrder.id}`);
+        appLogger.info("[FullPackage] Synced batchId from package to order", { batchId: data.batchId, packageCode: pkg.packageCode, orderId: fullPackageOrder.id });
       }
     } catch (e) {
-      console.error('[FullPackage] Failed to sync batchId to fullPackageOrder:', e);
+      appLogger.error('[FullPackage] Failed to sync batchId to fullPackageOrder', { error: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -348,13 +349,13 @@ export async function updatePackage(id: number, data: Partial<InsertPackage>) {
         
         const newStatus = statusMap[data.status];
         if (newStatus && newStatus !== fullPackageOrder.status) {
-          const updateData: any = { status: newStatus };
+          const updateData: Record<string, unknown> = { status: newStatus };
           
           // If delivered, update shipping cost and recalculate profit
           if (data.status === 'delivered' && (data.calculatedCostUsd || pkg.calculatedCostUsd)) {
             const shippingCost = parseFloat(data.calculatedCostUsd || pkg.calculatedCostUsd || '0');
             updateData.shippingCostUsd = shippingCost.toFixed(2);
-            console.log(`[FullPackage] Updating order ${fullPackageOrder.id} with shipping cost: $${shippingCost}`);
+            appLogger.info("[FullPackage] Updating order with shipping cost", { orderId: fullPackageOrder.id, shippingCost });
             
             // Notify customer about shipping cost
             try {
@@ -370,18 +371,18 @@ export async function updatePackage(id: number, data: Partial<InsertPackage>) {
                 relatedType: 'full_package',
                 relatedId: fullPackageOrder.id,
               });
-              console.log(`[Notification] Sent shipping cost notification to customer ${fullPackageOrder.customerId}`);
+              appLogger.info("[Notification] Sent shipping cost notification to customer", { customerId: fullPackageOrder.customerId });
             } catch (e) {
-              console.error('[Notification] Failed to send shipping cost notification:', e);
+              appLogger.error('[Notification] Failed to send shipping cost notification', { error: e instanceof Error ? e.message : String(e) });
             }
           }
           
           await updateFullPackageOrder(fullPackageOrder.id, updateData);
-          console.log(`[FullPackage] Synced status from package ${pkg.packageCode} to order ${fullPackageOrder.id}: ${newStatus}`);
+          appLogger.info("[FullPackage] Synced status from package to order", { packageCode: pkg.packageCode, orderId: fullPackageOrder.id, newStatus });
         }
       }
     } catch (e) {
-      console.error('[FullPackage] Failed to sync status to fullPackageOrder:', e);
+      appLogger.error('[FullPackage] Failed to sync status to fullPackageOrder', { error: e instanceof Error ? e.message : String(e) });
     }
   }
 }

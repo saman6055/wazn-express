@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { 
   Package, DollarSign, TrendingUp, TrendingDown, Plane, Ship, AlertTriangle,
   Eye, Search, Filter, Download, FileSpreadsheet, Printer, BarChart3,
@@ -112,6 +113,7 @@ export default function BatchReports() {
   // Fetch data
   const { data: batches, isLoading } = trpc.batches.list.useQuery();
   const { data: packages } = trpc.packages.list.useQuery({ pageSize: 10000 });
+  const { data: settings } = trpc.settings.list.useQuery();
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
   const yearOptions = useMemo(() => getYearOptions(), []);
@@ -289,6 +291,7 @@ export default function BatchReports() {
 
   // Print report
   const handlePrint = () => {
+    const company = getCompanyInfoFromSettings(settings || []);
     const printContent = `
       <!DOCTYPE html>
       <html dir="rtl" lang="ku">
@@ -321,7 +324,7 @@ export default function BatchReports() {
       <body>
         <div class="header">
           <h1>ڕاپۆرتی دارایی باچەکان</h1>
-          <p>Wazn Express - ${new Date().toLocaleDateString('ku')}</p>
+          <p>${company.name} - ${new Date().toLocaleDateString('ku')}</p>
         </div>
         
         <div class="summary">
@@ -388,7 +391,7 @@ export default function BatchReports() {
         </table>
 
         <div class="footer">
-          <p>دروستکراوە لە ${new Date().toLocaleString('ku')} - Wazn Express</p>
+          <p>دروستکراوە لە ${new Date().toLocaleString('ku')} - ${company.name}</p>
         </div>
       </body>
       </html>

@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Eye, EyeOff, Loader2, AlertCircle, User } from "lucide-react";
+import CompanyLogo from "@/components/CompanyLogo";
+import { Eye, EyeOff, Loader2, AlertCircle, User } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 
 export default function StaffLogin() {
+  const company = useCompanyInfo();
   const [, setLocation] = useLocation();
   const [identifier, setIdentifier] = useState(""); // Can be username, email or mobile number
   const [password, setPassword] = useState("");
@@ -21,7 +24,10 @@ export default function StaffLogin() {
       window.location.href = "/dashboard";
     },
     onError: (err) => {
-      setError(err.message || "چوونەژوورەوە سەرکەوتوو نەبوو");
+      const msg = (err as { message?: string; data?: { message?: string } }).message
+        || (err as { data?: { message?: string } }).data?.message
+        || "چوونەژوورەوە سەرکەوتوو نەبوو";
+      setError(msg);
     },
   });
 
@@ -42,10 +48,15 @@ export default function StaffLogin() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
-            <Package className="w-8 h-8 text-emerald-600" />
+          <div className="inline-flex items-center justify-center mb-4">
+            <CompanyLogo
+              size={64}
+              className="bg-white rounded-2xl shadow-lg p-2"
+              iconClassName="w-8 h-8 text-emerald-600"
+              fallbackBg="bg-white"
+            />
           </div>
-          <h1 className="text-3xl font-bold text-white">Wazn Express</h1>
+          <h1 className="text-3xl font-bold text-white">{company.name}</h1>
           <p className="text-emerald-200 mt-2">سیستەمی بەڕێوەبردنی ستاف</p>
         </div>
 
@@ -133,7 +144,7 @@ export default function StaffLogin() {
 
         {/* Footer */}
         <p className="text-center text-emerald-200 text-sm mt-6">
-          © 2024 Wazn Express. هەموو مافەکان پارێزراون.
+          © {new Date().getFullYear()} {company.name}. هەموو مافەکان پارێزراون.
         </p>
       </div>
     </div>

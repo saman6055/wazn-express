@@ -10,6 +10,7 @@
  */
 
 import { Connection } from "mysql2/promise";
+import { appLogger } from "../utils/logger";
 
 // ============ MIGRATION CONFIGURATION ============
 export interface MigrationConfig {
@@ -300,6 +301,40 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       showDate BOOLEAN NOT NULL DEFAULT TRUE,
       showPrice BOOLEAN NOT NULL DEFAULT FALSE,
       primaryColor VARCHAR(7) DEFAULT '#000000',
+      fontFamily VARCHAR(100) DEFAULT 'Arial',
+      fontSize INT DEFAULT 12,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
+    name: "batchLabelTemplates",
+    dependencies: [],
+    sql: `CREATE TABLE IF NOT EXISTS batchLabelTemplates (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      isDefault BOOLEAN NOT NULL DEFAULT FALSE,
+      size ENUM('10x15', '10x10', 'A6', 'A5', 'custom') NOT NULL DEFAULT '10x15',
+      widthMm INT DEFAULT 100,
+      heightMm INT DEFAULT 150,
+      showQrCode BOOLEAN NOT NULL DEFAULT TRUE,
+      qrCodeSize INT DEFAULT 80,
+      qrCodePosition ENUM('top-left', 'top-right', 'bottom-left', 'bottom-right', 'center') DEFAULT 'top-right',
+      showBarcode BOOLEAN NOT NULL DEFAULT TRUE,
+      barcodeType ENUM('code128', 'code39', 'ean13', 'qr') DEFAULT 'code128',
+      showLogo BOOLEAN NOT NULL DEFAULT TRUE,
+      logoUrl VARCHAR(500),
+      logoWidth INT DEFAULT 60,
+      showCustomerName BOOLEAN NOT NULL DEFAULT TRUE,
+      showCustomerCode BOOLEAN NOT NULL DEFAULT TRUE,
+      showTotalPackages BOOLEAN NOT NULL DEFAULT TRUE,
+      showTotalWeight BOOLEAN NOT NULL DEFAULT TRUE,
+      showTotalVolume BOOLEAN NOT NULL DEFAULT TRUE,
+      showTotalPrice BOOLEAN NOT NULL DEFAULT TRUE,
+      showBatchNumber BOOLEAN NOT NULL DEFAULT TRUE,
+      showDate BOOLEAN NOT NULL DEFAULT TRUE,
+      primaryColor VARCHAR(7) DEFAULT '#059669',
       fontFamily VARCHAR(100) DEFAULT 'Arial',
       fontSize INT DEFAULT 12,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1724,8 +1759,9 @@ export async function runMigrations(config: MigrationConfig): Promise<MigrationR
   };
 
   const log = config.logger || ((msg: string, level?: string) => {
-    const prefix = level === 'error' ? '❌' : level === 'success' ? '✅' : level === 'warn' ? '⚠️' : 'ℹ️';
-    console.log(`${prefix} ${msg}`);
+    if (level === 'error') appLogger.error(msg);
+    else if (level === 'warn') appLogger.warn(msg);
+    else appLogger.info(msg);
   });
 
   log(`Starting migration for ${TABLE_DEFINITIONS.length} tables...`, 'info');
@@ -1742,7 +1778,7 @@ export async function runMigrations(config: MigrationConfig): Promise<MigrationR
       const [rows] = await config.connection.execute(
         `SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?`,
         [table.name]
-      ) as any;
+      ) as unknown as [Array<{ count: number }>];
 
       if (rows[0].count > 0) {
         log(`Table ${table.name} already exists, skipping`, 'info');
@@ -1755,8 +1791,8 @@ export async function runMigrations(config: MigrationConfig): Promise<MigrationR
       log(`Created table: ${table.name}`, 'success');
       result.tablesCreated.push(table.name);
 
-    } catch (error: any) {
-      const errorMsg = error.message || String(error);
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
       log(`Failed to create table ${table.name}: ${errorMsg}`, 'error');
       result.errors.push({ table: table.name, error: errorMsg });
       result.success = false;
@@ -1785,9 +1821,9 @@ export async function getMigrationStatus(connection: Connection): Promise<{
 }> {
   const [rows] = await connection.execute(
     `SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()`
-  ) as any;
+  ) as unknown as [Array<{ table_name?: string; TABLE_NAME?: string }>];
 
-  const existingTables = rows.map((r: any) => r.table_name || r.TABLE_NAME);
+  const existingTables = rows.map((r) => r.table_name ?? r.TABLE_NAME ?? "");
   const allTableNames = TABLE_DEFINITIONS.map(t => t.name);
   const missingTables = allTableNames.filter(t => !existingTables.includes(t));
 

@@ -5,6 +5,12 @@
 # Build outputs
 dist/
 build/
+
+# Local uploads (when Forge storage is not used)
+uploads/
+
+# Local backup ZIPs (when storage proxy is not configured)
+data/
 *.dist
 
 # Environment variables
@@ -29,6 +35,10 @@ build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+nul
+con
+prn
+aux
 
 # Logs
 logs
@@ -105,3 +115,7 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+
+# Temp files
+temp_*.txt
+*.xlsx

@@ -14,12 +14,13 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-import { scheduleTrackingAlertNotifications } from "../trackingAlertNotifications";
-import { initializeScheduledBackups } from "../scheduledBackups";
+import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
+import { initializeScheduledBackups } from "../services/scheduledBackups.service";
 import { loadConfig } from "../config";
 import { globalLimiter, authLimiterMiddleware } from "../middleware/rateLimiter";
 import { registerHealthRoutes } from "./health";
 import { appLogger, requestLoggingMiddleware } from "../utils/logger";
+import { closeDb } from "../db/connection";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -31,7 +32,7 @@ function isPortAvailable(port: number): Promise<boolean> {
   });
 }
 
-async function findAvailablePort(startPort: number = 3000): Promise<number> {
+async function findAvailablePort(startPort: number = 3500): Promise<number> {
   for (let port = startPort; port < startPort + 20; port++) {
     if (await isPortAvailable(port)) {
       return port;
@@ -63,8 +64,12 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Security headers
-  app.use(helmet());
+  // Security headers (CSP disabled in dev; prod uses default)
+  app.use(
+    helmet({
+      contentSecurityPolicy: process.env.NODE_ENV === "development" ? false : undefined,
+    })
+  );
 
   // CORS: only allow origins from ALLOWED_ORIGINS (comma-separated)
   const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -106,7 +111,7 @@ async function startServer() {
   // Production mode: serve static files
   serveStatic(app);
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
+  const preferredPort = parseInt(process.env.PORT || "3500");
   const port = await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {
@@ -134,4 +139,15 @@ async function startServer() {
   }
 }
 
-startServer().catch(console.error);
+startServer().catch((err) => appLogger.error("Server failed to start", { error: err instanceof Error ? err.message : String(err) }));
+
+process.on("SIGTERM", async () => {
+  appLogger.info("SIGTERM received, closing database pool");
+  await closeDb();
+  process.exit(0);
+});
+process.on("SIGINT", async () => {
+  appLogger.info("SIGINT received, closing database pool");
+  await closeDb();
+  process.exit(0);
+});

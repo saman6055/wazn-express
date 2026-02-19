@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -52,6 +53,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import * as XLSX from "xlsx";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -66,38 +68,39 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-gray-100 text-gray-800",
 };
 
-const statusLabels: Record<string, string> = {
-  pending: "چاوەڕوان",
-  pending_quote: "چاوەڕوان",
-  ordered: "پەت کراوە",
-  tracking_added: "تراکینگ زیادکرا",
-  in_batch: "لە باچ",
-  in_transit: "لە ڕێگادا",
-  shipped: "گواستراوەتەوە",
-  delivered: "گەیشتووە",
-  completed: "تەواوبووە",
-  cancelled: "هەڵوەشاوە",
-};
-
-const statusOptions = [
-  { value: "pending", label: "چاوەڕوان" },
-  { value: "ordered", label: "پەت کراوە" },
-  { value: "tracking_added", label: "تراکینگ زیادکرا" },
-  { value: "in_batch", label: "لە باچ" },
-  { value: "in_transit", label: "لە ڕێگادا" },
-  { value: "shipped", label: "گواستراوەتەوە" },
-  { value: "delivered", label: "گەیشتووە" },
-  { value: "completed", label: "تەواوبووە" },
-  { value: "cancelled", label: "هەڵوەشاوە" },
-];
-
 type SortField = "date" | "itemPrice" | "commission" | "total" | "customer";
 type SortDirection = "asc" | "desc";
 
 export default function CommissionDashboard() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  const statusLabels: Record<string, string> = {
+    pending: t("commission.status.pending"),
+    pending_quote: t("commission.status.pending_quote"),
+    ordered: t("commission.status.ordered"),
+    tracking_added: t("commission.status.tracking_added"),
+    in_batch: t("commission.status.in_batch"),
+    in_transit: t("commission.status.in_transit"),
+    shipped: t("commission.status.shipped"),
+    delivered: t("commission.status.delivered"),
+    completed: t("commission.status.completed"),
+    cancelled: t("commission.status.cancelled"),
+  };
+
+  const statusOptions = [
+    { value: "pending", label: t("commission.status.pending") },
+    { value: "ordered", label: t("commission.status.ordered") },
+    { value: "tracking_added", label: t("commission.status.tracking_added") },
+    { value: "in_batch", label: t("commission.status.in_batch") },
+    { value: "in_transit", label: t("commission.status.in_transit") },
+    { value: "shipped", label: t("commission.status.shipped") },
+    { value: "delivered", label: t("commission.status.delivered") },
+    { value: "completed", label: t("commission.status.completed") },
+    { value: "cancelled", label: t("commission.status.cancelled") },
+  ];
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [batchFilter, setBatchFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<string>("");
@@ -117,11 +120,12 @@ export default function CommissionDashboard() {
 
   const { data: batches } = trpc.batches.list.useQuery();
   const { data: customers } = trpc.customers.list.useQuery();
+  const { data: settings } = trpc.settings.list.useQuery();
 
   // Update status mutation
   const updateStatusMutation = trpc.fullPackage.updateStatus.useMutation({
     onSuccess: () => {
-      toast.success("بارودۆخ نوێکرایەوە");
+      toast.success(t("commission.statusUpdated"));
       refetch();
     },
     onError: (error) => {
@@ -187,11 +191,11 @@ export default function CommissionDashboard() {
                        (parseFloat(b.itemPriceUsd || "0") * (b.quantity || 1));
           break;
         case "commission":
-          comparison = parseFloat(a.commissionFeeUsd || "0") - parseFloat(b.commissionFeeUsd || "0");
+          comparison = (parseFloat(a.commissionFeeUsd || "0") * (a.quantity || 1)) - (parseFloat(b.commissionFeeUsd || "0") * (b.quantity || 1));
           break;
         case "total":
-          const totalA = (parseFloat(a.itemPriceUsd || "0") * (a.quantity || 1)) + parseFloat(a.commissionFeeUsd || "0");
-          const totalB = (parseFloat(b.itemPriceUsd || "0") * (b.quantity || 1)) + parseFloat(b.commissionFeeUsd || "0");
+          const totalA = (parseFloat(a.itemPriceUsd || "0") * (a.quantity || 1)) + (parseFloat(a.commissionFeeUsd || "0") * (a.quantity || 1));
+          const totalB = (parseFloat(b.itemPriceUsd || "0") * (b.quantity || 1)) + (parseFloat(b.commissionFeeUsd || "0") * (b.quantity || 1));
           comparison = totalA - totalB;
           break;
         case "customer":
@@ -215,7 +219,7 @@ export default function CommissionDashboard() {
   }, 0);
   
   const totalCommission = filteredOrders.reduce((sum, o) => {
-    return sum + parseFloat(o.commissionFeeUsd || "0");
+    return sum + (parseFloat(o.commissionFeeUsd || "0") * (o.quantity || 1));
   }, 0);
   
   const totalCost = totalItemValue + totalCommission;
@@ -249,39 +253,41 @@ export default function CommissionDashboard() {
   // Export to Excel
   const exportToExcel = () => {
     const data = filteredOrders.map(order => ({
-      "کۆدی پەت": order.orderCode,
-      "کڕیار": (order as any).customer?.fullName || "",
-      "کۆدی کڕیار": (order as any).customer?.customerCode || "",
-      "ناوی کاڵا": order.productName,
-      "ژمارە": order.quantity,
-      "باچ": (order as any).batch?.batchCode || "بێ باچ",
-      "بەهای کاڵا ($)": (parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2),
-      "عمولە ($)": parseFloat(order.commissionFeeUsd || "0").toFixed(2),
-      "کۆی گشتی ($)": ((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + parseFloat(order.commissionFeeUsd || "0")).toFixed(2),
-      "تراکینگ": order.trackingNumber || "",
-      "بارودۆخ": statusLabels[order.status] || order.status,
-      "بەروار": new Date(order.createdAt).toLocaleDateString("ku"),
+      [t("commission.orderCode")]: order.orderCode,
+      "ئۆردەر نەمبەر": (order as any).orderNumber || "",
+      [t("commission.customer")]: (order as any).customer?.fullName || "",
+      [t("commission.customerCode")]: (order as any).customer?.customerCode || "",
+      [t("commission.productName")]: order.productName,
+      [t("commission.quantity")]: order.quantity,
+      [t("commission.batchLabel")]: (order as any).batch?.batchCode || t("commission.noBatch"),
+      [t("commission.itemPrice") + " ($)"]: (parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2),
+      [t("commission.commissionAmount") + " ($)"]: (parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2),
+      [t("commission.grandTotal") + " ($)"]: ((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + (parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1))).toFixed(2),
+      [t("commission.tracking")]: order.trackingNumber || "",
+      [t("commission.statusColumn")]: statusLabels[order.status] || order.status,
+      [t("commission.dateColumn")]: new Date(order.createdAt).toLocaleDateString("ku"),
     }));
 
     // Add summary row
     data.push({
-      "کۆدی پەت": "کۆی گشتی",
-      "کڕیار": "",
-      "کۆدی کڕیار": "",
-      "ناوی کاڵا": `${totalOrders} پەت`,
-      "ژمارە": filteredOrders.reduce((sum, o) => sum + (o.quantity || 1), 0),
-      "باچ": "",
-      "بەهای کاڵا ($)": totalItemValue.toFixed(2),
-      "عمولە ($)": totalCommission.toFixed(2),
-      "کۆی گشتی ($)": totalCost.toFixed(2),
-      "تراکینگ": "",
-      "بارودۆخ": "",
-      "بەروار": "",
+      [t("commission.orderCode")]: t("commission.grandTotal"),
+      "ئۆردەر نەمبەر": "",
+      [t("commission.customer")]: "",
+      [t("commission.customerCode")]: "",
+      [t("commission.productName")]: `${totalOrders} ${t("commission.orders")}`,
+      [t("commission.quantity")]: filteredOrders.reduce((sum, o) => sum + (o.quantity || 1), 0),
+      [t("commission.batchLabel")]: "",
+      [t("commission.itemPrice") + " ($)"]: totalItemValue.toFixed(2),
+      [t("commission.commissionAmount") + " ($)"]: totalCommission.toFixed(2),
+      [t("commission.grandTotal") + " ($)"]: totalCost.toFixed(2),
+      [t("commission.tracking")]: "",
+      [t("commission.statusColumn")]: "",
+      [t("commission.dateColumn")]: "",
     });
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "کڕین بە عمولە");
+    XLSX.utils.book_append_sheet(wb, ws, t("commission.sheetName"));
     
     // Set column widths
     ws["!cols"] = [
@@ -291,17 +297,18 @@ export default function CommissionDashboard() {
     ];
     
     XLSX.writeFile(wb, `commission-report-${new Date().toISOString().split("T")[0]}.xlsx`);
-    toast.success("فایلی Excel داگیرا");
+    toast.success(t("commission.excelDownloaded"));
   };
 
   // Export to PDF
   const exportToPDF = () => {
+    const company = getCompanyInfoFromSettings(settings || []);
     const printContent = `
       <!DOCTYPE html>
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>ڕاپۆرتی کڕین بە عمولە</title>
+        <title>${t("commission.reportTitle")}</title>
         <style>
           * { font-family: 'Segoe UI', Tahoma, sans-serif; }
           body { padding: 20px; direction: rtl; }
@@ -323,60 +330,63 @@ export default function CommissionDashboard() {
       </head>
       <body>
         <div class="header">
-          <h1>% ڕاپۆرتی کڕین بە عمولە</h1>
-          <p>Wazn Express - بەڕێوەبردنی کڕین بە عمولە</p>
-          <p>بەروار: ${new Date().toLocaleDateString("ku")}</p>
+          <h1>🛍 ${t("commission.reportTitle")}</h1>
+          <p>${company.name} - ${t("commission.managementSubtitle")}</p>
+          <p>${t("commission.dateColumn")}: ${new Date().toLocaleDateString("ku")}</p>
         </div>
         
         <div class="stats">
           <div class="stat-card">
             <div class="value">${totalOrders}</div>
-            <div class="label">کۆی پەتەکان</div>
+            <div class="label">${t("commission.totalOrdersLabel")}</div>
           </div>
           <div class="stat-card">
             <div class="value">$${totalItemValue.toFixed(2)}</div>
-            <div class="label">کۆی بەهای کاڵا</div>
+            <div class="label">${t("commission.totalItemValueLabel")}</div>
           </div>
           <div class="stat-card">
             <div class="value">$${totalCommission.toFixed(2)}</div>
-            <div class="label">کۆی عمولە</div>
+            <div class="label">${t("commission.totalCommissionLabel")}</div>
           </div>
           <div class="stat-card">
             <div class="value">$${totalCost.toFixed(2)}</div>
-            <div class="label">کۆی گشتی</div>
+            <div class="label">${t("commission.grandTotal")}</div>
           </div>
         </div>
         
         <table>
           <thead>
             <tr>
-              <th>کۆد</th>
-              <th>کڕیار</th>
-              <th>کاڵا</th>
-              <th>ژمارە</th>
-              <th>بەهای کاڵا</th>
-              <th>عمولە</th>
-              <th>کۆی گشتی</th>
-              <th>بارودۆخ</th>
-              <th>بەروار</th>
+              <th>${t("commission.orderCode")}</th>
+              <th>ئۆردەر #</th>
+              <th>${t("commission.customer")}</th>
+              <th>${t("commission.productName")}</th>
+              <th>${t("commission.quantity")}</th>
+              <th>${t("commission.itemPrice")}</th>
+              <th>${t("commission.commissionAmount")}</th>
+              <th>${t("commission.grandTotal")}</th>
+              <th>${t("commission.statusColumn")}</th>
+              <th>${t("commission.dateColumn")}</th>
             </tr>
           </thead>
           <tbody>
             ${filteredOrders.map(order => `
               <tr>
                 <td>${order.orderCode}</td>
+                <td>${(order as any).orderNumber || "-"}</td>
                 <td>${(order as any).customer?.fullName || "-"}</td>
                 <td>${order.productName}</td>
                 <td>${order.quantity}</td>
                 <td>$${(parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
-                <td>$${parseFloat(order.commissionFeeUsd || "0").toFixed(2)}</td>
-                <td>$${((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + parseFloat(order.commissionFeeUsd || "0")).toFixed(2)}</td>
+                <td>$${(parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
+                <td>$${((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + (parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1))).toFixed(2)}</td>
                 <td>${statusLabels[order.status] || order.status}</td>
                 <td>${new Date(order.createdAt).toLocaleDateString("ku")}</td>
               </tr>
             `).join("")}
             <tr class="total-row">
-              <td colspan="3">کۆی گشتی</td>
+              <td colspan="3">${t("commission.grandTotal")}</td>
+              <td></td>
               <td>${filteredOrders.reduce((sum, o) => sum + (o.quantity || 1), 0)}</td>
               <td>$${totalItemValue.toFixed(2)}</td>
               <td>$${totalCommission.toFixed(2)}</td>
@@ -387,8 +397,8 @@ export default function CommissionDashboard() {
         </table>
         
         <div class="footer">
-          <p>ئەم ڕاپۆرتە لە لایەن سیستەمی Wazn Express دروستکراوە</p>
-          <p>© ${new Date().getFullYear()} Wazn Express - هەموو مافەکان پارێزراون</p>
+          <p>${t("commission.reportGeneratedBy")}</p>
+          <p>© ${new Date().getFullYear()} ${company.name} - ${t("commission.copyright")}</p>
         </div>
       </body>
       </html>
@@ -402,7 +412,7 @@ export default function CommissionDashboard() {
         printWindow.print();
       };
     }
-    toast.success("ڕاپۆرتی PDF ئامادەیە بۆ چاپکردن");
+    toast.success(t("commission.pdfReadyForPrint"));
   };
 
   // Filtered customers for dropdown
@@ -427,8 +437,8 @@ export default function CommissionDashboard() {
                 <Percent className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">کڕین بە عمولە</h1>
-                <p className="text-amber-100">بەڕێوەبردنی پەتەکانی عمولە</p>
+                <h1 className="text-2xl font-bold">{t("commission.title")}</h1>
+                <p className="text-amber-100">{t("commission.subtitle")}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -437,17 +447,17 @@ export default function CommissionDashboard() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-0">
                     <Download className="h-4 w-4 ml-2" />
-                    داگرتن
+                    {t("common.export")}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={exportToExcel}>
                     <FileSpreadsheet className="h-4 w-4 ml-2 text-green-600" />
-                    داگرتنی Excel
+                    {t("commission.exportExcel")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={exportToPDF}>
                     <FileText className="h-4 w-4 ml-2 text-red-600" />
-                    داگرتنی PDF
+                    {t("commission.exportPDF")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -458,14 +468,14 @@ export default function CommissionDashboard() {
                 className="bg-white/80 text-amber-700 hover:bg-amber-50 border-amber-300"
               >
                 <PackagePlus className="h-4 w-4 ml-2" />
-                دروستکردن بە کۆمەڵ
+                {t("commission.bulkCreate")}
               </Button>
               <Button
                 onClick={() => navigate("/commission/new")}
                 className="bg-white text-amber-700 hover:bg-amber-50"
               >
                 <Plus className="h-4 w-4 ml-2" />
-                پەتی نوێ
+                {t("commission.newOrder")}
               </Button>
             </div>
           </div>
@@ -477,7 +487,7 @@ export default function CommissionDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-amber-600 font-medium">کۆی پەتەکان</p>
+                  <p className="text-xs text-amber-600 font-medium">{t("commission.totalOrdersLabel")}</p>
                   <p className="text-2xl font-bold text-amber-700">{totalOrders}</p>
                 </div>
                 <div className="p-2 bg-amber-100 rounded-xl">
@@ -491,7 +501,7 @@ export default function CommissionDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-orange-600 font-medium">چاوەڕوان</p>
+                  <p className="text-xs text-orange-600 font-medium">{t("commission.pendingLabel")}</p>
                   <p className="text-2xl font-bold text-orange-700">{pendingOrders}</p>
                 </div>
                 <div className="p-2 bg-orange-100 rounded-xl">
@@ -505,7 +515,7 @@ export default function CommissionDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-blue-600 font-medium">پەت کراوە</p>
+                  <p className="text-xs text-blue-600 font-medium">{t("commission.orderedLabel")}</p>
                   <p className="text-2xl font-bold text-blue-700">{orderedOrders}</p>
                 </div>
                 <div className="p-2 bg-blue-100 rounded-xl">
@@ -519,7 +529,7 @@ export default function CommissionDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-green-600 font-medium">گەیشتووە</p>
+                  <p className="text-xs text-green-600 font-medium">{t("commission.deliveredLabel")}</p>
                   <p className="text-2xl font-bold text-green-700">{deliveredOrders}</p>
                 </div>
                 <div className="p-2 bg-green-100 rounded-xl">
@@ -533,7 +543,7 @@ export default function CommissionDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-red-600 font-medium">کۆی کڕین</p>
+                  <p className="text-xs text-red-600 font-medium">{t("commission.totalCostLabel")}</p>
                   <p className="text-xl font-bold text-red-700">${totalCost.toFixed(2)}</p>
                 </div>
                 <div className="p-2 bg-red-100 rounded-xl">
@@ -547,7 +557,7 @@ export default function CommissionDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-yellow-700 font-medium">کۆی عمولە</p>
+                  <p className="text-xs text-yellow-700 font-medium">{t("commission.totalCommissionLabel")}</p>
                   <p className="text-xl font-bold text-yellow-800">${totalCommission.toFixed(2)}</p>
                 </div>
                 <div className="p-2 bg-yellow-100 rounded-xl">
@@ -567,7 +577,7 @@ export default function CommissionDashboard() {
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="گەڕان بە کۆد، ئۆردەر نەمبەر، ناوی کاڵا..."
+                    placeholder={t("commission.searchPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pr-10"
@@ -576,10 +586,10 @@ export default function CommissionDashboard() {
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full sm:w-48">
                     <Filter className="h-4 w-4 ml-2" />
-                    <SelectValue placeholder="هەموو" />
+                    <SelectValue placeholder={t("common.all")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">هەموو</SelectItem>
+                    <SelectItem value="all">{t("common.all")}</SelectItem>
                     {statusOptions.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
@@ -591,7 +601,7 @@ export default function CommissionDashboard() {
                   className="gap-2"
                 >
                   <Filter className="h-4 w-4" />
-                  فلتەری پێشکەوتوو
+                  {t("commission.advancedFilter")}
                   {hasActiveFilters && (
                     <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
                       !
@@ -604,11 +614,11 @@ export default function CommissionDashboard() {
               {showFilters && (
                 <div className="bg-muted/50 rounded-lg p-4 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-sm">فلتەرە پێشکەوتووەکان</h4>
+                    <h4 className="font-medium text-sm">{t("commission.advancedFiltersTitle")}</h4>
                     {hasActiveFilters && (
                       <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-red-600 hover:text-red-700">
                         <X className="h-4 w-4 ml-1" />
-                        پاککردنەوەی هەموو
+                        {t("commission.clearAllFilters")}
                       </Button>
                     )}
                   </div>
@@ -618,21 +628,21 @@ export default function CommissionDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        کڕیار
+                        {t("commission.customer")}
                       </label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="w-full justify-between">
                             {customerFilter !== "all" 
-                              ? customers?.find(c => c.id.toString() === customerFilter)?.fullName || "هەڵبژاردن"
-                              : "هەموو کڕیارەکان"
+                              ? customers?.find(c => c.id.toString() === customerFilter)?.fullName || t("fullPackage.selectCustomerPlaceholder")
+                              : t("commission.allCustomers")
                             }
                             <ChevronDown className="h-4 w-4 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-64 p-2" align="start">
+                        <PopoverContent variant="compact" className="w-64" align="start">
                           <Input
-                            placeholder="گەڕان بە ناو یان کۆد..."
+                            placeholder={t("commission.customerSearchPlaceholder")}
                             value={customerSearch}
                             onChange={(e) => setCustomerSearch(e.target.value)}
                             className="mb-2"
@@ -643,7 +653,7 @@ export default function CommissionDashboard() {
                               className="w-full justify-start"
                               onClick={() => { setCustomerFilter("all"); setCustomerSearch(""); }}
                             >
-                              هەموو کڕیارەکان
+                              {t("commission.allCustomers")}
                             </Button>
                             {filteredCustomers.map(customer => (
                               <Button
@@ -665,14 +675,14 @@ export default function CommissionDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         <Layers className="h-4 w-4" />
-                        باچ
+                        {t("commission.batchLabel")}
                       </label>
                       <Select value={batchFilter} onValueChange={setBatchFilter}>
                         <SelectTrigger>
-                          <SelectValue placeholder="هەموو باچەکان" />
+                          <SelectValue placeholder={t("commission.allBatches")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">هەموو باچەکان</SelectItem>
+                          <SelectItem value="all">{t("commission.allBatches")}</SelectItem>
                           {batches?.map(batch => (
                             <SelectItem key={batch.id} value={batch.id.toString()}>
                               {batch.batchCode}
@@ -686,7 +696,7 @@ export default function CommissionDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        ماوەی بەروار
+                        {t("commission.dateRangeLabel")}
                       </label>
                       <div className="flex gap-2">
                         <Input
@@ -694,14 +704,14 @@ export default function CommissionDashboard() {
                           value={dateFrom}
                           onChange={(e) => setDateFrom(e.target.value)}
                           className="flex-1"
-                          placeholder="لە"
+                          placeholder={t("commission.fromPlaceholder")}
                         />
                         <Input
                           type="date"
                           value={dateTo}
                           onChange={(e) => setDateTo(e.target.value)}
                           className="flex-1"
-                          placeholder="بۆ"
+                          placeholder={t("commission.toPlaceholder")}
                         />
                       </div>
                     </div>
@@ -710,21 +720,21 @@ export default function CommissionDashboard() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
                         <DollarSign className="h-4 w-4" />
-                        بەهای کاڵا ($)
+                        {t("commission.itemPriceFilter")}
                       </label>
                       <div className="flex gap-2">
                         <Input
                           type="number"
                           value={minPrice}
                           onChange={(e) => setMinPrice(e.target.value)}
-                          placeholder="کەمترین"
+                          placeholder={t("commission.minPricePlaceholder")}
                           className="flex-1"
                         />
                         <Input
                           type="number"
                           value={maxPrice}
                           onChange={(e) => setMaxPrice(e.target.value)}
-                          placeholder="زۆرترین"
+                          placeholder={t("commission.maxPricePlaceholder")}
                           className="flex-1"
                         />
                       </div>
@@ -736,9 +746,9 @@ export default function CommissionDashboard() {
               {/* Results count and active filters summary */}
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
-                  {filteredOrders.length} پەت دۆزرایەوە
+                  {t("commission.ordersCountFound", { count: String(filteredOrders.length) })}
                   {hasActiveFilters && (
-                    <span className="text-amber-600 mr-2">(فلتەرکراو)</span>
+                    <span className="text-amber-600 mr-2">{t("commission.filteredBadge")}</span>
                   )}
                 </div>
                 
@@ -747,24 +757,24 @@ export default function CommissionDashboard() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-2">
                       <ArrowUpDown className="h-4 w-4" />
-                      ڕیزکردن
+                      {t("commission.sort")}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => toggleSort("date")}>
-                      بەروار {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
+                      {t("commission.sortByDate")} {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => toggleSort("itemPrice")}>
-                      بەهای کاڵا {sortField === "itemPrice" && (sortDirection === "asc" ? "↑" : "↓")}
+                      {t("commission.sortByItemPrice")} {sortField === "itemPrice" && (sortDirection === "asc" ? "↑" : "↓")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => toggleSort("commission")}>
-                      عمولە {sortField === "commission" && (sortDirection === "asc" ? "↑" : "↓")}
+                      {t("commission.sortByCommission")} {sortField === "commission" && (sortDirection === "asc" ? "↑" : "↓")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => toggleSort("total")}>
-                      کۆی گشتی {sortField === "total" && (sortDirection === "asc" ? "↑" : "↓")}
+                      {t("commission.sortByTotal")} {sortField === "total" && (sortDirection === "asc" ? "↑" : "↓")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => toggleSort("customer")}>
-                      کڕیار {sortField === "customer" && (sortDirection === "asc" ? "↑" : "↓")}
+                      {t("commission.sortByCustomer")} {sortField === "customer" && (sortDirection === "asc" ? "↑" : "↓")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -781,14 +791,14 @@ export default function CommissionDashboard() {
             ) : filteredOrders.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">هیچ پەتێک نییە</p>
+                <p className="text-muted-foreground">{t("commission.noOrdersMessage")}</p>
                 <Button
                   className="mt-4"
                   variant="outline"
                   onClick={() => navigate("/commission/new")}
                 >
                   <Plus className="h-4 w-4 ml-2" />
-                  پەتی نوێ زیاد بکە
+                  {t("commission.addFirstOrderButton")}
                 </Button>
               </div>
             ) : (
@@ -796,37 +806,44 @@ export default function CommissionDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>کۆدی پەت</TableHead>
+                      <TableHead>کۆدی ئۆردەر</TableHead>
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("customer")}>
-                        کڕیار {sortField === "customer" && (sortDirection === "asc" ? "↑" : "↓")}
+                        {t("commission.customer")} {sortField === "customer" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead>ناوی کاڵا</TableHead>
-                      <TableHead>باچ</TableHead>
+                      <TableHead>{t("commission.productName")}</TableHead>
+                      <TableHead>{t("commission.batchLabel")}</TableHead>
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("itemPrice")}>
-                        بەهای کاڵا {sortField === "itemPrice" && (sortDirection === "asc" ? "↑" : "↓")}
+                        {t("commission.itemPrice")} {sortField === "itemPrice" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("commission")}>
-                        عمولە {sortField === "commission" && (sortDirection === "asc" ? "↑" : "↓")}
+                        {t("commission.commissionAmount")} {sortField === "commission" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead>تراکینگ</TableHead>
-                      <TableHead>بارودۆخ</TableHead>
+                      <TableHead>{t("commission.tracking")}</TableHead>
+                      <TableHead>{t("commission.statusColumn")}</TableHead>
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("date")}>
-                        بەروار {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
+                        {t("commission.dateColumn")} {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead className="text-left">کردارەکان</TableHead>
+                      <TableHead className="text-left">{t("commission.actionsColumn")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredOrders.map((order) => (
                       <TableRow key={order.id}>
                         <TableCell>
-                          <Badge variant="outline" className="font-mono text-amber-600 border-amber-300">
-                            {order.orderCode}
-                          </Badge>
+                          <div className="space-y-1">
+                            <Badge variant="outline" className="font-mono text-amber-600 border-amber-300">
+                              {order.orderCode}
+                            </Badge>
+                            {(order as any).orderNumber && (
+                              <p className="text-xs text-muted-foreground font-mono">
+                                #{(order as any).orderNumber}
+                              </p>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{(order as any).customer?.fullName || "کڕیار"}</p>
+                            <p className="font-medium">{(order as any).customer?.fullName || t("commission.customer")}</p>
                             <p className="text-xs text-muted-foreground font-mono">
                               {(order as any).customer?.customerCode || ""}
                             </p>
@@ -848,7 +865,7 @@ export default function CommissionDashboard() {
                             <div>
                               <p className="font-medium text-sm">{order.productName}</p>
                               {order.quantity > 1 && (
-                                <p className="text-xs text-muted-foreground">{order.quantity} دانە</p>
+                                <p className="text-xs text-muted-foreground">{order.quantity} {t("commission.quantityUnit")}</p>
                               )}
                             </div>
                           </div>
@@ -861,7 +878,7 @@ export default function CommissionDashboard() {
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                              بێ باچ
+                              {t("commission.noBatch")}
                             </Badge>
                           )}
                         </TableCell>
@@ -869,7 +886,7 @@ export default function CommissionDashboard() {
                           ${(parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2)}
                         </TableCell>
                         <TableCell className="font-mono text-amber-600">
-                          ${parseFloat(order.commissionFeeUsd || "0").toFixed(2)}
+                          ${(parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2)}
                         </TableCell>
                         <TableCell>
                           {order.trackingNumber ? (
@@ -878,7 +895,7 @@ export default function CommissionDashboard() {
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                              بێ تراکینگ
+                              {t("commission.noTracking")}
                             </Badge>
                           )}
                         </TableCell>
@@ -923,7 +940,7 @@ export default function CommissionDashboard() {
                               variant="ghost"
                               size="icon"
                               onClick={() => navigate(`/commission/${order.id}`)}
-                              title="سەیرکردن"
+                              title={t("commission.viewAction")}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -931,7 +948,7 @@ export default function CommissionDashboard() {
                               variant="ghost"
                               size="icon"
                               onClick={() => navigate(`/commission/${order.id}/edit`)}
-                              title="دەستکاریکردن"
+                              title={t("commission.editAction")}
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>

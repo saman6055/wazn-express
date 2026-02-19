@@ -43,4 +43,8 @@ export async function cacheGetOrSet<T>(
   return value;
 }
 
+export function cacheInvalidate(keys: string[]): void {
+  for (const k of keys) store.delete(k);
+}
+
 export const CACHE_TTL = DEFAULT_TTL;

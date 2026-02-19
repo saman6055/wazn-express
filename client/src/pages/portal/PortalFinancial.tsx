@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,6 +36,7 @@ const { t, language } = useLanguage();
     { enabled: !!selectedTransaction }
   );
   const { data: invoices, isLoading: invoicesLoading } = trpc.customerPortal.getMyInvoices.useQuery();
+  const { data: settings } = trpc.settings.list.useQuery();
   const [selectedInvoice, setSelectedInvoice] = useState<number | null>(null);
   const [invoiceSearch, setInvoiceSearch] = useState("");
   const [invoiceFilter, setInvoiceFilter] = useState<"all" | "paid" | "cancelled">("all");
@@ -687,6 +689,7 @@ const { t, language } = useLanguage();
             if (!invoice) return null;
             
             const downloadInvoicePDF = () => {
+              const company = getCompanyInfoFromSettings(settings || []);
               const lineItems = invoice.lineItems || [];
               const pdfHTML = `<!DOCTYPE html>
 <html>
@@ -730,7 +733,7 @@ const { t, language } = useLanguage();
   <div class="invoice">
     <div class="header">
       <div>
-        <div class="logo">Wazn Express</div>
+        <div class="logo">${company.name}</div>
         <div class="logo-sub">International Shipping & Logistics</div>
       </div>
       <div class="invoice-title">
@@ -751,7 +754,7 @@ const { t, language } = useLanguage();
       </div>
       <div class="info-box" style="text-align: right;">
         <h3>From</h3>
-        <p class="highlight">Wazn Express</p>
+        <p class="highlight">${company.name}</p>
         <p>International Shipping</p>
         <p>support@waznexpress.com</p>
       </div>
@@ -790,7 +793,7 @@ const { t, language } = useLanguage();
     </div>
     
     <div class="footer">
-      <p><strong>Thank you for choosing Wazn Express!</strong></p>
+      <p><strong>Thank you for choosing ${company.name}!</strong></p>
       <p>For questions about this invoice, please contact support@waznexpress.com</p>
       <p style="margin-top: 12px;">Generated on ${new Date().toLocaleString()}</p>
     </div>

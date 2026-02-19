@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { appLogger } from "../utils/logger";
 
 export function serveStatic(app: Express) {
   const distPath =
@@ -9,9 +10,7 @@ export function serveStatic(app: Express) {
       : path.resolve(import.meta.dirname, "public");
   
   if (!fs.existsSync(distPath)) {
-    console.error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
+    appLogger.error("Could not find the build directory", { distPath, hint: "Build the client first" });
   }
 
   app.use(express.static(distPath));

@@ -25,6 +25,7 @@ import {
   ArrowLeft,
   Calendar,
   Image as ImageIcon,
+  FileText,
 } from "lucide-react";
 import {
   Select,
@@ -167,7 +168,12 @@ export default function CommissionDetail() {
     });
   };
 
-  const totalCost = (Number(formData.itemPriceUsd) || 0) + (Number(formData.commissionFeeUsd) || 0);
+  const itemPriceUsd = Number(formData.itemPriceUsd) || 0;
+  const quantity = Number(formData.quantity) || 1;
+  const commissionFeeUsd = Number(formData.commissionFeeUsd) || 0;
+  const itemSubtotal = itemPriceUsd * quantity;
+  const totalCommission = commissionFeeUsd * quantity;
+  const totalCost = itemSubtotal + totalCommission;
 
   // Filter batches to show only preparing status
   const availableBatches = batches?.filter(b => b.status === 'preparing') || [];
@@ -450,6 +456,16 @@ export default function CommissionDetail() {
                   </div>
                 </div>
 
+                {quantity > 1 && (
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="text-muted-foreground">نرخی کاڵا × بڕ</span>
+                    <span className="font-mono font-medium">${itemSubtotal.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-muted-foreground">کۆی عمولە</span>
+                  <span className="font-mono font-medium text-purple-600">${totalCommission.toFixed(2)}</span>
+                </div>
                 <div className="p-3 bg-purple-50 rounded-lg">
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">کۆی گشتی</span>
@@ -529,12 +545,12 @@ export default function CommissionDetail() {
                       <p className="font-medium">{(order as any).batch?.batchCode || "بێ باچ"}</p>
                     </div>
                   </div>
-                  {order.productDescription && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">وەسف</p>
-                      <p className="font-medium">{order.productDescription}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-sm text-muted-foreground">وەسف</p>
+                    <p className={`font-medium ${!order.productDescription ? "text-gray-400 italic" : ""}`}>
+                      {order.productDescription || "وەسفی کاڵا نییە"}
+                    </p>
+                  </div>
                   {order.productLink && (
                     <div>
                       <p className="text-sm text-muted-foreground">لینکی کاڵا</p>
@@ -547,29 +563,34 @@ export default function CommissionDetail() {
               </Card>
 
               {/* Product Images Gallery */}
-              {((order as any).productImages?.length > 0 || order.productImage) && (
-                <Card className="shadow-sm border-0 bg-white overflow-hidden">
-                  <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-purple-100 rounded-lg">
-                        <ImageIcon className="h-5 w-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <CardTitle>وێنەکانی کاڵا</CardTitle>
-                        <CardDescription>
-                          {((order as any).productImages?.length || (order.productImage ? 1 : 0))} وێنە
-                        </CardDescription>
-                      </div>
+              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+                <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <ImageIcon className="h-5 w-5 text-purple-600" />
                     </div>
-                  </CardHeader>
-                  <CardContent className="p-6">
+                    <div>
+                      <CardTitle>وێنەکانی کاڵا</CardTitle>
+                      <CardDescription>
+                        {((order as any).productImages?.length || (order.productImage ? 1 : 0))} وێنە
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {((order as any).productImages?.length > 0 || order.productImage) ? (
                     <ImageGallery 
                       images={(order as any).productImages || (order.productImage ? [order.productImage] : [])} 
                       accentColor="amber"
                     />
-                  </CardContent>
-                </Card>
-              )}
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                      <ImageIcon className="h-10 w-10 mb-2 opacity-30" />
+                      <p className="text-sm">هیچ وێنەیەک نییە</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Customer Info */}
               <Card>
@@ -617,14 +638,24 @@ export default function CommissionDetail() {
                     <span className="text-muted-foreground">نرخی کاڵا</span>
                     <span className="font-mono font-medium">${order.itemPriceUsd || "0.00"}</span>
                   </div>
+                  {(Number(order.quantity) || 1) > 1 && (
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <span className="text-muted-foreground">نرخی کاڵا × بڕ</span>
+                      <span className="font-mono font-medium">
+                        ${((Number(order.itemPriceUsd) || 0) * (Number(order.quantity) || 1)).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-muted-foreground">عمولە</span>
-                    <span className="font-mono font-medium text-purple-600">${order.commissionFeeUsd || "0.00"}</span>
+                    <span className="text-muted-foreground">کۆی عمولە</span>
+                    <span className="font-mono font-medium text-purple-600">
+                      ${((Number(order.commissionFeeUsd) || 0) * (Number(order.quantity) || 1)).toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-purple-100 rounded-lg">
                     <span className="font-medium">کۆی گشتی</span>
                     <span className="font-mono font-bold text-lg text-purple-700">
-                      ${((Number(order.itemPriceUsd) || 0) + (Number(order.commissionFeeUsd) || 0)).toFixed(2)}
+                      ${(((Number(order.itemPriceUsd) || 0) * (Number(order.quantity) || 1)) + ((Number(order.commissionFeeUsd) || 0) * (Number(order.quantity) || 1))).toFixed(2)}
                     </span>
                   </div>
                 </CardContent>
@@ -659,16 +690,19 @@ export default function CommissionDetail() {
               </Card>
 
               {/* Notes */}
-              {order.notes && (
-                <Card>
-                  <CardHeader>
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-purple-600" />
                     <CardTitle>تێبینی</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{order.notes}</p>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className={order.notes ? "text-muted-foreground" : "text-gray-400 italic"}>
+                    {order.notes || "تێبینی نییە"}
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )}

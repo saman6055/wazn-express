@@ -409,7 +409,7 @@ export default function BulkOrderForm() {
                       <ChevronsUpDown className="w-4 h-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0" align="start">
+                  <PopoverContent variant="panel" className="w-[400px]" align="start">
                     <Command>
                       <CommandInput
                         placeholder="گەڕان بە ناو، کۆد، یان ژمارە..."

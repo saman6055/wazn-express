@@ -13,11 +13,11 @@ export function usePermissions() {
   const userId = user?.id;
   const userRole = user?.role;
 
-  // Only fetch permissions for non-super_admin users
+  // Only fetch permissions for non-super_admin and non-admin users
   const { data: userPermissions, isLoading } = trpc.permissions.getUserPermissions.useQuery(
     { userId: userId! },
     { 
-      enabled: !!userId && userRole !== "super_admin",
+      enabled: !!userId && userRole !== "super_admin" && userRole !== "admin",
       staleTime: 30000, // Cache for 30 seconds
     }
   );
@@ -51,8 +51,8 @@ export function usePermissions() {
    * Check if user can view a specific module
    */
   const canViewModule = (moduleName: string): boolean => {
-    // Super admin always has all permissions
-    if (userRole === "super_admin") return true;
+    // Super admin and admin always have all permissions
+    if (userRole === "super_admin" || userRole === "admin") return true;
     
     // If no permissions loaded yet, don't block (show loading state)
     if (isLoading) return true;
@@ -68,7 +68,7 @@ export function usePermissions() {
    * Check if a sidebar path should be visible
    */
   const canViewPath = (path: string): boolean => {
-    if (userRole === "super_admin") return true;
+    if (userRole === "super_admin" || userRole === "admin") return true;
     
     const moduleName = PATH_TO_MODULE[path];
     if (!moduleName) return true; // If no mapping, show by default
@@ -80,7 +80,7 @@ export function usePermissions() {
    * Check specific action on a module
    */
   const hasPermission = (moduleName: string, action: "view" | "create" | "edit" | "delete"): boolean => {
-    if (userRole === "super_admin") return true;
+    if (userRole === "super_admin" || userRole === "admin") return true;
     if (isLoading) return true;
     
     const perm = permMap[moduleName];
@@ -94,7 +94,7 @@ export function usePermissions() {
    * Check sub-permission
    */
   const hasSubPermission = (moduleName: string, permissionKey: string): boolean => {
-    if (userRole === "super_admin") return true;
+    if (userRole === "super_admin" || userRole === "admin") return true;
     if (isLoading) return true;
     
     return subPermMap[`${moduleName}::${permissionKey}`] || false;

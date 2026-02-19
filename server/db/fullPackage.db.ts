@@ -272,13 +272,18 @@ export async function updateFullPackageOrder(id: number, data: Partial<InsertFul
       let chargeAmount = 0;
       
       if (orderType === 'full_package' || orderType === 'purchase_request') {
-        // Customer pays ONLY the final selling price
-        chargeAmount = parseFloat(data.sellingPriceUsd as string ?? existing.sellingPriceUsd ?? '0');
+        // Customer pays the final selling price × quantity
+        // sellingPriceUsd is stored as PER-UNIT price
+        const sellingPricePerUnit = parseFloat(data.sellingPriceUsd as string ?? existing.sellingPriceUsd ?? '0');
+        const qty = data.quantity ?? existing.quantity ?? 1;
+        chargeAmount = sellingPricePerUnit * qty;
       } else if (orderType === 'commission') {
-        // Commission: Customer pays itemPrice + commissionFee (prepaid)
-        const itemPrice = parseFloat(data.itemPriceUsd as string ?? existing.itemPriceUsd ?? '0');
+        // Commission: Customer pays (itemPrice × quantity) + commissionFee (prepaid)
+        // itemPriceUsd is PER-UNIT
+        const itemPricePerUnit = parseFloat(data.itemPriceUsd as string ?? existing.itemPriceUsd ?? '0');
         const commissionFee = parseFloat(data.commissionFeeUsd as string ?? existing.commissionFeeUsd ?? '0');
-        chargeAmount = itemPrice + commissionFee;
+        const qty = data.quantity ?? existing.quantity ?? 1;
+        chargeAmount = (itemPricePerUnit * qty) + commissionFee;
       }
       
       if (chargeAmount > 0) {
@@ -286,6 +291,9 @@ export async function updateFullPackageOrder(id: number, data: Partial<InsertFul
                           orderType === 'purchase_request' ? 'PURCHASE_REQUEST' :
                           orderType === 'commission' ? 'COMMISSION' : 'SERVICE';
         
+        const qty = data.quantity ?? existing.quantity ?? 1;
+        const perUnitPrice = chargeAmount / qty;
+
         await applyCharge(
           existing.customerId!,
           customer.customerCode,
@@ -295,7 +303,13 @@ export async function updateFullPackageOrder(id: number, data: Partial<InsertFul
           `${orderType === 'full_package' ? 'Full Package' : 
              orderType === 'purchase_request' ? 'Purchase Request' : 
              'Commission'} Order ${existing.orderCode} delivered - Final Price: $${chargeAmount.toFixed(2)}`,
-          userId
+          userId,
+          [{
+            description: `${existing.productName || 'Product'} (${existing.orderCode})`,
+            quantity: qty,
+            unitPrice: perUnitPrice,
+            total: chargeAmount,
+          }]
         );
         
         data.isCharged = true;

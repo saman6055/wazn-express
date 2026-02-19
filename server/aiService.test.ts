@@ -6,7 +6,7 @@ import {
   PRODUCT_CATEGORIES,
   DAMAGE_LEVELS,
   CARRIER_PATTERNS
-} from "./aiService";
+} from "./services/ai.service";
 
 describe("AI Service - Carrier Detection", () => {
   it("should detect SF Express tracking numbers", () => {

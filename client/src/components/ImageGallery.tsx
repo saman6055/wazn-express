@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { X, ChevronLeft, ChevronRight, ZoomIn, Download, Maximize2 } from "lucide-react";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface ImageGalleryProps {
   images: string[];
@@ -39,6 +40,7 @@ const accentClasses = {
 };
 
 export default function ImageGallery({ images, accentColor = "emerald" }: ImageGalleryProps) {
+  const { t } = useTranslation();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const accent = accentClasses[accentColor];
@@ -94,7 +96,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
         >
           <img
             src={images[0]}
-            alt="وێنەی کاڵا"
+            alt={t('common.productImage')}
             className="w-full max-h-80 object-contain bg-gray-50"
             loading="lazy"
           />
@@ -115,7 +117,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
             >
               <img
                 src={img}
-                alt={`وێنەی کاڵا ${idx + 1}`}
+                alt={t('common.productImageNumber', { index: idx + 1 })}
                 className="w-full h-48 object-cover"
                 loading="lazy"
               />
@@ -137,7 +139,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
           >
             <img
               src={images[0]}
-              alt="وێنەی سەرەکی"
+              alt={t('common.mainImage')}
               className="w-full h-full min-h-[280px] object-cover"
               loading="lazy"
             />
@@ -147,7 +149,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
               </div>
             </div>
             <div className={cn("absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-bold text-white", accent.bg)}>
-              وێنەی سەرەکی
+              {t('common.mainImage')}
             </div>
           </div>
 
@@ -160,7 +162,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
             >
               <img
                 src={img}
-                alt={`وێنەی کاڵا ${idx + 2}`}
+                alt={t('common.productImageNumber', { index: idx + 2 })}
                 className="w-full h-[134px] object-cover"
                 loading="lazy"
               />
@@ -200,14 +202,14 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
                   rel="noopener noreferrer"
                   className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-sm"
                   onClick={(e) => e.stopPropagation()}
-                  title="داگرتن"
+                  title={t('common.download')}
                 >
                   <Download className="h-5 w-5" />
                 </a>
                 <button
                   className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-sm"
                   onClick={closeLightbox}
-                  title="داخستن"
+                  title={t('common.close')}
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -221,7 +223,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
             >
               <img
                 src={images[selectedIndex]}
-                alt={`وێنە ${selectedIndex + 1}`}
+                alt={t('common.imageNumber', { index: selectedIndex + 1 })}
                 className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
               />
             </div>
@@ -235,7 +237,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
                     e.stopPropagation();
                     goPrev();
                   }}
-                  title="پێشتر"
+                  title={t('common.previous')}
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>
@@ -245,7 +247,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
                     e.stopPropagation();
                     goNext();
                   }}
-                  title="دواتر"
+                  title={t('common.next')}
                 >
                   <ChevronRight className="h-6 w-6" />
                 </button>
@@ -271,7 +273,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
                   >
                     <img
                       src={img}
-                      alt={`وێنە ${idx + 1}`}
+                      alt={t('common.imageNumber', { index: idx + 1 })}
                       className="w-full h-full object-cover"
                     />
                   </button>

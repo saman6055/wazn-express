@@ -54,6 +54,8 @@ import {
 import QRCode from "qrcode";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
+import CompanyLogo from "@/components/CompanyLogo";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 
 const sizeOptions = [
   { value: "10x15", label: "10 × 15 cm", width: 100, height: 150 },
@@ -117,6 +119,7 @@ const samplePackage = {
 };
 
 export default function LabelTemplateSettings() {
+  const company = useCompanyInfo();
     const { t } = useTranslation();
 const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -235,9 +238,12 @@ const [editingTemplate, setEditingTemplate] = useState<any>(null);
           <div className="flex justify-between items-start mb-2">
             {template.showLogo && (
               <div className="flex items-center gap-1">
-                <Package className="h-6 w-6" style={{ color: template.primaryColor }} />
+                <CompanyLogo
+                  size={24}
+                  iconClassName="h-4 w-4 text-white"
+                />
                 <span className="font-bold text-sm" style={{ color: template.primaryColor }}>
-                  Wazn Express
+                  {company.name}
                 </span>
               </div>
             )}

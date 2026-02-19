@@ -1,16 +1,40 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import {
+  DashboardHero,
+  FinancialCard,
+  StatsCard,
+  ChartEmpty,
+  DashboardSection,
+} from "@/components/dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { 
-  Package, Users, Layers, DollarSign, TrendingUp, TrendingDown,
-  Clock, CheckCircle, AlertCircle, ArrowUpRight, Bell,
-  Sparkles, Crown, CreditCard, BarChart3, Activity, Briefcase,
-  Truck, AlertTriangle, Info, Calendar, Wallet, Ship, Plane,
-  FileDown, Loader2
+import {
+  Package,
+  Users,
+  Layers,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  CheckCircle,
+  AlertCircle,
+  Sparkles,
+  Crown,
+  CreditCard,
+  BarChart3,
+  Activity,
+  Briefcase,
+  Truck,
+  AlertTriangle,
+  Info,
+  Calendar,
+  Wallet,
+  Ship,
+  Plane,
+  FileDown,
+  Loader2,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "wouter";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, memo } from "react";
@@ -31,9 +55,9 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { 
+import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, BarChart, Bar, Legend
+  PieChart, Pie, Cell, BarChart, Bar, Legend, ComposedChart, Area,
 } from "recharts";
 
 export default function Dashboard() {
@@ -119,6 +143,7 @@ export default function Dashboard() {
   // New dashboard queries
   const { data: financialStats } = trpc.dashboard.financialStats.useQuery();
   const { data: revenueChart } = trpc.dashboard.revenueChart.useQuery({ days: 30 });
+  const { data: profitLossChart } = trpc.dashboard.profitLossChart.useQuery({ days: 30 });
   const { data: activeBatches } = trpc.dashboard.activeBatches.useQuery();
   const { data: topDebtors } = trpc.dashboard.topDebtors.useQuery({ limit: 10 });
   const { data: recentActivity } = trpc.dashboard.recentActivity.useQuery({ limit: 8 });
@@ -144,6 +169,29 @@ export default function Dashboard() {
     [revenueChart]
   );
 
+  const profitLossChartData = useMemo(
+    () =>
+      profitLossChart?.map(d => ({
+        date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        revenue: d.revenue,
+        expenses: d.expenses,
+        profit: d.profit,
+      })) || [],
+    [profitLossChart]
+  );
+
+  const periodTotals = useMemo(() => {
+    if (!profitLossChart?.length) return { revenue: 0, expenses: 0, profit: 0 };
+    return profitLossChart.reduce(
+      (acc, d) => ({
+        revenue: acc.revenue + d.revenue,
+        expenses: acc.expenses + d.expenses,
+        profit: acc.profit + d.profit,
+      }),
+      { revenue: 0, expenses: 0, profit: 0 }
+    );
+  }, [profitLossChart]);
+
   const shippingTypeData = useMemo(
     () => [
       { name: 'Air Regular', value: packageStats?.find((s: any) => s.status === 'in_transit')?.count || 30, color: '#3b82f6' },
@@ -155,80 +203,74 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header with gradient */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-6 md:p-8 text-primary-foreground">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NDEgMC0xOCA4LjA1OS0xOCAxOHM4LjA1OSAxOCAxOCAxOCAxOC04LjA1OSAxOC0xOC04LjA1OS0xOC0xOC0xOHptMCAzMmMtNy43MzIgMC0xNC02LjI2OC0xNC0xNHM2LjI2OC0xNCAxNC0xNCAxNCA2LjI2OCAxNCAxNC02LjI2OCAxNC0xNCAxNHoiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iLjA1Ii8+PC9nPjwvc3ZnPg==')] opacity-30" />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="h-5 w-5" />
-              <span className="text-sm font-medium opacity-90">{t("common.appName")}</span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">{t("dashboard.title")}</h1>
-            <p className="text-primary-foreground/80 max-w-lg text-sm md:text-base">
-              {t("dashboard.welcome")} {t("dashboard.subtitle")}
-            </p>
-            <div className="flex gap-2 mt-4 flex-wrap">
+      <div className="space-y-8">
+        <DashboardHero
+          badge={t("common.appName")}
+          badgeIcon={<Sparkles className="h-5 w-5" />}
+          title={t("dashboard.title")}
+          subtitle={`${t("dashboard.welcome")} ${t("dashboard.subtitle")}`}
+          actions={
+            <>
               <Button
                 onClick={handleExportPDF}
                 disabled={isExporting}
                 variant="secondary"
-                className="gap-2"
+                className="gap-2 bg-white/20 hover:bg-white/30 text-primary-foreground border-0"
               >
                 {isExporting ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> {t('common.creating')}</>
+                  <><Loader2 className="h-4 w-4 animate-spin" /> {t("common.creating")}</>
                 ) : (
-                  <><FileDown className="h-4 w-4" /> {t('dashboard.dailyReport')}</>
+                  <><FileDown className="h-4 w-4" /> {t("dashboard.dailyReport")}</>
                 )}
               </Button>
-              
               <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="secondary" className="gap-2">
-                  <><Calendar className="h-4 w-4" /> {t('dashboard.reportByDate')}</>                </Button>
+                  <Button
+                    variant="secondary"
+                    className="gap-2 bg-white/20 hover:bg-white/30 text-primary-foreground border-0"
+                  >
+                    <Calendar className="h-4 w-4" /> {t("dashboard.reportByDate")}
+                  </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>{t('dashboard.downloadReportByPeriod')}</DialogTitle>
-                    <DialogDescription>
-                      {t('dashboard.selectPeriodForPDF')}
-                    </DialogDescription>
+                    <DialogTitle>{t("dashboard.downloadReportByPeriod")}</DialogTitle>
+                    <DialogDescription>{t("dashboard.selectPeriodForPDF")}</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">{t('dashboard.period')}</label>
-                      <Select value={exportPeriod} onValueChange={(v: 'week' | 'month' | 'year') => setExportPeriod(v)}>
+                      <label className="text-sm font-medium">{t("dashboard.period")}</label>
+                      <Select value={exportPeriod} onValueChange={(v: "week" | "month" | "year") => setExportPeriod(v)}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="week">{t('dashboard.last7Days')}</SelectItem>
-                          <SelectItem value="month">{t('dashboard.last30Days')}</SelectItem>
-                          <SelectItem value="year">{t('dashboard.last12Months')}</SelectItem>
+                          <SelectItem value="week">{t("dashboard.last7Days")}</SelectItem>
+                          <SelectItem value="month">{t("dashboard.last30Days")}</SelectItem>
+                          <SelectItem value="year">{t("dashboard.last12Months")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <Button 
-                      onClick={handleFilteredExport} 
+                    <Button
+                      onClick={handleFilteredExport}
                       disabled={exportFilteredPDF.isPending}
                       className="w-full gap-2"
                     >
                       {exportFilteredPDF.isPending ? (
-                        <><Loader2 className="h-4 w-4 animate-spin" /> {t('common.creating')}</>
+                        <><Loader2 className="h-4 w-4 animate-spin" /> {t("common.creating")}</>
                       ) : (
-                        <><FileDown className="h-4 w-4" /> {t('dashboard.downloadReport')}</>
+                        <><FileDown className="h-4 w-4" /> {t("dashboard.downloadReport")}</>
                       )}
                     </Button>
                   </div>
                 </DialogContent>
               </Dialog>
-            </div>
-          </div>
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -right-20 -bottom-20 h-60 w-60 rounded-full bg-white/5 blur-3xl" />
-        </div>
+            </>
+          }
+        />
 
         {/* Profit / Revenue Summary */}
+        <DashboardSection title={t("dashboard.financialOverview") || "Financial overview"}>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <FinancialCard
             title={t('dashboard.todayIncome')}
@@ -263,38 +305,138 @@ export default function Dashboard() {
             isDebt
           />
         </div>
+        </DashboardSection>
 
         {/* Total customers, packages, active batches */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <AnimatedStatsCard
-            title={t('dashboard.totalCustomers') ?? 'Total Customers'}
+          <StatsCard
+            title={t("dashboard.totalCustomers") ?? "Total Customers"}
             value={customers?.length ?? 0}
-            description={t('dashboard.activeCustomers') ?? 'Active customers'}
+            description={t("dashboard.activeCustomers") ?? "Active customers"}
             icon={<Users className="h-5 w-5" />}
             color="emerald"
           />
-          <AnimatedStatsCard
-            title={t('dashboard.totalPackages') ?? 'Total Packages'}
+          <StatsCard
+            title={t("dashboard.totalPackages") ?? "Total Packages"}
             value={totalPackages}
-            description={t('dashboard.registeredToday')}
+            description={t("dashboard.registeredToday")}
             icon={<Package className="h-5 w-5" />}
             color="blue"
           />
-          <AnimatedStatsCard
-            title={t('dashboard.activeBatches')}
+          <StatsCard
+            title={t("dashboard.activeBatches")}
             value={activeBatches?.length || 0}
-            description={t('dashboard.onRouteOrPreparing')}
+            description={t("dashboard.onRouteOrPreparing")}
             icon={<Layers className="h-5 w-5" />}
             color="amber"
           />
-          <AnimatedStatsCard
-            title={t('dashboard.delivered')}
+          <StatsCard
+            title={t("dashboard.delivered")}
             value={deliveredPackages}
-            description={`${deliveryRate}% ${t('dashboard.deliveryRate')}`}
+            description={`${deliveryRate}% ${t("dashboard.deliveryRate")}`}
             icon={<CheckCircle className="h-5 w-5" />}
             color="green"
           />
         </div>
+
+        {/* Revenue, Profit & Loss — داهات، قازانج و زیان */}
+        <DashboardSection
+          title={t("dashboard.revenueProfitLossTitle")}
+          description={t("dashboard.revenueProfitLossDesc")}
+        >
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <FinancialCard
+              title={t("dashboard.totalRevenueInPeriod")}
+              value={periodTotals.revenue}
+              icon={<DollarSign className="h-5 w-5" />}
+              color="green"
+              prefix="$"
+            />
+            <FinancialCard
+              title={t("dashboard.totalExpensesInPeriod")}
+              value={periodTotals.expenses}
+              icon={<CreditCard className="h-5 w-5" />}
+              color="red"
+              prefix="$"
+              isDebt
+            />
+            <FinancialCard
+              title={t("dashboard.netProfitInPeriod")}
+              value={Math.abs(periodTotals.profit)}
+              icon={periodTotals.profit >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+              color={periodTotals.profit >= 0 ? "green" : "red"}
+              prefix={periodTotals.profit >= 0 ? "$" : "-$"}
+              isDebt={periodTotals.profit < 0}
+            />
+          </div>
+          <Card className="overflow-hidden border-0 shadow-lg">
+            <CardContent className="p-4 md:p-6">
+              <div className="h-[320px] min-h-0 w-full">
+                {profitLossChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={profitLossChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <YAxis
+                        tick={{ fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(v) => `$${v}`}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(value: number, name: string) => [
+                          `$${Number(value).toFixed(2)}`,
+                          name === "revenue"
+                            ? t("common.revenue")
+                            : name === "expenses"
+                              ? t("dashboard.totalExpensesInPeriod")
+                              : t("dashboard.netProfitInPeriod"),
+                        ]}
+                      />
+                      <Legend />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        fill="#10b981"
+                        fillOpacity={0.3}
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        name={t("common.revenue")}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="expenses"
+                        fill="#ef4444"
+                        fillOpacity={0.2}
+                        stroke="#ef4444"
+                        strokeWidth={2}
+                        name={t("dashboard.totalExpensesInPeriod")}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="profit"
+                        stroke={periodTotals.profit >= 0 ? "#059669" : "#dc2626"}
+                        strokeWidth={2}
+                        dot={false}
+                        name={t("dashboard.netProfitInPeriod")}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <ChartEmpty
+                    message={t("common.noData")}
+                    icon={<BarChart3 className="h-12 w-12" />}
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </DashboardSection>
 
         {/* Alert Summary Section */}
         <AlertSummarySection />
@@ -309,6 +451,7 @@ export default function Dashboard() {
         )}
 
         {/* Main Charts Row: Revenue (line) + Package volume (bar) */}
+        <DashboardSection title={t("dashboard.analytics") || "Analytics"} description={t("dashboard.revenueAndPackagesByDay")}>
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Revenue Chart - Last 30 days income (line) */}
           <Card className="lg:col-span-2 overflow-hidden border-0 shadow-lg">
@@ -324,7 +467,7 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
-              <div className="h-[300px]">
+              <div className="h-[300px] min-h-0 w-full">
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
@@ -372,12 +515,7 @@ export default function Dashboard() {
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-muted-foreground">
-                    <div className="text-center">
-                      <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                      <p>{t('common.noData')}</p>
-                    </div>
-                  </div>
+                  <ChartEmpty message={t("common.noData")} icon={<BarChart3 className="h-12 w-12" />} />
                 )}
               </div>
             </CardContent>
@@ -404,9 +542,7 @@ export default function Dashboard() {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-muted-foreground">
-                    <p className="text-sm">{t('common.noData')}</p>
-                  </div>
+                  <ChartEmpty message={t("common.noData")} icon={<Package className="h-10 w-10" />} />
                 )}
               </div>
             </CardContent>
@@ -453,6 +589,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+        </DashboardSection>
 
         {/* Activity & Lists Row */}
         <div className="grid gap-6 lg:grid-cols-3">
@@ -754,101 +891,6 @@ export default function Dashboard() {
   );
 }
 
-// Financial Card Component
-const FinancialCard = memo(function FinancialCard({ 
-  title, 
-  value, 
-  change,
-  icon,
-  color,
-  prefix = "",
-  isDebt = false
-}: { 
-  title: string; 
-  value: number; 
-  change?: number;
-  icon: React.ReactNode;
-  color: "green" | "blue" | "purple" | "red";
-  prefix?: string;
-  isDebt?: boolean;
-}) {
-  const colorStyles = {
-    green: "from-green-500 to-emerald-600",
-    blue: "from-blue-500 to-indigo-600",
-    purple: "from-purple-500 to-violet-600",
-    red: "from-red-500 to-rose-600",
-  };
-
-  const bgStyles = {
-    green: "bg-green-50 dark:bg-green-950/30",
-    blue: "bg-blue-50 dark:bg-blue-950/30",
-    purple: "bg-purple-50 dark:bg-purple-950/30",
-    red: "bg-red-50 dark:bg-red-950/30",
-  };
-
-  return (
-    <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${colorStyles[color]} flex items-center justify-center text-white shadow-lg`}>
-            {icon}
-          </div>
-          {change !== undefined && !isDebt && (
-            <div className={`flex items-center gap-1 text-sm font-medium ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {change >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-              {Math.abs(change)}%
-            </div>
-          )}
-        </div>
-        <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
-        <p className={`text-2xl font-bold ${isDebt ? 'text-red-600 dark:text-red-400' : ''}`}>
-          {prefix}{value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-        </p>
-      </CardContent>
-    </Card>
-  );
-});
-
-// Animated Stats Card
-const AnimatedStatsCard = memo(function AnimatedStatsCard({ 
-  title, 
-  value, 
-  description, 
-  icon,
-  color = "blue"
-}: { 
-  title: string; 
-  value: number; 
-  description: string; 
-  icon: React.ReactNode;
-  color?: "blue" | "emerald" | "amber" | "green" | "purple";
-}) {
-  const colorStyles = {
-    blue: "from-blue-500 to-blue-600",
-    emerald: "from-emerald-500 to-emerald-600",
-    amber: "from-amber-500 to-amber-600",
-    green: "from-green-500 to-green-600",
-    purple: "from-purple-500 to-purple-600",
-  };
-
-  return (
-    <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold tracking-tight">{value.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">{description}</p>
-          </div>
-          <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${colorStyles[color]} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-            {icon}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-});
-
 // Alert Card Component
 const AlertCard = memo(function AlertCard({ alert }: { alert: { id: string; type: string; title: string; description: string; count?: number; link?: string } }) {
   const typeStyles = {
@@ -986,7 +1028,7 @@ const StatusBar = memo(function StatusBar({ status, count, total }: { status: st
 // Alert Summary Section Component
 function AlertSummarySection() {
   const { t } = useTranslation();
-  const { data: packagesResponse } = trpc.packages.list.useQuery({ pageSize: 10000 });
+  const { data: packagesResponse } = trpc.packages.list.useQuery({ pageSize: 500 });
   const packages = packagesResponse?.data;
   const { data: batches } = trpc.batches.list.useQuery();
 

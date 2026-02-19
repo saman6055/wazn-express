@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { PortalThemeProvider } from "./contexts/PortalThemeContext";
+import { LandingThemeProvider } from "./contexts/LandingThemeContext";
 import { PWAInstallPrompt, OfflineIndicator } from "./components/PWAInstallPrompt";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import QueryErrorBoundary from "./components/QueryErrorBoundary";
@@ -83,6 +84,7 @@ const ProfitDashboardByType = lazy(() => import("./pages/ProfitDashboardByType")
 const UnifiedProfitDashboard = lazy(() => import("./pages/UnifiedProfitDashboard"));
 const MonthlyProfitReport = lazy(() => import("./pages/MonthlyProfitReport"));
 const ProfitReports = lazy(() => import("./pages/ProfitReports"));
+const ProfitLossReport = lazy(() => import("./pages/ProfitLossReport"));
 
 // ---------------------------------------------------------------------------
 // Company (Expenses, Partners, Treasury)
@@ -109,6 +111,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
 const InvoiceTemplateSettings = lazy(() => import("./pages/InvoiceTemplateSettings"));
 const LabelTemplateSettings = lazy(() => import("./pages/LabelTemplateSettings"));
+const BatchLabelTemplateSettings = lazy(() => import("./pages/BatchLabelTemplateSettings"));
 const DataManagement = lazy(() => import("./pages/admin/DataManagement"));
 const BackupManagement = lazy(() => import("./pages/BackupManagement"));
 const ScheduledBackups = lazy(() => import("./pages/ScheduledBackups"));
@@ -230,6 +233,7 @@ function Router() {
         <Route path="/reports/unified-profit" component={UnifiedProfitDashboard} />
         <Route path="/reports/monthly-profit" component={MonthlyProfitReport} />
         <Route path="/reports/profit" component={ProfitReports} />
+        <Route path="/reports/profit-loss" component={ProfitLossReport} />
         <Route path="/company/expenses" component={Expenses} />
         <Route path="/company/expense-alerts" component={ExpenseAlerts} />
         <Route path="/company/partners" component={Partners} />
@@ -244,6 +248,7 @@ function Router() {
         <Route path="/settings/notifications" component={NotificationSettings} />
         <Route path="/settings/invoice-template" component={InvoiceTemplateSettings} />
         <Route path="/settings/label-templates" component={LabelTemplateSettings} />
+        <Route path="/settings/batch-label-template" component={BatchLabelTemplateSettings} />
         <Route path="/settings/data-management" component={DataManagement} />
         <Route path="/backup-management" component={BackupManagement} />
         <Route path="/scheduled-backups" component={ScheduledBackups} />
@@ -309,7 +314,8 @@ function App() {
         <LanguageProvider>
           <OfflineProvider>
             <PortalThemeProvider>
-              <TooltipProvider>
+              <LandingThemeProvider>
+                <TooltipProvider>
                 <Toaster />
                 <MutationToastHandler />
                 <OfflineIndicator />
@@ -318,6 +324,7 @@ function App() {
                 </QueryErrorBoundary>
                 <PWAInstallPrompt />
               </TooltipProvider>
+              </LandingThemeProvider>
             </PortalThemeProvider>
           </OfflineProvider>
         </LanguageProvider>

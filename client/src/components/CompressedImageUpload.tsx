@@ -11,6 +11,7 @@ import {
   Upload,
   Camera,
 } from "lucide-react";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface CompressedImageUploadProps {
   /** Current images array */
@@ -44,6 +45,7 @@ export default function CompressedImageUpload({
   accentColor = "emerald",
   className,
 }: CompressedImageUploadProps) {
+  const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -117,7 +119,7 @@ export default function CompressedImageUpload({
 
       const remainingSlots = maxImages - images.length;
       if (remainingSlots <= 0) {
-        toast.error(`زۆرترین ${maxImages} وێنە دەتوانرێت`);
+        toast.error(t('common.maxImagesAllowed', { max: maxImages }));
         return;
       }
 
@@ -132,13 +134,13 @@ export default function CompressedImageUpload({
         try {
           // Validate file type
           if (!file.type.startsWith("image/")) {
-            toast.error(`${file.name} وێنە نییە`);
+            toast.error(t('common.notAnImage', { filename: file.name }));
             continue;
           }
 
           // Validate file size (max 20MB before compression)
           if (file.size > 20 * 1024 * 1024) {
-            toast.error(`${file.name} زۆر گەورەیە (زۆرترین 20MB)`);
+            toast.error(t('common.fileTooLarge', { filename: file.name }));
             continue;
           }
 
@@ -157,7 +159,7 @@ export default function CompressedImageUpload({
           }
         } catch (err) {
           console.error("Upload error:", err);
-          toast.error(`هەڵە لە ئەپلۆدکردنی ${file.name}`);
+          toast.error(t('common.uploadError', { filename: file.name }));
         }
 
         processed++;
@@ -168,8 +170,8 @@ export default function CompressedImageUpload({
         onChange([...images, ...newUrls]);
         toast.success(
           newUrls.length === 1
-            ? "وێنە ئەپلۆد کرا"
-            : `${newUrls.length} وێنە ئەپلۆد کران`
+            ? t('common.imageUploaded')
+            : t('common.imagesUploaded', { count: newUrls.length })
         );
       }
 
@@ -327,8 +329,8 @@ export default function CompressedImageUpload({
             >
               <img
                 src={url}
-                alt={`وێنەی ${i + 1}`}
-                className="w-full h-full object-cover"
+              alt={t('common.imageNumber', { index: i + 1 })}
+              className="w-full h-full object-cover"
               />
               {/* Overlay on hover */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
@@ -419,7 +421,7 @@ export default function CompressedImageUpload({
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  کۆمپریسکردن و ئەپلۆدکردن...
+                  {t('common.compressingAndUploading')}
                 </p>
               </>
             ) : (
@@ -441,14 +443,14 @@ export default function CompressedImageUpload({
                 <div className="text-center">
                   <p className={cn("text-sm font-medium", colors.text)}>
                     {images.length === 0
-                      ? "وێنەی کاڵا ئەپلۆد بکە"
-                      : "وێنەی زیاتر ئەپلۆد بکە"}
+                      ? t('common.uploadProductImage')
+                      : t('common.uploadMoreImages')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    دراگ و دروپ یان کلیک بکە • زۆرترین {maxImages} وێنە
+                    {t('common.dragDropOrClick')} • {t('common.maxImagesAllowed', { max: maxImages })}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    وێنەکان خۆکارانە کۆمپریس دەکرێن
+                    {t('common.imagesAutoCompressed')}
                   </p>
                 </div>
               </>
@@ -461,7 +463,7 @@ export default function CompressedImageUpload({
       {images.length > 0 && (
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>
-            {images.length} / {maxImages} وێنە
+            {t('common.imagesCount', { count: images.length, max: maxImages })}
           </span>
           {images.length > 0 && (
             <button
@@ -469,7 +471,7 @@ export default function CompressedImageUpload({
               onClick={() => onChange([])}
               className="text-red-500 hover:text-red-700 transition-colors"
             >
-              سڕینەوەی هەموو
+              {t('common.deleteAll')}
             </button>
           )}
         </div>
