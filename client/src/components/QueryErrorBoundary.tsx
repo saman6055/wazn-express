@@ -20,18 +20,21 @@ function getHttpStatus(error: Error): number | undefined {
   if (isTRPCClientError(error) && error.data && typeof error.data === "object" && "httpStatus" in error.data) {
     return (error.data as { httpStatus?: number }).httpStatus;
   }
+  const err = error as Error & { httpStatus?: number };
+  if (typeof err.httpStatus === "number") return err.httpStatus;
   return undefined;
 }
 
 function isAuthError(error: Error): boolean {
-  const msg = error.message?.toLowerCase() ?? "";
+  const msg = (error.message ?? "").toLowerCase();
+  const status = getHttpStatus(error);
   if (error.message === UNAUTHED_ERR_MSG) return true;
-  if (getHttpStatus(error) === 401) return true;
-  // 403 "Invalid session cookie" or similar → treat as auth so we redirect to login instead of "Something went wrong"
-  if (getHttpStatus(error) === 403 && (msg.includes("session") || msg.includes("cookie") || msg.includes("login"))) return true;
+  if (status === 401) return true;
   if (msg.includes("invalid session") || msg.includes("session cookie") || msg.includes("please login")) return true;
+  // 403 with unclear message (e.g. "[object Object]" after bad parse) or "forbidden" → treat as session, redirect
+  if (status === 403 && (msg.includes("session") || msg.includes("cookie") || msg === "[object object]" || msg === "forbidden" || msg.length < 3)) return true;
   const trpcData = isTRPCClientError(error) ? (error as TRPCClientError<{ code?: string }>).data : null;
-  if (trpcData?.code === "UNAUTHORIZED" || (trpcData?.code === "FORBIDDEN" && (msg.includes("session") || msg.includes("cookie")))) return true;
+  if (trpcData?.code === "UNAUTHORIZED" || (trpcData?.code === "FORBIDDEN" && (msg.includes("session") || msg.includes("cookie") || msg === "[object object]"))) return true;
   return false;
 }
 

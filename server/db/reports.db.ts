@@ -2149,29 +2149,48 @@ export async function getActivityStats(startDate: Date, endDate: Date) {
   return { packagesDelivered, fullPackagesSold, commissionOrders, invoicesIssued, paymentsReceived, servicesCompleted, totalCustomers };
 }
 
+const EMPTY_DASHBOARD_STATS = {
+  revenueBySource: {
+    batchProfit: { air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, total: 0 },
+    fullPackage: { revenue: 0, cost: 0, shippingCost: 0, profit: 0, count: 0 },
+    commission: { totalCommission: 0, count: 0 },
+    service: { revenue: 0, cost: 0, profit: 0, count: 0, byType: [] },
+    totalRevenue: 0,
+  },
+  expenseBreakdown: { categories: [] as { id: number; nameEn: string; nameKu: string; icon: string; color: string; amount: number; count: number; percentage: number }[], total: 0 },
+  profitLoss: { totalRevenue: 0, totalExpenses: 0, netProfit: 0, profitMargin: 0, isProfit: true },
+  monthlyTrend: [] as { month: string; revenue: number; expenses: number; netProfit: number }[],
+  activity: { packagesDelivered: 0, fullPackagesSold: 0, commissionOrders: 0, invoicesIssued: 0, paymentsReceived: 0, servicesCompleted: 0, totalCustomers: 0 },
+};
+
 export async function getComprehensiveDashboardStats(startDate: Date, endDate: Date) {
-  const [batchProfit, fpProfit, serviceProfit, expenseBreakdown, monthlyTrend, activity] = await Promise.all([
-    getBatchProfitByShippingType(startDate, endDate),
-    getFullPackageProfitBreakdown(startDate, endDate),
-    getServiceProfitBreakdown(startDate, endDate),
-    getExpenseBreakdownDetailed(startDate, endDate),
-    getMonthlyTrendData(startDate, endDate),
-    getActivityStats(startDate, endDate),
-  ]);
-  const batchRevenue = (batchProfit.air_regular?.profit || 0) + (batchProfit.air_irregular?.profit || 0) + (batchProfit.sea?.profit || 0);
-  const fpRevenue = fpProfit.fullPackage.profit;
-  const commissionRevenue = fpProfit.commission.totalCommission;
-  const serviceRevenue = serviceProfit.profit;
-  const totalGrossRevenue = batchRevenue + fpRevenue + commissionRevenue + serviceRevenue;
-  const totalExpenses = expenseBreakdown.total;
-  const netProfit = totalGrossRevenue - totalExpenses;
-  const profitMargin = totalGrossRevenue > 0 ? (netProfit / totalGrossRevenue) * 100 : 0;
-  return {
-    revenueBySource: { batchProfit: { air_regular: batchProfit.air_regular, air_irregular: batchProfit.air_irregular, sea: batchProfit.sea, total: batchRevenue }, fullPackage: { ...fpProfit.fullPackage }, commission: { ...fpProfit.commission }, service: serviceProfit, totalRevenue: totalGrossRevenue },
-    expenseBreakdown,
-    profitLoss: { totalRevenue: totalGrossRevenue, totalExpenses, netProfit, profitMargin, isProfit: netProfit >= 0 },
-    monthlyTrend,
-    activity,
-  };
+  try {
+    const [batchProfit, fpProfit, serviceProfit, expenseBreakdown, monthlyTrend, activity] = await Promise.all([
+      getBatchProfitByShippingType(startDate, endDate),
+      getFullPackageProfitBreakdown(startDate, endDate),
+      getServiceProfitBreakdown(startDate, endDate),
+      getExpenseBreakdownDetailed(startDate, endDate),
+      getMonthlyTrendData(startDate, endDate),
+      getActivityStats(startDate, endDate),
+    ]);
+    const batchRevenue = (batchProfit.air_regular?.profit || 0) + (batchProfit.air_irregular?.profit || 0) + (batchProfit.sea?.profit || 0);
+    const fpRevenue = fpProfit?.fullPackage?.profit ?? 0;
+    const commissionRevenue = fpProfit?.commission?.totalCommission ?? 0;
+    const serviceRevenue = serviceProfit?.profit ?? 0;
+    const totalGrossRevenue = batchRevenue + fpRevenue + commissionRevenue + serviceRevenue;
+    const totalExpenses = expenseBreakdown?.total ?? 0;
+    const netProfit = totalGrossRevenue - totalExpenses;
+    const profitMargin = totalGrossRevenue > 0 ? (netProfit / totalGrossRevenue) * 100 : 0;
+    return {
+      revenueBySource: { batchProfit: { air_regular: batchProfit.air_regular, air_irregular: batchProfit.air_irregular, sea: batchProfit.sea, total: batchRevenue }, fullPackage: { ...fpProfit?.fullPackage }, commission: { ...fpProfit?.commission }, service: serviceProfit, totalRevenue: totalGrossRevenue },
+      expenseBreakdown,
+      profitLoss: { totalRevenue: totalGrossRevenue, totalExpenses, netProfit, profitMargin, isProfit: netProfit >= 0 },
+      monthlyTrend,
+      activity,
+    };
+  } catch (err) {
+    appLogger.error("getComprehensiveDashboardStats failed", { error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined });
+    return EMPTY_DASHBOARD_STATS;
+  }
 }
 

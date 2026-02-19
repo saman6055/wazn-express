@@ -457,6 +457,7 @@
     "serviceTypes": "جۆری خزمەتگوزاری",
     "invoiceTemplate": "داڕشتەی پسووڵە",
     "labelTemplates": "قاڵبی لێبڵ",
+    "batchLabelTemplate": "داڕشتەی لەیبڵی باچ",
     "labelPrinting": "چاپکردنی لەیبڵ",
     "notificationSettings": "ئاگادارکردنەوەکان",
     "dataManagement": "بەڕێوەبردنی داتا",

@@ -112,11 +112,20 @@ const trpcClient = trpc.createClient({
           let msg: string;
           try {
             const json = JSON.parse(text);
-            msg = json?.error ?? json?.message ?? res.statusText;
+            // tRPC/Express: error can be { message, data } or string; batch is array
+            const err = json?.error ?? (Array.isArray(json) ? json[0]?.error : null);
+            if (err != null) {
+              msg = typeof err === "string" ? err : (err?.message ?? res.statusText);
+            } else {
+              msg = json?.message ?? res.statusText;
+            }
+            if (typeof msg !== "string") msg = res.statusText || "Request failed";
           } catch {
             msg = res.status === 429 ? "Too many requests. Please try again later." : res.statusText || "Request failed";
           }
-          throw new Error(msg);
+          const err = new Error(msg);
+          (err as Error & { httpStatus?: number }).httpStatus = res.status;
+          throw err;
         }
         return res;
       },
