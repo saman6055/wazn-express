@@ -40,6 +40,9 @@ import {
   CheckCircle,
   XCircle,
   Wrench,
+  AlertTriangle,
+  RotateCcw,
+  Home,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -89,7 +92,7 @@ export default function ServiceTypesManagement() {
   });
   
   // Queries
-  const { data: serviceTypes, isLoading, refetch } = trpc.extraServices.getServiceTypes.useQuery();
+  const { data: serviceTypes, isLoading, isError, error, refetch } = trpc.extraServices.getServiceTypes.useQuery();
   
   // Mutations
   const createMutation = trpc.extraServices.createServiceType.useMutation({
@@ -234,7 +237,35 @@ export default function ServiceTypesManagement() {
           </div>
         </div>
         
+        {/* API error: show message + retry instead of breaking the whole app */}
+        {isError && (
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardContent className="p-6 flex flex-col items-center justify-center text-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                <AlertTriangle className="h-6 w-6 text-destructive" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">هەڵەیەک ڕوویدا</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {error?.message || "نەتوانرا زانیاری جۆرەکانی خزمەتگوزاری وەربگیرێت. تکایە دووبارە هەوڵ بدەرەوە."}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => refetch()} className="gap-2">
+                  <RotateCcw size={16} />
+                  دووبارە هەوڵ بدەرەوە
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/")} className="gap-2">
+                  <Home size={16} />
+                  گەڕانەوە بۆ سەرەکی
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Service Types Grid */}
+        {!isError && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
@@ -366,6 +397,7 @@ export default function ServiceTypesManagement() {
             ))
           )}
         </div>
+        )}
         
         {/* Edit Dialog */}
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

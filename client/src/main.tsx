@@ -52,7 +52,7 @@ if ('serviceWorker' in navigator) {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      throwOnError: true, // Let QueryErrorBoundary catch tRPC query errors
+      throwOnError: false, // Avoid one failed API from breaking whole app; handle errors per page
       staleTime: 2 * 60 * 1000, // 2 min – reduce refetches that can fail after cookie issues
       refetchOnWindowFocus: false,
       retry: (failureCount, error) => {
