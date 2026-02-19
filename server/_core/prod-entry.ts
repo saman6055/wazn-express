@@ -21,6 +21,7 @@ import { globalLimiter, authLimiterMiddleware } from "../middleware/rateLimiter"
 import { registerHealthRoutes } from "./health";
 import { appLogger, requestLoggingMiddleware } from "../utils/logger";
 import { closeDb } from "../db/connection";
+import autoMigrate from "./autoMigrate";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -61,6 +62,18 @@ function serveStatic(app: express.Express) {
 
 async function startServer() {
   loadConfig(); // Validates required env vars (DATABASE_URL, JWT_SECRET, MIGRATION_SECRET); throws if missing
+
+  // Run DB migrations + schema patches (e.g. serviceTypes columns) before serving
+  const databaseUrl = process.env.DATABASE_URL;
+  if (databaseUrl) {
+    try {
+      const migrateResult = await autoMigrate({ databaseUrl, retryAttempts: 2, retryDelay: 3000, verbose: false });
+      if (!migrateResult.success && migrateResult.errors?.length) appLogger.warn("Startup migration had errors", { errors: migrateResult.errors });
+    } catch (err) {
+      appLogger.warn("Startup migration skipped or failed", { error: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
   const app = express();
   const server = createServer(app);
 

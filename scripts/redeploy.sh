@@ -39,7 +39,7 @@ echo ""
 # echo ""
 
 # 4) Skip db:push by default (use API migration or run manually)
-echo "[4/5] Database migration: skipped (run manually if needed: pnpm run db:push)"
+echo "[4/5] DB: migrations run on next start (serviceTypes patches included)."
 echo ""
 
 # 5) Restart PM2
@@ -53,6 +53,12 @@ else
 fi
 
 echo ""
+echo "[6/6] Health check (wait 3s)..."
+sleep 3
+PORT="${PORT:-3500}"
+CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${PORT}/api/trpc/extraServices.getServiceTypes" 2>/dev/null || echo "000")
+echo "  extraServices.getServiceTypes: HTTP $CODE"
+echo ""
 echo "=============================================="
-echo "Redeploy finished."
+echo "Redeploy finished. If /services/types still errors: pm2 logs"
 echo "=============================================="
