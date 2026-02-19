@@ -3,14 +3,11 @@ import { notifyOwner } from "./notification";
 import { adminProcedure, publicProcedure, protectedProcedure, router } from "./trpc";
 import { systemSettings } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import mysql from "mysql2/promise";
+import { getDb } from "../db/connection";
 
-// Get database connection
+// Use the shared connection pool instead of creating individual connections
 async function getDbConnection() {
-  if (!process.env.DATABASE_URL) return null;
-  const connection = await mysql.createConnection(process.env.DATABASE_URL);
-  return drizzle(connection);
+  return await getDb();
 }
 
 export const systemRouter = router({

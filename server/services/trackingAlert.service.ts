@@ -105,16 +105,35 @@ export async function checkAndNotifyTrackingAlerts(): Promise<void> {
   }
 }
 
+let trackingAlertInterval: ReturnType<typeof setInterval> | null = null;
+
 /**
  * Schedule tracking alert notifications
  * Should be called from a background job or cron service
  */
 export async function scheduleTrackingAlertNotifications(): Promise<void> {
+  // Clear any existing interval to prevent duplicates
+  if (trackingAlertInterval) {
+    clearInterval(trackingAlertInterval);
+    trackingAlertInterval = null;
+  }
+
   // Run every 6 hours
-  setInterval(async () => {
-    await checkAndNotifyTrackingAlerts();
+  trackingAlertInterval = setInterval(async () => {
+    try {
+      await checkAndNotifyTrackingAlerts();
+    } catch (error) {
+      appLogger.error("[Tracking Alerts] Scheduled check failed", { error: error instanceof Error ? error.message : String(error) });
+    }
   }, 6 * 60 * 60 * 1000);
 
   // Run once on startup
   await checkAndNotifyTrackingAlerts();
+}
+
+export function stopTrackingAlertNotifications(): void {
+  if (trackingAlertInterval) {
+    clearInterval(trackingAlertInterval);
+    trackingAlertInterval = null;
+  }
 }

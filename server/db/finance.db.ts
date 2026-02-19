@@ -1674,23 +1674,20 @@ export async function getMonthlyProfitTrend(year: number): Promise<{
   expenses: number;
   profit: number;
 }[]> {
-  const results = [];
-  
-  for (let month = 1; month <= 12; month++) {
+  // Run all 12 months in parallel instead of sequentially
+  const promises = Array.from({ length: 12 }, (_, i) => {
+    const month = i + 1;
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
-    
-    const pnl = await getProfitAndLoss(startDate, endDate);
-    
-    results.push({
+    return getProfitAndLoss(startDate, endDate).then(pnl => ({
       month,
       revenue: pnl.revenue.totalRevenue,
       expenses: pnl.expenses.totalExpenses,
-      profit: pnl.netProfit
-    });
-  }
-  
-  return results;
+      profit: pnl.netProfit,
+    }));
+  });
+
+  return Promise.all(promises);
 }
 
 

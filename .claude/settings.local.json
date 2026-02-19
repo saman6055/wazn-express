@@ -5,7 +5,8 @@
       "Bash(node -e:*)",
       "Bash(netstat:*)",
       "Bash(powershell -Command:*)",
-      "Bash(pnpm dev)"
+      "Bash(pnpm dev)",
+      "Bash(curl:*)"
     ]
   }
 }
