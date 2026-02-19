@@ -1,13 +1,21 @@
 /**
  * Health check endpoints for load balancers and container orchestration.
+ * Version is read from package.json when available (e.g. dev); in Docker/bundle
+ * package.json may be missing, so we fallback to a default.
  */
 import type { Express, Request, Response } from "express";
 import { createRequire } from "node:module";
 import { getDb } from "../db/connection";
 import { sql } from "drizzle-orm";
 
-const require = createRequire(import.meta.url);
-const pkg = require("../../package.json") as { version?: string };
+let appVersion = "1.0.0";
+try {
+  const require = createRequire(import.meta.url);
+  const pkg = require("../../package.json") as { version?: string };
+  if (pkg?.version) appVersion = pkg.version;
+} catch {
+  // In Docker/bundled build, package.json is often not copied; use fallback.
+}
 
 export function registerHealthRoutes(app: Express) {
   // Basic liveness/readiness: process is up
@@ -16,7 +24,7 @@ export function registerHealthRoutes(app: Express) {
       status: "ok",
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
-      version: pkg?.version ?? "0.0.0",
+      version: appVersion,
     });
   });
 

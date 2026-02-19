@@ -31,9 +31,10 @@ const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserI
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    appLogger.info("[OAuth] Initialized with baseURL", { baseURL: ENV.oAuthServerUrl });
-    if (!ENV.oAuthServerUrl) {
-      appLogger.error("[OAuth] OAUTH_SERVER_URL is not configured. Set OAUTH_SERVER_URL environment variable.");
+    if (ENV.oAuthServerUrl) {
+      appLogger.info("[OAuth] Initialized with baseURL", { baseURL: ENV.oAuthServerUrl });
+    } else {
+      appLogger.warn("[OAuth] OAUTH_SERVER_URL is not set; OAuth/Forge login will be disabled.");
     }
   }
 
