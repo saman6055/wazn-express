@@ -641,9 +641,9 @@ export async function getScanStatsByDateRange(startDate: Date, endDate: Date) {
   `);
   
   return ((results[0] as unknown) as any[]).map(row => ({
-    scanType: row.scanType,
+    scanType: String(row.scanType),
     count: Number(row.count),
-    date: row.date
+    date: row.date instanceof Date ? row.date.toISOString().split('T')[0] : String(row.date),
   }));
 }
 

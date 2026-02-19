@@ -23,6 +23,8 @@ export async function getDb() {
       queueLimit: 0,
       enableKeepAlive: true,
       keepAliveInitialDelay: 10000,
+      supportBigNumbers: true,
+      bigNumberStrings: false,
     });
 
     _db = drizzle(_pool) as unknown as ReturnType<typeof drizzle>;

@@ -476,7 +476,11 @@ export async function getDashboardRevenueChart(days: number = 30): Promise<{ dat
             GROUP BY DATE(createdAt) 
             ORDER BY date`
       );
-      revenueData = (Array.isArray(revenueResult) ? revenueResult[0] : revenueResult) as unknown as { date: string; revenue: string }[];
+      const rawRevenue = (Array.isArray(revenueResult) ? revenueResult[0] : revenueResult) as any[];
+      revenueData = (rawRevenue || []).map((r: any) => ({
+        date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date),
+        revenue: String(r.revenue ?? '0'),
+      }));
     } catch (e) {
       appLogger.error('Error fetching revenue data', { error: e instanceof Error ? e.message : String(e) });
       revenueData = [];
@@ -487,13 +491,17 @@ export async function getDashboardRevenueChart(days: number = 30): Promise<{ dat
     try {
       const startDateStr = startDate.toISOString().slice(0, 10);
       const packageResult = await db.execute(
-        sql`SELECT DATE(createdAt) as date, COUNT(*) as count 
-            FROM packages 
-            WHERE createdAt >= ${startDateStr} 
-            GROUP BY DATE(createdAt) 
+        sql`SELECT DATE(createdAt) as date, COUNT(*) as count
+            FROM packages
+            WHERE createdAt >= ${startDateStr}
+            GROUP BY DATE(createdAt)
             ORDER BY date`
       );
-      packageData = (Array.isArray(packageResult) ? packageResult[0] : packageResult) as unknown as { date: string; count: number }[];
+      const rawPackages = (Array.isArray(packageResult) ? packageResult[0] : packageResult) as any[];
+      packageData = (rawPackages || []).map((p: any) => ({
+        date: p.date instanceof Date ? p.date.toISOString().split('T')[0] : String(p.date),
+        count: Number(p.count || 0),
+      }));
     } catch (e) {
       appLogger.error('Error fetching package data', { error: e instanceof Error ? e.message : String(e) });
       packageData = [];
@@ -555,7 +563,11 @@ export async function getDashboardProfitLossChart(days: number = 30): Promise<{ 
             GROUP BY DATE(createdAt) 
             ORDER BY date`
       );
-      revenueData = (Array.isArray(revenueResult) ? revenueResult[0] : revenueResult) as unknown as { date: string; revenue: string }[];
+      const rawRevenue = (Array.isArray(revenueResult) ? revenueResult[0] : revenueResult) as any[];
+      revenueData = (rawRevenue || []).map((r: any) => ({
+        date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date),
+        revenue: String(r.revenue ?? '0'),
+      }));
     } catch (e) {
       appLogger.error('Error fetching revenue for P/L chart', { error: e instanceof Error ? e.message : String(e) });
     }
@@ -563,13 +575,17 @@ export async function getDashboardProfitLossChart(days: number = 30): Promise<{ 
     let expenseData: { date: string; expenses: string }[] = [];
     try {
       const expenseResult = await db.execute(
-        sql`SELECT DATE(expenseDate) as date, COALESCE(SUM(CAST(amountUsd AS DECIMAL(12,2))), 0) as expenses 
-            FROM expenses 
-            WHERE expenseDate >= ${startDateStr} 
-            GROUP BY DATE(expenseDate) 
+        sql`SELECT DATE(expenseDate) as date, COALESCE(SUM(CAST(amountUsd AS DECIMAL(12,2))), 0) as expenses
+            FROM expenses
+            WHERE expenseDate >= ${startDateStr}
+            GROUP BY DATE(expenseDate)
             ORDER BY date`
       );
-      expenseData = (Array.isArray(expenseResult) ? expenseResult[0] : expenseResult) as unknown as { date: string; expenses: string }[];
+      const rawExpenses = (Array.isArray(expenseResult) ? expenseResult[0] : expenseResult) as any[];
+      expenseData = (rawExpenses || []).map((e: any) => ({
+        date: e.date instanceof Date ? e.date.toISOString().split('T')[0] : String(e.date),
+        expenses: String(e.expenses ?? '0'),
+      }));
     } catch (e) {
       appLogger.error('Error fetching expenses for P/L chart', { error: e instanceof Error ? e.message : String(e) });
     }

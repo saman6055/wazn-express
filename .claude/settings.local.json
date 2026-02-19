@@ -6,7 +6,8 @@
       "Bash(netstat:*)",
       "Bash(powershell -Command:*)",
       "Bash(pnpm dev)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(grep:*)"
     ]
   }
 }
