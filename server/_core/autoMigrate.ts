@@ -11,7 +11,7 @@
 
 import mysql from "mysql2/promise";
 import { appLogger } from "../utils/logger";
-import { runMigrations, getMigrationStatus, TABLE_DEFINITIONS } from "./migrations";
+import { runMigrations, getMigrationStatus, TABLE_DEFINITIONS, runSchemaPatches } from "./migrations";
 
 // ============ CONFIGURATION ============
 
@@ -119,30 +119,44 @@ export async function autoMigrate(config: AutoMigrateConfig): Promise<AutoMigrat
     const status = await getMigrationStatus(connection);
     log(`Current status: ${status.existingTables.length} tables exist, ${status.missingTables.length} missing`, 'info');
     
-    if (status.missingTables.length === 0) {
-      log('All tables already exist, no migration needed', 'success');
-      result.success = true;
+    if (status.missingTables.length > 0) {
+      // Run migrations for missing tables
+      const migrationResult = await runMigrations({
+        connection,
+        logger: (msg, level) => log(msg, level),
+        dryRun: false
+      });
+      result.success = migrationResult.success;
+      result.tablesCreated = migrationResult.tablesCreated.length;
+      result.tablesSkipped = migrationResult.tablesSkipped.length;
+      result.errors = migrationResult.errors.map(e => `${e.table}: ${e.error}`);
+      if (!result.success) {
+        log(`Migration completed with ${result.errors.length} errors`, 'error');
+        result.duration = Date.now() - startTime;
+        await connection.end();
+        return result;
+      }
+    } else {
+      log('All tables already exist', 'success');
       result.tablesSkipped = status.existingTables.length;
-      result.duration = Date.now() - startTime;
-      await connection.end();
-      return result;
     }
-    
-    // Run migrations
-    const migrationResult = await runMigrations({
+
+    // Run schema patches (e.g. add missing columns to serviceTypes on existing DBs)
+    const patchResult = await runSchemaPatches({
       connection,
       logger: (msg, level) => log(msg, level),
       dryRun: false
     });
-    
-    result.success = migrationResult.success;
-    result.tablesCreated = migrationResult.tablesCreated.length;
-    result.tablesSkipped = migrationResult.tablesSkipped.length;
-    result.errors = migrationResult.errors.map(e => `${e.table}: ${e.error}`);
-    
+    if (patchResult.applied.length > 0) {
+      log(`Schema patches applied: ${patchResult.applied.length}`, 'success');
+    }
+
+    if (status.missingTables.length === 0) {
+      result.success = true;
+    }
     if (result.success) {
       log(`Migration completed successfully! Created ${result.tablesCreated} tables.`, 'success');
-    } else {
+    } else if (result.errors.length > 0) {
       log(`Migration completed with ${result.errors.length} errors`, 'error');
     }
     

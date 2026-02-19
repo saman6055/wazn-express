@@ -192,13 +192,18 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
     dependencies: [],
     sql: `CREATE TABLE IF NOT EXISTS serviceTypes (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      code VARCHAR(50) NOT NULL UNIQUE,
       nameEn VARCHAR(100) NOT NULL,
-      nameAr VARCHAR(100),
       nameKu VARCHAR(100),
-      description TEXT,
-      basePrice DECIMAL(10, 2) DEFAULT 0,
+      nameAr VARCHAR(100),
+      icon VARCHAR(50),
+      color VARCHAR(20),
+      defaultCost DECIMAL(10, 2),
+      defaultPrice DECIMAL(10, 2),
+      requiresCustomer BOOLEAN NOT NULL DEFAULT TRUE,
+      addToCustomerBalance BOOLEAN NOT NULL DEFAULT TRUE,
+      sortOrder INT NOT NULL DEFAULT 0,
       isActive BOOLEAN NOT NULL DEFAULT TRUE,
+      createdById INT,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
@@ -1834,8 +1839,49 @@ export async function getMigrationStatus(connection: Connection): Promise<{
   };
 }
 
+// ============ SCHEMA PATCHES (ALTER existing tables - e.g. serviceTypes had old columns only) ============
+export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
+  { name: "serviceTypes.sortOrder", sql: "ALTER TABLE serviceTypes ADD COLUMN sortOrder INT NOT NULL DEFAULT 0" },
+  { name: "serviceTypes.icon", sql: "ALTER TABLE serviceTypes ADD COLUMN icon VARCHAR(50)" },
+  { name: "serviceTypes.color", sql: "ALTER TABLE serviceTypes ADD COLUMN color VARCHAR(20)" },
+  { name: "serviceTypes.defaultCost", sql: "ALTER TABLE serviceTypes ADD COLUMN defaultCost DECIMAL(10,2)" },
+  { name: "serviceTypes.defaultPrice", sql: "ALTER TABLE serviceTypes ADD COLUMN defaultPrice DECIMAL(10,2)" },
+  { name: "serviceTypes.requiresCustomer", sql: "ALTER TABLE serviceTypes ADD COLUMN requiresCustomer BOOLEAN NOT NULL DEFAULT TRUE" },
+  { name: "serviceTypes.addToCustomerBalance", sql: "ALTER TABLE serviceTypes ADD COLUMN addToCustomerBalance BOOLEAN NOT NULL DEFAULT TRUE" },
+  { name: "serviceTypes.createdById", sql: "ALTER TABLE serviceTypes ADD COLUMN createdById INT" },
+];
+
+export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {
+  const applied: string[] = [];
+  const skipped: string[] = [];
+  const log = config.logger || (() => {});
+
+  for (const patch of SCHEMA_PATCHES) {
+    try {
+      if (config.dryRun) {
+        log(`[DRY RUN] Would run patch: ${patch.name}`, "info");
+        applied.push(patch.name);
+        continue;
+      }
+      await config.connection.execute(patch.sql);
+      log(`Applied schema patch: ${patch.name}`, "success");
+      applied.push(patch.name);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes("Duplicate column") || msg.includes("duplicate column")) {
+        skipped.push(patch.name);
+      } else {
+        log(`Schema patch failed ${patch.name}: ${msg}`, "warn");
+      }
+    }
+  }
+  return { applied, skipped };
+}
+
 export default {
   TABLE_DEFINITIONS,
   runMigrations,
-  getMigrationStatus
+  getMigrationStatus,
+  SCHEMA_PATCHES,
+  runSchemaPatches,
 };

@@ -138,18 +138,58 @@ export async function deleteProductCategory(id: number): Promise<void> {
 
 // ============ SERVICE TYPES (جۆرەکانی خزمەتگوزاری) ============
 
+/** Map raw row (old schema) to ServiceType shape for API */
+function mapRowToServiceType(row: Record<string, unknown>): ServiceType {
+  return {
+    id: Number(row.id),
+    nameEn: String(row.nameEn ?? ""),
+    nameKu: row.nameKu != null ? String(row.nameKu) : null,
+    nameAr: row.nameAr != null ? String(row.nameAr) : null,
+    icon: row.icon != null ? String(row.icon) : null,
+    color: row.color != null ? String(row.color) : null,
+    defaultCost: row.defaultCost != null ? String(row.defaultCost) : null,
+    defaultPrice: row.defaultPrice != null ? String(row.defaultPrice) : row.basePrice != null ? String(row.basePrice) : null,
+    requiresCustomer: row.requiresCustomer != null ? Boolean(row.requiresCustomer) : true,
+    addToCustomerBalance: row.addToCustomerBalance != null ? Boolean(row.addToCustomerBalance) : true,
+    sortOrder: row.sortOrder != null ? Number(row.sortOrder) : 0,
+    isActive: Boolean(row.isActive ?? true),
+    createdById: row.createdById != null ? Number(row.createdById) : null,
+    createdAt: row.createdAt as Date,
+    updatedAt: row.updatedAt as Date,
+  };
+}
+
+/** Fallback when serviceTypes table has old schema (no sortOrder etc.) */
+async function getAllServiceTypesFallback(db: Awaited<ReturnType<typeof getDb>>): Promise<ServiceType[]> {
+  const [rows] = (await db.execute(
+    sql`SELECT id, nameEn, nameKu, nameAr, isActive, createdAt, updatedAt FROM serviceTypes ORDER BY id`
+  )) as unknown as [Record<string, unknown>[]];
+  return (rows ?? []).map(mapRowToServiceType);
+}
+
 export async function getAllServiceTypes(): Promise<ServiceType[]> {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(serviceTypes).orderBy(serviceTypes.sortOrder);
+  try {
+    return await db.select().from(serviceTypes).orderBy(serviceTypes.sortOrder);
+  } catch {
+    return getAllServiceTypesFallback(db);
+  }
 }
 
 export async function getActiveServiceTypes(): Promise<ServiceType[]> {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(serviceTypes)
-    .where(eq(serviceTypes.isActive, true))
-    .orderBy(serviceTypes.sortOrder);
+  try {
+    return await db.select().from(serviceTypes)
+      .where(eq(serviceTypes.isActive, true))
+      .orderBy(serviceTypes.sortOrder);
+  } catch {
+    const [rows] = (await db.execute(
+      sql`SELECT id, nameEn, nameKu, nameAr, isActive, createdAt, updatedAt FROM serviceTypes WHERE isActive = 1 ORDER BY id`
+    )) as unknown as [Record<string, unknown>[]];
+    return (rows ?? []).map(mapRowToServiceType);
+  }
 }
 
 export async function getServiceTypeById(id: number): Promise<ServiceType | null> {
