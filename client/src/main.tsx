@@ -53,19 +53,30 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       throwOnError: true, // Let QueryErrorBoundary catch tRPC query errors
-      staleTime: 30 * 1000, // 30s for list/data queries
+      staleTime: 2 * 60 * 1000, // 2 min – reduce refetches that can fail after cookie issues
       refetchOnWindowFocus: false,
+      retry: (failureCount, error) => {
+        // Don't retry auth errors (redirect will happen)
+        const msg = error instanceof Error ? error.message : "";
+        if (msg.includes("Invalid session") || msg.includes("Please login") || msg.includes("session cookie")) return false;
+        return failureCount < 2;
+      },
     },
   },
 });
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
-  if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
 
-  const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
+  const msg = error instanceof Error ? error.message : String(error ?? "");
+  const isExplicitUnauth = error instanceof TRPCClientError && msg === UNAUTHED_ERR_MSG;
+  const isSessionInvalid =
+    msg.includes("Invalid session") ||
+    msg.includes("session cookie") ||
+    msg.includes("Please login") ||
+    (error instanceof TRPCClientError && (error.data?.code === "UNAUTHORIZED" || error.data?.code === "FORBIDDEN"));
 
-  if (!isUnauthorized) return;
+  if (!isExplicitUnauth && !isSessionInvalid) return;
 
   window.location.href = getLoginUrl();
 };

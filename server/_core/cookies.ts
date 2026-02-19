@@ -40,10 +40,12 @@ export function getSessionCookieOptions(
   //       : undefined;
 
   const secure = isSecureRequest(req);
+  // Use "lax" for same-origin (frontend and API on same domain). "none" is only needed for cross-site.
+  // "lax" avoids browsers dropping the cookie on navigation/refetch, which caused "pages disappear after a minute".
   return {
     httpOnly: true,
     path: "/",
-    sameSite: secure ? "none" : "lax",
+    sameSite: "lax",
     secure,
   };
 }
