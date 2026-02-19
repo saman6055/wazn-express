@@ -24,8 +24,15 @@ function getHttpStatus(error: Error): number | undefined {
 }
 
 function isAuthError(error: Error): boolean {
+  const msg = error.message?.toLowerCase() ?? "";
   if (error.message === UNAUTHED_ERR_MSG) return true;
-  return getHttpStatus(error) === 401;
+  if (getHttpStatus(error) === 401) return true;
+  // 403 "Invalid session cookie" or similar → treat as auth so we redirect to login instead of "Something went wrong"
+  if (getHttpStatus(error) === 403 && (msg.includes("session") || msg.includes("cookie") || msg.includes("login"))) return true;
+  if (msg.includes("invalid session") || msg.includes("session cookie") || msg.includes("please login")) return true;
+  const trpcData = isTRPCClientError(error) ? (error as TRPCClientError<{ code?: string }>).data : null;
+  if (trpcData?.code === "UNAUTHORIZED" || (trpcData?.code === "FORBIDDEN" && (msg.includes("session") || msg.includes("cookie")))) return true;
+  return false;
 }
 
 function isNotFoundError(error: Error): boolean {
