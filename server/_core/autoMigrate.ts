@@ -213,9 +213,13 @@ export async function runStandalone(): Promise<void> {
   process.exit(result.success ? 0 : 1);
 }
 
-// Check if running as standalone script
-if (require.main === module) {
-  runStandalone();
+// Run standalone only when executed as script (CJS). In ESM/bundle, module/require are undefined — skip to avoid ReferenceError.
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = typeof module !== "undefined" ? module : undefined;
+  if (typeof require !== "undefined" && mod && require.main === mod) runStandalone();
+} catch {
+  // ESM: server entry calls autoMigrate() explicitly; do not run runStandalone() here.
 }
 
 export default autoMigrate;

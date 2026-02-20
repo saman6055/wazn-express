@@ -163,7 +163,29 @@ export const packagesRouter = router({
       .mutation(async ({ input, ctx }) => {
         const warehouse = await db.getWarehouseById(input.originWarehouseId);
         if (!warehouse) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Warehouse not found" });
+          throw new TRPCError({ code: "NOT_FOUND", message: "کۆگا نەدۆزرایەوە. تکایە کۆگایەک زیاد بکە یان هەڵبژێرە." });
+        }
+        const codePrefix = warehouse.codePrefix ?? "PKG";
+
+        if (input.batchId != null) {
+          const batch = await db.getBatchById(input.batchId);
+          if (!batch) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "گرووپ/بەچ نەدۆزرایەوە. تکایە بەچێکی دروست هەڵبژێرە یان بە خاڵی بەچ پاک بکەرەوە." });
+          }
+        }
+
+        if (input.categoryId != null) {
+          const category = await db.getProductCategoryById(input.categoryId);
+          if (!category) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "جۆری بەرهەم نەدۆزرایەوە. تکایە جۆرێکی دروست هەڵبژێرە یان بە خاڵی جۆر پاک بکەرەوە." });
+          }
+        }
+
+        if (input.trackingNumber?.trim()) {
+          const existing = await db.getPackageByTrackingNumber(input.trackingNumber.trim());
+          if (existing) {
+            throw new TRPCError({ code: "CONFLICT", message: "ئەم تراکینگە پێشتر تۆمار کراوە. ناتوانرێت دووبارە تۆماری بکەیت." });
+          }
         }
 
         // For unclaimed packages, customer is optional
@@ -171,7 +193,7 @@ export const packagesRouter = router({
         if (input.customerId && !input.isUnclaimed) {
           customer = await db.getCustomerById(input.customerId);
           if (!customer) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+            throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە. تکایە کڕیارێکی دروست هەڵبژێرە یان بێ خاوەن دیاری بکە." });
           }
         }
 
@@ -218,7 +240,7 @@ export const packagesRouter = router({
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
           packageCode = input.isUnclaimed 
             ? await db.getNextUnclaimedPackageCode()
-            : await db.getNextPackageCode(warehouse.codePrefix);
+            : await db.getNextPackageCode(codePrefix);
 
           const qrData = JSON.stringify({
             customerCode: customer?.customerCode || "UNCLAIMED",
@@ -258,7 +280,16 @@ export const packagesRouter = router({
             const code = err && typeof err === "object" && "code" in err ? (err as { code: unknown }).code : "";
             const errno = err && typeof err === "object" && "errno" in err ? (err as { errno: unknown }).errno : "";
             const isDuplicate = code === "ER_DUP_ENTRY" || errno === 1062 || /duplicate|unique/i.test(msg);
-            if (!isDuplicate || attempt === maxAttempts - 1) throw err;
+            const isDuplicateTracking = isDuplicate && /tracking|trackingNumber/i.test(msg);
+            if (isDuplicateTracking) {
+              throw new TRPCError({ code: "CONFLICT", message: "ئەم تراکینگە پێشتر تۆمار کراوە. ناتوانرێت دووبارە تۆماری بکەیت." });
+            }
+            if (!isDuplicate || attempt === maxAttempts - 1) {
+              if (msg && !msg.includes("کۆگا") && !msg.includes("کڕیار") && !msg.includes("گرووپ") && !msg.includes("جۆری")) {
+                throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `هەڵەی داتابەیس: ${msg.slice(0, 120)}` });
+              }
+              throw err;
+            }
           }
         }
 

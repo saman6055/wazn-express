@@ -57,12 +57,21 @@ export default function QuickRegister() {
   const customerInputRef = useRef<HTMLInputElement>(null);
   const searchVersionRef = useRef(0);
 
-  // Queries
-  const { data: customers } = trpc.customers.list.useQuery();
-  const { data: batches } = trpc.batches.list.useQuery();
-  const { data: warehouses } = trpc.warehouses.list.useQuery();
-  const { data: categories } = trpc.productCategories.list.useQuery();
-  const { data: packageStats } = trpc.packages.stats.useQuery();
+  // Queries — handle errors so one failed API doesn't block the form
+  const { data: customers, isError: customersError, refetch: refetchCustomers } = trpc.customers.list.useQuery();
+  const { data: batches, isError: batchesError, refetch: refetchBatches } = trpc.batches.list.useQuery();
+  const { data: warehouses, isError: warehousesError, refetch: refetchWarehouses } = trpc.warehouses.list.useQuery();
+  const { data: categories, isError: categoriesError, refetch: refetchCategories } = trpc.productCategories.list.useQuery();
+  const { data: packageStats, isError: statsError, refetch: refetchStats } = trpc.packages.stats.useQuery();
+
+  const hasQueryError = customersError || batchesError || warehousesError || categoriesError || statsError;
+  const refetchAll = () => {
+    refetchCustomers();
+    refetchBatches();
+    refetchWarehouses();
+    refetchCategories();
+    refetchStats();
+  };
   
   // Search tracking - use trpc client directly for manual search
   const trpcUtils = trpc.useUtils();
@@ -426,7 +435,20 @@ export default function QuickRegister() {
       }
     },
     onError: (error) => {
-      toast.error(`هەڵە: ${error.message}`);
+      const msg = (error?.message ?? "").trim();
+      console.error("[QuickRegister] register error:", error);
+      // Server returns Kurdish for known errors; show as-is. Map common English to Kurdish.
+      if (msg.includes("کۆگا") || msg.includes("کڕیار") || msg.includes("گرووپ") || msg.includes("جۆری") || msg.includes("تکایە") || msg.includes("تراکینگە پێشتر") || msg.includes("هەڵەی داتابەیس")) {
+        toast.error(msg);
+      } else if (msg.includes("Warehouse not found")) {
+        toast.error("کۆگا نەدۆزرایەوە. تکایە لە ڕێکخستنەکان کۆگا زیاد بکە.");
+      } else if (msg.includes("Customer not found")) {
+        toast.error("کڕیار نەدۆزرایەوە. کڕیارێکی تر هەڵبژێرە یان بێ خاوەن دیاری بکە.");
+      } else if (msg.includes("duplicate") || /تۆمار کراوە|already registered|CONFLICT/i.test(msg)) {
+        toast.error("ئەم تراکینگە پێشتر تۆمار کراوە.");
+      } else {
+        toast.error(msg || "هەڵەیەک ڕوویدا. دووبارە هەوڵ بدەرەوە.");
+      }
     },
   });
   
@@ -574,6 +596,21 @@ export default function QuickRegister() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto px-2" onKeyDown={handleKeyDown}>
+        {/* Non-blocking error banner when list APIs fail */}
+        {hasQueryError && (
+          <div className="mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                پەیوەندی بە هەندێک داتا نەگەیشت. دەتوانیت دووبارە هەوڵ بدەیتەوە یان بە بەتاڵی بەردەوام بەیت.
+              </p>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={refetchAll} className="border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-900/40">
+              دووبارە هەوڵ بدە
+            </Button>
+          </div>
+        )}
+
         {/* Professional Header with Stats */}
         <div className="mb-6">
           {/* Top Bar with Title and Stats */}

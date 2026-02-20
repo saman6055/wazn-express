@@ -76,23 +76,64 @@ import {
 
 // ============ PRODUCT CATEGORIES (جۆرەکانی کاڵا) ============
 
+/** Fallback when productCategories table lacks sortOrder/icon/color columns (old schema) */
+async function getAllProductCategoriesFallback(db: Awaited<ReturnType<typeof getDb>>): Promise<ProductCategory[]> {
+  const [rows] = (await db.execute(
+    sql`SELECT id, nameEn, nameAr, nameKu, isActive, createdAt, updatedAt FROM productCategories ORDER BY id`
+  )) as unknown as [Record<string, unknown>[]];
+  return (rows ?? []).map((row) => ({
+    id: Number(row.id),
+    nameEn: String(row.nameEn ?? ""),
+    nameAr: row.nameAr != null ? String(row.nameAr) : null,
+    nameKu: row.nameKu != null ? String(row.nameKu) : null,
+    icon: null,
+    color: null,
+    sortOrder: 0,
+    isActive: Boolean(row.isActive ?? true),
+    createdById: null,
+    createdAt: row.createdAt as Date,
+    updatedAt: row.updatedAt as Date,
+  })) as ProductCategory[];
+}
+
 export async function getAllProductCategories(): Promise<ProductCategory[]> {
   const db = await getDb();
   if (!db) return [];
-  
-  return await db.select()
-    .from(productCategories)
-    .orderBy(productCategories.sortOrder);
+  try {
+    return await db.select()
+      .from(productCategories)
+      .orderBy(productCategories.sortOrder);
+  } catch {
+    return getAllProductCategoriesFallback(db);
+  }
 }
 
 export async function getActiveProductCategories(): Promise<ProductCategory[]> {
   const db = await getDb();
   if (!db) return [];
-  
-  return await db.select()
-    .from(productCategories)
-    .where(eq(productCategories.isActive, true))
-    .orderBy(productCategories.sortOrder);
+  try {
+    return await db.select()
+      .from(productCategories)
+      .where(eq(productCategories.isActive, true))
+      .orderBy(productCategories.sortOrder);
+  } catch {
+    const [rows] = (await db.execute(
+      sql`SELECT id, nameEn, nameAr, nameKu, isActive, createdAt, updatedAt FROM productCategories WHERE isActive = 1 ORDER BY id`
+    )) as unknown as [Record<string, unknown>[]];
+    return (rows ?? []).map((row) => ({
+      id: Number(row.id),
+      nameEn: String(row.nameEn ?? ""),
+      nameAr: row.nameAr != null ? String(row.nameAr) : null,
+      nameKu: row.nameKu != null ? String(row.nameKu) : null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+      isActive: true,
+      createdById: null,
+      createdAt: row.createdAt as Date,
+      updatedAt: row.updatedAt as Date,
+    })) as ProductCategory[];
+  }
 }
 
 export async function getProductCategoryById(id: number): Promise<ProductCategory | null> {
@@ -856,21 +897,33 @@ export async function ensureDefaultLabelTemplate(): Promise<LabelTemplate> {
 export async function getBatchLabelTemplates(): Promise<BatchLabelTemplate[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(batchLabelTemplates).orderBy(batchLabelTemplates.name);
+  try {
+    return await db.select().from(batchLabelTemplates).orderBy(batchLabelTemplates.name);
+  } catch {
+    return [];
+  }
 }
 
 export async function getBatchLabelTemplateById(id: number): Promise<BatchLabelTemplate | null> {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(batchLabelTemplates).where(eq(batchLabelTemplates.id, id));
-  return result[0] || null;
+  try {
+    const result = await db.select().from(batchLabelTemplates).where(eq(batchLabelTemplates.id, id));
+    return result[0] || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getDefaultBatchLabelTemplate(): Promise<BatchLabelTemplate | null> {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(batchLabelTemplates).where(eq(batchLabelTemplates.isDefault, true));
-  return result[0] || null;
+  try {
+    const result = await db.select().from(batchLabelTemplates).where(eq(batchLabelTemplates.isDefault, true));
+    return result[0] || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function createBatchLabelTemplate(data: InsertBatchLabelTemplate): Promise<BatchLabelTemplate> {

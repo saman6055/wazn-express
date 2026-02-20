@@ -117,6 +117,14 @@ export async function getPackageByCode(packageCode: string): Promise<Package | u
   return result[0];
 }
 
+export async function getPackageByTrackingNumber(trackingNumber: string): Promise<Package | undefined> {
+  if (!trackingNumber?.trim()) return undefined;
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(packages).where(eq(packages.trackingNumber, trackingNumber.trim())).limit(1);
+  return result[0];
+}
+
 const DEFAULT_PAGE_SIZE = 50;
 
 export async function getAllPackages(options: {
