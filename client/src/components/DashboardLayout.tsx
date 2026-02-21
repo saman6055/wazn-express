@@ -647,10 +647,10 @@ function DashboardLayoutContent({
 
       {/* Main Content */}
       <main className={cn(
-        "min-h-screen transition-all duration-300",
+        "min-h-screen transition-all duration-300 bg-gradient-to-b from-background to-muted/20 dark:to-muted/10",
         isMobile ? "pt-14" : isRTL ? "mr-64" : "ml-64"
       )}>
-        <div className="p-4 md:p-6">
+        <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
           {children}
         </div>
       </main>

@@ -74,7 +74,7 @@ export default function TrackingAlerts() {
   // State
   const [trackingDialogOpen, setTrackingDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderForTracking | null>(null);
-  const [trackingNumber, setTrackingNumber] = useState("");
+  const [trackingNumbers, setTrackingNumbers] = useState<string[]>([""]);
   const [activeTab, setActiveTab] = useState("alerts");
   
   // Filter states
@@ -86,12 +86,18 @@ export default function TrackingAlerts() {
   const { data: alertStats, refetch: refetchStats } = trpc.fullPackage.getTrackingAlertStats.useQuery();
   const { data: pendingOrders, refetch: refetchOrders, isLoading } = trpc.fullPackage.getOrdersPendingTracking.useQuery();
   
-  const updateTracking = trpc.fullPackage.update.useMutation({
-    onSuccess: () => {
-      toast.success(isKurdish ? "تراکینگ نەمبەر زیاد کرا" : "Tracking number added");
+  const addOrderTrackings = trpc.fullPackage.addOrderTrackings.useMutation({
+    onSuccess: (result) => {
+      const msg = result.added === 1
+        ? (isKurdish ? "تراکینگ نەمبەر زیاد کرا" : "Tracking number added")
+        : (isKurdish ? `${result.added} تراکینگ زیاد کرا` : `${result.added} tracking numbers added`);
+      toast.success(msg);
+      if (result.duplicates.length > 0) {
+        toast.warning(isKurdish ? `دووبارە یان پێشتر بەکارهاتوو: ${result.duplicates.join(", ")}` : `Duplicate/skip: ${result.duplicates.join(", ")}`);
+      }
       setTrackingDialogOpen(false);
       setSelectedOrder(null);
-      setTrackingNumber("");
+      setTrackingNumbers([""]);
       refetchStats();
       refetchOrders();
     },
@@ -102,19 +108,33 @@ export default function TrackingAlerts() {
 
   const handleAddTracking = (order: OrderForTracking) => {
     setSelectedOrder(order);
-    setTrackingNumber("");
+    setTrackingNumbers([""]);
     setTrackingDialogOpen(true);
   };
 
+  const setTrackingAt = (index: number, value: string) => {
+    setTrackingNumbers((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+  const addTrackingField = () => setTrackingNumbers((prev) => [...prev, ""]);
+  const removeTrackingField = (index: number) => {
+    if (trackingNumbers.length <= 1) return;
+    setTrackingNumbers((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSaveTracking = () => {
-    if (!selectedOrder || !trackingNumber.trim()) {
-      toast.error(isKurdish ? "تراکینگ نەمبەر داخڵ بکە" : "Enter tracking number");
+    if (!selectedOrder) return;
+    const list = trackingNumbers.map((s) => s.trim()).filter(Boolean);
+    if (list.length === 0) {
+      toast.error(isKurdish ? "هەر شتێک یەک تراکینگ نەمبەر داخڵ بکە" : "Enter at least one tracking number");
       return;
     }
-    
-    updateTracking.mutate({
-      id: selectedOrder.id,
-      trackingNumber: trackingNumber.trim(),
+    addOrderTrackings.mutate({
+      fullPackageOrderId: selectedOrder.id,
+      trackingNumbers: list,
     });
   };
 
@@ -657,33 +677,61 @@ export default function TrackingAlerts() {
           </Tabs>
         </div>
 
-        {/* Add Tracking Dialog */}
+        {/* Add Tracking Dialog - multiple trackings per order */}
         <Dialog open={trackingDialogOpen} onOpenChange={setTrackingDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5 text-emerald-600" />
-                {isKurdish ? "زیادکردنی تراکینگ نەمبەر" : "Add Tracking Number"}
+                {isKurdish ? "زیادکردنی تراکینگ نەمبەر" : "Add Tracking Number(s)"}
               </DialogTitle>
               <DialogDescription>
                 {selectedOrder && (
                   <span className="font-medium">{selectedOrder.orderCode} - {selectedOrder.productName}</span>
                 )}
+                <span className="block mt-1 text-muted-foreground text-xs">
+                  {isKurdish ? "دەتوانیت چەند تراکینگ زیاد بکەیت (وەک کارتۆنە جیاکان)" : "You can add multiple trackings (e.g. different cartons)"}
+                </span>
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="tracking">
-                  {isKurdish ? "تراکینگ نەمبەر" : "Tracking Number"}
-                </Label>
-                <Input
-                  id="tracking"
-                  value={trackingNumber}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
-                  placeholder={isKurdish ? "تراکینگ نەمبەر داخڵ بکە..." : "Enter tracking number..."}
-                  className="font-mono"
-                />
-              </div>
+              {trackingNumbers.map((value, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <div className="flex-1 space-y-1">
+                    <Label className="sr-only">
+                      {isKurdish ? `تراکینگ ${index + 1}` : `Tracking ${index + 1}`}
+                    </Label>
+                    <Input
+                      value={value}
+                      onChange={(e) => setTrackingAt(index, e.target.value)}
+                      placeholder={isKurdish ? `تراکینگ نەمبەر ${index + 1}...` : `Tracking number ${index + 1}...`}
+                      className="font-mono"
+                    />
+                  </div>
+                  {trackingNumbers.length > 1 ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeTrackingField(index)}
+                      title={isKurdish ? "سڕینەوە" : "Remove"}
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full gap-2 border-dashed"
+                onClick={addTrackingField}
+              >
+                <Plus className="h-4 w-4" />
+                {isKurdish ? "تراکینگ زیاد بکە" : "Add another tracking"}
+              </Button>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setTrackingDialogOpen(false)}>
@@ -691,10 +739,10 @@ export default function TrackingAlerts() {
               </Button>
               <Button 
                 onClick={handleSaveTracking}
-                disabled={!trackingNumber.trim() || updateTracking.isPending}
+                disabled={!trackingNumbers.some((s) => s.trim()) || addOrderTrackings.isPending}
                 className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500"
               >
-                {updateTracking.isPending ? (
+                {addOrderTrackings.isPending ? (
                   <RefreshCw className="h-4 w-4 animate-spin" />
                 ) : (
                   <Check className="h-4 w-4" />

@@ -735,6 +735,20 @@ export const fullPackageRouter = router({
       
       return result;
     }),
+
+    // Multi-tracking per order
+    getOrderTrackings: staffProcedure
+      .input(z.object({ fullPackageOrderId: z.number() }))
+      .query(async ({ input }) => db.getOrderTrackings(input.fullPackageOrderId)),
+    addOrderTrackings: staffProcedure
+      .input(z.object({
+        fullPackageOrderId: z.number(),
+        trackingNumbers: z.array(z.string().min(1)).min(1),
+      }))
+      .mutation(async ({ input }) => db.addOrderTrackings(input.fullPackageOrderId, input.trackingNumbers)),
+    removeOrderTracking: staffProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => db.removeOrderTracking(input.id)),
     
     // Get supplier tracking performance
     getSupplierTrackingPerformance: staffProcedure.query(async () => {

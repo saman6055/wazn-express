@@ -44,7 +44,7 @@ export const FinancialCard = memo(function FinancialCard({
   const styles = colorStyles[color];
 
   return (
-    <Card className="overflow-hidden border-0 shadow-lg transition-all duration-300 hover:shadow-xl">
+    <Card className="pro-stat-card overflow-hidden transition-all duration-300 hover:shadow-md">
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-3">
           <div

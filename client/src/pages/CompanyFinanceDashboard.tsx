@@ -180,6 +180,19 @@ export default function CompanyFinanceDashboard() {
             </TabsTrigger>
           </TabsList>
 
+          {/* Hint when all main metrics are zero */}
+          {!isLoading && (pl?.totalRevenue ?? 0) === 0 && (pl?.totalExpenses ?? 0) === 0 && (
+            <div className="mt-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-800 dark:text-amber-200">
+                <p className="font-medium">{t("companyFinance.noActivityHintTitle") || "هەموو ژمارەکان سفڕن"}</p>
+                <p className="mt-1 text-amber-700 dark:text-amber-300">
+                  {t("companyFinance.noActivityHintBody") || "لە ماوەی هەڵبژێردراو (ئەم مانگە) هیچ داهات یان خەرجی تۆمار نەکراوە. داهاتی باچ پەیوەندی بە باچە دروستکراوەکانی ئەم ماوەیەوە هەیە. دەتوانیت «ئەم ساڵە» هەڵبژێریت یان ماوەیەکی تر."}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* ============ OVERVIEW TAB ============ */}
           <TabsContent value="overview" className="space-y-6 mt-6">
             {/* Top 4 Summary Cards */}

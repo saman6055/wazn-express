@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -344,36 +345,33 @@ const [, setLocation] = useLocation();
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Users className="h-6 w-6 text-primary" />
-              {t("customers.title")}
-            </h1>
-            <p className="text-muted-foreground">{t("customers.subtitle")}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setLocation("/settings/customer-options")}
-              className="hidden sm:flex"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              {t("common.settings")}
-            </Button>
-            <Dialog open={isCreateOpen} onOpenChange={(open) => {
-              setIsCreateOpen(open);
-              if (!open) resetForm();
-            }}>
-              <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  {t("customers.addCustomer")}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="pro-page space-y-6">
+        <PageHeader
+          icon={Users}
+          title={t("customers.title")}
+          subtitle={t("customers.subtitle")}
+          variant="solid"
+          actions={
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setLocation("/settings/customer-options")}
+                className="hidden sm:flex"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                {t("common.settings")}
+              </Button>
+              <Dialog open={isCreateOpen} onOpenChange={(open) => {
+                setIsCreateOpen(open);
+                if (!open) resetForm();
+              }}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    {t("customers.addCustomer")}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <UserPlus className="h-5 w-5 text-primary" />
@@ -813,8 +811,9 @@ const [, setLocation] = useLocation();
                 </form>
               </DialogContent>
             </Dialog>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">

@@ -1,5 +1,6 @@
 // Invoice Template Settings - v2
 import DashboardLayout from "@/components/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -153,13 +154,13 @@ const [companyData, setCompanyData] = useState({
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t("settings.title")}</h1>
-            <p className="text-muted-foreground">{t("settings.subtitle")}</p>
-          </div>
-        </div>
+      <div className="pro-page space-y-6">
+        <PageHeader
+          icon={SettingsIcon}
+          title={t("settings.title")}
+          subtitle={t("settings.subtitle")}
+          variant="solid"
+        />
 
         <Tabs defaultValue="company">
           <TabsList>

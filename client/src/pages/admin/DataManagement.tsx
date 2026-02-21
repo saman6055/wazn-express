@@ -11,6 +11,7 @@ import {
   Package,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useDataManagement } from "@/hooks/useDataManagement";
 import { dataCategories } from "@/constants/dataManagementCategories";
 import { DashboardTab } from "@/components/admin/DashboardTab";
@@ -40,54 +41,50 @@ export default function DataManagement() {
     healthScore,
   } = dm;
 
+  const headerStats = (
+    <>
+      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+        <div className="flex items-center gap-2 text-white/70 text-xs mb-1">
+          <HardDrive className="h-3 w-3" />
+          {t("dataManagement.totalRecords")}
+        </div>
+        <div className="text-2xl font-bold">{totalRecords.toLocaleString()}</div>
+      </div>
+      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+        <div className="flex items-center gap-2 text-white/70 text-xs mb-1">
+          <Users className="h-3 w-3" />
+          {t("dataManagement.customers")}
+        </div>
+        <div className="text-2xl font-bold">{basicCounts?.customers ?? 0}</div>
+      </div>
+      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+        <div className="flex items-center gap-2 text-white/70 text-xs mb-1">
+          <Package className="h-3 w-3" />
+          {t("dataManagement.packages")}
+        </div>
+        <div className="text-2xl font-bold">{basicCounts?.packages ?? 0}</div>
+      </div>
+      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+        <div className="flex items-center gap-2 text-white/70 text-xs mb-1">
+          <Save className="h-3 w-3" />
+          {t("dataManagement.backupsCount")}
+        </div>
+        <div className="text-2xl font-bold">{backupsList?.length ?? 0}</div>
+      </div>
+    </>
+  );
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Professional Header — Blue-Indigo gradient */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 p-6 md:p-8 text-white">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NDEgMC0xOCA4LjA1OS0xOCAxOHM4LjA1OSAxOCAxOCAxOCAxOC04LjA1OSAxOC0xOC04LjA1OS0xOC0xOHptMCAzMmMtNy43MzIgMC0xNC02LjI2OC0xNC0xNHM2LjI2OC0xNCAxNC0xNCAxNCA2LjI2OCAxNCAxNC02LjI2OCAxNC0xNCAxNHoiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iLjA1Ii8+PC9nPjwvc3ZnPg==')] opacity-30" />
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Database className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold">{t("dataManagement.title")}</h1>
-                <p className="text-white/80 text-sm md:text-base">{t("dataManagement.subtitle")}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <div className="flex items-center gap-2 text-white/70 text-xs mb-1">
-                  <HardDrive className="h-3 w-3" />
-                  {t("dataManagement.totalRecords")}
-                </div>
-                <div className="text-2xl font-bold">{totalRecords.toLocaleString()}</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <div className="flex items-center gap-2 text-white/70 text-xs mb-1">
-                  <Users className="h-3 w-3" />
-                  {t("dataManagement.customers")}
-                </div>
-                <div className="text-2xl font-bold">{basicCounts?.customers ?? 0}</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <div className="flex items-center gap-2 text-white/70 text-xs mb-1">
-                  <Package className="h-3 w-3" />
-                  {t("dataManagement.packages")}
-                </div>
-                <div className="text-2xl font-bold">{basicCounts?.packages ?? 0}</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <div className="flex items-center gap-2 text-white/70 text-xs mb-1">
-                  <Save className="h-3 w-3" />
-                  {t("dataManagement.backupsCount")}
-                </div>
-                <div className="text-2xl font-bold">{backupsList?.length ?? 0}</div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="pro-page">
+        <PageHeader
+          icon={Database}
+          title={t("dataManagement.title")}
+          subtitle={t("dataManagement.subtitle")}
+          variant="gradient"
+          stats={headerStats}
+          className="bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 dark:from-blue-700 dark:via-blue-600 dark:to-indigo-700 shadow-xl"
+        />
 
         {/* 5 Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

@@ -203,5 +203,19 @@ export const fullPackageStatusHistory = mysqlTable("fullPackageStatusHistory", {
 export type FullPackageStatusHistory = typeof fullPackageStatusHistory.$inferSelect;
 export type InsertFullPackageStatusHistory = typeof fullPackageStatusHistory.$inferInsert;
 
+// ============ FULL PACKAGE ORDER TRACKINGS (multiple trackings per order) ============
+
+export const fullPackageOrderTrackings = mysqlTable("fullPackageOrderTrackings", {
+  id: int("id").autoincrement().primaryKey(),
+  fullPackageOrderId: int("fullPackageOrderId").notNull(),
+  trackingNumber: varchar("trackingNumber", { length: 100 }).notNull().unique(),
+  cartonIndex: int("cartonIndex"), // 1, 2, 3... for display order
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  orderIdIdx: index("idx_fpot_order_id").on(table.fullPackageOrderId),
+}));
+
+export type FullPackageOrderTracking = typeof fullPackageOrderTrackings.$inferSelect;
+export type InsertFullPackageOrderTracking = typeof fullPackageOrderTrackings.$inferInsert;
 
 // ============ CUSTOMER NOTIFICATION PREFERENCES ============

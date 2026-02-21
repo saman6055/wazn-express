@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import {
-  DashboardHero,
   FinancialCard,
   StatsCard,
   ChartEmpty,
@@ -17,7 +17,7 @@ import {
   TrendingDown,
   CheckCircle,
   AlertCircle,
-  Sparkles,
+  LayoutDashboard,
   Crown,
   CreditCard,
   BarChart3,
@@ -203,12 +203,12 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        <DashboardHero
-          badge={t("common.appName")}
-          badgeIcon={<Sparkles className="h-5 w-5" />}
+      <div className="pro-page space-y-6">
+        <PageHeader
+          icon={LayoutDashboard}
           title={t("dashboard.title")}
           subtitle={`${t("dashboard.welcome")} ${t("dashboard.subtitle")}`}
+          variant="gradient"
           actions={
             <>
               <Button
@@ -269,8 +269,8 @@ export default function Dashboard() {
           }
         />
 
-        {/* Profit / Revenue Summary */}
-        <DashboardSection title={t("dashboard.financialOverview") || "Financial overview"}>
+        {/* Financial overview */}
+        <DashboardSection className="pro-section" title={t("dashboard.financialOverview") || "Financial overview"}>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <FinancialCard
             title={t('dashboard.todayIncome')}
@@ -307,8 +307,9 @@ export default function Dashboard() {
         </div>
         </DashboardSection>
 
-        {/* Total customers, packages, active batches */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Operational stats */}
+        <DashboardSection className="pro-section">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title={t("dashboard.totalCustomers") ?? "Total Customers"}
             value={customers?.length ?? 0}
@@ -337,10 +338,11 @@ export default function Dashboard() {
             icon={<CheckCircle className="h-5 w-5" />}
             color="green"
           />
-        </div>
+          </div>
+        </DashboardSection>
 
         {/* Revenue, Profit & Loss — داهات، قازانج و زیان */}
-        <DashboardSection
+        <DashboardSection className="pro-section"
           title={t("dashboard.revenueProfitLossTitle")}
           description={t("dashboard.revenueProfitLossDesc")}
         >
@@ -369,8 +371,8 @@ export default function Dashboard() {
               isDebt={periodTotals.profit < 0}
             />
           </div>
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardContent className="p-4 md:p-6">
+          <Card className="pro-card overflow-hidden">
+            <CardContent className="pro-card-body">
               <div className="h-[320px] min-h-0 w-full">
                 {profitLossChartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -450,12 +452,12 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Main Charts Row: Revenue (line) + Package volume (bar) */}
-        <DashboardSection title={t("dashboard.analytics") || "Analytics"} description={t("dashboard.revenueAndPackagesByDay")}>
+        {/* Analytics */}
+        <DashboardSection className="pro-section" title={t("dashboard.analytics") || "Analytics"} description={t("dashboard.revenueAndPackagesByDay")}>
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Revenue Chart - Last 30 days income (line) */}
-          <Card className="lg:col-span-2 overflow-hidden border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
+          <Card className="pro-card lg:col-span-2 overflow-hidden">
+            <CardHeader className="border-b bg-muted/30 pro-card-body py-4">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -466,7 +468,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-4 md:p-6">
+            <CardContent className="pro-card-body">
               <div className="h-[300px] min-h-0 w-full">
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -521,8 +523,8 @@ export default function Dashboard() {
             </CardContent>
           </Card>
           {/* Package volume - packages per day (bar chart) */}
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
+          <Card className="pro-card overflow-hidden">
+            <CardHeader className="border-b bg-muted/30 pro-card-body py-4">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Package className="h-5 w-5 text-primary" />
                 {t('dashboard.packageVolume') ?? 'Package Volume'}
@@ -549,8 +551,8 @@ export default function Dashboard() {
           </Card>
 
           {/* Shipping Type Pie Chart */}
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
+          <Card className="pro-card overflow-hidden">
+            <CardHeader className="border-b bg-muted/30 pro-card-body py-4">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Truck className="h-5 w-5 text-primary" />
                 {t('dashboard.shippingType')}
@@ -592,10 +594,10 @@ export default function Dashboard() {
         </DashboardSection>
 
         {/* Activity & Lists Row */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="pro-section grid gap-6 lg:grid-cols-3">
           {/* Recent Activity Timeline */}
-          <Card className="lg:col-span-2 overflow-hidden border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
+          <Card className="pro-card lg:col-span-2 overflow-hidden">
+            <CardHeader className="border-b bg-muted/30 pro-card-body py-4">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -622,8 +624,8 @@ export default function Dashboard() {
           </Card>
 
           {/* Quick Actions */}
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
+          <Card className="pro-card overflow-hidden">
+            <CardHeader className="border-b bg-muted/30 pro-card-body py-4">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
                 {t('dashboard.quickActions')}
@@ -686,10 +688,10 @@ export default function Dashboard() {
         </div>
 
         {/* Bottom Row - Overdue debt alerts & Active Batches */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="pro-section grid gap-6 lg:grid-cols-2">
           {/* Overdue debt alerts - customers with balance due */}
-          <Card className="overflow-hidden border-0 shadow-lg ring-1 ring-red-200/50 dark:ring-red-800/30">
-            <CardHeader className="border-b bg-gradient-to-r from-red-50/50 to-orange-50/50 dark:from-red-950/20 dark:to-orange-950/20">
+          <Card className="pro-card overflow-hidden ring-1 ring-red-200/50 dark:ring-red-800/30">
+            <CardHeader className="border-b bg-red-50/50 dark:bg-red-950/20 pro-card-body py-4">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -742,8 +744,8 @@ export default function Dashboard() {
           </Card>
 
           {/* Active Batches */}
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
+          <Card className="pro-card overflow-hidden">
+            <CardHeader className="border-b bg-blue-50/50 dark:bg-blue-950/20 pro-card-body py-4">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -800,10 +802,10 @@ export default function Dashboard() {
         </div>
 
         {/* Top Customers & VIP Section */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="pro-section grid gap-6 lg:grid-cols-2">
           {/* Top Customers */}
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20">
+          <Card className="pro-card overflow-hidden">
+            <CardHeader className="border-b bg-amber-50/50 dark:bg-amber-950/20 pro-card-body py-4">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -862,8 +864,8 @@ export default function Dashboard() {
           </Card>
 
           {/* Package Status Overview */}
-          <Card className="overflow-hidden border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
+          <Card className="pro-card overflow-hidden">
+            <CardHeader className="border-b bg-muted/30 pro-card-body py-4">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">

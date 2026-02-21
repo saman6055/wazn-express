@@ -19,6 +19,7 @@ import {
   systemSettings, InsertSystemSetting,
   currencies, taxRates, emailTemplates, ipWhitelist,
   fullPackageOrders, InsertFullPackageOrder, FullPackageOrder,
+  fullPackageOrderTrackings, InsertFullPackageOrderTracking, FullPackageOrderTracking,
   suppliers, InsertSupplier, Supplier,
   fullPackageStatusHistory, InsertFullPackageStatusHistory, FullPackageStatusHistory,
   customerNotificationPrefs, InsertCustomerNotificationPref, CustomerNotificationPref,
@@ -213,12 +214,113 @@ export async function getAllFullPackageOrders(filters?: {
 export async function getFullPackageOrderByTrackingNumber(trackingNumber: string) {
   const db = await getDb();
   if (!db) return undefined;
-  
-  const result = await db.select().from(fullPackageOrders)
-    .where(eq(fullPackageOrders.trackingNumber, trackingNumber))
+  const t = trackingNumber?.trim();
+  if (!t) return undefined;
+
+  // First check new multi-tracking table
+  const fromTrackings = await db.select({ fullPackageOrderId: fullPackageOrderTrackings.fullPackageOrderId })
+    .from(fullPackageOrderTrackings)
+    .where(eq(fullPackageOrderTrackings.trackingNumber, t))
     .limit(1);
-  
+  if (fromTrackings.length > 0) {
+    const order = await getFullPackageOrderById(fromTrackings[0].fullPackageOrderId);
+    return order ?? undefined;
+  }
+
+  // Fallback: legacy single tracking on order
+  const result = await db.select().from(fullPackageOrders)
+    .where(eq(fullPackageOrders.trackingNumber, t))
+    .limit(1);
   return result[0];
+}
+
+// ---------- Multi-tracking per order ----------
+
+export async function getOrderTrackings(fullPackageOrderId: number): Promise<FullPackageOrderTracking[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(fullPackageOrderTrackings)
+    .where(eq(fullPackageOrderTrackings.fullPackageOrderId, fullPackageOrderId))
+    .orderBy(asc(fullPackageOrderTrackings.cartonIndex), asc(fullPackageOrderTrackings.id));
+}
+
+export async function orderHasAnyTracking(orderId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const order = await getFullPackageOrderById(orderId);
+  if (!order) return false;
+  if (order.trackingNumber && order.trackingNumber.trim() !== "") return true;
+  const rows = await db.select({ id: fullPackageOrderTrackings.id })
+    .from(fullPackageOrderTrackings)
+    .where(eq(fullPackageOrderTrackings.fullPackageOrderId, orderId))
+    .limit(1);
+  return rows.length > 0;
+}
+
+export async function addOrderTrackings(
+  fullPackageOrderId: number,
+  trackingNumbers: string[],
+  options?: { setOrderStatus?: boolean }
+): Promise<{ added: number; duplicates: string[] }> {
+  const db = await getDb();
+  if (!db) return { added: 0, duplicates: [] };
+  const order = await getFullPackageOrderById(fullPackageOrderId);
+  if (!order) return { added: 0, duplicates: trackingNumbers };
+
+  const trimmed = trackingNumbers.map((s) => s.trim()).filter(Boolean);
+  const unique = [...new Set(trimmed)];
+  let added = 0;
+  const duplicates: string[] = [];
+
+  for (let i = 0; i < unique.length; i++) {
+    const tr = unique[i];
+    const existing = await db.select().from(fullPackageOrderTrackings).where(eq(fullPackageOrderTrackings.trackingNumber, tr)).limit(1);
+    if (existing.length > 0) {
+      duplicates.push(tr);
+      continue;
+    }
+    const legacyMatch = await db.select().from(fullPackageOrders).where(eq(fullPackageOrders.trackingNumber, tr)).limit(1);
+    if (legacyMatch.length > 0) {
+      duplicates.push(tr);
+      continue;
+    }
+    await db.insert(fullPackageOrderTrackings).values({
+      fullPackageOrderId,
+      trackingNumber: tr,
+      cartonIndex: i + 1,
+    });
+    added++;
+  }
+
+  if (added > 0 && options?.setOrderStatus !== false) {
+    const updateData: Record<string, unknown> = { trackingAddedDate: new Date() };
+    if (!order.trackingNumber || order.trackingNumber.trim() === "") {
+      updateData.trackingNumber = unique[0] ?? null; // keep first in legacy field for compat
+    }
+    if (order.status === "ordered") {
+      updateData.status = "tracking_added";
+    }
+    await db.update(fullPackageOrders).set(updateData as any).where(eq(fullPackageOrders.id, fullPackageOrderId));
+  }
+
+  return { added, duplicates };
+}
+
+export async function removeOrderTracking(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const [row] = await db.select().from(fullPackageOrderTrackings).where(eq(fullPackageOrderTrackings.id, id)).limit(1);
+  if (!row) return false;
+  await db.delete(fullPackageOrderTrackings).where(eq(fullPackageOrderTrackings.id, id));
+  return true;
+}
+
+/** Order IDs that have at least one row in fullPackageOrderTrackings */
+async function getOrderIdsWithMultiTracking(): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.selectDistinct({ id: fullPackageOrderTrackings.fullPackageOrderId }).from(fullPackageOrderTrackings);
+  return rows.map((r) => r.id);
 }
 
 export async function updateFullPackageOrder(id: number, data: Partial<InsertFullPackageOrder>, userId?: number) {
@@ -438,15 +540,15 @@ export async function getFullPackageProfitSummaryByType(startDate?: Date, endDat
 // ============ TRACKING ALERT SYSTEM ============
 
 // Get orders pending tracking (ordered but no tracking number)
+// Excludes orders that have any tracking: legacy field OR rows in fullPackageOrderTrackings
 export async function getOrdersPendingTracking() {
   const db = await getDb();
   if (!db) return [];
   
-  // Get all orders that should have tracking but don't
-  // Exclude cancelled, refunded, returned orders
   const excludedStatuses: ("cancelled" | "refunded" | "returned" | "delivered")[] = ["cancelled", "refunded", "returned", "delivered"];
+  const withMultiTracking = await getOrderIdsWithMultiTracking();
   
-  return db.select().from(fullPackageOrders).where(
+  const candidates = await db.select().from(fullPackageOrders).where(
     and(
       notInArray(fullPackageOrders.status, excludedStatuses),
       or(
@@ -455,6 +557,8 @@ export async function getOrdersPendingTracking() {
       )
     )
   ).orderBy(fullPackageOrders.createdAt);
+
+  return candidates.filter((o) => !withMultiTracking.includes(o.id));
 }
 
 // Get orders by alert level
@@ -485,20 +589,15 @@ export async function updateOrderAlertLevel(id: number, alertLevel: "none" | "wa
   }).where(eq(fullPackageOrders.id, id));
 }
 
-// Get tracking alert statistics
+// Get tracking alert statistics (only orders with no tracking at all)
 export async function getTrackingAlertStats() {
   const db = await getDb();
   if (!db) return { warning: 0, urgent: 0, critical: 0, total: 0 };
   
-  const now = new Date();
-  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-  const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  
-  // Get all orders without tracking (exclude cancelled, refunded, returned, delivered)
   const excludedStatuses: ("cancelled" | "refunded" | "returned" | "delivered")[] = ["cancelled", "refunded", "returned", "delivered"];
+  const withMultiTracking = await getOrderIdsWithMultiTracking();
   
-  const orders = await db.select().from(fullPackageOrders).where(
+  const candidates = await db.select().from(fullPackageOrders).where(
     and(
       notInArray(fullPackageOrders.status, excludedStatuses),
       or(
@@ -507,28 +606,27 @@ export async function getTrackingAlertStats() {
       )
     )
   );
+  const orders = candidates.filter((o) => !withMultiTracking.includes(o.id));
   
+  const now = new Date();
+  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   let warning = 0, urgent = 0, critical = 0;
   
   for (const order of orders) {
-    // Use createdAt if orderDate is not set
     const dateToCheck = order.orderDate || order.createdAt;
     if (!dateToCheck) continue;
     const orderDate = new Date(dateToCheck);
-    
-    if (orderDate <= sevenDaysAgo) {
-      critical++;
-    } else if (orderDate <= fiveDaysAgo) {
-      urgent++;
-    } else if (orderDate <= threeDaysAgo) {
-      warning++;
-    }
+    if (orderDate <= sevenDaysAgo) critical++;
+    else if (orderDate <= fiveDaysAgo) urgent++;
+    else if (orderDate <= threeDaysAgo) warning++;
   }
   
   return { warning, urgent, critical, total: orders.length };
 }
 
-// Process and update all alert levels
+// Process and update all alert levels (only orders with no tracking)
 export async function processTrackingAlerts() {
   const db = await getDb();
   if (!db) return { updated: 0 };
@@ -537,9 +635,9 @@ export async function processTrackingAlerts() {
   const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
   const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const withMultiTracking = await getOrderIdsWithMultiTracking();
   
-  // Get all orders without tracking
-  const orders = await db.select().from(fullPackageOrders).where(
+  const candidates = await db.select().from(fullPackageOrders).where(
     and(
       eq(fullPackageOrders.status, "ordered"),
       or(
@@ -548,6 +646,7 @@ export async function processTrackingAlerts() {
       )
     )
   );
+  const orders = candidates.filter((o) => !withMultiTracking.includes(o.id));
   
   let updated = 0;
   

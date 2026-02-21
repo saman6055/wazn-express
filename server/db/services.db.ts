@@ -240,13 +240,41 @@ export async function getServiceTypeById(id: number): Promise<ServiceType | null
   return type || null;
 }
 
+/** Minimal insert for old serviceTypes table (only base columns) */
+async function createServiceTypeFallback(
+  db: Awaited<ReturnType<typeof getDb>>,
+  data: InsertServiceType
+): Promise<ServiceType> {
+  const insertResult = (await db.execute(
+    sql`INSERT INTO serviceTypes (nameEn, nameKu, nameAr, isActive, createdAt, updatedAt) VALUES (${data.nameEn}, ${data.nameKu ?? null}, ${data.nameAr ?? null}, ${data.isActive ?? true}, NOW(), NOW())`
+  )) as unknown as [{ insertId: number }, unknown];
+  const insertId = Number(insertResult[0]?.insertId);
+  if (!insertId) throw new Error("Insert failed");
+  const [rows] = (await db.execute(
+    sql`SELECT id, nameEn, nameKu, nameAr, isActive, createdAt, updatedAt FROM serviceTypes WHERE id = ${insertId}`
+  )) as unknown as [Record<string, unknown>[]];
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  return mapRowToServiceType((row ?? {}) as Record<string, unknown>);
+}
+
 export async function createServiceType(data: InsertServiceType): Promise<ServiceType> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(serviceTypes).values(data);
-  const insertId = Number(result[0].insertId);
-  const [type] = await db.select().from(serviceTypes).where(eq(serviceTypes.id, insertId));
-  return type;
+  try {
+    const result = await db.insert(serviceTypes).values(data);
+    const insertId = Number(result[0].insertId);
+    const [type] = await db.select().from(serviceTypes).where(eq(serviceTypes.id, insertId));
+    if (type) return type;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const isUnknownColumn =
+      /Unknown column|ER_BAD_FIELD_ERROR|doesn't exist/.test(msg);
+    if (isUnknownColumn) {
+      return createServiceTypeFallback(db, data);
+    }
+    throw err;
+  }
+  throw new Error("Failed to create service type");
 }
 
 export async function updateServiceType(id: number, data: Partial<InsertServiceType>): Promise<ServiceType | null> {

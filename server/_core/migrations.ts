@@ -973,6 +973,20 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "fullPackageOrderTrackings",
+    dependencies: ["fullPackageOrders"],
+    sql: `CREATE TABLE IF NOT EXISTS fullPackageOrderTrackings (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      fullPackageOrderId INT NOT NULL,
+      trackingNumber VARCHAR(100) NOT NULL,
+      cartonIndex INT,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY fullPackageOrderTrackings_trackingNumber_unique (trackingNumber),
+      KEY idx_fpot_order_id (fullPackageOrderId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "batchPricingTiers",
     dependencies: ["batches"],
     sql: `CREATE TABLE IF NOT EXISTS batchPricingTiers (
