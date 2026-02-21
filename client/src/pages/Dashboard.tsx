@@ -32,6 +32,7 @@ import {
   Plane,
   FileDown,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "wouter";

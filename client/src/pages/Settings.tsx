@@ -35,6 +35,7 @@ const [companyData, setCompanyData] = useState({
   const [iqdRate, setIqdRate] = useState("");
   const [rmbRate, setRmbRate] = useState("");
 
+  const utils = trpc.useUtils();
   const { data: settings, refetch } = trpc.settings.list.useQuery();
   const { data: exchangeRates, refetch: refetchRates } = trpc.exchangeRates.list.useQuery();
 
@@ -85,9 +86,12 @@ const [companyData, setCompanyData] = useState({
   };
   
   const updateSettingsMutation = trpc.settings.set.useMutation({
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       toast.success(t("toast.settingsUpdated"));
       refetch();
+      if (variables.key === "company_info") {
+        void utils.settings.getCompanyInfo.invalidate();
+      }
     },
     onError: (error) => toast.error(error.message)
   });
