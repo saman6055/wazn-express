@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { trpc } from "@/lib/trpc";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
-import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp } from "lucide-react";
+import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useLocation } from "wouter";
@@ -37,6 +37,7 @@ export default function QuickRegister() {
   const [widthCm, setWidthCm] = useState("");
   const [heightCm, setHeightCm] = useState("");
   const [batchId, setBatchId] = useState<string>("");
+  const [originWarehouseId, setOriginWarehouseId] = useState<number | null>(null);
   const [isUnclaimed, setIsUnclaimed] = useState(false);
   const [categoryId, setCategoryId] = useState<string>("");
   const [description, setDescription] = useState("");
@@ -165,8 +166,18 @@ export default function QuickRegister() {
     }
   };
   
-  const defaultWarehouse = warehouses?.[0];
-  
+  // Default to first warehouse when list loads; keep user selection when list refetches
+  useEffect(() => {
+    if (warehouses?.length && originWarehouseId === null) {
+      setOriginWarehouseId(warehouses[0].id);
+    }
+  }, [warehouses, originWarehouseId]);
+
+  const selectedWarehouse = useMemo(
+    () => (warehouses?.find((w) => w.id === originWarehouseId) ?? warehouses?.[0]) ?? null,
+    [warehouses, originWarehouseId]
+  );
+
   const filteredBatches = useMemo(() => {
     if (!batches) return [];
     return batches.filter(b => {
@@ -490,6 +501,7 @@ export default function QuickRegister() {
     setWidthCm("");
     setHeightCm("");
     setBatchId("");
+    setOriginWarehouseId(warehouses?.[0]?.id ?? null);
     setShippingType("air_regular");
     setCategoryId("");
     setDescription("");
@@ -532,16 +544,16 @@ export default function QuickRegister() {
       return;
     }
     
-    if (!defaultWarehouse) {
+    if (!selectedWarehouse) {
       soundManager.playError();
-      toast.error("هیچ کۆگایەک نەدۆزرایەوە");
+      toast.error("تکایە کۆگایەک هەڵبژێرە");
       return;
     }
-    
+
     const packageData: any = {
       customerId: isUnclaimed ? undefined : customerId!,
       isUnclaimed: isUnclaimed,
-      originWarehouseId: defaultWarehouse.id,
+      originWarehouseId: selectedWarehouse.id,
       trackingNumber: trackingNumber || undefined,
       weightKg: weightKg || undefined,
       lengthCm: lengthCm || undefined,
@@ -674,8 +686,8 @@ export default function QuickRegister() {
             {/* Main Form - 3 columns */}
             <div className="lg:col-span-3 space-y-4">
               
-              {/* Row 1: Tracking + Customer + Shipping Type */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Row 1: Tracking + Customer + Warehouse + Shipping Type */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 {/* Tracking Number */}
                 <Card className="border-2 border-amber-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-white to-amber-50/50">
                   <CardContent className="p-4">
@@ -805,6 +817,43 @@ export default function QuickRegister() {
                   </CardContent>
                 </Card>
 
+                {/* Warehouse Selection */}
+                <Card className="border-2 border-slate-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-white to-slate-50/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center">
+                        <Warehouse className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="text-sm font-bold text-slate-800">٣. کۆگا</span>
+                    </div>
+                    <Select
+                      value={originWarehouseId != null ? String(originWarehouseId) : ""}
+                      onValueChange={(v) => setOriginWarehouseId(v ? parseInt(v, 10) : null)}
+                      disabled={!warehouses?.length}
+                    >
+                      <SelectTrigger className="h-12 text-base border-2 border-slate-200 focus:border-slate-400">
+                        <SelectValue placeholder="کۆگا هەڵبژێرە..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {warehouses?.map((w) => (
+                          <SelectItem key={w.id} value={String(w.id)}>
+                            <span className="font-medium">{w.nameEn ?? w.nameKu ?? `کۆگا ${w.id}`}</span>
+                            {w.codePrefix && (
+                              <span className="text-muted-foreground mr-2">({w.codePrefix})</span>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedWarehouse && (
+                      <div className="mt-3 p-2 rounded-lg text-sm bg-slate-50 text-slate-700 border border-slate-200 flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-slate-600" />
+                        <span className="font-medium">{selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? `کۆگا ${selectedWarehouse.id}`}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* Shipping Type - Dropdown */}
                 <Card className="border-2 border-indigo-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-white to-indigo-50/50">
                   <CardContent className="p-4">
@@ -812,7 +861,7 @@ export default function QuickRegister() {
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
                         <Package className="h-4 w-4 text-white" />
                       </div>
-                      <span className="text-sm font-bold text-indigo-800">٣. گواستنەوە</span>
+                      <span className="text-sm font-bold text-indigo-800">٤. گواستنەوە</span>
                     </div>
                     <Select value={shippingType} onValueChange={(v) => { setShippingType(v as any); setBatchId(""); }}>
                       <SelectTrigger className="h-12 text-base border-2 border-indigo-200 focus:border-indigo-400">
@@ -1122,6 +1171,12 @@ export default function QuickRegister() {
                       <span className="text-muted-foreground">کڕیار</span>
                       <span className="font-bold text-primary">
                         {isUnclaimed ? "بێ خاوەن" : (customerId ? customers?.find(c => c.id === customerId)?.customerCode : "-")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+                      <span className="text-muted-foreground">کۆگا</span>
+                      <span className="font-medium">
+                        {selectedWarehouse ? (selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? `کۆگا ${selectedWarehouse.id}`) : "-"}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
