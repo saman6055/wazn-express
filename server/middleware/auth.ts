@@ -15,6 +15,13 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+export const superAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== "super_admin") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Super admin access required" });
+  }
+  return next({ ctx });
+});
+
 export const accountantProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (!["super_admin", "admin", "accountant"].includes(ctx.user.role)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Accountant access required" });

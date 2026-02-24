@@ -207,6 +207,91 @@ export async function deleteVipCustomer(id: number) {
   await db.update(vipCustomers).set({ isActive: false }).where(eq(vipCustomers.id, id));
 }
 
+// ============ DELETE CUSTOMER (SUPER ADMIN ONLY) ============
+
+export async function deleteCustomer(customerId: number, deletedById: number): Promise<{
+  success: boolean;
+  deletedData: {
+    packagesCount: number;
+    invoicesCount: number;
+    paymentsCount: number;
+    servicesCount: number;
+  };
+}> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const customer = await getCustomerById(customerId);
+  if (!customer) throw new Error("کڕیار نەدۆزرایەوە");
+
+  // Count related data before deletion
+  const [pkgCount] = await db.select({ count: count() }).from(packages).where(eq(packages.customerId, customerId));
+  const [invCount] = await db.select({ count: count() }).from(invoices).where(eq(invoices.customerId, customerId));
+  const [svcCount] = await db.select({ count: count() }).from(extraServices).where(eq(extraServices.customerId, customerId));
+
+  // Get customer account for payment records count
+  const customerAccount = await db.select().from(customerAccounts).where(eq(customerAccounts.customerId, customerId)).limit(1);
+  let paymentsCount = 0;
+  if (customerAccount[0]) {
+    const [payCount] = await db.select({ count: count() }).from(paymentRecords).where(eq(paymentRecords.accountId, customerAccount[0].id));
+    paymentsCount = Number(payCount?.count || 0);
+  }
+
+  const deletedData = {
+    packagesCount: Number(pkgCount?.count || 0),
+    invoicesCount: Number(invCount?.count || 0),
+    paymentsCount,
+    servicesCount: Number(svcCount?.count || 0),
+  };
+
+  // Log deletion before removing
+  await db.insert(deletionLogs).values({
+    entityType: "customer",
+    entityId: customerId,
+    deletedById,
+    entityData: JSON.stringify({
+      customer: { id: customer.id, customerCode: customer.customerCode, fullName: customer.fullName },
+      relatedCounts: deletedData,
+    }),
+  } as any);
+
+  // Delete in correct order (cascade manually)
+  // 1. Delete ledger transactions, payments, reminders for this customer's account
+  if (customerAccount[0]) {
+    const accId = customerAccount[0].id;
+    await db.delete(ledgerTransactions).where(eq(ledgerTransactions.accountId, accId));
+    await db.delete(creditAdjustments).where(eq(creditAdjustments.accountId, accId));
+    await db.delete(paymentRecords).where(eq(paymentRecords.accountId, accId));
+    await db.delete(paymentReminders).where(eq(paymentReminders.accountId, accId));
+    await db.delete(customerAccounts).where(eq(customerAccounts.customerId, customerId));
+  }
+
+  // 2. Delete related records
+  await db.delete(extraServices).where(eq(extraServices.customerId, customerId));
+  await db.delete(customerNotificationPrefs).where(eq(customerNotificationPrefs.customerId, customerId));
+  await db.delete(customerMessages).where(eq(customerMessages.customerId, customerId));
+  await db.delete(customerNotifications).where(eq(customerNotifications.customerId, customerId));
+  await db.delete(vipCustomers).where(eq(vipCustomers.customerId, customerId));
+  await db.delete(packageClaimRequests).where(eq(packageClaimRequests.customerId, customerId));
+
+  // 3. Delete invoices
+  await db.delete(invoices).where(eq(invoices.customerId, customerId));
+
+  // 4. Delete full package orders for this customer
+  await db.delete(fullPackageOrders).where(eq(fullPackageOrders.customerId, customerId));
+
+  // 5. Nullify customer on packages (keep packages for batch records)
+  await db.update(packages).set({ customerId: sql`NULL` }).where(eq(packages.customerId, customerId));
+
+  // 6. Delete customer addresses
+  await db.delete(customerAddresses).where(eq(customerAddresses.customerId, customerId));
+
+  // 7. Delete the customer
+  await db.delete(customers).where(eq(customers.id, customerId));
+
+  return { success: true, deletedData };
+}
+
 // Get VIP pricing for a customer
 export async function getVipPricing(customerId: number, shippingType: 'air' | 'sea'): Promise<{
   discountPercent: number;

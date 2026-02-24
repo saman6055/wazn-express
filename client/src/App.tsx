@@ -78,7 +78,7 @@ const Reports = lazy(() => import("./pages/Reports"));
 const BatchReports = lazy(() => import("./pages/BatchReports"));
 const ServicesReport = lazy(() => import("./pages/ServicesReport"));
 const ServicesManagement = lazy(() => import("./pages/ServicesManagement"));
-const ServiceTypesManagement = lazy(() => import("./pages/ServiceTypesManagement"));
+// ServiceTypesManagement removed — merged into /service-types (Settings)
 const ProfitDashboard = lazy(() => import("./pages/ProfitDashboard"));
 const ProfitDashboardByType = lazy(() => import("./pages/ProfitDashboardByType"));
 const UnifiedProfitDashboard = lazy(() => import("./pages/UnifiedProfitDashboard"));
@@ -227,7 +227,6 @@ function Router() {
         <Route path="/reports/batch-financial/:id" component={BatchFinancialReportFull} />
         <Route path="/reports/services" component={ServicesReport} />
         <Route path="/services" component={ServicesManagement} />
-        <Route path="/services/types" component={ServiceTypesManagement} />
         <Route path="/profit-dashboard" component={ProfitDashboard} />
         <Route path="/profit-by-type" component={ProfitDashboardByType} />
         <Route path="/reports/unified-profit" component={UnifiedProfitDashboard} />

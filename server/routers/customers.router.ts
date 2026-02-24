@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
-import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
+import { staffProcedure, adminProcedure, accountantProcedure, superAdminProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { generateCustomerCode } from "@shared/types";
 import * as bcrypt from "bcryptjs";
@@ -301,6 +301,33 @@ export const customersRouter = router({
         });
         
         return { success: true };
+      }),
+
+    // Delete customer permanently (super_admin only)
+    delete: superAdminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const customer = await db.getCustomerById(input.id);
+        if (!customer) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'کڕیار نەدۆزرایەوە' });
+        }
+
+        const result = await db.deleteCustomer(input.id, ctx.user.id);
+
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "delete_customer",
+          entityType: "customer",
+          entityId: input.id,
+          newValues: {
+            customerCode: customer.customerCode,
+            fullName: customer.fullName,
+            ...result.deletedData,
+          },
+        });
+
+        return result;
       }),
 });
 

@@ -12,10 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { trpc } from "@/lib/trpc";
 import { useCustomers, useFilteredCustomers } from "@/hooks/useCustomers";
-import { 
-  Plus, Search, Eye, RotateCcw, Users, UserPlus, Crown, TrendingUp, 
-  Phone, Mail, MapPin, Filter, X, ChevronDown, Upload, FileText, 
-  CreditCard, FileCheck, DollarSign, Package, Wallet, User, Briefcase, Globe, Settings
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  Plus, Search, Eye, RotateCcw, Users, UserPlus, Crown, TrendingUp,
+  Phone, Mail, MapPin, Filter, X, ChevronDown, Upload, FileText,
+  CreditCard, FileCheck, DollarSign, Package, Wallet, User, Briefcase, Globe, Settings, Trash2
 } from "lucide-react";
 import { useState, useRef, useMemo } from "react";
 import { toast } from "sonner";
@@ -23,6 +24,7 @@ import { useLocation } from "wouter";
 import { IRAQI_GOVERNORATES, IRAQI_CITIES } from "../../../shared/iraqi-cities";
 import { CUSTOMER_CODE_PREFIXES } from "../../../shared/types";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 // Default options - these can be customized in settings
 const DEFAULT_NATIONALITIES = [
@@ -91,7 +93,11 @@ export default function Customers() {
 const [, setLocation] = useLocation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteCustomerId, setDeleteCustomerId] = useState<number | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const {
@@ -105,7 +111,17 @@ const [, setLocation] = useLocation();
     resetPasswordMutation,
     uploadDocumentMutation,
   } = useCustomers();
-  
+
+  const deleteCustomerMutation = trpc.customers.delete.useMutation({
+    onSuccess: (data) => {
+      toast.success(`کڕیار بە سەرکەوتوویی سڕایەوە (${data.deletedData.packagesCount} پاکەت، ${data.deletedData.invoicesCount} وەسڵ)`);
+      setIsDeleteOpen(false);
+      setDeleteCustomerId(null);
+      refetch();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
   // Advanced filters
   const [cityFilter, setCityFilter] = useState<string>("");
   const [governorateFilter, setGovernorateFilter] = useState<string>("");
@@ -1112,6 +1128,19 @@ const [, setLocation] = useLocation();
                         >
                           <RotateCcw className="h-4 w-4" />
                         </Button>
+                        {isSuperAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                            onClick={() => {
+                              setDeleteCustomerId(customer.id);
+                              setIsDeleteOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -1164,6 +1193,46 @@ const [, setLocation] = useLocation();
             </form>
           </DialogContent>
         </Dialog>
+        {/* Delete Customer Confirmation Dialog (Super Admin Only) */}
+        {isSuperAdmin && (
+          <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                  <Trash2 className="h-5 w-5" />
+                  سڕینەوەی کڕیار
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-right space-y-2">
+                  <p className="font-semibold text-red-500">
+                    ئایا دڵنیایت لە سڕینەوەی ئەم کڕیارە؟
+                  </p>
+                  <p>
+                    ئەم کارە ناگەڕێتەوە. هەموو داتای پەیوەندیدار (وەسڵ، پارەدانەکان، خزمەتگوزاریەکان، مامەڵەکان) دەسڕێنەوە.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    تێبینی: پاکەتەکان ناسڕێنەوە بەڵام ناوی کڕیار لەسەریان لادەبردرێت.
+                  </p>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="gap-2">
+                <AlertDialogCancel>
+                  پاشگەزبوونەوە
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  disabled={deleteCustomerMutation.isPending}
+                  onClick={() => {
+                    if (deleteCustomerId) {
+                      deleteCustomerMutation.mutate({ id: deleteCustomerId });
+                    }
+                  }}
+                >
+                  {deleteCustomerMutation.isPending ? "چاوەڕوان بە..." : "بەڵێ، بسڕەوە"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
     </DashboardLayout>
   );

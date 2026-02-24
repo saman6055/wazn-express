@@ -311,7 +311,6 @@ function DashboardLayoutContent({
         color: "cyan",
         items: [
           { icon: Wrench, label: t("nav.allServices") || "All Services", path: "/services" },
-          { icon: Tags, label: t("nav.serviceTypes") || "Service Types", path: "/services/types" },
         ]
       });
     }

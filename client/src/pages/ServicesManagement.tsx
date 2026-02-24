@@ -410,7 +410,7 @@ export default function ServicesManagement() {
               <Button
                 variant="outline"
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                onClick={() => navigate("/services/types")}
+                onClick={() => navigate("/service-types")}
               >
                 <Settings className="h-4 w-4 ms-2" />
                 {t('services.serviceTypes')}
