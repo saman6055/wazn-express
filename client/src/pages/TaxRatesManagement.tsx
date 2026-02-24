@@ -142,7 +142,7 @@ export default function TaxRatesManagement() {
               </div>
             </div>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 ml-2" />
+              <Plus className="h-4 w-4 ms-2" />
               نرخی نوێ
             </Button>
           </div>
@@ -164,7 +164,7 @@ export default function TaxRatesManagement() {
                   <TableCell className="font-semibold">
                     {taxRate.name}
                     {taxRate.isDefault && (
-                      <Star className="inline h-4 w-4 mr-1 text-yellow-500 fill-yellow-500" />
+                      <Star className="inline h-4 w-4 me-1 text-yellow-500 fill-yellow-500" />
                     )}
                   </TableCell>
                   <TableCell className="font-mono text-lg">{taxRate.rate}%</TableCell>

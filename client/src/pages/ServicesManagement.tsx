@@ -412,13 +412,13 @@ export default function ServicesManagement() {
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 onClick={() => navigate("/services/types")}
               >
-                <Settings className="h-4 w-4 ml-2" />
+                <Settings className="h-4 w-4 ms-2" />
                 {t('services.serviceTypes')}
               </Button>
               <Dialog open={isAddServiceOpen} onOpenChange={setIsAddServiceOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-white text-emerald-600 hover:bg-emerald-50">
-                    <Plus className="h-4 w-4 ml-2" />
+                    <Plus className="h-4 w-4 ms-2" />
                     {t('services.addService')}
                   </Button>
                 </DialogTrigger>
@@ -479,7 +479,7 @@ export default function ServicesManagement() {
                                     ? t('services.customersSelected', { count: selectedCustomerIds.length })
                                     : t('services.selectCustomers')}
                                 </span>
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
@@ -554,7 +554,7 @@ export default function ServicesManagement() {
                               {newService.customerId 
                                 ? getCustomerById(newService.customerId)?.fullName 
                                 : t('services.selectCustomer')}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
@@ -902,11 +902,11 @@ export default function ServicesManagement() {
             {/* Export buttons */}
             <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
               <Button variant="outline" size="sm" onClick={handlePrint}>
-                <Printer className="h-4 w-4 ml-2" />
+                <Printer className="h-4 w-4 ms-2" />
                 {t('common.print')}
               </Button>
               <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                <Download className="h-4 w-4 ml-2" />
+                <Download className="h-4 w-4 ms-2" />
                 {t('common.exportExcel')}
               </Button>
               <Button 
@@ -914,7 +914,7 @@ export default function ServicesManagement() {
                 size="sm"
                 onClick={() => navigate("/reports/services")}
               >
-                <FileText className="h-4 w-4 ml-2" />
+                <FileText className="h-4 w-4 ms-2" />
                 {t('services.fullReport')}
               </Button>
             </div>
@@ -1017,15 +1017,15 @@ export default function ServicesManagement() {
                 <div className="flex items-center justify-end gap-8">
                   <div className="text-sm">
                     <span className="text-muted-foreground">{t('services.totalCost')}:</span>
-                    <span className="font-bold mr-2">${totals.totalCost.toFixed(2)}</span>
+                    <span className="font-bold me-2">${totals.totalCost.toFixed(2)}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-muted-foreground">{t('services.totalRevenue')}:</span>
-                    <span className="font-bold mr-2">${totals.totalRevenue.toFixed(2)}</span>
+                    <span className="font-bold me-2">${totals.totalRevenue.toFixed(2)}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-muted-foreground">{t('services.totalProfit')}:</span>
-                    <span className={`font-bold mr-2 ${totals.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className={`font-bold me-2 ${totals.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       ${totals.totalProfit.toFixed(2)}
                     </span>
                   </div>

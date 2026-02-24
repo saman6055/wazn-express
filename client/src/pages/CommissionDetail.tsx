@@ -107,7 +107,8 @@ export default function CommissionDetail() {
 
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: suppliers } = trpc.suppliers.list.useQuery();
-  const { data: batches } = trpc.batches.list.useQuery();
+  const { data: batchesRaw } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
 
   useEffect(() => {
     if (order) {
@@ -196,7 +197,7 @@ export default function CommissionDetail() {
           <Package className="h-16 w-16 text-muted-foreground mb-4" />
           <p className="text-xl text-muted-foreground">پەت نەدۆزرایەوە</p>
           <Button onClick={() => navigate("/commission")} className="mt-4">
-            <ArrowRight className="h-4 w-4 ml-2" />
+            <ArrowRight className="h-4 w-4 ms-2" />
             گەڕانەوە بۆ لیست
           </Button>
         </div>
@@ -237,7 +238,7 @@ export default function CommissionDetail() {
                   onClick={() => navigate(`/commission/${id}/edit`)}
                   className="bg-white text-purple-700 hover:bg-purple-50"
                 >
-                  <Pencil className="h-4 w-4 ml-2" />
+                  <Pencil className="h-4 w-4 ms-2" />
                   دەستکاری
                 </Button>
               )}
@@ -492,14 +493,14 @@ export default function CommissionDetail() {
                 variant="outline"
                 onClick={() => navigate(`/commission/${id}`)}
               >
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRight className="h-4 w-4 ms-2" />
                 پاشگەزبوونەوە
               </Button>
               <Button type="submit" disabled={updateMutation.isPending} className="bg-purple-600 hover:bg-purple-700">
                 {updateMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 ms-2 animate-spin" />
                 ) : (
-                  <Save className="h-4 w-4 ml-2" />
+                  <Save className="h-4 w-4 ms-2" />
                 )}
                 پاشەکەوتکردن
               </Button>

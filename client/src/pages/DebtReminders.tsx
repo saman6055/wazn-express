@@ -97,11 +97,11 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" onClick={() => refetch()} className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-              <RefreshCw className="h-4 w-4 ml-2" />{t("blog.update")}</Button>
+              <RefreshCw className="h-4 w-4 ms-2" />{t("blog.update")}</Button>
             <Dialog open={isSendDialogOpen} onOpenChange={setIsSendDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-white text-orange-600 hover:bg-orange-50" disabled={selectedCustomers.length === 0}>
-                  <Send className="h-4 w-4 ml-2" />
+                  <Send className="h-4 w-4 ms-2" />
                   {t("auto.text_49e6d3")} ({selectedCustomers.length})
                 </Button>
               </DialogTrigger>

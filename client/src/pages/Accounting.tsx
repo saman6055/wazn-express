@@ -102,7 +102,7 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
             <Dialog open={isExchangeOpen} onOpenChange={setIsExchangeOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="h-4 w-4 me-2" />
                   Exchange Rates
                 </Button>
               </DialogTrigger>
@@ -173,7 +173,7 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
             <Dialog open={isPaymentOpen} onOpenChange={setIsPaymentOpen}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 me-2" />
                   Record Payment
                 </Button>
               </DialogTrigger>
@@ -288,7 +288,7 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
                         <p className="text-xs text-muted-foreground">Current Balance</p>
                         <p className={`text-xl font-bold ${(customerBalance || 0) > 0 ? "text-red-600" : "text-green-600"}`}>
                           ${Math.abs(customerBalance || 0).toFixed(2)}
-                          <span className="text-xs font-normal ml-1">
+                          <span className="text-xs font-normal ms-1">
                             {(customerBalance || 0) > 0 ? "owed" : (customerBalance || 0) < 0 ? "credit" : ""}
                           </span>
                         </p>

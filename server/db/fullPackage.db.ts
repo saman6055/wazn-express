@@ -268,7 +268,7 @@ export async function addOrderTrackings(
   if (!order) return { added: 0, duplicates: trackingNumbers };
 
   const trimmed = trackingNumbers.map((s) => s.trim()).filter(Boolean);
-  const unique = [...new Set(trimmed)];
+  const unique = Array.from(new Set(trimmed));
   let added = 0;
   const duplicates: string[] = [];
 

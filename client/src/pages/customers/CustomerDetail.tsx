@@ -112,7 +112,7 @@ export default function CustomerDetail() {
                         : "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-700"
                   }`}
                 >
-                  <Crown className="h-3 w-3 mr-1" />
+                  <Crown className="h-3 w-3 me-1" />
                   {vipInfo?.tier?.toUpperCase()} VIP
                 </Badge>
               )}
@@ -126,7 +126,7 @@ export default function CustomerDetail() {
             <Dialog open={cd.isResetPasswordOpen} onOpenChange={cd.setIsResetPasswordOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <RotateCcw className="h-4 w-4 mr-2" />
+                  <RotateCcw className="h-4 w-4 me-2" />
                   Reset Password
                 </Button>
               </DialogTrigger>
@@ -158,20 +158,20 @@ export default function CustomerDetail() {
             </Dialog>
             <Button variant="outline" size="sm" onClick={cd.handleExportCustomerPDF} disabled={cd.isExportingPDF}>
               {cd.isExportingPDF ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting...</>
+                <><Loader2 className="h-4 w-4 me-2 animate-spin" /> Exporting...</>
               ) : (
-                <><FileDown className="h-4 w-4 mr-2" /> Export PDF</>
+                <><FileDown className="h-4 w-4 me-2" /> Export PDF</>
               )}
             </Button>
             <Button variant="outline" size="sm" onClick={cd.handleOpenEdit}>
-              <Edit className="h-4 w-4 mr-2" />
+              <Edit className="h-4 w-4 me-2" />
               Edit
             </Button>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          <CustomerInfoCard customer={customer} t={t} />
+          <CustomerInfoCard customer={customer as any} t={t} />
 
           <div className="lg:col-span-2 space-y-6">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -318,7 +318,7 @@ export default function CustomerDetail() {
               </TabsList>
 
               <TabsContent value="packages" className="mt-4">
-                <CustomerPackagesTab packages={packages} customerId={customerId} t={t} />
+                <CustomerPackagesTab packages={packages as any} customerId={customerId} t={t} />
               </TabsContent>
 
               <TabsContent value="services" className="mt-4">
@@ -512,8 +512,8 @@ export default function CustomerDetail() {
 
               <TabsContent value="finance" className="mt-4">
                 <CustomerFinanceTab
-                  ledger={ledger}
-                  invoices={invoices}
+                  ledger={ledger as any}
+                  invoices={invoices as any}
                   downloadingInvoiceId={cd.downloadingInvoiceId}
                   onViewInvoice={cd.handleViewInvoice}
                   onDownloadInvoice={cd.handleDownloadInvoice}
@@ -535,7 +535,7 @@ export default function CustomerDetail() {
               </TabsContent>
 
               <TabsContent value="activity" className="mt-4">
-                <CustomerActivityTab activityLogs={activityLogs} t={t} />
+                <CustomerActivityTab activityLogs={activityLogs as any} t={t} />
               </TabsContent>
 
               <TabsContent value="fullPackage" className="mt-4">
@@ -552,7 +552,7 @@ export default function CustomerDetail() {
                   <CardContent>
                     {fullPackageOrders && fullPackageOrders.length > 0 ? (
                       <div className="space-y-3">
-                        {fullPackageOrders.map((order: { id: string; orderCode: string; productName?: string; status: string; totalPrice?: string }) => (
+                        {fullPackageOrders.map((order: any) => (
                           <div
                             key={order.id}
                             className="flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
@@ -654,9 +654,9 @@ export default function CustomerDetail() {
               </Button>
               <Button type="submit" disabled={cd.updateCustomerMutation.isPending}>
                 {cd.updateCustomerMutation.isPending ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("messages.saving")}</>
+                  <><Loader2 className="h-4 w-4 me-2 animate-spin" />{t("messages.saving")}</>
                 ) : (
-                  <><Check className="h-4 w-4 mr-2" />{t("forms.save")}</>
+                  <><Check className="h-4 w-4 me-2" />{t("forms.save")}</>
                 )}
               </Button>
             </DialogFooter>
@@ -676,7 +676,7 @@ export default function CustomerDetail() {
               {(cd.selectedInvoice as { invoiceNumber?: string })?.invoiceNumber}
             </DialogDescription>
           </DialogHeader>
-          {cd.selectedInvoice && (
+          {!!cd.selectedInvoice && (
             <div className="space-y-6">
               <div className="flex justify-between items-start">
                 <div>
@@ -716,9 +716,9 @@ export default function CustomerDetail() {
               disabled={cd.downloadingInvoiceId === (cd.selectedInvoice as { id?: number })?.id}
             >
               {cd.downloadingInvoiceId === (cd.selectedInvoice as { id?: number })?.id ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("common.downloading") ?? "Downloading..."}</>
+                <><Loader2 className="h-4 w-4 me-2 animate-spin" />{t("common.downloading") ?? "Downloading..."}</>
               ) : (
-                <><Download className="h-4 w-4 mr-2" />{t("common.downloadPDF") ?? "Download PDF"}</>
+                <><Download className="h-4 w-4 me-2" />{t("common.downloadPDF") ?? "Download PDF"}</>
               )}
             </Button>
           </DialogFooter>

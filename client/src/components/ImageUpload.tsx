@@ -120,7 +120,7 @@ export function ImageUpload({
       });
 
       setUploadProgress(100);
-      onChange(result.url);
+      onChange(result.url ?? undefined);
     } catch (err) {
       console.error('Upload error:', err);
       setError(t('imageUpload.uploadFailed'));

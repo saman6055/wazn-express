@@ -130,7 +130,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-white text-amber-600 hover:bg-white/90 shadow-lg">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 me-2" />
                   Add VIP
                 </Button>
               </DialogTrigger>
@@ -371,7 +371,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   Add your first VIP customer to grant them special pricing and benefits
                 </p>
                 <Button onClick={() => setIsCreateOpen(true)} className="bg-amber-500 hover:bg-amber-600">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 me-2" />
                   Add First VIP
                 </Button>
               </CardContent>

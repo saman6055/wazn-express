@@ -562,7 +562,7 @@ export default function AuditLogs() {
                 <Icon className="h-4 w-4" />
                 {cat.label}
                 {count > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs">
+                  <Badge variant="secondary" className="ms-1 text-xs">
                     {count}
                   </Badge>
                 )}
@@ -661,7 +661,7 @@ export default function AuditLogs() {
                                   {log.actionLabel || log.action.replace(/_/g, " ")}
                                 </span>
                                 <Badge variant="outline" className={`${catConf.bgColor} ${catConf.color} border-0`}>
-                                  <CatIcon className="h-3 w-3 mr-1" />
+                                  <CatIcon className="h-3 w-3 me-1" />
                                   {catConf.label}
                                 </Badge>
                                 {log.entityCode && (

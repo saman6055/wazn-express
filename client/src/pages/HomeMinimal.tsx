@@ -133,12 +133,12 @@ export default function HomeMinimal() {
               </a>
             )}
             <Button size="sm" variant="ghost" className="hidden sm:inline-flex text-[var(--landing-text-muted)] hover:text-[var(--landing-text)]" onClick={() => setLocation("/customer-login")}>
-              <Search className="h-4 w-4 mr-1" />
+              <Search className="h-4 w-4 me-1" />
               {t("home.trackPackage")}
             </Button>
             <Link href="/customer-login">
               <Button variant="ghost" size="sm" className="text-[var(--landing-text-muted)] hover:text-[var(--landing-text)]">
-                <Users className="mr-1.5 h-4 w-4" />
+                <Users className="me-1.5 h-4 w-4" />
                 <span className="hidden sm:inline">{t("home.customerPortal")}</span>
               </Button>
             </Link>
@@ -215,12 +215,12 @@ export default function HomeMinimal() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/customer-login">
               <Button size="lg" className="bg-[linear-gradient(to_right,var(--landing-cta-from),var(--landing-cta-to))] text-white hover:opacity-90 shadow-xl w-full sm:w-auto">
-                <Users className="mr-2 h-5 w-5" />
+                <Users className="me-2 h-5 w-5" />
                 {t("home.customerPortal")}
               </Button>
             </Link>
             <Button size="lg" variant="outline" onClick={handleTrack} className="border-[var(--landing-border)] text-[var(--landing-text)] hover:bg-[var(--landing-card)] w-full sm:w-auto">
-              <Search className="mr-2 h-4 w-4" />
+              <Search className="me-2 h-4 w-4" />
               {t("home.trackPackage")}
             </Button>
           </div>
@@ -321,7 +321,7 @@ export default function HomeMinimal() {
           {posts.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                {posts.map((post: BlogPostRow) => (
+                {posts.map((post: any) => (
                   <BlogCard key={post.id} post={post} t={t} />
                 ))}
               </div>

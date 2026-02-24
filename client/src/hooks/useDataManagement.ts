@@ -32,7 +32,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
   const [oldDataDays, setOldDataDays] = useState("30");
   const [isExporting, setIsExporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
-  const [importPreview, setImportPreview] = useState<Record<string, unknown[]> | null>(null);
+  const [importPreview, setImportPreview] = useState<Record<string, Record<string, any>[]> | null>(null);
   const [importOverwrite, setImportOverwrite] = useState(false);
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [backupType, setBackupType] = useState<"database_only" | "files_only" | "full">("database_only");
@@ -124,7 +124,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
   });
 
   const getMutation = (key: string) => {
-    const mutations: Record<string, ReturnType<typeof deleteCustomers>> = {
+    const mutations: Record<string, typeof deleteCustomers> = {
       deleteAllCustomers: deleteCustomers,
       deleteAllPackages: deletePackages,
       deleteAllBatches: deleteBatches,
@@ -196,7 +196,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
       const result = await deleteOldData.mutateAsync({
         confirmation: "DELETE",
         daysOld: parseInt(oldDataDays, 10),
-        dataType: oldDataType as "packages" | "invoices" | "scans" | "auditLogs",
+        dataType: oldDataType as "packages" | "invoices" | "scans" | "ledger",
       });
       if (result.success) {
         toast.success(t("dataManagement.oldDataDeleted", { count: result.deletedCount }));
@@ -328,7 +328,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
         try {
           const content = event.target?.result as string;
           const format = detectFileFormat(content);
-          let data: unknown[];
+          let data: Record<string, any>[];
           if (format === "json") {
             data = JSON.parse(content);
           } else {

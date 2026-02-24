@@ -136,7 +136,7 @@ export default function CommissionOrders() {
             </div>
             <Link href="/commission-orders/new">
               <Button className="bg-white text-emerald-700 hover:bg-emerald-50">
-                <Plus className="h-4 w-4 ml-2" />
+                <Plus className="h-4 w-4 ms-2" />
                 پەتی نوێ
               </Button>
             </Link>
@@ -233,7 +233,7 @@ export default function CommissionOrders() {
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full sm:w-48">
-                    <Filter className="h-4 w-4 ml-2" />
+                    <Filter className="h-4 w-4 ms-2" />
                     <SelectValue placeholder="هەموو" />
                   </SelectTrigger>
                   <SelectContent>
@@ -264,7 +264,7 @@ export default function CommissionOrders() {
                 <p className="text-muted-foreground">هیچ پەتێک نییە</p>
                 <Link href="/commission-orders/new">
                   <Button className="mt-4" variant="outline">
-                    <Plus className="h-4 w-4 ml-2" />
+                    <Plus className="h-4 w-4 ms-2" />
                     پەتی نوێ زیاد بکە
                   </Button>
                 </Link>
@@ -326,7 +326,7 @@ export default function CommissionOrders() {
                       <TableCell>
                         {(order as any).batch ? (
                           <Badge variant="secondary" className="text-xs font-mono">
-                            <Layers className="h-3 w-3 mr-1" />
+                            <Layers className="h-3 w-3 me-1" />
                             {(order as any).batch.batchCode}
                           </Badge>
                         ) : (
@@ -382,7 +382,7 @@ export default function CommissionOrders() {
                                 }}
                                 className={order.status === option.value ? "bg-accent" : ""}
                               >
-                                <span className={`w-2 h-2 rounded-full mr-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
+                                <span className={`w-2 h-2 rounded-full me-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
                                 {option.label}
                                 {order.status === option.value && " ✓"}
                               </DropdownMenuItem>

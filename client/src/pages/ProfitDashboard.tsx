@@ -174,7 +174,8 @@ const [timeRange, setTimeRange] = useState("all");
   const [shippingType, setShippingType] = useState("all");
 
   // Fetch all batches with financial data
-  const { data: batches, isLoading: batchesLoading } = trpc.batches.list.useQuery();
+  const { data: batchesResponse, isLoading: batchesLoading } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
 
   // Calculate aggregated financial data
   const financialData = useMemo(() => {
@@ -226,24 +227,25 @@ const [timeRange, setTimeRange] = useState("all");
     const batchDetails: any[] = [];
 
     for (const batch of filteredBatches) {
-      const chargedVolume = batch.shippingType === "sea" 
-        ? Number(batch.chargedCbm || 0)
-        : Number(batch.chargedWeightKg || batch.totalWeight || 0);
-      
+      const b = batch as any;
+      const chargedVolume = batch.shippingType === "sea"
+        ? Number(b.chargedCbm || 0)
+        : Number(b.chargedWeightKg || b.totalWeight || 0);
+
       const costPerUnit = batch.shippingType === "sea"
-        ? Number(batch.costPerCbm || 0)
-        : Number(batch.costPerKg || 0);
-      
+        ? Number(b.costPerCbm || 0)
+        : Number(b.costPerKg || 0);
+
       const cost = chargedVolume * costPerUnit;
-      
+
       // Estimate revenue (this would come from actual package data in production)
       const sellingPrice = batch.shippingType === "sea"
-        ? Number(batch.pricePerCbm || 0)
-        : Number(batch.pricePerKg || 0);
-      
+        ? Number(b.pricePerCbm || 0)
+        : Number(b.pricePerKg || 0);
+
       const actualVolume = batch.shippingType === "sea"
-        ? Number(batch.actualCbm || 0)
-        : Number(batch.actualWeightKg || batch.totalWeight || 0);
+        ? Number(b.actualCbm || 0)
+        : Number(b.actualWeightKg || b.totalWeight || 0);
       
       const revenue = actualVolume * sellingPrice;
       
@@ -342,7 +344,7 @@ const [timeRange, setTimeRange] = useState("all");
         <div className="flex items-center gap-3">
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-[140px]">
-              <Calendar className="h-4 w-4 mr-2" />
+              <Calendar className="h-4 w-4 me-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -356,7 +358,7 @@ const [timeRange, setTimeRange] = useState("all");
           
           <Select value={shippingType} onValueChange={setShippingType}>
             <SelectTrigger className="w-[160px]">
-              <Filter className="h-4 w-4 mr-2" />
+              <Filter className="h-4 w-4 me-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -601,9 +603,9 @@ const [timeRange, setTimeRange] = useState("all");
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
-                      {batch.shippingType === "air_regular" && <Plane className="h-3 w-3 mr-1" />}
-                      {batch.shippingType === "air_irregular" && <Plane className="h-3 w-3 mr-1" />}
-                      {batch.shippingType === "sea" && <Ship className="h-3 w-3 mr-1" />}
+                      {batch.shippingType === "air_regular" && <Plane className="h-3 w-3 me-1" />}
+                      {batch.shippingType === "air_irregular" && <Plane className="h-3 w-3 me-1" />}
+                      {batch.shippingType === "sea" && <Ship className="h-3 w-3 me-1" />}
                       {batch.shippingType.replace("_", " ")}
                     </Badge>
                   </TableCell>

@@ -227,9 +227,9 @@ const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null
                             })}
                             {msg.senderType === 'admin' && (
                               msg.isRead ? (
-                                <CheckCheck className="w-3 h-3 ml-1" />
+                                <CheckCheck className="w-3 h-3 ms-1" />
                               ) : (
-                                <Circle className="w-2 h-2 ml-1 fill-current" />
+                                <Circle className="w-2 h-2 ms-1 fill-current" />
                               )
                             )}
                           </div>

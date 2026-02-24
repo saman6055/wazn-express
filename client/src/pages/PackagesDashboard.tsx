@@ -82,28 +82,28 @@ const [, setLocation] = useLocation();
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 me-2" />
                 Register Package
-                <ChevronDown className="h-4 w-4 ml-2" />
+                <ChevronDown className="h-4 w-4 ms-2" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem onClick={() => setLocation("/packages/register")}>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 me-2" />
                 <div>
                   <div className="font-medium">Standard Register</div>
                   <div className="text-xs text-muted-foreground">Full wizard with all options</div>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setLocation("/packages/quick-register")}>
-                <Zap className="h-4 w-4 mr-2 text-amber-500" />
+                <Zap className="h-4 w-4 me-2 text-amber-500" />
                 <div>
                   <div className="font-medium">Quick Register</div>
                   <div className="text-xs text-muted-foreground">Fast single-page form</div>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setLocation("/packages/bulk-register")}>
-                <Layers className="h-4 w-4 mr-2 text-purple-500" />
+                <Layers className="h-4 w-4 me-2 text-purple-500" />
                 <div>
                   <div className="font-medium">Bulk Register</div>
                   <div className="text-xs text-muted-foreground">Multiple packages at once</div>
@@ -111,7 +111,7 @@ const [, setLocation] = useLocation();
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setLocation("/packages/unclaimed")}>
-                <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
+                <AlertTriangle className="h-4 w-4 me-2 text-amber-500" />
                 <div>
                   <div className="font-medium">Unclaimed Packages</div>
                   <div className="text-xs text-muted-foreground">View packages without owner</div>
@@ -301,7 +301,7 @@ const [, setLocation] = useLocation();
                 className="w-full justify-start h-auto py-3"
                 onClick={() => setLocation("/packages/quick-register")}
               >
-                <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center mr-3">
+                <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center me-3">
                   <Zap className="h-4 w-4 text-amber-600" />
                 </div>
                 <div className="text-left">
@@ -316,7 +316,7 @@ const [, setLocation] = useLocation();
                 className="w-full justify-start h-auto py-3"
                 onClick={() => setLocation("/packages/bulk-register")}
               >
-                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center mr-3">
+                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center me-3">
                   <Layers className="h-4 w-4 text-purple-600" />
                 </div>
                 <div className="text-left">
@@ -331,7 +331,7 @@ const [, setLocation] = useLocation();
                 className="w-full justify-start h-auto py-3"
                 onClick={() => setLocation("/smart-scanner")}
               >
-                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center me-3">
                   <QrCode className="h-4 w-4 text-blue-600" />
                 </div>
                 <div className="text-left">
@@ -347,7 +347,7 @@ const [, setLocation] = useLocation();
                   className="w-full justify-start h-auto py-3 border-amber-200 bg-amber-50/50"
                   onClick={() => setLocation("/packages/unclaimed")}
                 >
-                  <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center mr-3">
+                  <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center me-3">
                     <AlertTriangle className="h-4 w-4 text-amber-600" />
                   </div>
                   <div className="text-left">
@@ -373,7 +373,7 @@ const [, setLocation] = useLocation();
             </div>
             <Button variant="ghost" size="sm" onClick={() => setLocation("/packages/all")}>
               View All
-              <ChevronRight className="h-4 w-4 ml-1" />
+              <ChevronRight className="h-4 w-4 ms-1" />
             </Button>
           </CardHeader>
           <CardContent>

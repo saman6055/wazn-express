@@ -255,7 +255,7 @@ export default function AdvancedSettings() {
               </div>
 
               <Button onClick={handleSaveBusinessConfig} disabled={setSetting.isPending} className="w-full">
-                <Save className="h-4 w-4 ml-2" />
+                <Save className="h-4 w-4 ms-2" />
                 {setSetting.isPending ? "چاوەڕێ بە..." : "پاشەکەوتکردن"}
               </Button>
             </CardContent>
@@ -351,7 +351,7 @@ export default function AdvancedSettings() {
               </div>
 
               <Button onClick={handleSaveSecurityConfig} disabled={setSetting.isPending} className="w-full">
-                <Save className="h-4 w-4 ml-2" />
+                <Save className="h-4 w-4 ms-2" />
                 {setSetting.isPending ? "چاوەڕێ بە..." : "پاشەکەوتکردن"}
               </Button>
             </CardContent>
@@ -467,7 +467,7 @@ export default function AdvancedSettings() {
               </div>
 
               <Button onClick={handleSaveUxConfig} disabled={setSetting.isPending} className="w-full">
-                <Save className="h-4 w-4 ml-2" />
+                <Save className="h-4 w-4 ms-2" />
                 {setSetting.isPending ? "چاوەڕێ بە..." : "پاشەکەوتکردن"}
               </Button>
             </CardContent>

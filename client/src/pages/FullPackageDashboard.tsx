@@ -119,7 +119,8 @@ export default function FullPackageDashboard() {
     status: statusFilter !== "all" ? statusFilter : undefined,
   });
 
-  const { data: batches } = trpc.batches.list.useQuery();
+  const { data: batchesRaw } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: settings } = trpc.settings.list.useQuery();
 
@@ -440,17 +441,17 @@ export default function FullPackageDashboard() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-0">
-                    <Download className="h-4 w-4 ml-2" />
+                    <Download className="h-4 w-4 ms-2" />
                     {t("common.export")}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={exportToExcel}>
-                    <FileSpreadsheet className="h-4 w-4 ml-2 text-green-600" />
+                    <FileSpreadsheet className="h-4 w-4 ms-2 text-green-600" />
                     {t("fullPackage.exportExcel")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={exportToPDF}>
-                    <FileText className="h-4 w-4 ml-2 text-red-600" />
+                    <FileText className="h-4 w-4 ms-2 text-red-600" />
                     {t("fullPackage.exportPDF")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -458,13 +459,13 @@ export default function FullPackageDashboard() {
               
               <Link href="/full-package/bulk-create?type=full_package">
                 <Button variant="outline" className="bg-white/80 text-emerald-700 hover:bg-emerald-50 border-emerald-300">
-                  <PackagePlus className="h-4 w-4 ml-2" />
+                  <PackagePlus className="h-4 w-4 ms-2" />
                   {t("fullPackage.bulkCreate")}
                 </Button>
               </Link>
               <Link href="/full-package/new">
                 <Button className="bg-white text-emerald-700 hover:bg-emerald-50">
-                  <Plus className="h-4 w-4 ml-2" />
+                  <Plus className="h-4 w-4 ms-2" />
                   {t("fullPackage.newOrder")}
                 </Button>
               </Link>
@@ -576,7 +577,7 @@ export default function FullPackageDashboard() {
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full sm:w-48">
-                    <Filter className="h-4 w-4 ml-2" />
+                    <Filter className="h-4 w-4 ms-2" />
                     <SelectValue placeholder={t("common.all")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -608,7 +609,7 @@ export default function FullPackageDashboard() {
                     <h4 className="font-medium text-sm">{t("fullPackage.advancedFiltersTitle")}</h4>
                     {hasActiveFilters && (
                       <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-red-600 hover:text-red-700">
-                        <X className="h-4 w-4 ml-1" />
+                        <X className="h-4 w-4 ms-1" />
                         {t("fullPackage.clearAllFilters")}
                       </Button>
                     )}
@@ -739,7 +740,7 @@ export default function FullPackageDashboard() {
                 <div className="text-sm text-muted-foreground">
                   {t("fullPackage.ordersCountFound", { count: String(filteredOrders.length) })}
                   {hasActiveFilters && (
-                    <span className="text-emerald-600 mr-2">{t("fullPackage.filteredBadge")}</span>
+                    <span className="text-emerald-600 me-2">{t("fullPackage.filteredBadge")}</span>
                   )}
                 </div>
                 
@@ -785,7 +786,7 @@ export default function FullPackageDashboard() {
                 <p className="text-muted-foreground">{t("fullPackage.noOrdersMessage")}</p>
                 <Link href="/full-package/new">
                   <Button className="mt-4" variant="outline">
-                    <Plus className="h-4 w-4 ml-2" />
+                    <Plus className="h-4 w-4 ms-2" />
                     {t("fullPackage.addFirstOrderButton")}
                   </Button>
                 </Link>
@@ -863,7 +864,7 @@ export default function FullPackageDashboard() {
                         <TableCell>
                           {(order as any).batch ? (
                             <Badge variant="secondary" className="text-xs font-mono">
-                              <Layers className="h-3 w-3 mr-1" />
+                              <Layers className="h-3 w-3 me-1" />
                               {(order as any).batch.batchCode}
                             </Badge>
                           ) : (
@@ -919,7 +920,7 @@ export default function FullPackageDashboard() {
                                   }}
                                   className={order.status === option.value ? "bg-accent" : ""}
                                 >
-                                  <span className={`w-2 h-2 rounded-full mr-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
+                                  <span className={`w-2 h-2 rounded-full me-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
                                   {option.label}
                                   {order.status === option.value && " ✓"}
                                 </DropdownMenuItem>

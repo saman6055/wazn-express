@@ -199,15 +199,15 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                 All Status
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("pending")}>
-                <Clock className="w-4 h-4 mr-2 text-yellow-500" />
+                <Clock className="w-4 h-4 me-2 text-yellow-500" />
                 Pending
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("approved")}>
-                <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                <CheckCircle className="w-4 h-4 me-2 text-green-500" />
                 Approved
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("rejected")}>
-                <XCircle className="w-4 h-4 mr-2 text-red-500" />
+                <XCircle className="w-4 h-4 me-2 text-red-500" />
                 Rejected
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -273,7 +273,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                           <span>
                             {getCustomerName(request.customerId)}
                             {getCustomerCode(request.customerId) && (
-                              <span className="text-gray-400 ml-1">
+                              <span className="text-gray-400 ms-1">
                                 ({getCustomerCode(request.customerId)})
                               </span>
                             )}
@@ -333,7 +333,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                           }}
                           className="flex-1 bg-green-600 hover:bg-green-700"
                         >
-                          <CheckCircle className="w-4 h-4 mr-2" />
+                          <CheckCircle className="w-4 h-4 me-2" />
                           Approve
                         </Button>
                         <Button
@@ -344,7 +344,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                           variant="outline"
                           className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
                         >
-                          <XCircle className="w-4 h-4 mr-2" />
+                          <XCircle className="w-4 h-4 me-2" />
                           Reject
                         </Button>
                       </div>
@@ -440,17 +440,17 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
               >
                 {(approveMutation.isPending || rejectMutation.isPending) ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
                     Processing...
                   </>
                 ) : actionType === "approve" ? (
                   <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
+                    <CheckCircle className="w-4 h-4 me-2" />
                     Approve
                   </>
                 ) : (
                   <>
-                    <XCircle className="w-4 h-4 mr-2" />
+                    <XCircle className="w-4 h-4 me-2" />
                     Reject
                   </>
                 )}

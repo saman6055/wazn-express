@@ -17,7 +17,7 @@ export const extraServicesRouter = router({
       return db.getActiveServiceTypes();
     }),
     
-    // Create service type (staff can add so "جۆری خزمەتگوزاری" can be increased by any staff)
+    // Create service type (all staff)
     createServiceType: staffProcedure
       .input(z.object({
         nameEn: z.string().min(1),

@@ -381,14 +381,14 @@ export default function ServicesReport() {
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 onClick={handlePrint}
               >
-                <Printer className="h-4 w-4 ml-2" />
+                <Printer className="h-4 w-4 ms-2" />
                 چاپکردن
               </Button>
               <Button
                 className="bg-white text-emerald-600 hover:bg-emerald-50"
                 onClick={handleExportCSV}
               >
-                <Download className="h-4 w-4 ml-2" />
+                <Download className="h-4 w-4 ms-2" />
                 داگرتنی Excel
               </Button>
             </div>

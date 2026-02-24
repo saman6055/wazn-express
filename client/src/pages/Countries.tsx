@@ -85,7 +85,7 @@ export default function Countries() {
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />Add Country</Button>
+              <Button><Plus className="h-4 w-4 me-2" />Add Country</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>

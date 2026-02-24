@@ -90,7 +90,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
           <div className="flex items-center gap-3">
             <Select value={selectedDate} onValueChange={setSelectedDate}>
               <SelectTrigger className="w-[200px] bg-white/10 border-white/20 text-white">
-                <Calendar className="h-4 w-4 ml-2" />
+                <Calendar className="h-4 w-4 ms-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -100,7 +100,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
               </SelectContent>
             </Select>
             <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={exportToExcel}>
-              <FileSpreadsheet className="h-4 w-4 ml-2" />
+              <FileSpreadsheet className="h-4 w-4 ms-2" />
               Excel
             </Button>
           </div>

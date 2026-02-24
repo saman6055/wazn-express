@@ -99,7 +99,10 @@ export async function createPackage(data: InsertPackage): Promise<Package> {
   }
   
   const result = await db.insert(packages).values(data);
-  const inserted = await db.select().from(packages).where(eq(packages.id, Number(result[0].insertId))).limit(1);
+  const insertId = Number(result[0].insertId);
+  if (!insertId) throw new Error("Failed to insert package");
+  const inserted = await db.select().from(packages).where(eq(packages.id, insertId)).limit(1);
+  if (!inserted[0]) throw new Error("Failed to retrieve inserted package");
   return inserted[0];
 }
 

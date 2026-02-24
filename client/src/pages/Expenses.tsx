@@ -287,13 +287,13 @@ const [activeTab, setActiveTab] = useState("expenses");
               }}
               disabled={generateExpensePDF.isPending}
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="me-2 h-4 w-4" />
               {generateExpensePDF.isPending ? t("common.loading") : 'PDF'}
             </Button>
             <Dialog open={showAddCategory} onOpenChange={setShowAddCategory}>
               <DialogTrigger asChild>
                 <Button variant="outline">
-                  <FolderOpen className="mr-2 h-4 w-4" />
+                  <FolderOpen className="me-2 h-4 w-4" />
                   {t("expenses.newCategory")}
                 </Button>
               </DialogTrigger>
@@ -386,7 +386,7 @@ const [activeTab, setActiveTab] = useState("expenses");
             <Dialog open={showAddExpense} onOpenChange={setShowAddExpense}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="me-2 h-4 w-4" />
                   {t("expenses.newExpense")}
                 </Button>
               </DialogTrigger>

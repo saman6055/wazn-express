@@ -321,7 +321,7 @@ export default function BulkOrderForm() {
                   setItems([emptyItem(), emptyItem()]);
                 }}
               >
-                <Plus className="w-4 h-4 ml-2" />
+                <Plus className="w-4 h-4 ms-2" />
                 دروستکردنی نوێ
               </Button>
               <Button
@@ -329,7 +329,7 @@ export default function BulkOrderForm() {
                 onClick={() => navigate(isCommission ? "/commission" : "/full-package")}
               >
                 گەڕانەوە بۆ داشبۆرد
-                <ArrowRight className="w-4 h-4 mr-2" />
+                <ArrowRight className="w-4 h-4 me-2" />
               </Button>
             </div>
           </CardContent>
@@ -370,7 +370,7 @@ export default function BulkOrderForm() {
                 onClick={() => navigate(isCommission ? "/commission" : "/full-package")}
               >
                 گەڕانەوە
-                <ArrowRight className="w-4 h-4 mr-1" />
+                <ArrowRight className="w-4 h-4 me-1" />
               </Button>
             </div>
           </div>
@@ -428,7 +428,7 @@ export default function BulkOrderForm() {
                                 setCustomerOpen(false);
                               }}
                             >
-                              <Check className={cn("ml-2 h-4 w-4", customerId === customer.id.toString() ? "opacity-100" : "opacity-0")} />
+                              <Check className={cn("ms-2 h-4 w-4", customerId === customer.id.toString() ? "opacity-100" : "opacity-0")} />
                               <div className="flex flex-col">
                                 <span className="font-medium">{customer.fullName || customer.fullNameKurdish}</span>
                                 <span className="text-xs text-muted-foreground">
@@ -719,7 +719,7 @@ export default function BulkOrderForm() {
             className="w-full h-14 border-2 border-dashed text-muted-foreground hover:text-foreground"
             onClick={addItem}
           >
-            <Plus className="w-5 h-5 ml-2" />
+            <Plus className="w-5 h-5 ms-2" />
             زیادکردنی پەتی نوێ
           </Button>
         </div>
@@ -791,12 +791,12 @@ export default function BulkOrderForm() {
               >
                 {bulkCreateMutation.isPending ? (
                   <>
-                    <Loader2 className="w-5 h-5 ml-2 animate-spin" />
+                    <Loader2 className="w-5 h-5 ms-2 animate-spin" />
                     چاوەڕوان بە...
                   </>
                 ) : (
                   <>
-                    <PackagePlus className="w-5 h-5 ml-2" />
+                    <PackagePlus className="w-5 h-5 ms-2" />
                     دروستکردنی {summary.validItems} پەت
                   </>
                 )}

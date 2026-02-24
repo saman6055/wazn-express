@@ -340,17 +340,17 @@ export default function BankAccounts() {
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20"
               onClick={() => setIsTransactionOpen(true)}>
-              <DollarSign className="h-4 w-4 ml-2" />
+              <DollarSign className="h-4 w-4 ms-2" />
               {t("bankAccounts.recordTransaction") || "تۆمارکردنی مامەڵە"}
             </Button>
             <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20"
               onClick={() => setIsTransferOpen(true)}>
-              <ArrowLeftRight className="h-4 w-4 ml-2" />
+              <ArrowLeftRight className="h-4 w-4 ms-2" />
               {t("bankAccounts.transfer") || "گواستنەوە"}
             </Button>
             <Button className="bg-white text-blue-700 hover:bg-blue-50 shadow-lg"
               onClick={() => setIsAddOpen(true)}>
-              <Plus className="h-4 w-4 ml-2" />
+              <Plus className="h-4 w-4 ms-2" />
               {t("bankAccounts.addAccount") || "زیادکردنی هەژمار"}
             </Button>
           </div>
@@ -424,11 +424,11 @@ export default function BankAccounts() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2 h-12">
           <TabsTrigger value="accounts" className="text-sm font-medium">
-            <Wallet className="h-4 w-4 ml-2" />
+            <Wallet className="h-4 w-4 ms-2" />
             {t("bankAccounts.allAccounts") || "هەموو حسابەکان"}
           </TabsTrigger>
           <TabsTrigger value="transactions" className="text-sm font-medium">
-            <History className="h-4 w-4 ml-2" />
+            <History className="h-4 w-4 ms-2" />
             {t("bankAccounts.transactionHistory") || "مێژووی مامەڵەکان"}
           </TabsTrigger>
         </TabsList>
@@ -499,7 +499,7 @@ export default function BankAccounts() {
                 <h3 className="font-semibold text-lg mb-2">{t("bankAccounts.noAccounts") || "هیچ حسابێک نییە"}</h3>
                 <p className="text-muted-foreground text-sm mb-4">{t("bankAccounts.noAccountsDesc") || "یەکەم حسابت زیاد بکە بۆ دەستپێکردنی بەڕێوەبردنی دارایی"}</p>
                 <Button onClick={() => setIsAddOpen(true)}>
-                  <Plus className="h-4 w-4 ml-2" />
+                  <Plus className="h-4 w-4 ms-2" />
                   {t("bankAccounts.addAccount") || "زیادکردنی هەژمار"}
                 </Button>
               </CardContent>
@@ -1008,20 +1008,20 @@ function AccountCard({ account, getTypeIcon, getTypeColor, getTypeBorderColor, g
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onViewTransactions(account.id)}>
-                <History className="h-4 w-4 ml-2" />
+                <History className="h-4 w-4 ms-2" />
                 {t("bankAccounts.viewTransactions") || "بینینی مامەڵەکان"}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onRecordTransaction(account.id)}>
-                <DollarSign className="h-4 w-4 ml-2" />
+                <DollarSign className="h-4 w-4 ms-2" />
                 {t("bankAccounts.recordTransaction") || "تۆمارکردنی مامەڵە"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onEdit(account)}>
-                <Edit className="h-4 w-4 ml-2" />
+                <Edit className="h-4 w-4 ms-2" />
                 {t("forms.edit") || "دەستکاری"}
               </DropdownMenuItem>
               <DropdownMenuItem className="text-red-600" onClick={() => onDelete(account.id)}>
-                <Trash2 className="h-4 w-4 ml-2" />
+                <Trash2 className="h-4 w-4 ms-2" />
                 {t("forms.delete") || "سڕینەوە"}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -1038,7 +1038,7 @@ function AccountCard({ account, getTypeIcon, getTypeColor, getTypeBorderColor, g
             <div className="flex flex-col items-end gap-1">
               {account.isPrimary && (
                 <Badge variant="default" className="text-xs bg-amber-500">
-                  <Star className="h-3 w-3 ml-1" />
+                  <Star className="h-3 w-3 ms-1" />
                   {t("bankAccounts.primary") || "سەرەکی"}
                 </Badge>
               )}

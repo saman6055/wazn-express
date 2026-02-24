@@ -156,7 +156,7 @@ const [searchTerm, setSearchTerm] = useState("");
               </div>
             </div>
             <Button variant="secondary" size="sm">
-              <Download className="w-4 h-4 mr-2" />{t("actions.download")}</Button>
+              <Download className="w-4 h-4 me-2" />{t("actions.download")}</Button>
           </div>
         </div>
         

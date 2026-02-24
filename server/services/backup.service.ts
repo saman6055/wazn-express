@@ -1,9 +1,12 @@
+import fs from "fs/promises";
+import path from "path";
 import { storagePut } from "./storage.service";
 import { getDb } from "../db";
 import { appLogger } from "../utils/logger";
 import { backups } from "../../drizzle/schema.js";
 import { eq } from "drizzle-orm";
 import * as dbHelpers from "../db";
+import { getLocalBackupFilePath, LOCAL_BACKUP_PREFIX } from "./zipBackup.service";
 
 interface BackupOptions {
   backupType: "manual" | "scheduled";
@@ -86,8 +89,24 @@ async function createDatabaseBackup(options: BackupOptions) {
 
     appLogger.info("[Backup] Exported records", { totalRecords: exportResult.totalRecords, fileSizeKb: (fileSize / 1024).toFixed(2) });
 
-    // Upload to S3
-    const { url: fileUrl } = await storagePut(s3Key, fileBuffer, "application/json");
+    let fileUrl: string;
+    try {
+      const result = await storagePut(s3Key, fileBuffer, "application/json");
+      fileUrl = result.url;
+    } catch (uploadErr: unknown) {
+      const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
+      const isStorageMissing = /Storage proxy credentials missing|BUILT_IN_FORGE/i.test(msg);
+      if (isStorageMissing) {
+        const localPath = getLocalBackupFilePath(backupId, "json");
+        const dir = path.dirname(localPath);
+        await fs.mkdir(dir, { recursive: true });
+        await fs.writeFile(localPath, fileBuffer);
+        fileUrl = LOCAL_BACKUP_PREFIX + String(backupId);
+        appLogger.info("[Backup] Storage not configured; saved locally", { path: localPath });
+      } else {
+        throw uploadErr;
+      }
+    }
 
     // Update backup record
     await db.update(backups)
@@ -162,15 +181,12 @@ async function createFilesBackup(options: BackupOptions) {
   const backupId = Number(result.insertId);
 
   try {
-    // Import S3 backup service
     const { backupS3Files } = await import("./s3Backup.service");
-    
-    // Create S3 files backup
-    const s3Result = await backupS3Files();
+    const s3Result = await backupS3Files(backupId);
 
-    // Update backup record
     await db.update(backups)
       .set({
+        fileUrl: s3Result.zipUrl,
         filesZipUrl: s3Result.zipUrl,
         filesZipSize: s3Result.totalSize,
         filesCount: s3Result.fileCount,

@@ -673,7 +673,7 @@ const { t, language } = useLanguage();
               </div>
               
               <Button onClick={downloadReceipt} className="w-full">
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="w-4 h-4 me-2" />
                 {language === "ku" ? "داگرتنی وەسڵ" : "Download Receipt"}
               </Button>
             </div>
@@ -685,7 +685,7 @@ const { t, language } = useLanguage();
       <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
         <DialogContent className={cn("max-w-md max-h-[90vh] overflow-y-auto", isDark ? "bg-slate-800 border-slate-700" : "")}>
           {(() => {
-            const invoice = invoices?.find(inv => inv.id === selectedInvoice);
+            const invoice = invoices?.find(inv => inv.id === selectedInvoice) as any;
             if (!invoice) return null;
             
             const downloadInvoicePDF = () => {
@@ -770,7 +770,7 @@ const { t, language } = useLanguage();
         </tr>
       </thead>
       <tbody>
-        ${lineItems.length > 0 ? lineItems.map(item => '<tr><td>' + item.description + '</td><td style="text-align: center;">' + item.quantity + '</td><td class="amount">$' + Number(item.unitPrice).toFixed(2) + '</td><td class="amount">$' + Number(item.total).toFixed(2) + '</td></tr>').join('') : '<tr><td>Shipping Services</td><td style="text-align: center;">1</td><td class="amount">$' + Number(invoice.subtotalUsd).toFixed(2) + '</td><td class="amount">$' + Number(invoice.subtotalUsd).toFixed(2) + '</td></tr>'}
+        ${lineItems.length > 0 ? lineItems.map((item: any) => '<tr><td>' + item.description + '</td><td style="text-align: center;">' + item.quantity + '</td><td class="amount">$' + Number(item.unitPrice).toFixed(2) + '</td><td class="amount">$' + Number(item.total).toFixed(2) + '</td></tr>').join('') : '<tr><td>Shipping Services</td><td style="text-align: center;">1</td><td class="amount">$' + Number(invoice.subtotalUsd).toFixed(2) + '</td><td class="amount">$' + Number(invoice.subtotalUsd).toFixed(2) + '</td></tr>'}
       </tbody>
     </table>
     
@@ -873,7 +873,7 @@ const { t, language } = useLanguage();
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-                        <Hash className="w-4 h-4 inline mr-1" />
+                        <Hash className="w-4 h-4 inline me-1" />
                         {language === "ku" ? "ژمارەی وەسڵ" : "Invoice Number"}
                       </span>
                       <span className={cn("font-medium", isDark ? "text-white" : "")}>
@@ -882,7 +882,7 @@ const { t, language } = useLanguage();
                     </div>
                     <div className="flex justify-between">
                       <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-                        <Calendar className="w-4 h-4 inline mr-1" />
+                        <Calendar className="w-4 h-4 inline me-1" />
                         {language === "ku" ? "بەروار" : "Date"}
                       </span>
                       <span className={cn("font-medium", isDark ? "text-white" : "")}>
@@ -892,7 +892,7 @@ const { t, language } = useLanguage();
                     {invoice.dueDate && (
                       <div className="flex justify-between">
                         <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-                          <Clock className="w-4 h-4 inline mr-1" />
+                          <Clock className="w-4 h-4 inline me-1" />
                           {language === "ku" ? "بەرواری دوایی" : "Due Date"}
                         </span>
                         <span className={cn("font-medium", isDark ? "text-white" : "")}>
@@ -903,7 +903,7 @@ const { t, language } = useLanguage();
                     {invoice.paidAt && (
                       <div className="flex justify-between">
                         <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-                          <CheckCircle2 className="w-4 h-4 inline mr-1" />
+                          <CheckCircle2 className="w-4 h-4 inline me-1" />
                           {language === "ku" ? "بەرواری پارەدان" : "Paid On"}
                         </span>
                         <span className={cn("font-medium text-emerald-500")}>
@@ -920,7 +920,7 @@ const { t, language } = useLanguage();
                         {language === "ku" ? "بەندەکان" : "Items"}
                       </p>
                       <div className="space-y-2">
-                        {invoice.lineItems.map((item, idx) => (
+                        {invoice.lineItems.map((item: any, idx: number) => (
                           <div key={idx} className="flex justify-between text-sm">
                             <span className={isDark ? "text-slate-300" : "text-slate-700"}>
                               {item.description} x{item.quantity}
@@ -949,11 +949,11 @@ const { t, language } = useLanguage();
                   {/* Action Buttons */}
                   <div className="flex gap-2 pt-2">
                     <Button onClick={downloadInvoicePDF} className="flex-1">
-                      <Download className="w-4 h-4 mr-2" />
+                      <Download className="w-4 h-4 me-2" />
                       {language === "ku" ? "داگرتن" : "Download"}
                     </Button>
                     <Button onClick={printInvoice} variant="outline" className="flex-1">
-                      <Printer className="w-4 h-4 mr-2" />
+                      <Printer className="w-4 h-4 me-2" />
                       {language === "ku" ? "چاپکردن" : "Print"}
                     </Button>
                   </div>

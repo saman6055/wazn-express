@@ -77,7 +77,7 @@ import {
 // ============ PRODUCT CATEGORIES (جۆرەکانی کاڵا) ============
 
 /** Fallback when productCategories table lacks sortOrder/icon/color columns (old schema) */
-async function getAllProductCategoriesFallback(db: Awaited<ReturnType<typeof getDb>>): Promise<ProductCategory[]> {
+async function getAllProductCategoriesFallback(db: NonNullable<Awaited<ReturnType<typeof getDb>>>): Promise<ProductCategory[]> {
   const [rows] = (await db.execute(
     sql`SELECT id, nameEn, nameAr, nameKu, isActive, createdAt, updatedAt FROM productCategories ORDER BY id`
   )) as unknown as [Record<string, unknown>[]];
@@ -201,7 +201,7 @@ function mapRowToServiceType(row: Record<string, unknown>): ServiceType {
 }
 
 /** Fallback when serviceTypes table has old schema (no sortOrder etc.) */
-async function getAllServiceTypesFallback(db: Awaited<ReturnType<typeof getDb>>): Promise<ServiceType[]> {
+async function getAllServiceTypesFallback(db: NonNullable<Awaited<ReturnType<typeof getDb>>>): Promise<ServiceType[]> {
   const [rows] = (await db.execute(
     sql`SELECT id, nameEn, nameKu, nameAr, isActive, createdAt, updatedAt FROM serviceTypes ORDER BY id`
   )) as unknown as [Record<string, unknown>[]];
@@ -242,7 +242,7 @@ export async function getServiceTypeById(id: number): Promise<ServiceType | null
 
 /** Minimal insert for old serviceTypes table (only base columns) */
 async function createServiceTypeFallback(
-  db: Awaited<ReturnType<typeof getDb>>,
+  db: NonNullable<Awaited<ReturnType<typeof getDb>>>,
   data: InsertServiceType
 ): Promise<ServiceType> {
   const insertResult = (await db.execute(

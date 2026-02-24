@@ -101,8 +101,9 @@ async function startServer() {
       if (!backup || !backup.fileUrl) return res.status(404).json({ error: "Backup not found" });
       const { getLocalBackupFilePath, LOCAL_BACKUP_PREFIX } = await import("../services/zipBackup.service.js");
       if (backup.fileUrl.startsWith(LOCAL_BACKUP_PREFIX)) {
-        const localPath = getLocalBackupFilePath(id);
-        return res.download(localPath, backup.filename || `backup-${id}.zip`, (err) => {
+        const ext = backup.filename?.endsWith(".json") ? "json" : "zip";
+        const localPath = getLocalBackupFilePath(id, ext);
+        return res.download(localPath, backup.filename || `backup-${id}.${ext}`, (err) => {
           if (err && !res.headersSent) res.status(500).json({ error: "Download failed" });
         });
       }

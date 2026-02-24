@@ -67,7 +67,7 @@ function GenerateInvoiceButton({ pkg }: { pkg: any }) {
       }}
       disabled={generateInvoiceMutation.isPending}
     >
-      <FileText className="h-4 w-4 mr-2" />
+      <FileText className="h-4 w-4 me-2" />
       {generateInvoiceMutation.isPending ? "Generating..." : "Generate Invoice"}
     </Button>
   );

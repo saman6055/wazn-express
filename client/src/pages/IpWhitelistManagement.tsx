@@ -102,7 +102,7 @@ export default function IpWhitelistManagement() {
               </div>
             </div>
             <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="h-4 w-4 ml-2" />
+              <Plus className="h-4 w-4 ms-2" />
               IP زیاد بکە
             </Button>
           </div>
@@ -171,7 +171,7 @@ export default function IpWhitelistManagement() {
             </TableBody>
           </Table>
 
-          {!whitelist || whitelist.length === 0 && (
+          {(!whitelist || whitelist.length === 0) && (
             <div className="text-center py-12 text-muted-foreground">
               <Shield className="h-12 w-12 mx-auto mb-4 opacity-20" />
               <p>هیچ IP ـێک لە لیستی سپی نییە</p>

@@ -154,7 +154,7 @@ export default function BusinessAnalytics() {
                 className="bg-white/20 hover:bg-white/30 text-white border-0"
                 onClick={exportToCSV}
               >
-                <Download className="h-4 w-4 ml-2" />
+                <Download className="h-4 w-4 ms-2" />
                 هەناردەکردن
               </Button>
             </div>

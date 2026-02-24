@@ -194,7 +194,7 @@ export function RichTextEditor({
       {/* Toolbar */}
       <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
         {/* History */}
-        <div className="flex gap-0.5 border-r pr-2 mr-1">
+        <div className="flex gap-0.5 border-r pr-2 me-1">
           <ToolbarButton
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
@@ -212,7 +212,7 @@ export function RichTextEditor({
         </div>
 
         {/* Headings */}
-        <div className="flex gap-0.5 border-r pr-2 mr-1">
+        <div className="flex gap-0.5 border-r pr-2 me-1">
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
             isActive={editor.isActive('heading', { level: 1 })}
@@ -237,7 +237,7 @@ export function RichTextEditor({
         </div>
 
         {/* Text formatting */}
-        <div className="flex gap-0.5 border-r pr-2 mr-1">
+        <div className="flex gap-0.5 border-r pr-2 me-1">
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBold().run()}
             isActive={editor.isActive('bold')}
@@ -276,7 +276,7 @@ export function RichTextEditor({
         </div>
 
         {/* Alignment */}
-        <div className="flex gap-0.5 border-r pr-2 mr-1">
+        <div className="flex gap-0.5 border-r pr-2 me-1">
           <ToolbarButton
             onClick={() => editor.chain().focus().setTextAlign('left').run()}
             isActive={editor.isActive({ textAlign: 'left' })}
@@ -301,7 +301,7 @@ export function RichTextEditor({
         </div>
 
         {/* Lists */}
-        <div className="flex gap-0.5 border-r pr-2 mr-1">
+        <div className="flex gap-0.5 border-r pr-2 me-1">
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             isActive={editor.isActive('bulletList')}

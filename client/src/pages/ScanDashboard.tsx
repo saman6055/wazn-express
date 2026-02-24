@@ -305,7 +305,7 @@ export default function ScanDashboard() {
                         variant="ghost" 
                         className="w-full justify-start text-white hover:bg-white/10 h-12"
                       >
-                        <Icon className="h-5 w-5 mr-3" />
+                        <Icon className="h-5 w-5 me-3" />
                         <span>{isKurdish ? module.labelKu : module.labelEn}</span>
                         <ChevronRight className="h-4 w-4 mr-auto opacity-50" />
                       </Button>
@@ -318,7 +318,7 @@ export default function ScanDashboard() {
                       variant="ghost" 
                       className="w-full justify-start text-cyan-300 hover:bg-white/10 h-12"
                     >
-                      <BarChart3 className="h-5 w-5 mr-3" />
+                      <BarChart3 className="h-5 w-5 me-3" />
                       <span>{isKurdish ? "ڕاپۆرتی سکان" : "Scan Reports"}</span>
                       <ChevronRight className="h-4 w-4 mr-auto opacity-50" />
                     </Button>
@@ -350,7 +350,7 @@ export default function ScanDashboard() {
                   <Link href="/scan-reports">
                     <Button variant="ghost" size="sm" className="text-blue-600">
                       {isKurdish ? "هەموو" : "View All"}
-                      <ArrowRight className="h-4 w-4 mr-1" />
+                      <ArrowRight className="h-4 w-4 me-1" />
                     </Button>
                   </Link>
                 </div>

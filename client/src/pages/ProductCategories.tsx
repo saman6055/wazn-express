@@ -139,13 +139,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 onClick={() => seedMutation.mutate()}
                 disabled={seedMutation.isPending}
               >
-                <Sparkles className="h-4 w-4 mr-2" />
+                <Sparkles className="h-4 w-4 me-2" />
                 {seedMutation.isPending ? "Creating..." : "Seed Defaults"}
               </Button>
             )}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4 mr-2" />Add Category</Button>
+                <Button><Plus className="h-4 w-4 me-2" />Add Category</Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
@@ -304,7 +304,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   onClick={() => seedMutation.mutate()}
                   disabled={seedMutation.isPending}
                 >
-                  <Sparkles className="h-4 w-4 mr-2" />
+                  <Sparkles className="h-4 w-4 me-2" />
                   Create Default Categories
                 </Button>
               </CardContent>

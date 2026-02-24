@@ -175,7 +175,7 @@ const PackageTableRow = memo(function PackageTableRow({
           const config = packageTypeConfig[pkgType] || packageTypeConfig.regular;
           return (
             <Badge variant="outline" className={`text-xs ${config.color}`}>
-              <span className="mr-1">{config.icon}</span>
+              <span className="me-1">{config.icon}</span>
               {t(config.tKey)}
             </Badge>
           );
@@ -192,7 +192,7 @@ const PackageTableRow = memo(function PackageTableRow({
           <span>{pkg.trackingNumber}</span>
         ) : (
           <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-            <Link2Off className="h-3 w-3 mr-1" />
+            <Link2Off className="h-3 w-3 me-1" />
             {t('packages.noTracking')}
           </Badge>
         )}
@@ -209,7 +209,7 @@ const PackageTableRow = memo(function PackageTableRow({
           </Badge>
         ) : (
           <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-            <PackageX className="h-3 w-3 mr-1" />
+            <PackageX className="h-3 w-3 me-1" />
             {t('packages.noBatch')}
           </Badge>
         )}
@@ -255,7 +255,7 @@ const PackageTableRow = memo(function PackageTableRow({
                 onClick={() => option.value !== pkg.status && onStatusChange(pkg, option.value)}
                 className={pkg.status === option.value ? "bg-accent" : ""}
               >
-                <span className={`w-2 h-2 rounded-full mr-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
+                <span className={`w-2 h-2 rounded-full me-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
                 {option.label}
                 {pkg.status === option.value && " ✓"}
               </DropdownMenuItem>
@@ -393,7 +393,8 @@ const [, setLocation] = useLocation();
 
   const packages = packagesFromHook;
   const { data: customers } = trpc.customers.list.useQuery();
-  const { data: batches } = trpc.batches.list.useQuery();
+  const { data: batchesRaw } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: categories } = trpc.productCategories.list.useQuery();
   const { data: labelTemplates } = trpc.labelTemplates.list.useQuery();
 
@@ -448,7 +449,7 @@ const [, setLocation] = useLocation();
 
   const getBatchCode = (batchId: number | null) => {
     if (!batchId) return "-";
-    return batches?.find(b => b.id === batchId)?.batchCode || "-";
+    return batches?.find((b: any) => b.id === batchId)?.batchCode || "-";
   };
 
   const getCategoryName = (categoryId: number | null) => {
@@ -471,13 +472,13 @@ const [, setLocation] = useLocation();
   // Filter batches by shipping type for edit dialog
   const filteredEditBatches = useMemo(() => {
     if (!batches) return [];
-    return batches.filter(b => {
+    return batches.filter((b: any) => {
       const batchType = b.shippingType as string;
       if (editShippingType === "air_regular" || editShippingType === "air_irregular") {
         return batchType === "air" || batchType.startsWith("air");
       }
       return batchType === "sea";
-    }).filter(b => b.status === "preparing" || b.status === "in_transit");
+    }).filter((b: any) => b.status === "preparing" || b.status === "in_transit");
   }, [batches, editShippingType]);
 
   // Calculate CBM for edit dialog
@@ -516,7 +517,7 @@ const [, setLocation] = useLocation();
 
   // Calculate estimated price for edit dialog
   const editEstimatedPrice = useMemo(() => {
-    const selectedBatch = batches?.find(b => b.id === parseInt(editBatchId));
+    const selectedBatch = batches?.find((b: any) => b.id === parseInt(editBatchId));
     if (!selectedBatch) return 0;
     
     if ((editShippingType === "air_regular" || editShippingType === "air_irregular") && selectedBatch.pricePerKg && editWeightKg) {
@@ -837,27 +838,27 @@ const [, setLocation] = useLocation();
             </div>
             <div className="flex gap-2">
               <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0" onClick={exportToExcel}>
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="h-4 w-4 me-2" />
                 {t('common.exportExcel')}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button className="bg-white text-blue-600 hover:bg-white/90">
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 me-2" />
                     {t('packages.registerPackage')}
-                    <ChevronDown className="h-4 w-4 ml-2" />
+                    <ChevronDown className="h-4 w-4 ms-2" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem onClick={() => setLocation("/packages/quick-register")}>
-                    <Zap className="h-4 w-4 mr-2 text-amber-500" />
+                    <Zap className="h-4 w-4 me-2 text-amber-500" />
                     <div>
                       <div className="font-medium">{t('packages.quickRegister')}</div>
                       <div className="text-xs text-muted-foreground">{t('packages.quickRegisterDescription')}</div>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setLocation("/packages/bulk-register")}>
-                    <Layers className="h-4 w-4 mr-2 text-purple-500" />
+                    <Layers className="h-4 w-4 me-2 text-purple-500" />
                     <div>
                       <div className="font-medium">{t('packages.bulkRegister')}</div>
                       <div className="text-xs text-muted-foreground">{t('packages.bulkRegisterDescription')}</div>
@@ -865,7 +866,7 @@ const [, setLocation] = useLocation();
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setLocation("/packages/unclaimed")}>
-                    <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
+                    <AlertTriangle className="h-4 w-4 me-2 text-amber-500" />
                     <div>
                       <div className="font-medium">{t('packages.unclaimedPackages')}</div>
                       <div className="text-xs text-muted-foreground">{t('packages.unclaimedDescription')}</div>
@@ -987,17 +988,17 @@ const [, setLocation] = useLocation();
                   onClick={() => setShowFilters(!showFilters)}
                   className="relative"
                 >
-                  <Filter className="h-4 w-4 mr-2" />
+                  <Filter className="h-4 w-4 me-2" />
                   {t("common.filters")}
                   {activeFiltersCount > 0 && (
-                    <Badge className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    <Badge className="ms-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
                       {activeFiltersCount}
                     </Badge>
                   )}
                 </Button>
                 {activeFiltersCount > 0 && (
                   <Button variant="ghost" size="sm" onClick={clearAllFilters}>
-                    <X className="h-4 w-4 mr-1" />
+                    <X className="h-4 w-4 me-1" />
                     {t("common.clear")}
                   </Button>
                 )}
@@ -1048,7 +1049,7 @@ const [, setLocation] = useLocation();
                       <SelectContent>
                         <SelectItem value="all">{t("common.all")}</SelectItem>
                         <SelectItem value="no_batch">{t("packages.noBatch")}</SelectItem>
-                        {batches?.map(batch => (
+                        {batches?.map((batch: any) => (
                           <SelectItem key={batch.id} value={batch.id.toString()}>
                             {batch.batchCode}
                           </SelectItem>
@@ -1112,7 +1113,7 @@ const [, setLocation] = useLocation();
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-start text-left font-normal">
-                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <CalendarIcon className="me-2 h-4 w-4" />
                           {dateFrom ? format(dateFrom, "yyyy-MM-dd") : t("common.select")}
                         </Button>
                       </PopoverTrigger>
@@ -1133,7 +1134,7 @@ const [, setLocation] = useLocation();
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-start text-left font-normal">
-                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <CalendarIcon className="me-2 h-4 w-4" />
                           {dateTo ? format(dateTo, "yyyy-MM-dd") : t("common.select")}
                         </Button>
                       </PopoverTrigger>
@@ -1513,7 +1514,7 @@ const [, setLocation] = useLocation();
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">{t("packages.noBatch")}</SelectItem>
-                          {filteredEditBatches.map((batch) => (
+                          {filteredEditBatches.map((batch: any) => (
                             <SelectItem key={batch.id} value={batch.id.toString()}>
                               {batch.batchCode} - {batch.pricePerKg ? `$${batch.pricePerKg}/kg` : batch.pricePerCbm ? `$${batch.pricePerCbm}/cbm` : "No price"}
                             </SelectItem>
@@ -1752,7 +1753,7 @@ const [, setLocation] = useLocation();
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t("batches.title")}</span>
                       <span className="font-medium">
-                        {editBatchId && editBatchId !== "none" ? batches?.find(b => b.id === parseInt(editBatchId))?.batchCode : "-"}
+                        {editBatchId && editBatchId !== "none" ? batches?.find((b: any) => b.id === parseInt(editBatchId))?.batchCode : "-"}
                       </span>
                     </div>
                   </div>
@@ -1777,7 +1778,7 @@ const [, setLocation] = useLocation();
               size="sm"
               onClick={handleDeleteClick}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="h-4 w-4 me-2" />
               {t("common.delete")}
             </Button>
             <div className="flex gap-2">
@@ -1830,7 +1831,7 @@ const [, setLocation] = useLocation();
                     const config = packageTypeConfig[pkgType] || packageTypeConfig.regular;
                     return (
                       <Badge variant="outline" className={`text-xs ${config.color}`}>
-                        <span className="mr-1">{config.icon}</span>
+                        <span className="me-1">{config.icon}</span>
                         {t(config.tKey)}
                       </Badge>
                     );
@@ -2012,7 +2013,7 @@ const [, setLocation] = useLocation();
               setShowViewDialog(false);
               if (viewPackage) handleEditClick(viewPackage);
             }}>
-              <Pencil className="h-4 w-4 mr-2" />
+              <Pencil className="h-4 w-4 me-2" />
               {t("common.edit")}
             </Button>
           </DialogFooter>

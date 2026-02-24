@@ -90,7 +90,7 @@ export default function HomeClassic() {
           <div className="flex items-center gap-3">
             <Link href="/customer-login">
               <Button variant="ghost" className="text-[var(--landing-text-muted)] hover:text-[var(--landing-text)] hover:opacity-90">
-                <Users className="mr-2 h-4 w-4" />
+                <Users className="me-2 h-4 w-4" />
                 <span className="hidden sm:inline">{t("home.customerPortal")}</span>
               </Button>
             </Link>
@@ -116,8 +116,8 @@ export default function HomeClassic() {
                 <br />
                 <span className="bg-[linear-gradient(to_right,var(--landing-cta-from),var(--landing-cta-to))] bg-clip-text text-transparent">{t("auto.text_33d433")}</span>
               </h1>
-              <p className="text-lg text-[var(--landing-text-muted)] mb-8 max-w-xl mx-auto lg:mx-0 lg:mr-0">{t("home.heroDescription")}</p>
-              <div className="bg-[var(--landing-card)] backdrop-blur-sm border border-[var(--landing-border)] rounded-2xl p-4 mb-8 max-w-md mx-auto lg:mx-0 lg:mr-0">
+              <p className="text-lg text-[var(--landing-text-muted)] mb-8 max-w-xl mx-auto lg:mx-0 lg:me-0">{t("home.heroDescription")}</p>
+              <div className="bg-[var(--landing-card)] backdrop-blur-sm border border-[var(--landing-border)] rounded-2xl p-4 mb-8 max-w-md mx-auto lg:mx-0 lg:me-0">
                 <p className="text-sm text-[var(--landing-text-muted)] mb-3 text-right">{t("home.quickTrack")}</p>
                 <div className="flex gap-2">
                   <Input
@@ -136,13 +136,13 @@ export default function HomeClassic() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link href="/customer-login">
                   <Button size="lg" className="bg-[linear-gradient(to_right,var(--landing-cta-from),var(--landing-cta-to))] hover:opacity-90 text-white shadow-xl w-full sm:w-auto">
-                    <Users className="mr-2 h-5 w-5" />
+                    <Users className="me-2 h-5 w-5" />
                     {t("auto.text_623179")}
                   </Button>
                 </Link>
                 <Button size="lg" variant="outline" onClick={() => window.location.href = getLoginUrl()} className="border-[var(--landing-border)] text-[var(--landing-text)] hover:bg-[var(--landing-card)] w-full sm:w-auto">
                   {t("home.staffLogin")}
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight className="ms-2 h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -229,7 +229,7 @@ export default function HomeClassic() {
           <div className="container mx-auto px-4">
             <h2 className="text-3xl md:text-4xl font-bold text-center text-[var(--landing-text)] mb-12">{t("blog.latestPosts") || "نوێترین بابەتەکان"}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {posts.map((post: { id: number; titleKu?: string; titleEn?: string; titleAr?: string; summaryKu?: string; summaryEn?: string }) => (
+              {posts.map((post: any) => (
                 <Link key={post.id} href={`/portal/blog/${post.id}`}>
                   <div className="group p-6 rounded-2xl bg-[var(--landing-card)] border border-[var(--landing-border)] hover:border-[var(--landing-accent)]/50 transition-all">
                     <div className="w-12 h-12 rounded-xl bg-[var(--landing-accent-subtle)] flex items-center justify-center text-[var(--landing-accent)] mb-3">
@@ -276,12 +276,12 @@ export default function HomeClassic() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/customer-login">
                   <Button size="lg" className="bg-white text-amber-600 hover:bg-slate-100 shadow-xl w-full sm:w-auto">
-                    <Users className="mr-2 h-5 w-5" />
+                    <Users className="me-2 h-5 w-5" />
                     {t("auto.text_410482")}
                   </Button>
                 </Link>
                 <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/20 w-full sm:w-auto">
-                  <Phone className="mr-2 h-5 w-5" />
+                  <Phone className="me-2 h-5 w-5" />
                   {t("auto.text_6733ea")}
                 </Button>
               </div>

@@ -113,7 +113,8 @@ export default function BulkRegister() {
   
   // Queries
   const { data: customers } = trpc.customers.list.useQuery();
-  const { data: batches } = trpc.batches.list.useQuery();
+  const { data: batchesResponse } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
   const { data: warehouses } = trpc.warehouses.list.useQuery();
   const { data: categories } = trpc.productCategories.list.useQuery();
   const { data: cbmDivisorData } = trpc.packages.getCbmDivisor.useQuery();
@@ -457,7 +458,7 @@ export default function BulkRegister() {
                   }}
                   className="w-full mt-2 h-7 text-xs"
                 >
-                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  <AlertTriangle className="h-3 w-3 me-1" />
                   {isUnclaimed ? t('packages.unclaimed') : t('packages.unclaimed')}
                 </Button>
                 
@@ -633,7 +634,7 @@ export default function BulkRegister() {
                   <Badge variant="secondary" className="text-[10px]">{packages.length} {t('packages.row')}</Badge>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addRow} className="h-7 text-xs">
-                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  <Plus className="h-3.5 w-3.5 me-1" />
                   {t('packages.addRow')}
                 </Button>
               </CardHeader>
@@ -773,7 +774,7 @@ export default function BulkRegister() {
                                           isVolumetricHigher ? "text-orange-600" : "text-foreground"
                                         )}>
                                           {chargeableKg.toFixed(2)}
-                                          {isVolumetricHigher && <span className="text-[8px] ml-0.5">📐</span>}
+                                          {isVolumetricHigher && <span className="text-[8px] ms-0.5">📐</span>}
                                         </span>
                                       </TooltipTrigger>
                                       <TooltipContent side="top" className="text-xs">
@@ -831,12 +832,12 @@ export default function BulkRegister() {
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 me-2 animate-spin" />
                         {t('packages.registering')} {registeredCount}/{totals.validPackages}...
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        <CheckCircle2 className="h-4 w-4 me-2" />
                         {t('packages.registerAll')} ({totals.validPackages})
                       </>
                     )}
@@ -885,7 +886,7 @@ export default function BulkRegister() {
               {t('common.cancel')}
             </Button>
             <Button onClick={handleSaveCbmDivisor} disabled={setCbmDivisorMutation.isPending}>
-              {setCbmDivisorMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {setCbmDivisorMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : null}
               {t('common.save')}
             </Button>
           </DialogFooter>

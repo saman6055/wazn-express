@@ -167,7 +167,7 @@ export default function StaffManagement() {
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-emerald-600 hover:bg-emerald-700">
-                <UserPlus className="w-4 h-4 mr-2" />
+                <UserPlus className="w-4 h-4 me-2" />
                 {t('staff.addStaff')}
               </Button>
             </DialogTrigger>
@@ -250,7 +250,7 @@ export default function StaffManagement() {
                     {t('common.cancel')}
                   </Button>
                   <Button type="submit" disabled={registerMutation.isPending}>
-                    {registerMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    {registerMutation.isPending && <Loader2 className="w-4 h-4 animate-spin me-2" />}
                     {t('common.add')}
                   </Button>
                 </DialogFooter>
@@ -292,12 +292,12 @@ export default function StaffManagement() {
                       {getRoleBadge(staff.role)}
                       {staff.isActive ? (
                         <Badge variant="outline" className="text-green-600 border-green-200">
-                          <CheckCircle className="w-3 h-3 mr-1" />
+                          <CheckCircle className="w-3 h-3 me-1" />
                           {t('status.active')}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-red-600 border-red-200">
-                          <XCircle className="w-3 h-3 mr-1" />
+                          <XCircle className="w-3 h-3 me-1" />
                           {t('status.inactive')}
                         </Badge>
                       )}
@@ -314,7 +314,7 @@ export default function StaffManagement() {
                               setResetDialogOpen(true);
                             }}
                           >
-                            <Key className="w-4 h-4 mr-2" />
+                            <Key className="w-4 h-4 me-2" />
                             {t('staff.resetPassword')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -325,7 +325,7 @@ export default function StaffManagement() {
                               });
                             }}
                           >
-                            <RefreshCw className="w-4 h-4 mr-2" />
+                            <RefreshCw className="w-4 h-4 me-2" />
                             {staff.isActive ? t('staff.deactivate') : t('staff.activate')}
                           </DropdownMenuItem>
                           {canDeleteStaff(staff) && (
@@ -336,7 +336,7 @@ export default function StaffManagement() {
                                 setDeleteDialogOpen(true);
                               }}
                             >
-                              <Trash2 className="w-4 h-4 mr-2" />
+                              <Trash2 className="w-4 h-4 me-2" />
                               {t('staff.deleteStaff') || 'سڕینەوە'}
                             </DropdownMenuItem>
                           )}
@@ -384,7 +384,7 @@ export default function StaffManagement() {
                   {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={resetPasswordMutation.isPending}>
-                  {resetPasswordMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  {resetPasswordMutation.isPending && <Loader2 className="w-4 h-4 animate-spin me-2" />}
                   {t('common.change')}
                 </Button>
               </DialogFooter>
@@ -416,7 +416,7 @@ export default function StaffManagement() {
                 }}
                 disabled={deleteStaffMutation.isPending}
               >
-                {deleteStaffMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                {deleteStaffMutation.isPending && <Loader2 className="w-4 h-4 animate-spin me-2" />}
                 {t('staff.confirmDeleteBtn') || 'بەڵێ، بسڕەوە'}
               </AlertDialogAction>
             </AlertDialogFooter>

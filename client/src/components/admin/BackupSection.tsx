@@ -74,21 +74,21 @@ function getBackupStatusBadge(status: string, t: (key: string) => string) {
     case "completed":
       return (
         <Badge className="bg-green-100 text-green-800 border-green-200">
-          <CheckCircle2 className="h-3 w-3 mr-1" />
+          <CheckCircle2 className="h-3 w-3 me-1" />
           {t("dataManagement.completed")}
         </Badge>
       );
     case "in_progress":
       return (
         <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-          <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+          <RefreshCw className="h-3 w-3 me-1 animate-spin" />
           {t("dataManagement.inProgress")}
         </Badge>
       );
     case "failed":
       return (
         <Badge className="bg-red-100 text-red-800 border-red-200">
-          <AlertCircle className="h-3 w-3 mr-1" />
+          <AlertCircle className="h-3 w-3 me-1" />
           {t("dataManagement.failed")}
         </Badge>
       );
@@ -102,21 +102,21 @@ function getBackupTypeBadge(type: string, t: (key: string) => string) {
     case "database_only":
       return (
         <Badge variant="outline" className="text-blue-600 border-blue-200">
-          <Database className="h-3 w-3 mr-1" />
+          <Database className="h-3 w-3 me-1" />
           {t("dataManagement.databaseOnly")}
         </Badge>
       );
     case "files_only":
       return (
         <Badge variant="outline" className="text-purple-600 border-purple-200">
-          <FolderArchive className="h-3 w-3 mr-1" />
+          <FolderArchive className="h-3 w-3 me-1" />
           {t("dataManagement.filesOnly")}
         </Badge>
       );
     case "full":
       return (
         <Badge variant="outline" className="text-green-600 border-green-200">
-          <Cloud className="h-3 w-3 mr-1" />
+          <Cloud className="h-3 w-3 me-1" />
           {t("dataManagement.fullBackup")}
         </Badge>
       );
@@ -201,7 +201,7 @@ export function BackupSection({
                 <div className="font-medium">{t("dataManagement.fullBackup")}</div>
                 <div className="text-xs text-muted-foreground mt-1">{t("dataManagement.fullBackupDesc")}</div>
                 <Badge variant="outline" className="mt-2 text-green-600 border-green-300">
-                  <Download className="h-3 w-3 mr-1" />
+                  <Download className="h-3 w-3 me-1" />
                   ZIP
                 </Badge>
               </CardContent>
@@ -214,11 +214,11 @@ export function BackupSection({
           >
             {isCreatingBackup ? (
               <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> {t("dataManagement.creatingBackup")}
+                <RefreshCw className="h-4 w-4 me-2 animate-spin" /> {t("dataManagement.creatingBackup")}
               </>
             ) : (
               <>
-                <Save className="h-4 w-4 mr-2" /> {t("dataManagement.createBackupNow")}
+                <Save className="h-4 w-4 me-2" /> {t("dataManagement.createBackupNow")}
               </>
             )}
           </Button>
@@ -238,7 +238,7 @@ export function BackupSection({
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => refetchBackups()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className="h-4 w-4 me-2" />
               {t("common.refresh")}
             </Button>
           </div>
@@ -279,13 +279,13 @@ export function BackupSection({
                             {getBackupTypeBadge(backup.backupContent, t)}
                             {backup.backupType === "scheduled" && (
                               <Badge variant="outline" className="text-amber-600 border-amber-200">
-                                <Clock className="h-3 w-3 mr-1" />
+                                <Clock className="h-3 w-3 me-1" />
                                 {t("dataManagement.scheduled")}
                               </Badge>
                             )}
                           </div>
                           <div className="text-sm text-muted-foreground mt-2">
-                            {backup.fileSize != null && <span className="mr-4">{formatFileSize(backup.fileSize)}</span>}
+                            {backup.fileSize != null && <span className="me-4">{formatFileSize(backup.fileSize)}</span>}
                             {backup.createdByName && (
                               <span>
                                 {t("dataManagement.createdBy")}: {backup.createdByName}
@@ -305,7 +305,7 @@ export function BackupSection({
                               size="sm"
                               onClick={() => window.open(`${window.location.origin}/api/backup-file/${backup.id}`, "_blank")}
                             >
-                              <Download className="h-3 w-3 mr-1" />
+                              <Download className="h-3 w-3 me-1" />
                               {t("dataManagement.download")}
                             </Button>
                           )}
@@ -319,7 +319,7 @@ export function BackupSection({
                                 setShowRestoreDialog(true);
                               }}
                             >
-                              <RotateCcw className="h-3 w-3 mr-1" />
+                              <RotateCcw className="h-3 w-3 me-1" />
                               {t("dataManagement.restore")}
                             </Button>
                           )}
@@ -451,12 +451,12 @@ export function BackupSection({
             >
               {restoreBackupMutation.isPending ? (
                 <>
-                  <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+                  <RotateCcw className="h-4 w-4 me-2 animate-spin" />
                   {t("dataManagement.restoring")}
                 </>
               ) : (
                 <>
-                  <RotateCcw className="h-4 w-4 mr-2" />
+                  <RotateCcw className="h-4 w-4 me-2" />
                   {t("dataManagement.restore")}
                 </>
               )}

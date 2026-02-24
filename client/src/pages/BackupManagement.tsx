@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 
 import { Database, Download, Trash2, RefreshCw, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
 export default function BackupManagement() {
@@ -20,30 +21,30 @@ export default function BackupManagement() {
 
   const createBackup = trpc.backup.create.useMutation({
     onSuccess: () => {
-      alert("✅ بەکاپ دەستی پێکرد");
+      toast.success("بەکاپ دەستی پێکرد");
       refetch();
     },
     onError: (error) => {
-      alert(`❌ هەڵە: ${error.message}`);
+      toast.error(`هەڵە: ${error.message}`);
     },
   });
 
   const deleteBackup = trpc.backup.delete.useMutation({
     onSuccess: () => {
-      alert("✅ بەکاپ سڕایەوە");
+      toast.success("بەکاپ سڕایەوە");
       refetch();
     },
     onError: (error) => {
-      alert(`❌ هەڵە: ${error.message}`);
+      toast.error(`هەڵە: ${error.message}`);
     },
   });
 
   const restoreBackup = trpc.backup.restore.useMutation({
     onSuccess: () => {
-      alert("✅ داتابەیس گەڕایەوە");
+      toast.success("داتابەیس گەڕایەوە");
     },
     onError: (error) => {
-      alert(`❌ هەڵە: ${error.message}`);
+      toast.error(`هەڵە: ${error.message}`);
     },
   });
 
@@ -88,11 +89,11 @@ export default function BackupManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
-        return <Badge className="bg-green-500"><CheckCircle2 className="w-3 h-3 mr-1" />تەواو</Badge>;
+        return <Badge className="bg-green-500"><CheckCircle2 className="w-3 h-3 me-1" />تەواو</Badge>;
       case "in_progress":
-        return <Badge className="bg-blue-500"><Clock className="w-3 h-3 mr-1" />لە پرۆسەدایە</Badge>;
+        return <Badge className="bg-blue-500"><Clock className="w-3 h-3 me-1" />لە پرۆسەدایە</Badge>;
       case "failed":
-        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />شکستی هێنا</Badge>;
+        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 me-1" />شکستی هێنا</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -118,7 +119,7 @@ export default function BackupManagement() {
           </p>
         </div>
         <Button onClick={handleCreateBackup} disabled={createBackup.isPending} size="lg">
-          <Database className="w-4 h-4 mr-2" />
+          <Database className="w-4 h-4 me-2" />
           دروستکردنی بەکاپی نوێ
         </Button>
       </div>
@@ -299,7 +300,7 @@ export default function BackupManagement() {
                               }}
                               title="دابەزاندنی هەردووکیان (SQL + ZIP)"
                             >
-                              <Download className="w-4 h-4 mr-1" />
+                              <Download className="w-4 h-4 me-1" />
                               هەردووکیان
                             </Button>
                             <Button

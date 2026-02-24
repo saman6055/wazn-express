@@ -60,7 +60,8 @@ export default function QuickRegister() {
 
   // Queries — handle errors so one failed API doesn't block the form
   const { data: customers, isError: customersError, refetch: refetchCustomers } = trpc.customers.list.useQuery();
-  const { data: batches, isError: batchesError, refetch: refetchBatches } = trpc.batches.list.useQuery();
+  const { data: batchesRaw, isError: batchesError, refetch: refetchBatches } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: warehouses, isError: warehousesError, refetch: refetchWarehouses } = trpc.warehouses.list.useQuery();
   const { data: categories, isError: categoriesError, refetch: refetchCategories } = trpc.productCategories.list.useQuery();
   const { data: packageStats, isError: statsError, refetch: refetchStats } = trpc.packages.stats.useQuery();
@@ -180,13 +181,13 @@ export default function QuickRegister() {
 
   const filteredBatches = useMemo(() => {
     if (!batches) return [];
-    return batches.filter(b => {
+    return batches.filter((b: any) => {
       const batchType = b.shippingType as string;
       if (shippingType === "air_regular" || shippingType === "air_irregular") {
         return batchType === "air" || batchType.startsWith("air");
       }
       return batchType === "sea";
-    }).filter(b => b.status === "preparing" || b.status === "in_transit");
+    }).filter((b: any) => b.status === "preparing" || b.status === "in_transit");
   }, [batches, shippingType]);
   
   const filteredCustomers = useMemo(() => {
@@ -320,7 +321,7 @@ export default function QuickRegister() {
   };
   
   const estimatedPrice = useMemo(() => {
-    const selectedBatch = batches?.find(b => b.id === parseInt(batchId));
+    const selectedBatch = batches?.find((b: any) => b.id === parseInt(batchId));
     if (!selectedBatch) return 0;
     
     if ((shippingType === "air_regular" || shippingType === "air_irregular") && selectedBatch.pricePerKg && chargeableWeight > 0) {
@@ -658,7 +659,7 @@ export default function QuickRegister() {
                   onClick={clearAllForm}
                   className="bg-white/20 border-white/30 text-white hover:bg-white/30 h-14 px-4"
                 >
-                  <RotateCcw className="h-5 w-5 ml-2" />
+                  <RotateCcw className="h-5 w-5 ms-2" />
                   پاککردنەوە
                 </Button>
               </div>
@@ -789,7 +790,7 @@ export default function QuickRegister() {
                                 onMouseEnter={() => setHighlightedCustomerIndex(index)}
                               >
                                 <span className="font-bold text-blue-600">{customer.customerCode}</span>
-                                <span className="text-muted-foreground mr-2">- {customer.fullName}</span>
+                                <span className="text-muted-foreground me-2">- {customer.fullName}</span>
                               </button>
                             ))}
                           </div>
@@ -839,7 +840,7 @@ export default function QuickRegister() {
                           <SelectItem key={w.id} value={String(w.id)}>
                             <span className="font-medium">{w.nameEn ?? w.nameKu ?? `کۆگا ${w.id}`}</span>
                             {w.codePrefix && (
-                              <span className="text-muted-foreground mr-2">({w.codePrefix})</span>
+                              <span className="text-muted-foreground me-2">({w.codePrefix})</span>
                             )}
                           </SelectItem>
                         ))}
@@ -896,7 +897,7 @@ export default function QuickRegister() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">بێ باچ</SelectItem>
-                          {filteredBatches.map((batch) => (
+                          {filteredBatches.map((batch: any) => (
                             <SelectItem key={batch.id} value={batch.id.toString()}>
                               {batch.batchCode} {batch.pricePerKg ? `- $${batch.pricePerKg}/kg` : batch.pricePerCbm ? `- $${batch.pricePerCbm}/cbm` : ""}
                             </SelectItem>
@@ -938,7 +939,7 @@ export default function QuickRegister() {
                         <Ruler className="h-5 w-5 text-white" />
                       </div>
                       <span className="text-base font-bold text-violet-800">٥. قەبارە (CM)</span>
-                      <span className="text-xs text-violet-500 mr-2">بۆ کێشی قەبارەیی</span>
+                      <span className="text-xs text-violet-500 me-2">بۆ کێشی قەبارەیی</span>
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-1">
@@ -984,7 +985,7 @@ export default function QuickRegister() {
                             <div>
                               <span className="text-sm text-violet-700">کێشی قەبارەیی: </span>
                               <span className="font-bold text-violet-900">{volumetricWeight.toFixed(2)} kg</span>
-                              <span className="text-xs text-violet-500 mr-2">(÷ {volumetricDivisor})</span>
+                              <span className="text-xs text-violet-500 me-2">(÷ {volumetricDivisor})</span>
                             </div>
                           </div>
                           <div className="p-3 bg-white rounded-lg shadow">
@@ -1211,7 +1212,7 @@ export default function QuickRegister() {
                     {batchId && batchId !== "none" && (
                       <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
                         <span className="text-muted-foreground">باچ</span>
-                        <span className="font-medium">{batches?.find(b => b.id === parseInt(batchId))?.batchCode}</span>
+                        <span className="font-medium">{batches?.find((b: any) => b.id === parseInt(batchId))?.batchCode}</span>
                       </div>
                     )}
                     
@@ -1236,11 +1237,11 @@ export default function QuickRegister() {
                     disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package"}
                   >
                     {registerMutation.isPending ? (
-                      <Loader2 className="h-6 w-6 animate-spin ml-2" />
+                      <Loader2 className="h-6 w-6 animate-spin ms-2" />
                     ) : foundOrder?.source === "package" ? (
-                      <AlertTriangle className="h-6 w-6 ml-2 text-yellow-600" />
+                      <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600" />
                     ) : (
-                      <Plus className="h-6 w-6 ml-2" />
+                      <Plus className="h-6 w-6 ms-2" />
                     )}
                     {foundOrder?.source === "package" ? "دووبارە!" : !trackingNumber.trim() ? "تراکینگ داخل بکە" : "تۆمار (Enter)"}                  
                   </Button>

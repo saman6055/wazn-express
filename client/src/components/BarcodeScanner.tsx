@@ -188,12 +188,12 @@ export default function BarcodeScanner({ onScan, onError, isActive = true }: Bar
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
                   {t("scan.waiting")}
                 </>
               ) : (
                 <>
-                  <Camera className="mr-2 h-4 w-4" />
+                  <Camera className="me-2 h-4 w-4" />
                   {t("scan.startCamera")}
                 </>
               )}
@@ -206,12 +206,12 @@ export default function BarcodeScanner({ onScan, onError, isActive = true }: Bar
       {isScanning && (
         <div className="flex items-center justify-center gap-2">
           <Button variant="outline" onClick={stopScanning}>
-            <CameraOff className="mr-2 h-4 w-4" />
+            <CameraOff className="me-2 h-4 w-4" />
             {t("scan.stop")}
           </Button>
           {cameras.length > 1 && (
             <Button variant="outline" onClick={switchCamera}>
-              <SwitchCamera className="mr-2 h-4 w-4" />
+              <SwitchCamera className="me-2 h-4 w-4" />
               {t("scan.switchCamera")}
             </Button>
           )}

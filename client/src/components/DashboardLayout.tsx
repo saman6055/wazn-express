@@ -536,7 +536,7 @@ function DashboardLayoutContent({
                   "overflow-hidden transition-all duration-200",
                   isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
                 )}>
-                  <div className={cn("mt-1 space-y-0.5", isRTL ? "mr-4" : "ml-4")}>
+                  <div className={cn("mt-1 space-y-0.5", isRTL ? "me-4" : "ms-4")}>
                     {group.items.map((item) => {
                       const isActive = isItemActive(item.path);
                       return (
@@ -577,7 +577,7 @@ function DashboardLayoutContent({
           <div className="mb-3">
             <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
               <SelectTrigger className="h-9 text-xs bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                <Languages className="h-3.5 w-3.5 mr-2 text-gray-500" />
+                <Languages className="h-3.5 w-3.5 me-2 text-gray-500" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -623,9 +623,9 @@ function DashboardLayoutContent({
                   className="cursor-pointer rounded-lg"
                 >
                   {theme === "dark" ? (
-                    <Sun className="mr-2 h-4 w-4 text-amber-500" />
+                    <Sun className="me-2 h-4 w-4 text-amber-500" />
                   ) : (
-                    <Moon className="mr-2 h-4 w-4 text-indigo-500" />
+                    <Moon className="me-2 h-4 w-4 text-indigo-500" />
                   )}
                   <span>{theme === "dark" ? t("lightMode") || "دۆخی ڕووناک" : t("darkMode") || "دۆخی تاریک"}</span>
                 </DropdownMenuItem>
@@ -636,7 +636,7 @@ function DashboardLayoutContent({
                   onClick={logout}
                   className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 rounded-lg"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className="me-2 h-4 w-4" />
                   <span>{t("signOut") || "چوونەدەرەوە"}</span>
                 </DropdownMenuItem>
               </div>
@@ -648,7 +648,7 @@ function DashboardLayoutContent({
       {/* Main Content */}
       <main className={cn(
         "min-h-screen transition-all duration-300 bg-gradient-to-b from-background to-muted/20 dark:to-muted/10",
-        isMobile ? "pt-14" : isRTL ? "mr-64" : "ml-64"
+        isMobile ? "pt-14" : isRTL ? "me-64" : "ms-64"
       )}>
         <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
           {children}

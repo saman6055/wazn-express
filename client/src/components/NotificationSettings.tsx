@@ -242,10 +242,10 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     >
-                      <Bell className="w-4 h-4 mr-2" />
+                      <Bell className="w-4 h-4 me-2" />
                     </motion.div>
                   ) : (
-                    <Bell className="w-4 h-4 mr-2" />
+                    <Bell className="w-4 h-4 me-2" />
                   )}
                   {isKurdish ? "چالاککردنی ئاگادارییەکان" : "Enable Notifications"}
                 </Button>

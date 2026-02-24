@@ -5,7 +5,8 @@ const EMPTY_ARRAY: never[] = [];
 
 export function useBatches() {
   const listQuery = trpc.batches.list.useQuery();
-  const batches = listQuery.data ?? [];
+  const raw = listQuery.data;
+  const batches = Array.isArray(raw) ? raw : raw?.data ?? [];
   const createMutation = trpc.batches.create.useMutation();
   const updateMutation = trpc.batches.update.useMutation();
   const updateStatusMutation = trpc.batches.updateStatus.useMutation();

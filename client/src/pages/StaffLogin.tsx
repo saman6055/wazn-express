@@ -122,7 +122,7 @@ export default function StaffLogin() {
               >
                 {loginMutation.isPending ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    <Loader2 className="w-5 h-5 animate-spin me-2" />
                     چاوەڕوان بە...
                   </>
                 ) : (

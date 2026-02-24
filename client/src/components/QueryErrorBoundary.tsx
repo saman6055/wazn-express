@@ -12,7 +12,7 @@ interface State {
   error: Error | null;
 }
 
-function isTRPCClientError(e: unknown): e is TRPCClientError<unknown> {
+function isTRPCClientError(e: unknown): e is TRPCClientError<any> {
   return e instanceof TRPCClientError;
 }
 
@@ -33,7 +33,7 @@ function isAuthError(error: Error): boolean {
   if (msg.includes("invalid session") || msg.includes("session cookie") || msg.includes("please login")) return true;
   // 403 with unclear message (e.g. "[object Object]" after bad parse) or "forbidden" → treat as session, redirect
   if (status === 403 && (msg.includes("session") || msg.includes("cookie") || msg === "[object object]" || msg === "forbidden" || msg.length < 3)) return true;
-  const trpcData = isTRPCClientError(error) ? (error as TRPCClientError<{ code?: string }>).data : null;
+  const trpcData = isTRPCClientError(error) ? (error as TRPCClientError<any>).data as { code?: string } | null : null;
   if (trpcData?.code === "UNAUTHORIZED" || (trpcData?.code === "FORBIDDEN" && (msg.includes("session") || msg.includes("cookie") || msg === "[object object]"))) return true;
   return false;
 }

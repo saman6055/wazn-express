@@ -210,7 +210,7 @@ export default function MonthlyProfitReport() {
             
             <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
               <SelectTrigger className="w-[120px]">
-                <Calendar className="w-4 h-4 mr-2" />
+                <Calendar className="w-4 h-4 me-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -419,14 +419,14 @@ export default function MonthlyProfitReport() {
                         <TableCell className="text-right">
                           <span className="text-emerald-600">${row.full_package.profit.toLocaleString()}</span>
                           {row.full_package.count > 0 && (
-                            <span className="text-xs text-muted-foreground ml-1">({row.full_package.count})</span>
+                            <span className="text-xs text-muted-foreground ms-1">({row.full_package.count})</span>
                           )}
                         </TableCell>
 
                         <TableCell className="text-right">
                           <span className="text-amber-600">${row.commission.profit.toLocaleString()}</span>
                           {row.commission.count > 0 && (
-                            <span className="text-xs text-muted-foreground ml-1">({row.commission.count})</span>
+                            <span className="text-xs text-muted-foreground ms-1">({row.commission.count})</span>
                           )}
                         </TableCell>
                         <TableCell className="text-right font-bold">

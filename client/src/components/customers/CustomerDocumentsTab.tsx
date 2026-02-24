@@ -84,7 +84,7 @@ export function CustomerDocumentsTab({
                 </Badge>
                 <div className="flex gap-2 justify-center mt-2">
                   <Button variant="outline" size="sm" onClick={() => window.open(customer.passportUrl!, "_blank")}>
-                    <Eye className="h-3 w-3 mr-1" />
+                    <Eye className="h-3 w-3 me-1" />
                     {t("blog.views")}
                   </Button>
                   <Button
@@ -105,9 +105,9 @@ export function CustomerDocumentsTab({
                 disabled={uploadingDoc === "passport"}
               >
                 {uploadingDoc === "passport" ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                 ) : (
-                  <Upload className="h-4 w-4 mr-2" />
+                  <Upload className="h-4 w-4 me-2" />
                 )}
                 {t("common.upload")}
               </Button>
@@ -133,7 +133,7 @@ export function CustomerDocumentsTab({
                 </Badge>
                 <div className="flex gap-2 justify-center mt-2">
                   <Button variant="outline" size="sm" onClick={() => window.open(customer.nationalIdUrl!, "_blank")}>
-                    <Eye className="h-3 w-3 mr-1" />
+                    <Eye className="h-3 w-3 me-1" />
                     {t("blog.views")}
                   </Button>
                   <Button
@@ -154,9 +154,9 @@ export function CustomerDocumentsTab({
                 disabled={uploadingDoc === "nationalId"}
               >
                 {uploadingDoc === "nationalId" ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                 ) : (
-                  <Upload className="h-4 w-4 mr-2" />
+                  <Upload className="h-4 w-4 me-2" />
                 )}
                 {t("common.upload")}
               </Button>
@@ -182,7 +182,7 @@ export function CustomerDocumentsTab({
                 </Badge>
                 <div className="flex gap-2 justify-center mt-2">
                   <Button variant="outline" size="sm" onClick={() => window.open(customer.contractUrl!, "_blank")}>
-                    <Eye className="h-3 w-3 mr-1" />
+                    <Eye className="h-3 w-3 me-1" />
                     {t("blog.views")}
                   </Button>
                   <Button
@@ -203,9 +203,9 @@ export function CustomerDocumentsTab({
                 disabled={uploadingDoc === "contract"}
               >
                 {uploadingDoc === "contract" ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                 ) : (
-                  <Upload className="h-4 w-4 mr-2" />
+                  <Upload className="h-4 w-4 me-2" />
                 )}
                 {t("common.upload")}
               </Button>

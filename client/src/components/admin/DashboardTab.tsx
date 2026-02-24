@@ -375,7 +375,7 @@ export function DashboardTab({
                 </div>
               </div>
               <Button onClick={handleExportStatisticsPDF} variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-1" />
+                <Download className="h-4 w-4 me-1" />
                 PDF
               </Button>
             </div>

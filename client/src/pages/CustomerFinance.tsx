@@ -932,7 +932,7 @@ export default function CustomerFinance() {
           <p className="text-muted-foreground text-lg">کڕیار نەدۆزرایەوە</p>
           <Link href="/finance">
             <Button variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 me-2" />
               گەڕانەوە
             </Button>
           </Link>
@@ -981,7 +981,7 @@ export default function CustomerFinance() {
                 <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl shadow-lg">
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="w-4 h-4 me-2" />
                       پارەدان
                     </Button>
                   </DialogTrigger>
@@ -1037,7 +1037,7 @@ export default function CustomerFinance() {
                                     return acc ? `${acc.accountNameKu || acc.accountName} ($${Number(acc.currentBalance).toLocaleString()})` : "حسابێک هەڵبژێرە (ئارەزوومەندانە)";
                                   })()
                                 : "حسابێک هەڵبژێرە (ئارەزوومەندانە)"}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
@@ -1048,7 +1048,7 @@ export default function CustomerFinance() {
                                     onSelect={() => setPaymentCashAccountId('none')}
                                     className="cursor-pointer"
                                   >
-                                    <Check className={`mr-2 h-4 w-4 ${paymentCashAccountId === 'none' || !paymentCashAccountId ? 'opacity-100' : 'opacity-0'}`} />
+                                    <Check className={`me-2 h-4 w-4 ${paymentCashAccountId === 'none' || !paymentCashAccountId ? 'opacity-100' : 'opacity-0'}`} />
                                     بێ حساب
                                   </CommandItem>
                                   {activeCashAccounts?.map((acc) => (
@@ -1057,7 +1057,7 @@ export default function CustomerFinance() {
                                       onSelect={() => setPaymentCashAccountId(acc.id.toString())}
                                       className="cursor-pointer"
                                     >
-                                      <Check className={`mr-2 h-4 w-4 ${paymentCashAccountId === acc.id.toString() ? 'opacity-100' : 'opacity-0'}`} />
+                                      <Check className={`me-2 h-4 w-4 ${paymentCashAccountId === acc.id.toString() ? 'opacity-100' : 'opacity-0'}`} />
                                       <div className="flex items-center gap-2">
                                         <Landmark className="h-4 w-4 text-muted-foreground" />
                                         <span>{acc.accountNameKu || acc.accountName}</span>
@@ -1170,7 +1170,7 @@ export default function CustomerFinance() {
               <h3 className="text-lg font-semibold mb-2">هیچ حسابێک نییە بۆ ئەم کڕیارە</h3>
               <p className="text-muted-foreground mb-6">بۆ بەدواداچوونی دارایی، پێویستە حسابێک دروست بکەیت</p>
               <Button onClick={handleCreateAccount} disabled={getOrCreateAccount.isPending} className="bg-emerald-600 hover:bg-emerald-700">
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4 me-2" />
                 دروستکردنی حساب
               </Button>
             </CardContent>
@@ -1320,7 +1320,7 @@ export default function CustomerFinance() {
                           <Clock className="w-5 h-5 text-emerald-600" />
                           داهاتی کڕیار
                           {filteredTransactions && (
-                            <Badge variant="secondary" className="mr-2 bg-emerald-100 text-emerald-700">
+                            <Badge variant="secondary" className="me-2 bg-emerald-100 text-emerald-700">
                               {filteredTransactions.length}
                             </Badge>
                           )}
@@ -1463,7 +1463,7 @@ export default function CustomerFinance() {
                         <CreditCard className="w-5 h-5 text-emerald-600" />
                         پارەدانەکان
                         {payments && (
-                          <Badge variant="secondary" className="mr-2 bg-emerald-100 text-emerald-700">
+                          <Badge variant="secondary" className="me-2 bg-emerald-100 text-emerald-700">
                             {payments.length}
                           </Badge>
                         )}

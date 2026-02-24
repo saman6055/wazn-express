@@ -148,7 +148,8 @@ export default function FullPackageDetail() {
 
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: suppliers } = trpc.suppliers.list.useQuery();
-  const { data: batches } = trpc.batches.list.useQuery();
+  const { data: batchesRaw } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
 
   useEffect(() => {
     if (order) {
@@ -267,7 +268,7 @@ export default function FullPackageDetail() {
           <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("fullPackage.orderNotFound")}</h2>
           <p className="text-muted-foreground mb-6">{t("fullPackage.orderNotFoundDesc")}</p>
           <Button onClick={() => navigate("/full-package")} size="lg">
-            <ArrowRight className="h-4 w-4 ml-2" />
+            <ArrowRight className="h-4 w-4 ms-2" />
             {t("fullPackage.backToList")}
           </Button>
         </div>
@@ -318,7 +319,7 @@ export default function FullPackageDetail() {
                     onClick={() => navigate(`/full-package/${id}/edit`)}
                     className="bg-white text-emerald-700 hover:bg-emerald-50 shadow-md"
                   >
-                    <Pencil className="h-4 w-4 ml-2" />
+                    <Pencil className="h-4 w-4 ms-2" />
                     {t("common.edit")}
                   </Button>
                   <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -327,7 +328,7 @@ export default function FullPackageDetail() {
                         variant="destructive"
                         className="bg-red-500 hover:bg-red-600 shadow-md"
                       >
-                        <Trash2 className="h-4 w-4 ml-2" />
+                        <Trash2 className="h-4 w-4 ms-2" />
                         {t("fullPackage.deleteOrder")}
                       </Button>
                     </AlertDialogTrigger>
@@ -348,9 +349,9 @@ export default function FullPackageDetail() {
                           disabled={deleteMutation.isPending}
                         >
                           {deleteMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                            <Loader2 className="h-4 w-4 ms-2 animate-spin" />
                           ) : (
-                            <Trash2 className="h-4 w-4 ml-2" />
+                            <Trash2 className="h-4 w-4 ms-2" />
                           )}
                           {t("common.delete")}
                         </AlertDialogAction>
@@ -361,7 +362,7 @@ export default function FullPackageDetail() {
               ) : (
                 <Badge className={`${statusColors[order.status]} text-sm px-4 py-2 border`}>
                   {statusIcons[order.status]}
-                  <span className="mr-2">{statusLabels[order.status]}</span>
+                  <span className="me-2">{statusLabels[order.status]}</span>
                 </Badge>
               )}
             </div>
@@ -580,7 +581,7 @@ export default function FullPackageDetail() {
                 onClick={() => navigate(`/full-package/${id}`)}
                 size="lg"
               >
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRight className="h-4 w-4 ms-2" />
                 {t("common.cancel")}
               </Button>
               <Button 
@@ -590,9 +591,9 @@ export default function FullPackageDetail() {
                 size="lg"
               >
                 {updateMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 ms-2 animate-spin" />
                 ) : (
-                  <Save className="h-4 w-4 ml-2" />
+                  <Save className="h-4 w-4 ms-2" />
                 )}
                 {t("common.save")}
               </Button>
@@ -812,7 +813,7 @@ export default function FullPackageDetail() {
                   
                   {/* Formula Explanation */}
                   <div className="text-xs text-muted-foreground text-center bg-blue-50 p-3 rounded-xl border border-blue-100">
-                    <AlertCircle className="h-3 w-3 inline-block ml-1" />
+                    <AlertCircle className="h-3 w-3 inline-block ms-1" />
                     {t("fullPackage.profit")} = {t("fullPackage.sellingPrice")} - ({t("fullPackage.purchasePrice")} × {t("fullPackage.quantity")}) - {t("fullPackage.shipping")}
                   </div>
                 </CardContent>
@@ -833,7 +834,7 @@ export default function FullPackageDetail() {
                     <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{t("fullPackage.statusColumn")}</p>
                     <Badge className={`${statusColors[order.status]} text-sm px-4 py-2 border`}>
                       {statusIcons[order.status]}
-                      <span className="mr-2">{statusLabels[order.status]}</span>
+                      <span className="me-2">{statusLabels[order.status]}</span>
                     </Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -887,7 +888,7 @@ export default function FullPackageDetail() {
                     className="w-full justify-start"
                     onClick={() => navigate(`/full-package/${id}/edit`)}
                   >
-                    <Pencil className="h-4 w-4 ml-2" />
+                    <Pencil className="h-4 w-4 ms-2" />
                     {t("fullPackage.editOrder")}
                   </Button>
                   <Button
@@ -895,7 +896,7 @@ export default function FullPackageDetail() {
                     className="w-full justify-start"
                     onClick={() => navigate(`/customers/${order.customerId}`)}
                   >
-                    <User className="h-4 w-4 ml-2" />
+                    <User className="h-4 w-4 ms-2" />
                     {t("common.view")} {t("fullPackage.customer")}
                   </Button>
                   <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -904,7 +905,7 @@ export default function FullPackageDetail() {
                         variant="outline"
                         className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
-                        <Trash2 className="h-4 w-4 ml-2" />
+                        <Trash2 className="h-4 w-4 ms-2" />
                         {t("fullPackage.deleteOrder")}
                       </Button>
                     </AlertDialogTrigger>
@@ -925,9 +926,9 @@ export default function FullPackageDetail() {
                           disabled={deleteMutation.isPending}
                         >
                           {deleteMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                            <Loader2 className="h-4 w-4 ms-2 animate-spin" />
                           ) : (
-                            <Trash2 className="h-4 w-4 ml-2" />
+                            <Trash2 className="h-4 w-4 ms-2" />
                           )}
                           {t("common.delete")}
                         </AlertDialogAction>

@@ -106,19 +106,20 @@ export default function ArrivalVerificationScanner() {
   };
 
   // Queries
-  const { data: batches, refetch: refetchBatches } = trpc.batches.list.useQuery();
+  const { data: batchesRaw, refetch: refetchBatches } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const trpcUtils = trpc.useUtils();
   
   // Get batches that are in transit (ready for arrival verification)
   const availableBatches = useMemo(() => {
     if (!batches) return [];
-    return batches.filter(b => b.status === "in_transit" || b.status === "preparing");
+    return batches.filter((b: any) => b.status === "in_transit" || b.status === "preparing");
   }, [batches]);
   
   // Selected batches info
   const selectedBatches = useMemo(() => {
     if (!batches) return [];
-    return batches.filter(b => selectedBatchIds.includes(b.id));
+    return batches.filter((b: any) => selectedBatchIds.includes(b.id));
   }, [selectedBatchIds, batches]);
   
   // Calculate verification stats
@@ -157,7 +158,7 @@ export default function ArrivalVerificationScanner() {
   const unverifiedPackages = useMemo(() => {
     const unverified: (BatchPackage & { batchNumber: string })[] = [];
     batchPackages.forEach((packages, batchId) => {
-      const batch = batches?.find(b => b.id === batchId);
+      const batch = batches?.find((b: any) => b.id === batchId);
       packages.forEach(pkg => {
         if (!pkg.verified) {
           unverified.push({ ...pkg, batchNumber: batch?.batchCode || `#${batchId}` });
@@ -301,7 +302,7 @@ export default function ArrivalVerificationScanner() {
           });
           return;
         }
-        const batch = batches?.find((b) => b.id === pkg.batchId);
+        const batch = batches?.find((b: any) => b.id === pkg.batchId);
         const hasCompleteData = !!(pkg.weightKg || (pkg.lengthCm && pkg.widthCm && pkg.heightCm));
         const verifiedPkg: VerifiedPackage = {
           id: pkg.id,
@@ -353,7 +354,7 @@ export default function ArrivalVerificationScanner() {
     if (!extraPackageDialog.package) return;
     
     const pkg = extraPackageDialog.package;
-    const batch = batches?.find(b => b.id === selectedBatchIds[0]);
+    const batch = batches?.find((b: any) => b.id === selectedBatchIds[0]);
     const hasCompleteData = !!(pkg.weightKg || (pkg.lengthCm && pkg.widthCm && pkg.heightCm));
     
     // Just verify it as extra - don't actually move it
@@ -411,7 +412,7 @@ export default function ArrivalVerificationScanner() {
                     {t("scan.arrivalVerification")}
                     {continuousMode && (
                       <Badge className="bg-white/20 text-white border-white/30 animate-pulse">
-                        <Zap className="h-3 w-3 mr-1" />
+                        <Zap className="h-3 w-3 me-1" />
                         {t("scan.continuousMode")}
                       </Badge>
                     )}
@@ -481,7 +482,7 @@ export default function ArrivalVerificationScanner() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {availableBatches.map((batch) => (
+                    {availableBatches.map((batch: any) => (
                       <div
                         key={batch.id}
                         onClick={() => toggleBatchSelection(batch.id)}
@@ -558,7 +559,7 @@ export default function ArrivalVerificationScanner() {
                       onClick={() => setReportDialog(true)}
                       disabled={verifiedPackages.length === 0}
                     >
-                      <FileText className="h-4 w-4 mr-2" />
+                      <FileText className="h-4 w-4 me-2" />
                       {t("scan.report")}
                     </Button>
                   </div>
@@ -641,7 +642,7 @@ export default function ArrivalVerificationScanner() {
                                       )}
                                       {!pkg.hasCompleteData && (
                                         <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-300">
-                                          <AlertTriangle className="h-3 w-3 mr-1" />
+                                          <AlertTriangle className="h-3 w-3 me-1" />
                                           {t("scan.incomplete")}
                                         </Badge>
                                       )}
@@ -775,7 +776,7 @@ export default function ArrivalVerificationScanner() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {selectedBatches.map((batch) => {
+                      {selectedBatches.map((batch: any) => {
                         const batchPkgs = batchPackages.get(batch.id) || [];
                         const verified = batchPkgs.filter(p => p.verified).length;
                         const total = batchPkgs.length;
@@ -807,7 +808,7 @@ export default function ArrivalVerificationScanner() {
                     className="w-full justify-start"
                     onClick={clearSession}
                   >
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                    <RefreshCw className="h-4 w-4 me-2" />
                     {t("scan.resetSession")}
                   </Button>
                   <Button
@@ -815,7 +816,7 @@ export default function ArrivalVerificationScanner() {
                     className="w-full justify-start"
                     onClick={() => refetchBatches()}
                   >
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                    <RefreshCw className="h-4 w-4 me-2" />
                     {t("scan.refreshBatches")}
                   </Button>
                 </CardContent>
@@ -856,7 +857,7 @@ export default function ArrivalVerificationScanner() {
                 onClick={handleAddExtraPackage}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 me-2" />
                 {t("scan.recordAsExtra")}
               </Button>
             </DialogFooter>
@@ -962,7 +963,7 @@ export default function ArrivalVerificationScanner() {
                 {t("scan.close")}
               </Button>
               <Button className="bg-emerald-600 hover:bg-emerald-700">
-                <Printer className="h-4 w-4 mr-2" />
+                <Printer className="h-4 w-4 me-2" />
                 {t("scan.print")}
               </Button>
             </DialogFooter>

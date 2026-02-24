@@ -79,7 +79,10 @@ export async function createBatch(data: InsertBatch): Promise<Batch> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.insert(batches).values(data);
-  const inserted = await db.select().from(batches).where(eq(batches.id, Number(result[0].insertId))).limit(1);
+  const insertId = Number(result[0].insertId);
+  if (!insertId) throw new Error("Failed to insert batch");
+  const inserted = await db.select().from(batches).where(eq(batches.id, insertId)).limit(1);
+  if (!inserted[0]) throw new Error("Failed to retrieve inserted batch");
   return inserted[0];
 }
 
@@ -102,11 +105,14 @@ export async function getAllBatches(options: { page?: number; pageSize?: number 
     originWarehouseId: batches.originWarehouseId,
     destinationCountryId: batches.destinationCountryId,
     shippingType: batches.shippingType,
+    carrierInfo: batches.carrierInfo,
     status: batches.status,
     totalPackages: batches.totalPackages,
     totalWeight: batches.totalWeight,
     actualWeightKg: batches.actualWeightKg,
     actualCbm: batches.actualCbm,
+    costPerKg: batches.costPerKg,
+    costPerCbm: batches.costPerCbm,
     pricePerKg: batches.pricePerKg,
     pricePerCbm: batches.pricePerCbm,
     useTieredPricing: batches.useTieredPricing,

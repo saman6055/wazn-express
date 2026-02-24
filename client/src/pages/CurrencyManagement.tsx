@@ -142,7 +142,7 @@ export default function CurrencyManagement() {
               </div>
             </div>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 ml-2" />
+              <Plus className="h-4 w-4 ms-2" />
               دراوی نوێ
             </Button>
           </div>
@@ -165,7 +165,7 @@ export default function CurrencyManagement() {
                   <TableCell className="font-mono font-semibold">
                     {currency.code}
                     {currency.isBaseCurrency && (
-                      <Star className="inline h-4 w-4 mr-1 text-yellow-500 fill-yellow-500" />
+                      <Star className="inline h-4 w-4 me-1 text-yellow-500 fill-yellow-500" />
                     )}
                   </TableCell>
                   <TableCell>{currency.name}</TableCell>

@@ -86,7 +86,8 @@ const [, setLocation] = useLocation();
   
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: warehouses } = trpc.warehouses.list.useQuery();
-  const { data: batches } = trpc.batches.list.useQuery();
+  const { data: batchesRaw } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: categories } = trpc.productCategories.listActive.useQuery();
   
   const createMutation = trpc.packages.register.useMutation({
@@ -115,8 +116,8 @@ const [, setLocation] = useLocation();
   // Get batches filtered by shipping type
   const filteredBatches = useMemo(() => {
     if (!batches || !shippingType) return [];
-    return batches.filter(b => 
-      b.shippingType === shippingType && 
+    return batches.filter((b: any) =>
+      b.shippingType === shippingType &&
       b.status === 'preparing'
     );
   }, [batches, shippingType]);
@@ -131,9 +132,9 @@ const [, setLocation] = useLocation();
   // Calculate estimated price from batch
   const estimatedPrice = useMemo(() => {
     if (!selectedBatchId || selectedBatchId === 'none') return null;
-    const batch = batches?.find(b => b.id === parseInt(selectedBatchId));
+    const batch = batches?.find((b: any) => b.id === parseInt(selectedBatchId));
     if (!batch) return null;
-    
+
     if (batch.shippingType === 'sea' && batch.pricePerCbm && calculatedCbm) {
       const price = parseFloat(batch.pricePerCbm) * parseFloat(calculatedCbm);
       return { price: price.toFixed(2), unit: 'CBM', rate: batch.pricePerCbm };
@@ -146,7 +147,7 @@ const [, setLocation] = useLocation();
 
   const selectedCustomer = customers?.find(c => c.id === parseInt(selectedCustomerId));
   const selectedCategory = categories?.find(c => c.id === parseInt(selectedCategoryId));
-  const selectedBatch = batches?.find(b => b.id === parseInt(selectedBatchId));
+  const selectedBatch = batches?.find((b: any) => b.id === parseInt(selectedBatchId));
 
   // Handle photo upload
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -294,7 +295,7 @@ const [, setLocation] = useLocation();
               </div>
               <div className="flex gap-3 pt-4">
                 <Button variant="outline" className="flex-1" onClick={resetForm}>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 me-2" />
                   Register Another
                 </Button>
                 <Button className="flex-1" onClick={() => setLocation("/packages")}>
@@ -359,7 +360,7 @@ const [, setLocation] = useLocation();
                         }
                       }}
                     >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      <AlertTriangle className="h-4 w-4 me-2" />
                       {isUnclaimed ? "Unclaimed" : "No Owner"}
                     </Button>
                   </div>
@@ -687,7 +688,7 @@ const [, setLocation] = useLocation();
                         <p className="text-sm text-muted-foreground">Package will be registered without batch assignment</p>
                       </div>
                       
-                      {filteredBatches.map(batch => (
+                      {filteredBatches.map((batch: any) => (
                         <div
                           key={batch.id}
                           onClick={() => setSelectedBatchId(batch.id.toString())}
@@ -808,14 +809,14 @@ const [, setLocation] = useLocation();
             <div className="flex gap-2">
               {currentStep > 1 && (
                 <Button variant="outline" onClick={goBack} className="flex-1">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  <ArrowLeft className="h-4 w-4 me-2" />
                   Back
                 </Button>
               )}
               {currentStep < 5 ? (
                 <Button onClick={goNext} disabled={!canGoNext()} className="flex-1">
                   Next
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                  <ArrowRight className="h-4 w-4 ms-2" />
                 </Button>
               ) : (
                 <Button 
@@ -824,7 +825,7 @@ const [, setLocation] = useLocation();
                   className="flex-1 bg-green-600 hover:bg-green-700"
                 >
                   {createMutation.isPending ? "Registering..." : "Register Package"}
-                  <Check className="h-4 w-4 ml-2" />
+                  <Check className="h-4 w-4 ms-2" />
                 </Button>
               )}
             </div>

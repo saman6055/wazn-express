@@ -476,7 +476,7 @@ export async function getDashboardRevenueChart(days: number = 30): Promise<{ dat
             GROUP BY DATE(createdAt) 
             ORDER BY date`
       );
-      const rawRevenue = (Array.isArray(revenueResult) ? revenueResult[0] : revenueResult) as any[];
+      const rawRevenue = (Array.isArray(revenueResult) ? revenueResult[0] : revenueResult) as unknown as any[];
       revenueData = (rawRevenue || []).map((r: any) => ({
         date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date),
         revenue: String(r.revenue ?? '0'),
@@ -497,7 +497,7 @@ export async function getDashboardRevenueChart(days: number = 30): Promise<{ dat
             GROUP BY DATE(createdAt)
             ORDER BY date`
       );
-      const rawPackages = (Array.isArray(packageResult) ? packageResult[0] : packageResult) as any[];
+      const rawPackages = (Array.isArray(packageResult) ? packageResult[0] : packageResult) as unknown as any[];
       packageData = (rawPackages || []).map((p: any) => ({
         date: p.date instanceof Date ? p.date.toISOString().split('T')[0] : String(p.date),
         count: Number(p.count || 0),
@@ -563,7 +563,7 @@ export async function getDashboardProfitLossChart(days: number = 30): Promise<{ 
             GROUP BY DATE(createdAt) 
             ORDER BY date`
       );
-      const rawRevenue = (Array.isArray(revenueResult) ? revenueResult[0] : revenueResult) as any[];
+      const rawRevenue = (Array.isArray(revenueResult) ? revenueResult[0] : revenueResult) as unknown as any[];
       revenueData = (rawRevenue || []).map((r: any) => ({
         date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date),
         revenue: String(r.revenue ?? '0'),
@@ -581,7 +581,7 @@ export async function getDashboardProfitLossChart(days: number = 30): Promise<{ 
             GROUP BY DATE(expenseDate)
             ORDER BY date`
       );
-      const rawExpenses = (Array.isArray(expenseResult) ? expenseResult[0] : expenseResult) as any[];
+      const rawExpenses = (Array.isArray(expenseResult) ? expenseResult[0] : expenseResult) as unknown as any[];
       expenseData = (rawExpenses || []).map((e: any) => ({
         date: e.date instanceof Date ? e.date.toISOString().split('T')[0] : String(e.date),
         expenses: String(e.expenses ?? '0'),

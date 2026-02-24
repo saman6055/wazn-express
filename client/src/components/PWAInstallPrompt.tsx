@@ -115,7 +115,7 @@ export function PWAInstallPrompt() {
                 onClick={handleInstall}
                 className="bg-orange-500 hover:bg-orange-600 text-white w-full"
               >
-                <Download className="h-4 w-4 ml-2" />
+                <Download className="h-4 w-4 ms-2" />
                 دابەزاندن
               </Button>
             )}

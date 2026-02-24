@@ -9,16 +9,16 @@ export const customerPortalRouter = router({
     getMyAccount: protectedProcedure.query(async ({ ctx }) => {
       // For merged model, the user IS the customer if isCustomer is true
       if (ctx.user.isCustomer) {
-        const customer = ctx.user as any;
+        const customer = ctx.user as Record<string, unknown>;
         return {
-          id: customer.id,
-          customerCode: customer.customerCode,
-          fullName: customer.fullName || customer.name,
-          mobileNumber: customer.mobileNumber,
-          email: customer.email,
-          country: customer.country,
-          city: customer.city,
-          address: customer.address,
+          id: customer.id as number,
+          customerCode: (customer.customerCode as string) || '',
+          fullName: (customer.fullName as string) || (customer.name as string) || '',
+          mobileNumber: (customer.mobileNumber as string) || '',
+          email: (customer.email as string) || '',
+          country: (customer.country as string) || '',
+          city: (customer.city as string) || '',
+          address: (customer.address as string) || '',
         };
       }
       // Legacy: find customer linked to this user

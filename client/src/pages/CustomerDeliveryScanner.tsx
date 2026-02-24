@@ -139,11 +139,11 @@ function SignaturePad({
       </div>
       <div className="flex gap-2">
         <Button variant="outline" size="sm" onClick={clear} className="flex-1">
-          <X className="h-4 w-4 mr-1" />
+          <X className="h-4 w-4 me-1" />
           {clearLabel}
         </Button>
         <Button size="sm" onClick={save} disabled={!hasSignature} className="flex-1 bg-rose-600 hover:bg-rose-700">
-          <Check className="h-4 w-4 mr-1" />
+          <Check className="h-4 w-4 me-1" />
           {confirmLabel}
         </Button>
       </div>
@@ -447,7 +447,7 @@ export default function CustomerDeliveryScanner() {
                     {t("scan.customerDelivery")}
                     {continuousMode && (
                       <Badge className="bg-white/20 text-white border-white/30 animate-pulse">
-                        <Zap className="h-3 w-3 mr-1" />
+                        <Zap className="h-3 w-3 me-1" />
                         {t("scan.continuousMode")}
                       </Badge>
                     )}
@@ -646,7 +646,7 @@ export default function CustomerDeliveryScanner() {
                         className="flex-1"
                         onClick={handleCancel}
                       >
-                        <X className="h-4 w-4 mr-2" />
+                        <X className="h-4 w-4 me-2" />
                         {t("scan.cancel")}
                       </Button>
                       <Button
@@ -655,9 +655,9 @@ export default function CustomerDeliveryScanner() {
                         disabled={updateStatusMutation.isPending}
                       >
                         {updateStatusMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-4 w-4 me-2 animate-spin" />
                         ) : (
-                          <Send className="h-4 w-4 mr-2" />
+                          <Send className="h-4 w-4 me-2" />
                         )}
                         {t("scan.deliver")}
                       </Button>
@@ -692,7 +692,7 @@ export default function CustomerDeliveryScanner() {
                                 </Badge>
                                 {pkg.signature && (
                                   <Badge className="text-xs bg-green-100 text-green-700">
-                                    <PenTool className="h-3 w-3 mr-1" />
+                                    <PenTool className="h-3 w-3 me-1" />
                                     {t("scan.signature")}
                                   </Badge>
                                 )}
@@ -891,9 +891,9 @@ export default function CustomerDeliveryScanner() {
                 className="bg-rose-600 hover:bg-rose-700"
               >
                 {updateStatusMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                 ) : (
-                  <Check className="h-4 w-4 mr-2" />
+                  <Check className="h-4 w-4 me-2" />
                 )}
                 {t("scan.confirm")}
               </Button>
@@ -971,7 +971,7 @@ export default function CustomerDeliveryScanner() {
                 {t("scan.close")}
               </Button>
               <Button className="bg-rose-600 hover:bg-rose-700">
-                <Printer className="h-4 w-4 mr-2" />
+                <Printer className="h-4 w-4 me-2" />
                 {t("scan.print")}
               </Button>
             </DialogFooter>

@@ -63,9 +63,9 @@ export function ImportExportSection({
             disabled={isExporting}
           >
             {isExporting ? (
-              <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+              <RotateCcw className="h-4 w-4 me-2 animate-spin" />
             ) : (
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 me-2" />
             )}
             {t("dataManagement.exportAll")}
           </Button>
@@ -187,11 +187,11 @@ export function ImportExportSection({
                   >
                     {isImportPending ? (
                       <>
-                        <RotateCcw className="h-4 w-4 mr-2 animate-spin" /> {t("dataManagement.importing")}
+                        <RotateCcw className="h-4 w-4 me-2 animate-spin" /> {t("dataManagement.importing")}
                       </>
                     ) : (
                       <>
-                        <Upload className="h-4 w-4 mr-2" /> {t("dataManagement.startImport")}
+                        <Upload className="h-4 w-4 me-2" /> {t("dataManagement.startImport")}
                       </>
                     )}
                   </Button>
@@ -229,7 +229,7 @@ export function ImportExportSection({
                   <label htmlFor={`import-merged-${category.id}`}>
                     <Button variant="outline" size="sm" className="cursor-pointer" asChild>
                       <span>
-                        <Upload className="h-3 w-3 mr-1" /> {t("dataManagement.import")}
+                        <Upload className="h-3 w-3 me-1" /> {t("dataManagement.import")}
                       </span>
                     </Button>
                   </label>

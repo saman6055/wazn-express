@@ -312,11 +312,11 @@ export default function SystemMonitorDashboard() {
             size="sm"
             onClick={() => setAutoRefresh(!autoRefresh)}
           >
-            {autoRefresh ? <Bell className="h-4 w-4 mr-2" /> : <BellOff className="h-4 w-4 mr-2" />}
+            {autoRefresh ? <Bell className="h-4 w-4 me-2" /> : <BellOff className="h-4 w-4 me-2" />}
             {autoRefresh ? "Auto" : "Manual"}
           </Button>
           <Button variant="outline" size="sm" onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4 me-2" />
             {t.refresh}
           </Button>
           <Button 
@@ -325,7 +325,7 @@ export default function SystemMonitorDashboard() {
             onClick={() => markAllAsRead.mutate()}
             disabled={markAllAsRead.isPending || (statsData?.unread || 0) === 0}
           >
-            <Check className="h-4 w-4 mr-2" />
+            <Check className="h-4 w-4 me-2" />
             {t.markAllAsRead}
           </Button>
         </div>
@@ -601,7 +601,7 @@ export default function SystemMonitorDashboard() {
                               <h4 className="font-medium truncate">{alert.title}</h4>
                               <Badge variant="outline" className={getSeverityBadge(alert.severity)}>
                                 {getSeverityIcon(alert.severity)}
-                                <span className="ml-1">{t[alert.severity as keyof typeof t]}</span>
+                                <span className="ms-1">{t[alert.severity as keyof typeof t]}</span>
                               </Badge>
                               {!alert.isRead && (
                                 <Badge variant="secondary" className="bg-primary/10 text-primary">

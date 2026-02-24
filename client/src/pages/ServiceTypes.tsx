@@ -136,7 +136,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           <div className="flex gap-2">
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4 mr-2" />{t("auto.text_1092e1")} </Button>
+                <Button><Plus className="h-4 w-4 me-2" />{t("auto.text_1092e1")} </Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>

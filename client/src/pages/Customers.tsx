@@ -190,8 +190,8 @@ const [, setLocation] = useLocation();
     : IRAQI_CITIES;
 
   const filteredCustomers = useFilteredCustomers(
-    customers,
-    vipCustomers?.map((v) => v.customerId),
+    customers as any,
+    vipCustomers?.map((v: any) => v.customerId),
     { search, statusFilter, cityFilter, governorateFilter, balanceFilter, vipFilter }
   );
 
@@ -358,7 +358,7 @@ const [, setLocation] = useLocation();
                 onClick={() => setLocation("/settings/customer-options")}
                 className="hidden sm:flex"
               >
-                <Settings className="h-4 w-4 mr-2" />
+                <Settings className="h-4 w-4 me-2" />
                 {t("common.settings")}
               </Button>
               <Dialog open={isCreateOpen} onOpenChange={(open) => {
@@ -367,7 +367,7 @@ const [, setLocation] = useLocation();
               }}>
                 <DialogTrigger asChild>
                   <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20">
-                    <UserPlus className="h-4 w-4 mr-2" />
+                    <UserPlus className="h-4 w-4 me-2" />
                     {t("customers.addCustomer")}
                   </Button>
                 </DialogTrigger>
@@ -687,7 +687,7 @@ const [, setLocation] = useLocation();
                               size="sm"
                               onClick={() => passportInputRef.current?.click()}
                             >
-                              <Upload className="h-4 w-4 mr-1" />
+                              <Upload className="h-4 w-4 me-1" />
                               {t("common.upload")}
                             </Button>
                             {passportFile && (
@@ -732,7 +732,7 @@ const [, setLocation] = useLocation();
                               size="sm"
                               onClick={() => nationalIdInputRef.current?.click()}
                             >
-                              <Upload className="h-4 w-4 mr-1" />
+                              <Upload className="h-4 w-4 me-1" />
                               {t("common.upload")}
                             </Button>
                             {nationalIdFile && (
@@ -777,7 +777,7 @@ const [, setLocation] = useLocation();
                               size="sm"
                               onClick={() => contractInputRef.current?.click()}
                             >
-                              <Upload className="h-4 w-4 mr-1" />
+                              <Upload className="h-4 w-4 me-1" />
                               {t("common.upload")}
                             </Button>
                             {contractFile && (
@@ -915,11 +915,11 @@ const [, setLocation] = useLocation();
               <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-fit">
-                    <Filter className="h-4 w-4 mr-2" />
+                    <Filter className="h-4 w-4 me-2" />
                     {t("common.advancedFilters")}
-                    <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${isFiltersOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`h-4 w-4 ms-2 transition-transform ${isFiltersOpen ? "rotate-180" : ""}`} />
                     {hasActiveFilters && (
-                      <Badge variant="secondary" className="ml-2 h-5 px-1.5">
+                      <Badge variant="secondary" className="ms-2 h-5 px-1.5">
                         {[cityFilter, governorateFilter, balanceFilter !== "all", vipFilter !== "all"].filter(Boolean).length}
                       </Badge>
                     )}
@@ -1010,7 +1010,7 @@ const [, setLocation] = useLocation();
                     {hasActiveFilters && (
                       <div className="flex justify-end">
                         <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-muted-foreground">
-                          <X className="h-4 w-4 mr-1" />
+                          <X className="h-4 w-4 me-1" />
                           {t("common.clearFilters")}
                         </Button>
                       </div>
@@ -1050,7 +1050,7 @@ const [, setLocation] = useLocation();
                                 getVipTier(customer.id) === 'gold' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' :
                                 'bg-gradient-to-r from-slate-300 to-slate-400 text-slate-700'
                               }`}>
-                                <Crown className="h-2.5 w-2.5 mr-0.5" />
+                                <Crown className="h-2.5 w-2.5 me-0.5" />
                                 {getVipTier(customer.id)?.toUpperCase()}
                               </Badge>
                             )}
@@ -1065,10 +1065,10 @@ const [, setLocation] = useLocation();
                           <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                           {customer.mobileNumber}
                         </div>
-                        {customer.email && (
+                        {(customer as any).email && (
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Mail className="h-3 w-3" />
-                            {customer.email}
+                            {(customer as any).email}
                           </div>
                         )}
                       </div>

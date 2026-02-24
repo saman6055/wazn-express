@@ -25,7 +25,8 @@ const [search, setSearch] = useState("");
   // Queries
   const { data: unclaimedPackages, refetch } = trpc.packages.getUnclaimed.useQuery();
   const { data: customers } = trpc.customers.list.useQuery();
-  const { data: batches } = trpc.batches.list.useQuery();
+  const { data: batchesRaw } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   
   // Mutation
   const claimMutation = trpc.packages.claimPackage.useMutation({
@@ -67,7 +68,7 @@ const [search, setSearch] = useState("");
   
   const getBatchCode = (batchId: number | null) => {
     if (!batchId) return "-";
-    return batches?.find(b => b.id === batchId)?.batchCode || "-";
+    return batches?.find((b: any) => b.id === batchId)?.batchCode || "-";
   };
   
   const openClaimDialog = (packageId: number) => {
@@ -206,7 +207,7 @@ const [search, setSearch] = useState("");
                             size="sm"
                             onClick={() => openClaimDialog(pkg.id)}
                           >
-                            <UserPlus className="h-4 w-4 mr-1" />
+                            <UserPlus className="h-4 w-4 me-1" />
                             Claim
                           </Button>
                         </TableCell>
@@ -291,12 +292,12 @@ const [search, setSearch] = useState("");
               >
                 {claimMutation.isPending ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 me-2 animate-spin" />
                     Claiming...
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    <CheckCircle2 className="h-4 w-4 me-2" />
                     Confirm Claim
                   </>
                 )}

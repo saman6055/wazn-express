@@ -243,7 +243,7 @@ const [searchQuery, setSearchQuery] = useState("");
             onClick={handleOpenCreate}
             className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 me-2" />
             {t("auto.text_dd2856")}
           </Button>
         </div>
@@ -355,7 +355,7 @@ const [searchQuery, setSearchQuery] = useState("");
                 <Store className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">{t("auto.text_5203e4")} </p>
                 <Button className="mt-4" onClick={handleOpenCreate}>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 me-2" />
                   {t("auto.text_5641c0")}
                 </Button>
               </div>
@@ -445,10 +445,10 @@ const [searchQuery, setSearchQuery] = useState("");
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleOpenEdit(supplier)}>
-                              <Edit className="h-4 w-4 mr-2" />{t("common.edit")}</DropdownMenuItem>
+                              <Edit className="h-4 w-4 me-2" />{t("common.edit")}</DropdownMenuItem>
                             {(supplier as any).website && (
                               <DropdownMenuItem onClick={() => window.open((supplier as any).website, "_blank")}>
-                                <ExternalLink className="h-4 w-4 mr-2" />
+                                <ExternalLink className="h-4 w-4 me-2" />
                                 {t("auto.text_6f00ef")}
                               </DropdownMenuItem>
                             )}
@@ -457,7 +457,7 @@ const [searchQuery, setSearchQuery] = useState("");
                               className="text-red-600"
                               onClick={() => setDeleteId(supplier.id)}
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />{t("common.delete")}</DropdownMenuItem>
+                              <Trash2 className="h-4 w-4 me-2" />{t("common.delete")}</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -554,7 +554,7 @@ const [searchQuery, setSearchQuery] = useState("");
                             {[...Array(r)].map((_, i) => (
                               <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
                             ))}
-                            <span className="ml-2">{r} {t("auto.text_da39b2")}</span>
+                            <span className="ms-2">{r} {t("auto.text_da39b2")}</span>
                           </div>
                         </SelectItem>
                       ))}

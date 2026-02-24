@@ -137,7 +137,7 @@ export default function ModernPortalFinancial() {
                     "flex-1 py-3 rounded-xl font-medium text-sm transition-all",
                     "bg-white text-violet-600 hover:bg-white/90"
                   )}>
-                    <CreditCard className="w-4 h-4 inline-block mr-2" />
+                    <CreditCard className="w-4 h-4 inline-block me-2" />
                     {language === "ku" ? "پارەدان" : "Pay Now"}
                   </button>
                 </Link>
@@ -145,7 +145,7 @@ export default function ModernPortalFinancial() {
                   "flex-1 py-3 rounded-xl font-medium text-sm transition-all",
                   "bg-white/20 text-white hover:bg-white/30"
                 )}>
-                  <Download className="w-4 h-4 inline-block mr-2" />
+                  <Download className="w-4 h-4 inline-block me-2" />
                   {language === "ku" ? "ڕاپۆرت" : "Report"}
                 </button>
               </div>

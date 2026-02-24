@@ -280,7 +280,7 @@ export default function UnifiedProfitDashboard() {
           <div className="flex items-center gap-2">
             <Select value={dateRange} onValueChange={(v: any) => setDateRange(v)}>
               <SelectTrigger className="w-[140px]">
-                <Calendar className="w-4 h-4 mr-2" />
+                <Calendar className="w-4 h-4 me-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

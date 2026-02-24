@@ -257,9 +257,9 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
         {hasChanges && (
           <Button onClick={saveAllSettings} disabled={updateSetting.isPending}>
             {updateSetting.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="me-2 h-4 w-4 animate-spin" />
             ) : (
-              <Save className="mr-2 h-4 w-4" />
+              <Save className="me-2 h-4 w-4" />
             )}
             Save All Changes
           </Button>
@@ -305,9 +305,9 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
               disabled={saveWhatsappConfig.isPending || !whatsappConfig.apiKey}
             >
               {saveWhatsappConfig.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="me-2 h-4 w-4 animate-spin" />
               ) : (
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="me-2 h-4 w-4" />
               )}
               Save WhatsApp Config
             </Button>
@@ -376,7 +376,7 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
                       
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="sm">
-                          <Settings className="h-4 w-4 mr-1" />
+                          <Settings className="h-4 w-4 me-1" />
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </Button>
                       </CollapsibleTrigger>
@@ -409,9 +409,9 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
                           disabled={updateSetting.isPending}
                         >
                           {updateSetting.isPending ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="me-2 h-4 w-4 animate-spin" />
                           ) : (
-                            <Save className="mr-2 h-4 w-4" />
+                            <Save className="me-2 h-4 w-4" />
                           )}
                           Save This Event
                         </Button>
@@ -482,7 +482,7 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
                       
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="sm">
-                          <Settings className="h-4 w-4 mr-1" />
+                          <Settings className="h-4 w-4 me-1" />
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </Button>
                       </CollapsibleTrigger>
@@ -515,9 +515,9 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
                           disabled={updateSetting.isPending}
                         >
                           {updateSetting.isPending ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="me-2 h-4 w-4 animate-spin" />
                           ) : (
-                            <Save className="mr-2 h-4 w-4" />
+                            <Save className="me-2 h-4 w-4" />
                           )}
                           Save This Event
                         </Button>

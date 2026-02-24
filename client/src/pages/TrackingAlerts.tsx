@@ -295,7 +295,7 @@ export default function TrackingAlerts() {
                   variant="outline"
                   className="bg-white/20 border-white/30 text-white hover:bg-white/30"
                 >
-                  <Download className="h-4 w-4 ml-2" />
+                  <Download className="h-4 w-4 ms-2" />
                   Excel
                 </Button>
                 <div className="flex items-center gap-6 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-4">

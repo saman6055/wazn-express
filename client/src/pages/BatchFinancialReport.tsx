@@ -902,7 +902,7 @@ export default function BatchFinancialReport() {
               <p className="text-lg font-medium">باچ نەدۆزرایەوە</p>
               <Link href="/batches">
                 <Button variant="outline" className="mt-4">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  <ArrowLeft className="me-2 h-4 w-4" />
                   گەڕانەوە بۆ باچەکان
                 </Button>
               </Link>
@@ -1301,7 +1301,7 @@ export default function BatchFinancialReport() {
               </div>
               <div>
                 <span className="text-lg">{selectedCustomer?.name}</span>
-                <Badge variant="outline" className="mr-2 text-xs">{selectedCustomer?.code}</Badge>
+                <Badge variant="outline" className="me-2 text-xs">{selectedCustomer?.code}</Badge>
               </div>
             </DialogTitle>
             <DialogDescription>
@@ -1417,18 +1417,18 @@ export default function BatchFinancialReport() {
                           {pkg.isFullPackage ? (
                             pkg.fullPackageOrderType === 'commission' ? (
                               <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200">
-                                <DollarSign className="h-3 w-3 ml-1" />
+                                <DollarSign className="h-3 w-3 ms-1" />
                                 کڕین بە عمولە
                               </Badge>
                             ) : (
                               <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">
-                                <ShoppingBag className="h-3 w-3 ml-1" />
+                                <ShoppingBag className="h-3 w-3 ms-1" />
                                 فول پاکێج
                               </Badge>
                             )
                           ) : (
                             <Badge variant="outline" className="text-slate-600">
-                              <Package className="h-3 w-3 ml-1" />
+                              <Package className="h-3 w-3 ms-1" />
                               ئاسایی
                             </Badge>
                           )}
@@ -1597,7 +1597,7 @@ export default function BatchFinancialReport() {
                           customer: {
                             name: selectedCustomer?.name ?? fullCustomer?.fullNameKurdish ?? fullCustomer?.fullName ?? '',
                             code: selectedCustomer?.code ?? fullCustomer?.customerCode ?? undefined,
-                            phone: fullCustomer?.phone ?? undefined,
+                            phone: (fullCustomer as any)?.phone ?? undefined,
                             city: fullCustomer?.city ?? undefined,
                           },
                           batch: { batchCode: batch?.batchCode, shippingType: batch?.shippingType },
@@ -1649,7 +1649,7 @@ export default function BatchFinancialReport() {
                           customer: {
                             name: selectedCustomer?.name ?? fullCustomer?.fullNameKurdish ?? fullCustomer?.fullName ?? '',
                             code: selectedCustomer?.code ?? fullCustomer?.customerCode ?? undefined,
-                            phone: fullCustomer?.phone ?? undefined,
+                            phone: (fullCustomer as any)?.phone ?? undefined,
                             city: fullCustomer?.city ?? undefined,
                           },
                           batch: { batchCode: batch?.batchCode, shippingType: batch?.shippingType },

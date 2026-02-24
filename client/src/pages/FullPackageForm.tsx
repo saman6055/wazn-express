@@ -169,7 +169,7 @@ export default function FullPackageForm() {
                         {selectedCustomer
                           ? `${selectedCustomer.fullName || selectedCustomer.fullNameKurdish} (${selectedCustomer.customerCode})`
                           : "کڕیارێک هەڵبژێرە..."}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
@@ -194,7 +194,7 @@ export default function FullPackageForm() {
                               >
                                 <Check
                                   className={cn(
-                                    "mr-2 h-4 w-4",
+                                    "me-2 h-4 w-4",
                                     formData.customerId === customer.id.toString()
                                       ? "opacity-100"
                                       : "opacity-0"
@@ -496,9 +496,9 @@ export default function FullPackageForm() {
               className="bg-emerald-600 hover:bg-emerald-700"
             >
               {createMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                <Loader2 className="h-4 w-4 animate-spin ms-2" />
               ) : (
-                <Save className="h-4 w-4 ml-2" />
+                <Save className="h-4 w-4 ms-2" />
               )}
               پاشەکەوتکردن
             </Button>

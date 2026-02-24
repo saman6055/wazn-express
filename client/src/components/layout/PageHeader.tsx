@@ -3,10 +3,7 @@ import { cn } from "@/lib/utils";
 
 export type PageHeaderVariant = "gradient" | "solid" | "muted" | "white";
 
-const variantStyles: Record<
-  PageHeaderVariant,
-  { wrapper: string; iconBg: string; title: string; subtitle: string }
-> = {
+const variantStyles: Record<PageHeaderVariant, string> = {
   gradient:
     "relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6 md:p-8 text-white shadow-xl",
   solid:
@@ -66,7 +63,7 @@ export function PageHeader({
     <header
       className={cn(
         "relative",
-        variantStyles[variant].wrapper,
+        variantStyles[variant],
         className // e.g. custom gradient: from-blue-600 to-indigo-600
       )}
     >

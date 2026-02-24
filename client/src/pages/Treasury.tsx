@@ -261,7 +261,7 @@ const [activeTab, setActiveTab] = useState("accounts");
             <Dialog open={showAddTransaction} onOpenChange={setShowAddTransaction}>
               <DialogTrigger asChild>
                 <Button variant="outline">
-                  <ArrowLeftRight className="mr-2 h-4 w-4" />
+                  <ArrowLeftRight className="me-2 h-4 w-4" />
                   {t("treasury.newTransaction")}
                 </Button>
               </DialogTrigger>
@@ -396,7 +396,7 @@ const [activeTab, setActiveTab] = useState("accounts");
             <Dialog open={showAddAccount} onOpenChange={setShowAddAccount}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="me-2 h-4 w-4" />
                  {t("treasury.newAccount")}
                 </Button>
               </DialogTrigger>
@@ -614,7 +614,7 @@ const [activeTab, setActiveTab] = useState("accounts");
                       setShowTransactions(true);
                     }}
                   >
-                    <History className="mr-2 h-4 w-4" />
+                    <History className="me-2 h-4 w-4" />
                     {t("common.history")}
                   </Button>
                   <Button

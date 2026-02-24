@@ -118,7 +118,8 @@ export default function CommissionDashboard() {
     status: statusFilter !== "all" ? statusFilter : undefined,
   });
 
-  const { data: batches } = trpc.batches.list.useQuery();
+  const { data: batchesRaw } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: settings } = trpc.settings.list.useQuery();
 
@@ -446,17 +447,17 @@ export default function CommissionDashboard() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-0">
-                    <Download className="h-4 w-4 ml-2" />
+                    <Download className="h-4 w-4 ms-2" />
                     {t("common.export")}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={exportToExcel}>
-                    <FileSpreadsheet className="h-4 w-4 ml-2 text-green-600" />
+                    <FileSpreadsheet className="h-4 w-4 ms-2 text-green-600" />
                     {t("commission.exportExcel")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={exportToPDF}>
-                    <FileText className="h-4 w-4 ml-2 text-red-600" />
+                    <FileText className="h-4 w-4 ms-2 text-red-600" />
                     {t("commission.exportPDF")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -467,14 +468,14 @@ export default function CommissionDashboard() {
                 onClick={() => navigate("/commission/bulk-create?type=commission")}
                 className="bg-white/80 text-amber-700 hover:bg-amber-50 border-amber-300"
               >
-                <PackagePlus className="h-4 w-4 ml-2" />
+                <PackagePlus className="h-4 w-4 ms-2" />
                 {t("commission.bulkCreate")}
               </Button>
               <Button
                 onClick={() => navigate("/commission/new")}
                 className="bg-white text-amber-700 hover:bg-amber-50"
               >
-                <Plus className="h-4 w-4 ml-2" />
+                <Plus className="h-4 w-4 ms-2" />
                 {t("commission.newOrder")}
               </Button>
             </div>
@@ -585,7 +586,7 @@ export default function CommissionDashboard() {
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full sm:w-48">
-                    <Filter className="h-4 w-4 ml-2" />
+                    <Filter className="h-4 w-4 ms-2" />
                     <SelectValue placeholder={t("common.all")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -617,7 +618,7 @@ export default function CommissionDashboard() {
                     <h4 className="font-medium text-sm">{t("commission.advancedFiltersTitle")}</h4>
                     {hasActiveFilters && (
                       <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-red-600 hover:text-red-700">
-                        <X className="h-4 w-4 ml-1" />
+                        <X className="h-4 w-4 ms-1" />
                         {t("commission.clearAllFilters")}
                       </Button>
                     )}
@@ -748,7 +749,7 @@ export default function CommissionDashboard() {
                 <div className="text-sm text-muted-foreground">
                   {t("commission.ordersCountFound", { count: String(filteredOrders.length) })}
                   {hasActiveFilters && (
-                    <span className="text-amber-600 mr-2">{t("commission.filteredBadge")}</span>
+                    <span className="text-amber-600 me-2">{t("commission.filteredBadge")}</span>
                   )}
                 </div>
                 
@@ -797,7 +798,7 @@ export default function CommissionDashboard() {
                   variant="outline"
                   onClick={() => navigate("/commission/new")}
                 >
-                  <Plus className="h-4 w-4 ml-2" />
+                  <Plus className="h-4 w-4 ms-2" />
                   {t("commission.addFirstOrderButton")}
                 </Button>
               </div>
@@ -873,7 +874,7 @@ export default function CommissionDashboard() {
                         <TableCell>
                           {(order as any).batch ? (
                             <Badge variant="secondary" className="text-xs font-mono">
-                              <Layers className="h-3 w-3 mr-1" />
+                              <Layers className="h-3 w-3 me-1" />
                               {(order as any).batch.batchCode}
                             </Badge>
                           ) : (
@@ -923,7 +924,7 @@ export default function CommissionDashboard() {
                                   }}
                                   className={order.status === option.value ? "bg-accent" : ""}
                                 >
-                                  <span className={`w-2 h-2 rounded-full mr-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
+                                  <span className={`w-2 h-2 rounded-full me-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
                                   {option.label}
                                   {order.status === option.value && " ✓"}
                                 </DropdownMenuItem>

@@ -129,7 +129,7 @@ export default function CommissionForm() {
             onClick={() => setLocation("/commission")}
             className="mb-4"
           >
-            <ArrowRight className="h-4 w-4 ml-2" />
+            <ArrowRight className="h-4 w-4 ms-2" />
             گەڕانەوە
           </Button>
           <div className="text-center">
@@ -165,7 +165,7 @@ export default function CommissionForm() {
                       {selectedCustomer
                         ? `${selectedCustomer.fullName || selectedCustomer.fullNameKurdish} (${selectedCustomer.customerCode})`
                         : "کڕیارێک هەڵبژێرە..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
@@ -190,7 +190,7 @@ export default function CommissionForm() {
                             >
                               <Check
                                 className={cn(
-                                  "mr-2 h-4 w-4",
+                                  "me-2 h-4 w-4",
                                   formData.customerId === customer.id.toString()
                                     ? "opacity-100"
                                     : "opacity-0"

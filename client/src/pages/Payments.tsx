@@ -119,7 +119,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-white text-green-600 hover:bg-white/90 shadow-lg">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 me-2" />
                   Record Payment
                 </Button>
               </DialogTrigger>
@@ -301,7 +301,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className={getMethodColor(payment.description || '')}>
                             {getMethodIcon(payment.description || '')}
-                            <span className="ml-1">{payment.description || 'Payment'}</span>
+                            <span className="ms-1">{payment.description || 'Payment'}</span>
                           </Badge>
                         </div>
                       </TableCell>

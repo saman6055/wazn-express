@@ -143,7 +143,7 @@ export default function UnifiedOrdersDashboard() {
                 <span className="font-mono text-lg">{currentTime.toLocaleTimeString('ku')}</span>
               </div>
               <Button className="bg-white text-purple-700 hover:bg-white/90">
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="me-2 h-4 w-4" />
                 پەتی نوێ
               </Button>
             </div>
@@ -389,7 +389,7 @@ export default function UnifiedOrdersDashboard() {
               </Select>
 
               <Button variant="outline" size="sm" onClick={() => { setSearchQuery(""); setStatusFilter("all"); setActiveTab("all"); }}>
-                <XCircle className="mr-2 h-4 w-4" />
+                <XCircle className="me-2 h-4 w-4" />
                 پاککردنەوەی فلتەرەکان
               </Button>
             </div>
@@ -520,7 +520,7 @@ export default function UnifiedOrdersDashboard() {
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setSelectedOrder(null)}>داخستن</Button>
                   <Button className="bg-gradient-to-r from-purple-500 to-indigo-600">
-                    <Edit className="mr-2 h-4 w-4" />
+                    <Edit className="me-2 h-4 w-4" />
                     دەستکاری
                   </Button>
                 </div>

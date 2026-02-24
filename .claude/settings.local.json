@@ -7,7 +7,10 @@
       "Bash(powershell -Command:*)",
       "Bash(pnpm dev)",
       "Bash(curl:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx vite build)",
+      "Bash(find:*)",
+      "Bash(echo:*)"
     ]
   }
 }

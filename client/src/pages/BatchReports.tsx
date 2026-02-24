@@ -111,7 +111,8 @@ export default function BatchReports() {
   const [showComparison, setShowComparison] = useState(false);
 
   // Fetch data
-  const { data: batches, isLoading } = trpc.batches.list.useQuery();
+  const { data: batchesResponse, isLoading } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
   const { data: packages } = trpc.packages.list.useQuery({ pageSize: 10000 });
   const { data: settings } = trpc.settings.list.useQuery();
 
@@ -450,7 +451,7 @@ export default function BatchReports() {
                   className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                   onClick={() => setShowComparison(true)}
                 >
-                  <GitCompare className="h-4 w-4 ml-2" />
+                  <GitCompare className="h-4 w-4 ms-2" />
                   بەراوردکردن ({selectedBatches.size})
                 </Button>
               )}
@@ -459,7 +460,7 @@ export default function BatchReports() {
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 onClick={handlePrint}
               >
-                <Printer className="h-4 w-4 ml-2" />
+                <Printer className="h-4 w-4 ms-2" />
                 چاپکردن
               </Button>
               <Button 
@@ -467,7 +468,7 @@ export default function BatchReports() {
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 onClick={handleExportExcel}
               >
-                <FileSpreadsheet className="h-4 w-4 ml-2" />
+                <FileSpreadsheet className="h-4 w-4 ms-2" />
                 Excel
               </Button>
             </div>
@@ -683,7 +684,7 @@ export default function BatchReports() {
               {/* Clear Filter Button */}
               {dateFilterType !== "all" && (
                 <Button variant="ghost" size="sm" onClick={clearDateFilter} className="text-muted-foreground">
-                  <X className="h-4 w-4 ml-1" />
+                  <X className="h-4 w-4 ms-1" />
                   پاککردنەوە
                 </Button>
               )}
@@ -839,7 +840,7 @@ export default function BatchReports() {
                   size="sm"
                   onClick={() => setSelectedBatches(new Set())}
                 >
-                  <X className="h-4 w-4 ml-1" />
+                  <X className="h-4 w-4 ms-1" />
                   پاککردنەوەی هەڵبژاردن ({selectedBatches.size})
                 </Button>
               )}
@@ -960,9 +961,9 @@ export default function BatchReports() {
                           <TableCell className="text-center">
                             <Link href={`/reports/batch-financial/${batch.id}`}>
                               <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                                <Eye className="h-4 w-4 ml-1" />
+                                <Eye className="h-4 w-4 ms-1" />
                                 بینین
-                                <ChevronRight className="h-4 w-4 mr-1" />
+                                <ChevronRight className="h-4 w-4 me-1" />
                               </Button>
                             </Link>
                           </TableCell>

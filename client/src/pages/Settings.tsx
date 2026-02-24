@@ -1206,7 +1206,7 @@ function LandingTeamSettings() {
           <Input className="max-w-[200px]" value={newImage} onChange={(e) => setNewImage(e.target.value)} placeholder="URL وێنە" />
           <Input className="min-w-[200px] flex-1" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t("settings.teamMemberDescription") || "دیسکڕیپشن"} />
           <Button type="button" size="sm" onClick={handleAdd} disabled={!newName.trim() || updateMutation.isPending}>
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="h-4 w-4 me-1" />
             {t("settings.add") || "زیادکردن"}
           </Button>
         </div>

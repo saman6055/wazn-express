@@ -174,7 +174,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               size="sm"
               className="bg-white/10 hover:bg-white/20 text-white"
             >
-              <Plus className="h-4 w-4 mr-1" />
+              <Plus className="h-4 w-4 me-1" />
               Add
             </Button>
           </div>
@@ -207,7 +207,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 Add your delivery addresses for faster checkout
               </p>
               <Button onClick={openNewDialog} className="bg-teal-500 hover:bg-teal-600">
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 me-2" />
                 Add Address
               </Button>
             </div>
@@ -274,7 +274,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                         onClick={() => setDefaultMutation.mutate({ addressId: address.id })}
                         disabled={setDefaultMutation.isPending}
                       >
-                        <Check className="h-4 w-4 mr-1" />
+                        <Check className="h-4 w-4 me-1" />
                         Set Default
                       </Button>
                     )}
@@ -284,7 +284,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                       className="text-gray-600 hover:text-gray-700"
                       onClick={() => openEditDialog(address)}
                     >
-                      <Edit2 className="h-4 w-4 mr-1" />
+                      <Edit2 className="h-4 w-4 me-1" />
                       Edit
                     </Button>
                     <Button
@@ -298,7 +298,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                       }}
                       disabled={deleteMutation.isPending}
                     >
-                      <Trash2 className="h-4 w-4 mr-1" />
+                      <Trash2 className="h-4 w-4 me-1" />
                       Delete
                     </Button>
                   </div>

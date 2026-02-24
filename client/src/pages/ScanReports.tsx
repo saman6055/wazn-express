@@ -93,7 +93,7 @@ export default function ScanReports() {
       const date = new Date(scan.scannedAt).toLocaleDateString('en-CA');
       if (!grouped[date]) {
         grouped[date] = { date, total: 0, modules: {} };
-        SCANNER_MODULES.forEach(m => grouped[date].modules[m.value] = 0);
+        SCANNER_MODULES.forEach(m => grouped[date].modules[m.scanType] = 0);
       }
       grouped[date].total++;
       if (grouped[date].modules[scan.scanType] !== undefined) {
@@ -163,7 +163,7 @@ export default function ScanReports() {
                 onClick={exportToExcel}
                 className="bg-white/20 hover:bg-white/30 text-white border-white/30"
               >
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="h-4 w-4 me-2" />
                 {isKurdish ? "داگرتنی Excel" : "Export Excel"}
               </Button>
             </div>
@@ -210,7 +210,7 @@ export default function ScanReports() {
                 </div>
                 <Select value={filterModule} onValueChange={setFilterModule}>
                   <SelectTrigger className="w-48">
-                    <Filter className="h-4 w-4 mr-2 text-slate-500" />
+                    <Filter className="h-4 w-4 me-2 text-slate-500" />
                     <SelectValue placeholder={isKurdish ? "هەموو" : "All"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -473,7 +473,7 @@ export default function ScanReports() {
                             </TableCell>
                             <TableCell>
                               <Badge className={`${module.lightColor} ${module.textColor}`}>
-                                <Icon className="h-3 w-3 mr-1" />
+                                <Icon className="h-3 w-3 me-1" />
                                 {isKurdish ? module.labelKu : module.labelEn}
                               </Badge>
                             </TableCell>

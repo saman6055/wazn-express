@@ -137,10 +137,10 @@ export default function PortalUnclaimedPackages() {
               value="unclaimed" 
               className="flex-1 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
             >
-              <PackageSearch className="w-4 h-4 mr-2" />
+              <PackageSearch className="w-4 h-4 me-2" />
               {t("availablePackages") || "Available"}
               {unclaimedData?.total ? (
-                <span className="ml-2 px-2 py-0.5 bg-slate-800 text-white text-xs rounded-full">
+                <span className="ms-2 px-2 py-0.5 bg-slate-800 text-white text-xs rounded-full">
                   {unclaimedData.total}
                 </span>
               ) : null}
@@ -149,10 +149,10 @@ export default function PortalUnclaimedPackages() {
               value="myClaims" 
               className="flex-1 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
             >
-              <Send className="w-4 h-4 mr-2" />
+              <Send className="w-4 h-4 me-2" />
               {t("myRequests") || "My Requests"}
               {myClaimRequests?.length ? (
-                <span className="ml-2 px-2 py-0.5 bg-yellow-500 text-white text-xs rounded-full">
+                <span className="ms-2 px-2 py-0.5 bg-yellow-500 text-white text-xs rounded-full">
                   {myClaimRequests.filter(r => r.status === "pending").length || ""}
                 </span>
               ) : null}
@@ -242,7 +242,7 @@ export default function PortalUnclaimedPackages() {
                       }}
                       className="w-full mt-3 bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-white rounded-xl h-11"
                     >
-                      <Send className="w-4 h-4 mr-2" />
+                      <Send className="w-4 h-4 me-2" />
                       {t("claimThisPackage") || "Claim This Package"}
                     </Button>
                   </div>
@@ -406,12 +406,12 @@ export default function PortalUnclaimedPackages() {
             >
               {createClaimMutation.isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 me-2 animate-spin" />
                   {t("submitting") || "Submitting..."}
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4 mr-2" />
+                  <Send className="w-4 h-4 me-2" />
                   {t("submitClaim") || "Submit Claim"}
                 </>
               )}

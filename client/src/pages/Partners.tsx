@@ -261,14 +261,14 @@ const [activeTab, setActiveTab] = useState("partners");
                 }}
                 disabled={generatePartnerPDF.isPending}
               >
-                <Download className="mr-2 h-4 w-4" />
+                <Download className="me-2 h-4 w-4" />
                 {generatePartnerPDF.isPending ? t("common.loading") : 'PDF'}
               </Button>
             )}
             <Dialog open={showAddTransaction} onOpenChange={setShowAddTransaction}>
               <DialogTrigger asChild>
                 <Button variant="outline">
-                  <Wallet className="mr-2 h-4 w-4" />
+                  <Wallet className="me-2 h-4 w-4" />
                   {t("partners.newTransaction")}
                 </Button>
               </DialogTrigger>
@@ -414,7 +414,7 @@ const [activeTab, setActiveTab] = useState("partners");
             <Dialog open={showAddPartner} onOpenChange={setShowAddPartner}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="me-2 h-4 w-4" />
                 {t("partners.newPartner")}
                 </Button>
               </DialogTrigger>
@@ -651,7 +651,7 @@ const [activeTab, setActiveTab] = useState("partners");
                           setShowTransactions(true);
                         }}
                       >
-                        <Eye className="mr-2 h-4 w-4" />
+                        <Eye className="me-2 h-4 w-4" />
                         {t("common.history")}
                       </Button>
                       <Button

@@ -335,7 +335,7 @@ export default function AccountantDashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y max-h-[360px] overflow-y-auto">
-                {recentPayments?.map((p: { id: number; amountUsd: string | number; createdAt: Date; customerName?: string; customerCode?: string }) => (
+                {recentPayments?.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between p-4 hover:bg-muted/50">
                     <div className="min-w-0">
                       <p className="font-medium truncate">{p.customerName ?? t("common.unknown")}</p>

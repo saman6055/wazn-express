@@ -108,19 +108,20 @@ export default function BatchAssignmentScanner() {
   }>({ open: false, package: null, trackingNumber: "" });
   
   // Queries
-  const { data: batches, refetch: refetchBatches } = trpc.batches.list.useQuery();
+  const { data: batchesRaw, refetch: refetchBatches } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const trpcUtils = trpc.useUtils();
   
   // Get open batches
   const openBatches = useMemo(() => {
     if (!batches) return [];
-    return batches.filter(b => b.status === "preparing" || b.status === "in_transit");
+    return batches.filter((b: any) => b.status === "preparing" || b.status === "in_transit");
   }, [batches]);
   
   // Selected batch info
   const selectedBatch = useMemo(() => {
     if (!selectedBatchId || !batches) return null;
-    return batches.find(b => b.id === parseInt(selectedBatchId));
+    return batches.find((b: any) => b.id === parseInt(selectedBatchId));
   }, [selectedBatchId, batches]);
   
   // Calculate batch stats from scanned packages
@@ -205,7 +206,7 @@ export default function BatchAssignmentScanner() {
         const hasCompleteData: boolean = !!(hasWeight || hasDimensions);
 
         if (pkg.batchId && pkg.batchId !== parseInt(selectedBatchId)) {
-          const previousBatch = batches?.find((b) => b.id === pkg.batchId);
+          const previousBatch = batches?.find((b: any) => b.id === pkg.batchId);
           setBatchChangeDialog({
             open: true,
             package: {
@@ -421,7 +422,7 @@ export default function BatchAssignmentScanner() {
                       <SelectValue placeholder={t("scan.selectBatch")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {openBatches.map((batch) => (
+                      {openBatches.map((batch: any) => (
                         <SelectItem key={batch.id} value={batch.id.toString()}>
                           <div className="flex items-center gap-2">
                             <Package className="h-4 w-4" />
@@ -570,7 +571,7 @@ export default function BatchAssignmentScanner() {
                     className="w-full justify-start"
                     onClick={() => setLocation("/quick-register")}
                   >
-                    <Edit className="h-4 w-4 mr-2" />
+                    <Edit className="h-4 w-4 me-2" />
                     {t("nav.quickRegister")}
                   </Button>
                   <Button
@@ -578,7 +579,7 @@ export default function BatchAssignmentScanner() {
                     className="w-full justify-start"
                     onClick={() => refetchBatches()}
                   >
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                    <RefreshCw className="h-4 w-4 me-2" />
                     {t("batches.refresh") || "Refresh Batches"}
                   </Button>
                 </CardContent>
@@ -664,7 +665,7 @@ export default function BatchAssignmentScanner() {
                 onClick={handleGoToQuickRegister}
                 className="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
               >
-                <ExternalLink className="h-4 w-4 mr-2" />
+                <ExternalLink className="h-4 w-4 me-2" />
                 {t("scan.goToQuickRegister")}
               </Button>
               <Button

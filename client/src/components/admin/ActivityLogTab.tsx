@@ -61,7 +61,7 @@ export function ActivityLogTab({
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => refetchResetHistory()}>
-              <RotateCcw className="h-4 w-4 mr-2" />
+              <RotateCcw className="h-4 w-4 me-2" />
               {t("common.refresh")}
             </Button>
           </div>
@@ -89,7 +89,7 @@ export function ActivityLogTab({
                           {reset.backupCreated && (
                             <div className="mt-2 space-y-1">
                               <span className="inline-flex items-center rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                <CheckCircle2 className="h-3 w-3 me-1" />
                                 {t("dataManagement.backupCreatedBeforeReset")}
                               </span>
                               {reset.backupFileUrl && (
@@ -109,7 +109,7 @@ export function ActivityLogTab({
                           )}
                           {!reset.backupCreated && (
                             <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 mt-2">
-                              <AlertCircle className="h-3 w-3 mr-1" />
+                              <AlertCircle className="h-3 w-3 me-1" />
                               {t("dataManagement.noBackupCreated")}
                             </span>
                           )}
@@ -151,7 +151,7 @@ export function ActivityLogTab({
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => refetchLogs()}>
-              <RotateCcw className="h-4 w-4 mr-2" />
+              <RotateCcw className="h-4 w-4 me-2" />
               {t("common.refresh")}
             </Button>
           </div>
@@ -200,7 +200,7 @@ export function ActivityLogTab({
                           </div>
                           {log.backupCreated && (
                             <span className="inline-flex items-center rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 mt-2">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              <CheckCircle2 className="h-3 w-3 me-1" />
                               {t("dataManagement.backupCreated")}
                             </span>
                           )}

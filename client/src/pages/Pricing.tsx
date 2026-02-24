@@ -22,7 +22,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   
   const createMutation = trpc.pricing.create.useMutation({
     onSuccess: () => {
-      toast.success("Pricing rule created successfully");
+      toast.success("یاسای نرخ بە سەرکەوتوویی دروستکرا");
       setIsCreateOpen(false);
       refetch();
     },
@@ -31,7 +31,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const updateMutation = trpc.pricing.update.useMutation({
     onSuccess: () => {
-      toast.success("Pricing rule updated");
+      toast.success("یاسای نرخ نوێکرایەوە");
       refetch();
     },
     onError: (error) => toast.error(error.message)
@@ -69,7 +69,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />Add Pricing Rule</Button>
+              <Button><Plus className="h-4 w-4 me-2" />Add Pricing Rule</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>

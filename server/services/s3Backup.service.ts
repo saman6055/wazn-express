@@ -23,6 +23,7 @@ import fs from "fs/promises";
 import { createWriteStream } from "fs";
 import path from "path";
 import { storagePut } from "./storage.service";
+import { getLocalBackupFilePath, LOCAL_BACKUP_PREFIX } from "./zipBackup.service";
 
 /**
  * S3 File Backup Service
@@ -37,9 +38,10 @@ export interface S3BackupResult {
 }
 
 /**
- * Create a backup of all S3 files
+ * Create a backup of all S3 files.
+ * If backupId is provided and storage is not configured, saves ZIP locally and returns local URL.
  */
-export async function backupS3Files(): Promise<S3BackupResult> {
+export async function backupS3Files(backupId?: number): Promise<S3BackupResult> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const zipFilename = `s3-backup-${timestamp}.zip`;
   const tempZipPath = `/tmp/${zipFilename}`;
@@ -99,13 +101,30 @@ export async function backupS3Files(): Promise<S3BackupResult> {
 
     appLogger.info("[S3 Backup] ZIP created", { zipFilename, fileCount, totalSize });
 
-    // Upload ZIP to S3
     const zipBuffer = await fs.readFile(tempZipPath);
     const s3Key = `backups/files/${zipFilename}`;
-    const { url: zipUrl } = await storagePut(s3Key, zipBuffer, "application/zip");
+    let zipUrl: string;
+    try {
+      const result = await storagePut(s3Key, zipBuffer, "application/zip");
+      zipUrl = result.url;
+    } catch (uploadErr: unknown) {
+      const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
+      const isStorageMissing = /Storage proxy credentials missing|BUILT_IN_FORGE/i.test(msg);
+      if (isStorageMissing && backupId != null) {
+        const localPath = getLocalBackupFilePath(backupId, "zip");
+        const dir = path.dirname(localPath);
+        await fs.mkdir(dir, { recursive: true });
+        await fs.writeFile(localPath, zipBuffer);
+        zipUrl = LOCAL_BACKUP_PREFIX + String(backupId);
+        appLogger.info("[S3 Backup] Storage not configured; saved locally", { path: localPath });
+      } else {
+        await fs.unlink(tempZipPath).catch(() => {});
+        throw uploadErr;
+      }
+    }
 
     // Clean up temp file
-    await fs.unlink(tempZipPath);
+    await fs.unlink(tempZipPath).catch(() => {});
 
     return {
       zipPath: s3Key,
@@ -114,11 +133,9 @@ export async function backupS3Files(): Promise<S3BackupResult> {
       totalSize,
     };
   } catch (error) {
-    // Clean up on error
     try {
       await fs.unlink(tempZipPath);
     } catch {}
-    
     throw error;
   }
 }

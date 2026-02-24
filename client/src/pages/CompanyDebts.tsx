@@ -303,13 +303,13 @@ const [showAddDebt, setShowAddDebt] = useState(false);
               onClick={() => generateDebtPDF.mutate()}
               disabled={generateDebtPDF.isPending}
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="me-2 h-4 w-4" />
               {generateDebtPDF.isPending ? t("common.loading") : 'PDF'}
             </Button>
             <Dialog open={showRecordPayment} onOpenChange={setShowRecordPayment}>
               <DialogTrigger asChild>
                 <Button variant="outline">
-                  <CreditCard className="mr-2 h-4 w-4" />{t("portal.payNow")}</Button>
+                  <CreditCard className="me-2 h-4 w-4" />{t("portal.payNow")}</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
@@ -424,7 +424,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
             <Dialog open={showAddDebt} onOpenChange={setShowAddDebt}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="me-2 h-4 w-4" />
                 {t("debts.newDebt")}
                 </Button>
               </DialogTrigger>
@@ -720,7 +720,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
                     <div className="flex gap-2 flex-wrap">
                       {Number(debt.interestRate) > 0 && (
                         <Badge variant="outline" className="text-xs">
-                          <Percent className="mr-1 h-3 w-3" />
+                          <Percent className="me-1 h-3 w-3" />
                           {debt.interestRate}% {t("debts.interest")}
                         </Badge>
                       )}
@@ -743,7 +743,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
                         setShowPayments(true);
                       }}
                     >
-                      <Eye className="mr-2 h-4 w-4" />{t("finance.payments")}</Button>
+                      <Eye className="me-2 h-4 w-4" />{t("finance.payments")}</Button>
                     {(debt.status === "active" || debt.status === "overdue") && (
                       <Button
                         variant="default"

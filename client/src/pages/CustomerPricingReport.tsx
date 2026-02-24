@@ -16,16 +16,18 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
   const [selectedShippingType, setSelectedShippingType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: batches } = trpc.batches.list.useQuery();
+  const { data: batchesRaw } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: customers } = trpc.customers.list.useQuery();
-  const { data: allCustomerPricing } = trpc.batches.listAllCustomerPricing.useQuery();
+  const { data: allCustomerPricingRaw } = trpc.batches.listAllCustomerPricing.useQuery();
+  const allCustomerPricing = Array.isArray(allCustomerPricingRaw) ? allCustomerPricingRaw : (allCustomerPricingRaw as any)?.data;
 
   // Filter pricing data
   const filteredPricing = allCustomerPricing?.filter((cp: any) => {
     if (selectedBatch !== "all" && cp.batchId !== parseInt(selectedBatch)) return false;
     if (selectedCustomer !== "all" && cp.customerId !== parseInt(selectedCustomer)) return false;
     
-    const batch = batches?.find(b => b.id === cp.batchId);
+    const batch = batches?.find((b: any) => b.id === cp.batchId);
     if (selectedShippingType !== "all" && batch?.shippingType !== selectedShippingType) return false;
     
     if (searchQuery) {
@@ -42,7 +44,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
 
   // Get batch info helper
   const getBatchInfo = (batchId: number) => {
-    const batch = batches?.find(b => b.id === batchId);
+    const batch = batches?.find((b: any) => b.id === batchId);
     return batch || null;
   };
 
@@ -105,14 +107,14 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
             <CardContent>
               <div className="flex gap-2">
                 <Badge variant="outline" className="text-amber-600">
-                  <Plane className="h-3 w-3 mr-1" />
+                  <Plane className="h-3 w-3 me-1" />
                   {filteredPricing.filter((cp: any) => {
                     const batch = getBatchInfo(cp.batchId);
                     return batch?.shippingType !== 'sea';
                   }).length}
                 </Badge>
                 <Badge variant="outline" className="text-blue-600">
-                  <Ship className="h-3 w-3 mr-1" />
+                  <Ship className="h-3 w-3 me-1" />
                   {filteredPricing.filter((cp: any) => {
                     const batch = getBatchInfo(cp.batchId);
                     return batch?.shippingType === 'sea';
@@ -145,7 +147,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t("batches.allBatches")}</SelectItem>
-                  {batches?.filter(b => b.hasCustomerPricing).map(batch => (
+                  {batches?.filter((b: any) => b.hasCustomerPricing).map((batch: any) => (
                     <SelectItem key={batch.id} value={batch.id.toString()}>
                       {batch.batchCode}
                     </SelectItem>

@@ -133,7 +133,7 @@ export default function CompanyFinanceDashboard() {
             <div className="flex gap-3 items-center">
               <Select value={period} onValueChange={(v) => setPeriod(v as any)}>
                 <SelectTrigger className="w-[160px] bg-white/10 border-white/20 text-white backdrop-blur-sm">
-                  <Calendar className="w-4 h-4 ml-2 opacity-70" />
+                  <Calendar className="w-4 h-4 ms-2 opacity-70" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -159,23 +159,23 @@ export default function CompanyFinanceDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5 h-12">
             <TabsTrigger value="overview" className="text-sm font-medium">
-              <BarChart3 className="w-4 h-4 ml-2" />
+              <BarChart3 className="w-4 h-4 ms-2" />
               {t("companyFinance.tabOverview") || "گشتی"}
             </TabsTrigger>
             <TabsTrigger value="revenue" className="text-sm font-medium">
-              <TrendingUp className="w-4 h-4 ml-2" />
+              <TrendingUp className="w-4 h-4 ms-2" />
               {t("companyFinance.tabRevenue") || "داهات"}
             </TabsTrigger>
             <TabsTrigger value="expenses" className="text-sm font-medium">
-              <TrendingDown className="w-4 h-4 ml-2" />
+              <TrendingDown className="w-4 h-4 ms-2" />
               {t("companyFinance.tabExpenses") || "خەرجی"}
             </TabsTrigger>
             <TabsTrigger value="profitloss" className="text-sm font-medium">
-              <Target className="w-4 h-4 ml-2" />
+              <Target className="w-4 h-4 ms-2" />
               {t("companyFinance.tabProfitLoss") || "قازانج/زەرەر"}
             </TabsTrigger>
             <TabsTrigger value="charts" className="text-sm font-medium">
-              <PieChartIcon className="w-4 h-4 ml-2" />
+              <PieChartIcon className="w-4 h-4 ms-2" />
               {t("companyFinance.tabCharts") || "چارتەکان"}
             </TabsTrigger>
           </TabsList>
@@ -250,12 +250,12 @@ export default function CompanyFinanceDashboard() {
                       <div className="flex items-center gap-1 mt-1">
                         {(pl?.netProfit || 0) >= 0 ? (
                           <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
-                            <ArrowUpRight className="w-3 h-3 ml-1" />
+                            <ArrowUpRight className="w-3 h-3 ms-1" />
                             {t("companyFinance.profit") || "قازانج"}
                           </Badge>
                         ) : (
                           <Badge variant="secondary" className="bg-orange-100 text-orange-700 text-xs">
-                            <ArrowDownRight className="w-3 h-3 ml-1" />
+                            <ArrowDownRight className="w-3 h-3 ms-1" />
                             {t("companyFinance.loss") || "زەرەر"}
                           </Badge>
                         )}
@@ -748,7 +748,7 @@ export default function CompanyFinanceDashboard() {
                   </div>
                   <Link href="/finance/expenses">
                     <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0">
-                      <FileText className="w-4 h-4 ml-2" />
+                      <FileText className="w-4 h-4 ms-2" />
                       {t("companyFinance.viewAll") || "هەمووی ببینە"}
                     </Button>
                   </Link>
@@ -850,7 +850,7 @@ export default function CompanyFinanceDashboard() {
                       <Plus className="w-5 h-5" />
                       {t("companyFinance.totalRevenue") || "کۆی داهات (قازانج)"}
                     </h3>
-                    <div className="space-y-3 mr-6">
+                    <div className="space-y-3 me-6">
                       <PLRow label={`🛫 ${t("companyFinance.batchProfitAir") || "قازانجی باچی ئاسمانی"}`} value={revenueBySource?.batchProfit?.air_regular?.profit || 0} />
                       <PLRow label={`⚠️ ${t("companyFinance.batchProfitIrregular") || "قازانجی باچی ئاسمانی مەترسیدار"}`} value={revenueBySource?.batchProfit?.air_irregular?.profit || 0} />
                       <PLRow label={`🚢 ${t("companyFinance.batchProfitSea") || "قازانجی باچی دەریایی"}`} value={revenueBySource?.batchProfit?.sea?.profit || 0} />
@@ -871,7 +871,7 @@ export default function CompanyFinanceDashboard() {
                       <Minus className="w-5 h-5" />
                       {t("companyFinance.totalExpenses") || "کۆی خەرجی"}
                     </h3>
-                    <div className="space-y-3 mr-6">
+                    <div className="space-y-3 me-6">
                       {stats?.expenseBreakdown?.categories?.map((cat: any) => (
                         <PLRow key={cat.id} label={`${cat.icon || '📦'} ${cat.nameKu || cat.nameEn}`} value={-cat.amount} />
                       ))}

@@ -101,7 +101,7 @@ function BatchCard({
         {eta && eta > 0 && (
           <div className="mt-3">
             <Badge variant="secondary" className="bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs px-3 py-1">
-              <Calendar className="h-3 w-3 mr-1 inline" />
+              <Calendar className="h-3 w-3 me-1 inline" />
               بەنزیکەیی دەگات: {eta} ڕۆژی تر
             </Badge>
           </div>
@@ -845,7 +845,7 @@ const { user, loading, logout } = useAuth();
               className="w-full mt-4 text-red-500 border-red-200 hover:bg-red-50 rounded-full"
               onClick={handleLogout}
             >
-              <LogOut className="h-4 w-4 mr-2" />
+              <LogOut className="h-4 w-4 me-2" />
               Logout
             </Button>
           </div>

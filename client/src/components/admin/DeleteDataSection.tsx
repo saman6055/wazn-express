@@ -97,7 +97,7 @@ export function DeleteDataSection({
                   </div>
                   <div className="mt-4 flex items-center justify-end">
                     <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                      <Trash2 className="h-4 w-4 mr-1" />
+                      <Trash2 className="h-4 w-4 me-1" />
                       {t("dataManagement.delete")}
                     </Button>
                   </div>
@@ -157,7 +157,7 @@ export function DeleteDataSection({
               className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
               onClick={() => setShowOldDataDialog(true)}
             >
-              <Clock className="h-4 w-4 mr-2" />
+              <Clock className="h-4 w-4 me-2" />
               {t("dataManagement.deleteOldRecords")}
             </Button>
           </CardContent>
@@ -188,7 +188,7 @@ export function DeleteDataSection({
               </ul>
             </div>
             <Button variant="destructive" className="w-full" onClick={() => setShowResetDialog(true)}>
-              <AlertTriangle className="h-4 w-4 mr-2" />
+              <AlertTriangle className="h-4 w-4 me-2" />
               {t("dataManagement.resetAllData")}
             </Button>
           </CardContent>
@@ -268,12 +268,12 @@ export function DeleteDataSection({
             >
               {isDeleting ? (
                 <>
-                  <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+                  <RotateCcw className="h-4 w-4 me-2 animate-spin" />
                   {t("dataManagement.deleting")}
                 </>
               ) : (
                 <>
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-4 w-4 me-2" />
                   {t("dataManagement.delete")}
                 </>
               )}
@@ -310,9 +310,9 @@ export function DeleteDataSection({
               disabled={isDeleting}
             >
               {isDeleting ? (
-                <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+                <RotateCcw className="h-4 w-4 me-2 animate-spin" />
               ) : (
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4 me-2" />
               )}
               {t("dataManagement.delete")}
             </Button>
@@ -393,12 +393,12 @@ export function DeleteDataSection({
             >
               {isDeleting ? (
                 <>
-                  <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+                  <RotateCcw className="h-4 w-4 me-2 animate-spin" />
                   {t("dataManagement.resetting")}
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  <AlertTriangle className="h-4 w-4 me-2" />
                   {t("dataManagement.resetAllData")}
                 </>
               )}

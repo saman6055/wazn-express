@@ -706,14 +706,14 @@ export default function Finance() {
             <div className="flex gap-3 flex-wrap">
               <Link href="/finance/debtors">
                 <Button variant="secondary" className="bg-red-500/20 hover:bg-red-500/30 text-white border-0">
-                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  <AlertTriangle className="w-4 h-4 me-2" />
                   قەرزدارەکان
                 </Button>
               </Link>
               <Dialog open={isCreatePaymentOpen} onOpenChange={setIsCreatePaymentOpen}>
                 <DialogTrigger asChild>
                   <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0">
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-4 h-4 me-2" />
                     {t("finance.recordPayment")}
                   </Button>
                 </DialogTrigger>
@@ -745,7 +745,7 @@ export default function Finance() {
                                     return c ? `${c.fullName} (${c.customerCode})` : t("finance.selectCustomer");
                                   })()
                                 : t("finance.selectCustomer")}
-                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              <ChevronDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent variant="panel" className="w-[400px]" align="start">
@@ -843,7 +843,7 @@ export default function Finance() {
                                     return acc ? `${acc.accountNameKu || acc.accountName} ($${Number(acc.currentBalance).toLocaleString()})` : t("bankAccounts.selectAccountOptional") || "هەژمارێک هەڵبژێرە (ئارەزوومەندانە)";
                                   })()
                                 : t("bankAccounts.selectAccountOptional") || "هەژمارێک هەڵبژێرە (ئارەزوومەندانە)"}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
@@ -854,7 +854,7 @@ export default function Finance() {
                                     onSelect={() => setSelectedCashAccountId('none')}
                                     className="cursor-pointer"
                                   >
-                                    <Check className={`mr-2 h-4 w-4 ${selectedCashAccountId === 'none' || !selectedCashAccountId ? 'opacity-100' : 'opacity-0'}`} />
+                                    <Check className={`me-2 h-4 w-4 ${selectedCashAccountId === 'none' || !selectedCashAccountId ? 'opacity-100' : 'opacity-0'}`} />
                                     {t("bankAccounts.noAccount") || "بێ هەژمار"}
                                   </CommandItem>
                                   {activeCashAccounts?.map((acc) => (
@@ -863,7 +863,7 @@ export default function Finance() {
                                       onSelect={() => setSelectedCashAccountId(acc.id.toString())}
                                       className="cursor-pointer"
                                     >
-                                      <Check className={`mr-2 h-4 w-4 ${selectedCashAccountId === acc.id.toString() ? 'opacity-100' : 'opacity-0'}`} />
+                                      <Check className={`me-2 h-4 w-4 ${selectedCashAccountId === acc.id.toString() ? 'opacity-100' : 'opacity-0'}`} />
                                       <div className="flex items-center gap-2">
                                         <Landmark className="h-4 w-4 text-muted-foreground" />
                                         <span>{acc.accountNameKu || acc.accountName}</span>
@@ -1017,7 +1017,7 @@ export default function Finance() {
                   <Link href="/finance?tab=accounts">
                     <Button variant="outline" size="sm">
                       هەموو ببینە
-                      <ArrowUpRight className="w-3 h-3 ml-1" />
+                      <ArrowUpRight className="w-3 h-3 ms-1" />
                     </Button>
                   </Link>
                 </div>
@@ -1127,7 +1127,7 @@ export default function Finance() {
                   <Link href="/finance/debtors">
                     <Button variant="outline" size="sm">
                       {t("auto.text_8247ac")}
-                      <ArrowUpRight className="w-3 h-3 ml-1" />
+                      <ArrowUpRight className="w-3 h-3 ms-1" />
                     </Button>
                   </Link>
                 </div>
@@ -1145,7 +1145,7 @@ export default function Finance() {
                       <div className="mt-3">
                         <Link href={`/finance/customer/${debtor.customerId}`}>
                           <Button variant="outline" size="sm" className="w-full">
-                            <Receipt className="w-3 h-3 mr-1" />
+                            <Receipt className="w-3 h-3 me-1" />
                             {t("common.details")}
                           </Button>
                         </Link>
@@ -1165,7 +1165,7 @@ export default function Finance() {
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Users className="w-5 h-5 text-blue-500" />
                     هەموو حسابەکان
-                    <Badge variant="secondary" className="ml-2">{filteredAndSortedAccounts.length}</Badge>
+                    <Badge variant="secondary" className="ms-2">{filteredAndSortedAccounts.length}</Badge>
                   </CardTitle>
                   
                   <div className="flex flex-wrap items-center gap-3 lg:mr-auto">
@@ -1196,11 +1196,11 @@ export default function Finance() {
                           هەموو
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('debtors')} className={accountFilter === 'debtors' ? 'bg-muted' : ''}>
-                          <TrendingUp className="w-4 h-4 mr-2 text-red-500" />
+                          <TrendingUp className="w-4 h-4 me-2 text-red-500" />
                           قەرزدارەکان
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('credit')} className={accountFilter === 'credit' ? 'bg-muted' : ''}>
-                          <TrendingDown className="w-4 h-4 mr-2 text-green-500" />
+                          <TrendingDown className="w-4 h-4 me-2 text-green-500" />
                           کریدیتدارەکان
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('zero')} className={accountFilter === 'zero' ? 'bg-muted' : ''}>
@@ -1208,11 +1208,11 @@ export default function Finance() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setAccountFilter('active')} className={accountFilter === 'active' ? 'bg-muted' : ''}>
-                          <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                          <CheckCircle className="w-4 h-4 me-2 text-green-500" />
                           چالاک
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('inactive')} className={accountFilter === 'inactive' ? 'bg-muted' : ''}>
-                          <XCircle className="w-4 h-4 mr-2 text-red-500" />
+                          <XCircle className="w-4 h-4 me-2 text-red-500" />
                           ناچالاک
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -1231,11 +1231,11 @@ export default function Finance() {
                         <DropdownMenuLabel>ڕیزکردن بەپێی</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => { setSortField('balance'); setSortDirection('desc'); }}>
-                          <TrendingUp className="w-4 h-4 mr-2" />
+                          <TrendingUp className="w-4 h-4 me-2" />
                           زۆرترین قەرز
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => { setSortField('balance'); setSortDirection('asc'); }}>
-                          <TrendingDown className="w-4 h-4 mr-2" />
+                          <TrendingDown className="w-4 h-4 me-2" />
                           زۆرترین کریدیت
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => { setSortField('name'); setSortDirection('asc'); }}>
@@ -1263,15 +1263,15 @@ export default function Finance() {
                         <DropdownMenuLabel>داونلۆدی ڕاپۆرت</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={exportToPDF}>
-                          <FileText className="w-4 h-4 mr-2 text-red-500" />
+                          <FileText className="w-4 h-4 me-2 text-red-500" />
                           PDF
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={exportToExcel}>
-                          <FileSpreadsheet className="w-4 h-4 mr-2 text-green-500" />
+                          <FileSpreadsheet className="w-4 h-4 me-2 text-green-500" />
                           Excel
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={exportToCSV}>
-                          <FileText className="w-4 h-4 mr-2 text-blue-500" />
+                          <FileText className="w-4 h-4 me-2 text-blue-500" />
                           CSV
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -1412,7 +1412,7 @@ export default function Finance() {
                       onClick={() => setMethodFilter("cash")}
                       className="h-9"
                     >
-                      <Banknote className="h-4 w-4 mr-1" /> {t("finance.cash")}
+                      <Banknote className="h-4 w-4 me-1" /> {t("finance.cash")}
                     </Button>
                     <Button 
                       variant={methodFilter === "bank_transfer" ? "default" : "outline"} 
@@ -1420,7 +1420,7 @@ export default function Finance() {
                       onClick={() => setMethodFilter("bank_transfer")}
                       className="h-9"
                     >
-                      <Building className="h-4 w-4 mr-1" /> {t("finance.bank")}
+                      <Building className="h-4 w-4 me-1" /> {t("finance.bank")}
                     </Button>
                     <Button 
                       variant={methodFilter === "card" ? "default" : "outline"} 
@@ -1428,7 +1428,7 @@ export default function Finance() {
                       onClick={() => setMethodFilter("card")}
                       className="h-9"
                     >
-                      <CreditCard className="h-4 w-4 mr-1" /> {t("finance.card")}
+                      <CreditCard className="h-4 w-4 me-1" /> {t("finance.card")}
                     </Button>
                   </div>
                 </div>
@@ -1476,7 +1476,7 @@ export default function Finance() {
                           <TableCell>
                             <Badge variant="secondary" className={getMethodColor('cash')}>
                               {getMethodIcon('cash')}
-                              <span className="ml-1">{t("finance.cash")}</span>
+                              <span className="ms-1">{t("finance.cash")}</span>
                             </Badge>
                           </TableCell>
                           <TableCell className="font-mono text-sm text-muted-foreground">

@@ -2512,19 +2512,31 @@ export async function validateAllAccounts(): Promise<{
   let invalidCount = 0;
 
   for (const account of accounts) {
-    const validation = await validateAccountBalance(account.id);
-    if (validation.isValid) {
-      validCount++;
-    } else {
+    try {
+      const validation = await validateAccountBalance(account.id);
+      if (validation.isValid) {
+        validCount++;
+      } else {
+        invalidCount++;
+        invalidCustomerIds.push(account.customerId);
+        issues.push({
+          accountId: account.id,
+          accountNumber: account.accountNumber,
+          customerCode: '', // filled below via batch fetch
+          storedBalance: validation.storedBalance,
+          calculatedBalance: validation.calculatedBalance,
+          difference: validation.difference
+        });
+      }
+    } catch {
       invalidCount++;
-      invalidCustomerIds.push(account.customerId);
       issues.push({
         accountId: account.id,
         accountNumber: account.accountNumber,
-        customerCode: '', // filled below via batch fetch
-        storedBalance: validation.storedBalance,
-        calculatedBalance: validation.calculatedBalance,
-        difference: validation.difference
+        customerCode: '',
+        storedBalance: 0,
+        calculatedBalance: 0,
+        difference: 0
       });
     }
   }

@@ -146,8 +146,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     toast.success(t("batches.statusUpdated"));
     refetch();
   };
-  const onMutationError = (error: { message?: string; data?: { zodError?: { errors?: { message: string }[] } } }) => {
-    const msg = error.data?.zodError?.errors?.[0]?.message || error.message || t("common.error");
+  const onMutationError = (error: unknown) => {
+    const err = error as { message?: string; data?: { zodError?: { errors?: { message: string }[] } } };
+    const msg = err.data?.zodError?.errors?.[0]?.message || err.message || t("common.error");
     toast.error(msg);
   };
 
@@ -351,7 +352,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           </div>
           <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />{t("batches.newBatch")}</Button>
+              <Button><Plus className="h-4 w-4 me-2" />{t("batches.newBatch")}</Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
@@ -688,7 +689,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                 </div>
                               ))}
                               <Button type="button" variant="outline" className="w-full" onClick={addTier}>
-                                <Plus className="h-4 w-4 mr-2" />Add Tier
+                                <Plus className="h-4 w-4 me-2" />Add Tier
                               </Button>
                               
                               {pricingTiers.length > 0 && (
@@ -1463,7 +1464,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             </div>
                           ))}
                           <Button type="button" variant="outline" className="w-full" onClick={addTier}>
-                            <Plus className="h-4 w-4 mr-2" />Add Tier
+                            <Plus className="h-4 w-4 me-2" />Add Tier
                           </Button>
                         </CardContent>
                       </Card>

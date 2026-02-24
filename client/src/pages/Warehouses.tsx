@@ -50,7 +50,7 @@ export default function Warehouses() {
     const formData = new FormData(e.currentTarget);
     const countryId = parseInt(createCountryId, 10);
     if (!createCountryId || isNaN(countryId)) {
-      toast.error("Please select a country");
+      toast.error("تکایە وڵاتێک هەڵبژێرە");
       return;
     }
     createMutation.mutate({
@@ -83,7 +83,7 @@ export default function Warehouses() {
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />Add Warehouse</Button>
+              <Button><Plus className="h-4 w-4 me-2" />Add Warehouse</Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>

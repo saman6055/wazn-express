@@ -210,7 +210,7 @@ export default function ServiceTypesManagement() {
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-white text-violet-600 hover:bg-violet-50">
-                  <Plus className="h-4 w-4 ml-2" />
+                  <Plus className="h-4 w-4 ms-2" />
                   زیادکردنی جۆری نوێ
                 </Button>
               </DialogTrigger>
@@ -284,7 +284,7 @@ export default function ServiceTypesManagement() {
                   className="mt-4"
                   onClick={() => setIsAddOpen(true)}
                 >
-                  <Plus className="h-4 w-4 ml-2" />
+                  <Plus className="h-4 w-4 ms-2" />
                   زیادکردنی جۆری یەکەم
                 </Button>
               </CardContent>
@@ -313,12 +313,12 @@ export default function ServiceTypesManagement() {
                     <Badge variant={type.isActive ? "default" : "secondary"} className="text-xs">
                       {type.isActive ? (
                         <>
-                          <CheckCircle className="h-3 w-3 ml-1" />
+                          <CheckCircle className="h-3 w-3 ms-1" />
                           چالاک
                         </>
                       ) : (
                         <>
-                          <XCircle className="h-3 w-3 ml-1" />
+                          <XCircle className="h-3 w-3 ms-1" />
                           ناچالاک
                         </>
                       )}
@@ -364,7 +364,7 @@ export default function ServiceTypesManagement() {
                       size="sm"
                       onClick={() => handleEdit(type)}
                     >
-                      <Edit className="h-4 w-4 ml-1" />
+                      <Edit className="h-4 w-4 ms-1" />
                       دەستکاری
                     </Button>
                     <AlertDialog>

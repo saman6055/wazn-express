@@ -233,10 +233,10 @@ export default function PortalMessages() {
                       "transition-all duration-200"
                     )}
                   >
-                    <MessageSquare className="w-4 h-4 mr-2" />
+                    <MessageSquare className="w-4 h-4 me-2" />
                     {isKurdish ? "چات" : "Chat"}
                     {(unreadQuery.data || 0) > 0 && (
-                      <Badge className="ml-2 bg-red-500 text-white text-xs px-1.5 py-0">
+                      <Badge className="ms-2 bg-red-500 text-white text-xs px-1.5 py-0">
                         {unreadQuery.data}
                       </Badge>
                     )}
@@ -248,7 +248,7 @@ export default function PortalMessages() {
                       "transition-all duration-200"
                     )}
                   >
-                    <Bell className="w-4 h-4 mr-2" />
+                    <Bell className="w-4 h-4 me-2" />
                     {isKurdish ? "ئاگادارییەکان" : "Notifications"}
                   </TabsTrigger>
                 </TabsList>
@@ -330,7 +330,7 @@ export default function PortalMessages() {
                             : "border-slate-200 hover:bg-slate-50"
                         )}
                       >
-                        <span className="mr-1">{reply.icon}</span>
+                        <span className="me-1">{reply.icon}</span>
                         {reply.text}
                       </Button>
                     ))}
@@ -366,7 +366,7 @@ export default function PortalMessages() {
                           )}
                         >
                           {message.senderType !== "customer" && (
-                            <Avatar className="w-8 h-8 mr-2 flex-shrink-0">
+                            <Avatar className="w-8 h-8 me-2 flex-shrink-0">
                               <AvatarFallback className={cn(
                                 "text-xs",
                                 isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600"
@@ -420,7 +420,7 @@ export default function PortalMessages() {
                           </div>
                           
                           {message.senderType === "customer" && (
-                            <Avatar className="w-8 h-8 ml-2 flex-shrink-0">
+                            <Avatar className="w-8 h-8 ms-2 flex-shrink-0">
                               <AvatarFallback className={cn(
                                 "text-xs",
                                 isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-600"

@@ -28,7 +28,7 @@ export function useCustomerLedger(customerId: number | null) {
 
 export function useFinanceDashboardStats(period?: string) {
   const query = trpc.financeIntegration.dashboardStats.useQuery(
-    period != null ? { period } : undefined
+    period != null ? { period } as any : undefined
   );
   return {
     stats: query.data,

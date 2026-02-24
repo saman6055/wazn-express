@@ -209,7 +209,7 @@ export function useCustomerDetail(customerId: number) {
         fullName: customer.fullName ?? "",
         fullNameArabic: (customer as { fullNameArabic?: string }).fullNameArabic ?? "",
         fullNameKurdish: (customer as { fullNameKurdish?: string }).fullNameKurdish ?? "",
-        gender: (customer as { gender?: string }).gender ?? "",
+        gender: ((customer as { gender?: string }).gender ?? "") as "" | "male" | "female",
         nationality: (customer as { nationality?: string }).nationality ?? "",
         businessType: (customer as { businessType?: string }).businessType ?? "",
         mobileNumber: customer.mobileNumber ?? "",

@@ -73,7 +73,8 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
   const printRef = useRef<HTMLDivElement>(null);
   
   const { data: templates } = trpc.labelTemplates.list.useQuery();
-  const { data: batches } = trpc.batches.list.useQuery();
+  const { data: batchesResponse } = trpc.batches.list.useQuery();
+  const batches = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
   const { data: packagesResponse, isLoading } = trpc.packages.list.useQuery({ pageSize: 1000 });
   const packages = packagesResponse?.data;
   
@@ -134,12 +135,12 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
       template,
       packages: selectedPkgs.map((p) => ({
         trackingNumber: p.trackingNumber,
-        weightKg: p.weightKg,
-        volumeCbm: p.volumeCbm,
-        lengthCm: p.lengthCm,
-        widthCm: p.widthCm,
-        heightCm: p.heightCm,
-        calculatedCostUsd: p.calculatedCostUsd,
+        weightKg: p.weightKg != null ? Number(p.weightKg) : null,
+        volumeCbm: p.volumeCbm != null ? Number(p.volumeCbm) : null,
+        lengthCm: p.lengthCm != null ? Number(p.lengthCm) : null,
+        widthCm: p.widthCm != null ? Number(p.widthCm) : null,
+        heightCm: p.heightCm != null ? Number(p.heightCm) : null,
+        calculatedCostUsd: p.calculatedCostUsd != null ? Number(p.calculatedCostUsd) : null,
         shippingType: p.shippingType,
       })),
       customer: selectedPkgs.map((p) => {
@@ -313,14 +314,14 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
               onClick={deselectAll}
               disabled={selectedPackages.length === 0}
             >
-              <X className="h-4 w-4 mr-2" />
+              <X className="h-4 w-4 me-2" />
               {t("auto.text_43b85e")}
             </Button>
             <Button
               onClick={handlePrint}
               disabled={selectedPackages.length === 0 || isPrinting}
             >
-              <Printer className="h-4 w-4 mr-2" />
+              <Printer className="h-4 w-4 me-2" />
               {t("auto.text_681d08")} ({selectedPackages.length})
             </Button>
           </div>
@@ -384,7 +385,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
               
               <div className="space-y-2 flex items-end">
                 <Button variant="outline" onClick={selectAll} className="w-full">
-                  <CheckSquare className="h-4 w-4 mr-2" />
+                  <CheckSquare className="h-4 w-4 me-2" />
                   {t("auto.text_218203")} ({filteredPackages.length})
                 </Button>
               </div>
@@ -569,7 +570,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
                 handlePrint();
                 setIsPreviewOpen(false);
               }}>
-                <Printer className="h-4 w-4 mr-2" />{t("actions.print")}</Button>
+                <Printer className="h-4 w-4 me-2" />{t("actions.print")}</Button>
             </div>
           </DialogContent>
         </Dialog>

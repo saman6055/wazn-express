@@ -18,10 +18,10 @@ function getErrorBoundaryStrings(): {
 } {
   const lang = (typeof localStorage !== "undefined" && localStorage.getItem(LANGUAGE_STORAGE_KEY)) || "ku";
   const maps: Record<string, Record<string, string>> = {
-    ku: (ku as Record<string, Record<string, string>>).errorBoundary,
-    en: (en as Record<string, Record<string, string>>).errorBoundary,
-    ar: (ar as Record<string, Record<string, string>>).errorBoundary,
-    zh: (zh as Record<string, Record<string, string>>).errorBoundary,
+    ku: (ku as unknown as Record<string, Record<string, string>>).errorBoundary,
+    en: (en as unknown as Record<string, Record<string, string>>).errorBoundary,
+    ar: (ar as unknown as Record<string, Record<string, string>>).errorBoundary,
+    zh: (zh as unknown as Record<string, Record<string, string>>).errorBoundary,
   };
   const s = maps[lang] || maps.ku;
   return {

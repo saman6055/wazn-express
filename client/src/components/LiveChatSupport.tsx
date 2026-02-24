@@ -384,7 +384,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                     )}
                   >
                     {message.senderType !== 'customer' && (
-                      <Avatar className="w-8 h-8 mr-2 flex-shrink-0">
+                      <Avatar className="w-8 h-8 me-2 flex-shrink-0">
                         <AvatarFallback className={cn(
                           "text-xs",
                           isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600"
@@ -426,7 +426,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                     </div>
                     
                     {message.senderType === 'customer' && (
-                      <Avatar className="w-8 h-8 ml-2 flex-shrink-0">
+                      <Avatar className="w-8 h-8 ms-2 flex-shrink-0">
                         <AvatarFallback className={cn(
                           "text-xs",
                           isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-600"
@@ -445,7 +445,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                     animate={{ opacity: 1, y: 0 }}
                     className="flex justify-start"
                   >
-                    <Avatar className="w-8 h-8 mr-2 flex-shrink-0">
+                    <Avatar className="w-8 h-8 me-2 flex-shrink-0">
                       <AvatarFallback className={cn(
                         "text-xs",
                         isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600"
@@ -495,7 +495,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                             : "border-slate-200 hover:bg-slate-50"
                         )}
                       >
-                        <span className="mr-1">{reply.icon}</span>
+                        <span className="me-1">{reply.icon}</span>
                         {reply.text}
                       </Button>
                     ))}

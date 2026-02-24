@@ -476,7 +476,7 @@ export default function InvoiceReports() {
           <div className="flex items-center gap-3">
             <Select value={dateRange} onValueChange={(v) => setDateRange(v as any)}>
               <SelectTrigger className="w-[140px]">
-                <Filter className="h-4 w-4 ml-2" />
+                <Filter className="h-4 w-4 ms-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -489,7 +489,7 @@ export default function InvoiceReports() {
             
             <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
               <SelectTrigger className="w-[120px]">
-                <Calendar className="h-4 w-4 ml-2" />
+                <Calendar className="h-4 w-4 ms-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -595,17 +595,17 @@ export default function InvoiceReports() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" disabled={isExporting || monthlyLoading}>
-                      <Download className="h-4 w-4 ml-2" />
+                      <Download className="h-4 w-4 ms-2" />
                       دابەزاندن
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => exportMonthlyReport('csv')}>
-                      <FileSpreadsheet className="h-4 w-4 ml-2" />
+                      <FileSpreadsheet className="h-4 w-4 ms-2" />
                       Excel (CSV)
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => exportMonthlyReport('pdf')}>
-                      <File className="h-4 w-4 ml-2" />
+                      <File className="h-4 w-4 ms-2" />
                       PDF / چاپکردن
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -677,17 +677,17 @@ export default function InvoiceReports() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" disabled={isExporting || customerLoading}>
-                      <Download className="h-4 w-4 ml-2" />
+                      <Download className="h-4 w-4 ms-2" />
                       دابەزاندن
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => exportCustomerReport('csv')}>
-                      <FileSpreadsheet className="h-4 w-4 ml-2" />
+                      <FileSpreadsheet className="h-4 w-4 ms-2" />
                       Excel (CSV)
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => exportCustomerReport('pdf')}>
-                      <File className="h-4 w-4 ml-2" />
+                      <File className="h-4 w-4 ms-2" />
                       PDF / چاپکردن
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -750,17 +750,17 @@ export default function InvoiceReports() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" disabled={isExporting || serviceTypeLoading}>
-                      <Download className="h-4 w-4 ml-2" />
+                      <Download className="h-4 w-4 ms-2" />
                       دابەزاندن
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => exportServiceReport('csv')}>
-                      <FileSpreadsheet className="h-4 w-4 ml-2" />
+                      <FileSpreadsheet className="h-4 w-4 ms-2" />
                       Excel (CSV)
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => exportServiceReport('pdf')}>
-                      <File className="h-4 w-4 ml-2" />
+                      <File className="h-4 w-4 ms-2" />
                       PDF / چاپکردن
                     </DropdownMenuItem>
                   </DropdownMenuContent>

@@ -373,11 +373,11 @@ const [editingTemplate, setEditingTemplate] = useState<any>(null);
             onClick={() => ensureDefaultMutation.mutate()}
             disabled={ensureDefaultMutation.isPending}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${ensureDefaultMutation.isPending ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 me-2 ${ensureDefaultMutation.isPending ? 'animate-spin' : ''}`} />
             {t("auto.text_30d6a9")}
           </Button>
           <Button onClick={handleCreate}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 me-2" />
             {t("auto.text_26b39c")}
           </Button>
         </div>
@@ -406,7 +406,7 @@ const [editingTemplate, setEditingTemplate] = useState<any>(null);
                     {template.name}
                     {template.isDefault && (
                       <Badge variant="default" className="text-xs">
-                        <Star className="h-3 w-3 mr-1" />
+                        <Star className="h-3 w-3 me-1" />
                         {t("auto.text_b254b4")}
                       </Badge>
                     )}
@@ -440,7 +440,7 @@ const [editingTemplate, setEditingTemplate] = useState<any>(null);
                     className="flex-1"
                     onClick={() => handleEdit(template)}
                   >
-                    <Edit className="h-4 w-4 mr-1" />{t("common.edit")}</Button>
+                    <Edit className="h-4 w-4 me-1" />{t("common.edit")}</Button>
                   {!template.isDefault && (
                     <>
                       <Button
@@ -792,7 +792,7 @@ const [editingTemplate, setEditingTemplate] = useState<any>(null);
           <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4 me-2" />
               {createMutation.isPending || updateMutation.isPending ? t("auto.text_f7ce12") : t("common.save")}
             </Button>
           </DialogFooter>

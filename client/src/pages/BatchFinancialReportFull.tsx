@@ -642,7 +642,7 @@ export default function BatchFinancialReportFull() {
               </div>
               <div>
                 <span className="text-lg">{selectedCustomer?.name}</span>
-                <Badge variant="outline" className="mr-2 text-xs">{selectedCustomer?.code}</Badge>
+                <Badge variant="outline" className="me-2 text-xs">{selectedCustomer?.code}</Badge>
               </div>
             </DialogTitle>
             <DialogDescription>

@@ -269,7 +269,7 @@ export default function PortalFullPackage() {
                 size="sm"
                 className="bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm rounded-xl shadow-lg transition-all hover:scale-105"
               >
-                <Plus className="w-4 h-4 ml-1" />
+                <Plus className="w-4 h-4 ms-1" />
 {isKurdish ? "داواکاری نوێ" : language === "ar" ? "طلب جديد" : "New Order"}
               </Button>
             </Link>
@@ -414,7 +414,7 @@ placeholder={isKurdish ? "گەڕان بە ناوی کاڵا..." : language === "
             </p>
             <Link href="/portal/create-full-package">
               <Button className="bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl px-6 py-3 shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                <Plus className="w-5 h-5 ml-2" />
+                <Plus className="w-5 h-5 ms-2" />
 {isKurdish ? "داواکاری نوێ" : language === "ar" ? "طلب جديد" : "New Order"}
               </Button>
             </Link>

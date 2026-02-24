@@ -128,7 +128,7 @@ export default function ProfitDashboardByType() {
                 size="sm"
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
-                <FileDown className="h-4 w-4 mr-2" />
+                <FileDown className="h-4 w-4 me-2" />
                 Excel
               </Button>
               <Button
@@ -137,7 +137,7 @@ export default function ProfitDashboardByType() {
                 size="sm"
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
-                <FileText className="h-4 w-4 mr-2" />
+                <FileText className="h-4 w-4 me-2" />
                 PDF
               </Button>
             </div>

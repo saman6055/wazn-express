@@ -1033,7 +1033,8 @@ function AlertSummarySection() {
   const { t } = useTranslation();
   const { data: packagesResponse } = trpc.packages.list.useQuery({ pageSize: 500 });
   const packages = packagesResponse?.data;
-  const { data: batches } = trpc.batches.list.useQuery();
+  const { data: batchesResponse } = trpc.batches.list.useQuery();
+  const batchList = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
 
   // Calculate package alerts
   const packageAlerts = packages?.reduce((acc, pkg) => {
@@ -1055,7 +1056,7 @@ function AlertSummarySection() {
   }, { normal: 0, warning: 0, highRisk: 0 }) || { normal: 0, warning: 0, highRisk: 0 };
 
   // Calculate batch alerts
-  const batchAlerts = batches?.reduce((acc, batch) => {
+  const batchAlerts = batchList?.reduce((acc, batch) => {
     const isCompleted = batch.status === "arrived" || batch.status === "delivered" || batch.status === "closed";
     if (isCompleted) {
       acc.normal++;

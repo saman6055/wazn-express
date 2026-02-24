@@ -108,7 +108,7 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
                 onClick={() => markAllAsReadMutation.mutate()}
                 disabled={markAllAsReadMutation.isPending}
               >
-                <CheckCheck className="h-4 w-4 mr-1" />
+                <CheckCheck className="h-4 w-4 me-1" />
                 Mark all read
               </Button>
             )}
@@ -191,7 +191,7 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
                           <Link href={notification.actionUrl}>
                             <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 h-auto p-0 text-xs">
                               {notification.actionLabel || "View"}
-                              <ChevronRight className="h-3 w-3 ml-1" />
+                              <ChevronRight className="h-3 w-3 ms-1" />
                             </Button>
                           </Link>
                         )}
