@@ -2003,100 +2003,141 @@ export async function checkExpenseThresholds(newExpenseAmount: number, newExpens
 // ============ COMPREHENSIVE P&L DASHBOARD FUNCTIONS ============
 
 export async function getBatchProfitByShippingType(startDate: Date, endDate: Date) {
+  const emptyResult = { air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 } };
   const db = await getDb();
-  if (!db) return { air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 } };
-  const batchList = await db.select({ id: batches.id, shippingType: batches.shippingType, shippingCost: batches.shippingCost, actualWeightKg: batches.actualWeightKg, chargedWeightKg: batches.chargedWeightKg, totalWeight: batches.totalWeight, actualCbm: batches.actualCbm, chargedCbm: batches.chargedCbm }).from(batches).where(and(gte(batches.createdAt, startDate), lte(batches.createdAt, endDate)));
-  const result: Record<string, { revenue: number; cost: number; profit: number; count: number; totalWeight: number; totalCbm: number; batchCount: number }> = {
-    air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
-    air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
-    sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
-  };
-  if (batchList.length === 0) return result;
-  const batchIds = batchList.map(b => b.id);
-  const allPackages = await db.select({ batchId: packages.batchId, calculatedCostUsd: packages.calculatedCostUsd }).from(packages).where(inArray(packages.batchId, batchIds));
-  const packagesByBatch = new Map<number, { calculatedCostUsd: string | null }[]>();
-  for (const pkg of allPackages) {
-    if (pkg.batchId == null) continue;
-    if (!packagesByBatch.has(pkg.batchId)) packagesByBatch.set(pkg.batchId, []);
-    packagesByBatch.get(pkg.batchId)!.push({ calculatedCostUsd: pkg.calculatedCostUsd });
-  }
-  for (const batch of batchList) {
-    const type = batch.shippingType || 'air_regular';
-    if (!result[type]) continue;
-    result[type].batchCount++;
-    result[type].cost += Number(batch.shippingCost || 0);
-    result[type].totalWeight += Number(batch.actualWeightKg || batch.chargedWeightKg || batch.totalWeight || 0);
-    result[type].totalCbm += Number(batch.actualCbm || batch.chargedCbm || 0);
-    const batchPackages = packagesByBatch.get(batch.id) ?? [];
-    for (const pkg of batchPackages) {
-      result[type].count++;
-      result[type].revenue += Number(pkg.calculatedCostUsd || 0);
+  if (!db) return emptyResult;
+  try {
+    // Try fetching with typed columns first, fall back to raw SQL if schema mismatch
+    let batchList: { id: number; shippingType: string | null; shippingCost: string | null; totalWeight: string | null }[];
+    try {
+      batchList = (await db.select({ id: batches.id, shippingType: batches.shippingType, shippingCost: batches.shippingCost, actualWeightKg: batches.actualWeightKg, chargedWeightKg: batches.chargedWeightKg, totalWeight: batches.totalWeight, actualCbm: batches.actualCbm, chargedCbm: batches.chargedCbm }).from(batches).where(and(gte(batches.createdAt, startDate), lte(batches.createdAt, endDate)))) as any;
+    } catch {
+      // Fallback: minimal columns that should always exist
+      const [rows] = (await db.execute(sql`SELECT id, shippingType, shippingCost, totalWeight FROM batches WHERE createdAt >= ${startDate} AND createdAt <= ${endDate}`)) as unknown as [any[]];
+      batchList = (rows ?? []).map((r: any) => ({ id: Number(r.id), shippingType: r.shippingType, shippingCost: r.shippingCost, totalWeight: r.totalWeight }));
     }
-    result[type].profit = result[type].revenue - result[type].cost;
+    const result: Record<string, { revenue: number; cost: number; profit: number; count: number; totalWeight: number; totalCbm: number; batchCount: number }> = {
+      air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
+      air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
+      sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
+    };
+    if (batchList.length === 0) return result;
+    const batchIds = batchList.map(b => b.id);
+    let allPackages: { batchId: number | null; calculatedCostUsd: string | null }[];
+    try {
+      allPackages = await db.select({ batchId: packages.batchId, calculatedCostUsd: packages.calculatedCostUsd }).from(packages).where(inArray(packages.batchId, batchIds));
+    } catch {
+      // Fallback: raw SQL
+      const [pkgRows] = (await db.execute(sql`SELECT batchId, calculatedCostUsd FROM packages WHERE batchId IN (${sql.raw(batchIds.join(','))})`)) as unknown as [any[]];
+      allPackages = (pkgRows ?? []).map((r: any) => ({ batchId: r.batchId != null ? Number(r.batchId) : null, calculatedCostUsd: r.calculatedCostUsd != null ? String(r.calculatedCostUsd) : null }));
+    }
+    const packagesByBatch = new Map<number, { calculatedCostUsd: string | null }[]>();
+    for (const pkg of allPackages) {
+      if (pkg.batchId == null) continue;
+      if (!packagesByBatch.has(pkg.batchId)) packagesByBatch.set(pkg.batchId, []);
+      packagesByBatch.get(pkg.batchId)!.push({ calculatedCostUsd: pkg.calculatedCostUsd });
+    }
+    for (const batch of batchList) {
+      const type = (batch as any).shippingType || 'air_regular';
+      if (!result[type]) continue;
+      result[type].batchCount++;
+      result[type].cost += Number((batch as any).shippingCost || 0);
+      result[type].totalWeight += Number((batch as any).actualWeightKg || (batch as any).chargedWeightKg || (batch as any).totalWeight || 0);
+      result[type].totalCbm += Number((batch as any).actualCbm || (batch as any).chargedCbm || 0);
+      const batchPackages = packagesByBatch.get(batch.id) ?? [];
+      for (const pkg of batchPackages) {
+        result[type].count++;
+        result[type].revenue += Number(pkg.calculatedCostUsd || 0);
+      }
+      result[type].profit = result[type].revenue - result[type].cost;
+    }
+    return result;
+  } catch (err) {
+    appLogger.error("getBatchProfitByShippingType failed", { error: err instanceof Error ? err.message : String(err) });
+    return emptyResult;
   }
-  return result;
 }
 
 export async function getFullPackageProfitBreakdown(startDate: Date, endDate: Date) {
+  const emptyResult = { fullPackage: { revenue: 0, cost: 0, shippingCost: 0, profit: 0, count: 0 }, commission: { totalCommission: 0, count: 0 } };
   const db = await getDb();
-  if (!db) return { fullPackage: { revenue: 0, cost: 0, shippingCost: 0, profit: 0, count: 0 }, commission: { totalCommission: 0, count: 0 } };
-  const fpOrders = await db.select().from(fullPackageOrders).where(and(gte(fullPackageOrders.createdAt, startDate), lte(fullPackageOrders.createdAt, endDate), eq(fullPackageOrders.orderType, 'full_package')));
-  const fullPackageData = { revenue: 0, cost: 0, shippingCost: 0, profit: 0, count: fpOrders.length };
-  for (const order of fpOrders) {
-    const selling = Number(order.sellingPriceUsd || 0);
-    const purchase = Number(order.purchasePriceUsd || 0);
-    const shipping = Number(order.shippingCostUsd || 0);
-    fullPackageData.revenue += selling;
-    fullPackageData.cost += purchase;
-    fullPackageData.shippingCost += shipping;
-    fullPackageData.profit += (selling - purchase - shipping);
+  if (!db) return emptyResult;
+  try {
+    const fpOrders = await db.select().from(fullPackageOrders).where(and(gte(fullPackageOrders.createdAt, startDate), lte(fullPackageOrders.createdAt, endDate), eq(fullPackageOrders.orderType, 'full_package')));
+    const fullPackageData = { revenue: 0, cost: 0, shippingCost: 0, profit: 0, count: fpOrders.length };
+    for (const order of fpOrders) {
+      const selling = Number(order.sellingPriceUsd || 0);
+      const purchase = Number(order.purchasePriceUsd || 0);
+      const shipping = Number(order.shippingCostUsd || 0);
+      fullPackageData.revenue += selling;
+      fullPackageData.cost += purchase;
+      fullPackageData.shippingCost += shipping;
+      fullPackageData.profit += (selling - purchase - shipping);
+    }
+    const commOrders = await db.select().from(fullPackageOrders).where(and(gte(fullPackageOrders.createdAt, startDate), lte(fullPackageOrders.createdAt, endDate), eq(fullPackageOrders.orderType, 'commission')));
+    const commissionData = { totalCommission: 0, count: commOrders.length };
+    for (const order of commOrders) {
+      commissionData.totalCommission += Number(order.commissionFeeUsd || order.commissionAmount || 0);
+    }
+    return { fullPackage: fullPackageData, commission: commissionData };
+  } catch (err) {
+    appLogger.error("getFullPackageProfitBreakdown failed", { error: err instanceof Error ? err.message : String(err) });
+    return emptyResult;
   }
-  const commOrders = await db.select().from(fullPackageOrders).where(and(gte(fullPackageOrders.createdAt, startDate), lte(fullPackageOrders.createdAt, endDate), eq(fullPackageOrders.orderType, 'commission')));
-  const commissionData = { totalCommission: 0, count: commOrders.length };
-  for (const order of commOrders) {
-    commissionData.totalCommission += Number(order.commissionFeeUsd || order.commissionAmount || 0);
-  }
-  return { fullPackage: fullPackageData, commission: commissionData };
 }
 
 export async function getServiceProfitBreakdown(startDate: Date, endDate: Date) {
+  const emptyResult = { revenue: 0, cost: 0, profit: 0, count: 0, byType: [] as { typeId: number; typeName: string; revenue: number; cost: number; profit: number; count: number }[] };
   const db = await getDb();
-  if (!db) return { revenue: 0, cost: 0, profit: 0, count: 0, byType: [] as { typeId: number; typeName: string; revenue: number; cost: number; profit: number; count: number }[] };
-  const services = await db.select().from(extraServices).where(and(gte(extraServices.createdAt, startDate), lte(extraServices.createdAt, endDate)));
-  const typeMap = new Map<number, { typeName: string; revenue: number; cost: number; profit: number; count: number }>();
-  let totalRevenue = 0, totalCost = 0, totalProfit = 0;
-  const types = await db.select().from(serviceTypes);
-  const typeNameMap = new Map<number, string>();
-  for (const t of types) typeNameMap.set(t.id, t.nameKu || t.nameEn || `Service ${t.id}`);
-  for (const svc of services) {
-    const revenue = Number(svc.priceAmount || 0);
-    const cost = Number(svc.costAmount || 0);
-    const profit = Number(svc.profitAmount || 0) || (revenue - cost);
-    totalRevenue += revenue; totalCost += cost; totalProfit += profit;
-    const existing = typeMap.get(svc.serviceTypeId) || { typeName: typeNameMap.get(svc.serviceTypeId) || '', revenue: 0, cost: 0, profit: 0, count: 0 };
-    existing.revenue += revenue; existing.cost += cost; existing.profit += profit; existing.count++;
-    typeMap.set(svc.serviceTypeId, existing);
+  if (!db) return emptyResult;
+  try {
+    const services = await db.select().from(extraServices).where(and(gte(extraServices.createdAt, startDate), lte(extraServices.createdAt, endDate)));
+    const typeMap = new Map<number, { typeName: string; revenue: number; cost: number; profit: number; count: number }>();
+    let totalRevenue = 0, totalCost = 0, totalProfit = 0;
+    let types: { id: number; nameKu: string | null; nameEn: string }[] = [];
+    try { types = await db.select().from(serviceTypes) as any; } catch { /* serviceTypes may not exist */ }
+    const typeNameMap = new Map<number, string>();
+    for (const t of types) typeNameMap.set(t.id, t.nameKu || t.nameEn || `Service ${t.id}`);
+    for (const svc of services) {
+      const revenue = Number(svc.priceAmount || 0);
+      const cost = Number(svc.costAmount || 0);
+      const profit = Number(svc.profitAmount || 0) || (revenue - cost);
+      totalRevenue += revenue; totalCost += cost; totalProfit += profit;
+      const existing = typeMap.get(svc.serviceTypeId) || { typeName: typeNameMap.get(svc.serviceTypeId) || '', revenue: 0, cost: 0, profit: 0, count: 0 };
+      existing.revenue += revenue; existing.cost += cost; existing.profit += profit; existing.count++;
+      typeMap.set(svc.serviceTypeId, existing);
+    }
+    return { revenue: totalRevenue, cost: totalCost, profit: totalProfit, count: services.length, byType: Array.from(typeMap.entries()).map(([typeId, data]) => ({ typeId, ...data })) };
+  } catch (err) {
+    appLogger.error("getServiceProfitBreakdown failed", { error: err instanceof Error ? err.message : String(err) });
+    return emptyResult;
   }
-  return { revenue: totalRevenue, cost: totalCost, profit: totalProfit, count: services.length, byType: Array.from(typeMap.entries()).map(([typeId, data]) => ({ typeId, ...data })) };
 }
 
 export async function getExpenseBreakdownDetailed(startDate: Date, endDate: Date) {
+  const emptyResult = { categories: [] as { id: number; nameEn: string; nameKu: string; icon: string; color: string; amount: number; count: number; percentage: number }[], total: 0 };
   const db = await getDb();
-  if (!db) return { categories: [] as { id: number; nameEn: string; nameKu: string; icon: string; color: string; amount: number; count: number; percentage: number }[], total: 0 };
-  const expenseResult = await db.select({ categoryId: expenses.categoryId, amount: sql<number>`SUM(${expenses.amountUsd})`, count: sql<number>`COUNT(*)` }).from(expenses).where(and(gte(expenses.expenseDate, startDate), lte(expenses.expenseDate, endDate))).groupBy(expenses.categoryId);
-  const allCategories = await db.select().from(expenseCategories);
-  const catMap = new Map<number, ExpenseCategory>();
-  for (const cat of allCategories) catMap.set(cat.id, cat);
-  let total = 0;
-  const categories = expenseResult.map(e => {
-    const amount = Number(e.amount || 0);
-    total += amount;
-    const cat = catMap.get(e.categoryId);
-    return { id: e.categoryId, nameEn: cat?.nameEn || 'Other', nameKu: cat?.nameKu || 'تر', icon: cat?.icon || '📦', color: cat?.color || '#6B7280', amount, count: Number(e.count || 0), percentage: 0 };
-  });
-  for (const cat of categories) cat.percentage = total > 0 ? (cat.amount / total) * 100 : 0;
-  categories.sort((a, b) => b.amount - a.amount);
-  return { categories, total };
+  if (!db) return emptyResult;
+  try {
+    const expenseResult = await db.select({ categoryId: expenses.categoryId, amount: sql<number>`SUM(${expenses.amountUsd})`, count: sql<number>`COUNT(*)` }).from(expenses).where(and(gte(expenses.expenseDate, startDate), lte(expenses.expenseDate, endDate))).groupBy(expenses.categoryId);
+    let allCategories: ExpenseCategory[] = [];
+    try { allCategories = await db.select().from(expenseCategories); } catch { /* table may not exist */ }
+    const catMap = new Map<number, ExpenseCategory>();
+    for (const cat of allCategories) catMap.set(cat.id, cat);
+    let total = 0;
+    const categories = expenseResult.map(e => {
+      const amount = Number(e.amount || 0);
+      total += amount;
+      const cat = catMap.get(e.categoryId);
+      return { id: e.categoryId, nameEn: cat?.nameEn || 'Other', nameKu: cat?.nameKu || 'تر', icon: cat?.icon || '📦', color: cat?.color || '#6B7280', amount, count: Number(e.count || 0), percentage: 0 };
+    });
+    for (const cat of categories) cat.percentage = total > 0 ? (cat.amount / total) * 100 : 0;
+    categories.sort((a, b) => b.amount - a.amount);
+    return { categories, total };
+  } catch (err) {
+    appLogger.error("getExpenseBreakdownDetailed failed", { error: err instanceof Error ? err.message : String(err) });
+    return emptyResult;
+  }
 }
 
 export async function getMonthlyTrendData(startDate: Date, endDate: Date) {
@@ -2180,33 +2221,43 @@ const EMPTY_DASHBOARD_STATS = {
 };
 
 export async function getComprehensiveDashboardStats(startDate: Date, endDate: Date) {
-  try {
-    const [batchProfit, fpProfit, serviceProfit, expenseBreakdown, monthlyTrend, activity] = await Promise.all([
-      getBatchProfitByShippingType(startDate, endDate),
-      getFullPackageProfitBreakdown(startDate, endDate),
-      getServiceProfitBreakdown(startDate, endDate),
-      getExpenseBreakdownDetailed(startDate, endDate),
-      getMonthlyTrendData(startDate, endDate),
-      getActivityStats(startDate, endDate),
-    ]);
-    const batchRevenue = (batchProfit.air_regular?.profit || 0) + (batchProfit.air_irregular?.profit || 0) + (batchProfit.sea?.profit || 0);
-    const fpRevenue = fpProfit?.fullPackage?.profit ?? 0;
-    const commissionRevenue = fpProfit?.commission?.totalCommission ?? 0;
-    const serviceRevenue = serviceProfit?.profit ?? 0;
-    const totalGrossRevenue = batchRevenue + fpRevenue + commissionRevenue + serviceRevenue;
-    const totalExpenses = expenseBreakdown?.total ?? 0;
-    const netProfit = totalGrossRevenue - totalExpenses;
-    const profitMargin = totalGrossRevenue > 0 ? (netProfit / totalGrossRevenue) * 100 : 0;
-    return {
-      revenueBySource: { batchProfit: { air_regular: batchProfit.air_regular, air_irregular: batchProfit.air_irregular, sea: batchProfit.sea, total: batchRevenue }, fullPackage: { ...fpProfit?.fullPackage }, commission: { ...fpProfit?.commission }, service: serviceProfit, totalRevenue: totalGrossRevenue },
-      expenseBreakdown,
-      profitLoss: { totalRevenue: totalGrossRevenue, totalExpenses, netProfit, profitMargin, isProfit: netProfit >= 0 },
-      monthlyTrend,
-      activity,
-    };
-  } catch (err) {
-    appLogger.error("getComprehensiveDashboardStats failed", { error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined });
-    return EMPTY_DASHBOARD_STATS;
-  }
+  // Each sub-query is individually wrapped so ONE failure doesn't zero-out the entire dashboard
+  const defaultBatchProfit = { air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 } };
+  const defaultFpProfit = { fullPackage: { revenue: 0, cost: 0, shippingCost: 0, profit: 0, count: 0 }, commission: { totalCommission: 0, count: 0 } };
+  const defaultServiceProfit = { revenue: 0, cost: 0, profit: 0, count: 0, byType: [] as { typeId: number; typeName: string; revenue: number; cost: number; profit: number; count: number }[] };
+  const defaultExpenseBreakdown = { categories: [] as { id: number; nameEn: string; nameKu: string; icon: string; color: string; amount: number; count: number; percentage: number }[], total: 0 };
+
+  const safeCall = async <T>(fn: () => Promise<T>, fallback: T, label: string): Promise<T> => {
+    try { return await fn(); } catch (err) {
+      appLogger.error(`Dashboard sub-query [${label}] failed`, { error: err instanceof Error ? err.message : String(err) });
+      return fallback;
+    }
+  };
+
+  const [batchProfit, fpProfit, serviceProfit, expenseBreakdown, monthlyTrend, activity] = await Promise.all([
+    safeCall(() => getBatchProfitByShippingType(startDate, endDate), defaultBatchProfit, "batchProfit"),
+    safeCall(() => getFullPackageProfitBreakdown(startDate, endDate), defaultFpProfit, "fullPackageProfit"),
+    safeCall(() => getServiceProfitBreakdown(startDate, endDate), defaultServiceProfit, "serviceProfit"),
+    safeCall(() => getExpenseBreakdownDetailed(startDate, endDate), defaultExpenseBreakdown, "expenseBreakdown"),
+    safeCall(() => getMonthlyTrendData(startDate, endDate), [] as { month: string; revenue: number; expenses: number; netProfit: number }[], "monthlyTrend"),
+    safeCall(() => getActivityStats(startDate, endDate), { packagesDelivered: 0, fullPackagesSold: 0, commissionOrders: 0, invoicesIssued: 0, paymentsReceived: 0, servicesCompleted: 0, totalCustomers: 0 }, "activityStats"),
+  ]);
+
+  const batchRevenue = (batchProfit.air_regular?.profit || 0) + (batchProfit.air_irregular?.profit || 0) + (batchProfit.sea?.profit || 0);
+  const fpRevenue = fpProfit?.fullPackage?.profit ?? 0;
+  const commissionRevenue = fpProfit?.commission?.totalCommission ?? 0;
+  const serviceRevenue = serviceProfit?.profit ?? 0;
+  const totalGrossRevenue = batchRevenue + fpRevenue + commissionRevenue + serviceRevenue;
+  const totalExpenses = expenseBreakdown?.total ?? 0;
+  const netProfit = totalGrossRevenue - totalExpenses;
+  const profitMargin = totalGrossRevenue > 0 ? (netProfit / totalGrossRevenue) * 100 : 0;
+
+  return {
+    revenueBySource: { batchProfit: { air_regular: batchProfit.air_regular, air_irregular: batchProfit.air_irregular, sea: batchProfit.sea, total: batchRevenue }, fullPackage: { ...fpProfit?.fullPackage }, commission: { ...fpProfit?.commission }, service: serviceProfit, totalRevenue: totalGrossRevenue },
+    expenseBreakdown,
+    profitLoss: { totalRevenue: totalGrossRevenue, totalExpenses, netProfit, profitMargin, isProfit: netProfit >= 0 },
+    monthlyTrend,
+    activity,
+  };
 }
 

@@ -251,15 +251,49 @@ async function createServiceTypeFallback(
   const insertId = Number(insertResult[0]?.insertId);
   if (!insertId) throw new Error("Insert failed");
   const [rows] = (await db.execute(
-    sql`SELECT id, nameEn, nameKu, nameAr, isActive, createdAt, updatedAt FROM serviceTypes WHERE id = ${insertId}`
+    sql`SELECT * FROM serviceTypes WHERE id = ${insertId}`
   )) as unknown as [Record<string, unknown>[]];
   const row = Array.isArray(rows) ? rows[0] : rows;
   return mapRowToServiceType((row ?? {}) as Record<string, unknown>);
 }
 
+/** Ensure serviceTypes table has all required columns (auto-migration) */
+async function ensureServiceTypeColumns(db: NonNullable<Awaited<ReturnType<typeof getDb>>>): Promise<void> {
+  const columns = ['icon', 'color', 'defaultCost', 'defaultPrice', 'requiresCustomer', 'addToCustomerBalance', 'sortOrder', 'createdById'];
+  for (const col of columns) {
+    try {
+      await db.execute(sql`SELECT ${sql.raw(col)} FROM serviceTypes LIMIT 0`);
+    } catch {
+      // Column doesn't exist - add it
+      const alterSql = col === 'icon' ? `ALTER TABLE serviceTypes ADD COLUMN icon VARCHAR(50)` :
+        col === 'color' ? `ALTER TABLE serviceTypes ADD COLUMN color VARCHAR(20)` :
+        col === 'defaultCost' ? `ALTER TABLE serviceTypes ADD COLUMN defaultCost DECIMAL(10,2)` :
+        col === 'defaultPrice' ? `ALTER TABLE serviceTypes ADD COLUMN defaultPrice DECIMAL(10,2)` :
+        col === 'requiresCustomer' ? `ALTER TABLE serviceTypes ADD COLUMN requiresCustomer BOOLEAN NOT NULL DEFAULT TRUE` :
+        col === 'addToCustomerBalance' ? `ALTER TABLE serviceTypes ADD COLUMN addToCustomerBalance BOOLEAN NOT NULL DEFAULT TRUE` :
+        col === 'sortOrder' ? `ALTER TABLE serviceTypes ADD COLUMN sortOrder INT NOT NULL DEFAULT 0` :
+        col === 'createdById' ? `ALTER TABLE serviceTypes ADD COLUMN createdById INT` : null;
+      if (alterSql) {
+        try { await db.execute(sql.raw(alterSql)); } catch { /* already exists or other issue */ }
+      }
+    }
+  }
+}
+
+let _serviceTypeColumnsEnsured = false;
+
 export async function createServiceType(data: InsertServiceType): Promise<ServiceType> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+
+  // Auto-migrate columns on first call
+  if (!_serviceTypeColumnsEnsured) {
+    try {
+      await ensureServiceTypeColumns(db);
+      _serviceTypeColumnsEnsured = true;
+    } catch { /* non-fatal */ }
+  }
+
   try {
     const result = await db.insert(serviceTypes).values(data);
     const insertId = Number(result[0].insertId);

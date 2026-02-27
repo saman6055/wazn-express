@@ -2703,7 +2703,9 @@
     "last3Months": "最近3个月",
     "last6Months": "最近6个月",
     "thisYear": "今年",
-    "allTime": "所有时间"
+    "allTime": "所有时间",
+    "noActivityHintTitle": "所有数据为零",
+    "noActivityHintBody": "所选期间内没有记录的收入或支出。批次收入与该期间内创建的批次相关。您可以选择「今年」或其他时间段。"
   },
   "tables": {
     "noData": "暂无数据",
