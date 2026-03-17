@@ -94,10 +94,15 @@ export async function getRevenueByDateRange(startDate: Date, endDate: Date) {
 export async function getPackageCountByStatus() {
   const db = await getDb();
   if (!db) return [];
-  return db.select({
-    status: packages.status,
-    count: sql<number>`COUNT(*)`,
-  }).from(packages).groupBy(packages.status);
+  try {
+    return await db.select({
+      status: packages.status,
+      count: sql<number>`COUNT(*)`,
+    }).from(packages).groupBy(packages.status);
+  } catch (err) {
+    appLogger.error("getPackageCountByStatus failed", { error: err instanceof Error ? err.message : String(err) });
+    return [];
+  }
 }
 
 export async function getCustomersWithBalance() {
@@ -368,92 +373,119 @@ export async function getDashboardFinancialStats(): Promise<{
   monthPackages: number;
   totalDebt: number;
 }> {
-  const db = await getDb();
-  if (!db) return {
+  const emptyResult = {
     todayRevenue: 0, weekRevenue: 0, monthRevenue: 0,
     todayChange: 0, weekChange: 0, monthChange: 0,
     todayPackages: 0, weekPackages: 0, monthPackages: 0,
     totalDebt: 0
   };
+  const db = await getDb();
+  if (!db) return emptyResult;
 
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
-  const weekStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const lastWeekStart = new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonthEnd = new Date(monthStart.getTime() - 1);
+  try {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+    const weekStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const lastWeekStart = new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-  // Today's revenue from payments
-  const todayPayments = await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
-  }).from(paymentRecords).where(gte(paymentRecords.createdAt, todayStart));
-  const todayRevenue = parseFloat(todayPayments[0]?.total || '0');
+    // Revenue queries - each wrapped individually
+    let todayRevenue = 0, yesterdayRevenue = 0, weekRevenue = 0, lastWeekRevenue = 0, monthRevenue = 0, lastMonthRevenue = 0;
+    try {
+      const todayPayments = await db.select({
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+      }).from(paymentRecords).where(gte(paymentRecords.createdAt, todayStart));
+      todayRevenue = parseFloat(todayPayments[0]?.total || '0');
+    } catch (e) { appLogger.error('Dashboard: todayRevenue query failed', { error: e instanceof Error ? e.message : String(e) }); }
 
-  // Yesterday's revenue for comparison
-  const yesterdayPayments = await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
-  }).from(paymentRecords).where(and(
-    gte(paymentRecords.createdAt, yesterdayStart),
-    lt(paymentRecords.createdAt, todayStart)
-  ));
-  const yesterdayRevenue = parseFloat(yesterdayPayments[0]?.total || '0');
-  const todayChange = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
+    try {
+      const yesterdayPayments = await db.select({
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+      }).from(paymentRecords).where(and(
+        gte(paymentRecords.createdAt, yesterdayStart),
+        lt(paymentRecords.createdAt, todayStart)
+      ));
+      yesterdayRevenue = parseFloat(yesterdayPayments[0]?.total || '0');
+    } catch { /* non-critical */ }
 
-  // This week's revenue
-  const weekPayments = await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
-  }).from(paymentRecords).where(gte(paymentRecords.createdAt, weekStart));
-  const weekRevenue = parseFloat(weekPayments[0]?.total || '0');
+    try {
+      const weekPayments = await db.select({
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+      }).from(paymentRecords).where(gte(paymentRecords.createdAt, weekStart));
+      weekRevenue = parseFloat(weekPayments[0]?.total || '0');
+    } catch (e) { appLogger.error('Dashboard: weekRevenue query failed', { error: e instanceof Error ? e.message : String(e) }); }
 
-  // Last week's revenue for comparison
-  const lastWeekPayments = await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
-  }).from(paymentRecords).where(and(
-    gte(paymentRecords.createdAt, lastWeekStart),
-    lt(paymentRecords.createdAt, weekStart)
-  ));
-  const lastWeekRevenue = parseFloat(lastWeekPayments[0]?.total || '0');
-  const weekChange = lastWeekRevenue > 0 ? ((weekRevenue - lastWeekRevenue) / lastWeekRevenue) * 100 : 0;
+    try {
+      const lastWeekPayments = await db.select({
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+      }).from(paymentRecords).where(and(
+        gte(paymentRecords.createdAt, lastWeekStart),
+        lt(paymentRecords.createdAt, weekStart)
+      ));
+      lastWeekRevenue = parseFloat(lastWeekPayments[0]?.total || '0');
+    } catch { /* non-critical */ }
 
-  // This month's revenue
-  const monthPayments = await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
-  }).from(paymentRecords).where(gte(paymentRecords.createdAt, monthStart));
-  const monthRevenue = parseFloat(monthPayments[0]?.total || '0');
+    try {
+      const monthPayments = await db.select({
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+      }).from(paymentRecords).where(gte(paymentRecords.createdAt, monthStart));
+      monthRevenue = parseFloat(monthPayments[0]?.total || '0');
+    } catch (e) { appLogger.error('Dashboard: monthRevenue query failed', { error: e instanceof Error ? e.message : String(e) }); }
 
-  // Last month's revenue for comparison
-  const lastMonthPayments = await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
-  }).from(paymentRecords).where(and(
-    gte(paymentRecords.createdAt, lastMonthStart),
-    lt(paymentRecords.createdAt, monthStart)
-  ));
-  const lastMonthRevenue = parseFloat(lastMonthPayments[0]?.total || '0');
-  const monthChange = lastMonthRevenue > 0 ? ((monthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
+    try {
+      const lastMonthPayments = await db.select({
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+      }).from(paymentRecords).where(and(
+        gte(paymentRecords.createdAt, lastMonthStart),
+        lt(paymentRecords.createdAt, monthStart)
+      ));
+      lastMonthRevenue = parseFloat(lastMonthPayments[0]?.total || '0');
+    } catch { /* non-critical */ }
 
-  // Package counts
-  const todayPkgCount = await db.select({ count: count() }).from(packages).where(gte(packages.createdAt, todayStart));
-  const weekPkgCount = await db.select({ count: count() }).from(packages).where(gte(packages.createdAt, weekStart));
-  const monthPkgCount = await db.select({ count: count() }).from(packages).where(gte(packages.createdAt, monthStart));
+    const todayChange = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
+    const weekChange = lastWeekRevenue > 0 ? ((weekRevenue - lastWeekRevenue) / lastWeekRevenue) * 100 : 0;
+    const monthChange = lastMonthRevenue > 0 ? ((monthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
 
-  // Total debt - use unified debt calculation
-  const debtInfo = await getTotalDebtAmount();
-  const totalDebt = debtInfo.totalUsd;
+    // Package counts
+    let todayPackages = 0, weekPackages = 0, monthPackages = 0;
+    try {
+      const todayPkgCount = await db.select({ count: count() }).from(packages).where(gte(packages.createdAt, todayStart));
+      todayPackages = todayPkgCount[0]?.count || 0;
+    } catch { /* ignore */ }
+    try {
+      const weekPkgCount = await db.select({ count: count() }).from(packages).where(gte(packages.createdAt, weekStart));
+      weekPackages = weekPkgCount[0]?.count || 0;
+    } catch { /* ignore */ }
+    try {
+      const monthPkgCount = await db.select({ count: count() }).from(packages).where(gte(packages.createdAt, monthStart));
+      monthPackages = monthPkgCount[0]?.count || 0;
+    } catch { /* ignore */ }
 
-  return {
-    todayRevenue,
-    weekRevenue,
-    monthRevenue,
-    todayChange: Math.round(todayChange * 10) / 10,
-    weekChange: Math.round(weekChange * 10) / 10,
-    monthChange: Math.round(monthChange * 10) / 10,
-    todayPackages: todayPkgCount[0]?.count || 0,
-    weekPackages: weekPkgCount[0]?.count || 0,
-    monthPackages: monthPkgCount[0]?.count || 0,
-    totalDebt
-  };
+    // Total debt - use unified debt calculation
+    let totalDebt = 0;
+    try {
+      const debtInfo = await getTotalDebtAmount();
+      totalDebt = debtInfo.totalUsd;
+    } catch (e) { appLogger.error('Dashboard: totalDebt query failed', { error: e instanceof Error ? e.message : String(e) }); }
+
+    return {
+      todayRevenue,
+      weekRevenue,
+      monthRevenue,
+      todayChange: Math.round(todayChange * 10) / 10,
+      weekChange: Math.round(weekChange * 10) / 10,
+      monthChange: Math.round(monthChange * 10) / 10,
+      todayPackages,
+      weekPackages,
+      monthPackages,
+      totalDebt
+    };
+  } catch (err) {
+    appLogger.error("getDashboardFinancialStats failed", { error: err instanceof Error ? err.message : String(err) });
+    return emptyResult;
+  }
 }
 
 export async function getDashboardRevenueChart(days: number = 30): Promise<{ date: string; revenue: number; packages: number }[]> {
@@ -637,40 +669,44 @@ export async function getDashboardActiveBatches(): Promise<{
 }[]> {
   const db = await getDb();
   if (!db) return [];
+  try {
+    const activeBatches = await db.select({
+      id: batches.id,
+      batchCode: batches.batchCode,
+      status: batches.status,
+      shippingType: batches.shippingType,
+      createdAt: batches.createdAt
+    }).from(batches)
+      .where(inArray(batches.status, ['preparing', 'in_transit', 'arrived']))
+      .orderBy(desc(batches.createdAt))
+      .limit(5);
 
-  const activeBatches = await db.select({
-    id: batches.id,
-    batchCode: batches.batchCode,
-    status: batches.status,
-    shippingType: batches.shippingType,
-    createdAt: batches.createdAt
-  }).from(batches)
-    .where(inArray(batches.status, ['preparing', 'in_transit', 'arrived']))
-    .orderBy(desc(batches.createdAt))
-    .limit(5);
+    // Batch fetch package stats for all active batches (avoid N+1)
+    const batchIds = activeBatches.map((b) => b.id);
+    const statsRows = batchIds.length > 0
+      ? await db.select({
+          batchId: packages.batchId,
+          count: count(),
+          totalWeight: sql<string>`COALESCE(SUM(CAST(${packages.weightKg} AS DECIMAL(10,2))), 0)`
+        })
+          .from(packages)
+          .where(inArray(packages.batchId, batchIds))
+          .groupBy(packages.batchId)
+      : [];
+    const statsByBatchId = new Map(statsRows.map((r) => [r.batchId, { count: r.count, totalWeight: parseFloat(r.totalWeight || "0") }]));
 
-  // Batch fetch package stats for all active batches (avoid N+1)
-  const batchIds = activeBatches.map((b) => b.id);
-  const statsRows = batchIds.length > 0
-    ? await db.select({
-        batchId: packages.batchId,
-        count: count(),
-        totalWeight: sql<string>`COALESCE(SUM(CAST(${packages.weightKg} AS DECIMAL(10,2))), 0)`
-      })
-        .from(packages)
-        .where(inArray(packages.batchId, batchIds))
-        .groupBy(packages.batchId)
-    : [];
-  const statsByBatchId = new Map(statsRows.map((r) => [r.batchId, { count: r.count, totalWeight: parseFloat(r.totalWeight || "0") }]));
-
-  return activeBatches.map((batch) => {
-    const stats = statsByBatchId.get(batch.id) ?? { count: 0, totalWeight: 0 };
-    return {
-      ...batch,
-      packageCount: stats.count,
-      totalWeight: stats.totalWeight
-    };
-  });
+    return activeBatches.map((batch) => {
+      const stats = statsByBatchId.get(batch.id) ?? { count: 0, totalWeight: 0 };
+      return {
+        ...batch,
+        packageCount: stats.count,
+        totalWeight: stats.totalWeight
+      };
+    });
+  } catch (err) {
+    appLogger.error("getDashboardActiveBatches failed", { error: err instanceof Error ? err.message : String(err) });
+    return [];
+  }
 }
 
 export async function getDashboardTopDebtors(limit: number = 5): Promise<{
@@ -682,46 +718,51 @@ export async function getDashboardTopDebtors(limit: number = 5): Promise<{
 }[]> {
   const db = await getDb();
   if (!db) return [];
+  try {
+    const debtors = await db.select({
+      accountId: customerAccounts.id,
+      customerId: customerAccounts.customerId,
+      debtUsd: sql<string>`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`
+    }).from(customerAccounts)
+      .where(gt(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`, 0))
+      .orderBy(desc(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`))
+      .limit(limit);
 
-  const debtors = await db.select({
-    accountId: customerAccounts.id,
-    customerId: customerAccounts.customerId,
-    debtUsd: sql<string>`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`
-  }).from(customerAccounts)
-    .where(gt(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`, 0))
-    .orderBy(desc(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`))
-    .limit(limit);
+    if (debtors.length === 0) return [];
 
-  if (debtors.length === 0) return [];
+    const customerIds = debtors.map((d) => d.customerId);
+    const accountIds = debtors.map((d) => d.accountId);
+    const customersList = await db.select({
+      id: customers.id,
+      fullName: customers.fullName,
+      customerCode: customers.customerCode
+    }).from(customers).where(inArray(customers.id, customerIds));
+    const customerMap = new Map(customersList.map((c) => [c.id, c]));
 
-  const customerIds = debtors.map((d) => d.customerId);
-  const accountIds = debtors.map((d) => d.accountId);
-  const customersList = await db.select({
-    id: customers.id,
-    fullName: customers.fullName,
-    customerCode: customers.customerCode
-  }).from(customers).where(inArray(customers.id, customerIds));
-  const customerMap = new Map(customersList.map((c) => [c.id, c]));
+    let lastPaymentByAccount = new Map<number, Date>();
+    try {
+      const lastPayments = await db.select({
+        accountId: paymentRecords.accountId,
+        paymentDate: sql<Date>`MAX(${paymentRecords.createdAt})`.as("paymentDate")
+      }).from(paymentRecords).where(inArray(paymentRecords.accountId, accountIds)).groupBy(paymentRecords.accountId);
+      lastPaymentByAccount = new Map(lastPayments.map((p) => [p.accountId, p.paymentDate]));
+    } catch { /* paymentRecords may not exist */ }
 
-  const lastPayments = await db.select({
-    accountId: paymentRecords.accountId,
-    paymentDate: sql<Date>`MAX(${paymentRecords.createdAt})`.as("paymentDate")
-  }).from(paymentRecords).where(inArray(paymentRecords.accountId, accountIds)).groupBy(paymentRecords.accountId);
-  const lastPaymentByAccount = new Map(lastPayments.map((p) => [p.accountId, p.paymentDate]));
-
-  const result = debtors.map((debtor) => {
-    const customer = customerMap.get(debtor.customerId);
-    const lastPaymentDate = lastPaymentByAccount.get(debtor.accountId) ?? null;
-    return {
-      customerId: debtor.customerId,
-      customerName: customer?.fullName || 'Unknown',
-      customerCode: customer?.customerCode || '',
-      debtUsd: parseFloat(debtor.debtUsd),
-      lastPaymentDate
-    };
-  });
-
-  return result;
+    return debtors.map((debtor) => {
+      const customer = customerMap.get(debtor.customerId);
+      const lastPaymentDate = lastPaymentByAccount.get(debtor.accountId) ?? null;
+      return {
+        customerId: debtor.customerId,
+        customerName: customer?.fullName || 'Unknown',
+        customerCode: customer?.customerCode || '',
+        debtUsd: parseFloat(debtor.debtUsd),
+        lastPaymentDate
+      };
+    });
+  } catch (err) {
+    appLogger.error("getDashboardTopDebtors failed", { error: err instanceof Error ? err.message : String(err) });
+    return [];
+  }
 }
 
 export async function getDashboardRecentActivity(limit: number = 10): Promise<{
@@ -735,7 +776,7 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
 }[]> {
   const db = await getDb();
   if (!db) return [];
-
+  try {
   const activities: {
     id: string;
     type: 'package' | 'payment' | 'customer' | 'batch' | 'delivery';
@@ -843,6 +884,10 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
   return activities
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
     .slice(0, limit);
+  } catch (err) {
+    appLogger.error("getDashboardRecentActivity failed", { error: err instanceof Error ? err.message : String(err) });
+    return [];
+  }
 }
 
 export async function getDashboardAlerts(): Promise<{
@@ -855,133 +900,87 @@ export async function getDashboardAlerts(): Promise<{
 }[]> {
   const db = await getDb();
   if (!db) return [];
+  try {
+    const alerts: {
+      id: string;
+      type: 'warning' | 'info' | 'error' | 'success';
+      title: string;
+      description: string;
+      count?: number;
+      link?: string;
+    }[] = [];
 
-  const alerts: {
-    id: string;
-    type: 'warning' | 'info' | 'error' | 'success';
-    title: string;
-    description: string;
-    count?: number;
-    link?: string;
-  }[] = [];
+    // High debt customers (> $500)
+    try {
+      const highDebtors = await db.select({ count: count() })
+        .from(customerAccounts)
+        .where(gt(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`, 500));
+      if (highDebtors[0]?.count > 0) {
+        alerts.push({ id: 'high-debt', type: 'warning', title: 'کڕیارە قەرزدارەکان', description: `${highDebtors[0].count} کڕیار قەرزیان لە $500 زیاترە`, count: highDebtors[0].count, link: '/finance/debtors' });
+      }
+    } catch { /* ignore */ }
 
-  // High debt customers (> $500)
-  const highDebtors = await db.select({ count: count() })
-    .from(customerAccounts)
-    .where(gt(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`, 500));
-  
-  if (highDebtors[0]?.count > 0) {
-    alerts.push({
-      id: 'high-debt',
-      type: 'warning',
-      title: 'کڕیارە قەرزدارەکان',
-      description: `${highDebtors[0].count} کڕیار قەرزیان لە $500 زیاترە`,
-      count: highDebtors[0].count,
-      link: '/finance/debtors'
-    });
+    // Batches at customs
+    try {
+      const customsBatches = await db.select({ count: count() }).from(batches).where(eq(batches.status, 'customs'));
+      if (customsBatches[0]?.count > 0) {
+        alerts.push({ id: 'customs', type: 'info', title: 'باچ لە گومرگ', description: `${customsBatches[0].count} باچ لە گومرگدا`, count: customsBatches[0].count, link: '/batches' });
+      }
+    } catch { /* ignore */ }
+
+    // Unclaimed packages
+    try {
+      const unclaimedPkgs = await db.select({ count: count() }).from(packages).where(eq(packages.isUnclaimed, true));
+      if (unclaimedPkgs[0]?.count > 0) {
+        alerts.push({ id: 'unclaimed', type: 'warning', title: 'پاکەتی بێ خاوەن', description: `${unclaimedPkgs[0].count} پاکەت بێ خاوەنە`, count: unclaimedPkgs[0].count, link: '/packages/unclaimed' });
+      }
+    } catch { /* ignore */ }
+
+    // Pending Full Package orders
+    try {
+      const pendingFP = await db.select({ count: count() }).from(fullPackageOrders).where(eq(fullPackageOrders.status, 'pending'));
+      if (pendingFP[0]?.count > 0) {
+        alerts.push({ id: 'pending-fp', type: 'info', title: 'داواکاری Full Package', description: `${pendingFP[0].count} داواکاری چاوەڕوانە`, count: pendingFP[0].count, link: '/full-package' });
+      }
+    } catch { /* ignore */ }
+
+    // Today's deliveries
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    try {
+      const todayDeliveries = await db.select({ count: count() }).from(packages).where(and(eq(packages.status, 'delivered'), gte(packages.updatedAt, todayStart)));
+      if (todayDeliveries[0]?.count > 0) {
+        alerts.push({ id: 'today-deliveries', type: 'success', title: 'گەیاندنی ئەمڕۆ', description: `${todayDeliveries[0].count} پاکەت گەیاندرا ئەمڕۆ`, count: todayDeliveries[0].count });
+      }
+    } catch { /* ignore */ }
+
+    // New payments today
+    try {
+      const todayPayments = await db.select({ count: count() }).from(paymentRecords).where(gte(paymentRecords.createdAt, todayStart));
+      if (todayPayments[0]?.count > 0) {
+        alerts.push({ id: 'today-payments', type: 'success', title: 'پارەدانی ئەمڕۆ', description: `${todayPayments[0].count} پارەدان وەرگیرا`, count: todayPayments[0].count, link: '/finance' });
+      }
+    } catch { /* ignore */ }
+
+    return alerts;
+  } catch (err) {
+    appLogger.error("getDashboardAlerts failed", { error: err instanceof Error ? err.message : String(err) });
+    return [];
   }
-
-  // Batches at customs
-  const customsBatches = await db.select({ count: count() })
-    .from(batches)
-    .where(eq(batches.status, 'customs'));
-  
-  if (customsBatches[0]?.count > 0) {
-    alerts.push({
-      id: 'customs',
-      type: 'info',
-      title: 'باچ لە گومرگ',
-      description: `${customsBatches[0].count} باچ لە گومرگدا`,
-      count: customsBatches[0].count,
-      link: '/batches'
-    });
-  }
-
-  // Unclaimed packages
-  const unclaimedPkgs = await db.select({ count: count() })
-    .from(packages)
-    .where(eq(packages.isUnclaimed, true));
-  
-  if (unclaimedPkgs[0]?.count > 0) {
-    alerts.push({
-      id: 'unclaimed',
-      type: 'warning',
-      title: 'پاکەتی بێ خاوەن',
-      description: `${unclaimedPkgs[0].count} پاکەت بێ خاوەنە`,
-      count: unclaimedPkgs[0].count,
-      link: '/packages/unclaimed'
-    });
-  }
-
-  // Pending Full Package orders
-  const pendingFP = await db.select({ count: count() })
-    .from(fullPackageOrders)
-    .where(eq(fullPackageOrders.status, 'pending'));
-  
-  if (pendingFP[0]?.count > 0) {
-    alerts.push({
-      id: 'pending-fp',
-      type: 'info',
-      title: 'داواکاری Full Package',
-      description: `${pendingFP[0].count} داواکاری چاوەڕوانە`,
-      count: pendingFP[0].count,
-      link: '/full-package'
-    });
-  }
-
-  // Today's deliveries
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  
-  const todayDeliveries = await db.select({ count: count() })
-    .from(packages)
-    .where(and(
-      eq(packages.status, 'delivered'),
-      gte(packages.updatedAt, todayStart)
-    ));
-  
-  if (todayDeliveries[0]?.count > 0) {
-    alerts.push({
-      id: 'today-deliveries',
-      type: 'success',
-      title: 'گەیاندنی ئەمڕۆ',
-      description: `${todayDeliveries[0].count} پاکەت گەیاندرا ئەمڕۆ`,
-      count: todayDeliveries[0].count
-    });
-  }
-
-  // New payments today
-  const todayPayments = await db.select({ count: count() })
-    .from(paymentRecords)
-    .where(gte(paymentRecords.createdAt, todayStart));
-  
-  if (todayPayments[0]?.count > 0) {
-    alerts.push({
-      id: 'today-payments',
-      type: 'success',
-      title: 'پارەدانی ئەمڕۆ',
-      description: `${todayPayments[0].count} پارەدان وەرگیرا`,
-      count: todayPayments[0].count,
-      link: '/finance'
-    });
-  }
-
-  return alerts;
 }
 
 export async function getDashboardNewCustomers(days: number = 7): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
-
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-
-  // Get new customers from customers table
-  const result = await db.select({ count: count() })
-    .from(customers)
-    .where(gte(customers.createdAt, startDate));
-
-  return result[0]?.count || 0;
+  try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const result = await db.select({ count: count() }).from(customers).where(gte(customers.createdAt, startDate));
+    return result[0]?.count || 0;
+  } catch (err) {
+    appLogger.error("getDashboardNewCustomers failed", { error: err instanceof Error ? err.message : String(err) });
+    return 0;
+  }
 }
 
 
