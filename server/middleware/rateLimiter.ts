@@ -3,37 +3,37 @@ import rateLimit from "express-rate-limit";
 
 const isDev = process.env.NODE_ENV === "development";
 
-/** Global: 100 requests per minute per IP (dev: 10000 to avoid HMR/refresh limits) */
+/** Global: 500 requests per minute per IP (dev: 10000 to avoid HMR/refresh limits) */
 export const globalLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: isDev ? 10000 : 100,
+  max: isDev ? 10000 : 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many requests, please try again later." },
 });
 
-/** Auth routes (login): 5 attempts per 15 minutes per IP (dev: 50 for testing) */
+/** Auth routes (login): 10 attempts per 15 minutes per IP (dev: 50 for testing) */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: isDev ? 50 : 5,
+  max: isDev ? 50 : 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many login attempts, please try again later." },
 });
 
-/** Data mutation routes: 30 requests per minute per IP (dev: 500) */
+/** Data mutation routes: 100 requests per minute per IP (dev: 500) */
 export const mutationLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: isDev ? 500 : 30,
+  max: isDev ? 500 : 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many mutations, please try again later." },
 });
 
-/** File upload routes: 10 per minute per IP (dev: 100) */
+/** File upload routes: 30 per minute per IP (dev: 100) */
 export const fileUploadLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: isDev ? 100 : 10,
+  max: isDev ? 100 : 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many file uploads, please try again later." },

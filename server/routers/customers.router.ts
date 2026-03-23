@@ -49,6 +49,8 @@ export const customersRouter = router({
         contractUrl: z.string().max(2048).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        appLogger.info("[Customer Create] Input received", { prefix: input.codePrefix, customCode: input.customCode, fullName: input.fullName, mobile: input.mobileNumber?.substring(0, 4) + "***" });
+
         // Check if mobile already exists in customers table
         const existingCustomer = await db.getCustomerByMobile(input.mobileNumber);
         if (existingCustomer) {
@@ -115,6 +117,7 @@ export const customersRouter = router({
             break;
           } catch (error: unknown) {
             lastError = error as Error;
+            appLogger.error("[Customer Create] Attempt failed", { retry: retries, prefix: input.codePrefix, error: (error as Error).message });
             // Check if it's a duplicate key error (race condition)
             const errorMessage = (error as Error).message || '';
             if (errorMessage.includes('Duplicate') || errorMessage.includes('unique')) {
