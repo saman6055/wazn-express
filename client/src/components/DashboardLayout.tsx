@@ -535,7 +535,7 @@ function DashboardLayoutContent({
                   "overflow-hidden transition-all duration-200",
                   isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
                 )}>
-                  <div className={cn("mt-1 space-y-0.5", isRTL ? "me-4" : "ms-4")}>
+                  <div className={cn("mt-1 space-y-0.5", "ms-4")}>
                     {group.items.map((item) => {
                       const isActive = isItemActive(item.path);
                       return (
@@ -556,7 +556,7 @@ function DashboardLayoutContent({
                           <span className="truncate">{item.label}</span>
                           {isActive && (
                             <div className={cn(
-                              "w-1.5 h-1.5 rounded-full ml-auto",
+                              "w-1.5 h-1.5 rounded-full ms-auto",
                               `bg-${group.color}-500`
                             )} style={{ backgroundColor: `var(--${group.color}-500, #10b981)` }} />
                           )}
@@ -647,7 +647,7 @@ function DashboardLayoutContent({
       {/* Main Content */}
       <main className={cn(
         "min-h-screen transition-all duration-300 bg-gradient-to-b from-background to-muted/20 dark:to-muted/10",
-        isMobile ? "pt-14" : isRTL ? "me-64" : "ms-64"
+        isMobile ? "pt-14" : "ms-64"
       )}>
         <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
           {children}
