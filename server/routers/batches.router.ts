@@ -346,18 +346,36 @@ export const batchesRouter = router({
           const isSea = batch?.shippingType === 'sea';
           
           // Create invoice for each customer with packages in this batch
+          // IMPORTANT: Filter out already-charged packages FIRST to prevent duplicate invoices on re-delivery
           for (const [customerId, customerPackages] of Array.from(packagesByCustomer.entries())) {
             try {
-              // Calculate total for this customer's packages
+              // STEP 1: Separate uncharged packages from already-charged ones
+              const unchargedPackages: typeof customerPackages = [];
+              for (const pkg of customerPackages) {
+                const freshPkg = await db.getPackageById(pkg.id);
+                if (freshPkg?.isCharged) {
+                  appLogger.info("[Batch] Package already charged, skipping invoice+charge", { packageCode: pkg.packageCode });
+                } else {
+                  unchargedPackages.push(pkg);
+                }
+              }
+
+              // If ALL packages were already charged, skip invoice creation entirely
+              if (unchargedPackages.length === 0) {
+                appLogger.info("[Batch] All packages for customer already charged, no new invoice needed", { customerId, totalPkgs: customerPackages.length });
+                continue;
+              }
+
+              // STEP 2: Calculate total ONLY for uncharged packages
               let totalAmount = 0;
               const lineItems = [];
-              
-              for (const pkg of customerPackages) {
+
+              for (const pkg of unchargedPackages) {
                 // Calculate price from batch pricing
                 let pkgPrice = 0;
                 let quantity = 0;
                 let unit = 'KG';
-                
+
                 if (isSea && pricePerCbm > 0) {
                   // Sea shipping - use CBM
                   const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
@@ -378,16 +396,16 @@ export const batchesRouter = router({
                   quantity = chargeableKg;
                   unit = 'KG';
                 }
-                
+
                 // Update package with calculated cost
                 if (pkgPrice > 0) {
-                  await db.updatePackage(pkg.id, { 
+                  await db.updatePackage(pkg.id, {
                     calculatedCostUsd: pkgPrice.toFixed(2)
                   });
                 }
-                
+
                 totalAmount += pkgPrice;
-                
+
                 lineItems.push({
                   description: `پاکەت ${pkg.trackingNumber || pkg.packageCode} - ${quantity.toFixed(2)} ${unit} × $${isSea ? pricePerCbm : pricePerKg}`,
                   quantity: 1,
@@ -395,9 +413,9 @@ export const batchesRouter = router({
                   total: pkgPrice
                 });
               }
-              
+
               if (totalAmount > 0) {
-                // Create ONE consolidated invoice for this customer's packages in this batch
+                // STEP 3: Create ONE consolidated invoice ONLY for uncharged packages
                 const invoiceNumber = `INV-${Date.now()}-${customerId}`;
                 const invoice = await db.createInvoice({
                   invoiceNumber,
@@ -408,25 +426,14 @@ export const batchesRouter = router({
                   status: "issued",
                   issuedAt: new Date(),
                   lineItems: lineItems as { description: string; quantity: number; unitPrice: number; total: number; }[],
-                  notes: `پسووڵەی باچ ${batch?.batchCode || ''} - ${customerPackages.length} پاکەت - کۆی $${totalAmount.toFixed(2)}`,
+                  notes: `پسووڵەی باچ ${batch?.batchCode || ''} - ${unchargedPackages.length} پاکەت - کۆی $${totalAmount.toFixed(2)}`,
                   createdById: ctx.user.id,
                 });
-                
-                // Record charge for each package WITHOUT creating individual invoices
-                // Link all charges to the consolidated invoice
-                // IMPORTANT: Check isCharged to prevent double charging
+
+                // STEP 4: Record charge for each uncharged package and link to consolidated invoice
                 const customer = await db.getCustomerById(customerId);
                 if (customer) {
-                  for (const pkg of customerPackages) {
-                    // Re-fetch package to get latest isCharged status
-                    const freshPkg = await db.getPackageById(pkg.id);
-                    
-                    // SKIP if package is already charged (prevents double charging)
-                    if (freshPkg?.isCharged) {
-                      appLogger.info("[Batch] Package already charged, skipping", { packageCode: pkg.packageCode });
-                      continue;
-                    }
-                    
+                  for (const pkg of unchargedPackages) {
                     let pkgPrice = 0;
                     if (isSea && pricePerCbm > 0) {
                       const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
@@ -441,7 +448,7 @@ export const batchesRouter = router({
                       const chargeableKg = Math.max(actualKg, volumetricKg);
                       pkgPrice = chargeableKg * pricePerKg;
                     }
-                    
+
                     if (pkgPrice > 0) {
                       // Use recordPackageChargeWithoutInvoice to avoid creating duplicate invoices
                       await db.recordPackageChargeWithoutInvoice(
@@ -453,11 +460,11 @@ export const batchesRouter = router({
                         ctx.user.id,
                         invoice.id  // Link to the consolidated invoice
                       );
-                      
+
                       // Mark package as charged to prevent future double charging
                       await db.updatePackage(pkg.id, { isCharged: true });
-                      
-                      // Create revenue record and update daily summary (correct charge point)
+
+                      // Create revenue record (correct charge point)
                       try {
                         await db.createRevenueRecord({
                           recordDate: new Date(),
