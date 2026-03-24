@@ -706,23 +706,23 @@ export default function CustomerDeliveryScanner() {
                 <div className="rounded-xl bg-white shadow-sm p-5">
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs text-gray-500 mb-1">پاکەت</p>
+                      <p className="text-xs text-gray-500 mb-1">{t("delivery.packageCount")}</p>
                       <p className="text-xl font-bold text-gray-800">{box.totalPackages || 0}</p>
                     </div>
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs text-gray-500 mb-1">کۆی کێش</p>
+                      <p className="text-xs text-gray-500 mb-1">{t("delivery.totalWeight")}</p>
                       <p className="text-xl font-bold text-gray-800">{Number(box.totalWeightKg || 0).toFixed(2)}<span className="text-xs font-normal mr-1">kg</span></p>
                     </div>
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs text-gray-500 mb-1">بەهای پاکەت</p>
+                      <p className="text-xs text-gray-500 mb-1">{t("delivery.packageValue")}</p>
                       <p className="text-xl font-bold text-gray-800">${Number(box.totalValueUsd || 0).toFixed(2)}</p>
                     </div>
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs text-gray-500 mb-1">نرخی گەیاندن</p>
+                      <p className="text-xs text-gray-500 mb-1">{t("delivery.deliveryCharge")}</p>
                       <p className="text-xl font-bold text-emerald-600">${Number(box.deliveryChargeUsd || 0).toFixed(2)}</p>
                     </div>
                     <div className="text-center p-3 bg-emerald-50 rounded-lg sm:col-span-1 col-span-2">
-                      <p className="text-xs text-emerald-600 mb-1">کۆی گشتی</p>
+                      <p className="text-xs text-emerald-600 mb-1">{t("delivery.grandTotal")}</p>
                       <p className="text-xl font-bold text-emerald-700">
                         ${(Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0)).toFixed(2)}
                       </p>
@@ -738,7 +738,7 @@ export default function CustomerDeliveryScanner() {
                       <button
                         onClick={() => {
                           if (boxItems.length === 0) {
-                            toast.error("بۆکس خالییە — سەرەتا پاکەت زیاد بکە");
+                            toast.error(t("delivery.toastBoxEmpty"));
                             return;
                           }
                           sealBox.mutate({ id: activeBoxId! });
@@ -747,7 +747,7 @@ export default function CustomerDeliveryScanner() {
                         className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 font-medium"
                       >
                         {sealBox.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-                        داخستن (Seal)
+                        {t("delivery.seal")}
                       </button>
                     )}
 
@@ -759,7 +759,7 @@ export default function CustomerDeliveryScanner() {
                         className="px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 flex items-center gap-2 font-medium"
                       >
                         {markInTransit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />}
-                        نێردن (In Transit)
+                        {t("delivery.sendInTransit")}
                       </button>
                     )}
 
@@ -771,7 +771,7 @@ export default function CustomerDeliveryScanner() {
                         className="px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 font-medium"
                       >
                         {markDelivered.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                        گەیەندرا (Delivered)
+                        {t("delivery.markDelivered")}
                       </button>
                     )}
 
@@ -779,7 +779,7 @@ export default function CustomerDeliveryScanner() {
                     {!isViewOnly && (
                       <button
                         onClick={() => {
-                          if (window.confirm("دڵنیایت لە هەڵوەشاندنەوەی ئەم بۆکسە؟")) {
+                          if (window.confirm(t("delivery.confirmCancel"))) {
                             cancelBox.mutate({ id: activeBoxId! });
                           }
                         }}
@@ -787,7 +787,7 @@ export default function CustomerDeliveryScanner() {
                         className="px-4 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 flex items-center gap-2 font-medium"
                       >
                         {cancelBox.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
-                        هەڵوەشاندنەوە
+                        {t("delivery.cancel")}
                       </button>
                     )}
 
@@ -797,7 +797,7 @@ export default function CustomerDeliveryScanner() {
                       className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 font-medium mr-auto"
                     >
                       <Printer className="h-4 w-4" />
-                      چاپکردن
+                      {t("delivery.printFull")}
                     </button>
                   </div>
                 </div>
@@ -811,7 +811,7 @@ export default function CustomerDeliveryScanner() {
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="font-bold text-gray-800 flex items-center gap-2">
                   <Box className="h-5 w-5 text-emerald-600" />
-                  بۆکسەکانی ئەمڕۆ
+                  {t("delivery.todayBoxes")}
                 </h3>
                 <button
                   onClick={() => {
@@ -819,7 +819,7 @@ export default function CustomerDeliveryScanner() {
                     setShowCreateForm(true);
                   }}
                   className="text-emerald-600 hover:text-emerald-700 p-1.5 rounded-lg hover:bg-emerald-50"
-                  title="بۆکسی نوێ"
+                  title={t("delivery.newBox")}
                 >
                   <Plus className="h-5 w-5" />
                 </button>
@@ -828,7 +828,7 @@ export default function CustomerDeliveryScanner() {
               {boxes.length === 0 ? (
                 <div className="p-8 text-center text-gray-400">
                   <Box className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">هیچ بۆکسێک نییە</p>
+                  <p className="text-sm">{t("delivery.noBoxes")}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-50 max-h-[calc(100vh-24rem)] overflow-y-auto">
@@ -851,7 +851,7 @@ export default function CustomerDeliveryScanner() {
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <Package className="h-3 w-3" />
-                          {b.totalPackages || 0} پاکەت
+                          {b.totalPackages || 0} {t("delivery.packageCount")}
                         </span>
                         <span className="flex items-center gap-1">
                           <DollarSign className="h-3 w-3" />
