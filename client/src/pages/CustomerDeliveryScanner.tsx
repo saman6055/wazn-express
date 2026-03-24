@@ -378,6 +378,10 @@ export default function CustomerDeliveryScanner() {
                             setSelectedCustomerId(c.id);
                             setCustomerSearch("");
                             setShowCustomerDropdown(false);
+                            // Auto-fill from customer profile
+                            if (c.mobileNumber) setRecipientPhone(c.mobileNumber);
+                            if (c.address) setDestinationAddress(c.address);
+                            if (c.city) setDestinationCity(c.city);
                           }}
                           className="w-full text-right px-4 py-2.5 hover:bg-emerald-50 flex items-center gap-3 border-b border-gray-50 last:border-0"
                         >
@@ -403,7 +407,13 @@ export default function CustomerDeliveryScanner() {
                     {(["warehouse_pickup", "home_delivery", "city_transfer"] as DeliveryMethod[]).map((method) => (
                       <button
                         key={method}
-                        onClick={() => setDeliveryMethod(method)}
+                        onClick={() => {
+                          setDeliveryMethod(method);
+                          if (method === "warehouse_pickup") {
+                            setDeliveryCost("0");
+                            setDeliveryCharge("0");
+                          }
+                        }}
                         className={cn(
                           "px-3 py-2.5 rounded-lg border text-sm font-medium transition-all",
                           deliveryMethod === method
@@ -488,31 +498,33 @@ export default function CustomerDeliveryScanner() {
                   </div>
                 )}
 
-                {/* Cost & Charge */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t("delivery.costForCompany")}</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={deliveryCost}
-                      onChange={(e) => setDeliveryCost(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                    />
+                {/* Cost & Charge - only for non-warehouse pickup */}
+                {deliveryMethod !== "warehouse_pickup" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t("delivery.costForCompany")}</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={deliveryCost}
+                        onChange={(e) => setDeliveryCost(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t("delivery.chargeForCustomer")}</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={deliveryCharge}
+                        onChange={(e) => setDeliveryCharge(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t("delivery.chargeForCustomer")}</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={deliveryCharge}
-                      onChange={(e) => setDeliveryCharge(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                    />
-                  </div>
-                </div>
+                )}
 
                 {/* Notes */}
                 <div>
