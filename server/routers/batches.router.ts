@@ -264,70 +264,25 @@ export const batchesRouter = router({
                   }
                 }
                 
-                // For commission orders: charge shipping cost to customer (separate from item+commission already charged)
-                // Re-fetch the order to check if shipping was already charged by updateFullPackageOrder
+                // For commission orders: record shipping cost on the order for profit calculation only
+                // DO NOT charge customer wallet or create invoice - shipping cost is included in commission fee
                 const refreshedForCommission = refreshedFPOrder || await db.getFullPackageOrderById(linkedFPOrder.id);
-                if (refreshedForCommission && refreshedForCommission.orderType === 'commission' && refreshedForCommission.customerId && shippingCost > 0 && !refreshedForCommission.isShippingCharged) {
+                if (refreshedForCommission && refreshedForCommission.orderType === 'commission' && shippingCost > 0 && !refreshedForCommission.isShippingCharged) {
                   try {
-                    const customer = await db.getCustomerById(refreshedForCommission.customerId);
-                    if (customer) {
-                      // Calculate chargeable weight (max of actual weight and volumetric weight)
-                      const actualWeight = parseFloat(pkg.weightKg?.toString() || "0");
-                      // Calculate volumetric weight from dimensions if available
-                      const length = parseFloat(pkg.lengthCm?.toString() || "0");
-                      const width = parseFloat(pkg.widthCm?.toString() || "0");
-                      const height = parseFloat(pkg.heightCm?.toString() || "0");
-                      const volumetricWeight = (length * width * height) / 6000;
-                      const chargeableWeight = Math.max(actualWeight, volumetricWeight);
-                      const chargeableShippingCost = chargeableWeight * pricePerKg;
-                      
-                      // Record shipping charge to customer balance
-                      await db.recordPackageCharge(
-                        refreshedForCommission.customerId,
-                        customer.customerCode,
-                        pkg.id,
-                        chargeableShippingCost,
-                        `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە (${chargeableWeight.toFixed(2)} KG)`,
-                        ctx.user.id
-                      );
-                      
-                      // Create invoice for shipping charge
-                      const invoiceNumber = `INV-CM-SHIP-${Date.now()}-${refreshedForCommission.id}`;
-                      await db.createInvoice({
-                        invoiceNumber,
-                        customerId: refreshedForCommission.customerId,
-                        batchId: id,
-                        subtotalUsd: chargeableShippingCost.toFixed(2),
-                        totalUsd: chargeableShippingCost.toFixed(2),
-                        status: "issued",
-                        issuedAt: new Date(),
-                        lineItems: [{
-                          description: `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە`,
-                          quantity: 1,
-                          unitPrice: chargeableShippingCost,
-                          total: chargeableShippingCost,
-                          // Note: chargeable weight = max(actual, volumetric) = chargeableWeight KG
-                        }],
-                        notes: `پسووڵەی گواستنەوەی کڕین بە عمولە ${refreshedForCommission.orderCode} - باچ ${batch?.batchCode || ''} - کێشی کڕێیی ${chargeableWeight.toFixed(2)} KG - کۆی $${chargeableShippingCost.toFixed(2)}`,
-                        createdById: ctx.user.id,
-                      });
-                      
-                      // Mark shipping as charged and update net profit
-                      const grossProfit = parseFloat(refreshedForCommission.grossProfitUsd || '0');
-                      const netProfitUsd = (grossProfit - shippingCost).toFixed(2); // Our cost is actual shipping, not chargeable
-                      
-                      await db.updateFullPackageOrder(refreshedForCommission.id, {
-                        isShippingCharged: true,
-                        shippingChargedAt: new Date(),
-                        shippingChargedUsd: chargeableShippingCost.toFixed(2),
-                        netProfitUsd,
-                        batchId: id,
-                      }, ctx.user.id);
-                      
-                      appLogger.info("[Commission] Charged customer shipping for CM", { customerCode: customer.customerCode, chargeableShippingCost, orderCode: refreshedForCommission.orderCode, chargeableWeight, shippingCost });
-                    }
+                    const grossProfit = parseFloat(refreshedForCommission.grossProfitUsd || '0');
+                    const netProfitUsd = (grossProfit - shippingCost).toFixed(2);
+
+                    await db.updateFullPackageOrder(refreshedForCommission.id, {
+                      isShippingCharged: true,
+                      shippingChargedAt: new Date(),
+                      shippingCostUsd: shippingCost.toFixed(2),
+                      netProfitUsd,
+                      batchId: id,
+                    }, ctx.user.id);
+
+                    appLogger.info("[Commission] Recorded shipping cost for CM (no customer charge)", { orderCode: refreshedForCommission.orderCode, shippingCost });
                   } catch (chargeError) {
-                    appLogger.error("[Commission] Failed to charge shipping for CM", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
+                    appLogger.error("[Commission] Failed to record shipping for CM", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
                   }
                 }
               }
