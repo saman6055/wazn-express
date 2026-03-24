@@ -5422,6 +5422,23 @@
     "toastBoxDelivered": "Box delivered",
     "toastBoxCancelled": "Box cancelled",
     "toastSelectCustomer": "Please select a customer",
-    "toastBoxEmpty": "Box is empty — add packages first"
+    "toastBoxEmpty": "Box is empty — add packages first",
+    "all": "All",
+    "searchBoxes": "Search box code, customer...",
+    "noMatchingBoxes": "No matching boxes",
+    "printLabel": "Print Label",
+    "receipt": "Receipt",
+    "customerCode": "Customer Code",
+    "phone": "Phone",
+    "description": "Description",
+    "date": "Date",
+    "signature": "Signature",
+    "customerDetails": "Customer Details",
+    "deliveryDetails": "Delivery Details",
+    "companyTagline": "Shipping & Logistics Services",
+    "receiptNote": "This receipt is a proof of delivery. Please keep it for your records.",
+    "thankYou": "Thank you for choosing Wazn Express!",
+    "staffSignature": "Staff Signature",
+    "customerSignature": "Customer Signature"
   }
 }

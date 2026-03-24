@@ -5435,6 +5435,23 @@
     "toastBoxDelivered": "بۆکس گەیەندرا",
     "toastBoxCancelled": "بۆکس هەڵوەشێنرایەوە",
     "toastSelectCustomer": "تکایە کڕیار هەڵبژێرە",
-    "toastBoxEmpty": "بۆکس خالییە — سەرەتا پاکەت زیاد بکە"
+    "toastBoxEmpty": "بۆکس خالییە — سەرەتا پاکەت زیاد بکە",
+    "all": "هەموو",
+    "searchBoxes": "گەڕان بە کۆدی بۆکس، کڕیار...",
+    "noMatchingBoxes": "هیچ بۆکسێک نەدۆزرایەوە",
+    "printLabel": "چاپی لەیبڵ",
+    "receipt": "وەسڵ",
+    "customerCode": "کۆدی کڕیار",
+    "phone": "ژمارەی مۆبایل",
+    "description": "وردەکاری",
+    "date": "بەروار",
+    "signature": "واژوو",
+    "customerDetails": "زانیاری کڕیار",
+    "deliveryDetails": "زانیاری گەیاندن",
+    "companyTagline": "خزمەتگوزاری بارنامە و لۆجستیک",
+    "receiptNote": "ئەم وەسڵە بەڵگەی گەیاندنە. تکایە بیپارێزە.",
+    "thankYou": "سوپاس بۆ هەڵبژاردنی وازن ئێکسپرێس!",
+    "staffSignature": "واژووی کارمەند",
+    "customerSignature": "واژووی کڕیار"
   }
 }

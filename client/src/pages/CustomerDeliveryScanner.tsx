@@ -1,17 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   Package, Box, Truck, MapPin, Search, Plus, X, Check,
   Printer, Ban, ChevronDown, ScanBarcode, Weight, DollarSign,
   User, Phone, Building2, Hash, Loader2, ArrowRight, Lock,
-  Eye
+  Eye, FileText, Home, Warehouse, Filter
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { soundManager } from "@/lib/soundManager";
 import { cn } from "@/lib/utils";
+import { printBoxLabel, printBoxReceipt } from "@/lib/deliveryBoxPrintUtils";
 
 // ==================== TYPES ====================
 
@@ -94,6 +95,10 @@ export default function CustomerDeliveryScanner() {
   // Scan state
   const [scanInput, setScanInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
+
+  // Sidebar filter state
+  const [sidebarSearch, setSidebarSearch] = useState("");
+  const [sidebarStatusFilter, setSidebarStatusFilter] = useState<"all" | BoxStatus>("all");
 
   // ---- Queries ----
   const { data: customers } = trpc.customers.list.useQuery();
@@ -274,6 +279,67 @@ export default function CustomerDeliveryScanner() {
   const isBoxDelivered = boxStatus === "delivered";
   const isBoxCancelled = boxStatus === "cancelled";
   const isViewOnly = isBoxDelivered || isBoxCancelled;
+
+  // Helper: resolve customer name from customers list
+  const getCustomerName = useCallback((customerId: number) => {
+    const c = (customers ?? []).find((c: any) => c.id === customerId);
+    return c ? c.fullName : null;
+  }, [customers]);
+
+  const getCustomerObj = useCallback((customerId: number) => {
+    return (customers ?? []).find((c: any) => c.id === customerId) ?? null;
+  }, [customers]);
+
+  // Filtered sidebar boxes
+  const filteredSidebarBoxes = useMemo(() => {
+    let result = boxes;
+    // Status filter
+    if (sidebarStatusFilter !== "all") {
+      result = result.filter((b: any) => b.status === sidebarStatusFilter);
+    }
+    // Search filter
+    if (sidebarSearch.trim()) {
+      const q = sidebarSearch.toLowerCase();
+      result = result.filter((b: any) => {
+        const customerName = getCustomerName(b.customerId)?.toLowerCase() || "";
+        return (
+          b.boxCode?.toLowerCase().includes(q) ||
+          customerName.includes(q) ||
+          b.destinationCity?.toLowerCase().includes(q)
+        );
+      });
+    }
+    return result;
+  }, [boxes, sidebarStatusFilter, sidebarSearch, getCustomerName]);
+
+  // Sidebar status counts
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: boxes.length };
+    for (const b of boxes) {
+      counts[(b as any).status] = (counts[(b as any).status] || 0) + 1;
+    }
+    return counts;
+  }, [boxes]);
+
+  // Delivery method icon component
+  const DeliveryMethodIcon = ({ method, className }: { method: string; className?: string }) => {
+    if (method === "home_delivery") return <Home className={className} />;
+    if (method === "city_transfer") return <Truck className={className} />;
+    return <Warehouse className={className} />;
+  };
+
+  // Print handlers
+  const handlePrintLabel = useCallback(() => {
+    if (!box) return;
+    const customer = getCustomerObj(box.customerId);
+    printBoxLabel(box as any, boxItems, customer, t);
+  }, [box, boxItems, getCustomerObj, t]);
+
+  const handlePrintReceipt = useCallback(() => {
+    if (!box) return;
+    const customer = getCustomerObj(box.customerId);
+    printBoxReceipt(box as any, boxItems, customer, t);
+  }, [box, boxItems, getCustomerObj, t]);
 
   // ==================== RENDER ====================
 
@@ -648,13 +714,25 @@ export default function CustomerDeliveryScanner() {
                       {t("delivery.packages")} ({boxItems.length})
                     </h4>
                     {!isViewOnly && (
-                      <button
-                        onClick={() => window.print()}
-                        className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                      >
-                        <Printer className="h-4 w-4" />
-                        {t("delivery.print")}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handlePrintLabel}
+                          className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                          title={t("delivery.printLabel")}
+                        >
+                          <Printer className="h-4 w-4" />
+                          {t("delivery.printLabel")}
+                        </button>
+                        <span className="text-gray-300">|</span>
+                        <button
+                          onClick={handlePrintReceipt}
+                          className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                          title={t("delivery.receipt")}
+                        >
+                          <FileText className="h-4 w-4" />
+                          {t("delivery.receipt")}
+                        </button>
+                      </div>
                     )}
                   </div>
                   {boxItems.length === 0 ? (
@@ -804,78 +882,177 @@ export default function CustomerDeliveryScanner() {
                     )}
 
                     {/* Print buttons */}
-                    <button
-                      onClick={() => window.print()}
-                      className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 font-medium mr-auto"
-                    >
-                      <Printer className="h-4 w-4" />
-                      {t("delivery.printFull")}
-                    </button>
+                    <div className="flex items-center gap-2 mr-auto">
+                      <button
+                        onClick={handlePrintLabel}
+                        className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 font-medium"
+                      >
+                        <Printer className="h-4 w-4" />
+                        {t("delivery.printLabel")}
+                      </button>
+                      <button
+                        onClick={handlePrintReceipt}
+                        className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 font-medium"
+                      >
+                        <FileText className="h-4 w-4" />
+                        {t("delivery.receipt")}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* ======== RIGHT PANEL: Today's Boxes ======== */}
+          {/* ======== RIGHT PANEL: Today's Boxes Dashboard ======== */}
           <div className="space-y-4">
-            <div className="rounded-xl bg-white shadow-sm">
+            <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+              {/* Header */}
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="font-bold text-gray-800 flex items-center gap-2">
                   <Box className="h-5 w-5 text-emerald-600" />
                   {t("delivery.todayBoxes")}
+                  <span className="text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    {boxes.length}
+                  </span>
                 </h3>
                 <button
                   onClick={() => {
                     setActiveBoxId(null);
                     setShowCreateForm(true);
                   }}
-                  className="text-emerald-600 hover:text-emerald-700 p-1.5 rounded-lg hover:bg-emerald-50"
+                  className="text-emerald-600 hover:text-emerald-700 p-1.5 rounded-lg hover:bg-emerald-50 transition-colors"
                   title={t("delivery.newBox")}
                 >
                   <Plus className="h-5 w-5" />
                 </button>
               </div>
 
-              {boxes.length === 0 ? (
+              {/* Search Bar */}
+              <div className="px-4 pt-3 pb-2">
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={sidebarSearch}
+                    onChange={(e) => setSidebarSearch(e.target.value)}
+                    placeholder={t("delivery.searchBoxes")}
+                    className="w-full pr-9 pl-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-gray-50 placeholder:text-gray-400"
+                  />
+                  {sidebarSearch && (
+                    <button
+                      onClick={() => setSidebarSearch("")}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Status Filter Tabs */}
+              <div className="px-4 pb-3">
+                <div className="flex gap-1 overflow-x-auto no-scrollbar">
+                  {(["all", "open", "ready", "in_transit", "delivered"] as const).map((status) => {
+                    const count = statusCounts[status] || 0;
+                    const isActive = sidebarStatusFilter === status;
+                    const labelKey = status === "all" ? "delivery.all" : STATUS_LABEL_KEYS[status as BoxStatus];
+                    return (
+                      <button
+                        key={status}
+                        onClick={() => setSidebarStatusFilter(status)}
+                        className={cn(
+                          "px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1",
+                          isActive
+                            ? "bg-emerald-100 text-emerald-700 shadow-sm"
+                            : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                        )}
+                      >
+                        {t(labelKey)}
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.5 rounded-full min-w-[18px] text-center",
+                          isActive ? "bg-emerald-200 text-emerald-800" : "bg-gray-200 text-gray-600"
+                        )}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Box List */}
+              {filteredSidebarBoxes.length === 0 ? (
                 <div className="p-8 text-center text-gray-400">
                   <Box className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">{t("delivery.noBoxes")}</p>
+                  <p className="text-sm">{sidebarSearch || sidebarStatusFilter !== "all" ? t("delivery.noMatchingBoxes") : t("delivery.noBoxes")}</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-50 max-h-[calc(100vh-24rem)] overflow-y-auto">
-                  {boxes.map((b: any) => (
-                    <button
-                      key={b.id}
-                      onClick={() => {
-                        setActiveBoxId(b.id);
-                        setShowCreateForm(false);
-                      }}
-                      className={cn(
-                        "w-full text-right px-5 py-3.5 hover:bg-gray-50 transition-colors",
-                        activeBoxId === b.id && "bg-emerald-50 border-r-2 border-emerald-500"
-                      )}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-mono font-medium text-sm">{b.boxCode}</span>
-                        <StatusBadge status={b.status} />
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Package className="h-3 w-3" />
-                          {b.totalPackages || 0} {t("delivery.packageCount")}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
-                          ${Number(b.totalValueUsd || 0).toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {t(DELIVERY_METHOD_KEYS[b.deliveryMethod as DeliveryMethod] || "delivery.methodPickup")}
-                        {b.destinationCity && ` - ${b.destinationCity}`}
-                      </div>
-                    </button>
-                  ))}
+                <div className="max-h-[calc(100vh-28rem)] overflow-y-auto">
+                  {filteredSidebarBoxes.map((b: any) => {
+                    const isSelected = activeBoxId === b.id;
+                    const customerName = getCustomerName(b.customerId);
+                    return (
+                      <button
+                        key={b.id}
+                        onClick={() => {
+                          setActiveBoxId(b.id);
+                          setShowCreateForm(false);
+                        }}
+                        className={cn(
+                          "w-full text-right px-4 py-3 transition-all border-b border-gray-50 last:border-b-0 group",
+                          isSelected
+                            ? "bg-emerald-50 border-r-3 border-r-emerald-500"
+                            : "hover:bg-gray-50/80"
+                        )}
+                      >
+                        {/* Row 1: Box code + Status */}
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className={cn(
+                            "font-mono font-bold text-sm",
+                            isSelected ? "text-emerald-700" : "text-gray-800"
+                          )}>
+                            {b.boxCode}
+                          </span>
+                          <StatusBadge status={b.status} />
+                        </div>
+
+                        {/* Row 2: Customer name */}
+                        {customerName && (
+                          <div className="flex items-center gap-1.5 mb-1.5">
+                            <User className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                            <span className="text-sm text-gray-700 truncate">{customerName}</span>
+                          </div>
+                        )}
+
+                        {/* Row 3: Stats row */}
+                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Package className="h-3 w-3" />
+                            {b.totalPackages || 0}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <DollarSign className="h-3 w-3" />
+                            ${Number(b.totalValueUsd || 0).toFixed(2)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <DeliveryMethodIcon method={b.deliveryMethod} className="h-3 w-3" />
+                            <span className="truncate max-w-[80px]">
+                              {t(DELIVERY_METHOD_KEYS[b.deliveryMethod as DeliveryMethod] || "delivery.methodPickup")}
+                            </span>
+                          </span>
+                        </div>
+
+                        {/* Row 4: Destination city (if exists) */}
+                        {b.destinationCity && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{b.destinationCity}</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

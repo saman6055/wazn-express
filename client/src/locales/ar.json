@@ -5479,6 +5479,23 @@
     "toastBoxDelivered": "تم توصيل الصندوق",
     "toastBoxCancelled": "تم إلغاء الصندوق",
     "toastSelectCustomer": "يرجى اختيار عميل",
-    "toastBoxEmpty": "الصندوق فارغ — أضف طروداً أولاً"
+    "toastBoxEmpty": "الصندوق فارغ — أضف طروداً أولاً",
+    "all": "الكل",
+    "searchBoxes": "بحث برمز الصندوق، العميل...",
+    "noMatchingBoxes": "لا توجد صناديق مطابقة",
+    "printLabel": "طباعة الملصق",
+    "receipt": "إيصال",
+    "customerCode": "رمز العميل",
+    "phone": "الهاتف",
+    "description": "الوصف",
+    "date": "التاريخ",
+    "signature": "التوقيع",
+    "customerDetails": "تفاصيل العميل",
+    "deliveryDetails": "تفاصيل التوصيل",
+    "companyTagline": "خدمات الشحن واللوجستيك",
+    "receiptNote": "هذا الإيصال هو إثبات التوصيل. يرجى الاحتفاظ به للرجوع إليه.",
+    "thankYou": "شكراً لاختيارك وزن إكسبرس!",
+    "staffSignature": "توقيع الموظف",
+    "customerSignature": "توقيع العميل"
   }
 }
