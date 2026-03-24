@@ -264,25 +264,67 @@ export const batchesRouter = router({
                   }
                 }
                 
-                // For commission orders: record shipping cost on the order for profit calculation only
-                // DO NOT charge customer wallet or create invoice - shipping cost is included in commission fee
+                // For commission orders: charge shipping cost to customer wallet + create ONE invoice
                 const refreshedForCommission = refreshedFPOrder || await db.getFullPackageOrderById(linkedFPOrder.id);
-                if (refreshedForCommission && refreshedForCommission.orderType === 'commission' && shippingCost > 0 && !refreshedForCommission.isShippingCharged) {
+                if (refreshedForCommission && refreshedForCommission.orderType === 'commission' && refreshedForCommission.customerId && shippingCost > 0 && !refreshedForCommission.isShippingCharged) {
                   try {
-                    const grossProfit = parseFloat(refreshedForCommission.grossProfitUsd || '0');
-                    const netProfitUsd = (grossProfit - shippingCost).toFixed(2);
+                    const customer = await db.getCustomerById(refreshedForCommission.customerId);
+                    if (customer) {
+                      // Calculate chargeable weight (max of actual weight and volumetric weight)
+                      const actualWeight = parseFloat(pkg.weightKg?.toString() || "0");
+                      const length = parseFloat(pkg.lengthCm?.toString() || "0");
+                      const width = parseFloat(pkg.widthCm?.toString() || "0");
+                      const height = parseFloat(pkg.heightCm?.toString() || "0");
+                      const volumetricWeight = (length * width * height) / 6000;
+                      const chargeableWeight = Math.max(actualWeight, volumetricWeight);
+                      const chargeableShippingCost = chargeableWeight * pricePerKg;
 
-                    await db.updateFullPackageOrder(refreshedForCommission.id, {
-                      isShippingCharged: true,
-                      shippingChargedAt: new Date(),
-                      shippingCostUsd: shippingCost.toFixed(2),
-                      netProfitUsd,
-                      batchId: id,
-                    }, ctx.user.id);
+                      // Create invoice for shipping charge
+                      const invoiceNumber = `INV-CM-SHIP-${Date.now()}-${refreshedForCommission.id}`;
+                      await db.createInvoice({
+                        invoiceNumber,
+                        customerId: refreshedForCommission.customerId,
+                        batchId: id,
+                        subtotalUsd: chargeableShippingCost.toFixed(2),
+                        totalUsd: chargeableShippingCost.toFixed(2),
+                        status: "issued",
+                        issuedAt: new Date(),
+                        lineItems: [{
+                          description: `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە`,
+                          quantity: 1,
+                          unitPrice: chargeableShippingCost,
+                          total: chargeableShippingCost,
+                        }],
+                        notes: `پسووڵەی گواستنەوەی کڕین بە عمولە ${refreshedForCommission.orderCode} - باچ ${batch?.batchCode || ''} - کێشی کڕێیی ${chargeableWeight.toFixed(2)} KG - کۆی $${chargeableShippingCost.toFixed(2)}`,
+                        createdById: ctx.user.id,
+                      });
 
-                    appLogger.info("[Commission] Recorded shipping cost for CM (no customer charge)", { orderCode: refreshedForCommission.orderCode, shippingCost });
+                      // Charge wallet using WithoutInvoice variant to avoid creating a SECOND invoice
+                      await db.recordPackageChargeWithoutInvoice(
+                        refreshedForCommission.customerId,
+                        customer.customerCode,
+                        pkg.id,
+                        chargeableShippingCost,
+                        `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە (${chargeableWeight.toFixed(2)} KG)`,
+                        ctx.user.id
+                      );
+
+                      // Mark shipping as charged and update net profit
+                      const grossProfit = parseFloat(refreshedForCommission.grossProfitUsd || '0');
+                      const netProfitUsd = (grossProfit - shippingCost).toFixed(2);
+
+                      await db.updateFullPackageOrder(refreshedForCommission.id, {
+                        isShippingCharged: true,
+                        shippingChargedAt: new Date(),
+                        shippingChargedUsd: chargeableShippingCost.toFixed(2),
+                        netProfitUsd,
+                        batchId: id,
+                      }, ctx.user.id);
+
+                      appLogger.info("[Commission] Charged customer shipping for CM", { customerCode: customer.customerCode, chargeableShippingCost, orderCode: refreshedForCommission.orderCode, chargeableWeight, shippingCost });
+                    }
                   } catch (chargeError) {
-                    appLogger.error("[Commission] Failed to record shipping for CM", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
+                    appLogger.error("[Commission] Failed to charge shipping for CM", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
                   }
                 }
               }
