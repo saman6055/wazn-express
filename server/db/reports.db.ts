@@ -2,6 +2,7 @@ import { getDb } from './connection';
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getTotalDebtAmount } from './finance.db';
+import { getDeliveryBoxProfitBreakdown } from './deliveryBoxes.db';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -2233,26 +2234,30 @@ export async function getComprehensiveDashboardStats(startDate: Date, endDate: D
     }
   };
 
-  const [batchProfit, fpProfit, serviceProfit, expenseBreakdown, monthlyTrend, activity] = await Promise.all([
+  const defaultDeliveryBox = { totalCharge: 0, totalCost: 0, totalProfit: 0, boxCount: 0, packageCount: 0 };
+
+  const [batchProfit, fpProfit, serviceProfit, expenseBreakdown, monthlyTrend, activity, deliveryBoxProfit] = await Promise.all([
     safeCall(() => getBatchProfitByShippingType(startDate, endDate), defaultBatchProfit, "batchProfit"),
     safeCall(() => getFullPackageProfitBreakdown(startDate, endDate), defaultFpProfit, "fullPackageProfit"),
     safeCall(() => getServiceProfitBreakdown(startDate, endDate), defaultServiceProfit, "serviceProfit"),
     safeCall(() => getExpenseBreakdownDetailed(startDate, endDate), defaultExpenseBreakdown, "expenseBreakdown"),
     safeCall(() => getMonthlyTrendData(startDate, endDate), [] as { month: string; revenue: number; expenses: number; netProfit: number }[], "monthlyTrend"),
     safeCall(() => getActivityStats(startDate, endDate), { packagesDelivered: 0, fullPackagesSold: 0, commissionOrders: 0, invoicesIssued: 0, paymentsReceived: 0, servicesCompleted: 0, totalCustomers: 0 }, "activityStats"),
+    safeCall(() => getDeliveryBoxProfitBreakdown(startDate, endDate), defaultDeliveryBox, "deliveryBoxProfit"),
   ]);
 
   const batchRevenue = (batchProfit.air_regular?.profit || 0) + (batchProfit.air_irregular?.profit || 0) + (batchProfit.sea?.profit || 0);
   const fpRevenue = fpProfit?.fullPackage?.profit ?? 0;
   const commissionRevenue = fpProfit?.commission?.totalCommission ?? 0;
   const serviceRevenue = serviceProfit?.profit ?? 0;
-  const totalGrossRevenue = batchRevenue + fpRevenue + commissionRevenue + serviceRevenue;
+  const deliveryRevenue = deliveryBoxProfit?.totalProfit ?? 0;
+  const totalGrossRevenue = batchRevenue + fpRevenue + commissionRevenue + serviceRevenue + deliveryRevenue;
   const totalExpenses = expenseBreakdown?.total ?? 0;
   const netProfit = totalGrossRevenue - totalExpenses;
   const profitMargin = totalGrossRevenue > 0 ? (netProfit / totalGrossRevenue) * 100 : 0;
 
   return {
-    revenueBySource: { batchProfit: { air_regular: batchProfit.air_regular, air_irregular: batchProfit.air_irregular, sea: batchProfit.sea, total: batchRevenue }, fullPackage: { ...fpProfit?.fullPackage }, commission: { ...fpProfit?.commission }, service: serviceProfit, totalRevenue: totalGrossRevenue },
+    revenueBySource: { batchProfit: { air_regular: batchProfit.air_regular, air_irregular: batchProfit.air_irregular, sea: batchProfit.sea, total: batchRevenue }, fullPackage: { ...fpProfit?.fullPackage }, commission: { ...fpProfit?.commission }, service: serviceProfit, deliveryBox: deliveryBoxProfit, totalRevenue: totalGrossRevenue },
     expenseBreakdown,
     profitLoss: { totalRevenue: totalGrossRevenue, totalExpenses, netProfit, profitMargin, isProfit: netProfit >= 0 },
     monthlyTrend,
