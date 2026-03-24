@@ -252,4 +252,88 @@ export type PackageClaimRequest = typeof packageClaimRequests.$inferSelect;
 export type InsertPackageClaimRequest = typeof packageClaimRequests.$inferInsert;
 
 
+// ============ DELIVERY BOX SYSTEM ============
+// بۆکسی گەیاندن — کۆکردنەوەی چەندین پاکەت لە سەرچاوەی جیاواز بۆ گەیاندن بە کڕیار
+
+export const deliveryBoxes = mysqlTable("deliveryBoxes", {
+  id: int("id").autoincrement().primaryKey(),
+  boxCode: varchar("boxCode", { length: 50 }).notNull().unique(), // BOX-20260324-001
+
+  // کڕیار
+  customerId: int("customerId").notNull(),
+
+  // جۆری گەیاندن
+  deliveryMethod: mysqlEnum("deliveryMethod", ["warehouse_pickup", "home_delivery", "city_transfer"]).default("warehouse_pickup").notNull(),
+  destinationCity: varchar("destinationCity", { length: 100 }),
+  destinationAddress: text("destinationAddress"),
+  recipientName: varchar("recipientName", { length: 255 }),
+  recipientPhone: varchar("recipientPhone", { length: 20 }),
+
+  // تێچوو و نرخی گەیاندن
+  deliveryCostUsd: decimal("deliveryCostUsd", { precision: 10, scale: 2 }).default("0"), // تێچووی ڕاستەقینە بۆ کۆمپانیا
+  deliveryChargeUsd: decimal("deliveryChargeUsd", { precision: 10, scale: 2 }).default("0"), // نرخ بۆ کڕیار
+  deliveryProfitUsd: decimal("deliveryProfitUsd", { precision: 10, scale: 2 }).default("0"), // قازانج = charge - cost
+
+  // ئامار
+  totalPackages: int("totalPackages").default(0).notNull(),
+  totalWeightKg: decimal("totalWeightKg", { precision: 10, scale: 3 }).default("0"),
+  totalValueUsd: decimal("totalValueUsd", { precision: 10, scale: 2 }).default("0"), // کۆی نرخی پاکەتەکان
+
+  // بارودۆخ
+  status: mysqlEnum("status", ["open", "ready", "in_transit", "delivered", "cancelled"]).default("open").notNull(),
+
+  // واژوو و وێنە
+  signature: text("signature"), // base64
+  deliveryPhoto: text("deliveryPhoto"),
+
+  // ئینڤۆیس
+  invoiceId: int("invoiceId"),
+  isCharged: boolean("isCharged").default(false).notNull(), // ئایا نرخی گەیاندن لە والیت چووە
+
+  // تێبینی
+  notes: text("notes"),
+
+  // کارمەندان
+  createdById: int("createdById").notNull(),
+  sealedById: int("sealedById"),
+  deliveredById: int("deliveredById"),
+
+  // کاتەکان
+  sealedAt: timestamp("sealedAt"),
+  inTransitAt: timestamp("inTransitAt"),
+  deliveredAt: timestamp("deliveredAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DeliveryBox = typeof deliveryBoxes.$inferSelect;
+export type InsertDeliveryBox = typeof deliveryBoxes.$inferInsert;
+
+// ئایتمەکانی بۆکسی گەیاندن — هەر پاکەتێک لە ناو بۆکسدا
+export const deliveryBoxItems = mysqlTable("deliveryBoxItems", {
+  id: int("id").autoincrement().primaryKey(),
+  boxId: int("boxId").notNull(), // FK → deliveryBoxes
+  packageId: int("packageId"), // FK → packages (nullable)
+  fullPackageOrderId: int("fullPackageOrderId"), // FK → fullPackageOrders (nullable)
+
+  // snapshot زانیاری پاکەت کاتی سکان
+  trackingNumber: varchar("trackingNumber", { length: 100 }),
+  packageCode: varchar("packageCode", { length: 50 }),
+  description: text("description"),
+  weightKg: decimal("weightKg", { precision: 10, scale: 3 }),
+  calculatedCostUsd: decimal("calculatedCostUsd", { precision: 10, scale: 2 }),
+
+  // جۆری پاکەت
+  itemType: mysqlEnum("itemType", ["regular", "full_package", "commission"]).default("regular").notNull(),
+  sourceInfo: varchar("sourceInfo", { length: 255 }), // "باچ AIR-001" یان "FP-00123"
+
+  // سکان
+  scannedAt: timestamp("scannedAt").defaultNow().notNull(),
+  scannedById: int("scannedById").notNull(),
+});
+
+export type DeliveryBoxItem = typeof deliveryBoxItems.$inferSelect;
+export type InsertDeliveryBoxItem = typeof deliveryBoxItems.$inferInsert;
+
+
 // Customer Messages - پەیامەکانی کڕیار (Chat System)

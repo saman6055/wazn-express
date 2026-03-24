@@ -796,9 +796,324 @@ export const scanReportsRouter = router({
       }),
 });
 
+// ============ DELIVERY BOX ROUTER ============
+
+export const deliveryBoxRouter = router({
+  // Create a new delivery box for a customer
+  create: staffProcedure
+    .input(z.object({
+      customerId: z.number(),
+      deliveryMethod: z.enum(["warehouse_pickup", "home_delivery", "city_transfer"]).default("warehouse_pickup"),
+      destinationCity: z.string().max(100).optional(),
+      destinationAddress: z.string().max(2000).optional(),
+      recipientName: z.string().max(255).optional(),
+      recipientPhone: z.string().max(20).optional(),
+      deliveryCostUsd: z.string().default("0"),
+      deliveryChargeUsd: z.string().default("0"),
+      notes: z.string().max(2000).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      return db.createDeliveryBox({
+        ...input,
+        createdById: ctx.user.id,
+      });
+    }),
+
+  // Get box by ID with items
+  getById: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const box = await db.getDeliveryBoxById(input.id);
+      if (!box) return null;
+      const items = await db.getBoxItems(input.id);
+      return { ...box, items };
+    }),
+
+  // Get open boxes (for current user or all)
+  getOpenBoxes: staffProcedure
+    .input(z.object({ myOnly: z.boolean().default(false) }).optional())
+    .query(async ({ input, ctx }) => {
+      return db.getOpenBoxes(input?.myOnly ? ctx.user.id : undefined);
+    }),
+
+  // List all boxes with filters
+  list: staffProcedure
+    .input(z.object({
+      status: z.string().optional(),
+      customerId: z.number().optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+      limit: z.number().default(50),
+      offset: z.number().default(0),
+    }).optional())
+    .query(async ({ input }) => {
+      return db.getAllDeliveryBoxes({
+        ...input,
+        startDate: input?.startDate ? new Date(input.startDate) : undefined,
+        endDate: input?.endDate ? new Date(input.endDate) : undefined,
+      });
+    }),
+
+  // Update box details (cost, charge, destination, etc.)
+  update: staffProcedure
+    .input(z.object({
+      id: z.number(),
+      deliveryMethod: z.enum(["warehouse_pickup", "home_delivery", "city_transfer"]).optional(),
+      destinationCity: z.string().max(100).optional(),
+      destinationAddress: z.string().max(2000).optional(),
+      recipientName: z.string().max(255).optional(),
+      recipientPhone: z.string().max(20).optional(),
+      deliveryCostUsd: z.string().optional(),
+      deliveryChargeUsd: z.string().optional(),
+      notes: z.string().max(2000).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      return db.updateDeliveryBox(id, data);
+    }),
+
+  // Scan a package into a box
+  addItem: staffProcedure
+    .input(z.object({
+      boxId: z.number(),
+      trackingNumber: z.string().min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const box = await db.getDeliveryBoxById(input.boxId);
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
+      if (box.status !== 'open') throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم بۆکسە داخراوە، ناتوانرێت پاکەت زیاد بکرێت" });
+
+      // Search package by tracking number
+      const pkg = await db.getPackageByTrackingNumber(input.trackingNumber);
+      const fpOrder = pkg ? null : await db.getFullPackageOrderByTrackingNumber(input.trackingNumber);
+
+      if (!pkg && !fpOrder) {
+        throw new TRPCError({ code: "NOT_FOUND", message: `پاکەت بە تراکینگ "${input.trackingNumber}" نەدۆزرایەوە` });
+      }
+
+      // Check ownership
+      const itemCustomerId = pkg?.customerId || fpOrder?.customerId;
+      if (itemCustomerId && itemCustomerId !== box.customerId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم پاکەتە بۆ کڕیارێکی تر تۆمارکراوە" });
+      }
+
+      // Check if already in a box
+      if (pkg) {
+        const check = await db.isPackageInAnyBox(pkg.id);
+        if (check.inBox) throw new TRPCError({ code: "CONFLICT", message: `ئەم پاکەتە لە بۆکسی ${check.boxCode} دایە` });
+      }
+      if (fpOrder) {
+        const check = await db.isFPOrderInAnyBox(fpOrder.id);
+        if (check.inBox) throw new TRPCError({ code: "CONFLICT", message: `ئەم ئۆردەرە لە بۆکسی ${check.boxCode} دایە` });
+      }
+
+      // Determine item type and source
+      let itemType: 'regular' | 'full_package' | 'commission' = 'regular';
+      let sourceInfo = '';
+      let description = '';
+      let weightKg = '0';
+      let calculatedCostUsd = '0';
+
+      if (pkg) {
+        const batch = pkg.batchId ? await db.getBatchById(pkg.batchId) : null;
+        sourceInfo = batch ? `باچ ${batch.batchCode}` : 'بێ باچ';
+        description = pkg.description || pkg.trackingNumber || '';
+        weightKg = pkg.weightKg?.toString() || '0';
+        calculatedCostUsd = pkg.calculatedCostUsd?.toString() || '0';
+
+        // Check if linked to FP order
+        if (pkg.trackingNumber) {
+          const linkedFP = await db.getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
+          if (linkedFP) {
+            itemType = linkedFP.orderType === 'commission' ? 'commission' : 'full_package';
+            sourceInfo = `${linkedFP.orderCode} - ${sourceInfo}`;
+            description = linkedFP.productName || description;
+          }
+        }
+      } else if (fpOrder) {
+        itemType = fpOrder.orderType === 'commission' ? 'commission' : 'full_package';
+        sourceInfo = fpOrder.orderCode;
+        description = fpOrder.productName || '';
+        weightKg = fpOrder.weightKg?.toString() || '0';
+        calculatedCostUsd = fpOrder.sellingPriceUsd?.toString() || fpOrder.itemPriceUsd?.toString() || '0';
+      }
+
+      const item = await db.addItemToBox({
+        boxId: input.boxId,
+        packageId: pkg?.id || undefined,
+        fullPackageOrderId: fpOrder?.id || undefined,
+        trackingNumber: input.trackingNumber,
+        packageCode: pkg?.packageCode || fpOrder?.orderCode || undefined,
+        description,
+        weightKg,
+        calculatedCostUsd,
+        itemType,
+        sourceInfo,
+        scannedById: ctx.user.id,
+      });
+
+      return { item, packageInfo: pkg || fpOrder };
+    }),
+
+  // Remove item from box
+  removeItem: staffProcedure
+    .input(z.object({ itemId: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.removeItemFromBox(input.itemId);
+      return { success: true };
+    }),
+
+  // Get items in a box
+  getItems: staffProcedure
+    .input(z.object({ boxId: z.number() }))
+    .query(async ({ input }) => {
+      return db.getBoxItems(input.boxId);
+    }),
+
+  // Seal box (ready for shipping)
+  seal: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const box = await db.getDeliveryBoxById(input.id);
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
+      if (box.status !== 'open') throw new TRPCError({ code: "BAD_REQUEST", message: "تەنها بۆکسی کراوە داخرانی دەکرێت" });
+      if (box.totalPackages === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "بۆکس خالییە — سەرەتا پاکەت زیاد بکە" });
+      return db.sealBox(input.id, ctx.user.id);
+    }),
+
+  // Mark box as in-transit (charges customer wallet + creates invoice)
+  markInTransit: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const box = await db.getDeliveryBoxById(input.id);
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
+      if (box.status !== 'ready') throw new TRPCError({ code: "BAD_REQUEST", message: "سەرەتا بۆکسەکە داخە (seal)" });
+
+      // Charge delivery fee to customer wallet
+      const deliveryCharge = Number(box.deliveryChargeUsd || 0);
+      if (deliveryCharge > 0 && !box.isCharged) {
+        try {
+          const customer = await db.getCustomerById(box.customerId);
+          if (customer) {
+            // Create invoice for delivery charge
+            const items = await db.getBoxItems(box.id);
+            const lineItems = [{
+              description: `نرخی گەیاندنی بۆکس ${box.boxCode} (${items.length} پاکەت) - ${box.destinationCity || 'ناوخۆیی'}`,
+              quantity: 1,
+              unitPrice: deliveryCharge,
+              total: deliveryCharge,
+            }];
+            const invoiceNumber = `INV-BOX-${Date.now()}-${box.id}`;
+            const invoice = await db.createInvoice({
+              invoiceNumber,
+              customerId: box.customerId,
+              subtotalUsd: deliveryCharge.toFixed(2),
+              totalUsd: deliveryCharge.toFixed(2),
+              status: "issued",
+              issuedAt: new Date(),
+              lineItems,
+              notes: `پسووڵەی گەیاندنی بۆکس ${box.boxCode} بۆ ${box.destinationCity || 'ناوخۆیی'}`,
+              createdById: ctx.user.id,
+            });
+
+            // Charge wallet
+            await db.recordPackageChargeWithoutInvoice(
+              box.customerId,
+              customer.customerCode,
+              0, // no specific package
+              deliveryCharge,
+              `نرخی گەیاندنی بۆکس ${box.boxCode}`,
+              ctx.user.id,
+              invoice.id
+            );
+
+            await db.updateDeliveryBox(box.id, {
+              isCharged: true,
+              invoiceId: invoice.id,
+            });
+
+            appLogger.info("[DeliveryBox] Charged customer for box delivery", { boxCode: box.boxCode, charge: deliveryCharge, customerId: box.customerId });
+          }
+        } catch (err) {
+          appLogger.error("[DeliveryBox] Failed to charge delivery", { boxCode: box.boxCode, error: err instanceof Error ? err.message : String(err) });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "هەڵە لە charge کردنی والیت" });
+        }
+      }
+
+      return db.markBoxInTransit(box.id, ctx.user.id);
+    }),
+
+  // Mark box as delivered
+  markDelivered: staffProcedure
+    .input(z.object({
+      id: z.number(),
+      signature: z.string().optional(),
+      deliveryPhoto: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const box = await db.getDeliveryBoxById(input.id);
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
+      if (box.status !== 'in_transit' && box.status !== 'ready') {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "بۆکس لە دۆخی گونجاو نییە" });
+      }
+
+      // Mark all packages in box as delivered
+      const items = await db.getBoxItems(box.id);
+      for (const item of items) {
+        if (item.packageId) {
+          try {
+            await db.updatePackage(item.packageId, {
+              status: 'delivered',
+              deliveredAt: new Date(),
+              deliveredById: ctx.user.id,
+              recipientSignature: input.signature,
+              deliveryPhoto: input.deliveryPhoto,
+            });
+          } catch (e) {
+            appLogger.error("[DeliveryBox] Failed to update package status", { packageId: item.packageId, error: e instanceof Error ? e.message : String(e) });
+          }
+        }
+        if (item.fullPackageOrderId) {
+          try {
+            await db.updateFullPackageOrder(item.fullPackageOrderId, {
+              status: 'delivered',
+              deliveredDate: new Date(),
+              actualDeliveryDate: new Date(),
+            }, ctx.user.id);
+          } catch (e) {
+            appLogger.error("[DeliveryBox] Failed to update FP order status", { fpOrderId: item.fullPackageOrderId, error: e instanceof Error ? e.message : String(e) });
+          }
+        }
+      }
+
+      return db.markBoxDelivered(box.id, ctx.user.id, input.signature, input.deliveryPhoto);
+    }),
+
+  // Cancel a box
+  cancel: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const box = await db.getDeliveryBoxById(input.id);
+      if (!box) throw new TRPCError({ code: "NOT_FOUND" });
+      if (box.status === 'delivered') throw new TRPCError({ code: "BAD_REQUEST", message: "بۆکسی گەیاندراو هەڵناوەشێنرێتەوە" });
+      return db.updateDeliveryBox(input.id, { status: 'cancelled' });
+    }),
+
+  // Profit report
+  profitReport: accountantProcedure
+    .input(z.object({
+      startDate: z.string(),
+      endDate: z.string(),
+    }))
+    .query(async ({ input }) => {
+      return db.getDeliveryBoxProfitBreakdown(new Date(input.startDate), new Date(input.endDate));
+    }),
+});
+
 export const scanningRouters = {
   qrCodes: qrCodesRouter,
   scanning: scanningRouter,
   scanHistory: scanHistoryRouter,
   scanReports: scanReportsRouter,
+  deliveryBox: deliveryBoxRouter,
 };
