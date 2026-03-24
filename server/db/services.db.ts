@@ -245,8 +245,10 @@ async function createServiceTypeFallback(
   db: NonNullable<Awaited<ReturnType<typeof getDb>>>,
   data: InsertServiceType
 ): Promise<ServiceType> {
+  // Generate a unique code from nameEn (slug-like, e.g., "rmb" → "RMB", "Packing Service" → "PACKING_SERVICE")
+  const code = (data.nameEn || 'SVC').toUpperCase().replace(/[^A-Z0-9]/g, '_').substring(0, 40) + '_' + Date.now().toString(36);
   const insertResult = (await db.execute(
-    sql`INSERT INTO serviceTypes (nameEn, nameKu, nameAr, isActive, createdAt, updatedAt) VALUES (${data.nameEn}, ${data.nameKu ?? null}, ${data.nameAr ?? null}, ${data.isActive ?? true}, NOW(), NOW())`
+    sql`INSERT INTO serviceTypes (code, nameEn, nameKu, nameAr, icon, color, defaultCost, defaultPrice, requiresCustomer, addToCustomerBalance, sortOrder, isActive, createdById, createdAt, updatedAt) VALUES (${code}, ${data.nameEn}, ${data.nameKu ?? null}, ${data.nameAr ?? null}, ${data.icon ?? null}, ${data.color ?? null}, ${data.defaultCost ?? null}, ${data.defaultPrice ?? null}, ${data.requiresCustomer ?? true}, ${data.addToCustomerBalance ?? true}, ${data.sortOrder ?? 0}, ${data.isActive ?? true}, ${data.createdById ?? null}, NOW(), NOW())`
   )) as unknown as [{ insertId: number }, unknown];
   const insertId = Number(insertResult[0]?.insertId);
   if (!insertId) throw new Error("Insert failed");
@@ -294,21 +296,9 @@ export async function createServiceType(data: InsertServiceType): Promise<Servic
     } catch { /* non-fatal */ }
   }
 
-  try {
-    const result = await db.insert(serviceTypes).values(data);
-    const insertId = Number(result[0].insertId);
-    const [type] = await db.select().from(serviceTypes).where(eq(serviceTypes.id, insertId));
-    if (type) return type;
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const isUnknownColumn =
-      /Unknown column|ER_BAD_FIELD_ERROR|doesn't exist/.test(msg);
-    if (isUnknownColumn) {
-      return createServiceTypeFallback(db, data);
-    }
-    throw err;
-  }
-  throw new Error("Failed to create service type");
+  // Production table has a NOT NULL `code` column not in the Drizzle schema.
+  // Always use the raw-SQL fallback path so `code` is included.
+  return createServiceTypeFallback(db, data);
 }
 
 export async function updateServiceType(id: number, data: Partial<InsertServiceType>): Promise<ServiceType | null> {
