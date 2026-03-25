@@ -909,7 +909,12 @@ export const deliveryBoxRouter = router({
         if (check.inBox) throw new TRPCError({ code: "CONFLICT", message: `ئەم ئۆردەرە لە بۆکسی ${check.boxCode} دایە` });
       }
 
-      // Determine item type and source
+      // Labels for description breakdown
+      const t_itemPrice = 'نرخی بەرهەم';
+      const t_commission = 'عمولە';
+      const t_shipping = 'گەیاندن';
+
+      // Determine item type, source, and CORRECT price per item type
       let itemType: 'regular' | 'full_package' | 'commission' = 'regular';
       let sourceInfo = '';
       let description = '';
@@ -923,13 +928,28 @@ export const deliveryBoxRouter = router({
         weightKg = pkg.weightKg?.toString() || '0';
         calculatedCostUsd = pkg.calculatedCostUsd?.toString() || '0';
 
-        // Check if linked to FP order
+        // Check if linked to FP order — use FP pricing instead of shipping cost
         if (pkg.trackingNumber) {
           const linkedFP = await db.getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
           if (linkedFP) {
             itemType = linkedFP.orderType === 'commission' ? 'commission' : 'full_package';
             sourceInfo = `${linkedFP.orderCode} - ${sourceInfo}`;
             description = linkedFP.productName || description;
+
+            if (linkedFP.orderType === 'commission') {
+              // Commission: total = item price + commission fee
+              const itemPrice = Number(linkedFP.itemPriceUsd || 0);
+              const commFee = Number(linkedFP.commissionFeeUsd || linkedFP.commissionAmount || 0);
+              const shippingCost = Number(pkg.calculatedCostUsd || 0);
+              const qty = linkedFP.quantity || 1;
+              calculatedCostUsd = ((itemPrice * qty) + commFee + shippingCost).toFixed(2);
+              description = `${linkedFP.productName || ''} | ${t_itemPrice}: $${(itemPrice * qty).toFixed(2)} + ${t_commission}: $${commFee.toFixed(2)} + ${t_shipping}: $${shippingCost.toFixed(2)}`;
+            } else {
+              // Full Package: selling price × quantity
+              const sellingPrice = Number(linkedFP.sellingPriceUsd || 0);
+              const qty = linkedFP.quantity || 1;
+              calculatedCostUsd = (sellingPrice * qty).toFixed(2);
+            }
           }
         }
       } else if (fpOrder) {
@@ -937,7 +957,20 @@ export const deliveryBoxRouter = router({
         sourceInfo = fpOrder.orderCode;
         description = fpOrder.productName || '';
         weightKg = fpOrder.weightKg?.toString() || '0';
-        calculatedCostUsd = fpOrder.sellingPriceUsd?.toString() || fpOrder.itemPriceUsd?.toString() || '0';
+
+        if (fpOrder.orderType === 'commission') {
+          // Commission: item price + commission fee
+          const itemPrice = Number(fpOrder.itemPriceUsd || 0);
+          const commFee = Number(fpOrder.commissionFeeUsd || fpOrder.commissionAmount || 0);
+          const qty = fpOrder.quantity || 1;
+          calculatedCostUsd = ((itemPrice * qty) + commFee).toFixed(2);
+          description = `${fpOrder.productName || ''} | ${t_itemPrice}: $${(itemPrice * qty).toFixed(2)} + ${t_commission}: $${commFee.toFixed(2)}`;
+        } else {
+          // Full Package: selling price × quantity
+          const sellingPrice = Number(fpOrder.sellingPriceUsd || 0);
+          const qty = fpOrder.quantity || 1;
+          calculatedCostUsd = (sellingPrice * qty).toFixed(2);
+        }
       }
 
       const item = await db.addItemToBox({
