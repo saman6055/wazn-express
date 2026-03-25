@@ -2,481 +2,666 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { ModernPortalLayout } from "@/components/ModernPortalLayout";
-import { 
-  Package, ChevronRight, Truck, CheckCircle, Clock, AlertCircle, 
-  Plane, Ship, Box, AlertTriangle, Search, Filter, X, Calendar,
-  ArrowUpDown, Download, Share2, MapPin, Eye
+import {
+  Package,
+  ChevronRight,
+  ChevronDown,
+  Truck,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Plane,
+  Ship,
+  AlertTriangle,
+  Search,
+  X,
+  Calendar,
+  Weight,
+  DollarSign,
+  Box,
 } from "lucide-react";
-import { Link, useSearch } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearch } from "wouter";
 
-type StatusFilter = "all" | "in_transit" | "delivered" | "preparing";
-type ShippingFilter = "all" | "air_regular" | "sea" | "air_irregular";
-type SortOption = "newest" | "oldest" | "status";
+type StatusFilter = "all" | "in_transit" | "arrived" | "delivered";
 
 export default function ModernPortalShipments() {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
-  
+
   const searchString = useSearch();
   const urlParams = new URLSearchParams(searchString);
   const initialStatus = (urlParams.get("status") as StatusFilter) || "all";
-  
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus);
-  const [shippingType, setShippingType] = useState<ShippingFilter>("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
-  const [showFilters, setShowFilters] = useState(false);
-  
-  const { data: batches, isLoading } = trpc.customerPortal.getMyBatches.useQuery();
-  const { data: unbatchedPackages } = trpc.customerPortal.getMyUnbatchedPackages.useQuery();
 
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedBatchId, setExpandedBatchId] = useState<number | null>(null);
+  const [trackingSearch, setTrackingSearch] = useState("");
+
+  // tRPC queries
+  const { data: batches, isLoading } =
+    trpc.customerPortal.getMyBatches.useQuery();
+  const { data: unbatchedPackages } =
+    trpc.customerPortal.getMyUnbatchedPackages.useQuery();
+  const { data: batchPackages, isLoading: batchPackagesLoading } =
+    trpc.customerPortal.getMyPackagesInBatch.useQuery(
+      { batchId: expandedBatchId! },
+      { enabled: expandedBatchId !== null }
+    );
+  const { data: searchResult, isLoading: searchLoading } =
+    trpc.customerPortal.searchPackage.useQuery(
+      { trackingNumber: trackingSearch },
+      { enabled: trackingSearch.length >= 3 }
+    );
+
+  // Filter batches
   const filteredBatches = useMemo(() => {
     let result = batches || [];
-    
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(batch => 
+      result = result.filter((batch: any) =>
         batch.batchCode?.toLowerCase().includes(query)
       );
     }
-    
+
     if (statusFilter !== "all") {
-      result = result.filter(batch => {
+      result = result.filter((batch: any) => {
         if (statusFilter === "in_transit") return batch.status === "in_transit";
-        if (statusFilter === "delivered") return ["delivered", "closed"].includes(batch.status);
-        if (statusFilter === "preparing") return ["preparing", "arrived", "customs"].includes(batch.status);
+        if (statusFilter === "arrived")
+          return ["arrived", "customs"].includes(batch.status);
+        if (statusFilter === "delivered")
+          return ["delivered", "closed"].includes(batch.status);
         return true;
       });
     }
-    
-    if (shippingType !== "all") {
-      result = result.filter(batch => batch.shippingType === shippingType);
-    }
-    
-    result = [...result].sort((a, b) => {
-      if (sortBy === "newest") {
-        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-      }
-      if (sortBy === "oldest") {
-        return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-      }
-      const statusPriority: Record<string, number> = {
-        in_transit: 1, customs: 2, arrived: 3, preparing: 4, delivered: 5, closed: 6
-      };
-      return (statusPriority[a.status] || 99) - (statusPriority[b.status] || 99);
-    });
-    
-    return result;
-  }, [batches, searchQuery, statusFilter, shippingType, sortBy]);
 
-  const getProgressPercentage = (status: string) => {
-    switch (status) {
-      case "preparing": return 20;
-      case "in_transit": return 50;
-      case "arrived": return 70;
-      case "customs": return 80;
-      case "delivered": case "closed": return 100;
-      default: return 10;
-    }
-  };
+    return [...result].sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt || 0).getTime() -
+        new Date(a.createdAt || 0).getTime()
+    );
+  }, [batches, searchQuery, statusFilter]);
 
   const getStatusConfig = (status: string) => {
     switch (status) {
       case "delivered":
       case "closed":
-        return { 
-          gradient: "from-emerald-500 to-teal-600",
-          bg: "bg-emerald-500/10",
-          text: "text-emerald-500",
-          icon: CheckCircle
+        return {
+          label: language === "ku" ? "گەیاندرا" : "Delivered",
+          color: "text-emerald-600 dark:text-emerald-400",
+          bg: "bg-emerald-50 dark:bg-emerald-950/40",
+          border: "border-emerald-200 dark:border-emerald-800",
+          icon: CheckCircle,
         };
       case "in_transit":
-        return { 
-          gradient: "from-blue-500 to-cyan-600",
-          bg: "bg-blue-500/10",
-          text: "text-blue-500",
-          icon: Truck
+        return {
+          label: language === "ku" ? "لەڕێگا" : "In Transit",
+          color: "text-blue-600 dark:text-blue-400",
+          bg: "bg-blue-50 dark:bg-blue-950/40",
+          border: "border-blue-200 dark:border-blue-800",
+          icon: Truck,
+        };
+      case "arrived":
+        return {
+          label: language === "ku" ? "گەیشتوو" : "Arrived",
+          color: "text-violet-600 dark:text-violet-400",
+          bg: "bg-violet-50 dark:bg-violet-950/40",
+          border: "border-violet-200 dark:border-violet-800",
+          icon: Package,
         };
       case "customs":
-        return { 
-          gradient: "from-amber-500 to-orange-600",
-          bg: "bg-amber-500/10",
-          text: "text-amber-500",
-          icon: AlertCircle
+        return {
+          label: language === "ku" ? "گومرگ" : "Customs",
+          color: "text-amber-600 dark:text-amber-400",
+          bg: "bg-amber-50 dark:bg-amber-950/40",
+          border: "border-amber-200 dark:border-amber-800",
+          icon: AlertCircle,
+        };
+      case "preparing":
+        return {
+          label: language === "ku" ? "ئامادەکاری" : "Preparing",
+          color: "text-gray-600 dark:text-gray-400",
+          bg: "bg-gray-50 dark:bg-gray-950/40",
+          border: "border-gray-200 dark:border-gray-800",
+          icon: Clock,
         };
       default:
-        return { 
-          gradient: "from-slate-500 to-slate-600",
-          bg: "bg-slate-500/10",
-          text: "text-slate-500",
-          icon: Clock
+        return {
+          label: status?.replace(/_/g, " ") || "Unknown",
+          color: "text-gray-600 dark:text-gray-400",
+          bg: "bg-gray-50 dark:bg-gray-950/40",
+          border: "border-gray-200 dark:border-gray-800",
+          icon: Clock,
         };
     }
   };
 
-  const getStatusText = (status: string) => {
-    if (language === "ku") {
-      const statusMap: Record<string, string> = {
-        preparing: "ئامادەکاری",
-        in_transit: "لە ڕێگادا",
-        arrived: "گەیشتووە",
-        customs: "گومرگ",
-        delivered: "گەیشتووە",
-        closed: "داخراوە",
-      };
-      return statusMap[status] || status;
+  const getPackageStatusConfig = (status: string) => {
+    switch (status) {
+      case "delivered":
+        return {
+          label: language === "ku" ? "گەیاندرا" : "Delivered",
+          color: "text-emerald-600 dark:text-emerald-400",
+          bg: "bg-emerald-50 dark:bg-emerald-950/40",
+        };
+      case "in_transit":
+        return {
+          label: language === "ku" ? "لەڕێگا" : "In Transit",
+          color: "text-blue-600 dark:text-blue-400",
+          bg: "bg-blue-50 dark:bg-blue-950/40",
+        };
+      case "arrived":
+        return {
+          label: language === "ku" ? "گەیشتوو" : "Arrived",
+          color: "text-violet-600 dark:text-violet-400",
+          bg: "bg-violet-50 dark:bg-violet-950/40",
+        };
+      case "scanned":
+        return {
+          label: language === "ku" ? "سکان کراو" : "Scanned",
+          color: "text-cyan-600 dark:text-cyan-400",
+          bg: "bg-cyan-50 dark:bg-cyan-950/40",
+        };
+      default:
+        return {
+          label: status?.replace(/_/g, " ") || "—",
+          color: "text-gray-600 dark:text-gray-400",
+          bg: "bg-gray-50 dark:bg-gray-950/40",
+        };
     }
-    return status.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const statusFilters = [
+  const segmentedTabs: { value: StatusFilter; label: string }[] = [
     { value: "all", label: language === "ku" ? "هەموو" : "All" },
-    { value: "in_transit", label: language === "ku" ? "لە ڕێگادا" : "In Transit" },
-    { value: "preparing", label: language === "ku" ? "چاوەڕوان" : "Pending" },
-    { value: "delivered", label: language === "ku" ? "گەیشتووە" : "Delivered" },
+    { value: "in_transit", label: language === "ku" ? "لەڕێگا" : "Transit" },
+    { value: "arrived", label: language === "ku" ? "گەیشتوو" : "Arrived" },
+    { value: "delivered", label: language === "ku" ? "گەیاندرا" : "Delivered" },
   ];
 
-  const shippingFilters = [
-    { value: "all", label: language === "ku" ? "هەموو" : "All" },
-    { value: "air_regular", label: language === "ku" ? "فڕۆکە" : "Air", icon: Plane },
-    { value: "sea", label: language === "ku" ? "دەریا" : "Sea", icon: Ship },
-  ];
+  const handleBatchToggle = (batchId: number) => {
+    setExpandedBatchId(expandedBatchId === batchId ? null : batchId);
+  };
+
+  const handleTrackingSearch = (value: string) => {
+    setSearchQuery(value);
+    if (value.length >= 3) {
+      setTrackingSearch(value);
+    } else {
+      setTrackingSearch("");
+    }
+  };
 
   return (
     <ModernPortalLayout>
       <div className={cn("min-h-screen pb-8", isRTL && "rtl")}>
         {/* Header */}
-        <div className={cn(
-          "relative overflow-hidden",
-          isDark 
-            ? "bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950" 
-            : "bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700"
-        )}>
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute top-40 -left-20 w-40 h-40 rounded-full bg-emerald-400/20 blur-2xl" />
-          </div>
+        <div className="px-5 pt-12 pb-2">
+          <h1
+            className={cn(
+              "text-2xl font-bold tracking-tight mb-1",
+              isDark ? "text-white" : "text-gray-900"
+            )}
+          >
+            {language === "ku" ? "بارەکانم" : "My Shipments"}
+          </h1>
+          <p className={cn("text-sm", isDark ? "text-zinc-500" : "text-gray-500")}>
+            {language === "ku"
+              ? "شوێنکەوتنی هەموو بارەکانت"
+              : "Track all your shipments"}
+          </p>
+        </div>
 
-          <div className="relative px-6 pt-12 pb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-white font-bold text-2xl">
-                  {language === "ku" ? "بارەکانم" : "My Shipments"}
-                </h1>
-                <p className="text-white/70 text-sm mt-1">
-                  {language === "ku" ? "شوێنکەوتنی هەموو بارەکانت" : "Track all your shipments"}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
-                    showFilters 
-                      ? "bg-white text-emerald-600" 
-                      : "bg-white/20 text-white"
-                  )}
-                >
-                  <Filter className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Search Bar */}
-            <div className={cn(
-              "relative rounded-2xl overflow-hidden",
-              "bg-white/10 backdrop-blur-xl border border-white/20"
-            )}>
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50" />
-              <input
-                type="text"
-                placeholder={language === "ku" ? "گەڕان بە کۆدی باچ..." : "Search by batch code..."}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={cn(
-                  "w-full bg-transparent py-4 px-12 text-white placeholder:text-white/50",
-                  "focus:outline-none"
-                )}
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
-                >
-                  <X className="w-5 h-5 text-white/50" />
-                </button>
+        {/* Search Bar */}
+        <div className="px-5 py-3">
+          <div
+            className={cn(
+              "relative rounded-2xl overflow-hidden shadow-sm",
+              isDark
+                ? "bg-zinc-900 border border-zinc-800"
+                : "bg-white border border-gray-200"
+            )}
+          >
+            <Search
+              className={cn(
+                "absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5",
+                isDark ? "text-zinc-500" : "text-gray-400"
               )}
-            </div>
+            />
+            <input
+              type="text"
+              placeholder={
+                language === "ku"
+                  ? "گەڕان بە ژمارەی تراکینگ..."
+                  : "Search by tracking number..."
+              }
+              value={searchQuery}
+              onChange={(e) => handleTrackingSearch(e.target.value)}
+              className={cn(
+                "w-full bg-transparent py-3.5 text-sm",
+                isRTL ? "pe-4 ps-12" : "ps-12 pe-10",
+                isDark
+                  ? "text-white placeholder:text-zinc-500"
+                  : "text-gray-900 placeholder:text-gray-400",
+                "focus:outline-none"
+              )}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setTrackingSearch("");
+                }}
+                className="absolute end-3 top-1/2 -translate-y-1/2"
+              >
+                <X
+                  className={cn(
+                    "w-5 h-5",
+                    isDark ? "text-zinc-500" : "text-gray-400"
+                  )}
+                />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Search Result (when searching by tracking number) */}
         <AnimatePresence>
-          {showFilters && (
+          {trackingSearch.length >= 3 && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="px-5 mb-3 overflow-hidden"
             >
-              <div className={cn(
-                "px-6 py-4 border-b",
-                isDark ? "bg-slate-900/50 border-slate-800" : "bg-white border-slate-200"
-              )}>
-                {/* Status Filters */}
-                <div className="mb-4">
-                  <p className={cn(
-                    "text-xs font-medium mb-2",
-                    isDark ? "text-slate-400" : "text-slate-500"
-                  )}>
-                    {language === "ku" ? "بارودۆخ" : "Status"}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {statusFilters.map((filter) => (
-                      <button
-                        key={filter.value}
-                        onClick={() => setStatusFilter(filter.value as StatusFilter)}
+              {searchLoading ? (
+                <Skeleton className="h-20 w-full rounded-2xl" />
+              ) : searchResult ? (
+                <div
+                  className={cn(
+                    "rounded-2xl p-4 shadow-sm",
+                    isDark
+                      ? "bg-emerald-950/30 border border-emerald-800/50"
+                      : "bg-emerald-50 border border-emerald-200"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p
                         className={cn(
-                          "px-4 py-2 rounded-xl text-sm font-medium transition-all",
-                          statusFilter === filter.value
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30"
-                            : isDark 
-                              ? "bg-slate-800 text-slate-300 hover:bg-slate-700" 
-                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          "text-sm font-semibold truncate",
+                          isDark ? "text-white" : "text-gray-900"
                         )}
                       >
-                        {filter.label}
-                      </button>
-                    ))}
+                        {(searchResult as any).trackingNumber || (searchResult as any).packageCode}
+                      </p>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                        {language === "ku" ? "دۆزرایەوە!" : "Found!"}
+                        {" — "}
+                        {getPackageStatusConfig((searchResult as any).status).label}
+                      </p>
+                    </div>
+                    <span className="text-sm font-mono font-semibold text-emerald-700 dark:text-emerald-300">
+                      {Number((searchResult as any).weightKg || 0).toFixed(1)} kg
+                    </span>
                   </div>
                 </div>
-
-                {/* Shipping Type Filters */}
-                <div>
-                  <p className={cn(
-                    "text-xs font-medium mb-2",
-                    isDark ? "text-slate-400" : "text-slate-500"
-                  )}>
-                    {language === "ku" ? "جۆری گواستنەوە" : "Shipping Type"}
+              ) : (
+                <div
+                  className={cn(
+                    "rounded-2xl p-4 text-center",
+                    isDark
+                      ? "bg-zinc-900 border border-zinc-800"
+                      : "bg-gray-50 border border-gray-200"
+                  )}
+                >
+                  <p
+                    className={cn(
+                      "text-sm",
+                      isDark ? "text-zinc-500" : "text-gray-400"
+                    )}
+                  >
+                    {language === "ku" ? "هیچ نەدۆزرایەوە" : "No package found"}
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    {shippingFilters.map((filter) => (
-                      <button
-                        key={filter.value}
-                        onClick={() => setShippingType(filter.value as ShippingFilter)}
-                        className={cn(
-                          "px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2",
-                          shippingType === filter.value
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30"
-                            : isDark 
-                              ? "bg-slate-800 text-slate-300 hover:bg-slate-700" 
-                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                        )}
-                      >
-                        {filter.icon && <filter.icon className="w-4 h-4" />}
-                        {filter.label}
-                      </button>
-                    ))}
-                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Content */}
-        <div className="px-6 py-6">
-          {/* Stats Summary */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            {[
-              { 
-                label: language === "ku" ? "کۆی گشتی" : "Total", 
-                value: batches?.length || 0,
-                gradient: "from-violet-500 to-purple-600"
-              },
-              { 
-                label: language === "ku" ? "لە ڕێگادا" : "In Transit", 
-                value: batches?.filter(b => b.status === "in_transit").length || 0,
-                gradient: "from-blue-500 to-cyan-600"
-              },
-              { 
-                label: language === "ku" ? "گەیشتووە" : "Delivered", 
-                value: batches?.filter(b => ["delivered", "closed"].includes(b.status)).length || 0,
-                gradient: "from-emerald-500 to-teal-600"
-              },
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+        {/* Segmented Control Tabs */}
+        <div className="px-5 mb-4">
+          <div
+            className={cn(
+              "flex rounded-2xl p-1 shadow-sm",
+              isDark
+                ? "bg-zinc-900 border border-zinc-800"
+                : "bg-gray-100"
+            )}
+          >
+            {segmentedTabs.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setStatusFilter(tab.value)}
                 className={cn(
-                  "relative overflow-hidden rounded-2xl p-4",
-                  isDark 
-                    ? "bg-slate-800/50 border border-slate-700/50" 
-                    : "bg-white border border-slate-200/50",
-                  "backdrop-blur-xl"
+                  "flex-1 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                  statusFilter === tab.value
+                    ? cn(
+                        "shadow-sm",
+                        isDark
+                          ? "bg-emerald-600 text-white"
+                          : "bg-white text-emerald-700 shadow-sm"
+                      )
+                    : isDark
+                      ? "text-zinc-400 hover:text-zinc-300"
+                      : "text-gray-500 hover:text-gray-700"
                 )}
               >
-                <div className={cn(
-                  "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r",
-                  stat.gradient
-                )} />
-                <p className={cn(
-                  "text-2xl font-bold",
-                  isDark ? "text-white" : "text-slate-900"
-                )}>
-                  {stat.value}
-                </p>
-                <p className={cn(
-                  "text-xs",
-                  isDark ? "text-slate-400" : "text-slate-500"
-                )}>
-                  {stat.label}
-                </p>
-              </motion.div>
+                {tab.label}
+              </button>
             ))}
           </div>
+        </div>
 
-          {/* Batch List */}
+        {/* Batch List */}
+        <div className="px-5">
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+                <Skeleton key={i} className="h-28 w-full rounded-2xl" />
               ))}
             </div>
           ) : filteredBatches.length > 0 ? (
-            <div className="space-y-4">
-              {filteredBatches.map((batch: any, index) => {
+            <div className="space-y-3">
+              {filteredBatches.map((batch: any, index: number) => {
                 const statusConfig = getStatusConfig(batch.status);
                 const StatusIcon = statusConfig.icon;
-                const progress = getProgressPercentage(batch.status);
-                
+                const isExpanded = expandedBatchId === batch.id;
+
                 return (
                   <motion.div
                     key={batch.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: index * 0.04, duration: 0.3 }}
                   >
-                    <Link href={`/portal/shipments/${batch.id}`}>
-                      <div className={cn(
-                        "relative overflow-hidden rounded-2xl p-4 transition-all duration-300",
-                        isDark 
-                          ? "bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800/70" 
-                          : "bg-white border border-slate-200/50 hover:shadow-lg",
-                        "backdrop-blur-xl cursor-pointer"
-                      )}>
-                        {/* Progress bar at top */}
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-slate-200 dark:bg-slate-700">
-                          <div 
-                            className={cn("h-full bg-gradient-to-r transition-all duration-500", statusConfig.gradient)}
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-
-                        <div className="flex items-start gap-4 mt-2">
-                          {/* Icon */}
-                          <div className={cn(
-                            "w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br",
-                            statusConfig.gradient
-                          )}>
+                    {/* Batch Card */}
+                    <div
+                      className={cn(
+                        "rounded-2xl overflow-hidden shadow-sm transition-all duration-200",
+                        isDark
+                          ? "bg-zinc-900 border border-zinc-800"
+                          : "bg-white border border-gray-100",
+                        isExpanded && (isDark ? "ring-1 ring-emerald-800" : "ring-1 ring-emerald-200")
+                      )}
+                    >
+                      {/* Batch Header - clickable */}
+                      <button
+                        onClick={() => handleBatchToggle(batch.id)}
+                        className="w-full text-start p-4"
+                      >
+                        <div className="flex items-start gap-3">
+                          {/* Shipping type icon */}
+                          <div
+                            className={cn(
+                              "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0",
+                              statusConfig.bg
+                            )}
+                          >
                             {batch.shippingType?.includes("sea") ? (
-                              <Ship className="w-6 h-6 text-white" />
+                              <Ship className={cn("w-5 h-5", statusConfig.color)} />
                             ) : (
-                              <Plane className="w-6 h-6 text-white" />
+                              <Plane className={cn("w-5 h-5", statusConfig.color)} />
                             )}
                           </div>
 
-                          {/* Content */}
+                          {/* Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <h3 className={cn(
-                                "font-bold",
-                                isDark ? "text-white" : "text-slate-900"
-                              )}>
+                              <h3
+                                className={cn(
+                                  "font-bold text-sm",
+                                  isDark ? "text-white" : "text-gray-900"
+                                )}
+                              >
                                 {batch.batchCode || `B-${batch.id}`}
                               </h3>
-                              <span className={cn(
-                                "px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1",
-                                statusConfig.bg, statusConfig.text
-                              )}>
+                              <span
+                                className={cn(
+                                  "px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1",
+                                  statusConfig.bg,
+                                  statusConfig.color
+                                )}
+                              >
                                 <StatusIcon className="w-3 h-3" />
-                                {getStatusText(batch.status)}
+                                {statusConfig.label}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-4 text-sm">
-                              <span className={cn(
-                                "flex items-center gap-1",
-                                isDark ? "text-slate-400" : "text-slate-500"
-                              )}>
-                                <Package className="w-4 h-4" />
-                                {batch.customerPackageCount || 0} {language === "ku" ? "بار" : "pkgs"}
+                            <div className="flex items-center gap-3 text-xs">
+                              <span
+                                className={cn(
+                                  "flex items-center gap-1",
+                                  isDark ? "text-zinc-500" : "text-gray-500"
+                                )}
+                              >
+                                <Box className="w-3.5 h-3.5" />
+                                {batch.customerPackageCount || 0}{" "}
+                                {language === "ku" ? "بار" : "pkgs"}
                               </span>
-                              <span className={cn(
-                                "flex items-center gap-1",
-                                isDark ? "text-slate-400" : "text-slate-500"
-                              )}>
-                                <Calendar className="w-4 h-4" />
+                              <span
+                                className={cn(
+                                  "flex items-center gap-1",
+                                  isDark ? "text-zinc-500" : "text-gray-500"
+                                )}
+                              >
+                                <Calendar className="w-3.5 h-3.5" />
                                 {new Date(batch.createdAt).toLocaleDateString()}
                               </span>
                             </div>
 
                             {batch.estimatedArrival && (
-                              <p className={cn(
-                                "text-xs mt-2",
-                                isDark ? "text-slate-500" : "text-slate-400"
-                              )}>
-                                {language === "ku" ? "گەیشتنی چاوەڕوانکراو:" : "ETA:"} {new Date(batch.estimatedArrival).toLocaleDateString()}
+                              <p
+                                className={cn(
+                                  "text-[11px] mt-1.5",
+                                  isDark ? "text-zinc-600" : "text-gray-400"
+                                )}
+                              >
+                                {language === "ku"
+                                  ? "گەیشتنی چاوەڕوانکراو:"
+                                  : "ETA:"}{" "}
+                                {new Date(
+                                  batch.estimatedArrival
+                                ).toLocaleDateString()}
                               </p>
                             )}
                           </div>
 
-                          <ChevronRight className={cn(
-                            "w-5 h-5",
-                            isDark ? "text-slate-600" : "text-slate-300"
-                          )} />
+                          {/* Expand arrow */}
+                          <motion.div
+                            animate={{ rotate: isExpanded ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="mt-1"
+                          >
+                            <ChevronDown
+                              className={cn(
+                                "w-5 h-5",
+                                isDark ? "text-zinc-600" : "text-gray-400"
+                              )}
+                            />
+                          </motion.div>
                         </div>
-                      </div>
-                    </Link>
+                      </button>
+
+                      {/* Expanded: Packages inside this batch */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="overflow-hidden"
+                          >
+                            <div
+                              className={cn(
+                                "border-t px-4 pb-3 pt-2",
+                                isDark ? "border-zinc-800" : "border-gray-100"
+                              )}
+                            >
+                              {batchPackagesLoading ? (
+                                <div className="space-y-2 py-2">
+                                  {[1, 2].map((i) => (
+                                    <Skeleton
+                                      key={i}
+                                      className="h-16 w-full rounded-xl"
+                                    />
+                                  ))}
+                                </div>
+                              ) : batchPackages && batchPackages.length > 0 ? (
+                                <div className="space-y-2 pt-1">
+                                  {batchPackages.map((pkg: any) => {
+                                    const pkgStatus = getPackageStatusConfig(
+                                      pkg.status
+                                    );
+                                    return (
+                                      <div
+                                        key={pkg.id}
+                                        className={cn(
+                                          "rounded-xl p-3",
+                                          isDark
+                                            ? "bg-zinc-800/60"
+                                            : "bg-gray-50"
+                                        )}
+                                      >
+                                        <div className="flex items-center justify-between mb-1.5">
+                                          <span
+                                            className={cn(
+                                              "text-sm font-mono font-semibold",
+                                              isDark
+                                                ? "text-white"
+                                                : "text-gray-900"
+                                            )}
+                                          >
+                                            {pkg.trackingNumber ||
+                                              pkg.packageCode ||
+                                              `PKG-${pkg.id}`}
+                                          </span>
+                                          <span
+                                            className={cn(
+                                              "text-[10px] font-semibold px-2 py-0.5 rounded-md",
+                                              pkgStatus.bg,
+                                              pkgStatus.color
+                                            )}
+                                          >
+                                            {pkgStatus.label}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs">
+                                          <span
+                                            className={cn(
+                                              "flex items-center gap-1",
+                                              isDark
+                                                ? "text-zinc-500"
+                                                : "text-gray-500"
+                                            )}
+                                          >
+                                            <Weight className="w-3 h-3" />
+                                            {Number(
+                                              pkg.weightKg || 0
+                                            ).toFixed(1)}{" "}
+                                            kg
+                                          </span>
+                                          {pkg.calculatedCostUsd > 0 && (
+                                            <span
+                                              className={cn(
+                                                "flex items-center gap-1",
+                                                isDark
+                                                  ? "text-zinc-500"
+                                                  : "text-gray-500"
+                                              )}
+                                            >
+                                              <DollarSign className="w-3 h-3" />
+                                              $
+                                              {Number(
+                                                pkg.calculatedCostUsd
+                                              ).toFixed(2)}
+                                            </span>
+                                          )}
+                                          {pkg.isFullPackage && (
+                                            <span className="text-[10px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/40 px-1.5 py-0.5 rounded">
+                                              {language === "ku"
+                                                ? "فول پاکەج"
+                                                : "Full Pkg"}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <p
+                                  className={cn(
+                                    "text-sm text-center py-4",
+                                    isDark ? "text-zinc-600" : "text-gray-400"
+                                  )}
+                                >
+                                  {language === "ku"
+                                    ? "هیچ بارێک نییە"
+                                    : "No packages in this batch"}
+                                </p>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </motion.div>
                 );
               })}
             </div>
           ) : (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               className={cn(
-                "rounded-3xl p-8 text-center",
-                isDark 
-                  ? "bg-slate-800/50 border border-slate-700/50" 
-                  : "bg-white border border-slate-200/50"
+                "rounded-2xl p-10 text-center shadow-sm",
+                isDark
+                  ? "bg-zinc-900 border border-zinc-800"
+                  : "bg-white border border-gray-100"
               )}
             >
-              <Package className={cn(
-                "w-16 h-16 mx-auto mb-4",
-                isDark ? "text-slate-600" : "text-slate-300"
-              )} />
-              <h3 className={cn(
-                "font-bold text-lg mb-2",
-                isDark ? "text-white" : "text-slate-900"
-              )}>
+              <Package
+                className={cn(
+                  "w-14 h-14 mx-auto mb-3",
+                  isDark ? "text-zinc-700" : "text-gray-300"
+                )}
+              />
+              <h3
+                className={cn(
+                  "font-bold text-base mb-1",
+                  isDark ? "text-white" : "text-gray-900"
+                )}
+              >
                 {language === "ku" ? "هیچ بارێک نییە" : "No shipments found"}
               </h3>
-              <p className={cn(
-                "text-sm",
-                isDark ? "text-slate-500" : "text-slate-400"
-              )}>
-                {language === "ku" 
-                  ? "کاتێک بارت هەبێت لێرە دەردەکەوێت" 
+              <p
+                className={cn(
+                  "text-sm",
+                  isDark ? "text-zinc-500" : "text-gray-400"
+                )}
+              >
+                {language === "ku"
+                  ? "کاتێک بارت هەبێت لێرە دەردەکەوێت"
                   : "Your shipments will appear here"}
               </p>
             </motion.div>
@@ -485,33 +670,83 @@ export default function ModernPortalShipments() {
           {/* Unbatched Packages Alert */}
           {unbatchedPackages && unbatchedPackages.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               className={cn(
-                "mt-6 rounded-2xl p-4",
-                isDark 
-                  ? "bg-amber-900/20 border border-amber-700/50" 
+                "mt-4 rounded-2xl p-4 shadow-sm",
+                isDark
+                  ? "bg-amber-950/30 border border-amber-800/40"
                   : "bg-amber-50 border border-amber-200"
               )}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 </div>
-                <div>
-                  <p className={cn(
-                    "font-medium",
-                    isDark ? "text-amber-400" : "text-amber-700"
-                  )}>
-                    {unbatchedPackages.length} {language === "ku" ? "پاکەت چاوەڕوانی باچن" : "packages waiting"}
+                <div className="flex-1">
+                  <p
+                    className={cn(
+                      "text-sm font-semibold",
+                      isDark ? "text-amber-300" : "text-amber-800"
+                    )}
+                  >
+                    {unbatchedPackages.length}{" "}
+                    {language === "ku"
+                      ? "پاکەت چاوەڕوانی باچن"
+                      : "packages awaiting batch"}
                   </p>
-                  <p className={cn(
-                    "text-sm",
-                    isDark ? "text-amber-400/70" : "text-amber-600"
-                  )}>
-                    {language === "ku" ? "بەم زووانە زیاد دەکرێن" : "Will be added to a batch soon"}
+                  <p
+                    className={cn(
+                      "text-xs mt-0.5",
+                      isDark ? "text-amber-400/70" : "text-amber-600"
+                    )}
+                  >
+                    {language === "ku"
+                      ? "بەم زووانە زیاد دەکرێن"
+                      : "Will be added to a batch soon"}
                   </p>
                 </div>
+              </div>
+
+              {/* List unbatched packages */}
+              <div className="mt-3 space-y-2">
+                {unbatchedPackages.slice(0, 5).map((pkg: any) => (
+                  <div
+                    key={pkg.id}
+                    className={cn(
+                      "flex items-center justify-between rounded-xl px-3 py-2",
+                      isDark ? "bg-amber-950/40" : "bg-amber-100/50"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "text-xs font-mono font-medium",
+                        isDark ? "text-amber-300" : "text-amber-800"
+                      )}
+                    >
+                      {pkg.trackingNumber || pkg.packageCode || `PKG-${pkg.id}`}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-xs",
+                        isDark ? "text-amber-400/60" : "text-amber-600"
+                      )}
+                    >
+                      {Number(pkg.weightKg || 0).toFixed(1)} kg
+                    </span>
+                  </div>
+                ))}
+                {unbatchedPackages.length > 5 && (
+                  <p
+                    className={cn(
+                      "text-xs text-center pt-1",
+                      isDark ? "text-amber-400/50" : "text-amber-500"
+                    )}
+                  >
+                    +{unbatchedPackages.length - 5}{" "}
+                    {language === "ku" ? "زیاتر" : "more"}
+                  </p>
+                )}
               </div>
             </motion.div>
           )}

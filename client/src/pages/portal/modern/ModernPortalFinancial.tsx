@@ -2,364 +2,505 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { ModernPortalLayout } from "@/components/ModernPortalLayout";
-import { 
-  Wallet, CreditCard, ArrowUpRight, ArrowDownLeft, Clock, 
-  CheckCircle, XCircle, TrendingUp, TrendingDown, DollarSign,
-  Receipt, ChevronRight, Filter, Calendar, Download
+import {
+  Wallet, ArrowUpRight, ArrowDownLeft, Clock,
+  Receipt, Download, FileText, CreditCard,
+  TrendingUp, AlertCircle, CheckCircle2
 } from "lucide-react";
-import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-type TransactionFilter = "all" | "payment" | "refund" | "pending";
+type FilterTab = "all" | "credit" | "debit";
 
 export default function ModernPortalFinancial() {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
-  
-  const [filter, setFilter] = useState<TransactionFilter>("all");
-  const [showFilters, setShowFilters] = useState(false);
-  
-  const { data: summary, isLoading: accountLoading } = trpc.customerPortal.getMyFinancialSummary.useQuery();
-  const { data: transactions, isLoading: transactionsLoading } = trpc.customerPortal.getMyTransactions.useQuery();
+
+  const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const [receiptTxId, setReceiptTxId] = useState<number | null>(null);
+
+  const { data: summary, isLoading: summaryLoading } =
+    trpc.customerPortal.getMyFinancialSummary.useQuery();
+  const { data: transactions, isLoading: transactionsLoading } =
+    trpc.customerPortal.getMyTransactions.useQuery({ limit: 50 });
+  const { data: invoices, isLoading: invoicesLoading } =
+    trpc.customerPortal.getMyInvoices.useQuery();
+  const { data: receiptData, isLoading: receiptLoading } =
+    trpc.customerPortal.getReceiptData.useQuery(
+      { transactionId: receiptTxId! },
+      { enabled: !!receiptTxId }
+    );
 
   const filteredTransactions = useMemo(() => {
     if (!transactions) return [];
-    if (filter === "all") return transactions;
-    return transactions.filter((t: any) => {
-      if (filter === "payment") return t.type === "payment";
-      if (filter === "refund") return t.type === "refund";
-      if (filter === "pending") return t.status === "pending";
-      return true;
+    if (activeTab === "all") return transactions;
+    if (activeTab === "credit") {
+      return transactions.filter(
+        (tx: any) =>
+          tx.transactionType === "payment" ||
+          tx.transactionType === "credit" ||
+          tx.transactionType === "refund"
+      );
+    }
+    // debit
+    return transactions.filter(
+      (tx: any) =>
+        tx.transactionType === "charge" ||
+        tx.transactionType === "debit" ||
+        tx.transactionType === "invoice"
+    );
+  }, [transactions, activeTab]);
+
+  const unpaidInvoices = useMemo(() => {
+    if (!invoices) return [];
+    return invoices.filter(
+      (inv: any) => inv.status === "unpaid" || inv.status === "pending" || inv.status === "overdue"
+    );
+  }, [invoices]);
+
+  const totalPaid = useMemo(() => {
+    return summary?.totalPaid ?? 0;
+  }, [summary]);
+
+  const isCredit = (type: string) => {
+    return type === "payment" || type === "credit" || type === "refund";
+  };
+
+  const formatCurrency = (amount: number | string) => {
+    const num = typeof amount === "string" ? parseFloat(amount) : amount;
+    return `$${Math.abs(num).toFixed(2)}`;
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(language === "ku" || language === "ar" ? "ar-IQ" : "en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
-  }, [transactions, filter]);
-
-  const getTransactionIcon = (type: string) => {
-    switch (type) {
-      case "payment":
-        return { icon: ArrowDownLeft, gradient: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" };
-      case "refund":
-        return { icon: ArrowUpRight, gradient: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" };
-      default:
-        return { icon: Receipt, gradient: "from-slate-500 to-slate-600", bg: "bg-slate-500/10" };
-    }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return { text: language === "ku" ? "تەواو" : "Completed", color: "text-emerald-500", bg: "bg-emerald-500/10" };
-      case "pending":
-        return { text: language === "ku" ? "چاوەڕوان" : "Pending", color: "text-amber-500", bg: "bg-amber-500/10" };
-      case "failed":
-        return { text: language === "ku" ? "شکستخوارد" : "Failed", color: "text-red-500", bg: "bg-red-500/10" };
-      default:
-        return { text: status, color: "text-slate-500", bg: "bg-slate-500/10" };
-    }
+  const handleDownloadReceipt = (txId: number) => {
+    setReceiptTxId(txId);
   };
 
-  const filters = [
-    { value: "all", label: language === "ku" ? "هەموو" : "All" },
-    { value: "payment", label: language === "ku" ? "پارەدان" : "Payments" },
-    { value: "refund", label: language === "ku" ? "گەڕاندنەوە" : "Refunds" },
-    { value: "pending", label: language === "ku" ? "چاوەڕوان" : "Pending" },
+  const tabs: { value: FilterTab; label: string }[] = [
+    { value: "all", label: t("portal.all") },
+    {
+      value: "credit",
+      label: language === "ku" ? "واردە" : language === "ar" ? "وارد" : language === "zh" ? "收入" : "Credits",
+    },
+    {
+      value: "debit",
+      label: language === "ku" ? "دەرچووە" : language === "ar" ? "صادر" : language === "zh" ? "支出" : "Debits",
+    },
   ];
 
   return (
     <ModernPortalLayout>
-      <div className={cn("min-h-screen pb-8", isRTL && "rtl")}>
-        {/* Header with Balance */}
-        <div className={cn(
-          "relative overflow-hidden",
-          isDark 
-            ? "bg-gradient-to-br from-violet-950 via-purple-900 to-slate-950" 
-            : "bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700"
-        )}>
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute top-40 -left-20 w-40 h-40 rounded-full bg-violet-400/20 blur-2xl" />
-          </div>
+      <div className={cn("min-h-screen pb-24", isRTL && "rtl")} dir={isRTL ? "rtl" : "ltr"}>
+        <div className="max-w-lg mx-auto px-4 pt-6 space-y-5">
 
-          <div className="relative px-6 pt-12 pb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-white font-bold text-2xl">
-                  {language === "ku" ? "دارایی" : "Financial"}
-                </h1>
-                <p className="text-white/70 text-sm mt-1">
-                  {language === "ku" ? "بەڕێوەبردنی باڵانس و مامەڵەکان" : "Manage your balance & transactions"}
-                </p>
-              </div>
-            </div>
-
-            {/* Balance Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cn(
-                "relative overflow-hidden rounded-3xl p-6",
-                "bg-white/10 backdrop-blur-xl border border-white/20"
-              )}
-            >
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <p className="text-white/70 text-sm mb-1">
-                    {language === "ku" ? "باڵانسی ئێستا" : "Current Balance"}
-                  </p>
-                  {accountLoading ? (
-                    <Skeleton className="h-10 w-32 bg-white/20" />
-                  ) : (
-                    <>
-                      <h2 className="text-4xl font-bold text-white">
-                        ${(summary?.balanceUsd ?? 0).toFixed(2)} <span className="text-lg font-normal text-white/80">USD</span>
-                      </h2>
-                      {(summary?.balanceIqd ?? 0) !== 0 && (
-                        <p className="text-white/80 text-sm mt-1">
-                          {new Intl.NumberFormat("en-US").format(Number(summary?.balanceIqd ?? 0))} <span className="text-white/70">IQD</span>
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-                <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">
-                  <Wallet className="w-8 h-8 text-white" />
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="flex gap-3 mt-6">
-                <Link href="/portal/payment">
-                  <button className={cn(
-                    "flex-1 py-3 rounded-xl font-medium text-sm transition-all",
-                    "bg-white text-violet-600 hover:bg-white/90"
-                  )}>
-                    <CreditCard className="w-4 h-4 inline-block me-2" />
-                    {language === "ku" ? "پارەدان" : "Pay Now"}
-                  </button>
-                </Link>
-                <button className={cn(
-                  "flex-1 py-3 rounded-xl font-medium text-sm transition-all",
-                  "bg-white/20 text-white hover:bg-white/30"
+          {/* Balance Hero Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className={cn(
+              "rounded-2xl p-6 shadow-sm relative overflow-hidden",
+              isDark
+                ? "bg-gradient-to-br from-emerald-900/60 to-teal-900/40 border border-emerald-800/40"
+                : "bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100"
+            )}
+          >
+            <div className="absolute top-0 end-0 w-32 h-32 rounded-full bg-emerald-400/10 -translate-y-1/2 translate-x-1/2" />
+            <div className="relative">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center",
+                  isDark ? "bg-emerald-500/20" : "bg-emerald-500/10"
                 )}>
-                  <Download className="w-4 h-4 inline-block me-2" />
-                  {language === "ku" ? "ڕاپۆرت" : "Report"}
-                </button>
+                  <Wallet className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className={cn(
+                    "text-sm",
+                    isDark ? "text-emerald-300/70" : "text-emerald-700/70"
+                  )}>
+                    {t("portal.totalBalance")}
+                  </p>
+                </div>
               </div>
-            </motion.div>
-          </div>
-        </div>
 
-        {/* Stats */}
-        <div className="px-6 -mt-4">
-          <div className="grid grid-cols-2 gap-3">
+              {summaryLoading ? (
+                <Skeleton className="h-12 w-40 mb-2" />
+              ) : (
+                <>
+                  <h1 className={cn(
+                    "text-4xl font-bold font-mono tracking-tight",
+                    isDark ? "text-white" : "text-slate-900"
+                  )}>
+                    ${(summary?.balanceUsd ?? 0).toFixed(2)}
+                    <span className={cn(
+                      "text-base font-normal ms-2",
+                      isDark ? "text-emerald-300/60" : "text-emerald-600/60"
+                    )}>
+                      USD
+                    </span>
+                  </h1>
+                  {(summary?.balanceIqd ?? 0) !== 0 && (
+                    <p className={cn(
+                      "text-sm font-mono mt-1",
+                      isDark ? "text-emerald-300/50" : "text-emerald-700/50"
+                    )}>
+                      {new Intl.NumberFormat("en-US").format(Number(summary?.balanceIqd ?? 0))} IQD
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-3 gap-3">
             {[
-              { 
-                label: language === "ku" ? "کۆی پارەدان" : "Total Paid", 
-                value: `$${(transactions?.filter((t: any) => t.type === "payment" && t.status === "completed").reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0).toFixed(2)}`,
+              {
                 icon: TrendingUp,
-                gradient: "from-emerald-500 to-teal-600"
+                label: t("portal.totalPaid"),
+                value: formatCurrency(totalPaid),
+                color: "text-emerald-600 dark:text-emerald-400",
+                bg: isDark ? "bg-emerald-500/10" : "bg-emerald-50",
+                iconBg: isDark ? "bg-emerald-500/20" : "bg-emerald-100",
               },
-              { 
-                label: language === "ku" ? "چاوەڕوان" : "Pending", 
-                value: `$${(transactions?.filter((t: any) => t.status === "pending").reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0).toFixed(2)}`,
-                icon: Clock,
-                gradient: "from-amber-500 to-orange-600"
+              {
+                icon: FileText,
+                label: t("portal.unpaidInvoices"),
+                value: String(unpaidInvoices.length),
+                color: "text-amber-600 dark:text-amber-400",
+                bg: isDark ? "bg-amber-500/10" : "bg-amber-50",
+                iconBg: isDark ? "bg-amber-500/20" : "bg-amber-100",
               },
-            ].map((stat, index) => (
+              {
+                icon: CreditCard,
+                label: t("portal.balance"),
+                value: formatCurrency(summary?.creditLimitUsd ?? 0),
+                color: "text-sky-600 dark:text-sky-400",
+                bg: isDark ? "bg-sky-500/10" : "bg-sky-50",
+                iconBg: isDark ? "bg-sky-500/20" : "bg-sky-100",
+              },
+            ].map((stat, i) => (
               <motion.div
                 key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: 0.1 + i * 0.08 }}
                 className={cn(
-                  "relative overflow-hidden rounded-2xl p-4",
-                  isDark 
-                    ? "bg-slate-800/50 border border-slate-700/50" 
-                    : "bg-white border border-slate-200/50",
-                  "backdrop-blur-xl shadow-lg"
+                  "rounded-2xl p-3 shadow-sm border",
+                  isDark ? "border-slate-700/50" : "border-slate-100",
+                  stat.bg
                 )}
               >
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-gradient-to-br",
-                  stat.gradient
-                )}>
-                  <stat.icon className="w-5 h-5 text-white" />
+                <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-2", stat.iconBg)}>
+                  <stat.icon className={cn("w-4 h-4", stat.color)} />
                 </div>
-                <p className={cn(
-                  "text-lg font-bold",
-                  isDark ? "text-white" : "text-slate-900"
-                )}>
+                <p className={cn("text-lg font-bold font-mono", isDark ? "text-white" : "text-slate-900")}>
                   {stat.value}
                 </p>
-                <p className={cn(
-                  "text-xs",
-                  isDark ? "text-slate-400" : "text-slate-500"
-                )}>
+                <p className={cn("text-[11px] leading-tight", isDark ? "text-slate-400" : "text-slate-500")}>
                   {stat.label}
                 </p>
               </motion.div>
             ))}
           </div>
-        </div>
 
-        {/* Transactions */}
-        <div className="px-6 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className={cn(
-              "font-bold text-lg",
+          {/* Filter Tabs */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className={cn(
+              "flex rounded-xl p-1 gap-1",
+              isDark ? "bg-slate-800/60" : "bg-slate-100"
+            )}
+          >
+            {tabs.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={cn(
+                  "flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                  activeTab === tab.value
+                    ? cn(
+                        "shadow-sm",
+                        isDark
+                          ? "bg-emerald-600 text-white"
+                          : "bg-white text-emerald-700 shadow-sm"
+                      )
+                    : isDark
+                    ? "text-slate-400 hover:text-slate-200"
+                    : "text-slate-500 hover:text-slate-700"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </motion.div>
+
+          {/* Transaction List - Timeline style */}
+          <div>
+            <h2 className={cn(
+              "text-lg font-bold mb-3",
               isDark ? "text-white" : "text-slate-900"
             )}>
-              {language === "ku" ? "مامەڵەکان" : "Transactions"}
-            </h3>
-            <button 
-              onClick={() => setShowFilters(!showFilters)}
-              className={cn(
-                "p-2 rounded-xl transition-all",
-                showFilters 
-                  ? "bg-violet-500 text-white" 
-                  : isDark ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-600"
-              )}
-            >
-              <Filter className="w-5 h-5" />
-            </button>
-          </div>
+              {t("portal.paymentHistory")}
+            </h2>
 
-          {/* Filters */}
-          <AnimatePresence>
-            {showFilters && (
+            {transactionsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-18 w-full rounded-2xl" />
+                ))}
+              </div>
+            ) : filteredTransactions.length > 0 ? (
+              <div className="space-y-2.5">
+                <AnimatePresence mode="popLayout">
+                  {filteredTransactions.map((tx: any, index: number) => {
+                    const credit = isCredit(tx.transactionType);
+
+                    return (
+                      <motion.div
+                        key={tx.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ delay: index * 0.03 }}
+                        layout
+                        className={cn(
+                          "rounded-2xl p-4 shadow-sm border transition-colors",
+                          isDark
+                            ? "bg-slate-800/50 border-slate-700/40 hover:bg-slate-800/70"
+                            : "bg-white border-slate-100 hover:border-slate-200"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          {/* Icon */}
+                          <div
+                            className={cn(
+                              "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                              credit
+                                ? isDark
+                                  ? "bg-emerald-500/15"
+                                  : "bg-emerald-50"
+                                : isDark
+                                ? "bg-red-500/15"
+                                : "bg-red-50"
+                            )}
+                          >
+                            {credit ? (
+                              <ArrowDownLeft
+                                className={cn(
+                                  "w-5 h-5",
+                                  isDark ? "text-emerald-400" : "text-emerald-600"
+                                )}
+                              />
+                            ) : (
+                              <ArrowUpRight
+                                className={cn(
+                                  "w-5 h-5",
+                                  isDark ? "text-red-400" : "text-red-500"
+                                )}
+                              />
+                            )}
+                          </div>
+
+                          {/* Details */}
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={cn(
+                                "text-sm font-medium truncate",
+                                isDark ? "text-white" : "text-slate-900"
+                              )}
+                            >
+                              {tx.description ||
+                                tx.transactionNumber ||
+                                (language === "ku" ? "مامەڵە" : "Transaction")}
+                            </p>
+                            <p
+                              className={cn(
+                                "text-xs mt-0.5",
+                                isDark ? "text-slate-500" : "text-slate-400"
+                              )}
+                            >
+                              {formatDate(tx.createdAt)}
+                            </p>
+                          </div>
+
+                          {/* Amount + Download */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              className={cn(
+                                "text-sm font-bold font-mono",
+                                credit
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : "text-red-500 dark:text-red-400"
+                              )}
+                            >
+                              {credit ? "+" : "-"}
+                              {formatCurrency(tx.amountUsd)}
+                            </span>
+                            <button
+                              onClick={() => handleDownloadReceipt(tx.id)}
+                              className={cn(
+                                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                                isDark
+                                  ? "hover:bg-slate-700 text-slate-500"
+                                  : "hover:bg-slate-100 text-slate-400"
+                              )}
+                              title={t("portal.downloadInvoice")}
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            ) : (
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden mb-4"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn(
+                  "rounded-2xl p-10 text-center shadow-sm border",
+                  isDark
+                    ? "bg-slate-800/50 border-slate-700/40"
+                    : "bg-white border-slate-100"
+                )}
               >
-                <div className="flex flex-wrap gap-2">
-                  {filters.map((f) => (
-                    <button
-                      key={f.value}
-                      onClick={() => setFilter(f.value as TransactionFilter)}
-                      className={cn(
-                        "px-4 py-2 rounded-xl text-sm font-medium transition-all",
-                        filter === f.value
-                          ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/30"
-                          : isDark 
-                            ? "bg-slate-800 text-slate-300 hover:bg-slate-700" 
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      )}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
+                <Receipt
+                  className={cn(
+                    "w-12 h-12 mx-auto mb-3",
+                    isDark ? "text-slate-600" : "text-slate-300"
+                  )}
+                />
+                <h3
+                  className={cn(
+                    "font-bold mb-1",
+                    isDark ? "text-white" : "text-slate-900"
+                  )}
+                >
+                  {t("portal.noTransactions")}
+                </h3>
+                <p className={cn("text-sm", isDark ? "text-slate-500" : "text-slate-400")}>
+                  {language === "ku"
+                    ? "مامەڵەکانت لێرە دەردەکەون"
+                    : "Your transactions will appear here"}
+                </p>
               </motion.div>
             )}
-          </AnimatePresence>
+          </div>
 
-          {/* Transaction List */}
-          {transactionsLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-2xl" />
-              ))}
-            </div>
-          ) : filteredTransactions.length > 0 ? (
-            <div className="space-y-3">
-              {filteredTransactions.map((transaction: any, index: number) => {
-                const iconConfig = getTransactionIcon(transaction.type);
-                const IconComponent = iconConfig.icon;
-                const statusBadge = getStatusBadge(transaction.status);
-                
-                return (
+          {/* Unpaid Invoices Section */}
+          {!invoicesLoading && unpaidInvoices.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-900")}>
+                  {t("portal.unpaidInvoices")}
+                </h2>
+                <span
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-xs font-bold",
+                    isDark ? "bg-red-500/20 text-red-400" : "bg-red-50 text-red-600"
+                  )}
+                >
+                  {unpaidInvoices.length}
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                {unpaidInvoices.map((inv: any, i: number) => (
                   <motion.div
-                    key={transaction.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    key={inv.id}
+                    initial={{ opacity: 0, x: isRTL ? 12 : -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.45 + i * 0.05 }}
                     className={cn(
-                      "relative overflow-hidden rounded-2xl p-4 transition-all",
-                      isDark 
-                        ? "bg-slate-800/50 border border-slate-700/50" 
-                        : "bg-white border border-slate-200/50",
-                      "backdrop-blur-xl"
+                      "rounded-2xl p-4 shadow-sm border",
+                      isDark
+                        ? "bg-slate-800/50 border-slate-700/40"
+                        : "bg-white border-slate-100"
                     )}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br",
-                        iconConfig.gradient
-                      )}>
-                        <IconComponent className="w-6 h-6 text-white" />
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                          isDark ? "bg-amber-500/15" : "bg-amber-50"
+                        )}
+                      >
+                        <AlertCircle
+                          className={cn(
+                            "w-5 h-5",
+                            isDark ? "text-amber-400" : "text-amber-600"
+                          )}
+                        />
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className={cn(
-                            "font-semibold",
+                        <p
+                          className={cn(
+                            "text-sm font-medium",
                             isDark ? "text-white" : "text-slate-900"
-                          )}>
-                            {transaction.description || (language === "ku" ? "مامەڵە" : "Transaction")}
-                          </h4>
-                          <span className={cn(
-                            "font-bold",
-                            transaction.type === "payment" ? "text-emerald-500" : "text-amber-500"
-                          )}>
-                            {transaction.type === "payment" ? "-" : "+"}${(transaction.amount || 0).toFixed(2)}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <span className={cn(
-                            "text-xs",
-                            isDark ? "text-slate-500" : "text-slate-400"
-                          )}>
-                            {new Date(transaction.createdAt).toLocaleDateString()}
-                          </span>
-                          <span className={cn(
-                            "px-2 py-0.5 rounded-full text-xs font-medium",
-                            statusBadge.bg, statusBadge.color
-                          )}>
-                            {statusBadge.text}
-                          </span>
-                        </div>
+                          )}
+                        >
+                          {inv.invoiceNumber}
+                        </p>
+                        <p className={cn("text-xs mt-0.5", isDark ? "text-slate-500" : "text-slate-400")}>
+                          {inv.dueDate
+                            ? formatDate(inv.dueDate)
+                            : inv.issuedAt
+                            ? formatDate(inv.issuedAt)
+                            : ""}
+                        </p>
+                      </div>
+
+                      <div className="text-end shrink-0">
+                        <p
+                          className={cn(
+                            "text-sm font-bold font-mono",
+                            "text-red-500 dark:text-red-400"
+                          )}
+                        >
+                          ${Number(inv.totalUsd || 0).toFixed(2)}
+                        </p>
+                        <span
+                          className={cn(
+                            "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                            inv.status === "overdue"
+                              ? "bg-red-500/10 text-red-500"
+                              : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                          )}
+                        >
+                          {inv.status === "overdue"
+                            ? language === "ku"
+                              ? "دواکەوتوو"
+                              : "Overdue"
+                            : t("portal.pending")}
+                        </span>
                       </div>
                     </div>
                   </motion.div>
-                );
-              })}
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cn(
-                "rounded-3xl p-8 text-center",
-                isDark 
-                  ? "bg-slate-800/50 border border-slate-700/50" 
-                  : "bg-white border border-slate-200/50"
-              )}
-            >
-              <Receipt className={cn(
-                "w-16 h-16 mx-auto mb-4",
-                isDark ? "text-slate-600" : "text-slate-300"
-              )} />
-              <h3 className={cn(
-                "font-bold text-lg mb-2",
-                isDark ? "text-white" : "text-slate-900"
-              )}>
-                {language === "ku" ? "هیچ مامەڵەیەک نییە" : "No transactions"}
-              </h3>
-              <p className={cn(
-                "text-sm",
-                isDark ? "text-slate-500" : "text-slate-400"
-              )}>
-                {language === "ku" 
-                  ? "مامەڵەکانت لێرە دەردەکەون" 
-                  : "Your transactions will appear here"}
-              </p>
+                ))}
+              </div>
             </motion.div>
           )}
         </div>
