@@ -841,6 +841,8 @@ export const deliveryBoxRouter = router({
     .input(z.object({
       status: z.string().optional(),
       customerId: z.number().optional(),
+      deliveryMethod: z.string().optional(),
+      search: z.string().optional(),
       startDate: z.string().optional(),
       endDate: z.string().optional(),
       limit: z.number().default(50),

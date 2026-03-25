@@ -315,10 +315,10 @@ export function printBoxLabel(
         <div style="font-size:9px; color:#6b7280;">${t("delivery.packageValue")}</div>
         <div style="font-weight:700;">$${totalValue}</div>
       </div>
-      <div class="total-cell">
+      ${box.deliveryMethod !== "warehouse_pickup" ? `<div class="total-cell">
         <div style="font-size:9px; color:#6b7280;">${t("delivery.deliveryCharge")}</div>
         <div style="font-weight:700; color:${PRIMARY_COLOR};">$${deliveryCharge}</div>
-      </div>
+      </div>` : ""}
       <div class="grand-total-cell">
         <div style="font-size:9px; color:${PRIMARY_COLOR};">${t("delivery.grandTotal")}</div>
         <div style="font-size:16px; font-weight:800; color:${PRIMARY_COLOR};">$${grandTotal}</div>
@@ -631,10 +631,10 @@ export function printBoxReceipt(
           <span>${t("delivery.packageValue")}:</span>
           <span style="font-weight:600;">$${totalValue}</span>
         </div>
-        <div class="financial-row">
+        ${box.deliveryMethod !== "warehouse_pickup" ? `<div class="financial-row">
           <span>${t("delivery.deliveryCharge")}:</span>
           <span style="font-weight:600; color:${PRIMARY_COLOR};">$${deliveryCharge}</span>
-        </div>
+        </div>` : ""}
         <div class="financial-row total">
           <span>${t("delivery.grandTotal")}:</span>
           <span>$${grandTotal}</span>

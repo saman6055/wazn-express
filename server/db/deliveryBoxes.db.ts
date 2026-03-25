@@ -73,6 +73,8 @@ export async function getOpenBoxes(userId?: number): Promise<DeliveryBox[]> {
 export async function getAllDeliveryBoxes(filters?: {
   status?: string;
   customerId?: number;
+  deliveryMethod?: string;
+  search?: string;
   startDate?: Date;
   endDate?: Date;
   limit?: number;
@@ -84,6 +86,8 @@ export async function getAllDeliveryBoxes(filters?: {
   const conditions = [];
   if (filters?.status) conditions.push(eq(deliveryBoxes.status, filters.status as any));
   if (filters?.customerId) conditions.push(eq(deliveryBoxes.customerId, filters.customerId));
+  if (filters?.deliveryMethod) conditions.push(eq(deliveryBoxes.deliveryMethod, filters.deliveryMethod as any));
+  if (filters?.search) conditions.push(sql`(${deliveryBoxes.boxCode} LIKE ${`%${filters.search}%`} OR ${deliveryBoxes.destinationCity} LIKE ${`%${filters.search}%`})`);
   if (filters?.startDate) conditions.push(gte(deliveryBoxes.createdAt, filters.startDate));
   if (filters?.endDate) conditions.push(lte(deliveryBoxes.createdAt, filters.endDate));
 

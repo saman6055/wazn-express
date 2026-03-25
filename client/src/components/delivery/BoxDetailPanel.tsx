@@ -1,0 +1,488 @@
+import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
+import { soundManager } from "@/lib/soundManager";
+import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  X,
+  ScanBarcode,
+  Lock,
+  Truck,
+  CheckCircle,
+  Ban,
+  Printer,
+  FileText,
+  Trash2,
+  Package,
+  Loader2,
+  Hash,
+  Weight,
+  DollarSign,
+} from "lucide-react";
+import { printBoxLabel, printBoxReceipt } from "@/lib/deliveryBoxPrintUtils";
+
+type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
+
+const STATUS_CONFIG: Record<BoxStatus, { className: string; key: string }> = {
+  open: { className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400", key: "delivery.statusOpen" },
+  ready: { className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", key: "delivery.statusReady" },
+  in_transit: { className: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400", key: "delivery.statusInTransit" },
+  delivered: { className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400", key: "delivery.statusDelivered" },
+  cancelled: { className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400", key: "delivery.statusCancelled" },
+};
+
+const METHOD_KEYS: Record<string, string> = {
+  warehouse_pickup: "delivery.methodPickup",
+  home_delivery: "delivery.methodHomeDelivery",
+  city_transfer: "delivery.methodCityTransfer",
+};
+
+const ITEM_TYPE_STYLES: Record<string, string> = {
+  regular: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  full_package: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  commission: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+};
+
+const ITEM_TYPE_KEYS: Record<string, string> = {
+  regular: "delivery.typeRegular",
+  full_package: "delivery.typeFullPackage",
+  commission: "delivery.typeCommission",
+};
+
+interface Customer {
+  id: number;
+  fullName: string;
+  customerCode: string;
+  mobileNumber: string;
+  address: string;
+  city: string;
+  [key: string]: any;
+}
+
+interface BoxDetailPanelProps {
+  boxId: number;
+  onClose: () => void;
+  customers: Customer[];
+}
+
+export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProps) {
+  const { t, language } = useTranslation();
+  const isRtl = language === "ku" || language === "ar";
+  const utils = trpc.useUtils();
+
+  const [scanInput, setScanInput] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
+  const scanInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch box data
+  const { data: box, refetch: refetchBox } = trpc.deliveryBox.getById.useQuery(
+    { id: boxId },
+    { refetchInterval: 5000 }
+  );
+
+  // Mutations
+  const addItem = trpc.deliveryBox.addItem.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(`${t("delivery.toastItemAdded")} ${data.item.trackingNumber}`);
+      soundManager.playBeep();
+      setScanInput("");
+      refetchBox();
+      scanInputRef.current?.focus();
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      soundManager.playError();
+      setScanInput("");
+      scanInputRef.current?.focus();
+    },
+  });
+
+  const removeItem = trpc.deliveryBox.removeItem.useMutation({
+    onSuccess: () => {
+      toast.success(t("delivery.toastItemRemoved"));
+      refetchBox();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const sealBox = trpc.deliveryBox.seal.useMutation({
+    onSuccess: () => {
+      toast.success(t("delivery.toastBoxSealed"));
+      soundManager.playComplete();
+      refetchBox();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const markInTransit = trpc.deliveryBox.markInTransit.useMutation({
+    onSuccess: () => {
+      toast.success(t("delivery.toastBoxInTransit"));
+      soundManager.playSuccess();
+      refetchBox();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const markDelivered = trpc.deliveryBox.markDelivered.useMutation({
+    onSuccess: () => {
+      toast.success(t("delivery.toastBoxDelivered"));
+      soundManager.playComplete();
+      refetchBox();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const cancelBox = trpc.deliveryBox.cancel.useMutation({
+    onSuccess: () => {
+      toast.success(t("delivery.toastBoxCancelled"));
+      onClose();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Auto-focus scan input
+  useEffect(() => {
+    if (box?.status === "open" && scanInputRef.current) {
+      scanInputRef.current.focus();
+    }
+  }, [box?.status]);
+
+  const handleScan = () => {
+    const tracking = scanInput.trim();
+    if (!tracking) return;
+    setIsScanning(true);
+    addItem.mutate(
+      { boxId, trackingNumber: tracking },
+      { onSettled: () => setIsScanning(false) }
+    );
+  };
+
+  const handleScanKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleScan();
+    }
+  };
+
+  if (!box) {
+    return (
+      <Card className="animate-pulse">
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const customer = customers.find((c) => c.id === box.customerId);
+  const items = box.items ?? [];
+  const status = box.status as BoxStatus;
+  const isOpen = status === "open";
+  const isReady = status === "ready";
+  const isInTransit = status === "in_transit";
+  const statusCfg = STATUS_CONFIG[status] || STATUS_CONFIG.open;
+
+  const totalWeight = items.reduce((sum: number, i: any) => sum + Number(i.weightKg || 0), 0);
+  const totalItemValue = items.reduce((sum: number, i: any) => sum + Number(i.calculatedCostUsd || 0), 0);
+  const deliveryCharge = Number(box.deliveryChargeUsd || 0);
+  const grandTotal = totalItemValue + deliveryCharge;
+
+  const handlePrintLabel = () => {
+    printBoxLabel(
+      {
+        boxCode: box.boxCode,
+        status: box.status,
+        deliveryMethod: box.deliveryMethod,
+        destinationCity: box.destinationCity,
+        destinationAddress: box.destinationAddress,
+        recipientPhone: box.recipientPhone,
+        deliveryCostUsd: box.deliveryCostUsd,
+        deliveryChargeUsd: box.deliveryChargeUsd,
+        totalPackages: box.totalPackages,
+        totalWeightKg: box.totalWeightKg,
+        totalValueUsd: box.totalValueUsd,
+        notes: box.notes,
+        createdAt: box.createdAt,
+      },
+      items.map((i: any) => ({
+        trackingNumber: i.trackingNumber,
+        itemType: i.itemType,
+        weightKg: i.weightKg,
+        calculatedCostUsd: i.calculatedCostUsd,
+        description: i.description,
+        sourceInfo: i.sourceInfo,
+      })),
+      customer
+        ? {
+            fullName: customer.fullName,
+            customerCode: customer.customerCode,
+            mobileNumber: customer.mobileNumber,
+            city: customer.city,
+            address: customer.address,
+          }
+        : null,
+      t
+    );
+  };
+
+  const handlePrintReceipt = () => {
+    printBoxReceipt(
+      {
+        boxCode: box.boxCode,
+        status: box.status,
+        deliveryMethod: box.deliveryMethod,
+        destinationCity: box.destinationCity,
+        destinationAddress: box.destinationAddress,
+        recipientPhone: box.recipientPhone,
+        deliveryCostUsd: box.deliveryCostUsd,
+        deliveryChargeUsd: box.deliveryChargeUsd,
+        totalPackages: box.totalPackages,
+        totalWeightKg: box.totalWeightKg,
+        totalValueUsd: box.totalValueUsd,
+        notes: box.notes,
+        createdAt: box.createdAt,
+      },
+      items.map((i: any) => ({
+        trackingNumber: i.trackingNumber,
+        itemType: i.itemType,
+        weightKg: i.weightKg,
+        calculatedCostUsd: i.calculatedCostUsd,
+        description: i.description,
+        sourceInfo: i.sourceInfo,
+      })),
+      customer
+        ? {
+            fullName: customer.fullName,
+            customerCode: customer.customerCode,
+            mobileNumber: customer.mobileNumber,
+            city: customer.city,
+            address: customer.address,
+          }
+        : null,
+      t
+    );
+  };
+
+  return (
+    <Card dir={isRtl ? "rtl" : "ltr"} className="border-primary/20 shadow-md">
+      {/* Header */}
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <Package className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <CardTitle className="font-mono text-lg">{box.boxCode}</CardTitle>
+                <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", statusCfg.className)}>
+                  {t(statusCfg.key)}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {customer?.fullName || "-"} ({customer?.customerCode || ""}) &middot;{" "}
+                {t(METHOD_KEYS[box.deliveryMethod] || METHOD_KEYS.warehouse_pickup)}
+              </p>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Scan Input (only when box is open) */}
+        {isOpen && (
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <ScanBarcode className="absolute top-1/2 -translate-y-1/2 start-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                ref={scanInputRef}
+                placeholder={t("delivery.scanPlaceholder")}
+                value={scanInput}
+                onChange={(e) => setScanInput(e.target.value)}
+                onKeyDown={handleScanKeyDown}
+                className="ps-9 font-mono"
+                dir="ltr"
+                disabled={isScanning}
+              />
+            </div>
+            <Button onClick={handleScan} disabled={isScanning || !scanInput.trim()}>
+              {isScanning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ScanBarcode className="h-4 w-4 me-1" />
+              )}
+              {t("delivery.scan")}
+            </Button>
+          </div>
+        )}
+
+        {/* Items Table */}
+        {items.length > 0 ? (
+          <div className="rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]">#</TableHead>
+                  <TableHead>{t("delivery.tracking")}</TableHead>
+                  <TableHead>{t("delivery.type")}</TableHead>
+                  <TableHead className="text-end">{t("delivery.weight")}</TableHead>
+                  <TableHead className="text-end">{t("delivery.price")}</TableHead>
+                  {isOpen && <TableHead className="w-[50px]" />}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item: any, idx: number) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                    <TableCell className="font-mono text-sm" dir="ltr">
+                      {item.trackingNumber || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", ITEM_TYPE_STYLES[item.itemType] || ITEM_TYPE_STYLES.regular)}>
+                        {t(ITEM_TYPE_KEYS[item.itemType] || ITEM_TYPE_KEYS.regular)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-end font-mono text-sm">
+                      {Number(item.weightKg || 0).toFixed(2)} kg
+                    </TableCell>
+                    <TableCell className="text-end font-mono text-sm">
+                      ${Number(item.calculatedCostUsd || 0).toFixed(2)}
+                    </TableCell>
+                    {isOpen && (
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => removeItem.mutate({ itemId: item.id })}
+                          disabled={removeItem.isPending}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-muted-foreground">
+            <Package className="h-8 w-8 mb-2 opacity-30" />
+            <p className="text-sm">{t("delivery.noItems")}</p>
+          </div>
+        )}
+
+        {/* Totals */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <div className="rounded-lg bg-muted/50 p-3 text-center">
+            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+              <Hash className="h-3 w-3" />
+              {t("delivery.packageCount")}
+            </p>
+            <p className="text-lg font-bold">{box.totalPackages || items.length}</p>
+          </div>
+          <div className="rounded-lg bg-muted/50 p-3 text-center">
+            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+              <Weight className="h-3 w-3" />
+              {t("delivery.totalWeight")}
+            </p>
+            <p className="text-lg font-bold">{totalWeight.toFixed(2)} kg</p>
+          </div>
+          <div className="rounded-lg bg-muted/50 p-3 text-center">
+            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+              <DollarSign className="h-3 w-3" />
+              {t("delivery.packageValue")}
+            </p>
+            <p className="text-lg font-bold">${totalItemValue.toFixed(2)}</p>
+          </div>
+          <div className="rounded-lg bg-muted/50 p-3 text-center">
+            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+              <Truck className="h-3 w-3" />
+              {t("delivery.deliveryCharge")}
+            </p>
+            <p className="text-lg font-bold text-primary">${deliveryCharge.toFixed(2)}</p>
+          </div>
+          <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-center col-span-2 sm:col-span-1">
+            <p className="text-xs text-primary font-medium">{t("delivery.grandTotal")}</p>
+            <p className="text-xl font-extrabold text-primary">${grandTotal.toFixed(2)}</p>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+          {isOpen && (
+            <Button
+              onClick={() => sealBox.mutate({ id: boxId })}
+              disabled={sealBox.isPending || items.length === 0}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              {sealBox.isPending ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Lock className="h-4 w-4 me-1" />}
+              {t("delivery.sealBox")}
+            </Button>
+          )}
+
+          {isReady && (
+            <Button
+              onClick={() => markInTransit.mutate({ id: boxId })}
+              disabled={markInTransit.isPending}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {markInTransit.isPending ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Truck className="h-4 w-4 me-1" />}
+              {t("delivery.markInTransit")}
+            </Button>
+          )}
+
+          {isInTransit && (
+            <Button
+              onClick={() => markDelivered.mutate({ id: boxId })}
+              disabled={markDelivered.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {markDelivered.isPending ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <CheckCircle className="h-4 w-4 me-1" />}
+              {t("delivery.markDelivered")}
+            </Button>
+          )}
+
+          {(isOpen || isReady) && (
+            <Button
+              variant="destructive"
+              onClick={() => cancelBox.mutate({ id: boxId })}
+              disabled={cancelBox.isPending}
+            >
+              {cancelBox.isPending ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Ban className="h-4 w-4 me-1" />}
+              {t("delivery.cancelBox")}
+            </Button>
+          )}
+
+          <div className="flex-1" />
+
+          <Button variant="outline" size="sm" onClick={handlePrintLabel}>
+            <Printer className="h-4 w-4 me-1" />
+            {t("delivery.printLabel")}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handlePrintReceipt}>
+            <FileText className="h-4 w-4 me-1" />
+            {t("delivery.printReceipt")}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
