@@ -5509,6 +5509,9 @@
     "status": "状态",
     "toDate": "至",
     "totalBoxes": "总箱数",
-    "view": "查看详情"
+    "view": "查看详情",
+    "details": "详情",
+    "totalWithCommission": "总计（产品+佣金）",
+    "sellingPrice": "销售价格"
   }
 }

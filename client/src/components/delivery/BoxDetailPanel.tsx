@@ -332,15 +332,17 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           </div>
         )}
 
-        {/* Items Table */}
+        {/* Items Table — Rich detail per item type */}
         {items.length > 0 ? (
           <div className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">#</TableHead>
-                  <TableHead>{t("delivery.tracking")}</TableHead>
+                  <TableHead className="w-[40px]">#</TableHead>
                   <TableHead>{t("delivery.type")}</TableHead>
+                  <TableHead>{t("delivery.tracking")}</TableHead>
+                  <TableHead>{t("delivery.details")}</TableHead>
+                  <TableHead>{t("delivery.source")}</TableHead>
                   <TableHead className="text-end">{t("delivery.weight")}</TableHead>
                   <TableHead className="text-end">{t("delivery.price")}</TableHead>
                   {isOpen && <TableHead className="w-[50px]" />}
@@ -349,19 +351,39 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
               <TableBody>
                 {items.map((item: any, idx: number) => (
                   <TableRow key={item.id}>
-                    <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
-                    <TableCell className="font-mono text-sm" dir="ltr">
-                      {item.trackingNumber || "-"}
-                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
+                    {/* Type Badge */}
                     <TableCell>
                       <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", ITEM_TYPE_STYLES[item.itemType] || ITEM_TYPE_STYLES.regular)}>
                         {t(ITEM_TYPE_KEYS[item.itemType] || ITEM_TYPE_KEYS.regular)}
                       </span>
                     </TableCell>
-                    <TableCell className="text-end font-mono text-sm">
+                    {/* Tracking Number */}
+                    <TableCell className="font-mono text-xs" dir="ltr">
+                      {item.trackingNumber || "-"}
+                    </TableCell>
+                    {/* Details — varies by item type */}
+                    <TableCell className="text-xs max-w-[200px]">
+                      {item.description && (
+                        <p className="font-medium truncate" title={item.description}>{item.description}</p>
+                      )}
+                      {item.itemType === 'commission' && item.calculatedCostUsd && (
+                        <p className="text-muted-foreground">{t("delivery.totalWithCommission")}: <span className="font-mono font-semibold text-amber-600">${Number(item.calculatedCostUsd || 0).toFixed(2)}</span></p>
+                      )}
+                      {item.itemType === 'full_package' && item.calculatedCostUsd && (
+                        <p className="text-muted-foreground">{t("delivery.sellingPrice")}: <span className="font-mono font-semibold text-purple-600">${Number(item.calculatedCostUsd || 0).toFixed(2)}</span></p>
+                      )}
+                    </TableCell>
+                    {/* Source (batch code / order code) */}
+                    <TableCell className="text-xs text-muted-foreground font-mono">
+                      {item.sourceInfo || "-"}
+                    </TableCell>
+                    {/* Weight */}
+                    <TableCell className="text-end font-mono text-xs">
                       {Number(item.weightKg || 0).toFixed(2)} kg
                     </TableCell>
-                    <TableCell className="text-end font-mono text-sm">
+                    {/* Price */}
+                    <TableCell className="text-end font-mono text-sm font-semibold">
                       ${Number(item.calculatedCostUsd || 0).toFixed(2)}
                     </TableCell>
                     {isOpen && (
