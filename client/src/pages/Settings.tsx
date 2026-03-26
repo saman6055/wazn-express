@@ -1331,6 +1331,14 @@ function PortalThemeSettings() {
       description: "ڕووکارێکی نوێ و پڕۆفیشناڵ - بە ئەنیمەیشن و دیزاینی سەرنجڕاکێش",
       preview: "bg-gradient-to-br from-violet-950 to-slate-950",
       accent: "from-violet-500 to-purple-600"
+    },
+    {
+      id: "skin3",
+      name: "نیۆبروتاڵیست",
+      nameEn: "Neobrutalist",
+      description: "دیزاینێکی تایبەت و جوان - بە بۆردەری ئەستوور و شادۆی بۆڵد و ڕەنگی ئینیدگۆ",
+      preview: "bg-gradient-to-br from-amber-50 to-indigo-100",
+      accent: "from-indigo-500 to-violet-600"
     }
   ];
 
@@ -1346,7 +1354,7 @@ function PortalThemeSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {themes.map((theme) => (
             <div
               key={theme.id}
