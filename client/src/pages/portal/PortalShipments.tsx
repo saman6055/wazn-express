@@ -1,6 +1,7 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import ModernPortalShipments from "./modern/ModernPortalShipments";
+import Skin3PortalShipments from "./skin3/Skin3PortalShipments";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -612,9 +613,7 @@ function ClassicPortalShipments() {
 export default function PortalShipments() {
   const { portalTheme } = usePortalTheme();
   
-  if (portalTheme === "modern") {
-    return <ModernPortalShipments />;
-  }
-  
+  if (portalTheme === "skin3") return <Skin3PortalShipments />;
+  if (portalTheme === "modern") return <ModernPortalShipments />;
   return <ClassicPortalShipments />;
 }

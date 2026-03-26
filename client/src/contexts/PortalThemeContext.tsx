@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { trpc } from "@/lib/trpc";
 
-export type PortalThemeName = "classic" | "modern";
+export type PortalThemeName = "classic" | "modern" | "skin3";
 
 interface PortalThemeContextType {
   portalTheme: PortalThemeName;

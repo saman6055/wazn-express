@@ -2,6 +2,7 @@ import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import { Link } from "wouter";
 import ModernPortalFinancial from "./modern/ModernPortalFinancial";
+import Skin3PortalFinancial from "./skin3/Skin3PortalFinancial";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -970,9 +971,7 @@ const { t, language } = useLanguage();
 export default function PortalFinancial() {
   const { portalTheme } = usePortalTheme();
   
-  if (portalTheme === "modern") {
-    return <ModernPortalFinancial />;
-  }
-  
+  if (portalTheme === "skin3") return <Skin3PortalFinancial />;
+  if (portalTheme === "modern") return <ModernPortalFinancial />;
   return <ClassicPortalFinancial />;
 }

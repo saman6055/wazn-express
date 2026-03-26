@@ -1,6 +1,7 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import ModernPortalHome from "./modern/ModernPortalHome";
+import Skin3PortalHome from "./skin3/Skin3PortalHome";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -260,10 +261,8 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
 export default function PortalHome() {
   const { portalTheme } = usePortalTheme();
   
-  // If modern theme is selected, render the modern version
-  if (portalTheme === "modern") {
-    return <ModernPortalHome />;
-  }
+  if (portalTheme === "skin3") return <Skin3PortalHome />;
+  if (portalTheme === "modern") return <ModernPortalHome />;
   
   // Classic theme (current design)
   return <ClassicPortalHome />;

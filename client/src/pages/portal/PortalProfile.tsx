@@ -1,6 +1,7 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import ModernPortalProfile from "./modern/ModernPortalProfile";
+import Skin3PortalProfile from "./skin3/Skin3PortalProfile";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -485,9 +486,7 @@ const { t, language, setLanguage } = useLanguage();
 export default function PortalProfile() {
   const { portalTheme } = usePortalTheme();
   
-  if (portalTheme === "modern") {
-    return <ModernPortalProfile />;
-  }
-  
+  if (portalTheme === "skin3") return <Skin3PortalProfile />;
+  if (portalTheme === "modern") return <ModernPortalProfile />;
   return <ClassicPortalProfile />;
 }
