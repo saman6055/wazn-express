@@ -79,6 +79,7 @@ export const fullPackageRouter = router({
         // Order info
         orderNumber: z.string().optional(),
         trackingNumber: z.string().optional(),
+        trackingNumbers: z.array(z.string()).optional(), // Multiple tracking numbers
         orderDate: z.date().optional(),
         expectedDeliveryDate: z.date().optional(),
         priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
@@ -384,6 +385,7 @@ export const fullPackageRouter = router({
         // Order info
         orderNumber: z.string().optional(),
         trackingNumber: z.string().optional(),
+        trackingNumbers: z.array(z.string()).optional(), // Multiple tracking numbers
         expectedDeliveryDate: z.date().nullable().optional(),
         // Quality check
         qualityCheckStatus: z.enum(["pending", "passed", "failed", "partial"]).optional(),

@@ -51,6 +51,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Plus,
+  X,
 } from "lucide-react";
 import {
   Select,
@@ -142,6 +144,7 @@ export default function FullPackageDetail() {
     purchasePriceUsd: "",
     sellingPriceUsd: "",
     trackingNumber: "",
+    trackingNumbers: [] as string[],
     notes: "",
     status: "pending",
   });
@@ -153,6 +156,11 @@ export default function FullPackageDetail() {
 
   useEffect(() => {
     if (order) {
+      const existingTrackings = (order as any).trackingNumbers?.length
+        ? (order as any).trackingNumbers
+        : order.trackingNumber
+          ? [order.trackingNumber]
+          : [];
       setFormData({
         customerId: order.customerId?.toString() || "",
         supplierId: order.supplierId?.toString() || "",
@@ -168,6 +176,7 @@ export default function FullPackageDetail() {
         purchasePriceUsd: order.purchasePriceUsd?.toString() || "",
         sellingPriceUsd: order.sellingPriceUsd?.toString() || "",
         trackingNumber: order.trackingNumber || "",
+        trackingNumbers: existingTrackings,
         notes: order.notes || "",
         status: order.status || "pending",
       });
@@ -210,6 +219,7 @@ export default function FullPackageDetail() {
       return;
     }
 
+    const cleanedTrackings = formData.trackingNumbers.filter((t) => t.trim() !== "");
     updateMutation.mutate({
       id: Number(id),
       supplierId: formData.supplierId && formData.supplierId !== "none" ? Number(formData.supplierId) : null,
@@ -223,7 +233,8 @@ export default function FullPackageDetail() {
       size: formData.size || undefined,
       purchasePriceUsd: formData.purchasePriceUsd || undefined,
       sellingPriceUsd: formData.sellingPriceUsd || undefined,
-      trackingNumber: formData.trackingNumber || undefined,
+      trackingNumber: cleanedTrackings[0] || undefined,
+      trackingNumbers: cleanedTrackings.length > 0 ? cleanedTrackings : undefined,
       notes: formData.notes || undefined,
     });
   };
@@ -453,14 +464,47 @@ export default function FullPackageDetail() {
                       className="h-11"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:col-span-2">
                     <Label className="text-sm font-medium">{t("fullPackage.trackingNumber")}</Label>
-                    <Input
-                      value={formData.trackingNumber}
-                      onChange={(e) => setFormData({ ...formData, trackingNumber: e.target.value })}
-                      placeholder={t("fullPackage.trackingNumberPlaceholder")}
-                      className="h-11 font-mono"
-                    />
+                    <div className="space-y-2">
+                      {formData.trackingNumbers.map((tn, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <Input
+                            value={tn}
+                            onChange={(e) => {
+                              const updated = [...formData.trackingNumbers];
+                              updated[idx] = e.target.value;
+                              setFormData({ ...formData, trackingNumbers: updated });
+                            }}
+                            placeholder={t("fullPackage.trackingNumberPlaceholder")}
+                            className="h-11 font-mono flex-1"
+                            dir="ltr"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-11 w-11 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => {
+                              const updated = formData.trackingNumbers.filter((_, i) => i !== idx);
+                              setFormData({ ...formData, trackingNumbers: updated });
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => setFormData({ ...formData, trackingNumbers: [...formData.trackingNumbers, ""] })}
+                      >
+                        <Plus className="h-4 w-4" />
+                        {t("fullPackage.addTrackingNumber") || "زیادکردنی ژمارەی شوێنکەوتنەوە"}
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">{t("fullPackage.quantity")}</Label>
@@ -624,7 +668,28 @@ export default function FullPackageDetail() {
                       <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                         <Hash className="h-3 w-3" /> {t("fullPackage.trackingNumber")}
                       </p>
-                      <p className="font-mono font-medium text-blue-600">{order.trackingNumber || "-"}</p>
+                      {(() => {
+                        const allTrackings = (order as any).trackingNumbers?.length
+                          ? (order as any).trackingNumbers as string[]
+                          : order.trackingNumber
+                            ? [order.trackingNumber]
+                            : [];
+                        return allTrackings.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {allTrackings.map((tn: string, idx: number) => (
+                              <Badge
+                                key={idx}
+                                variant="secondary"
+                                className="font-mono text-sm px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 cursor-default"
+                              >
+                                {tn}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="font-mono font-medium text-muted-foreground">-</p>
+                        );
+                      })()}
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">

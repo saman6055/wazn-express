@@ -111,6 +111,7 @@ export const fullPackageOrders = mysqlTable("fullPackageOrders", {
   // Order & Tracking
   orderNumber: varchar("orderNumber", { length: 100 }),
   trackingNumber: varchar("trackingNumber", { length: 100 }).unique(),
+  trackingNumbers: json("trackingNumbers").$type<string[]>(), // Multiple tracking numbers for one order
   orderDate: timestamp("orderDate"),
   trackingAddedDate: timestamp("trackingAddedDate"),
   expectedDeliveryDate: timestamp("expectedDeliveryDate"), // Expected delivery to customer
