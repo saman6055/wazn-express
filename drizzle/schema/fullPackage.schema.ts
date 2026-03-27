@@ -209,7 +209,7 @@ export type InsertFullPackageStatusHistory = typeof fullPackageStatusHistory.$in
 export const fullPackageOrderTrackings = mysqlTable("fullPackageOrderTrackings", {
   id: int("id").autoincrement().primaryKey(),
   fullPackageOrderId: int("fullPackageOrderId").notNull(),
-  trackingNumber: varchar("trackingNumber", { length: 100 }).notNull().unique(),
+  trackingNumber: varchar("trackingNumber", { length: 100 }).notNull(), // Not unique — same tracking can be shared across orders (same carton)
   cartonIndex: int("cartonIndex"), // 1, 2, 3... for display order
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
