@@ -110,7 +110,7 @@ export const fullPackageOrders = mysqlTable("fullPackageOrders", {
   
   // Order & Tracking
   orderNumber: varchar("orderNumber", { length: 100 }),
-  trackingNumber: varchar("trackingNumber", { length: 100 }).unique(),
+  trackingNumber: varchar("trackingNumber", { length: 100 }), // Not unique — multiple orders can share same tracking (same carton)
   trackingNumbers: json("trackingNumbers").$type<string[]>(), // Multiple tracking numbers for one order
   orderDate: timestamp("orderDate"),
   trackingAddedDate: timestamp("trackingAddedDate"),

@@ -274,13 +274,14 @@ export async function addOrderTrackings(
 
   for (let i = 0; i < unique.length; i++) {
     const tr = unique[i];
-    const existing = await db.select().from(fullPackageOrderTrackings).where(eq(fullPackageOrderTrackings.trackingNumber, tr)).limit(1);
-    if (existing.length > 0) {
-      duplicates.push(tr);
-      continue;
-    }
-    const legacyMatch = await db.select().from(fullPackageOrders).where(eq(fullPackageOrders.trackingNumber, tr)).limit(1);
-    if (legacyMatch.length > 0) {
+    // Only skip if this SAME ORDER already has this tracking (prevent self-duplicate)
+    // Allow shared tracking across DIFFERENT orders (same carton scenario)
+    const existingForThisOrder = await db.select().from(fullPackageOrderTrackings)
+      .where(and(
+        eq(fullPackageOrderTrackings.trackingNumber, tr),
+        eq(fullPackageOrderTrackings.fullPackageOrderId, fullPackageOrderId)
+      )).limit(1);
+    if (existingForThisOrder.length > 0) {
       duplicates.push(tr);
       continue;
     }
