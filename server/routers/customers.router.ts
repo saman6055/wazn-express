@@ -172,6 +172,7 @@ export const customersRouter = router({
         gender: z.enum(["male", "female"]).optional(),
         nationality: z.string().max(100).optional(),
         businessType: z.string().max(100).optional(),
+        mobileNumber: phoneSchema.optional(),
         secondaryMobile: phoneSchema.optional(),
         district: z.string().max(100).optional(),
         email: emailSchema.optional(),

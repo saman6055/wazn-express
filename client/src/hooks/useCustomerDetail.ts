@@ -234,6 +234,7 @@ export function useCustomerDetail(customerId: number) {
       id: customerId,
       customerCode: editForm.customerCode || undefined,
       fullName: editForm.fullName,
+      mobileNumber: editForm.mobileNumber || undefined,
       fullNameArabic: editForm.fullNameArabic || undefined,
       fullNameKurdish: editForm.fullNameKurdish || undefined,
       gender: editForm.gender || undefined,

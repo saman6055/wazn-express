@@ -26,7 +26,11 @@ import {
   FileCheck,
   Clock as ClockIcon,
   Download,
+  User,
 } from "lucide-react";
+import { useMemo } from "react";
+import { trpc } from "@/lib/trpc";
+import { IRAQI_CITIES } from "../../../../shared/iraqi-cities";
 import { useLocation, useParams } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useCustomerDetail } from "@/hooks/useCustomerDetail";
@@ -78,6 +82,40 @@ export default function CustomerDetail() {
   } = cd;
 
   const deliveryRatePct = totalPackages > 0 ? Math.round((deliveredPackages / totalPackages) * 100) : 0;
+
+  // Nationalities & business types for edit form
+  const DEFAULT_NATIONALITIES = [
+    { id: "kurdish", nameEn: "Kurdish", nameKu: "کورد" },
+    { id: "arab", nameEn: "Arab", nameKu: "عەرەب" },
+    { id: "turkmen", nameEn: "Turkmen", nameKu: "تورکمان" },
+    { id: "assyrian", nameEn: "Assyrian", nameKu: "ئاشووری" },
+    { id: "armenian", nameEn: "Armenian", nameKu: "ئەرمەنی" },
+    { id: "foreign", nameEn: "Foreign", nameKu: "بیانی" },
+    { id: "other", nameEn: "Other", nameKu: "تر" },
+  ];
+  const DEFAULT_BUSINESS_TYPES = [
+    { id: "online_page", nameEn: "Online Page", nameKu: "پەیجی ئۆنلاین" },
+    { id: "shop_owner", nameEn: "Shop Owner", nameKu: "دوکاندار" },
+    { id: "wholesaler", nameEn: "Wholesaler", nameKu: "جوملەفرۆش" },
+    { id: "personal", nameEn: "Personal", nameKu: "کەسی (شەخصی)" },
+    { id: "company", nameEn: "Company", nameKu: "کۆمپانیا" },
+    { id: "agent", nameEn: "Agent", nameKu: "ئەیجنت" },
+    { id: "other", nameEn: "Other", nameKu: "تر" },
+  ];
+  const { data: settingsData } = trpc.system.getSettings.useQuery();
+  const nationalities = useMemo(() => {
+    const custom = settingsData?.find(s => s.settingKey === "nationalities")?.settingValue;
+    if (custom) { try { return JSON.parse(custom); } catch { return DEFAULT_NATIONALITIES; } }
+    return DEFAULT_NATIONALITIES;
+  }, [settingsData]);
+  const businessTypes = useMemo(() => {
+    const custom = settingsData?.find(s => s.settingKey === "businessTypes")?.settingValue;
+    if (custom) { try { return JSON.parse(custom); } catch { return DEFAULT_BUSINESS_TYPES; } }
+    return DEFAULT_BUSINESS_TYPES;
+  }, [settingsData]);
+  const editFilteredCities = cd.selectedGovernorate
+    ? IRAQI_CITIES.filter((c) => c.governorateId === cd.selectedGovernorate)
+    : IRAQI_CITIES;
 
   if (!customer) {
     return (
@@ -590,7 +628,7 @@ export default function CustomerDetail() {
         </div>
       </div>
 
-      {/* Edit Customer Dialog - simplified; full form can be in CustomerEditDialog component if needed */}
+      {/* Edit Customer Dialog - full form matching create form */}
       <Dialog open={cd.isEditOpen} onOpenChange={cd.setIsEditOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -601,31 +639,157 @@ export default function CustomerDetail() {
             <DialogDescription>{t("customers.editCustomerDescription")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={cd.handleEditSubmit}>
-            <div className="grid gap-6 py-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-fullName">{t("customers.fullNameEnglish")}</Label>
+            <Tabs defaultValue="basic" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="basic">{t("customers.form.basicInfo")}</TabsTrigger>
+                <TabsTrigger value="location">{t("customers.form.location")}</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="basic" className="space-y-4 mt-4">
+                {/* Customer Code - read only */}
+                <div className="grid gap-2">
+                  <Label>{t("customers.customerCode")}</Label>
+                  <Input value={cd.editForm.customerCode} disabled className="h-11 bg-muted" />
+                </div>
+
+                {/* Full Name (English) */}
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-fullName">{t("customers.form.fullNameEn")} *</Label>
                   <Input
                     id="edit-fullName"
                     value={cd.editForm.fullName}
                     onChange={(e) => cd.setEditForm({ ...cd.editForm, fullName: e.target.value })}
                     required
+                    className="h-11"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-mobileNumber">{t("customers.mobileNotEditable")}</Label>
-                  <Input id="edit-mobileNumber" value={cd.editForm.mobileNumber} disabled className="bg-muted" />
+
+                {/* Arabic & Kurdish names */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-fullNameArabic">{t("customers.form.nameArabic")}</Label>
+                    <Input
+                      id="edit-fullNameArabic"
+                      value={cd.editForm.fullNameArabic}
+                      onChange={(e) => cd.setEditForm({ ...cd.editForm, fullNameArabic: e.target.value })}
+                      dir="rtl"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-fullNameKurdish">{t("customers.form.nameKurdish")}</Label>
+                    <Input
+                      id="edit-fullNameKurdish"
+                      value={cd.editForm.fullNameKurdish}
+                      onChange={(e) => cd.setEditForm({ ...cd.editForm, fullNameKurdish: e.target.value })}
+                      dir="rtl"
+                      className="h-11"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="edit-email">{t("customers.email")}</Label>
+
+                {/* Gender & Nationality */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>{t("customers.form.gender")}</Label>
+                    <Select value={cd.editForm.gender} onValueChange={(v) => cd.setEditForm({ ...cd.editForm, gender: v as "male" | "female" | "" })}>
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder={t("customers.form.selectGender")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-blue-500" />
+                            {t("common.male")}
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="female">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-pink-500" />
+                            {t("common.female")}
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>{t("customers.form.nationality")}</Label>
+                    <Select value={cd.editForm.nationality} onValueChange={(v) => cd.setEditForm({ ...cd.editForm, nationality: v })}>
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder={t("customers.form.selectNationality")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {nationalities.map((nat: any) => (
+                          <SelectItem key={nat.id} value={nat.id}>
+                            <div className="flex items-center gap-2">
+                              <Globe className="h-4 w-4 text-emerald-500" />
+                              {nat.nameKu} - {nat.nameEn}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Business Type */}
+                <div className="grid gap-2">
+                  <Label>{t("customers.form.businessType")}</Label>
+                  <Select value={cd.editForm.businessType} onValueChange={(v) => cd.setEditForm({ ...cd.editForm, businessType: v })}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder={t("customers.form.selectBusinessType")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {businessTypes.map((bt: any) => (
+                        <SelectItem key={bt.id} value={bt.id}>
+                          <div className="flex items-center gap-2">
+                            <Briefcase className="h-4 w-4 text-amber-500" />
+                            {bt.nameKu} - {bt.nameEn}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Mobile & Secondary Mobile */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-mobileNumber">{t("customers.form.mobileNumber")}</Label>
+                    <Input
+                      id="edit-mobileNumber"
+                      value={cd.editForm.mobileNumber}
+                      onChange={(e) => cd.setEditForm({ ...cd.editForm, mobileNumber: e.target.value })}
+                      type="tel"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-secondaryMobile">{t("customers.form.secondaryMobile")}</Label>
+                    <Input
+                      id="edit-secondaryMobile"
+                      value={cd.editForm.secondaryMobile}
+                      onChange={(e) => cd.setEditForm({ ...cd.editForm, secondaryMobile: e.target.value })}
+                      type="tel"
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-email">{t("customers.form.email")}</Label>
                   <Input
                     id="edit-email"
                     type="email"
                     value={cd.editForm.email}
                     onChange={(e) => cd.setEditForm({ ...cd.editForm, email: e.target.value })}
+                    className="h-11"
                   />
                 </div>
-                <div className="space-y-2 sm:col-span-2">
+
+                {/* Notes */}
+                <div className="grid gap-2">
                   <Label htmlFor="edit-notes">{t("common.notes")}</Label>
                   <Textarea
                     id="edit-notes"
@@ -634,6 +798,8 @@ export default function CustomerDetail() {
                     rows={3}
                   />
                 </div>
+
+                {/* Active */}
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -646,9 +812,78 @@ export default function CustomerDetail() {
                     {t("common.active")}
                   </Label>
                 </div>
-              </div>
-            </div>
-            <DialogFooter className="gap-2">
+              </TabsContent>
+
+              <TabsContent value="location" className="space-y-4 mt-4">
+                {/* Governorate & City */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>{t("customers.form.governorate")}</Label>
+                    <Select
+                      value={cd.selectedGovernorate}
+                      onValueChange={(value) => {
+                        cd.setSelectedGovernorate(value);
+                        const gov = cd.IRAQI_GOVERNORATES.find((g) => g.id === value);
+                        cd.setEditForm({ ...cd.editForm, country: gov?.nameEn ?? "", city: "" });
+                      }}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder={t("customers.form.selectGovernorate")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cd.IRAQI_GOVERNORATES.map((gov) => (
+                          <SelectItem key={gov.id} value={gov.id}>
+                            {gov.nameKu} - {gov.nameEn}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>{t("customers.form.city")}</Label>
+                    <select
+                      className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={cd.editForm.city}
+                      onChange={(e) => cd.setEditForm({ ...cd.editForm, city: e.target.value })}
+                      disabled={!cd.selectedGovernorate}
+                    >
+                      <option value="">{cd.selectedGovernorate ? t("customers.selectCity") : t("customers.selectGovernorateFirst")}</option>
+                      {editFilteredCities.map((city) => (
+                        <option key={`${city.governorateId}-${city.nameEn}`} value={city.nameEn}>
+                          {city.nameKu} - {city.nameEn}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* District */}
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-district">{t("customers.form.district")}</Label>
+                  <Input
+                    id="edit-district"
+                    value={cd.editForm.district}
+                    onChange={(e) => cd.setEditForm({ ...cd.editForm, district: e.target.value })}
+                    className="h-11"
+                    placeholder="e.g., Ankawa, Ainkawa"
+                  />
+                </div>
+
+                {/* Address */}
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-address">{t("customers.form.address")}</Label>
+                  <Input
+                    id="edit-address"
+                    value={cd.editForm.address}
+                    onChange={(e) => cd.setEditForm({ ...cd.editForm, address: e.target.value })}
+                    className="h-11"
+                    placeholder={t("customers.form.addressPlaceholder")}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter className="mt-6 gap-2">
               <Button type="button" variant="outline" onClick={() => cd.setIsEditOpen(false)}>
                 {t("forms.cancel")}
               </Button>
