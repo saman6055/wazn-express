@@ -74,8 +74,10 @@ export default function TrackingAlerts() {
   // State
   const [trackingDialogOpen, setTrackingDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderForTracking | null>(null);
+  const [selectedOrders, setSelectedOrders] = useState<OrderForTracking[]>([]); // Multi-select for shared tracking
   const [trackingNumbers, setTrackingNumbers] = useState<string[]>([""]);
   const [activeTab, setActiveTab] = useState("alerts");
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
   
   // Filter states
   const [typeFilter, setTypeFilter] = useState("all");
@@ -86,8 +88,28 @@ export default function TrackingAlerts() {
   const { data: alertStats, refetch: refetchStats } = trpc.fullPackage.getTrackingAlertStats.useQuery();
   const { data: pendingOrders, refetch: refetchOrders, isLoading } = trpc.fullPackage.getOrdersPendingTracking.useQuery();
   
+  // Track how many multi-order saves remain
+  const multiSaveCountRef = { current: 0, total: 0 };
+
   const addOrderTrackings = trpc.fullPackage.addOrderTrackings.useMutation({
     onSuccess: (result) => {
+      // If multi-order mode, wait for all to complete
+      if (multiSaveCountRef.current > 0) {
+        multiSaveCountRef.current--;
+        if (multiSaveCountRef.current === 0) {
+          toast.success(isKurdish
+            ? `تراکینگ بۆ ${multiSaveCountRef.total} ئۆردەر زیاد کرا`
+            : `Tracking added to ${multiSaveCountRef.total} orders`);
+          setTrackingDialogOpen(false);
+          setSelectedOrder(null);
+          setSelectedOrders([]);
+          setMultiSelectMode(false);
+          setTrackingNumbers([""]);
+          refetchStats();
+          refetchOrders();
+        }
+        return;
+      }
       const msg = result.added === 1
         ? (isKurdish ? "تراکینگ نەمبەر زیاد کرا" : "Tracking number added")
         : (isKurdish ? `${result.added} تراکینگ زیاد کرا` : `${result.added} tracking numbers added`);
@@ -108,9 +130,29 @@ export default function TrackingAlerts() {
 
   const handleAddTracking = (order: OrderForTracking) => {
     setSelectedOrder(order);
+    setSelectedOrders([]);
     setTrackingNumbers([""]);
     setTrackingDialogOpen(true);
   };
+
+  // Multi-select: open dialog for all selected orders
+  const handleAddTrackingToSelected = () => {
+    if (selectedOrders.length === 0) return;
+    setSelectedOrder(null); // Not single mode
+    setTrackingNumbers([""]);
+    setTrackingDialogOpen(true);
+  };
+
+  // Toggle order selection for multi-select
+  const toggleOrderSelection = (order: OrderForTracking) => {
+    setSelectedOrders((prev) => {
+      const exists = prev.find((o) => o.id === order.id);
+      if (exists) return prev.filter((o) => o.id !== order.id);
+      return [...prev, order];
+    });
+  };
+
+  const isOrderSelected = (id: number) => selectedOrders.some((o) => o.id === id);
 
   const setTrackingAt = (index: number, value: string) => {
     setTrackingNumbers((prev) => {
@@ -126,12 +168,27 @@ export default function TrackingAlerts() {
   };
 
   const handleSaveTracking = () => {
-    if (!selectedOrder) return;
     const list = trackingNumbers.map((s) => s.trim()).filter(Boolean);
     if (list.length === 0) {
       toast.error(isKurdish ? "هەر شتێک یەک تراکینگ نەمبەر داخڵ بکە" : "Enter at least one tracking number");
       return;
     }
+
+    // Multi-order mode: same tracking for all selected orders
+    if (!selectedOrder && selectedOrders.length > 0) {
+      multiSaveCountRef.current = selectedOrders.length;
+      multiSaveCountRef.total = selectedOrders.length;
+      for (const order of selectedOrders) {
+        addOrderTrackings.mutate({
+          fullPackageOrderId: order.id,
+          trackingNumbers: list,
+        });
+      }
+      return;
+    }
+
+    // Single order mode
+    if (!selectedOrder) return;
     addOrderTrackings.mutate({
       fullPackageOrderId: selectedOrder.id,
       trackingNumbers: list,
@@ -570,9 +627,44 @@ export default function TrackingAlerts() {
                     </div>
                   ) : (
                     <Table>
+                      {/* Multi-select toolbar */}
+                      {selectedOrders.length > 0 && (
+                        <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between gap-3">
+                          <span className="text-sm font-medium text-emerald-800">
+                            {isKurdish
+                              ? `${selectedOrders.length} ئۆردەر هەڵبژاردراوە — یەک تراک بۆ هەمووی`
+                              : `${selectedOrders.length} orders selected — assign same tracking to all`}
+                          </span>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => { setSelectedOrders([]); setMultiSelectMode(false); }}>
+                              {isKurdish ? "هەڵوەشاندنەوە" : "Cancel"}
+                            </Button>
+                            <Button size="sm" onClick={handleAddTrackingToSelected} className="gap-1 bg-gradient-to-r from-emerald-500 to-teal-500">
+                              <Plus className="h-4 w-4" />
+                              {isKurdish ? "تراک زیاد بکە" : "Add Tracking"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                       <TableHeader>
                         <TableRow className="bg-slate-50">
-                          <TableHead className="w-16">#</TableHead>
+                          <TableHead className="w-10">
+                            <input
+                              type="checkbox"
+                              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                              checked={filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedOrders(filteredOrders);
+                                  setMultiSelectMode(true);
+                                } else {
+                                  setSelectedOrders([]);
+                                  setMultiSelectMode(false);
+                                }
+                              }}
+                            />
+                          </TableHead>
+                          <TableHead className="w-12">#</TableHead>
                           <TableHead>{isKurdish ? "وێنە" : "Image"}</TableHead>
                           <TableHead>{isKurdish ? "کۆد" : "Code"}</TableHead>
                           <TableHead>{isKurdish ? "ناوی ئایتم" : "Item Name"}</TableHead>
@@ -592,6 +684,14 @@ export default function TrackingAlerts() {
                               order.daysWaiting >= 3 ? "bg-yellow-50/50" : ""
                             }`}
                           >
+                            <TableCell>
+                              <input
+                                type="checkbox"
+                                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                checked={isOrderSelected(order.id)}
+                                onChange={() => { toggleOrderSelection(order); setMultiSelectMode(true); }}
+                              />
+                            </TableCell>
                             <TableCell className="font-medium text-slate-500">
                               {index + 1}
                             </TableCell>
@@ -689,8 +789,25 @@ export default function TrackingAlerts() {
                 {selectedOrder && (
                   <span className="font-medium">{selectedOrder.orderCode} - {selectedOrder.productName}</span>
                 )}
+                {!selectedOrder && selectedOrders.length > 0 && (
+                  <div className="space-y-1 mt-1">
+                    <span className="block text-emerald-700 font-semibold text-sm">
+                      {isKurdish
+                        ? `🔗 یەک تراک بۆ ${selectedOrders.length} ئۆردەر (هەمان کارتۆن)`
+                        : `🔗 Same tracking for ${selectedOrders.length} orders (same carton)`}
+                    </span>
+                    {selectedOrders.map((o) => (
+                      <span key={o.id} className="block text-xs text-muted-foreground">
+                        • {o.orderCode} — {o.productName}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <span className="block mt-1 text-muted-foreground text-xs">
-                  {isKurdish ? "دەتوانیت چەند تراکینگ زیاد بکەیت (وەک کارتۆنە جیاکان)" : "You can add multiple trackings (e.g. different cartons)"}
+                  {!selectedOrder && selectedOrders.length > 0
+                    ? (isKurdish ? "ئەم تراکینگە بۆ هەموو ئۆردەرە هەڵبژاردراوەکان زیاد دەکرێت" : "This tracking will be added to all selected orders")
+                    : (isKurdish ? "دەتوانیت چەند تراکینگ زیاد بکەیت (وەک کارتۆنە جیاکان)" : "You can add multiple trackings (e.g. different cartons)")
+                  }
                 </span>
               </DialogDescription>
             </DialogHeader>
