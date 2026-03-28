@@ -179,21 +179,20 @@ export const batchesRouter = router({
 
             
             if (pkg.trackingNumber) {
-              // Check Full Package first
-              const linkedFPOrder = await db.getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
-              if (linkedFPOrder) {
+              // Check Full Package - find ALL orders sharing this tracking (same carton)
+              const linkedFPOrders = await db.getAllOrdersByTrackingNumber(pkg.trackingNumber);
+              if (linkedFPOrders.length > 0) {
                 isLinkedToFullPackage = true;
-                // Update Full Package with shipping cost (our cost, not charged to customer)
+                // Calculate total shipping cost for this package
                 const pricePerKg = batch ? parseFloat(batch.pricePerKg?.toString() || "0") : 0;
                 const pricePerCbm = batch ? parseFloat(batch.pricePerCbm?.toString() || "0") : 0;
                 const isSea = batch?.shippingType === 'sea';
-                
+
                 let shippingCost = 0;
                 if (isSea && pricePerCbm > 0) {
                   const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
                   shippingCost = cbm * pricePerCbm;
                 } else if (pricePerKg > 0) {
-                  // Use chargeable weight (max of actual weight and volumetric weight)
                   const actualKg = parseFloat(pkg.weightKg?.toString() || "0");
                   const lengthCm = parseFloat(pkg.lengthCm?.toString() || "0");
                   const widthCm = parseFloat(pkg.widthCm?.toString() || "0");
@@ -202,131 +201,160 @@ export const batchesRouter = router({
                   const chargeableKg = Math.max(actualKg, volumetricKg);
                   shippingCost = chargeableKg * pricePerKg;
                 }
-                
+
+                // Calculate shipping shares for all orders
+                const shares: { order: typeof linkedFPOrders[0]; share: number }[] = [];
+
                 if (shippingCost > 0) {
                   // Save calculated cost to package for reference
                   await db.updatePackage(pkg.id, { calculatedCostUsd: shippingCost.toFixed(2) });
-                  
-                  // Update Full Package with shipping cost and recalculate profit
-                  await db.updateFullPackageOrder(linkedFPOrder.id, {
-                    status: 'delivered',
-                    shippingCostUsd: shippingCost.toFixed(2),
-                    deliveredDate: new Date(),
-                    batchId: id,
-                  }, ctx.user.id);
-                  appLogger.info("[FullPackage] Package linked to FP - shipping cost (OUR cost, not charged to customer)", { packageCode: pkg.packageCode, orderCode: linkedFPOrder.orderCode, shippingCost });
-                }
-                
-                // Auto-charge customer balance and create invoice for full package delivery
-                // IMPORTANT: Check BOTH isCharged (set by updateFullPackageOrder) and isChargedToCustomer to prevent double charging
-                // The updatePackage call above triggers updateFullPackageOrder which may have already charged the customer
-                const refreshedFPOrder = await db.getFullPackageOrderById(linkedFPOrder.id);
-                if (refreshedFPOrder && refreshedFPOrder.customerId && refreshedFPOrder.sellingPriceUsd && !refreshedFPOrder.isCharged && !refreshedFPOrder.isChargedToCustomer) {
-                  try {
-                    const customer = await db.getCustomerById(refreshedFPOrder.customerId);
-                    if (customer) {
-                      // sellingPriceUsd is PER-UNIT — multiply by quantity for total charge
-                      const sellingPricePerUnit = parseFloat(refreshedFPOrder.sellingPriceUsd?.toString() || '0');
-                      const fpQuantity = refreshedFPOrder.quantity || 1;
-                      const totalCharge = sellingPricePerUnit * fpQuantity;
 
-                      // Use applyCharge directly (not recordPackageCharge) to use correct charge type FULL_PACKAGE
-                      // This creates both the ledger transaction AND the invoice in one step
-                      await db.applyCharge(
-                        refreshedFPOrder.customerId,
-                        customer.customerCode,
-                        'FULL_PACKAGE',
-                        refreshedFPOrder.id,
-                        totalCharge,
-                        `فول پاکێج ${refreshedFPOrder.orderCode} - ${refreshedFPOrder.productName} - گەیاندن`,
-                        ctx.user.id,
-                        [{
-                          description: `فول پاکێج ${refreshedFPOrder.orderCode} - ${refreshedFPOrder.productName}`,
-                          quantity: fpQuantity,
-                          unitPrice: sellingPricePerUnit,
-                          total: totalCharge
-                        }]
-                      );
-                      
-                      // Mark as charged - also set isCharged for consistency
-                      await db.updateFullPackageOrder(refreshedFPOrder.id, {
-                        isCharged: true,
-                        isChargedToCustomer: true,
-                        chargedAt: new Date(),
-                        paidFromBalanceUsd: totalCharge.toFixed(2),
-                        batchId: id,
-                      }, ctx.user.id);
-                      
-                      appLogger.info("[FullPackage] Charged customer for FP", { customerCode: customer.customerCode, totalCharge, orderCode: refreshedFPOrder.orderCode });
+                  // Split shipping cost across all orders sharing this tracking
+                  let totalMeasure = 0;
+                  const orderMeasures: { order: typeof linkedFPOrders[0]; measure: number }[] = [];
+                  for (const fpOrder of linkedFPOrders) {
+                    let measure = 0;
+                    if (isSea) {
+                      measure = parseFloat(fpOrder.volumeCbm?.toString() || "0") || 0;
+                    } else {
+                      const oKg = parseFloat(fpOrder.weightKg?.toString() || "0") || 0;
+                      const oL = parseFloat(fpOrder.dimensionLength?.toString() || "0") || 0;
+                      const oW = parseFloat(fpOrder.dimensionWidth?.toString() || "0") || 0;
+                      const oH = parseFloat(fpOrder.dimensionHeight?.toString() || "0") || 0;
+                      const oVol = (oL * oW * oH) / 6000;
+                      measure = Math.max(oKg, oVol);
                     }
-                  } catch (chargeError) {
-                    appLogger.error("[FullPackage] Failed to charge customer for FP", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
+                    orderMeasures.push({ order: fpOrder, measure });
+                    totalMeasure += measure;
+                  }
+                  const useEqual = totalMeasure === 0;
+
+                  // Calculate shares and fix rounding
+                  for (const { order, measure } of orderMeasures) {
+                    const ratio = useEqual ? (1 / linkedFPOrders.length) : (measure / totalMeasure);
+                    shares.push({ order, share: Math.round(shippingCost * ratio * 100) / 100 });
+                  }
+                  const totalAssigned = shares.reduce((s, r) => s + r.share, 0);
+                  const diff = Math.round((shippingCost - totalAssigned) * 100) / 100;
+                  if (diff !== 0 && shares.length > 0) shares[0].share += diff;
+
+                  for (const { order: fpOrder, share } of shares) {
+                    await db.updateFullPackageOrder(fpOrder.id, {
+                      status: 'delivered',
+                      shippingCostUsd: share.toFixed(2),
+                      deliveredDate: new Date(),
+                      batchId: id,
+                    }, ctx.user.id);
+                    appLogger.info("[FullPackage] Shipping split across shared tracking", {
+                      packageCode: pkg.packageCode, orderCode: fpOrder.orderCode,
+                      share, totalShipping: shippingCost, orderCount: linkedFPOrders.length,
+                      splitMethod: useEqual ? 'equal' : (isSea ? 'cbm' : 'weight'),
+                    });
                   }
                 }
-                
-                // For commission orders: charge shipping cost to customer wallet + create ONE invoice
-                const refreshedForCommission = refreshedFPOrder || await db.getFullPackageOrderById(linkedFPOrder.id);
-                if (refreshedForCommission && refreshedForCommission.orderType === 'commission' && refreshedForCommission.customerId && shippingCost > 0 && !refreshedForCommission.isShippingCharged) {
-                  try {
-                    const customer = await db.getCustomerById(refreshedForCommission.customerId);
-                    if (customer) {
-                      // Calculate chargeable weight (max of actual weight and volumetric weight)
-                      const actualWeight = parseFloat(pkg.weightKg?.toString() || "0");
-                      const length = parseFloat(pkg.lengthCm?.toString() || "0");
-                      const width = parseFloat(pkg.widthCm?.toString() || "0");
-                      const height = parseFloat(pkg.heightCm?.toString() || "0");
-                      const volumetricWeight = (length * width * height) / 6000;
-                      const chargeableWeight = Math.max(actualWeight, volumetricWeight);
-                      const chargeableShippingCost = chargeableWeight * pricePerKg;
 
-                      // Create invoice for shipping charge
-                      const invoiceNumber = `INV-CM-SHIP-${Date.now()}-${refreshedForCommission.id}`;
-                      await db.createInvoice({
-                        invoiceNumber,
-                        customerId: refreshedForCommission.customerId,
-                        batchId: id,
-                        subtotalUsd: chargeableShippingCost.toFixed(2),
-                        totalUsd: chargeableShippingCost.toFixed(2),
-                        status: "issued",
-                        issuedAt: new Date(),
-                        lineItems: [{
-                          description: `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە`,
-                          quantity: 1,
-                          unitPrice: chargeableShippingCost,
-                          total: chargeableShippingCost,
-                        }],
-                        notes: `پسووڵەی گواستنەوەی کڕین بە عمولە ${refreshedForCommission.orderCode} - باچ ${batch?.batchCode || ''} - کێشی کڕێیی ${chargeableWeight.toFixed(2)} KG - کۆی $${chargeableShippingCost.toFixed(2)}`,
-                        createdById: ctx.user.id,
-                      });
+                // Charge ALL orders sharing this tracking (not just the first)
+                for (const linkedFPOrder of linkedFPOrders) {
+                  // Find this order's share from the split
+                  const orderShare = shares.find((s: { order: { id: number }; share: number }) => s.order.id === linkedFPOrder.id);
+                  const orderShippingCost = orderShare?.share ?? 0;
 
-                      // Charge wallet using WithoutInvoice variant to avoid creating a SECOND invoice
-                      await db.recordPackageChargeWithoutInvoice(
-                        refreshedForCommission.customerId,
-                        customer.customerCode,
-                        pkg.id,
-                        chargeableShippingCost,
-                        `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە (${chargeableWeight.toFixed(2)} KG)`,
-                        ctx.user.id
-                      );
+                  // Auto-charge customer balance for full package / purchase request delivery
+                  const refreshedFPOrder = await db.getFullPackageOrderById(linkedFPOrder.id);
+                  if (refreshedFPOrder && refreshedFPOrder.customerId && refreshedFPOrder.sellingPriceUsd && !refreshedFPOrder.isCharged && !refreshedFPOrder.isChargedToCustomer) {
+                    try {
+                      const customer = await db.getCustomerById(refreshedFPOrder.customerId);
+                      if (customer) {
+                        const sellingPricePerUnit = parseFloat(refreshedFPOrder.sellingPriceUsd?.toString() || '0');
+                        const fpQuantity = refreshedFPOrder.quantity || 1;
+                        const totalCharge = sellingPricePerUnit * fpQuantity;
 
-                      // Mark shipping as charged and update net profit
-                      const grossProfit = parseFloat(refreshedForCommission.grossProfitUsd || '0');
-                      const netProfitUsd = (grossProfit - shippingCost).toFixed(2);
+                        await db.applyCharge(
+                          refreshedFPOrder.customerId,
+                          customer.customerCode,
+                          'FULL_PACKAGE',
+                          refreshedFPOrder.id,
+                          totalCharge,
+                          `فول پاکێج ${refreshedFPOrder.orderCode} - ${refreshedFPOrder.productName} - گەیاندن`,
+                          ctx.user.id,
+                          [{
+                            description: `فول پاکێج ${refreshedFPOrder.orderCode} - ${refreshedFPOrder.productName}`,
+                            quantity: fpQuantity,
+                            unitPrice: sellingPricePerUnit,
+                            total: totalCharge
+                          }]
+                        );
 
-                      await db.updateFullPackageOrder(refreshedForCommission.id, {
-                        isShippingCharged: true,
-                        shippingChargedAt: new Date(),
-                        shippingChargedUsd: chargeableShippingCost.toFixed(2),
-                        netProfitUsd,
-                        batchId: id,
-                      }, ctx.user.id);
+                        await db.updateFullPackageOrder(refreshedFPOrder.id, {
+                          isCharged: true,
+                          isChargedToCustomer: true,
+                          chargedAt: new Date(),
+                          paidFromBalanceUsd: totalCharge.toFixed(2),
+                          batchId: id,
+                        }, ctx.user.id);
 
-                      appLogger.info("[Commission] Charged customer shipping for CM", { customerCode: customer.customerCode, chargeableShippingCost, orderCode: refreshedForCommission.orderCode, chargeableWeight, shippingCost });
+                        appLogger.info("[FullPackage] Charged customer for FP", { customerCode: customer.customerCode, totalCharge, orderCode: refreshedFPOrder.orderCode });
+                      }
+                    } catch (chargeError) {
+                      appLogger.error("[FullPackage] Failed to charge customer for FP", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
                     }
-                  } catch (chargeError) {
-                    appLogger.error("[Commission] Failed to charge shipping for CM", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
                   }
-                }
+
+                  // For commission orders: charge their SPLIT shipping cost to customer wallet
+                  const refreshedForCommission = refreshedFPOrder || await db.getFullPackageOrderById(linkedFPOrder.id);
+                  if (refreshedForCommission && refreshedForCommission.orderType === 'commission' && refreshedForCommission.customerId && orderShippingCost > 0 && !refreshedForCommission.isShippingCharged) {
+                    try {
+                      const customer = await db.getCustomerById(refreshedForCommission.customerId);
+                      if (customer) {
+                        // Use the split shipping cost (not full package cost)
+                        const chargeableShippingCost = orderShippingCost;
+
+                        const invoiceNumber = `INV-CM-SHIP-${Date.now()}-${refreshedForCommission.id}`;
+                        await db.createInvoice({
+                          invoiceNumber,
+                          customerId: refreshedForCommission.customerId,
+                          batchId: id,
+                          subtotalUsd: chargeableShippingCost.toFixed(2),
+                          totalUsd: chargeableShippingCost.toFixed(2),
+                          status: "issued",
+                          issuedAt: new Date(),
+                          lineItems: [{
+                            description: `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە`,
+                            quantity: 1,
+                            unitPrice: chargeableShippingCost,
+                            total: chargeableShippingCost,
+                          }],
+                          notes: `پسووڵەی گواستنەوەی کڕین بە عمولە ${refreshedForCommission.orderCode} - باچ ${batch?.batchCode || ''} - شیپینگی دابەشکراو $${chargeableShippingCost.toFixed(2)}`,
+                          createdById: ctx.user.id,
+                        });
+
+                        await db.recordPackageChargeWithoutInvoice(
+                          refreshedForCommission.customerId,
+                          customer.customerCode,
+                          pkg.id,
+                          chargeableShippingCost,
+                          `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە (دابەشکراو)`,
+                          ctx.user.id
+                        );
+
+                        const grossProfit = parseFloat(refreshedForCommission.grossProfitUsd || '0');
+                        const netProfitUsd = (grossProfit - orderShippingCost).toFixed(2);
+
+                        await db.updateFullPackageOrder(refreshedForCommission.id, {
+                          isShippingCharged: true,
+                          shippingChargedAt: new Date(),
+                          shippingChargedUsd: chargeableShippingCost.toFixed(2),
+                          netProfitUsd,
+                          batchId: id,
+                        }, ctx.user.id);
+
+                        appLogger.info("[Commission] Charged split shipping for CM", { customerCode: customer.customerCode, chargeableShippingCost, orderCode: refreshedForCommission.orderCode, totalShipping: shippingCost, orderCount: linkedFPOrders.length });
+                      }
+                    } catch (chargeError) {
+                      appLogger.error("[Commission] Failed to charge shipping for CM", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
+                    }
+                  }
+                } // end for each linkedFPOrder
               }
               
               // Purchase Request logic removed

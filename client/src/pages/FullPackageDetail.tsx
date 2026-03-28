@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -53,7 +53,17 @@ import {
   AlertCircle,
   Plus,
   X,
+  Split,
+  Weight,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -95,6 +105,9 @@ export default function FullPackageDetail() {
   const [, navigate] = useLocation();
   const isEditMode = mode === "edit";
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [splitDialogOpen, setSplitDialogOpen] = useState(false);
+  const [splitShippingCost, setSplitShippingCost] = useState("");
+  const [splitShippingType, setSplitShippingType] = useState<"air_regular" | "air_irregular" | "sea">("air_regular");
 
   const statusLabels: Record<string, string> = {
     pending: t("fullPackage.status.pending"),
@@ -194,6 +207,76 @@ export default function FullPackageDetail() {
       toast.error(error.message || t("errors.somethingWentWrong"));
     },
   });
+
+  // Shared tracking: get all orders with same tracking number
+  const trackingForQuery = order?.trackingNumber || "";
+  const { data: sharedOrders } = trpc.fullPackage.getOrdersByTracking.useQuery(
+    { trackingNumber: trackingForQuery },
+    { enabled: !!trackingForQuery }
+  );
+  const hasSharedTracking = (sharedOrders?.length ?? 0) > 1;
+
+  const splitMutation = trpc.fullPackage.splitShippingCost.useMutation({
+    onSuccess: (result) => {
+      toast.success(
+        `${t("fullPackage.shippingSplit")} - ${result.orders.length} ${t("fullPackage.orders")}`
+      );
+      setSplitDialogOpen(false);
+      setSplitShippingCost("");
+      refetch();
+      utils.fullPackage.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message || t("errors.somethingWentWrong"));
+    },
+  });
+
+  const handleSplitShipping = () => {
+    if (!trackingForQuery || !splitShippingCost) return;
+    splitMutation.mutate({
+      trackingNumber: trackingForQuery,
+      totalShippingCost: parseFloat(splitShippingCost),
+      shippingType: splitShippingType,
+    });
+  };
+
+  // Preview split calculation (client-side)
+  const splitPreview = useMemo(() => {
+    if (!sharedOrders || sharedOrders.length <= 1 || !splitShippingCost) return null;
+    const total = parseFloat(splitShippingCost) || 0;
+    if (total <= 0) return null;
+
+    const isSea = splitShippingType === "sea";
+    let totalMeasure = 0;
+    const items = sharedOrders.map((o: any) => {
+      let measure = 0;
+      if (isSea) {
+        measure = parseFloat(o.volumeCbm?.toString() || "0") || 0;
+      } else {
+        const kg = parseFloat(o.weightKg?.toString() || "0") || 0;
+        const l = parseFloat(o.dimensionLength?.toString() || "0") || 0;
+        const w = parseFloat(o.dimensionWidth?.toString() || "0") || 0;
+        const h = parseFloat(o.dimensionHeight?.toString() || "0") || 0;
+        const vol = (l * w * h) / 6000;
+        measure = Math.max(kg, vol);
+      }
+      totalMeasure += measure;
+      return { order: o, measure };
+    });
+
+    const useEqual = totalMeasure === 0;
+    return items.map(({ order: o, measure }) => {
+      const ratio = useEqual ? (1 / sharedOrders.length) : (measure / totalMeasure);
+      return {
+        orderCode: o.orderCode,
+        productName: o.productName,
+        measure: isSea ? measure : measure,
+        ratio: Math.round(ratio * 10000) / 100,
+        share: Math.round(total * ratio * 100) / 100,
+        weightKg: parseFloat(o.weightKg?.toString() || "0") || 0,
+      };
+    });
+  }, [sharedOrders, splitShippingCost, splitShippingType]);
 
   const deleteMutation = trpc.fullPackage.delete.useMutation({
     onSuccess: () => {
@@ -839,8 +922,29 @@ export default function FullPackageDetail() {
                   
                   {/* Shipping Cost */}
                   <div className="flex justify-between items-center p-3 bg-orange-50 rounded-xl border border-orange-100">
-                    <span className="text-sm text-muted-foreground">{t("fullPackage.shippingCost")}</span>
-                    <span className="font-mono font-semibold text-orange-600">${shippingCost.toFixed(2)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">{t("fullPackage.shippingCost")}</span>
+                      {hasSharedTracking && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                          <Split className="h-3 w-3 me-1" />
+                          {sharedOrders?.length} {t("fullPackage.orders")}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-semibold text-orange-600">${shippingCost.toFixed(2)}</span>
+                      {hasSharedTracking && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                          onClick={() => setSplitDialogOpen(true)}
+                        >
+                          <Split className="h-3 w-3 me-1" />
+                          {t("fullPackage.splitShipping")}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   
                   {/* Divider */}
@@ -1006,6 +1110,131 @@ export default function FullPackageDetail() {
           </div>
         )}
       </div>
+
+      {/* Split Shipping Cost Dialog */}
+      <Dialog open={splitDialogOpen} onOpenChange={setSplitDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Split className="h-5 w-5 text-blue-600" />
+              {t("fullPackage.splitShipping")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("fullPackage.splitShippingDesc")} ({sharedOrders?.length ?? 0} {t("fullPackage.orders")})
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Tracking Number */}
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs text-muted-foreground">{t("fullPackage.trackingNumber")}</p>
+              <p className="font-mono font-semibold">{trackingForQuery}</p>
+            </div>
+
+            {/* Shipping Type */}
+            <div className="space-y-2">
+              <Label>{t("fullPackage.shippingType")}</Label>
+              <Select value={splitShippingType} onValueChange={(v) => setSplitShippingType(v as any)}>
+                <SelectTrigger className="h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="air_regular">{t("fullPackage.airRegular")} (KG)</SelectItem>
+                  <SelectItem value="air_irregular">{t("fullPackage.airIrregular")} (KG)</SelectItem>
+                  <SelectItem value="sea">{t("fullPackage.sea")} (CBM)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Total Shipping Cost */}
+            <div className="space-y-2">
+              <Label>{t("fullPackage.totalShippingCost")} ($)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={splitShippingCost}
+                onChange={(e) => setSplitShippingCost(e.target.value)}
+                placeholder="0.00"
+                className="h-11 font-mono text-lg"
+              />
+            </div>
+
+            {/* Preview */}
+            {splitPreview && splitPreview.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">{t("fullPackage.splitPreview")}</Label>
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="p-2 text-start text-xs text-muted-foreground">{t("fullPackage.orderCode")}</th>
+                        <th className="p-2 text-center text-xs text-muted-foreground">
+                          <Weight className="h-3 w-3 inline me-1" />
+                          {splitShippingType === "sea" ? "CBM" : "KG"}
+                        </th>
+                        <th className="p-2 text-center text-xs text-muted-foreground">%</th>
+                        <th className="p-2 text-end text-xs text-muted-foreground">$</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {splitPreview.map((item) => (
+                        <tr key={item.orderCode} className="border-t">
+                          <td className="p-2">
+                            <p className="font-mono font-medium text-xs">{item.orderCode}</p>
+                            <p className="text-xs text-muted-foreground truncate max-w-[150px]">{item.productName}</p>
+                          </td>
+                          <td className="p-2 text-center font-mono text-xs">
+                            {item.measure > 0 ? item.measure.toFixed(2) : "-"}
+                          </td>
+                          <td className="p-2 text-center">
+                            <Badge variant="outline" className="text-xs">{item.ratio}%</Badge>
+                          </td>
+                          <td className="p-2 text-end font-mono font-semibold text-emerald-700">
+                            ${item.share.toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-gray-50 border-t-2">
+                      <tr>
+                        <td className="p-2 font-semibold" colSpan={2}>{t("common.total")}</td>
+                        <td className="p-2 text-center font-semibold">100%</td>
+                        <td className="p-2 text-end font-mono font-bold text-emerald-800">
+                          ${parseFloat(splitShippingCost || "0").toFixed(2)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                {splitPreview.every(p => p.measure === 0) && (
+                  <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                    <AlertCircle className="h-3 w-3 inline me-1" />
+                    {t("fullPackage.noWeightData")}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setSplitDialogOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={handleSplitShipping}
+              disabled={!splitShippingCost || parseFloat(splitShippingCost) <= 0 || splitMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {splitMutation.isPending ? (
+                <Loader2 className="h-4 w-4 me-2 animate-spin" />
+              ) : (
+                <Split className="h-4 w-4 me-2" />
+              )}
+              {t("fullPackage.applySplit")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

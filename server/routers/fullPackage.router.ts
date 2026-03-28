@@ -1094,5 +1094,105 @@ export const fullPackageRouter = router({
       .query(async ({ input }) => {
         return db.getAggregatedProfitAndExpenses(input.year, input.month);
       }),
+
+    // Get all orders sharing a tracking number (for split shipping UI)
+    getOrdersByTracking: staffProcedure
+      .input(z.object({ trackingNumber: z.string().min(1) }))
+      .query(async ({ input }) => {
+        return db.getAllOrdersByTrackingNumber(input.trackingNumber);
+      }),
+
+    // Split shipping cost across orders sharing a tracking number
+    splitShippingCost: staffProcedure
+      .input(z.object({
+        trackingNumber: z.string().min(1),
+        totalShippingCost: z.number().min(0),
+        shippingType: z.enum(["air_regular", "air_irregular", "sea"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const orders = await db.getAllOrdersByTrackingNumber(input.trackingNumber);
+        if (orders.length === 0) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "No orders found for this tracking number" });
+        }
+
+        const isSea = input.shippingType === "sea";
+        const results: { orderId: number; orderCode: string; share: number; weight?: number; cbm?: number; ratio: number }[] = [];
+
+        if (orders.length === 1) {
+          // Single order - full cost
+          await db.updateFullPackageOrder(orders[0].id, {
+            shippingCostUsd: input.totalShippingCost.toFixed(2),
+            shippingType: input.shippingType,
+          }, ctx.user.id);
+          results.push({
+            orderId: orders[0].id,
+            orderCode: orders[0].orderCode,
+            share: input.totalShippingCost,
+            ratio: 1,
+          });
+        } else {
+          // Multiple orders - split by weight (air) or CBM (sea)
+          let totalMeasure = 0;
+          const orderMeasures: { order: typeof orders[0]; measure: number }[] = [];
+
+          for (const order of orders) {
+            let measure = 0;
+            if (isSea) {
+              measure = parseFloat(order.volumeCbm?.toString() || "0") || 0;
+            } else {
+              // Air: use chargeable weight (max of actual and volumetric)
+              const actualKg = parseFloat(order.weightKg?.toString() || "0") || 0;
+              const length = parseFloat(order.dimensionLength?.toString() || "0") || 0;
+              const width = parseFloat(order.dimensionWidth?.toString() || "0") || 0;
+              const height = parseFloat(order.dimensionHeight?.toString() || "0") || 0;
+              const volumetricKg = (length * width * height) / 6000;
+              measure = Math.max(actualKg, volumetricKg);
+            }
+            orderMeasures.push({ order, measure });
+            totalMeasure += measure;
+          }
+
+          // If no orders have weight/CBM data, split equally
+          const useEqual = totalMeasure === 0;
+
+          for (const { order, measure } of orderMeasures) {
+            const ratio = useEqual ? (1 / orders.length) : (measure / totalMeasure);
+            const share = Math.round(input.totalShippingCost * ratio * 100) / 100;
+
+            await db.updateFullPackageOrder(order.id, {
+              shippingCostUsd: share.toFixed(2),
+              shippingType: input.shippingType,
+            }, ctx.user.id);
+
+            results.push({
+              orderId: order.id,
+              orderCode: order.orderCode,
+              share,
+              weight: isSea ? undefined : measure,
+              cbm: isSea ? measure : undefined,
+              ratio: Math.round(ratio * 10000) / 100, // percentage with 2 decimals
+            });
+          }
+
+          // Fix rounding: adjust first order to ensure total matches exactly
+          const totalAssigned = results.reduce((sum, r) => sum + r.share, 0);
+          const diff = Math.round((input.totalShippingCost - totalAssigned) * 100) / 100;
+          if (diff !== 0 && results.length > 0) {
+            results[0].share = Math.round((results[0].share + diff) * 100) / 100;
+            await db.updateFullPackageOrder(results[0].orderId, {
+              shippingCostUsd: results[0].share.toFixed(2),
+            }, ctx.user.id);
+          }
+        }
+
+        appLogger.info("[ShippingSplit] Split shipping cost across orders", {
+          trackingNumber: input.trackingNumber,
+          totalCost: input.totalShippingCost,
+          orderCount: orders.length,
+          results,
+        });
+
+        return { trackingNumber: input.trackingNumber, totalShippingCost: input.totalShippingCost, orders: results };
+      }),
 });
 

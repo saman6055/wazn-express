@@ -234,6 +234,46 @@ export async function getFullPackageOrderByTrackingNumber(trackingNumber: string
   return result[0];
 }
 
+/**
+ * Get ALL orders linked to a tracking number (for shared tracking / same carton).
+ * Unlike getFullPackageOrderByTrackingNumber which returns only the first match,
+ * this returns every order sharing the tracking number.
+ */
+export async function getAllOrdersByTrackingNumber(trackingNumber: string): Promise<FullPackageOrder[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const t = trackingNumber?.trim();
+  if (!t) return [];
+
+  const orderIdSet: Record<number, true> = {};
+
+  // Check multi-tracking table
+  const fromTrackings = await db.select({ fullPackageOrderId: fullPackageOrderTrackings.fullPackageOrderId })
+    .from(fullPackageOrderTrackings)
+    .where(eq(fullPackageOrderTrackings.trackingNumber, t));
+  for (const row of fromTrackings) {
+    orderIdSet[row.fullPackageOrderId] = true;
+  }
+
+  // Fallback: legacy single tracking on order
+  const fromLegacy = await db.select({ id: fullPackageOrders.id })
+    .from(fullPackageOrders)
+    .where(eq(fullPackageOrders.trackingNumber, t));
+  for (const row of fromLegacy) {
+    orderIdSet[row.id] = true;
+  }
+
+  const orderIds = Object.keys(orderIdSet).map(Number);
+  if (orderIds.length === 0) return [];
+
+  const orders: FullPackageOrder[] = [];
+  for (const oid of orderIds) {
+    const order = await getFullPackageOrderById(oid);
+    if (order) orders.push(order);
+  }
+  return orders;
+}
+
 // ---------- Multi-tracking per order ----------
 
 export async function getOrderTrackings(fullPackageOrderId: number): Promise<FullPackageOrderTracking[]> {
