@@ -26,7 +26,32 @@ import {
   Calendar,
   Image as ImageIcon,
   FileText,
+  Hash,
+  Box,
+  Palette,
+  Ruler,
+  Phone,
+  Clock,
+  CheckCircle,
+  XCircle,
+  ShoppingBag,
+  Truck,
+  ExternalLink,
+  AlertCircle,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useTranslation } from "@/contexts/LanguageContext";
 import {
   Select,
   SelectContent,
@@ -36,48 +61,50 @@ import {
 } from "@/components/ui/select";
 
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800",
-  approved: "bg-blue-100 text-blue-800",
-  ordered: "bg-indigo-100 text-indigo-800",
-  tracking_added: "bg-cyan-100 text-cyan-800",
-  in_china_warehouse: "bg-purple-100 text-purple-800",
-  in_batch: "bg-violet-100 text-violet-800",
-  in_transit: "bg-orange-100 text-orange-800",
-  arrived: "bg-teal-100 text-teal-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
+  pending: "bg-amber-100 text-amber-800 border-amber-200",
+  approved: "bg-blue-100 text-blue-800 border-blue-200",
+  ordered: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  tracking_added: "bg-cyan-100 text-cyan-800 border-cyan-200",
+  in_china_warehouse: "bg-purple-100 text-purple-800 border-purple-200",
+  in_batch: "bg-violet-100 text-violet-800 border-violet-200",
+  in_transit: "bg-orange-100 text-orange-800 border-orange-200",
+  arrived: "bg-teal-100 text-teal-800 border-teal-200",
+  delivered: "bg-green-100 text-green-800 border-green-200",
+  cancelled: "bg-red-100 text-red-800 border-red-200",
 };
 
-const statusLabels: Record<string, string> = {
-  pending: "چاوەڕوان",
-  approved: "پەسەندکراو",
-  ordered: "کڕدرا",
-  tracking_added: "تراکینگ زیادکرا",
-  in_china_warehouse: "لە کۆگای چین",
-  in_batch: "لە باچ",
-  in_transit: "لە ڕێگادا",
-  arrived: "گەیشتووە",
-  delivered: "گەیەندرا",
-  cancelled: "هەڵوەشاوە",
+const statusIcons: Record<string, React.ReactNode> = {
+  pending: <Clock className="h-4 w-4" />,
+  approved: <CheckCircle className="h-4 w-4" />,
+  ordered: <ShoppingBag className="h-4 w-4" />,
+  tracking_added: <Hash className="h-4 w-4" />,
+  in_china_warehouse: <Box className="h-4 w-4" />,
+  in_batch: <Layers className="h-4 w-4" />,
+  in_transit: <Truck className="h-4 w-4" />,
+  arrived: <CheckCircle className="h-4 w-4" />,
+  delivered: <CheckCircle className="h-4 w-4" />,
+  cancelled: <XCircle className="h-4 w-4" />,
 };
-
-const statusOptions = [
-  { value: "pending", label: "چاوەڕوان" },
-  { value: "approved", label: "پەسەندکراو" },
-  { value: "ordered", label: "کڕدرا" },
-  { value: "tracking_added", label: "تراکینگ زیادکرا" },
-  { value: "in_china_warehouse", label: "لە کۆگای چین" },
-  { value: "in_batch", label: "لە باچ" },
-  { value: "in_transit", label: "لە ڕێگادا" },
-  { value: "arrived", label: "گەیشتووە" },
-  { value: "delivered", label: "گەیەندرا" },
-  { value: "cancelled", label: "هەڵوەشاوە" },
-];
 
 export default function CommissionDetail() {
+  const { t } = useTranslation();
   const { id, mode } = useParams<{ id: string; mode?: string }>();
   const [, navigate] = useLocation();
   const isEditMode = mode === "edit";
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const statusLabels: Record<string, string> = {
+    pending: t("fullPackage.status.pending"),
+    approved: t("fullPackage.status.approved"),
+    ordered: t("fullPackage.status.ordered"),
+    tracking_added: t("fullPackage.status.tracking_added"),
+    in_china_warehouse: t("fullPackage.status.in_china_warehouse"),
+    in_batch: t("fullPackage.status.in_batch"),
+    in_transit: t("fullPackage.status.in_transit"),
+    arrived: t("fullPackage.status.arrived"),
+    delivered: t("fullPackage.status.delivered"),
+    cancelled: t("fullPackage.status.cancelled"),
+  };
   
   const utils = trpc.useUtils();
 
@@ -145,11 +172,27 @@ export default function CommissionDetail() {
     },
   });
 
+  const deleteMutation = trpc.fullPackage.delete.useMutation({
+    onSuccess: () => {
+      toast.success(t("fullPackage.orderDeleted"));
+      utils.fullPackage.list.invalidate();
+      navigate("/commission");
+    },
+    onError: (error) => {
+      toast.error(error.message || t("errors.deleteFailed"));
+    },
+  });
+
+  const handleDelete = () => {
+    deleteMutation.mutate({ id: Number(id) });
+    setDeleteDialogOpen(false);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.productName) {
-      toast.error("تکایە ناوی کاڵا داخڵ بکە");
+      toast.error(t("fullPackage.enterProductNameError"));
       return;
     }
 
@@ -183,8 +226,17 @@ export default function CommissionDetail() {
     return (
       <DashboardLayout>
         <div className="space-y-6 p-6">
-          <Skeleton className="h-12 w-64" />
-          <Skeleton className="h-96 w-full" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Skeleton className="h-64 w-full rounded-xl" />
+              <Skeleton className="h-48 w-full rounded-xl" />
+            </div>
+            <div className="space-y-6">
+              <Skeleton className="h-80 w-full rounded-xl" />
+              <Skeleton className="h-48 w-full rounded-xl" />
+            </div>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -194,9 +246,12 @@ export default function CommissionDetail() {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center h-96">
-          <Package className="h-16 w-16 text-muted-foreground mb-4" />
-          <p className="text-xl text-muted-foreground">پەت نەدۆزرایەوە</p>
-          <Button onClick={() => navigate("/commission")} className="mt-4">
+          <div className="p-6 bg-purple-50 rounded-full mb-6">
+            <Percent className="h-16 w-16 text-purple-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("commission.orderNotFound") || "پەت نەدۆزرایەوە"}</h2>
+          <p className="text-muted-foreground mb-6">{t("fullPackage.orderNotFoundDesc")}</p>
+          <Button onClick={() => navigate("/commission")} size="lg" className="bg-purple-600 hover:bg-purple-700">
             <ArrowRight className="h-4 w-4 ms-2" />
             گەڕانەوە بۆ لیست
           </Button>
@@ -209,42 +264,83 @@ export default function CommissionDetail() {
     <DashboardLayout>
       <div className="space-y-6 p-6">
         {/* Header */}
-        <div className="bg-gradient-to-l from-purple-600 to-purple-700 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-l from-purple-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/commission")}
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/20 rounded-xl"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div className="p-3 bg-white/20 rounded-xl">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                 <Percent className="h-8 w-8" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold">
-                  {isEditMode ? "دەستکاری پەت" : "وردەکاری پەت"}
+                  {isEditMode ? t("commission.editOrder") || "دەستکاری پەت" : t("commission.orderDetails") || "وردەکاری پەت"}
                 </h1>
-                <p className="text-purple-100">
-                  کۆدی پەت: {order.orderCode}
+                <p className="text-purple-100 flex items-center gap-2 mt-1">
+                  <Hash className="h-4 w-4" />
+                  {t("commission.orderCode") || "کۆدی پەت"}: <span className="font-mono font-bold">{order.orderCode}</span>
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {!isEditMode && (
-                <Button
-                  onClick={() => navigate(`/commission/${id}/edit`)}
-                  className="bg-white text-purple-700 hover:bg-purple-50"
-                >
-                  <Pencil className="h-4 w-4 ms-2" />
-                  دەستکاری
-                </Button>
+            <div className="flex items-center gap-3">
+              {!isEditMode ? (
+                <>
+                  <Button
+                    onClick={() => navigate(`/commission/${id}/edit`)}
+                    className="bg-white text-purple-700 hover:bg-purple-50 shadow-md"
+                  >
+                    <Pencil className="h-4 w-4 ms-2" />
+                    {t("common.edit")}
+                  </Button>
+                  <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        className="bg-red-500 hover:bg-red-600 shadow-md"
+                      >
+                        <Trash2 className="h-4 w-4 ms-2" />
+                        {t("fullPackage.deleteOrder")}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-right">{t("fullPackage.confirmDelete")}</AlertDialogTitle>
+                        <AlertDialogDescription className="text-right">
+                          {t("fullPackage.deleteOrderDescription")}
+                          <br />
+                          <span className="font-bold text-red-600">{t("commission.orderCode") || "کۆدی پەت"}: {order.orderCode}</span>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="flex gap-2">
+                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDelete}
+                          className="bg-red-600 hover:bg-red-700"
+                          disabled={deleteMutation.isPending}
+                        >
+                          {deleteMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 ms-2 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 ms-2" />
+                          )}
+                          {t("common.delete")}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              ) : (
+                <Badge className={`${statusColors[order.status]} text-sm px-4 py-2 border`}>
+                  {statusIcons[order.status]}
+                  <span className="me-2">{statusLabels[order.status]}</span>
+                </Badge>
               )}
-              <Badge className={`${statusColors[order.status]} text-sm px-3 py-1`}>
-                {statusLabels[order.status]}
-              </Badge>
             </div>
           </div>
         </div>
@@ -511,52 +607,82 @@ export default function CommissionDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Info */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Product Info */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-purple-600" />
-                    <CardTitle>زانیاری کاڵا</CardTitle>
+              {/* Product Info Card */}
+              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+                <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Package className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <CardTitle>{t("fullPackage.productInfo")}</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">ناوی کاڵا</p>
-                      <p className="font-medium">{order.productName}</p>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("fullPackage.productName")}</p>
+                      <p className="font-semibold text-lg">{order.productName}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">تراکینگ نەمبەر</p>
-                      <p className="font-medium font-mono">{order.trackingNumber || "-"}</p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                        <Hash className="h-3 w-3" /> {t("fullPackage.trackingNumber")}
+                      </p>
+                      {order.trackingNumber ? (
+                        <Badge variant="secondary" className="font-mono text-sm px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200">
+                          {order.trackingNumber}
+                        </Badge>
+                      ) : (
+                        <p className="font-mono font-medium text-muted-foreground">-</p>
+                      )}
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">بڕ</p>
-                      <p className="font-medium">{order.quantity}</p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                        <Box className="h-3 w-3" /> {t("fullPackage.quantity")}
+                      </p>
+                      <p className="font-semibold">{order.quantity} {t("fullPackage.quantityUnit")}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">ڕەنگ</p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                        <Palette className="h-3 w-3" /> {t("fullPackage.color")}
+                      </p>
                       <p className="font-medium">{order.color || "-"}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">قەبارە</p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                        <Ruler className="h-3 w-3" /> {t("fullPackage.size")}
+                      </p>
                       <p className="font-medium">{order.size || "-"}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">باچ</p>
-                      <p className="font-medium">{(order as any).batch?.batchCode || "بێ باچ"}</p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                        <Layers className="h-3 w-3" /> {t("fullPackage.batch")}
+                      </p>
+                      <Badge variant="outline" className="font-mono">
+                        {(order as any).batch?.batchCode || t("fullPackage.noBatch")}
+                      </Badge>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">وەسف</p>
-                    <p className={`font-medium ${!order.productDescription ? "text-gray-400 italic" : ""}`}>
-                      {order.productDescription || "وەسفی کاڵا نییە"}
+
+                  <div className="mt-6 pt-6 border-t">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                      <FileText className="h-3 w-3" /> {t("fullPackage.productDescription")}
+                    </p>
+                    <p className={`leading-relaxed ${order.productDescription ? "text-gray-700" : "text-gray-400 italic"}`}>
+                      {order.productDescription || t("fullPackage.noDescription") || "وەسفی کاڵا نییە"}
                     </p>
                   </div>
+
                   {order.productLink && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">لینکی کاڵا</p>
-                      <a href={order.productLink} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
-                        {order.productLink}
+                    <div className="mt-4 pt-4 border-t">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{t("fullPackage.productLink")}</p>
+                      <a
+                        href={order.productLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 hover:underline"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        {order.productLink.length > 50 ? order.productLink.substring(0, 50) + "..." : order.productLink}
                       </a>
                     </div>
                   )}
@@ -571,52 +697,58 @@ export default function CommissionDetail() {
                       <ImageIcon className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <CardTitle>وێنەکانی کاڵا</CardTitle>
+                      <CardTitle>{t("fullPackage.productImages") || "وێنەکانی کاڵا"}</CardTitle>
                       <CardDescription>
-                        {((order as any).productImages?.length || (order.productImage ? 1 : 0))} وێنە
+                        {((order as any).productImages?.length || (order.productImage ? 1 : 0))} {t("fullPackage.imagesCount") || "وێنە"}
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-6">
                   {((order as any).productImages?.length > 0 || order.productImage) ? (
-                    <ImageGallery 
-                      images={(order as any).productImages || (order.productImage ? [order.productImage] : [])} 
+                    <ImageGallery
+                      images={(order as any).productImages || (order.productImage ? [order.productImage] : [])}
                       accentColor="amber"
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center py-8 text-gray-400">
                       <ImageIcon className="h-10 w-10 mb-2 opacity-30" />
-                      <p className="text-sm">هیچ وێنەیەک نییە</p>
+                      <p className="text-sm">{t("fullPackage.noImages") || "هیچ وێنەیەک نییە"}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              {/* Customer Info */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <User className="h-5 w-5 text-purple-600" />
-                    <CardTitle>زانیاری کڕیار</CardTitle>
+              {/* Customer Info Card */}
+              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+                <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <User className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <CardTitle>{t("fullPackage.customer")}</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">ناو</p>
-                      <p className="font-medium">{(order as any).customer?.fullName || "-"}</p>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("common.name")}</p>
+                      <p className="font-semibold text-lg">{(order as any).customer?.fullName || "-"}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">کۆد</p>
-                      <p className="font-medium font-mono">{(order as any).customer?.customerCode || "-"}</p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("fullPackage.customerCode")}</p>
+                      <Badge variant="secondary" className="font-mono text-sm">
+                        {(order as any).customer?.customerCode || "-"}
+                      </Badge>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">ژمارەی مۆبایل</p>
-                      <p className="font-medium">{(order as any).customer?.mobileNumber || "-"}</p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                        <Phone className="h-3 w-3" /> {t("customers.mobileNumber") || "ژمارەی مۆبایل"}
+                      </p>
+                      <p className="font-mono font-medium">{(order as any).customer?.mobileNumber || "-"}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">فرۆشیار</p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("fullPackage.supplier")}</p>
                       <p className="font-medium">{(order as any).supplier?.name || "-"}</p>
                     </div>
                   </div>
@@ -627,80 +759,133 @@ export default function CommissionDetail() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Pricing Card */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-green-600" />
-                    <CardTitle>نرخەکان</CardTitle>
+              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+                <CardHeader className="border-b bg-gradient-to-l from-green-50 to-white">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <DollarSign className="h-5 w-5 text-green-600" />
+                    </div>
+                    <CardTitle>{t("fullPackage.prices")}</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-muted-foreground">نرخی کاڵا</span>
-                    <span className="font-mono font-medium">${order.itemPriceUsd || "0.00"}</span>
+                <CardContent className="p-4 space-y-3">
+                  {/* Item Price */}
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                    <span className="text-sm text-muted-foreground">{t("commission.itemPrice") || "نرخی کاڵا"}</span>
+                    <span className="font-mono font-semibold">${Number(order.itemPriceUsd || 0).toFixed(2)}</span>
                   </div>
-                  {(Number(order.quantity) || 1) > 1 && (
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <span className="text-muted-foreground">نرخی کاڵا × بڕ</span>
-                      <span className="font-mono font-medium">
-                        ${((Number(order.itemPriceUsd) || 0) * (Number(order.quantity) || 1)).toFixed(2)}
+
+                  {/* Commission per item */}
+                  <div className="flex justify-between items-center p-3 bg-purple-50 rounded-xl border border-purple-100">
+                    <span className="text-sm text-muted-foreground">{t("commission.commissionPerItem") || "عمولەی هەر دانەیەک"}</span>
+                    <span className="font-mono font-semibold text-purple-600">${Number(order.commissionFeeUsd || 0).toFixed(2)}</span>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-dashed my-3"></div>
+
+                  {/* Cost Breakdown */}
+                  <div className="bg-gray-100 rounded-xl p-4 space-y-2">
+                    <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{t("fullPackage.costBreakdown")}</p>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{t("commission.itemPrice") || "نرخی کاڵا"} × {order.quantity || 1}</span>
+                      <span className="font-mono">${((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">+ {t("commission.commission") || "عمولە"} × {order.quantity || 1}</span>
+                      <span className="font-mono text-purple-600">${((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1)).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-semibold border-t border-gray-200 pt-2 mt-2">
+                      <span>{t("commission.totalCost") || "کۆی گشتی"}</span>
+                      <span className="font-mono">${(((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)) + ((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1))).toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {/* Commission Income (Profit equivalent) */}
+                  <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-l from-purple-100 to-purple-50 border border-purple-200">
+                    <div>
+                      <span className="font-semibold block">{t("commission.commissionIncome") || "داهاتی عمولە"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ${Number(order.commissionFeeUsd || 0).toFixed(2)} × {order.quantity || 1}
                       </span>
                     </div>
-                  )}
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-muted-foreground">کۆی عمولە</span>
-                    <span className="font-mono font-medium text-purple-600">
-                      ${((Number(order.commissionFeeUsd) || 0) * (Number(order.quantity) || 1)).toFixed(2)}
+                    <span className="font-mono font-bold text-2xl text-purple-700">
+                      ${((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1)).toFixed(2)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-purple-100 rounded-lg">
-                    <span className="font-medium">کۆی گشتی</span>
-                    <span className="font-mono font-bold text-lg text-purple-700">
-                      ${(((Number(order.itemPriceUsd) || 0) * (Number(order.quantity) || 1)) + ((Number(order.commissionFeeUsd) || 0) * (Number(order.quantity) || 1))).toFixed(2)}
-                    </span>
+
+                  {/* Total Cost highlight */}
+                  <div className="bg-gradient-to-l from-purple-600 to-purple-700 rounded-xl p-4 text-white">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-purple-100">{t("commission.totalCost") || "کۆی گشتی"}</span>
+                      <span className="font-mono font-bold text-2xl">
+                        ${(((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)) + ((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1))).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Formula Explanation */}
+                  <div className="text-xs text-muted-foreground text-center bg-purple-50 p-3 rounded-xl border border-purple-100">
+                    <AlertCircle className="h-3 w-3 inline-block ms-1" />
+                    {t("commission.totalCost") || "کۆی گشتی"} = ({t("commission.itemPrice") || "نرخی کاڵا"} + {t("commission.commission") || "عمولە"}) × {t("fullPackage.quantity")}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Status & Date Card */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-purple-600" />
-                    <CardTitle>بارودۆخ و بەروار</CardTitle>
+              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+                <CardHeader className="border-b bg-gradient-to-l from-blue-50 to-white">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Calendar className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <CardTitle>{t("fullPackage.statusColumn")} & {t("fullPackage.dateColumn")}</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="p-4 space-y-4">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">بارودۆخ</p>
-                    <Badge className={`${statusColors[order.status]} text-sm px-3 py-1`}>
-                      {statusLabels[order.status]}
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{t("fullPackage.statusColumn")}</p>
+                    <Badge className={`${statusColors[order.status]} text-sm px-4 py-2 border`}>
+                      {statusIcons[order.status]}
+                      <span className="me-2">{statusLabels[order.status]}</span>
                     </Badge>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">بەرواری دروستکردن</p>
-                    <p className="font-medium">{new Date(order.createdAt).toLocaleDateString("ku-IQ")}</p>
-                  </div>
-                  {order.updatedAt && (
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">دوایین نوێکردنەوە</p>
-                      <p className="font-medium">{new Date(order.updatedAt).toLocaleDateString("ku-IQ")}</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("fullPackage.orderDate")}</p>
+                      <p className="font-medium mt-1">{new Date(order.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit"
+                      })}</p>
                     </div>
-                  )}
+                    {order.updatedAt && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("common.update")}</p>
+                        <p className="font-medium mt-1">{new Date(order.updatedAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit"
+                        })}</p>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Notes */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-purple-600" />
-                    <CardTitle>تێبینی</CardTitle>
+              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+                <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <FileText className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <CardTitle>{t("fullPackage.notes")}</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <p className={order.notes ? "text-muted-foreground" : "text-gray-400 italic"}>
-                    {order.notes || "تێبینی نییە"}
+                <CardContent className="p-4">
+                  <p className={`leading-relaxed ${order.notes ? "text-gray-700" : "text-gray-400 italic"}`}>
+                    {order.notes || t("fullPackage.noNotes") || "تێبینی نییە"}
                   </p>
                 </CardContent>
               </Card>

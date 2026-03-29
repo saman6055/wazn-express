@@ -967,19 +967,31 @@ export default function FullPackageDetail() {
                     </div>
                   </div>
                   
-                  {/* Profit */}
-                  <div className={`flex justify-between items-center p-4 rounded-xl ${totalProfit >= 0 ? "bg-gradient-to-l from-green-100 to-green-50 border border-green-200" : "bg-gradient-to-l from-red-100 to-red-50 border border-red-200"}`}>
-                    <div>
-                      <span className="font-semibold block">{t("fullPackage.profit")}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {profitMargin}% {t("fullPackage.profitMargin")}
+                  {/* Selling Price Total */}
+                  <div className="bg-gradient-to-l from-emerald-600 to-emerald-700 rounded-xl p-4 text-white">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-emerald-100">{t("fullPackage.sellingPrice")}</span>
+                      <span className="font-mono font-bold text-2xl">
+                        ${Number(order.sellingPriceUsd || 0).toFixed(2)}
                       </span>
                     </div>
-                    <span className={`font-mono font-bold text-2xl ${totalProfit >= 0 ? "text-green-700" : "text-red-700"}`}>
-                      ${totalProfit.toFixed(2)}
-                    </span>
                   </div>
-                  
+
+                  {/* Profit */}
+                  <div className={`p-4 rounded-xl ${totalProfit >= 0 ? "bg-gradient-to-l from-green-100 to-green-50 border border-green-200" : "bg-gradient-to-l from-red-100 to-red-50 border border-red-200"}`}>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="font-semibold block">{t("fullPackage.profit")}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {profitMargin}% {t("fullPackage.profitMargin")}
+                        </span>
+                      </div>
+                      <span className={`font-mono font-bold text-2xl ${totalProfit >= 0 ? "text-green-700" : "text-red-700"}`}>
+                        ${totalProfit.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
                   {/* Formula Explanation */}
                   <div className="text-xs text-muted-foreground text-center bg-blue-50 p-3 rounded-xl border border-blue-100">
                     <AlertCircle className="h-3 w-3 inline-block ms-1" />
