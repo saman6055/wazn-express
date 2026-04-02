@@ -868,6 +868,11 @@ export default function CommissionDashboard() {
                               {order.quantity > 1 && (
                                 <p className="text-xs text-muted-foreground">{order.quantity} {t("commission.quantityUnit")}</p>
                               )}
+                              {(order as any).orderNumber && (
+                                <p className="text-xs text-blue-600 font-mono mt-0.5">
+                                  # {(order as any).orderNumber}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </TableCell>

@@ -858,6 +858,11 @@ export default function FullPackageDashboard() {
                               {order.quantity > 1 && (
                                 <p className="text-xs text-muted-foreground">{order.quantity} {t("fullPackage.quantityUnit")}</p>
                               )}
+                              {(order as any).orderNumber && (
+                                <p className="text-xs text-blue-600 font-mono mt-0.5">
+                                  # {(order as any).orderNumber}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </TableCell>

@@ -625,6 +625,18 @@ export default function CommissionDetail() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                        <Hash className="h-3 w-3" /> {t("fullPackage.orderNumber") || "ئۆردەر نەمبەر"}
+                      </p>
+                      {(order as any).orderNumber ? (
+                        <Badge variant="secondary" className="font-mono text-sm px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200">
+                          # {(order as any).orderNumber}
+                        </Badge>
+                      ) : (
+                        <p className="font-mono font-medium text-muted-foreground">-</p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                         <Hash className="h-3 w-3" /> {t("fullPackage.trackingNumber")}
                       </p>
                       {order.trackingNumber ? (
