@@ -274,6 +274,23 @@ export async function getAllOrdersByTrackingNumber(trackingNumber: string): Prom
   return orders;
 }
 
+export async function getOrdersByBatchId(batchId: number): Promise<FullPackageOrder[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const results = await db.select()
+    .from(fullPackageOrders)
+    .where(and(
+      eq(fullPackageOrders.batchId, batchId),
+      isNotNull(fullPackageOrders.trackingNumber)
+    ));
+  const orders: FullPackageOrder[] = [];
+  for (const row of results) {
+    const order = await getFullPackageOrderById(row.id);
+    if (order) orders.push(order);
+  }
+  return orders;
+}
+
 // ---------- Multi-tracking per order ----------
 
 export async function getOrderTrackings(fullPackageOrderId: number): Promise<FullPackageOrderTracking[]> {

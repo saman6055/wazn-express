@@ -6,6 +6,81 @@ import { staffProcedure, adminProcedure, accountantProcedure } from "../middlewa
 import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
+async function autoSplitShippingByTracking(order: any, userId: number): Promise<void> {
+  const trackingNumber = order.trackingNumber;
+  if (!trackingNumber || !order.batchId) return;
+
+  const batch = await db.getBatchById(order.batchId);
+  if (!batch?.shippingCost || parseFloat(batch.shippingCost as string) <= 0) return;
+
+  const totalBatchShipping = parseFloat(batch.shippingCost as string);
+  const shippingType = (batch.shippingType as string) || 'air_regular';
+  const isSea = shippingType === 'sea';
+
+  const batchOrders = await db.getOrdersByBatchId(order.batchId);
+  const ordersWithTracking = batchOrders.filter((o: any) => o.trackingNumber);
+  if (ordersWithTracking.length === 0) return;
+
+  // Group by trackingNumber
+  const trackingGroups = new Map<string, any[]>();
+  for (const o of ordersWithTracking) {
+    const tn = o.trackingNumber!;
+    if (!trackingGroups.has(tn)) trackingGroups.set(tn, []);
+    trackingGroups.get(tn)!.push(o);
+  }
+
+  // Skip if this tracking group already has shipping cost assigned
+  const thisGroup = trackingGroups.get(trackingNumber) || [];
+  if (thisGroup.some((o: any) => parseFloat(o.shippingCostUsd?.toString() || '0') > 0)) return;
+
+  // Measure per group (Level 1 proportioning between tracking groups)
+  const getMeasure = (o: any): number => {
+    if (isSea) return parseFloat(o.volumeCbm?.toString() || '0') || 0;
+    const kg = parseFloat(o.weightKg?.toString() || '0') || 0;
+    const l = parseFloat(o.dimensionLength?.toString() || '0') || 0;
+    const w = parseFloat(o.dimensionWidth?.toString() || '0') || 0;
+    const h = parseFloat(o.dimensionHeight?.toString() || '0') || 0;
+    return Math.max(kg, (l * w * h) / 6000);
+  };
+
+  const groupWeights = new Map<string, number>();
+  let totalWeight = 0;
+  for (const [tn, orders] of trackingGroups) {
+    const gw = orders.reduce((s: number, o: any) => s + getMeasure(o), 0);
+    groupWeights.set(tn, gw);
+    totalWeight += gw;
+  }
+
+  const useEqual = totalWeight === 0;
+  const groupCount = trackingGroups.size;
+  const thisWeight = groupWeights.get(trackingNumber) || 0;
+  const ratio = useEqual ? (1 / groupCount) : (thisWeight / totalWeight);
+  const groupShipping = Math.round(totalBatchShipping * ratio * 100) / 100;
+
+  // Level 2: equal split within the same tracking group
+  const perOrder = Math.round((groupShipping / thisGroup.length) * 100) / 100;
+  for (let i = 0; i < thisGroup.length; i++) {
+    let share = perOrder;
+    if (i === thisGroup.length - 1) {
+      // Last order absorbs rounding difference
+      share = Math.round((groupShipping - perOrder * (thisGroup.length - 1)) * 100) / 100;
+    }
+    await db.updateFullPackageOrder(thisGroup[i].id, {
+      shippingCostUsd: share.toFixed(2),
+      shippingType: shippingType as any,
+    }, userId);
+  }
+
+  appLogger.info('[ShippingSplit] Auto-split on delivery', {
+    orderId: order.id,
+    trackingNumber,
+    batchId: order.batchId,
+    groupShipping,
+    perOrder,
+    count: thisGroup.length,
+  });
+}
+
 export const fullPackageRouter = router({
     list: staffProcedure
       .input(z.object({
@@ -459,7 +534,17 @@ export const fullPackageRouter = router({
         if (input.status === "delivered" && !existing.deliveredDate) {
           updateData.deliveredDate = new Date();
           updateData.actualDeliveryDate = new Date();
-          
+
+          // Auto-split shipping cost across orders sharing the same tracking number
+          try {
+            await autoSplitShippingByTracking(existing, ctx.user.id);
+          } catch (e) {
+            appLogger.error('[ShippingSplit] Auto-split failed on delivery', {
+              error: e instanceof Error ? e.message : String(e),
+              orderId: existing.id,
+            });
+          }
+
           // Create revenue record for finance tracking
           // sellingPriceUsd and purchasePriceUsd are PER-UNIT — multiply by quantity
           try {
