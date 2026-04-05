@@ -59,9 +59,10 @@ interface PermState {
 
 export default function PermissionsManagement() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(PERMISSION_GROUPS.map(g => g.id)));
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
+  const [showAllGroups, setShowAllGroups] = useState(false);
 
   // Permission state
   const [permState, setPermState] = useState<PermState>({
@@ -128,6 +129,19 @@ export default function PermissionsManagement() {
 
       setPermState({ permissions: perms, subPermissions: subPerms });
       setHasChanges(false);
+      setShowAllGroups(false);
+
+      // Auto-expand groups that have at least one enabled permission
+      const groupsWithPerms = new Set<string>();
+      for (const group of PERMISSION_GROUPS) {
+        const hasAny = group.modules.some(mod => {
+          const p = perms[mod.module];
+          if (!p) return false;
+          return p.canView || p.canCreate || p.canEdit || p.canDelete;
+        });
+        if (hasAny) groupsWithPerms.add(group.id);
+      }
+      setExpandedGroups(groupsWithPerms);
     }
   }, [userPermissions]);
 
@@ -240,6 +254,8 @@ export default function PermissionsManagement() {
       }
     }
     setPermState({ permissions: newPerms, subPermissions: newSubPerms });
+    setShowAllGroups(true);
+    setExpandedGroups(new Set(PERMISSION_GROUPS.map(g => g.id)));
     setHasChanges(true);
   };
 
@@ -314,17 +330,34 @@ export default function PermissionsManagement() {
     });
   };
 
-  // Filter groups by search
+  // Check if a group has at least one active permission for the selected user
+  const groupHasActivePerms = (group: PermissionGroup) => {
+    return group.modules.some(mod => {
+      const p = permState.permissions[mod.module];
+      if (!p) return false;
+      return p.canView || p.canCreate || p.canEdit || p.canDelete;
+    });
+  };
+
+  // Filter groups by search and active-only toggle
   const filteredGroups = useMemo(() => {
-    if (!searchQuery.trim()) return PERMISSION_GROUPS;
+    let groups = PERMISSION_GROUPS;
+
+    // If not showing all, only show groups with at least one active permission
+    if (selectedUserId && !showAllGroups && !searchQuery.trim()) {
+      groups = groups.filter(g => groupHasActivePerms(g));
+    }
+
+    if (!searchQuery.trim()) return groups;
     const q = searchQuery.toLowerCase();
-    return PERMISSION_GROUPS.map(g => ({
+    return groups.map(g => ({
       ...g,
       modules: g.modules.filter(m =>
         m.labelKu.includes(q) || m.label.toLowerCase().includes(q) || m.module.includes(q)
       ),
     })).filter(g => g.modules.length > 0);
-  }, [searchQuery]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, showAllGroups, selectedUserId, permState.permissions]);
 
   const selectedUser = staffMembers.find(u => u.id === selectedUserId);
   const { total, enabled } = selectedUserId ? countEnabled() : { total: 0, enabled: 0 };
@@ -385,7 +418,7 @@ export default function PermissionsManagement() {
                       return (
                         <button
                           key={user.id}
-                          onClick={() => setSelectedUserId(user.id)}
+                          onClick={() => { setSelectedUserId(user.id); setShowAllGroups(false); setSearchQuery(""); }}
                           className={`w-full text-right p-3 rounded-xl border transition-all duration-200 ${
                             isSelected
                               ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 shadow-sm"
@@ -474,20 +507,48 @@ export default function PermissionsManagement() {
                   </CardContent>
                 </Card>
 
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="گەڕان بۆ مۆڵەت..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full ps-10 pe-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
+                {/* Search + toggle */}
+                <div className="flex gap-2 items-center">
+                  <div className="relative flex-1">
+                    <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="گەڕان بۆ مۆڵەت..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full ps-10 pe-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  <Button
+                    variant={showAllGroups ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowAllGroups(v => !v)}
+                    className={`shrink-0 text-xs gap-1.5 ${showAllGroups ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}`}
+                  >
+                    <ToggleLeft className="h-3.5 w-3.5" />
+                    {showAllGroups ? "تەنیا چالاکەکان" : "هەموو بەشەکان"}
+                  </Button>
                 </div>
 
                 {/* Permission Groups */}
                 <div className="space-y-3">
+                  {filteredGroups.length === 0 && !searchQuery.trim() && !showAllGroups && (
+                    <Card className="py-12">
+                      <div className="text-center space-y-3">
+                        <div className="mx-auto w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <Shield className="h-7 w-7 text-gray-400" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-600 dark:text-gray-300">هیچ مۆڵەتێک دیاری نەکراوە</p>
+                          <p className="text-xs text-muted-foreground mt-1">بەستەرەکەی خوارەوە بکە بۆ زیادکردنی مۆڵەت</p>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => setShowAllGroups(true)} className="text-xs gap-1.5">
+                          <ToggleLeft className="h-3.5 w-3.5" />
+                          نیشاندانی هەموو بەشەکان
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
                   {filteredGroups.map((group) => {
                     const colors = GROUP_COLORS[group.color] || GROUP_COLORS.slate;
                     const IconComp = GROUP_ICONS[group.icon] || Shield;
