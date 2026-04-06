@@ -370,6 +370,11 @@ export default function FullPackageDetail() {
     );
   }
 
+  // IQD exchange rate for display
+  const { data: iqdRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "IQD" });
+  const iqdRate = parseFloat(iqdRateData?.rate?.toString() || "0");
+  const toIqd = (usd: number) => iqdRate > 0 ? Math.round(usd * iqdRate).toLocaleString("en-US") : null;
+
   // Calculate totals
   const totalPurchase = (Number(order.purchasePriceUsd) || 0) * (order.quantity || 1);
   const totalSelling = (Number(order.sellingPriceUsd) || 0) * (order.quantity || 1);
@@ -923,13 +928,23 @@ export default function FullPackageDetail() {
                   {/* Purchase Price */}
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
                     <span className="text-sm text-muted-foreground">{t("fullPackage.purchasePrice")}</span>
-                    <span className="font-mono font-semibold">${Number(order.purchasePriceUsd || 0).toFixed(2)}</span>
+                    <div className="text-right">
+                      <span className="font-mono font-semibold">${Number(order.purchasePriceUsd || 0).toFixed(2)}</span>
+                      {toIqd(Number(order.purchasePriceUsd || 0)) && (
+                        <p className="text-[11px] text-orange-500 font-mono">≈ {toIqd(Number(order.purchasePriceUsd || 0))} ع</p>
+                      )}
+                    </div>
                   </div>
-                  
+
                   {/* Selling Price */}
                   <div className="flex justify-between items-center p-3 bg-emerald-50 rounded-xl border border-emerald-100">
                     <span className="text-sm text-muted-foreground">{t("fullPackage.sellingPrice")}</span>
-                    <span className="font-mono font-semibold text-emerald-600">${Number(order.sellingPriceUsd || 0).toFixed(2)}</span>
+                    <div className="text-right">
+                      <span className="font-mono font-semibold text-emerald-600">${Number(order.sellingPriceUsd || 0).toFixed(2)}</span>
+                      {toIqd(Number(order.sellingPriceUsd || 0)) && (
+                        <p className="text-[11px] text-orange-500 font-mono">≈ {toIqd(Number(order.sellingPriceUsd || 0))} ع</p>
+                      )}
+                    </div>
                   </div>
                   
                   {/* Shipping Cost */}

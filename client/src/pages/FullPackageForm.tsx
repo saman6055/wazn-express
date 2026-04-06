@@ -22,6 +22,8 @@ import {
   TrendingUp,
   Check,
   ChevronsUpDown,
+  Banknote,
+  ArrowLeftRight,
 } from "lucide-react";
 import {
   Select,
@@ -44,6 +46,10 @@ export default function FullPackageForm() {
   const [customerSearch, setCustomerSearch] = useState("");
   const [productImages, setProductImages] = useState<string[]>([]);
 
+  // IQD converter state
+  const [iqdPurchaseTotal, setIqdPurchaseTotal] = useState("");
+  const [iqdSellingTotal, setIqdSellingTotal] = useState("");
+
   const [formData, setFormData] = useState({
     customerId: "",
     supplierId: "",
@@ -58,6 +64,10 @@ export default function FullPackageForm() {
     sellingPriceUsd: "",
     notes: "",
   });
+
+  // IQD exchange rate
+  const { data: iqdRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "IQD" });
+  const iqdRate = parseFloat(iqdRateData?.rate?.toString() || "0");
 
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: suppliers } = trpc.suppliers.list.useQuery();
@@ -118,6 +128,62 @@ export default function FullPackageForm() {
       sellingPriceUsd: formData.sellingPriceUsd || undefined,
       notes: formData.notes || undefined,
     });
+  };
+
+  // IQD ↔ USD bidirectional handlers
+  const qty = parseInt(formData.quantity) || 1;
+
+  const handleIqdPurchaseChange = (val: string) => {
+    setIqdPurchaseTotal(val);
+    const iqdVal = parseFloat(val) || 0;
+    if (iqdVal > 0 && iqdRate > 0) {
+      setFormData(prev => ({ ...prev, purchasePriceUsd: (iqdVal / qty / iqdRate).toFixed(4) }));
+    } else if (!val) {
+      setFormData(prev => ({ ...prev, purchasePriceUsd: "" }));
+    }
+  };
+
+  const handleUsdPurchaseChange = (val: string) => {
+    setFormData(prev => ({ ...prev, purchasePriceUsd: val }));
+    const usdVal = parseFloat(val) || 0;
+    if (usdVal > 0 && iqdRate > 0) {
+      setIqdPurchaseTotal((usdVal * qty * iqdRate).toFixed(0));
+    } else {
+      setIqdPurchaseTotal("");
+    }
+  };
+
+  const handleIqdSellingChange = (val: string) => {
+    setIqdSellingTotal(val);
+    const iqdVal = parseFloat(val) || 0;
+    if (iqdVal > 0 && iqdRate > 0) {
+      setFormData(prev => ({ ...prev, sellingPriceUsd: (iqdVal / qty / iqdRate).toFixed(4) }));
+    } else if (!val) {
+      setFormData(prev => ({ ...prev, sellingPriceUsd: "" }));
+    }
+  };
+
+  const handleUsdSellingChange = (val: string) => {
+    setFormData(prev => ({ ...prev, sellingPriceUsd: val }));
+    const usdVal = parseFloat(val) || 0;
+    if (usdVal > 0 && iqdRate > 0) {
+      setIqdSellingTotal((usdVal * qty * iqdRate).toFixed(0));
+    } else {
+      setIqdSellingTotal("");
+    }
+  };
+
+  const handleQtyChange = (newQty: string) => {
+    const q = parseInt(newQty) || 1;
+    // Re-sync IQD fields when quantity changes
+    const updatedData: typeof formData = { ...formData, quantity: newQty };
+    if (iqdPurchaseTotal && iqdRate > 0) {
+      updatedData.purchasePriceUsd = (parseFloat(iqdPurchaseTotal) / q / iqdRate).toFixed(4);
+    }
+    if (iqdSellingTotal && iqdRate > 0) {
+      updatedData.sellingPriceUsd = (parseFloat(iqdSellingTotal) / q / iqdRate).toFixed(4);
+    }
+    setFormData(updatedData);
   };
 
   // Calculate gross profit
@@ -345,7 +411,7 @@ export default function FullPackageForm() {
                       variant="outline"
                       size="icon"
                       className="h-10 w-10 rounded-full"
-                      onClick={() => setFormData({ ...formData, quantity: Math.max(1, parseInt(formData.quantity) - 1).toString() })}
+                      onClick={() => handleQtyChange(Math.max(1, parseInt(formData.quantity) - 1).toString())}
                     >
                       -
                     </Button>
@@ -353,7 +419,7 @@ export default function FullPackageForm() {
                       type="number"
                       min="1"
                       value={formData.quantity}
-                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      onChange={(e) => handleQtyChange(e.target.value)}
                       className="text-center text-2xl font-bold h-14 border-2"
                       dir="ltr"
                     />
@@ -362,7 +428,7 @@ export default function FullPackageForm() {
                       variant="outline"
                       size="icon"
                       className="h-10 w-10 rounded-full"
-                      onClick={() => setFormData({ ...formData, quantity: (parseInt(formData.quantity) + 1).toString() })}
+                      onClick={() => handleQtyChange((parseInt(formData.quantity) + 1).toString())}
                     >
                       +
                     </Button>
@@ -370,41 +436,162 @@ export default function FullPackageForm() {
                 </div>
 
                 {/* Purchase Price */}
-                <div className="bg-amber-50 rounded-xl p-4 border-2 border-amber-200">
-                  <Label className="text-sm font-medium text-amber-700 mb-2 block">نرخی کڕین (یەک عەدەد)</Label>
+                <div className="bg-amber-50 rounded-xl p-4 border-2 border-amber-200 space-y-2">
+                  <Label className="text-sm font-medium text-amber-700 block">نرخی کڕین (یەک عەدەد)</Label>
                   <div className="relative">
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-600 font-bold">$</span>
                     <Input
                       type="number"
-                      step="0.01"
+                      step="0.0001"
                       min="0"
                       value={formData.purchasePriceUsd}
-                      onChange={(e) => setFormData({ ...formData, purchasePriceUsd: e.target.value })}
+                      onChange={(e) => handleUsdPurchaseChange(e.target.value)}
                       placeholder="0.00"
                       className="pr-8 text-left text-xl font-bold h-14 border-2 border-amber-300 bg-white"
                       dir="ltr"
                     />
                   </div>
-                  <p className="text-xs text-amber-600 mt-2">نرخی کاڵا لە چین</p>
+                  {iqdPurchaseTotal && iqdRate > 0 && (
+                    <div className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1.5 border border-orange-200">
+                      <span className="text-[11px] text-orange-600">کۆی ئارئیمبی</span>
+                      <span className="text-sm font-bold text-orange-700 font-mono">
+                        {Number(iqdPurchaseTotal).toLocaleString("en-US")} ع
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-xs text-amber-600">نرخی کاڵا لە چین</p>
                 </div>
 
                 {/* Selling Price */}
-                <div className="bg-emerald-50 rounded-xl p-4 border-2 border-emerald-200">
-                  <Label className="text-sm font-medium text-emerald-700 mb-2 block">نرخی فرۆشتن (یەک عەدەد)</Label>
+                <div className="bg-emerald-50 rounded-xl p-4 border-2 border-emerald-200 space-y-2">
+                  <Label className="text-sm font-medium text-emerald-700 block">نرخی فرۆشتن (یەک عەدەد)</Label>
                   <div className="relative">
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600 font-bold">$</span>
                     <Input
                       type="number"
-                      step="0.01"
+                      step="0.0001"
                       min="0"
                       value={formData.sellingPriceUsd}
-                      onChange={(e) => setFormData({ ...formData, sellingPriceUsd: e.target.value })}
+                      onChange={(e) => handleUsdSellingChange(e.target.value)}
                       placeholder="0.00"
                       className="pr-8 text-left text-xl font-bold h-14 border-2 border-emerald-300 bg-white"
                       dir="ltr"
                     />
                   </div>
-                  <p className="text-xs text-emerald-600 mt-2">نرخی فرۆشتن بە کڕیار</p>
+                  {iqdSellingTotal && iqdRate > 0 && (
+                    <div className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1.5 border border-orange-200">
+                      <span className="text-[11px] text-orange-600">کۆی ئارئیمبی</span>
+                      <span className="text-sm font-bold text-orange-700 font-mono">
+                        {Number(iqdSellingTotal).toLocaleString("en-US")} ع
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-xs text-emerald-600">نرخی فرۆشتن بە کڕیار</p>
+                </div>
+              </div>
+
+              {/* ── IQD Converter Section ── */}
+              <div className={`rounded-2xl border-2 overflow-hidden ${iqdRate > 0 ? "border-orange-200" : "border-dashed border-gray-300"}`}>
+                {/* Header */}
+                <div className="bg-gradient-to-l from-orange-100 to-amber-50 px-5 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-orange-500 rounded-lg">
+                      <Banknote className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-orange-900 text-sm">گەردانەوەی ئارئیمبی بۆ دۆلار</p>
+                      {iqdRate > 0 ? (
+                        <p className="text-xs text-orange-700">
+                          نرخی بەراورد: ١ دۆلار = {iqdRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} ئارئیمبی
+                        </p>
+                      ) : (
+                        <p className="text-xs text-red-600">تکایە نرخی بەراورد لە سیتینگی سیستەم داخڵ بکە</p>
+                      )}
+                    </div>
+                  </div>
+                  {iqdRate > 0 && (
+                    <div className="flex items-center gap-1 bg-orange-100 border border-orange-300 rounded-lg px-2.5 py-1 text-xs font-mono text-orange-800">
+                      <ArrowLeftRight className="h-3 w-3" />
+                      ${(1 / iqdRate).toFixed(5)} = ١ ع
+                    </div>
+                  )}
+                </div>
+
+                {/* Two IQD inputs side by side */}
+                <div className="bg-white px-5 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Purchase IQD */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold text-amber-700">
+                        کۆی نرخی کڕین بە ئارئیمبی ({qty} دانە)
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">ع</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={iqdPurchaseTotal}
+                          onChange={(e) => handleIqdPurchaseChange(e.target.value)}
+                          placeholder="٠"
+                          className="pe-9 h-12 text-lg font-bold border-2 border-amber-200 focus:border-amber-400 bg-amber-50/30"
+                          dir="ltr"
+                          disabled={!iqdRate}
+                        />
+                      </div>
+                      {parseFloat(iqdPurchaseTotal) > 0 && iqdRate > 0 && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-amber-50 rounded-lg p-2 text-center border border-amber-100">
+                            <p className="text-[10px] text-amber-500">١ دانە</p>
+                            <p className="font-bold text-amber-700 text-sm font-mono">
+                              {(parseFloat(iqdPurchaseTotal) / qty).toLocaleString("en-US", { maximumFractionDigits: 0 })} ع
+                            </p>
+                          </div>
+                          <div className="bg-gradient-to-b from-amber-500 to-orange-500 rounded-lg p-2 text-center">
+                            <p className="text-[10px] text-amber-100">$ یەک دانە</p>
+                            <p className="font-bold text-white text-sm font-mono">
+                              ${(parseFloat(iqdPurchaseTotal) / qty / iqdRate).toFixed(4)}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Selling IQD */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold text-emerald-700">
+                        کۆی نرخی فرۆشتن بە ئارئیمبی ({qty} دانە)
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">ع</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={iqdSellingTotal}
+                          onChange={(e) => handleIqdSellingChange(e.target.value)}
+                          placeholder="٠"
+                          className="pe-9 h-12 text-lg font-bold border-2 border-emerald-200 focus:border-emerald-400 bg-emerald-50/30"
+                          dir="ltr"
+                          disabled={!iqdRate}
+                        />
+                      </div>
+                      {parseFloat(iqdSellingTotal) > 0 && iqdRate > 0 && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-emerald-50 rounded-lg p-2 text-center border border-emerald-100">
+                            <p className="text-[10px] text-emerald-500">١ دانە</p>
+                            <p className="font-bold text-emerald-700 text-sm font-mono">
+                              {(parseFloat(iqdSellingTotal) / qty).toLocaleString("en-US", { maximumFractionDigits: 0 })} ع
+                            </p>
+                          </div>
+                          <div className="bg-gradient-to-b from-emerald-500 to-green-600 rounded-lg p-2 text-center">
+                            <p className="text-[10px] text-green-100">$ یەک دانە</p>
+                            <p className="font-bold text-white text-sm font-mono">
+                              ${(parseFloat(iqdSellingTotal) / qty / iqdRate).toFixed(4)}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 

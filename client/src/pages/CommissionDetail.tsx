@@ -212,6 +212,11 @@ export default function CommissionDetail() {
     });
   };
 
+  // IQD exchange rate for display
+  const { data: iqdRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "IQD" });
+  const iqdRate = parseFloat(iqdRateData?.rate?.toString() || "0");
+  const toIqd = (usd: number) => iqdRate > 0 ? Math.round(usd * iqdRate).toLocaleString("en-US") : null;
+
   const itemPriceUsd = Number(formData.itemPriceUsd) || 0;
   const quantity = Number(formData.quantity) || 1;
   const commissionFeeUsd = Number(formData.commissionFeeUsd) || 0;
@@ -784,13 +789,23 @@ export default function CommissionDetail() {
                   {/* Item Price */}
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
                     <span className="text-sm text-muted-foreground">{t("commission.itemPrice") || "نرخی کاڵا"}</span>
-                    <span className="font-mono font-semibold">${Number(order.itemPriceUsd || 0).toFixed(2)}</span>
+                    <div className="text-right">
+                      <span className="font-mono font-semibold">${Number(order.itemPriceUsd || 0).toFixed(2)}</span>
+                      {toIqd(Number(order.itemPriceUsd || 0)) && (
+                        <p className="text-[11px] text-orange-500 font-mono">≈ {toIqd(Number(order.itemPriceUsd || 0))} ع</p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Commission per item */}
                   <div className="flex justify-between items-center p-3 bg-purple-50 rounded-xl border border-purple-100">
                     <span className="text-sm text-muted-foreground">{t("commission.commissionPerItem") || "عمولەی هەر دانەیەک"}</span>
-                    <span className="font-mono font-semibold text-purple-600">${Number(order.commissionFeeUsd || 0).toFixed(2)}</span>
+                    <div className="text-right">
+                      <span className="font-mono font-semibold text-purple-600">${Number(order.commissionFeeUsd || 0).toFixed(2)}</span>
+                      {toIqd(Number(order.commissionFeeUsd || 0)) && (
+                        <p className="text-[11px] text-orange-500 font-mono">≈ {toIqd(Number(order.commissionFeeUsd || 0))} ع</p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Divider */}

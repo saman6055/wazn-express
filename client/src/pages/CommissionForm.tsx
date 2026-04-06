@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, DollarSign, Package, User, Percent, Info, ImageIcon, Check, ChevronsUpDown } from "lucide-react";
+import { ArrowRight, DollarSign, Package, User, Percent, Info, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, RefreshCw } from "lucide-react";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -25,6 +25,9 @@ export default function CommissionForm() {
   // Image state
   const [productImages, setProductImages] = useState<string[]>([]);
 
+  // IQD converter state
+  const [iqdTotalItem, setIqdTotalItem] = useState("");
+
   // Form state
   const [formData, setFormData] = useState({
     customerId: "",
@@ -40,6 +43,10 @@ export default function CommissionForm() {
     itemPriceUsd: "",
     commissionFeeUsd: "",
   });
+
+  // IQD exchange rate
+  const { data: iqdRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "IQD" });
+  const iqdRate = parseFloat(iqdRateData?.rate?.toString() || "0");
 
   // Fetch customers and suppliers
   const { data: customers } = trpc.customers.list.useQuery();
@@ -69,6 +76,42 @@ export default function CommissionForm() {
       toast.error(error.message);
     },
   });
+
+  // IQD ↔ USD bidirectional handlers
+  const handleIqdTotalChange = (val: string) => {
+    setIqdTotalItem(val);
+    const iqdVal = parseFloat(val) || 0;
+    const qty = parseInt(formData.quantity) || 1;
+    if (iqdVal > 0 && iqdRate > 0) {
+      const perUnitUsd = iqdVal / qty / iqdRate;
+      setFormData(prev => ({ ...prev, itemPriceUsd: perUnitUsd.toFixed(4) }));
+    } else if (!val) {
+      setFormData(prev => ({ ...prev, itemPriceUsd: "" }));
+    }
+  };
+
+  const handleUsdItemChange = (val: string) => {
+    setFormData(prev => ({ ...prev, itemPriceUsd: val }));
+    const usdVal = parseFloat(val) || 0;
+    const qty = parseInt(formData.quantity) || 1;
+    if (usdVal > 0 && iqdRate > 0) {
+      setIqdTotalItem((usdVal * qty * iqdRate).toFixed(0));
+    } else {
+      setIqdTotalItem("");
+    }
+  };
+
+  const handleQuantityChange = (val: string) => {
+    const qty = parseInt(val) || 1;
+    // Re-sync IQD when quantity changes
+    if (iqdTotalItem && iqdRate > 0) {
+      const iqdVal = parseFloat(iqdTotalItem) || 0;
+      const perUnitUsd = iqdVal / qty / iqdRate;
+      setFormData(prev => ({ ...prev, quantity: val, itemPriceUsd: perUnitUsd.toFixed(4) }));
+    } else {
+      setFormData(prev => ({ ...prev, quantity: val }));
+    }
+  };
 
   // Calculate totals
   const itemPrice = parseFloat(formData.itemPriceUsd) || 0;
@@ -326,20 +369,22 @@ export default function CommissionForm() {
               </CardTitle>
               <CardDescription>نرخی کاڵا و عمولەی کۆمپانیا</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
+
+              {/* USD Price Row */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>نرخی کاڵا (یەکە) $ *</Label>
                   <Input
                     type="number"
-                    step="0.01"
+                    step="0.0001"
                     min="0"
                     value={formData.itemPriceUsd}
-                    onChange={(e) => setFormData({ ...formData, itemPriceUsd: e.target.value })}
+                    onChange={(e) => handleUsdItemChange(e.target.value)}
                     placeholder="0.00"
                     dir="ltr"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">نرخی کاڵاکە</p>
+                  <p className="text-xs text-muted-foreground mt-1">نرخی هەر دانەیەک</p>
                 </div>
                 <div>
                   <Label>عموڵەی کڕین $ *</Label>
@@ -360,11 +405,87 @@ export default function CommissionForm() {
                     type="number"
                     min="1"
                     value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                    onChange={(e) => handleQuantityChange(e.target.value)}
                     placeholder="1"
                     dir="ltr"
                   />
                   <p className="text-xs text-muted-foreground mt-1">ژمارەی کاڵا</p>
+                </div>
+              </div>
+
+              {/* ── IQD Converter Section ── */}
+              <div className={`rounded-2xl border-2 overflow-hidden transition-all ${iqdRate > 0 ? "border-orange-200" : "border-dashed border-gray-300"}`}>
+                {/* Header */}
+                <div className="bg-gradient-to-l from-orange-100 to-amber-50 px-5 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-orange-500 rounded-lg">
+                      <Banknote className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-orange-900 text-sm">گەردانەوەی ئارئیمبی بۆ دۆلار</p>
+                      {iqdRate > 0 ? (
+                        <p className="text-xs text-orange-700">
+                          نرخی بەراورد: ١ دۆلار = {iqdRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} ئارئیمبی
+                        </p>
+                      ) : (
+                        <p className="text-xs text-red-600">تکایە نرخی بەراورد لە سیتینگی سیستەم داخڵ بکە</p>
+                      )}
+                    </div>
+                  </div>
+                  {iqdRate > 0 && (
+                    <div className="flex items-center gap-1 bg-orange-100 border border-orange-300 rounded-lg px-2.5 py-1 text-xs font-mono text-orange-800">
+                      <ArrowLeftRight className="h-3 w-3" />
+                      ${(1 / iqdRate).toFixed(5)} = ١ ع
+                    </div>
+                  )}
+                </div>
+
+                {/* Body */}
+                <div className="bg-white px-5 py-4 space-y-4">
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-700">
+                      کۆی نرخی کاڵا بە ئارئیمبی ({quantity} دانە)
+                    </Label>
+                    <div className="relative mt-1.5">
+                      <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold text-base select-none">ع</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={iqdTotalItem}
+                        onChange={(e) => handleIqdTotalChange(e.target.value)}
+                        placeholder="٠"
+                        className="pe-9 h-13 text-xl font-bold border-2 border-orange-200 focus:border-orange-400 bg-orange-50/40"
+                        dir="ltr"
+                        disabled={!iqdRate}
+                      />
+                    </div>
+                  </div>
+
+                  {parseFloat(iqdTotalItem) > 0 && iqdRate > 0 && (
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-orange-50 rounded-xl p-3 text-center border border-orange-100">
+                        <p className="text-[10px] text-orange-500 uppercase tracking-wide mb-1">کۆی ئارئیمبی</p>
+                        <p className="font-bold text-orange-800 font-mono text-base">
+                          {Number(iqdTotalItem).toLocaleString("en-US")}
+                        </p>
+                        <p className="text-[10px] text-orange-400 mt-0.5">{quantity} دانە</p>
+                      </div>
+                      <div className="bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
+                        <p className="text-[10px] text-amber-500 uppercase tracking-wide mb-1">١ دانە = ئارئیمبی</p>
+                        <p className="font-bold text-amber-700 font-mono text-base">
+                          {(parseFloat(iqdTotalItem) / quantity).toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                        </p>
+                        <p className="text-[10px] text-amber-400 mt-0.5">ع</p>
+                      </div>
+                      <div className="bg-gradient-to-b from-emerald-500 to-green-600 rounded-xl p-3 text-center shadow-sm">
+                        <p className="text-[10px] text-green-100 uppercase tracking-wide mb-1">هەمارداری دۆلار</p>
+                        <p className="font-bold text-white font-mono text-lg">
+                          ${(parseFloat(iqdTotalItem) / quantity / iqdRate).toFixed(4)}
+                        </p>
+                        <p className="text-[10px] text-green-200 mt-0.5">یەک دانە</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -374,30 +495,44 @@ export default function CommissionForm() {
                 <div>
                   <p className="text-sm font-medium text-amber-800">کۆستی گواستنەوە</p>
                   <p className="text-sm text-amber-700">
-                    کۆستی گواستنەوە دواتر کاتێک پاکەت چوە ناو باچ حساب دەکرێت بەپێی کێش و نرخی گواستنەوە.
+                    کۆستی گواستنەوە دواتر کاتێک پاکەت چوە ناو باچ حساب دەکرێت.
                     <br />
-                    <strong>تێبینی:</strong> کۆستی گواستنەوە لەسەر کڕیار دەچێت (نرخی فرۆشتن).
+                    <strong>تێبینی:</strong> کۆستی گواستنەوە لەسەر کڕیار دەچێت.
                   </p>
                 </div>
               </div>
 
               {/* Summary */}
-              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+              <div className="bg-gray-50 rounded-xl p-4 space-y-2 border">
                 <div className="flex justify-between text-sm">
-                  <span>نرخی کاڵا (یەکە):</span>
-                  <span className="font-medium">${itemPrice.toFixed(2)}</span>
+                  <span className="text-muted-foreground">نرخی کاڵا (یەکە):</span>
+                  <div className="text-right">
+                    <span className="font-medium">${itemPrice.toFixed(4)}</span>
+                    {iqdTotalItem && iqdRate > 0 && (
+                      <p className="text-[10px] text-orange-500 font-mono">
+                        ≈ {(parseFloat(iqdTotalItem) / quantity).toLocaleString("en-US", { maximumFractionDigits: 0 })} ع
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>عمولەی کڕین:</span>
+                  <span className="text-muted-foreground">عمولەی کڕین:</span>
                   <span className="font-medium text-amber-600">${commissionFee.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>ژمارە:</span>
+                  <span className="text-muted-foreground">ژمارە:</span>
                   <span className="font-medium">{quantity}</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between">
                   <span className="font-semibold">کۆی پارەدانی پێشوەخت:</span>
-                  <span className="font-bold text-lg text-amber-600">${totalPrepaid.toFixed(2)}</span>
+                  <div className="text-right">
+                    <span className="font-bold text-lg text-amber-600">${totalPrepaid.toFixed(2)}</span>
+                    {iqdTotalItem && iqdRate > 0 && (
+                      <p className="text-xs text-orange-500 font-mono">
+                        ≈ {(totalPrepaid * iqdRate).toLocaleString("en-US", { maximumFractionDigits: 0 })} ع
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between text-sm text-green-600">
                   <span>قازانج (عمولە):</span>
