@@ -392,7 +392,7 @@ export default function CommissionForm() {
                     dir="ltr"
                   />
                   {iqdPerUnit && iqdRate > 0 && (
-                    <p className="text-[11px] text-orange-500 font-mono mt-1">≈ {Number(iqdPerUnit).toLocaleString("en-US")} ع</p>
+                    <p className="text-[11px] text-orange-500 font-mono mt-1">≈ {Number(iqdPerUnit).toLocaleString("en-US")} IQD</p>
                   )}
                   <p className="text-xs text-muted-foreground mt-0.5">نرخی هەر دانەیەک</p>
                 </div>
@@ -445,7 +445,7 @@ export default function CommissionForm() {
                   {iqdRate > 0 && (
                     <div className="flex items-center gap-1 bg-orange-100 border border-orange-300 rounded-lg px-2.5 py-1 text-xs font-mono text-orange-800">
                       <ArrowLeftRight className="h-3 w-3" />
-                      ${(1 / iqdRate).toFixed(5)} = ١ ع
+                      ${(1 / iqdRate).toFixed(5)} = ١ IQD
                     </div>
                   )}
                 </div>
@@ -457,7 +457,7 @@ export default function CommissionForm() {
                     <div className="space-y-1.5">
                       <Label className="text-sm font-semibold text-amber-700">نرخی ١ دانە بە ئارئیمبی</Label>
                       <div className="relative">
-                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">ع</span>
+                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">IQD</span>
                         <Input
                           type="number"
                           min="0"
@@ -466,7 +466,7 @@ export default function CommissionForm() {
                           placeholder="٠"
                           className="pe-9 h-12 text-lg font-bold border-2 border-amber-200 focus:border-orange-400 bg-amber-50/40"
                           dir="ltr"
-                          disabled={!iqdRate}
+                          
                         />
                       </div>
                       <p className="text-xs text-amber-500">نرخی یەک دانەی کاڵا</p>
@@ -476,7 +476,7 @@ export default function CommissionForm() {
                     <div className="space-y-1.5">
                       <Label className="text-sm font-semibold text-orange-700">کۆی نرخ بە ئارئیمبی ({quantity} دانە)</Label>
                       <div className="relative">
-                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">ع</span>
+                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">IQD</span>
                         <Input
                           type="number"
                           min="0"
@@ -485,7 +485,7 @@ export default function CommissionForm() {
                           placeholder="٠"
                           className="pe-9 h-12 text-lg font-bold border-2 border-orange-200 focus:border-orange-400 bg-orange-50/40"
                           dir="ltr"
-                          disabled={!iqdRate}
+                          
                         />
                       </div>
                       <p className="text-xs text-orange-500">کۆی گشتی بۆ هەموو دانەکان</p>
@@ -493,15 +493,15 @@ export default function CommissionForm() {
                   </div>
 
                   {/* Result */}
-                  {(parseFloat(iqdPerUnit) > 0 || parseFloat(iqdTotal) > 0) && iqdRate > 0 && (
+                  {(parseFloat(iqdPerUnit) > 0 || parseFloat(iqdTotal) > 0) && (
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
                         <p className="text-[10px] text-amber-500 uppercase tracking-wide mb-1">١ دانە ئارئیمبی</p>
-                        <p className="font-bold text-amber-700 font-mono">{Number(iqdPerUnit || 0).toLocaleString("en-US")} ع</p>
+                        <p className="font-bold text-amber-700 font-mono">{Number(iqdPerUnit || 0).toLocaleString("en-US")} IQD</p>
                       </div>
                       <div className="bg-orange-50 rounded-xl p-3 text-center border border-orange-100">
                         <p className="text-[10px] text-orange-500 uppercase tracking-wide mb-1">کۆی {quantity} دانە</p>
-                        <p className="font-bold text-orange-700 font-mono">{Number(iqdTotal || 0).toLocaleString("en-US")} ع</p>
+                        <p className="font-bold text-orange-700 font-mono">{Number(iqdTotal || 0).toLocaleString("en-US")} IQD</p>
                       </div>
                       <div className="bg-gradient-to-b from-amber-500 to-orange-500 rounded-xl p-3 text-center shadow-sm">
                         <p className="text-[10px] text-amber-100 uppercase tracking-wide mb-1">نرخی $ یەک دانە</p>
@@ -533,7 +533,7 @@ export default function CommissionForm() {
                     <span className="font-medium">${itemPrice.toFixed(4)}</span>
                     {iqdPerUnit && iqdRate > 0 && (
                       <p className="text-[10px] text-orange-500 font-mono">
-                        ≈ {Number(iqdPerUnit).toLocaleString("en-US")} ع
+                        ≈ {Number(iqdPerUnit).toLocaleString("en-US")} IQD
                       </p>
                     )}
                   </div>
@@ -552,7 +552,7 @@ export default function CommissionForm() {
                     <span className="font-bold text-lg text-amber-600">${totalPrepaid.toFixed(2)}</span>
                     {iqdTotal && iqdRate > 0 && (
                       <p className="text-xs text-orange-500 font-mono">
-                        ≈ {(totalPrepaid * iqdRate).toLocaleString("en-US", { maximumFractionDigits: 0 })} ع
+                        ≈ {(totalPrepaid * iqdRate).toLocaleString("en-US", { maximumFractionDigits: 0 })} IQD
                       </p>
                     )}
                   </div>
