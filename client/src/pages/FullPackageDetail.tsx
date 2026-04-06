@@ -370,10 +370,10 @@ export default function FullPackageDetail() {
     );
   }
 
-  // IQD exchange rate for display
-  const { data: iqdRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "IQD" });
-  const iqdRate = parseFloat(iqdRateData?.rate?.toString() || "0");
-  const toIqd = (usd: number) => iqdRate > 0 ? Math.round(usd * iqdRate).toLocaleString("en-US") : null;
+  // ¥ exchange rate for display
+  const { data: rmbRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "RMB" });
+  const rmbRate = parseFloat(rmbRateData?.rate?.toString() || "0");
+  const toRmb = (usd: number) => rmbRate > 0 ? Math.round(usd * rmbRate).toLocaleString("en-US") : null;
 
   // Calculate totals
   const totalPurchase = (Number(order.purchasePriceUsd) || 0) * (order.quantity || 1);
@@ -930,8 +930,8 @@ export default function FullPackageDetail() {
                     <span className="text-sm text-muted-foreground">{t("fullPackage.purchasePrice")}</span>
                     <div className="text-right">
                       <span className="font-mono font-semibold">${Number(order.purchasePriceUsd || 0).toFixed(2)}</span>
-                      {toIqd(Number(order.purchasePriceUsd || 0)) && (
-                        <p className="text-[11px] text-orange-500 font-mono">≈ {toIqd(Number(order.purchasePriceUsd || 0))} ع</p>
+                      {toRmb(Number(order.purchasePriceUsd || 0)) && (
+                        <p className="text-[11px] text-orange-500 font-mono">≈ {toRmb(Number(order.purchasePriceUsd || 0))} ¥</p>
                       )}
                     </div>
                   </div>
@@ -941,8 +941,8 @@ export default function FullPackageDetail() {
                     <span className="text-sm text-muted-foreground">{t("fullPackage.sellingPrice")}</span>
                     <div className="text-right">
                       <span className="font-mono font-semibold text-emerald-600">${Number(order.sellingPriceUsd || 0).toFixed(2)}</span>
-                      {toIqd(Number(order.sellingPriceUsd || 0)) && (
-                        <p className="text-[11px] text-orange-500 font-mono">≈ {toIqd(Number(order.sellingPriceUsd || 0))} ع</p>
+                      {toRmb(Number(order.sellingPriceUsd || 0)) && (
+                        <p className="text-[11px] text-orange-500 font-mono">≈ {toRmb(Number(order.sellingPriceUsd || 0))} ¥</p>
                       )}
                     </div>
                   </div>

@@ -25,9 +25,9 @@ export default function CommissionForm() {
   // Image state
   const [productImages, setProductImages] = useState<string[]>([]);
 
-  // IQD converter state
-  const [iqdPerUnit, setIqdPerUnit] = useState("");
-  const [iqdTotal, setIqdTotal] = useState("");
+  // ¥ converter state
+  const [rmbPerUnit, setIqdPerUnit] = useState("");
+  const [rmbTotal, setIqdTotal] = useState("");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -45,9 +45,9 @@ export default function CommissionForm() {
     commissionFeeUsd: "",
   });
 
-  // IQD exchange rate
-  const { data: iqdRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "IQD" });
-  const iqdRate = parseFloat(iqdRateData?.rate?.toString() || "0");
+  // ¥ exchange rate
+  const { data: rmbRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "RMB" });
+  const rmbRate = parseFloat(rmbRateData?.rate?.toString() || "0");
 
   // Fetch customers and suppliers
   const { data: customers } = trpc.customers.list.useQuery();
@@ -78,28 +78,28 @@ export default function CommissionForm() {
     },
   });
 
-  // 3-way sync: iqdPerUnit ↔ iqdTotal ↔ itemPriceUsd
+  // 3-way sync: rmbPerUnit ↔ rmbTotal ↔ itemPriceUsd
   const qty = parseInt(formData.quantity) || 1;
 
   const syncFromPerUnit = (perUnit: string, q = qty) => {
     const v = parseFloat(perUnit) || 0;
     setIqdPerUnit(perUnit);
     setIqdTotal(v > 0 ? (v * q).toFixed(0) : "");
-    setFormData(prev => ({ ...prev, itemPriceUsd: v > 0 && iqdRate > 0 ? (v / iqdRate).toFixed(4) : "" }));
+    setFormData(prev => ({ ...prev, itemPriceUsd: v > 0 && rmbRate > 0 ? (v / rmbRate).toFixed(4) : "" }));
   };
 
   const syncFromTotal = (total: string, q = qty) => {
     const v = parseFloat(total) || 0;
     setIqdTotal(total);
     setIqdPerUnit(v > 0 && q > 0 ? (v / q).toFixed(0) : "");
-    setFormData(prev => ({ ...prev, itemPriceUsd: v > 0 && q > 0 && iqdRate > 0 ? (v / q / iqdRate).toFixed(4) : "" }));
+    setFormData(prev => ({ ...prev, itemPriceUsd: v > 0 && q > 0 && rmbRate > 0 ? (v / q / rmbRate).toFixed(4) : "" }));
   };
 
   const syncFromUsd = (usd: string, q = qty) => {
     setFormData(prev => ({ ...prev, itemPriceUsd: usd }));
     const v = parseFloat(usd) || 0;
-    if (v > 0 && iqdRate > 0) {
-      const perUnit = v * iqdRate;
+    if (v > 0 && rmbRate > 0) {
+      const perUnit = v * rmbRate;
       setIqdPerUnit(perUnit.toFixed(0));
       setIqdTotal((perUnit * q).toFixed(0));
     } else {
@@ -109,11 +109,11 @@ export default function CommissionForm() {
 
   const handleQuantityChange = (val: string) => {
     const q = parseInt(val) || 1;
-    if (iqdPerUnit) {
-      syncFromPerUnit(iqdPerUnit, q);
+    if (rmbPerUnit) {
+      syncFromPerUnit(rmbPerUnit, q);
       setFormData(prev => ({ ...prev, quantity: val }));
-    } else if (iqdTotal) {
-      syncFromTotal(iqdTotal, q);
+    } else if (rmbTotal) {
+      syncFromTotal(rmbTotal, q);
       setFormData(prev => ({ ...prev, quantity: val }));
     } else {
       setFormData(prev => ({ ...prev, quantity: val }));
@@ -391,8 +391,8 @@ export default function CommissionForm() {
                     placeholder="0.00"
                     dir="ltr"
                   />
-                  {iqdPerUnit && iqdRate > 0 && (
-                    <p className="text-[11px] text-orange-500 font-mono mt-1">≈ {Number(iqdPerUnit).toLocaleString("en-US")} IQD</p>
+                  {rmbPerUnit && rmbRate > 0 && (
+                    <p className="text-[11px] text-orange-500 font-mono mt-1">≈ {Number(rmbPerUnit).toLocaleString("en-US")} ¥</p>
                   )}
                   <p className="text-xs text-muted-foreground mt-0.5">نرخی هەر دانەیەک</p>
                 </div>
@@ -423,8 +423,8 @@ export default function CommissionForm() {
                 </div>
               </div>
 
-              {/* ── IQD Converter Section ── */}
-              <div className={`rounded-2xl border-2 overflow-hidden ${iqdRate > 0 ? "border-orange-200" : "border-dashed border-gray-300"}`}>
+              {/* ── ¥ Converter Section ── */}
+              <div className={`rounded-2xl border-2 overflow-hidden ${rmbRate > 0 ? "border-orange-200" : "border-dashed border-gray-300"}`}>
                 {/* Header */}
                 <div className="bg-gradient-to-l from-orange-100 to-amber-50 px-5 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -432,36 +432,36 @@ export default function CommissionForm() {
                       <Banknote className="h-4 w-4 text-white" />
                     </div>
                     <div>
-                      <p className="font-bold text-orange-900 text-sm">نرخی کاڵا بە ئارئیمبی</p>
-                      {iqdRate > 0 ? (
+                      <p className="font-bold text-orange-900 text-sm">نرخی کاڵا بە یوانی چینی</p>
+                      {rmbRate > 0 ? (
                         <p className="text-xs text-orange-700">
-                          نرخی بەراورد: ١ دۆلار = {iqdRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} ئارئیمبی
+                          نرخی بەراورد: ١ دۆلار = {rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} یوانی چینی
                         </p>
                       ) : (
                         <p className="text-xs text-red-600">تکایە نرخی بەراورد لە سیتینگی سیستەم داخڵ بکە</p>
                       )}
                     </div>
                   </div>
-                  {iqdRate > 0 && (
+                  {rmbRate > 0 && (
                     <div className="flex items-center gap-1 bg-orange-100 border border-orange-300 rounded-lg px-2.5 py-1 text-xs font-mono text-orange-800">
                       <ArrowLeftRight className="h-3 w-3" />
-                      ${(1 / iqdRate).toFixed(5)} = ١ IQD
+                      ${(1 / rmbRate).toFixed(5)} = ١ ¥
                     </div>
                   )}
                 </div>
 
-                {/* Two IQD inputs + result */}
+                {/* Two ¥ inputs + result */}
                 <div className="bg-white px-5 py-4 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Per-unit IQD */}
+                    {/* Per-unit ¥ */}
                     <div className="space-y-1.5">
-                      <Label className="text-sm font-semibold text-amber-700">نرخی ١ دانە بە ئارئیمبی</Label>
+                      <Label className="text-sm font-semibold text-amber-700">نرخی ١ دانە بە یوانی چینی</Label>
                       <div className="relative">
-                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">IQD</span>
+                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
                         <Input
                           type="number"
                           min="0"
-                          value={iqdPerUnit}
+                          value={rmbPerUnit}
                           onChange={(e) => syncFromPerUnit(e.target.value)}
                           placeholder="٠"
                           className="pe-9 h-12 text-lg font-bold border-2 border-amber-200 focus:border-orange-400 bg-amber-50/40"
@@ -472,15 +472,15 @@ export default function CommissionForm() {
                       <p className="text-xs text-amber-500">نرخی یەک دانەی کاڵا</p>
                     </div>
 
-                    {/* Total IQD */}
+                    {/* Total ¥ */}
                     <div className="space-y-1.5">
-                      <Label className="text-sm font-semibold text-orange-700">کۆی نرخ بە ئارئیمبی ({quantity} دانە)</Label>
+                      <Label className="text-sm font-semibold text-orange-700">کۆی نرخ بە یوانی چینی ({quantity} دانە)</Label>
                       <div className="relative">
-                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">IQD</span>
+                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
                         <Input
                           type="number"
                           min="0"
-                          value={iqdTotal}
+                          value={rmbTotal}
                           onChange={(e) => syncFromTotal(e.target.value)}
                           placeholder="٠"
                           className="pe-9 h-12 text-lg font-bold border-2 border-orange-200 focus:border-orange-400 bg-orange-50/40"
@@ -493,15 +493,15 @@ export default function CommissionForm() {
                   </div>
 
                   {/* Result */}
-                  {(parseFloat(iqdPerUnit) > 0 || parseFloat(iqdTotal) > 0) && (
+                  {(parseFloat(rmbPerUnit) > 0 || parseFloat(rmbTotal) > 0) && (
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
-                        <p className="text-[10px] text-amber-500 uppercase tracking-wide mb-1">١ دانە ئارئیمبی</p>
-                        <p className="font-bold text-amber-700 font-mono">{Number(iqdPerUnit || 0).toLocaleString("en-US")} IQD</p>
+                        <p className="text-[10px] text-amber-500 uppercase tracking-wide mb-1">١ دانە یوانی چینی</p>
+                        <p className="font-bold text-amber-700 font-mono">{Number(rmbPerUnit || 0).toLocaleString("en-US")} ¥</p>
                       </div>
                       <div className="bg-orange-50 rounded-xl p-3 text-center border border-orange-100">
                         <p className="text-[10px] text-orange-500 uppercase tracking-wide mb-1">کۆی {quantity} دانە</p>
-                        <p className="font-bold text-orange-700 font-mono">{Number(iqdTotal || 0).toLocaleString("en-US")} IQD</p>
+                        <p className="font-bold text-orange-700 font-mono">{Number(rmbTotal || 0).toLocaleString("en-US")} ¥</p>
                       </div>
                       <div className="bg-gradient-to-b from-amber-500 to-orange-500 rounded-xl p-3 text-center shadow-sm">
                         <p className="text-[10px] text-amber-100 uppercase tracking-wide mb-1">نرخی $ یەک دانە</p>
@@ -531,9 +531,9 @@ export default function CommissionForm() {
                   <span className="text-muted-foreground">نرخی کاڵا (یەکە):</span>
                   <div className="text-right">
                     <span className="font-medium">${itemPrice.toFixed(4)}</span>
-                    {iqdPerUnit && iqdRate > 0 && (
+                    {rmbPerUnit && rmbRate > 0 && (
                       <p className="text-[10px] text-orange-500 font-mono">
-                        ≈ {Number(iqdPerUnit).toLocaleString("en-US")} IQD
+                        ≈ {Number(rmbPerUnit).toLocaleString("en-US")} ¥
                       </p>
                     )}
                   </div>
@@ -550,9 +550,9 @@ export default function CommissionForm() {
                   <span className="font-semibold">کۆی پارەدانی پێشوەخت:</span>
                   <div className="text-right">
                     <span className="font-bold text-lg text-amber-600">${totalPrepaid.toFixed(2)}</span>
-                    {iqdTotal && iqdRate > 0 && (
+                    {rmbTotal && rmbRate > 0 && (
                       <p className="text-xs text-orange-500 font-mono">
-                        ≈ {(totalPrepaid * iqdRate).toLocaleString("en-US", { maximumFractionDigits: 0 })} IQD
+                        ≈ {(totalPrepaid * rmbRate).toLocaleString("en-US", { maximumFractionDigits: 0 })} ¥
                       </p>
                     )}
                   </div>
