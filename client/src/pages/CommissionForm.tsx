@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, DollarSign, Package, User, Percent, Info, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, RefreshCw, Plane, Ship, Zap, Ruler, Scale, Calculator } from "lucide-react";
+import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator } from "lucide-react";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -43,6 +44,7 @@ export default function CommissionForm() {
     // Commission pricing
     itemPriceUsd: "",
     commissionFeeUsd: "",
+    notes: "",
     // Shipping
     shippingType: "" as "" | "air_regular" | "air_irregular" | "sea",
     weightKg: "",
@@ -182,6 +184,7 @@ export default function CommissionForm() {
       itemPriceUsd: formData.itemPriceUsd,
       commissionFeeUsd: formData.commissionFeeUsd,
       totalPrepaidUsd: totalPrepaid.toFixed(2),
+      notes: formData.notes || undefined,
       shippingType: formData.shippingType || undefined,
       weightKg: formData.weightKg || undefined,
       dimensionLength: formData.dimensionLength || undefined,
@@ -192,24 +195,21 @@ export default function CommissionForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-yellow-100 p-6">
-      <div className="max-w-2xl mx-auto">
+    <DashboardLayout>
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => setLocation("/commission")}
-            className="mb-4"
-          >
-            <ArrowRight className="h-4 w-4 ms-2" />
-            گەڕانەوە
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={() => setLocation("/commission")}>
+            <ArrowRight className="h-4 w-4" />
           </Button>
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500 text-white mb-4">
-              <Percent className="h-8 w-8" />
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <Percent className="h-6 w-6 text-amber-600" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">پەتی عمولەی نوێ</h1>
-            <p className="text-gray-600 mt-2">کڕیار نرخ دەزانێت، کۆمپانیا تەنها عمولە وەردەگرێت</p>
+            <div>
+              <h1 className="text-2xl font-bold">پەتی عمولەی نوێ</h1>
+              <p className="text-muted-foreground">کڕیار نرخ دەزانێت، کۆمپانیا تەنها عمولە وەردەگرێت</p>
+            </div>
           </div>
         </div>
 
@@ -224,81 +224,82 @@ export default function CommissionForm() {
               <CardDescription>کڕیارێک هەڵبژێرە بۆ ئەم پەتە</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label>کڕیار *</Label>
-                <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={customerOpen}
-                      className="w-full justify-between"
-                    >
-                      {selectedCustomer
-                        ? `${selectedCustomer.fullName || selectedCustomer.fullNameKurdish} (${selectedCustomer.customerCode})`
-                        : "کڕیارێک هەڵبژێرە..."}
-                      <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
-                    <Command>
-                      <CommandInput
-                        placeholder="گەڕان بە ناو یان کۆد..."
-                        value={customerSearch}
-                        onValueChange={setCustomerSearch}
-                      />
-                      <CommandList>
-                        <CommandEmpty>کڕیار نەدۆزرایەوە</CommandEmpty>
-                        <CommandGroup>
-                          {filteredCustomers.map((customer) => (
-                            <CommandItem
-                              key={customer.id}
-                              value={`${customer.fullName || customer.fullNameKurdish} ${customer.customerCode}`}
-                              onSelect={() => {
-                                setFormData({ ...formData, customerId: customer.id.toString() });
-                                setCustomerOpen(false);
-                                setCustomerSearch("");
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "me-2 h-4 w-4",
-                                  formData.customerId === customer.id.toString()
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                )}
-                              />
-                              <div className="flex flex-col">
-                                <span>{customer.fullName || customer.fullNameKurdish}</span>
-                                <span className="text-xs text-muted-foreground">{customer.customerCode}</span>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div>
-                <Label>فرۆشیار (ئارەزوومەندانە)</Label>
-                <Select
-                  value={formData.supplierId}
-                  onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="فرۆشیارێک هەڵبژێرە" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">بێ فرۆشیار</SelectItem>
-                    {suppliers?.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id.toString()}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>کڕیار *</Label>
+                  <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={customerOpen}
+                        className="w-full justify-between"
+                      >
+                        {selectedCustomer
+                          ? `${selectedCustomer.fullName || selectedCustomer.fullNameKurdish} (${selectedCustomer.customerCode})`
+                          : "کڕیارێک هەڵبژێرە..."}
+                        <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
+                      <Command>
+                        <CommandInput
+                          placeholder="گەڕان بە ناو، کۆد یان مۆبایل..."
+                          value={customerSearch}
+                          onValueChange={setCustomerSearch}
+                        />
+                        <CommandList>
+                          <CommandEmpty>کڕیار نەدۆزرایەوە</CommandEmpty>
+                          <CommandGroup>
+                            {filteredCustomers.map((customer) => (
+                              <CommandItem
+                                key={customer.id}
+                                value={`${customer.fullName || customer.fullNameKurdish} ${customer.customerCode}`}
+                                onSelect={() => {
+                                  setFormData({ ...formData, customerId: customer.id.toString() });
+                                  setCustomerOpen(false);
+                                  setCustomerSearch("");
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "me-2 h-4 w-4",
+                                    formData.customerId === customer.id.toString()
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                <div className="flex flex-col">
+                                  <span>{customer.fullName || customer.fullNameKurdish}</span>
+                                  <span className="text-xs text-muted-foreground">{customer.customerCode}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label>فرۆشیار</Label>
+                  <Select
+                    value={formData.supplierId}
+                    onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="فرۆشیارێک هەڵبژێرە (ئارەزوومەندانە)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">بێ فرۆشیار</SelectItem>
+                      {suppliers?.map((supplier) => (
+                        <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                          {supplier.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -315,7 +316,7 @@ export default function CommissionForm() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-2">
                   <Label>ناوی کاڵا *</Label>
                   <Input
                     value={formData.productName}
@@ -323,7 +324,7 @@ export default function CommissionForm() {
                     placeholder="ناوی کاڵا"
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label>ئۆردەر نەمبەر</Label>
                   <Input
                     value={formData.orderNumber}
@@ -334,8 +335,11 @@ export default function CommissionForm() {
                 </div>
               </div>
 
-              <div>
-                <Label>لینکی کاڵا</Label>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <LinkIcon className="h-4 w-4" />
+                  لینکی کاڵا
+                </Label>
                 <Input
                   value={formData.productLink}
                   onChange={(e) => setFormData({ ...formData, productLink: e.target.value })}
@@ -358,26 +362,26 @@ export default function CommissionForm() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label>ڕەنگ</Label>
                   <Input
                     value={formData.color}
                     onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    placeholder="ڕەنگ"
+                    placeholder="ڕەنگی کاڵا"
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label>قەبارە</Label>
                   <Input
                     value={formData.size}
                     onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                    placeholder="قەبارە"
+                    placeholder="قەبارەی کاڵا"
                   />
                 </div>
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label>وەسف</Label>
                 <Textarea
                   value={formData.productDescription}
@@ -390,58 +394,93 @@ export default function CommissionForm() {
           </Card>
 
           {/* Pricing */}
-          <Card>
-            <CardHeader>
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-l from-amber-50 to-yellow-50 border-b">
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-amber-600" />
-                نرخەکان
+                نرخەکان و عەدەد
               </CardTitle>
-              <CardDescription>نرخی کاڵا و عمولەی کۆمپانیا</CardDescription>
+              <CardDescription>نرخی کاڵا، عمولەی کۆمپانیا و ژمارە داخڵ بکە</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="p-6 space-y-6">
 
-              {/* USD Price Row */}
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label>نرخی کاڵا (یەکە) $ *</Label>
-                  <Input
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={formData.itemPriceUsd}
-                    onChange={(e) => syncFromUsd(e.target.value)}
-                    placeholder="0.00"
-                    dir="ltr"
-                  />
+              {/* Quantity + Item Price + Commission in styled blocks */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Quantity */}
+                <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
+                  <Label className="text-sm font-medium text-slate-600 mb-2 block">عەدەد *</Label>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 rounded-full"
+                      onClick={() => handleQuantityChange(Math.max(1, parseInt(formData.quantity) - 1).toString())}
+                    >
+                      -
+                    </Button>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={formData.quantity}
+                      onChange={(e) => handleQuantityChange(e.target.value)}
+                      className="text-center text-2xl font-bold h-14 border-2"
+                      dir="ltr"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 rounded-full"
+                      onClick={() => handleQuantityChange((parseInt(formData.quantity) + 1).toString())}
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Item Price */}
+                <div className="bg-amber-50 rounded-xl p-4 border-2 border-amber-200 space-y-2">
+                  <Label className="text-sm font-medium text-amber-700 block">نرخی کاڵا (یەک دانە) *</Label>
+                  <div className="relative">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-600 font-bold">$</span>
+                    <Input
+                      type="number"
+                      step="0.0001"
+                      min="0"
+                      value={formData.itemPriceUsd}
+                      onChange={(e) => syncFromUsd(e.target.value)}
+                      placeholder="0.00"
+                      className="pr-8 text-left text-xl font-bold h-14 border-2 border-amber-300 bg-white"
+                      dir="ltr"
+                    />
+                  </div>
                   {rmbPerUnit && rmbRate > 0 && (
-                    <p className="text-[11px] text-orange-500 font-mono mt-1">≈ {Number(rmbPerUnit).toLocaleString("en-US")} ¥</p>
+                    <div className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1.5 border border-orange-200">
+                      <span className="text-[11px] text-orange-600">١ دانە بە یوانی چینی</span>
+                      <span className="text-sm font-bold text-orange-700 font-mono">{Number(rmbPerUnit).toLocaleString("en-US")} ¥</span>
+                    </div>
                   )}
-                  <p className="text-xs text-muted-foreground mt-0.5">نرخی هەر دانەیەک</p>
+                  <p className="text-xs text-amber-600">نرخی کاڵا بۆ کڕیار</p>
                 </div>
-                <div>
-                  <Label>عموڵەی کڕین $ *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.commissionFeeUsd}
-                    onChange={(e) => setFormData({ ...formData, commissionFeeUsd: e.target.value })}
-                    placeholder="0.00"
-                    dir="ltr"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">عموڵەی کۆمپانیا</p>
-                </div>
-                <div>
-                  <Label>ژمارە *</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={formData.quantity}
-                    onChange={(e) => handleQuantityChange(e.target.value)}
-                    placeholder="1"
-                    dir="ltr"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">ژمارەی کاڵا</p>
+
+                {/* Commission Fee */}
+                <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200 space-y-2">
+                  <Label className="text-sm font-medium text-purple-700 block">عموڵەی کڕین *</Label>
+                  <div className="relative">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-600 font-bold">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.commissionFeeUsd}
+                      onChange={(e) => setFormData({ ...formData, commissionFeeUsd: e.target.value })}
+                      placeholder="0.00"
+                      className="pr-8 text-left text-xl font-bold h-14 border-2 border-purple-300 bg-white"
+                      dir="ltr"
+                    />
+                  </div>
+                  <p className="text-xs text-purple-600">قازانجی کۆمپانیا بۆ هەر دانەیەک</p>
                 </div>
               </div>
 
@@ -534,106 +573,149 @@ export default function CommissionForm() {
                 </div>
               </div>
 
-              {/* Info about shipping */}
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-                <Info className="h-5 w-5 text-amber-600 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-amber-800">کۆستی گواستنەوە</p>
-                  <p className="text-sm text-amber-700">
-                    کۆستی گواستنەوە دواتر کاتێک پاکەت چوە ناو باچ حساب دەکرێت.
-                    <br />
-                    <strong>تێبینی:</strong> کۆستی گواستنەوە لەسەر کڕیار دەچێت.
+              {/* Commission Income Preview */}
+              {(itemPrice > 0 || commissionFee > 0) && (
+                <div className="bg-gradient-to-l from-amber-100 via-yellow-50 to-amber-50 rounded-2xl p-6 border-2 border-amber-300 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-amber-500 rounded-lg">
+                        <TrendingUp className="h-5 w-5 text-white" />
+                      </div>
+                      <span className="font-bold text-lg text-amber-800">پێشبینی پارەدان</span>
+                    </div>
+                    <div className="bg-white px-4 py-2 rounded-full border-2 border-amber-300">
+                      <span className="text-amber-700 font-bold">{formData.quantity || 1} عەدەد</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-white rounded-xl p-4 text-center shadow-sm">
+                      <p className="text-xs text-slate-500 mb-1">نرخی کاڵا (١ دانە)</p>
+                      <p className="text-xl font-bold text-amber-600">${itemPrice.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-amber-100 rounded-xl p-4 text-center shadow-sm">
+                      <p className="text-xs text-amber-700 mb-1">کۆی نرخ ({formData.quantity || 1} دانە)</p>
+                      <p className="text-xl font-bold text-amber-700">${(itemPrice * quantity).toFixed(2)}</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 text-center shadow-sm">
+                      <p className="text-xs text-slate-500 mb-1">عمولە (١ دانە)</p>
+                      <p className="text-xl font-bold text-purple-600">${commissionFee.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-purple-100 rounded-xl p-4 text-center shadow-sm">
+                      <p className="text-xs text-purple-700 mb-1">کۆی عمولە ({formData.quantity || 1} دانە)</p>
+                      <p className="text-xl font-bold text-purple-700">${(commissionFee * quantity).toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t-2 border-amber-300">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-amber-700">کۆی پارەدانی پێشوەخت</p>
+                        <p className="text-xs text-slate-500">(نرخ + عمولە) × {formData.quantity || 1}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-amber-700">${totalPrepaid.toFixed(2)}</div>
+                        {rmbTotal && rmbRate > 0 && (
+                          <p className="text-xs text-orange-500 font-mono mt-0.5">
+                            ≈ {(totalPrepaid * rmbRate).toLocaleString("en-US", { maximumFractionDigits: 0 })} ¥
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-center text-amber-600 mt-3 bg-white/50 rounded-lg py-2">
+                    💡 قازانجی کۆمپانیا = ${(commissionFee * quantity).toFixed(2)} (عمولەی {formData.quantity || 1} دانە)
                   </p>
                 </div>
-              </div>
-
-              {/* Summary */}
-              <div className="bg-gray-50 rounded-xl p-4 space-y-2 border">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">نرخی کاڵا (یەکە):</span>
-                  <div className="text-right">
-                    <span className="font-medium">${itemPrice.toFixed(4)}</span>
-                    {rmbPerUnit && rmbRate > 0 && (
-                      <p className="text-[10px] text-orange-500 font-mono">
-                        ≈ {Number(rmbPerUnit).toLocaleString("en-US")} ¥
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">عمولەی کڕین:</span>
-                  <span className="font-medium text-amber-600">${commissionFee.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">ژمارە:</span>
-                  <span className="font-medium">{quantity}</span>
-                </div>
-                <div className="border-t pt-2 flex justify-between">
-                  <span className="font-semibold">کۆی پارەدانی پێشوەخت:</span>
-                  <div className="text-right">
-                    <span className="font-bold text-lg text-amber-600">${totalPrepaid.toFixed(2)}</span>
-                    {rmbTotal && rmbRate > 0 && (
-                      <p className="text-xs text-orange-500 font-mono">
-                        ≈ {(totalPrepaid * rmbRate).toLocaleString("en-US", { maximumFractionDigits: 0 })} ¥
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex justify-between text-sm text-green-600">
-                  <span>قازانج (عمولە):</span>
-                  <span className="font-medium">${(commissionFee * quantity).toFixed(2)}</span>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
           {/* ── Shipping Method ── */}
           <Card className="overflow-hidden">
             <CardHeader className="bg-gradient-to-l from-sky-50 to-blue-50 border-b">
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex items-center gap-2">
                 <Plane className="h-5 w-5 text-sky-600" />
                 ریگاکانی گواستنەوە
               </CardTitle>
-              <CardDescription className="text-xs">ریگای گواستنەوەی کاڵاکە هەڵبژێرە</CardDescription>
+              <CardDescription>ریگای گواستنەوەی کاڵاکە هەڵبژێرە</CardDescription>
             </CardHeader>
-            <CardContent className="p-4 space-y-4">
+            <CardContent className="p-5 space-y-5">
 
+              {/* Method Selector */}
               <div className="grid grid-cols-3 gap-3">
                 {/* Air Regular */}
-                <button type="button"
+                <button
+                  type="button"
                   onClick={() => setFormData(p => ({ ...p, shippingType: p.shippingType === "air_regular" ? "" : "air_regular", volumeCbm: "" }))}
-                  className={`relative flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all ${
-                    formData.shippingType === "air_regular" ? "border-sky-400 bg-sky-50 shadow-md shadow-sky-100" : "border-gray-200 bg-white hover:border-sky-200"}`}>
-                  {formData.shippingType === "air_regular" && <span className="absolute top-2 end-2 w-5 h-5 bg-sky-500 rounded-full flex items-center justify-center"><Check className="h-3 w-3 text-white" /></span>}
-                  <div className={`p-2.5 rounded-xl ${formData.shippingType === "air_regular" ? "bg-sky-500" : "bg-gray-100"}`}>
-                    <Plane className={`h-5 w-5 ${formData.shippingType === "air_regular" ? "text-white" : "text-gray-500"}`} />
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                    formData.shippingType === "air_regular"
+                      ? "border-sky-400 bg-sky-50 shadow-md shadow-sky-100"
+                      : "border-gray-200 bg-white hover:border-sky-200 hover:bg-sky-50/40"
+                  }`}
+                >
+                  {formData.shippingType === "air_regular" && (
+                    <span className="absolute top-2 end-2 w-5 h-5 bg-sky-500 rounded-full flex items-center justify-center">
+                      <Check className="h-3 w-3 text-white" />
+                    </span>
+                  )}
+                  <div className={`p-3 rounded-xl ${formData.shippingType === "air_regular" ? "bg-sky-500" : "bg-gray-100"}`}>
+                    <Plane className={`h-6 w-6 ${formData.shippingType === "air_regular" ? "text-white" : "text-gray-500"}`} />
                   </div>
-                  <div className="text-center"><p className={`font-bold text-xs ${formData.shippingType === "air_regular" ? "text-sky-700" : "text-gray-700"}`}>ئاسمانی ئاسایی</p><p className="text-[10px] text-muted-foreground">Air Regular</p></div>
+                  <div className="text-center">
+                    <p className={`font-bold text-sm ${formData.shippingType === "air_regular" ? "text-sky-700" : "text-gray-700"}`}>ئاسمانی ئاسایی</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Air Regular</p>
+                  </div>
                 </button>
 
                 {/* Air Irregular */}
-                <button type="button"
+                <button
+                  type="button"
                   onClick={() => setFormData(p => ({ ...p, shippingType: p.shippingType === "air_irregular" ? "" : "air_irregular", volumeCbm: "" }))}
-                  className={`relative flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all ${
-                    formData.shippingType === "air_irregular" ? "border-amber-400 bg-amber-50 shadow-md shadow-amber-100" : "border-gray-200 bg-white hover:border-amber-200"}`}>
-                  {formData.shippingType === "air_irregular" && <span className="absolute top-2 end-2 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center"><Check className="h-3 w-3 text-white" /></span>}
-                  <div className={`p-2.5 rounded-xl relative ${formData.shippingType === "air_irregular" ? "bg-amber-500" : "bg-gray-100"}`}>
-                    <Plane className={`h-5 w-5 ${formData.shippingType === "air_irregular" ? "text-white" : "text-gray-500"}`} />
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                    formData.shippingType === "air_irregular"
+                      ? "border-amber-400 bg-amber-50 shadow-md shadow-amber-100"
+                      : "border-gray-200 bg-white hover:border-amber-200 hover:bg-amber-50/40"
+                  }`}
+                >
+                  {formData.shippingType === "air_irregular" && (
+                    <span className="absolute top-2 end-2 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
+                      <Check className="h-3 w-3 text-white" />
+                    </span>
+                  )}
+                  <div className={`p-3 rounded-xl relative ${formData.shippingType === "air_irregular" ? "bg-amber-500" : "bg-gray-100"}`}>
+                    <Plane className={`h-6 w-6 ${formData.shippingType === "air_irregular" ? "text-white" : "text-gray-500"}`} />
                     <Zap className={`h-3 w-3 absolute -bottom-0.5 -end-0.5 ${formData.shippingType === "air_irregular" ? "text-yellow-200" : "text-amber-400"}`} />
                   </div>
-                  <div className="text-center"><p className={`font-bold text-xs ${formData.shippingType === "air_irregular" ? "text-amber-700" : "text-gray-700"}`}>ئاسمانی مەرسیدار</p><p className="text-[10px] text-muted-foreground">Air Irregular</p></div>
+                  <div className="text-center">
+                    <p className={`font-bold text-sm ${formData.shippingType === "air_irregular" ? "text-amber-700" : "text-gray-700"}`}>ئاسمانی مەرسیدار</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Air Irregular</p>
+                  </div>
                 </button>
 
                 {/* Sea */}
-                <button type="button"
+                <button
+                  type="button"
                   onClick={() => setFormData(p => ({ ...p, shippingType: p.shippingType === "sea" ? "" : "sea", weightKg: "", dimensionLength: "", dimensionWidth: "", dimensionHeight: "" }))}
-                  className={`relative flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all ${
-                    formData.shippingType === "sea" ? "border-teal-400 bg-teal-50 shadow-md shadow-teal-100" : "border-gray-200 bg-white hover:border-teal-200"}`}>
-                  {formData.shippingType === "sea" && <span className="absolute top-2 end-2 w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center"><Check className="h-3 w-3 text-white" /></span>}
-                  <div className={`p-2.5 rounded-xl ${formData.shippingType === "sea" ? "bg-teal-500" : "bg-gray-100"}`}>
-                    <Ship className={`h-5 w-5 ${formData.shippingType === "sea" ? "text-white" : "text-gray-500"}`} />
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                    formData.shippingType === "sea"
+                      ? "border-teal-400 bg-teal-50 shadow-md shadow-teal-100"
+                      : "border-gray-200 bg-white hover:border-teal-200 hover:bg-teal-50/40"
+                  }`}
+                >
+                  {formData.shippingType === "sea" && (
+                    <span className="absolute top-2 end-2 w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
+                      <Check className="h-3 w-3 text-white" />
+                    </span>
+                  )}
+                  <div className={`p-3 rounded-xl ${formData.shippingType === "sea" ? "bg-teal-500" : "bg-gray-100"}`}>
+                    <Ship className={`h-6 w-6 ${formData.shippingType === "sea" ? "text-white" : "text-gray-500"}`} />
                   </div>
-                  <div className="text-center"><p className={`font-bold text-xs ${formData.shippingType === "sea" ? "text-teal-700" : "text-gray-700"}`}>دەریایی</p><p className="text-[10px] text-muted-foreground">Sea Freight</p></div>
+                  <div className="text-center">
+                    <p className={`font-bold text-sm ${formData.shippingType === "sea" ? "text-teal-700" : "text-gray-700"}`}>دەریایی</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Sea Freight</p>
+                  </div>
                 </button>
               </div>
 
@@ -645,10 +727,11 @@ export default function CommissionForm() {
                     <span className="text-sm font-semibold">کێش و قەبارە</span>
                     <span className="text-xs text-muted-foreground ms-auto">max(ڕاستەقینە، ئەندازەیی)</span>
                   </div>
-                  <div className="p-4 space-y-3 bg-white">
+                  <div className="p-4 space-y-4 bg-white">
+                    {/* Weight */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">کێشی ڕاستەقینە (kg)</Label>
+                        <Label className="text-sm font-medium">کێشی ڕاستەقینە (کیلۆگرام)</Label>
                         <div className="relative">
                           <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">kg</span>
                           <Input type="number" step="0.01" min="0" value={formData.weightKg}
@@ -665,21 +748,32 @@ export default function CommissionForm() {
                       )}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 mb-2"><Ruler className="h-3.5 w-3.5 text-muted-foreground" /><Label className="text-sm font-medium">قەبارە (cm) — ئارەزووی</Label></div>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[["dimensionLength","L درێژی"],["dimensionWidth","W پانی"],["dimensionHeight","H بەرزی"]].map(([field, label]) => (
-                          <div key={field} className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">{label}</Label>
-                            <div className="relative">
-                              <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
-                              <Input type="number" step="0.1" min="0" value={formData[field as keyof typeof formData] as string}
-                                onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
-                                placeholder="0" className="pe-8 h-10 font-mono text-sm" dir="ltr" />
+                      {/* Dimensions */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Ruler className="h-4 w-4 text-muted-foreground" />
+                          <Label className="text-sm font-medium">قەبارە (سانتیمەتر) — ئارەزووی</Label>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
+                            <div key={field} className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">{label}</Label>
+                              <div className="relative">
+                                <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
+                                <Input type="number" step="0.1" min="0"
+                                  value={formData[field as keyof typeof formData] as string}
+                                  onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
+                                  placeholder="0" className="pe-8 h-10 font-mono text-sm" dir="ltr" />
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+                        {volumetricKg > 0 && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            کێشی ئەندازەیی: ({dimL}×{dimW}×{dimH}) ÷ 6000 = <strong>{volumetricKg.toFixed(3)} kg</strong>
+                          </p>
+                        )}
                       </div>
-                      {volumetricKg > 0 && <p className="text-xs text-muted-foreground mt-2">کێشی ئەندازەیی: ({dimL}×{dimW}×{dimH}) ÷ 6000 = <strong>{volumetricKg.toFixed(3)} kg</strong></p>}
                     </div>
                   </div>
                 </div>
@@ -691,37 +785,47 @@ export default function CommissionForm() {
                   <div className="px-4 py-2.5 flex items-center gap-2 bg-teal-50">
                     <Calculator className="h-4 w-4 text-teal-600" />
                     <span className="text-sm font-semibold text-teal-800">قەبارەی CBM</span>
-                    <span className="text-xs text-muted-foreground ms-auto">١ CBM = ١m³</span>
+                    <span className="text-xs text-muted-foreground ms-auto">١ CBM = ١٠٠cm × ١٠٠cm × ١٠٠cm</span>
                   </div>
-                  <div className="p-4 space-y-3 bg-white">
+                  <div className="p-4 space-y-4 bg-white">
                     <div className="grid grid-cols-2 gap-4">
+                      {/* Direct CBM */}
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">CBM ڕاستەوخۆ</Label>
                         <div className="relative">
-                          <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">m³</span>
+                          <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">m³</span>
                           <Input type="number" step="0.0001" min="0" value={formData.volumeCbm}
                             onChange={e => setFormData(p => ({ ...p, volumeCbm: e.target.value }))}
                             placeholder="0.0000" className="pe-10 h-11 font-mono" dir="ltr" />
                         </div>
                         <p className="text-xs text-muted-foreground">ئەگەر CBM دەزانیت</p>
                       </div>
+                      {/* Auto CBM from dims */}
                       {autoCbm > 0 && (
                         <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex flex-col justify-center">
                           <p className="text-[11px] text-teal-600">CBM خۆکار</p>
                           <p className="text-xl font-bold font-mono text-teal-700">{autoCbm.toFixed(4)} m³</p>
-                          <button type="button" onClick={() => setFormData(p => ({ ...p, volumeCbm: autoCbm.toFixed(4) }))} className="text-[11px] text-teal-600 underline text-start mt-1 hover:text-teal-800">بەکاربێنە ←</button>
+                          <button type="button" onClick={() => setFormData(p => ({ ...p, volumeCbm: autoCbm.toFixed(4) }))}
+                            className="text-[11px] text-teal-600 underline text-start mt-1 hover:text-teal-800">
+                            بەکاربێنە ←
+                          </button>
                         </div>
                       )}
                     </div>
+                    {/* Dimensions for CBM calc */}
                     <div>
-                      <div className="flex items-center gap-2 mb-2"><Ruler className="h-3.5 w-3.5 text-muted-foreground" /><Label className="text-sm font-medium">قەبارە (cm) — ئارەزووی</Label></div>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[["dimensionLength","L درێژی"],["dimensionWidth","W پانی"],["dimensionHeight","H بەرزی"]].map(([field, label]) => (
+                      <div className="flex items-center gap-2 mb-2">
+                        <Ruler className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm font-medium">قەبارە بۆ حساب کردنی CBM — ئارەزووی</Label>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
                           <div key={field} className="space-y-1">
                             <Label className="text-xs text-muted-foreground">{label}</Label>
                             <div className="relative">
                               <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
-                              <Input type="number" step="0.1" min="0" value={formData[field as keyof typeof formData] as string}
+                              <Input type="number" step="0.1" min="0"
+                                value={formData[field as keyof typeof formData] as string}
                                 onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
                                 placeholder="0" className="pe-8 h-10 font-mono text-sm" dir="ltr" />
                             </div>
@@ -735,17 +839,41 @@ export default function CommissionForm() {
             </CardContent>
           </Card>
 
+          {/* Notes */}
+          <Card>
+            <CardHeader>
+              <CardTitle>تێبینی</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="تێبینی..."
+                rows={3}
+              />
+            </CardContent>
+          </Card>
+
           {/* Submit */}
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full bg-amber-500 hover:bg-amber-600"
-            disabled={createMutation.isPending}
-          >
-            {createMutation.isPending ? "چاوەڕوان بە..." : "دروستکردنی پەت"}
-          </Button>
+          <div className="flex justify-end gap-4">
+            <Button type="button" variant="outline" onClick={() => setLocation("/commission")}>
+              پاشگەزبوونەوە
+            </Button>
+            <Button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              {createMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin ms-2" />
+              ) : (
+                <Save className="h-4 w-4 ms-2" />
+              )}
+              پاشەکەوتکردن
+            </Button>
+          </div>
         </form>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
