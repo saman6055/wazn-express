@@ -220,3 +220,18 @@ export type InsertIpWhitelist = typeof ipWhitelist.$inferInsert;
 
 
 // ============ ACTIVITY ALERTS ============
+
+// ============ PRODUCT ATTRIBUTES (ڕەنگ، قەبارە، جۆری کاڵا) ============
+
+export const productAttributes = mysqlTable("productAttributes", {
+  id: int("id").autoincrement().primaryKey(),
+  type: mysqlEnum("type", ["color", "size", "productType"]).notNull(),
+  value: varchar("value", { length: 200 }).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProductAttribute = typeof productAttributes.$inferSelect;
+export type InsertProductAttribute = typeof productAttributes.$inferInsert;

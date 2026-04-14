@@ -124,6 +124,7 @@ export const fullPackageRouter = router({
         quantity: z.number().min(1).default(1),
         color: z.string().optional(),
         size: z.string().optional(),
+        productType: z.string().optional(),
         // Supplier tracking
         supplierTrackingNumber: z.string().optional(),
         supplierOrderNumber: z.string().optional(),
@@ -286,6 +287,7 @@ export const fullPackageRouter = router({
           quantity: z.number().min(1).default(1),
           color: z.string().optional(),
           size: z.string().optional(),
+          productType: z.string().optional(),
           supplierTrackingNumber: z.string().optional(),
           supplierOrderNumber: z.string().optional(),
           purchaseInvoiceUrl: z.string().optional(),
@@ -436,6 +438,7 @@ export const fullPackageRouter = router({
         quantity: z.number().min(1).optional(),
         color: z.string().optional(),
         size: z.string().optional(),
+        productType: z.string().optional(),
         // Supplier tracking
         supplierTrackingNumber: z.string().optional(),
         supplierOrderNumber: z.string().optional(),
@@ -1036,6 +1039,7 @@ export const fullPackageRouter = router({
         quantity: z.number().min(1).default(1),
         color: z.string().optional(),
         size: z.string().optional(),
+        productType: z.string().optional(),
         itemPriceUsd: z.string(), // Actual item price (customer knows)
         itemPriceCny: z.string().optional(),
         commissionFeeUsd: z.string(), // Service fee

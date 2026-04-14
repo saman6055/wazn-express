@@ -45,6 +45,7 @@ export const fullPackageOrders = mysqlTable("fullPackageOrders", {
   quantity: int("quantity").default(1).notNull(),
   color: varchar("color", { length: 100 }), // Product color
   size: varchar("size", { length: 100 }), // Product size
+  productType: varchar("productType", { length: 200 }), // Product type/category
   
   // Supplier Tracking
   supplierTrackingNumber: varchar("supplierTrackingNumber", { length: 100 }), // 1688/Taobao tracking

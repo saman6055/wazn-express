@@ -41,6 +41,7 @@ export default function CommissionForm() {
     quantity: "1",
     color: "",
     size: "",
+    productType: "",
     // Commission pricing
     itemPriceUsd: "",
     commissionFeeUsd: "",
@@ -61,6 +62,9 @@ export default function CommissionForm() {
   // Fetch customers and suppliers
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: suppliers } = trpc.suppliers.list.useQuery();
+  const { data: colorAttrs } = trpc.productAttributes.list.useQuery({ type: "color" });
+  const { data: sizeAttrs } = trpc.productAttributes.list.useQuery({ type: "size" });
+  const { data: typeAttrs } = trpc.productAttributes.list.useQuery({ type: "productType" });
 
   // Filter customers based on search
   const filteredCustomers = customers?.filter((customer) => {
@@ -181,6 +185,7 @@ export default function CommissionForm() {
       quantity: quantity,
       color: formData.color || undefined,
       size: formData.size || undefined,
+      productType: formData.productType || undefined,
       itemPriceUsd: formData.itemPriceUsd,
       commissionFeeUsd: formData.commissionFeeUsd,
       totalPrepaidUsd: totalPrepaid.toFixed(2),
@@ -362,22 +367,60 @@ export default function CommissionForm() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Color */}
                 <div className="space-y-2">
                   <Label>ڕەنگ</Label>
-                  <Input
+                  <Select
                     value={formData.color}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    placeholder="ڕەنگی کاڵا"
-                  />
+                    onValueChange={(v) => setFormData({ ...formData, color: v === "__none__" ? "" : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="ڕەنگ هەڵبژێرە" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— بێ ڕەنگ —</SelectItem>
+                      {colorAttrs?.map(a => (
+                        <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+                {/* Size */}
                 <div className="space-y-2">
                   <Label>قەبارە</Label>
-                  <Input
+                  <Select
                     value={formData.size}
-                    onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                    placeholder="قەبارەی کاڵا"
-                  />
+                    onValueChange={(v) => setFormData({ ...formData, size: v === "__none__" ? "" : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="قەبارە هەڵبژێرە" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— بێ قەبارە —</SelectItem>
+                      {sizeAttrs?.map(a => (
+                        <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Product Type */}
+                <div className="space-y-2">
+                  <Label>جۆری کاڵا</Label>
+                  <Select
+                    value={formData.productType}
+                    onValueChange={(v) => setFormData({ ...formData, productType: v === "__none__" ? "" : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="جۆر هەڵبژێرە" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— بێ جۆر —</SelectItem>
+                      {typeAttrs?.map(a => (
+                        <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

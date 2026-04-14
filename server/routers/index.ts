@@ -15,6 +15,7 @@ import { settingsRouters } from "./settings.router";
 import { fullPackageRouter } from "./fullPackage.router";
 import { scanningRouters } from "./scanning.router";
 import { servicesRouters } from "./services.router";
+import { productAttributesRouter } from "./productAttributes.router";
 
 export const appRouter = router({
   ...adminRouters,
@@ -30,6 +31,7 @@ export const appRouter = router({
   fullPackage: fullPackageRouter,
   ...scanningRouters,
   ...servicesRouters,
+  productAttributes: productAttributesRouter,
 });
 
 export type AppRouter = typeof appRouter;

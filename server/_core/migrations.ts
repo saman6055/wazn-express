@@ -1759,6 +1759,20 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+  // Product Attributes: colors, sizes, product types managed from settings
+  {
+    name: "productAttributes",
+    dependencies: [],
+    sql: `CREATE TABLE IF NOT EXISTS productAttributes (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      type ENUM('color', 'size', 'productType') NOT NULL,
+      value VARCHAR(200) NOT NULL,
+      sortOrder INT NOT NULL DEFAULT 0,
+      isActive BOOLEAN NOT NULL DEFAULT true,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   }
 ];
 
@@ -1863,6 +1877,7 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "serviceTypes.requiresCustomer", sql: "ALTER TABLE serviceTypes ADD COLUMN requiresCustomer BOOLEAN NOT NULL DEFAULT TRUE" },
   { name: "serviceTypes.addToCustomerBalance", sql: "ALTER TABLE serviceTypes ADD COLUMN addToCustomerBalance BOOLEAN NOT NULL DEFAULT TRUE" },
   { name: "serviceTypes.createdById", sql: "ALTER TABLE serviceTypes ADD COLUMN createdById INT" },
+  { name: "fullPackageOrders.productType", sql: "ALTER TABLE fullPackageOrders ADD COLUMN productType VARCHAR(200)" },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { Settings as SettingsIcon, Building2, Bell, Globe, Mail, Shield, FileText, DollarSign, RefreshCw, TrendingUp, Palette, Code, Upload, Loader2, LayoutGrid, Sparkles, Users, Plus, Trash2 } from "lucide-react";
+import { Settings as SettingsIcon, Building2, Bell, Globe, Mail, Shield, FileText, DollarSign, RefreshCw, TrendingUp, Palette, Code, Upload, Loader2, LayoutGrid, Sparkles, Users, Plus, Trash2, Tag, Pencil, Check, X } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -195,6 +195,10 @@ const [companyData, setCompanyData] = useState({
             <TabsTrigger value="landing" className="gap-2">
               <Palette className="h-4 w-4" />
               {t("settings.landingThemeTab") || "ڕووکاری پەرەی یەکەم"}
+            </TabsTrigger>
+            <TabsTrigger value="productAttributes" className="gap-2">
+              <Tag className="h-4 w-4" />
+              زانیاری کاڵا
             </TabsTrigger>
           </TabsList>
 
@@ -955,9 +959,191 @@ const [companyData, setCompanyData] = useState({
             <LandingThemeSettings />
             <LandingTeamSettings />
           </TabsContent>
+          <TabsContent value="productAttributes" className="space-y-4 mt-4">
+            <ProductAttributesSettings />
+          </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
+  );
+}
+
+// ============ Product Attributes Settings ============
+function ProductAttributesSettings() {
+  const utils = trpc.useUtils();
+  const { data: allAttrs, isLoading } = trpc.productAttributes.list.useQuery();
+
+  const createMutation = trpc.productAttributes.create.useMutation({
+    onSuccess: () => {
+      toast.success("زیادکرا");
+      utils.productAttributes.list.invalidate();
+      setNewValue("");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const updateMutation = trpc.productAttributes.update.useMutation({
+    onSuccess: () => {
+      toast.success("نوێکرایەوە");
+      utils.productAttributes.list.invalidate();
+      setEditingId(null);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deleteMutation = trpc.productAttributes.delete.useMutation({
+    onSuccess: () => {
+      toast.success("سڕایەوە");
+      utils.productAttributes.list.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const [newValue, setNewValue] = useState("");
+  const [activeType, setActiveType] = useState<"color" | "size" | "productType">("color");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+
+  const typeLabels: Record<string, string> = {
+    color: "ڕەنگ",
+    size: "قەبارە",
+    productType: "جۆری کاڵا",
+  };
+
+  const typeIcons: Record<string, string> = {
+    color: "🎨",
+    size: "📐",
+    productType: "📦",
+  };
+
+  const filtered = allAttrs?.filter(a => a.type === activeType) ?? [];
+
+  const handleAdd = () => {
+    if (!newValue.trim()) return;
+    createMutation.mutate({ type: activeType, value: newValue.trim(), sortOrder: filtered.length });
+  };
+
+  const handleEdit = (id: number, val: string) => {
+    setEditingId(id);
+    setEditingValue(val);
+  };
+
+  const handleSaveEdit = (id: number) => {
+    if (!editingValue.trim()) return;
+    updateMutation.mutate({ id, value: editingValue.trim() });
+  };
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-gradient-to-l from-violet-50 to-purple-50 border-b">
+        <CardTitle className="flex items-center gap-2">
+          <Tag className="h-5 w-5 text-violet-600" />
+          زانیاری کاڵا
+        </CardTitle>
+        <CardDescription>ڕەنگ، قەبارە و جۆری کاڵا بەڕێوە ببە — لە کاتی دروستکردنی ئۆردەر نیشان دەدرێن</CardDescription>
+      </CardHeader>
+      <CardContent className="p-6 space-y-6">
+
+        {/* Type Selector */}
+        <div className="flex gap-3">
+          {(["color", "size", "productType"] as const).map(type => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => { setActiveType(type); setNewValue(""); setEditingId(null); }}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
+                activeType === type
+                  ? "border-violet-400 bg-violet-50 text-violet-700 shadow-sm"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-violet-200"
+              }`}
+            >
+              <span>{typeIcons[type]}</span>
+              {typeLabels[type]}
+              <span className={`text-xs px-1.5 py-0.5 rounded-full font-mono ${activeType === type ? "bg-violet-100 text-violet-600" : "bg-gray-100 text-gray-500"}`}>
+                {allAttrs?.filter(a => a.type === type).length ?? 0}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Add New */}
+        <div className="flex gap-3">
+          <Input
+            value={newValue}
+            onChange={e => setNewValue(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleAdd()}
+            placeholder={`${typeLabels[activeType]}ێکی نوێ...`}
+            className="flex-1 h-11"
+          />
+          <Button
+            type="button"
+            onClick={handleAdd}
+            disabled={!newValue.trim() || createMutation.isPending}
+            className="bg-violet-600 hover:bg-violet-700 h-11 px-5"
+          >
+            {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            زیادکردن
+          </Button>
+        </div>
+
+        {/* List */}
+        {isLoading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-violet-500" /></div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-10 text-muted-foreground">
+            <span className="text-4xl">{typeIcons[activeType]}</span>
+            <p className="mt-3 font-medium">هیچ {typeLabels[activeType]}ێک نییە</p>
+            <p className="text-sm mt-1">بە فۆرمی سەرەوە زیادی بکە</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filtered.map(attr => (
+              <div
+                key={attr.id}
+                className="flex items-center gap-3 bg-gray-50 hover:bg-violet-50/40 border border-gray-200 hover:border-violet-200 rounded-xl px-4 py-3 transition-colors group"
+              >
+                <span className="text-lg">{typeIcons[attr.type]}</span>
+
+                {editingId === attr.id ? (
+                  <>
+                    <Input
+                      value={editingValue}
+                      onChange={e => setEditingValue(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") handleSaveEdit(attr.id); if (e.key === "Escape") setEditingId(null); }}
+                      className="flex-1 h-9"
+                      autoFocus
+                    />
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600 hover:bg-green-50"
+                      onClick={() => handleSaveEdit(attr.id)} disabled={updateMutation.isPending}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-400 hover:bg-gray-100"
+                      onClick={() => setEditingId(null)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex-1 font-medium text-gray-800">{attr.value}</span>
+                    <Button size="icon" variant="ghost"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 text-violet-500 hover:bg-violet-100 transition-opacity"
+                      onClick={() => handleEdit(attr.id, attr.value)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="icon" variant="ghost"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 text-red-400 hover:bg-red-50 transition-opacity"
+                      onClick={() => deleteMutation.mutate({ id: attr.id })}
+                      disabled={deleteMutation.isPending}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
