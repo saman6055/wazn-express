@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback } from "react";
-import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -51,14 +50,14 @@ export default function CompressedImageUpload({
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const uploadMutation = trpc.storage.upload.useMutation();
-
-  // Compress image on client side
+  // Compress image client-side and return data URL (no server upload needed)
   const compressImage = useCallback(
-    async (file: File): Promise<{ base64: string; blob: Blob }> => {
+    async (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
         const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
         img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
           const canvas = document.createElement("canvas");
           const ctx = canvas.getContext("2d");
           if (!ctx) {
@@ -82,32 +81,20 @@ export default function CompressedImageUpload({
           canvas.width = width;
           canvas.height = height;
 
-          // Draw with white background (for transparency)
+          // Draw with white background (handles transparency)
           ctx.fillStyle = "#FFFFFF";
           ctx.fillRect(0, 0, width, height);
           ctx.drawImage(img, 0, 0, width, height);
 
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                reject(new Error("Failed to compress image"));
-                return;
-              }
-
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                const base64 = (reader.result as string).split(",")[1];
-                resolve({ base64, blob });
-              };
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
-            },
-            "image/jpeg",
-            quality
-          );
+          // Return compressed data URL directly — no server upload needed
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
+          resolve(dataUrl);
         };
-        img.onerror = () => reject(new Error("Failed to load image"));
-        img.src = URL.createObjectURL(file);
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error("Failed to load image"));
+        };
+        img.src = objectUrl;
       });
     },
     [maxDimension, quality]
@@ -119,7 +106,7 @@ export default function CompressedImageUpload({
 
       const remainingSlots = maxImages - images.length;
       if (remainingSlots <= 0) {
-        toast.error(t('common.maxImagesAllowed', { max: maxImages }));
+        toast.error(t('common.maxImagesAllowed', { max: maxImages }) || `زیاترین ${maxImages} وێنە`);
         return;
       }
 
@@ -127,52 +114,38 @@ export default function CompressedImageUpload({
       setUploading(true);
       setUploadProgress(0);
 
-      const newUrls: string[] = [];
+      const newDataUrls: string[] = [];
       let processed = 0;
 
       for (const file of filesToProcess) {
         try {
           // Validate file type
           if (!file.type.startsWith("image/")) {
-            toast.error(t('common.notAnImage', { filename: file.name }));
+            toast.error(`${file.name} وێنە نییە`);
             continue;
           }
 
           // Validate file size (max 20MB before compression)
           if (file.size > 20 * 1024 * 1024) {
-            toast.error(t('common.fileTooLarge', { filename: file.name }));
+            toast.error(`${file.name} زۆر گەورەیە (زیاترین 20MB)`);
             continue;
           }
 
-          // Compress
-          const { base64 } = await compressImage(file);
-
-          // Upload via tRPC
-          const result = await uploadMutation.mutateAsync({
-            fileName: file.name.replace(/\.[^.]+$/, ".jpg"),
-            contentType: "image/jpeg",
-            base64Data: base64,
-          });
-
-          if (result.url) {
-            newUrls.push(result.url);
-          }
+          // Compress client-side → get data URL
+          const dataUrl = await compressImage(file);
+          newDataUrls.push(dataUrl);
         } catch (err) {
-          console.error("Upload error:", err);
-          toast.error(t('common.uploadError', { filename: file.name }));
+          console.error("Compress error:", err);
+          toast.error(`کۆمپریسکردنی ${file.name} شکستی هێنا`);
         }
 
         processed++;
         setUploadProgress(Math.round((processed / filesToProcess.length) * 100));
       }
 
-      if (newUrls.length > 0) {
-        onChange([...images, ...newUrls]);
-        toast.success(
-          newUrls.length === 1
-            ? t('common.imageUploaded')
-            : t('common.imagesUploaded', { count: newUrls.length })
-        );
+      if (newDataUrls.length > 0) {
+        onChange([...images, ...newDataUrls]);
+        toast.success(newDataUrls.length === 1 ? "وێنەکە زیادکرا ✓" : `${newDataUrls.length} وێنە زیادکران ✓`);
       }
 
       setUploading(false);
@@ -183,7 +156,7 @@ export default function CompressedImageUpload({
         fileInputRef.current.value = "";
       }
     },
-    [images, maxImages, compressImage, uploadMutation, onChange]
+    [images, maxImages, compressImage, onChange]
   );
 
   const removeImage = useCallback(
