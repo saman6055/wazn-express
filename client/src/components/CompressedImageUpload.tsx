@@ -52,49 +52,53 @@ export default function CompressedImageUpload({
 
   // Compress image client-side and return data URL (no server upload needed)
   const compressImage = useCallback(
-    async (file: File): Promise<string> => {
+    (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
-        const img = new Image();
-        const objectUrl = URL.createObjectURL(file);
-        img.onload = () => {
-          URL.revokeObjectURL(objectUrl);
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-          if (!ctx) {
-            reject(new Error("Canvas context not available"));
-            return;
-          }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const src = e.target?.result as string;
+          if (!src) { reject(new Error("FileReader returned empty")); return; }
 
-          let { width, height } = img;
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const canvas = document.createElement("canvas");
+              const ctx = canvas.getContext("2d");
+              if (!ctx) { reject(new Error("No canvas context")); return; }
 
-          // Scale down if needed
-          if (width > maxDimension || height > maxDimension) {
-            if (width > height) {
-              height = Math.round((height / width) * maxDimension);
-              width = maxDimension;
-            } else {
-              width = Math.round((width / height) * maxDimension);
-              height = maxDimension;
+              let { width, height } = img;
+              if (width > maxDimension || height > maxDimension) {
+                if (width > height) {
+                  height = Math.round((height / width) * maxDimension);
+                  width = maxDimension;
+                } else {
+                  width = Math.round((width / height) * maxDimension);
+                  height = maxDimension;
+                }
+              }
+
+              canvas.width = width || 1;
+              canvas.height = height || 1;
+
+              ctx.fillStyle = "#FFFFFF";
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+              const dataUrl = canvas.toDataURL("image/jpeg", quality);
+              if (!dataUrl || dataUrl === "data:,") {
+                reject(new Error("Canvas toDataURL returned empty"));
+                return;
+              }
+              resolve(dataUrl);
+            } catch (err) {
+              reject(err);
             }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-
-          // Draw with white background (handles transparency)
-          ctx.fillStyle = "#FFFFFF";
-          ctx.fillRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Return compressed data URL directly — no server upload needed
-          const dataUrl = canvas.toDataURL("image/jpeg", quality);
-          resolve(dataUrl);
+          };
+          img.onerror = () => reject(new Error("Image failed to load from data URL"));
+          img.src = src;
         };
-        img.onerror = () => {
-          URL.revokeObjectURL(objectUrl);
-          reject(new Error("Failed to load image"));
-        };
-        img.src = objectUrl;
+        reader.onerror = () => reject(new Error("FileReader error"));
+        reader.readAsDataURL(file);
       });
     },
     [maxDimension, quality]
