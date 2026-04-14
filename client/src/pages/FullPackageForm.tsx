@@ -24,6 +24,12 @@ import {
   ChevronsUpDown,
   Banknote,
   ArrowLeftRight,
+  Plane,
+  Ship,
+  Zap,
+  Ruler,
+  Scale,
+  Calculator,
 } from "lucide-react";
 import {
   Select,
@@ -63,6 +69,13 @@ export default function FullPackageForm() {
     purchasePriceUsd: "",
     sellingPriceUsd: "",
     notes: "",
+    // Shipping
+    shippingType: "" as "" | "air_regular" | "air_irregular" | "sea",
+    weightKg: "",
+    dimensionLength: "",
+    dimensionWidth: "",
+    dimensionHeight: "",
+    volumeCbm: "",
   });
 
   // ¥ exchange rate
@@ -127,6 +140,12 @@ export default function FullPackageForm() {
       purchasePriceUsd: formData.purchasePriceUsd || undefined,
       sellingPriceUsd: formData.sellingPriceUsd || undefined,
       notes: formData.notes || undefined,
+      shippingType: formData.shippingType || undefined,
+      weightKg: formData.weightKg || undefined,
+      dimensionLength: formData.dimensionLength || undefined,
+      dimensionWidth: formData.dimensionWidth || undefined,
+      dimensionHeight: formData.dimensionHeight || undefined,
+      volumeCbm: formData.volumeCbm || undefined,
     });
   };
 
@@ -172,6 +191,15 @@ export default function FullPackageForm() {
       setFormData(prev => ({ ...prev, quantity: newQty }));
     }
   };
+
+  // Shipping calculations
+  const actualKg = parseFloat(formData.weightKg) || 0;
+  const dimL = parseFloat(formData.dimensionLength) || 0;
+  const dimW = parseFloat(formData.dimensionWidth) || 0;
+  const dimH = parseFloat(formData.dimensionHeight) || 0;
+  const volumetricKg = dimL && dimW && dimH ? (dimL * dimW * dimH) / 6000 : 0;
+  const chargeableKg = Math.max(actualKg, volumetricKg);
+  const autoCbm = dimL && dimW && dimH ? (dimL * dimW * dimH) / 1_000_000 : 0;
 
   // Calculate gross profit
   const purchasePrice = parseFloat(formData.purchasePriceUsd) || 0;
@@ -621,6 +649,216 @@ export default function FullPackageForm() {
                   <p className="text-xs text-center text-emerald-600 mt-3 bg-white/50 rounded-lg py-2">
                     💡 قازانجی خاوێن = قازانجی خاو - کۆستی گواستنەوە (دواتر کاتی باچ حساب دەکرێت)
                   </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── Shipping Method ── */}
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-l from-sky-50 to-blue-50 border-b">
+              <CardTitle className="flex items-center gap-2">
+                <Plane className="h-5 w-5 text-sky-600" />
+                ریگاکانی گواستنەوە
+              </CardTitle>
+              <CardDescription>ریگای گواستنەوەی کاڵاکە هەڵبژێرە</CardDescription>
+            </CardHeader>
+            <CardContent className="p-5 space-y-5">
+
+              {/* Method Selector */}
+              <div className="grid grid-cols-3 gap-3">
+                {/* Air Regular */}
+                <button
+                  type="button"
+                  onClick={() => setFormData(p => ({ ...p, shippingType: p.shippingType === "air_regular" ? "" : "air_regular", volumeCbm: "" }))}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                    formData.shippingType === "air_regular"
+                      ? "border-sky-400 bg-sky-50 shadow-md shadow-sky-100"
+                      : "border-gray-200 bg-white hover:border-sky-200 hover:bg-sky-50/40"
+                  }`}
+                >
+                  {formData.shippingType === "air_regular" && (
+                    <span className="absolute top-2 end-2 w-5 h-5 bg-sky-500 rounded-full flex items-center justify-center">
+                      <Check className="h-3 w-3 text-white" />
+                    </span>
+                  )}
+                  <div className={`p-3 rounded-xl ${formData.shippingType === "air_regular" ? "bg-sky-500" : "bg-gray-100"}`}>
+                    <Plane className={`h-6 w-6 ${formData.shippingType === "air_regular" ? "text-white" : "text-gray-500"}`} />
+                  </div>
+                  <div className="text-center">
+                    <p className={`font-bold text-sm ${formData.shippingType === "air_regular" ? "text-sky-700" : "text-gray-700"}`}>ئاسمانی ئاسایی</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Air Regular</p>
+                  </div>
+                </button>
+
+                {/* Air Irregular */}
+                <button
+                  type="button"
+                  onClick={() => setFormData(p => ({ ...p, shippingType: p.shippingType === "air_irregular" ? "" : "air_irregular", volumeCbm: "" }))}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                    formData.shippingType === "air_irregular"
+                      ? "border-amber-400 bg-amber-50 shadow-md shadow-amber-100"
+                      : "border-gray-200 bg-white hover:border-amber-200 hover:bg-amber-50/40"
+                  }`}
+                >
+                  {formData.shippingType === "air_irregular" && (
+                    <span className="absolute top-2 end-2 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
+                      <Check className="h-3 w-3 text-white" />
+                    </span>
+                  )}
+                  <div className={`p-3 rounded-xl relative ${formData.shippingType === "air_irregular" ? "bg-amber-500" : "bg-gray-100"}`}>
+                    <Plane className={`h-6 w-6 ${formData.shippingType === "air_irregular" ? "text-white" : "text-gray-500"}`} />
+                    <Zap className={`h-3 w-3 absolute -bottom-0.5 -end-0.5 ${formData.shippingType === "air_irregular" ? "text-yellow-200" : "text-amber-400"}`} />
+                  </div>
+                  <div className="text-center">
+                    <p className={`font-bold text-sm ${formData.shippingType === "air_irregular" ? "text-amber-700" : "text-gray-700"}`}>ئاسمانی مەرسیدار</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Air Irregular</p>
+                  </div>
+                </button>
+
+                {/* Sea */}
+                <button
+                  type="button"
+                  onClick={() => setFormData(p => ({ ...p, shippingType: p.shippingType === "sea" ? "" : "sea", weightKg: "", dimensionLength: "", dimensionWidth: "", dimensionHeight: "" }))}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                    formData.shippingType === "sea"
+                      ? "border-teal-400 bg-teal-50 shadow-md shadow-teal-100"
+                      : "border-gray-200 bg-white hover:border-teal-200 hover:bg-teal-50/40"
+                  }`}
+                >
+                  {formData.shippingType === "sea" && (
+                    <span className="absolute top-2 end-2 w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
+                      <Check className="h-3 w-3 text-white" />
+                    </span>
+                  )}
+                  <div className={`p-3 rounded-xl ${formData.shippingType === "sea" ? "bg-teal-500" : "bg-gray-100"}`}>
+                    <Ship className={`h-6 w-6 ${formData.shippingType === "sea" ? "text-white" : "text-gray-500"}`} />
+                  </div>
+                  <div className="text-center">
+                    <p className={`font-bold text-sm ${formData.shippingType === "sea" ? "text-teal-700" : "text-gray-700"}`}>دەریایی</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Sea Freight</p>
+                  </div>
+                </button>
+              </div>
+
+              {/* Air fields */}
+              {(formData.shippingType === "air_regular" || formData.shippingType === "air_irregular") && (
+                <div className={`rounded-2xl border-2 overflow-hidden ${formData.shippingType === "air_irregular" ? "border-amber-200" : "border-sky-200"}`}>
+                  <div className={`px-4 py-2.5 flex items-center gap-2 ${formData.shippingType === "air_irregular" ? "bg-amber-50" : "bg-sky-50"}`}>
+                    <Scale className={`h-4 w-4 ${formData.shippingType === "air_irregular" ? "text-amber-600" : "text-sky-600"}`} />
+                    <span className="text-sm font-semibold">کێش و قەبارە</span>
+                    <span className="text-xs text-muted-foreground ms-auto">کێشی پارەدان = max(ڕاستەقینە، ئەندازەیی)</span>
+                  </div>
+                  <div className="p-4 space-y-4 bg-white">
+                    {/* Weight */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">کێشی ڕاستەقینە (کیلۆگرام)</Label>
+                        <div className="relative">
+                          <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">kg</span>
+                          <Input type="number" step="0.01" min="0" value={formData.weightKg}
+                            onChange={e => setFormData(p => ({ ...p, weightKg: e.target.value }))}
+                            placeholder="0.00" className="pe-10 h-11 font-mono" dir="ltr" />
+                        </div>
+                      </div>
+                      {volumetricKg > 0 && (
+                        <div className={`rounded-xl p-3 flex flex-col justify-center ${chargeableKg === volumetricKg ? "bg-amber-50 border border-amber-200" : "bg-sky-50 border border-sky-200"}`}>
+                          <p className="text-[11px] text-muted-foreground">کێشی پارەدان</p>
+                          <p className={`text-xl font-bold font-mono ${chargeableKg === volumetricKg ? "text-amber-700" : "text-sky-700"}`}>
+                            {chargeableKg.toFixed(3)} kg
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {chargeableKg === volumetricKg ? "ئەندازەیی" : "ڕاستەقینە"} بە کار هاتووە
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Dimensions */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Ruler className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm font-medium">قەبارە (سانتیمەتر) — ئارەزووی</Label>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
+                          <div key={field} className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">{label}</Label>
+                            <div className="relative">
+                              <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
+                              <Input type="number" step="0.1" min="0"
+                                value={formData[field as keyof typeof formData] as string}
+                                onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
+                                placeholder="0" className="pe-8 h-10 font-mono text-sm" dir="ltr" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {volumetricKg > 0 && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          کێشی ئەندازەیی: ({dimL}×{dimW}×{dimH}) ÷ 6000 = <strong>{volumetricKg.toFixed(3)} kg</strong>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Sea fields */}
+              {formData.shippingType === "sea" && (
+                <div className="rounded-2xl border-2 border-teal-200 overflow-hidden">
+                  <div className="px-4 py-2.5 flex items-center gap-2 bg-teal-50">
+                    <Calculator className="h-4 w-4 text-teal-600" />
+                    <span className="text-sm font-semibold text-teal-800">قەبارەی CBM</span>
+                    <span className="text-xs text-muted-foreground ms-auto">١ CBM = ١٠٠cm × ١٠٠cm × ١٠٠cm</span>
+                  </div>
+                  <div className="p-4 space-y-4 bg-white">
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Direct CBM */}
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">CBM ڕاستەوخۆ</Label>
+                        <div className="relative">
+                          <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">m³</span>
+                          <Input type="number" step="0.0001" min="0" value={formData.volumeCbm}
+                            onChange={e => setFormData(p => ({ ...p, volumeCbm: e.target.value }))}
+                            placeholder="0.0000" className="pe-10 h-11 font-mono" dir="ltr" />
+                        </div>
+                        <p className="text-xs text-muted-foreground">ئەگەر CBM دەزانیت</p>
+                      </div>
+                      {/* Auto CBM from dims */}
+                      {autoCbm > 0 && (
+                        <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex flex-col justify-center">
+                          <p className="text-[11px] text-teal-600">CBM خۆکار</p>
+                          <p className="text-xl font-bold font-mono text-teal-700">{autoCbm.toFixed(4)} m³</p>
+                          <button type="button" onClick={() => setFormData(p => ({ ...p, volumeCbm: autoCbm.toFixed(4) }))}
+                            className="text-[11px] text-teal-600 underline text-start mt-1 hover:text-teal-800">
+                            بەکاربێنە ←
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {/* Dimensions for CBM calc */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Ruler className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm font-medium">قەبارە بۆ حساب کردنی CBM — ئارەزووی</Label>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
+                          <div key={field} className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">{label}</Label>
+                            <div className="relative">
+                              <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
+                              <Input type="number" step="0.1" min="0"
+                                value={formData[field as keyof typeof formData] as string}
+                                onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
+                                placeholder="0" className="pe-8 h-10 font-mono text-sm" dir="ltr" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
