@@ -8,7 +8,7 @@ import * as db from "../db";
 import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
 import { notifyPackageStatusChange } from "../services/notification.service";
 import type { InsertPackage, InsertFullPackageOrder } from "../../drizzle/schema";
-import { fullPackageOrders, packages } from "../../drizzle/schema";
+import { fullPackageOrders, fullPackageOrderTrackings, packages } from "../../drizzle/schema";
 import { signQrData, verifyQrSignature } from "../utils/qr";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
@@ -74,8 +74,8 @@ export const packagesRouter = router({
         const database = await db.getDb();
         if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
         
-        // Check if tracking exists in fullPackageOrders
-        const order = await database.select({
+        // Check if tracking exists in fullPackageOrders (single tracking field)
+        let order = await database.select({
           id: fullPackageOrders.id,
           orderCode: fullPackageOrders.orderCode,
           orderType: fullPackageOrders.orderType,
@@ -85,7 +85,29 @@ export const packagesRouter = router({
         }).from(fullPackageOrders)
           .where(eq(fullPackageOrders.trackingNumber, input.trackingNumber))
           .limit(1);
-        
+
+        // Also check fullPackageOrderTrackings table (multiple trackings per order)
+        if (order.length === 0) {
+          const trackingRow = await database.select({
+            fullPackageOrderId: fullPackageOrderTrackings.fullPackageOrderId,
+          }).from(fullPackageOrderTrackings)
+            .where(eq(fullPackageOrderTrackings.trackingNumber, input.trackingNumber))
+            .limit(1);
+
+          if (trackingRow.length > 0) {
+            order = await database.select({
+              id: fullPackageOrders.id,
+              orderCode: fullPackageOrders.orderCode,
+              orderType: fullPackageOrders.orderType,
+              customerId: fullPackageOrders.customerId,
+              productName: fullPackageOrders.productName,
+              status: fullPackageOrders.status,
+            }).from(fullPackageOrders)
+              .where(eq(fullPackageOrders.id, trackingRow[0].fullPackageOrderId))
+              .limit(1);
+          }
+        }
+
         if (order.length > 0) {
           // Get customer info
           const customer = await db.getCustomerById(order[0].customerId);

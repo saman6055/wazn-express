@@ -839,9 +839,9 @@ export async function getFullPackageStatusHistoryByOrderId(orderId: number) {
 export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
   const db = await getDb();
   if (!db) return null;
-  
-  // First check in fullPackageOrders (includes all three types) - use customers table
-  const order = await db.select({
+
+  // Check in fullPackageOrders (single tracking field)
+  let order = await db.select({
     order: fullPackageOrders,
     customer: customers
   })
@@ -849,7 +849,26 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
     .leftJoin(customers, eq(fullPackageOrders.customerId, customers.id))
     .where(eq(fullPackageOrders.trackingNumber, trackingNumber))
     .limit(1);
-  
+
+  // Also check fullPackageOrderTrackings (multiple trackings per order)
+  if (order.length === 0) {
+    const trackingRow = await db.select({ fullPackageOrderId: fullPackageOrderTrackings.fullPackageOrderId })
+      .from(fullPackageOrderTrackings)
+      .where(eq(fullPackageOrderTrackings.trackingNumber, trackingNumber))
+      .limit(1);
+
+    if (trackingRow.length > 0) {
+      order = await db.select({
+        order: fullPackageOrders,
+        customer: customers
+      })
+        .from(fullPackageOrders)
+        .leftJoin(customers, eq(fullPackageOrders.customerId, customers.id))
+        .where(eq(fullPackageOrders.id, trackingRow[0].fullPackageOrderId))
+        .limit(1);
+    }
+  }
+
   if (order.length > 0) {
     return {
       found: true,
