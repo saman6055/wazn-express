@@ -52,11 +52,18 @@ export default function QuickRegister() {
   // Arrow key navigation state for customer dropdown
   const [highlightedCustomerIndex, setHighlightedCustomerIndex] = useState(-1);
   
+  // Auto-register mode
+  const [autoRegisterEnabled, setAutoRegisterEnabled] = useState(false);
+  const autoRegisterRef = useRef(false);
+  useEffect(() => { autoRegisterRef.current = autoRegisterEnabled; }, [autoRegisterEnabled]);
+
   // Refs for auto-focus
   const trackingRef = useRef<HTMLInputElement>(null);
   const weightRef = useRef<HTMLInputElement>(null);
   const customerInputRef = useRef<HTMLInputElement>(null);
   const searchVersionRef = useRef(0);
+  // Always-fresh ref to handleSubmit (to avoid stale closures in async callbacks)
+  const handleSubmitRef = useRef<() => void>(() => {});
 
   // Queries — handle errors so one failed API doesn't block the form
   const { data: customers, isError: customersError, refetch: refetchCustomers } = trpc.customers.list.useQuery();
@@ -137,17 +144,27 @@ export default function QuickRegister() {
               </div>
             );
           }
-          setTimeout(() => {
-            weightRef.current?.focus();
-            weightRef.current?.select();
-          }, 100);
+          // Auto-register: submit immediately if mode is on and not a duplicate
+          if (autoRegisterRef.current && result.source !== "package" && (customerId || isUnclaimed) && selectedWarehouse) {
+            setTimeout(() => handleSubmitRef.current?.(), 200);
+          } else {
+            setTimeout(() => {
+              weightRef.current?.focus();
+              weightRef.current?.select();
+            }, 100);
+          }
         } else {
           soundManager.playNotFound();
           toast.info("تراکینگ نەدۆزرایەوە - دەتوانیت بەردەوام بیت");
-          setTimeout(() => {
-            weightRef.current?.focus();
-            weightRef.current?.select();
-          }, 100);
+          // Auto-register even when tracking not found in orders
+          if (autoRegisterRef.current && (customerId || isUnclaimed) && selectedWarehouse) {
+            setTimeout(() => handleSubmitRef.current?.(), 200);
+          } else {
+            setTimeout(() => {
+              weightRef.current?.focus();
+              weightRef.current?.select();
+            }, 100);
+          }
         }
       }
     } catch (error: any) {
@@ -416,7 +433,10 @@ export default function QuickRegister() {
     onSuccess: (data) => {
       // Play success beep sound
       soundManager.playSuccess();
-      
+
+      // Activate auto-register mode after first successful registration
+      setAutoRegisterEnabled(true);
+
       // Save last registered package info
       setLastRegistered({
         packageCode: data.packageCode,
@@ -509,8 +529,9 @@ export default function QuickRegister() {
     setDirectCbm("");
     setPhotos([]);
     setHighlightedCustomerIndex(-1);
+    setAutoRegisterEnabled(false);
     trackingRef.current?.focus();
-    toast.info("فۆرم پاککرایەوە");
+    toast.info("فۆرم پاككرایەوە");
   };
   
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -576,7 +597,9 @@ export default function QuickRegister() {
     
     registerMutation.mutate(packageData);
   };
-  
+  // Keep ref up-to-date so async callbacks always call the latest handleSubmit
+  handleSubmitRef.current = handleSubmit;
+
   // Handle Enter key for form submission
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -652,6 +675,21 @@ export default function QuickRegister() {
                   </div>
                 </div>
                 
+                {/* Auto-register toggle */}
+                <button
+                  type="button"
+                  onClick={() => setAutoRegisterEnabled(v => !v)}
+                  className={cn(
+                    "h-14 px-4 rounded-xl border-2 flex items-center gap-2 transition-all font-bold text-sm",
+                    autoRegisterEnabled
+                      ? "bg-white text-orange-600 border-white shadow-lg"
+                      : "bg-white/20 border-white/30 text-white hover:bg-white/30"
+                  )}
+                >
+                  <Zap className={cn("h-5 w-5", autoRegisterEnabled ? "fill-orange-500 text-orange-500" : "")} />
+                  {autoRegisterEnabled ? "ئۆتۆ: چالاک" : "ئۆتۆ: ناچالاک"}
+                </button>
+
                 {/* Clear All Button */}
                 <Button
                   type="button"
@@ -660,7 +698,7 @@ export default function QuickRegister() {
                   className="bg-white/20 border-white/30 text-white hover:bg-white/30 h-14 px-4"
                 >
                   <RotateCcw className="h-5 w-5 ms-2" />
-                  پاککردنەوە
+                  پاككردنەوە
                 </Button>
               </div>
             </div>
