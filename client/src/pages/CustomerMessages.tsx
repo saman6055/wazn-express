@@ -44,10 +44,12 @@ export default function CustomerMessages() {
   const utils = trpc.useUtils();
 
   // Fetch all chats (staff endpoint) with polling
-  const { data: chats, isLoading: loadingChats } =
+  const { data: chatsRaw, isLoading: loadingChats } =
     trpc.supportChat.getAllChats.useQuery(undefined, {
       refetchInterval: 5000,
     });
+  // getAllChats returns { chats, total } — extract the array
+  const chats = Array.isArray(chatsRaw) ? chatsRaw : (chatsRaw as any)?.chats;
 
   // Fetch messages for selected chat with polling
   const { data: messages, isLoading: loadingMessages } =

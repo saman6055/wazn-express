@@ -1,4 +1,5 @@
 import { useAuth } from "../_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -93,6 +94,7 @@ interface MenuItem {
   icon: LucideIcon;
   label: string;
   path: string;
+  badge?: number;
 }
 
 interface MenuGroup {
@@ -158,6 +160,11 @@ function DashboardLayoutContent({
 
   const userRole = user?.role || "user";
 
+  // Unread messages count for sidebar badge
+  const { data: unreadMsgCount } = trpc.supportChat.getUnreadCount.useQuery(undefined, {
+    refetchInterval: 15000,
+  });
+
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
     if (sidebarOpen && isMobile) {
@@ -210,6 +217,7 @@ function DashboardLayoutContent({
       items: [
         { icon: LayoutDashboard, label: t("nav.dashboard") || "داشبۆرد", path: "/dashboard" },
         { icon: Users, label: t("nav.customers") || "کڕیارەکان", path: "/customers" },
+        { icon: MessageCircle, label: t("nav.customerMessages") || "پەیامەکانی کڕیار", path: "/customer-messages", badge: (unreadMsgCount as number) || 0 },
       ]
     });
 
@@ -387,7 +395,6 @@ function DashboardLayoutContent({
           { icon: Database, label: t("nav.dataManagement") || "بەڕێوەبردنی داتا", path: "/settings/data-management" },
           { icon: HardDrive, label: t("nav.backupManagement") || "بەڕێوەبردنی بەکاپ", path: "/backup-management" },
           { icon: Clock, label: t("nav.scheduledBackups") || "بەکاپی خۆکار", path: "/scheduled-backups" },
-          { icon: MessageCircle, label: t("nav.customerMessages") || "پەیامەکانی کڕیار", path: "/customer-messages" },
         ]
       });
     }
@@ -554,7 +561,12 @@ function DashboardLayoutContent({
                             isActive ? colorClasses.icon : "text-gray-400 dark:text-gray-500"
                           )} />
                           <span className="truncate">{item.label}</span>
-                          {isActive && (
+                          {item.badge && item.badge > 0 ? (
+                            <span className="ms-auto min-w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center px-1">
+                              {item.badge > 99 ? "99+" : item.badge}
+                            </span>
+                          ) : null}
+                          {isActive && !item.badge && (
                             <div className={cn(
                               "w-1.5 h-1.5 rounded-full ms-auto",
                               `bg-${group.color}-500`
