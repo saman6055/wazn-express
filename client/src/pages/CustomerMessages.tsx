@@ -1,75 +1,258 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { 
-  MessageCircle, 
-  Send, 
-  User, 
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import {
+  MessageCircle,
+  Send,
+  User,
   Clock,
   ArrowLeft,
   Search,
   CheckCheck,
-  Circle
+  Circle,
+  Image as ImageIcon,
+  Paperclip,
+  Mic,
+  X,
+  FileText,
+  Download,
+  Loader2,
+  Inbox,
 } from "lucide-react";
 
 export default function CustomerMessages() {
-    const { t } = useTranslation();
-const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const { t } = useTranslation();
+  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations } = 
-    trpc.adminMessages.getConversations.useQuery();
-  
-  const { data: messages, isLoading: loadingMessages, refetch: refetchMessages } = 
-    trpc.adminMessages.getMessages.useQuery(
-      { customerId: selectedCustomerId! },
-      { enabled: !!selectedCustomerId }
+  const utils = trpc.useUtils();
+
+  // Fetch all chats (staff endpoint) with polling
+  const { data: chats, isLoading: loadingChats } =
+    trpc.supportChat.getAllChats.useQuery(undefined, {
+      refetchInterval: 5000,
+    });
+
+  // Fetch messages for selected chat with polling
+  const { data: messages, isLoading: loadingMessages } =
+    trpc.supportChat.getMessages.useQuery(
+      { chatId: selectedChatId! },
+      { enabled: !!selectedChatId, refetchInterval: 3000 }
     );
 
-  const sendReply = trpc.adminMessages.sendReply.useMutation({
+  // Send message mutation
+  const sendMessageMutation = trpc.supportChat.sendMessage.useMutation({
     onSuccess: () => {
       setNewMessage("");
-      refetchMessages();
-      refetchConversations();
+      setAttachmentFile(null);
+      setAttachmentPreview(null);
+      utils.supportChat.getMessages.invalidate({ chatId: selectedChatId! });
+      utils.supportChat.getAllChats.invalidate();
+    },
+    onError: () => {
+      toast.error("هەڵە لە ناردنی پەیام");
     },
   });
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim() || !selectedCustomerId) return;
-    sendReply.mutate({
-      customerId: selectedCustomerId,
-      message: newMessage.trim(),
+  // Mark as read when selecting a chat
+  const markAsRead = trpc.supportChat.markAsRead.useMutation({
+    onSuccess: () => {
+      utils.supportChat.getAllChats.invalidate();
+      utils.supportChat.getUnreadCount.invalidate();
+    },
+  });
+
+  // Upload mutation for files/images
+  const uploadMutation = trpc.storage.upload.useMutation();
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Mark as read when opening a chat
+  useEffect(() => {
+    if (selectedChatId) {
+      markAsRead.mutate({ chatId: selectedChatId });
+    }
+  }, [selectedChatId]);
+
+  const selectedChat = chats?.find((c: any) => c.id === selectedChatId);
+
+  const filteredChats = chats?.filter(
+    (chat: any) =>
+      (chat.customerName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (chat.customerCode || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSendMessage = async () => {
+    if ((!newMessage.trim() && !attachmentFile) || !selectedChatId) return;
+
+    let attachmentUrl: string | undefined;
+    let attachmentName: string | undefined;
+    let attachmentType: string | undefined;
+    let messageType: "text" | "image" | "file" = "text";
+
+    // Upload file if attached
+    if (attachmentFile) {
+      setIsUploading(true);
+      try {
+        const reader = new FileReader();
+        const base64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            const result = reader.result as string;
+            resolve(result.split(",")[1]);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(attachmentFile);
+        });
+
+        const result = await uploadMutation.mutateAsync({
+          fileName: attachmentFile.name,
+          contentType: attachmentFile.type,
+          base64Data: base64,
+        });
+
+        attachmentUrl = result.url;
+        attachmentName = attachmentFile.name;
+        attachmentType = attachmentFile.type;
+        messageType = attachmentFile.type.startsWith("image/") ? "image" : "file";
+      } catch {
+        toast.error("هەڵە لە ئەپڵۆدکردنی فایل");
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    }
+
+    sendMessageMutation.mutate({
+      chatId: selectedChatId,
+      content: newMessage.trim() || (attachmentName ? `📎 ${attachmentName}` : ""),
+      messageType,
+      attachmentUrl,
+      attachmentName,
+      attachmentType,
     });
   };
 
-  const filteredConversations = conversations?.filter(conv => 
-    conv.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.customerCode.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "file") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const selectedConversation = conversations?.find(c => c.customerId === selectedCustomerId);
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("فایل زۆر گەورەیە (max 10MB)");
+      return;
+    }
 
-  const formatTime = (date: Date) => {
+    setAttachmentFile(file);
+
+    if (type === "image" && file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      setAttachmentPreview(url);
+    } else {
+      setAttachmentPreview(null);
+    }
+
+    e.target.value = "";
+  };
+
+  const clearAttachment = () => {
+    setAttachmentFile(null);
+    if (attachmentPreview) {
+      URL.revokeObjectURL(attachmentPreview);
+      setAttachmentPreview(null);
+    }
+  };
+
+  const formatTime = (date: any) => {
     const d = new Date(date);
     const now = new Date();
     const diff = now.getTime() - d.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
+
     if (days === 0) {
-      return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     } else if (days === 1) {
-      return 'Yesterday';
+      return "دوێنێ";
     } else if (days < 7) {
-      return d.toLocaleDateString('en-US', { weekday: 'short' });
-    } else {
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return d.toLocaleDateString("ku-IQ", { weekday: "short" });
     }
+    return d.toLocaleDateString("ku-IQ", { month: "short", day: "numeric" });
+  };
+
+  const renderMessageContent = (msg: any) => {
+    const isStaff = msg.senderType === "staff";
+
+    return (
+      <div>
+        {/* Image attachment */}
+        {msg.messageType === "image" && msg.attachmentUrl && (
+          <div className="mb-2">
+            <img
+              src={msg.attachmentUrl}
+              alt={msg.attachmentName || "image"}
+              className="max-w-[240px] rounded-lg cursor-pointer hover:opacity-90 transition"
+              onClick={() => window.open(msg.attachmentUrl, "_blank")}
+            />
+          </div>
+        )}
+
+        {/* File attachment */}
+        {msg.messageType === "file" && msg.attachmentUrl && (
+          <a
+            href={msg.attachmentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "flex items-center gap-2 mb-2 p-2 rounded-lg transition",
+              isStaff ? "bg-blue-500/20 hover:bg-blue-500/30" : "bg-gray-100 hover:bg-gray-200"
+            )}
+          >
+            <FileText className="w-5 h-5 shrink-0" />
+            <span className="text-sm truncate">{msg.attachmentName || "File"}</span>
+            <Download className="w-4 h-4 shrink-0 ms-auto" />
+          </a>
+        )}
+
+        {/* Text content */}
+        {msg.content && !(msg.messageType !== "text" && msg.content.startsWith("📎")) && (
+          <p className="whitespace-pre-wrap">{msg.content}</p>
+        )}
+
+        {/* Time + read status */}
+        <div
+          className={cn(
+            "flex items-center gap-1 mt-1 text-xs",
+            isStaff ? "text-blue-100" : "text-gray-400"
+          )}
+        >
+          <Clock className="w-3 h-3" />
+          {new Date(msg.createdAt).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+          {isStaff &&
+            (msg.isRead ? (
+              <CheckCheck className="w-3 h-3 ms-1" />
+            ) : (
+              <Circle className="w-2 h-2 ms-1 fill-current" />
+            ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -82,22 +265,32 @@ const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null
               <MessageCircle className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Customer Messages</h1>
-              <p className="text-blue-100">Respond to customer inquiries</p>
+              <h1 className="text-2xl font-bold">پەیامەکانی کڕیارەکان</h1>
+              <p className="text-blue-100">وەڵامدانەوە بە کڕیارەکان</p>
             </div>
+            {chats && (
+              <Badge className="ms-auto bg-white/20 text-white border-0 text-base px-3 py-1">
+                {chats.filter((c: any) => c.unreadByStaff > 0).length} نەخوێندراوە
+              </Badge>
+            )}
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex bg-white rounded-b-xl shadow-sm overflow-hidden border border-t-0">
+        <div className="flex-1 flex bg-white dark:bg-slate-900 rounded-b-xl shadow-sm overflow-hidden border border-t-0">
           {/* Conversations List */}
-          <div className={`w-full md:w-80 border-r flex flex-col ${selectedCustomerId ? 'hidden md:flex' : 'flex'}`}>
+          <div
+            className={cn(
+              "w-full md:w-80 border-e flex flex-col",
+              selectedChatId ? "hidden md:flex" : "flex"
+            )}
+          >
             {/* Search */}
             <div className="p-4 border-b">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder="Search conversations..."
+                  placeholder="گەڕان..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -105,62 +298,59 @@ const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null
               </div>
             </div>
 
-            {/* Conversations */}
+            {/* Chat list */}
             <div className="flex-1 overflow-y-auto">
-              {loadingConversations ? (
+              {loadingChats ? (
                 <div className="p-4 space-y-3">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="animate-pulse">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-200 rounded-full" />
-                        <div className="flex-1">
-                          <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
-                          <div className="h-3 bg-gray-200 rounded w-32" />
-                        </div>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gray-200 rounded-full" />
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
+                        <div className="h-3 bg-gray-200 rounded w-32" />
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : filteredConversations?.length === 0 ? (
+              ) : !filteredChats?.length ? (
                 <div className="p-8 text-center text-gray-500">
-                  <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>No conversations yet</p>
+                  <Inbox className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>هیچ گفتوگۆیەک نییە</p>
                 </div>
               ) : (
-                filteredConversations?.map(conv => (
+                filteredChats.map((chat: any) => (
                   <button
-                    key={conv.customerId}
-                    onClick={() => setSelectedCustomerId(conv.customerId)}
-                    className={`w-full p-4 flex items-start gap-3 hover:bg-gray-50 transition-colors border-b ${
-                      selectedCustomerId === conv.customerId ? 'bg-blue-50' : ''
-                    }`}
+                    key={chat.id}
+                    onClick={() => setSelectedChatId(chat.id)}
+                    className={cn(
+                      "w-full p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors border-b",
+                      selectedChatId === chat.id && "bg-blue-50 dark:bg-blue-900/20"
+                    )}
                   >
                     <div className="relative">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {conv.customerName.charAt(0).toUpperCase()}
+                        {(chat.customerName || "?").charAt(0).toUpperCase()}
                       </div>
-                      {conv.unreadCount > 0 && (
+                      {chat.unreadByStaff > 0 && (
                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                          {conv.unreadCount}
+                          {chat.unreadByStaff}
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 text-left min-w-0">
+                    <div className="flex-1 text-right min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-gray-900 truncate">
-                          {conv.customerName}
-                        </span>
                         <span className="text-xs text-gray-500">
-                          {formatTime(conv.lastMessageAt)}
+                          {chat.lastMessageAt ? formatTime(chat.lastMessageAt) : ""}
+                        </span>
+                        <span className="font-semibold text-gray-900 dark:text-white truncate">
+                          {chat.customerName || "نەناسراو"}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline" className="text-xs px-1.5 py-0">
-                          {conv.customerCode}
-                        </Badge>
-                      </div>
+                      <Badge variant="outline" className="text-xs px-1.5 py-0 mt-0.5">
+                        {chat.customerCode || "-"}
+                      </Badge>
                       <p className="text-sm text-gray-500 truncate mt-1">
-                        {conv.lastMessage}
+                        {chat.totalMessages || 0} پەیام
                       </p>
                     </div>
                   </button>
@@ -170,106 +360,178 @@ const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null
           </div>
 
           {/* Chat Area */}
-          <div className={`flex-1 flex flex-col ${selectedCustomerId ? 'flex' : 'hidden md:flex'}`}>
-            {selectedCustomerId ? (
+          <div className={cn("flex-1 flex flex-col", selectedChatId ? "flex" : "hidden md:flex")}>
+            {selectedChatId && selectedChat ? (
               <>
                 {/* Chat Header */}
                 <div className="p-4 border-b flex items-center gap-3">
                   <button
-                    onClick={() => setSelectedCustomerId(null)}
+                    onClick={() => setSelectedChatId(null)}
                     className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    {selectedConversation?.customerName.charAt(0).toUpperCase()}
+                    {(selectedChat.customerName || "?").charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <h3 className="font-semibold">{selectedConversation?.customerName}</h3>
-                    <p className="text-sm text-gray-500">{selectedConversation?.customerCode}</p>
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{selectedChat.customerName}</h3>
+                    <p className="text-sm text-gray-500">{selectedChat.customerCode}</p>
                   </div>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-xs",
+                      selectedChat.status === "open" && "border-green-300 text-green-700 bg-green-50",
+                      selectedChat.status === "resolved" && "border-blue-300 text-blue-700 bg-blue-50",
+                      selectedChat.status === "closed" && "border-gray-300 text-gray-700 bg-gray-50"
+                    )}
+                  >
+                    {selectedChat.status === "open" ? "کراوە" : selectedChat.status === "resolved" ? "چارەسەرکرا" : selectedChat.status}
+                  </Badge>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-slate-950">
                   {loadingMessages ? (
                     <div className="flex items-center justify-center h-full">
-                      <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+                      <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
                     </div>
-                  ) : messages?.length === 0 ? (
+                  ) : !messages?.length ? (
                     <div className="flex items-center justify-center h-full text-gray-500">
                       <div className="text-center">
                         <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                        <p>No messages yet</p>
+                        <p>هیچ پەیامێک نییە</p>
                       </div>
                     </div>
                   ) : (
-                    messages?.map(msg => (
+                    messages.map((msg: any) => (
                       <div
                         key={msg.id}
-                        className={`flex ${msg.senderType === 'admin' ? 'justify-end' : 'justify-start'}`}
+                        className={cn(
+                          "flex",
+                          msg.senderType === "staff" ? "justify-start" : "justify-end"
+                        )}
                       >
                         <div
-                          className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                            msg.senderType === 'admin'
-                              ? 'bg-blue-600 text-white rounded-br-md'
-                              : 'bg-white text-gray-900 rounded-bl-md shadow-sm'
-                          }`}
+                          className={cn(
+                            "max-w-[70%] rounded-2xl px-4 py-2",
+                            msg.senderType === "staff"
+                              ? "bg-blue-600 text-white rounded-bl-md"
+                              : "bg-white dark:bg-slate-800 text-gray-900 dark:text-white rounded-br-md shadow-sm"
+                          )}
                         >
-                          <p className="whitespace-pre-wrap">{msg.message}</p>
-                          <div className={`flex items-center gap-1 mt-1 text-xs ${
-                            msg.senderType === 'admin' ? 'text-blue-100' : 'text-gray-400'
-                          }`}>
-                            <Clock className="w-3 h-3" />
-                            {new Date(msg.createdAt).toLocaleTimeString('en-US', { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
-                            {msg.senderType === 'admin' && (
-                              msg.isRead ? (
-                                <CheckCheck className="w-3 h-3 ms-1" />
-                              ) : (
-                                <Circle className="w-2 h-2 ms-1 fill-current" />
-                              )
-                            )}
-                          </div>
+                          {msg.senderType !== "staff" && msg.senderName && (
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                              {msg.senderName}
+                            </p>
+                          )}
+                          {renderMessageContent(msg)}
                         </div>
                       </div>
                     ))
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
 
+                {/* Attachment preview */}
+                {attachmentFile && (
+                  <div className="px-4 pt-3 bg-white dark:bg-slate-900 border-t">
+                    <div className="flex items-center gap-3 p-2 bg-gray-100 dark:bg-slate-800 rounded-lg">
+                      {attachmentPreview ? (
+                        <img src={attachmentPreview} alt="" className="w-16 h-16 rounded object-cover" />
+                      ) : (
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <FileText className="w-6 h-6 text-blue-600" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{attachmentFile.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {(attachmentFile.size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                      <button onClick={clearAttachment} className="p-1 hover:bg-gray-200 rounded">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Message Input */}
-                <div className="p-4 border-t bg-white">
-                  <div className="flex gap-2">
+                <div className="p-4 border-t bg-white dark:bg-slate-900">
+                  <div className="flex gap-2 items-end">
+                    {/* Attachment buttons */}
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => imageInputRef.current?.click()}
+                        className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 hover:text-blue-600"
+                        title="وێنە"
+                      >
+                        <ImageIcon className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 hover:text-blue-600"
+                        title="فایل"
+                      >
+                        <Paperclip className="w-5 h-5" />
+                      </button>
+                    </div>
+
                     <Input
-                      placeholder="Type your reply..."
+                      placeholder="پەیامەکەت بنووسە..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
+                        if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
                           handleSendMessage();
                         }
                       }}
                       className="flex-1"
+                      dir="rtl"
                     />
                     <Button
                       onClick={handleSendMessage}
-                      disabled={!newMessage.trim() || sendReply.isPending}
-                      className="bg-blue-600 hover:bg-blue-700"
+                      disabled={
+                        (!newMessage.trim() && !attachmentFile) ||
+                        sendMessageMutation.isPending ||
+                        isUploading
+                      }
+                      className="bg-blue-600 hover:bg-blue-700 h-10 w-10 p-0"
                     >
-                      <Send className="w-4 h-4" />
+                      {isUploading || sendMessageMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
+
+                  {/* Hidden file inputs */}
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleFileSelect(e, "image")}
+                  />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="*/*"
+                    className="hidden"
+                    onChange={(e) => handleFileSelect(e, "file")}
+                  />
                 </div>
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-gray-500">
                 <div className="text-center">
                   <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                  <h3 className="text-lg font-semibold mb-2">Select a conversation</h3>
-                  <p>Choose a customer from the list to view messages</p>
+                  <h3 className="text-lg font-semibold mb-2">گفتوگۆیەک هەڵبژێرە</h3>
+                  <p>کڕیارێک لە لیستەکە هەڵبژێرە بۆ بینینی پەیامەکان</p>
                 </div>
               </div>
             )}
