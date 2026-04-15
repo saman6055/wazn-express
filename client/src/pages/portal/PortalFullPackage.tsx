@@ -19,7 +19,7 @@ import {
   ArrowUpRight, Sparkles, TrendingUp, Box, Plane, Home,
   FileText, Wallet, ShoppingCart, Star, Filter, XCircle,
   Loader2, Check, AlertTriangle, Gift, Zap, ThumbsUp, ThumbsDown,
-  Image as ImageIcon, ExternalLink, Hash
+  Image as ImageIcon, ExternalLink, Hash, SlidersHorizontal, ArrowUpDown
 } from "lucide-react";
 
 // Status configuration with beautiful colors
@@ -179,6 +179,9 @@ export default function PortalFullPackage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price_high" | "price_low">("newest");
+  const [showFilters, setShowFilters] = useState(false);
   
   // Fetch full package orders for this customer (using customer portal endpoint)
   const { data: fullPackageOrders, isLoading } = trpc.customerPortal.getMyFullPackageOrders.useQuery({
@@ -190,15 +193,39 @@ export default function PortalFullPackage() {
     ...(fullPackageOrders || []).map(o => ({ ...o, source: 'full_package' as const })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   
-  // Filter by tab
+  // Active filter count for badge
+  const activeFilterCount = (statusFilter !== "all" ? 1 : 0) + (sortBy !== "newest" ? 1 : 0);
+
+  // Filter by tab, status, search, then sort
   const filteredOrders = allOrders.filter(order => {
     if (activeTab === "all") return true;
     if (activeTab === "full_package") return order.orderType === "full_package";
     if (activeTab === "commission") return order.orderType === "commission";
     return true;
   }).filter(order => {
+    if (statusFilter === "all") return true;
+    if (statusFilter === "pending") return ["pending", "purchasing", "purchased", "ordered"].includes(order.status);
+    if (statusFilter === "in_transit") return ["tracking_added", "in_china_warehouse", "in_batch", "in_transit"].includes(order.status);
+    if (statusFilter === "delivered") return ["delivered", "completed", "arrived"].includes(order.status);
+    if (statusFilter === "cancelled") return order.status === "cancelled";
+    return true;
+  }).filter(order => {
     if (!searchQuery) return true;
     return order.productName?.toLowerCase().includes(searchQuery.toLowerCase());
+  }).sort((a, b) => {
+    if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    if (sortBy === "price_high") {
+      const pa = parseFloat(a.totalPrepaidUsd || a.sellingPriceUsd || "0");
+      const pb = parseFloat(b.totalPrepaidUsd || b.sellingPriceUsd || "0");
+      return pb - pa;
+    }
+    if (sortBy === "price_low") {
+      const pa = parseFloat(a.totalPrepaidUsd || a.sellingPriceUsd || "0");
+      const pb = parseFloat(b.totalPrepaidUsd || b.sellingPriceUsd || "0");
+      return pa - pb;
+    }
+    // default: newest
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
   
   // Calculate stats
@@ -364,26 +391,159 @@ export default function PortalFullPackage() {
           </button>
         </div>
         
-        {/* Search Bar */}
-        <div className="relative mb-6">
-          <Search className={cn(
-            "absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5",
-            isDark ? "text-slate-500" : "text-slate-400"
-          )} />
-          <input
-            type="text"
-placeholder={isKurdish ? "گەڕان بە ناوی کاڵا..." : language === "ar" ? "البحث باسم المنتج..." : "Search by product name..."}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+        {/* Search Bar + Filter Toggle */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="relative flex-1">
+            <Search className={cn(
+              "absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5",
+              isDark ? "text-slate-500" : "text-slate-400"
+            )} />
+            <input
+              type="text"
+              placeholder={isKurdish ? "گەڕان بە ناوی کاڵا..." : language === "ar" ? "البحث باسم المنتج..." : "Search by product name..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={cn(
+                "w-full pr-12 pl-4 py-4 rounded-2xl border-2 transition-all text-right",
+                isDark
+                  ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-purple-500"
+                  : "bg-white border-slate-200 focus:border-purple-500 shadow-sm"
+              )}
+            />
+          </div>
+          <button
+            onClick={() => setShowFilters(v => !v)}
             className={cn(
-              "w-full pr-12 pl-4 py-4 rounded-2xl border-2 transition-all text-right",
-              isDark 
-                ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-purple-500" 
-                : "bg-white border-slate-200 focus:border-purple-500 shadow-sm"
+              "relative flex items-center justify-center w-14 h-14 rounded-2xl border-2 transition-all shrink-0",
+              showFilters
+                ? "bg-gradient-to-r from-violet-500 to-purple-600 border-purple-500 text-white shadow-lg"
+                : isDark
+                  ? "bg-slate-800 border-slate-700 text-slate-400 hover:border-purple-500"
+                  : "bg-white border-slate-200 text-slate-500 hover:border-purple-500 shadow-sm"
             )}
-          />
+          >
+            <SlidersHorizontal className="w-5 h-5" />
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center shadow">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
         </div>
-        
+
+        {/* Advanced Filter Panel */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden mb-4"
+            >
+              <div className={cn(
+                "p-4 rounded-2xl space-y-4",
+                isDark ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200 shadow-sm"
+              )}>
+                {/* Status Filter */}
+                <div>
+                  <p className={cn(
+                    "text-xs font-semibold mb-2.5 flex items-center gap-1.5",
+                    isDark ? "text-slate-400" : "text-slate-500"
+                  )}>
+                    <Filter className="w-3.5 h-3.5" />
+                    {isKurdish ? "بارودۆخ" : language === "ar" ? "الحالة" : "Status"}
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    {[
+                      { key: "all", ku: "هەموو", ar: "الكل", en: "All", gradient: "from-violet-500 to-purple-600" },
+                      { key: "pending", ku: "چاوەڕوان", ar: "قيد الانتظار", en: "Pending", gradient: "from-amber-500 to-orange-500" },
+                      { key: "in_transit", ku: "لە ڕێگادایە", ar: "في الطريق", en: "In Transit", gradient: "from-blue-500 to-cyan-500" },
+                      { key: "delivered", ku: "گەیشت", ar: "تم التسليم", en: "Delivered", gradient: "from-emerald-500 to-teal-500" },
+                      { key: "cancelled", ku: "هەڵوەشاوە", ar: "ملغى", en: "Cancelled", gradient: "from-red-500 to-rose-500" },
+                    ].map(s => (
+                      <button
+                        key={s.key}
+                        onClick={() => setStatusFilter(s.key)}
+                        className={cn(
+                          "shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                          statusFilter === s.key
+                            ? `bg-gradient-to-r ${s.gradient} text-white shadow-md`
+                            : isDark
+                              ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        )}
+                      >
+                        {isKurdish ? s.ku : language === "ar" ? s.ar : s.en}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Sort */}
+                <div>
+                  <p className={cn(
+                    "text-xs font-semibold mb-2.5 flex items-center gap-1.5",
+                    isDark ? "text-slate-400" : "text-slate-500"
+                  )}>
+                    <ArrowUpDown className="w-3.5 h-3.5" />
+                    {isKurdish ? "ڕیزکردن" : language === "ar" ? "الترتيب" : "Sort"}
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    {[
+                      { key: "newest" as const, ku: "نوێترین", ar: "الأحدث", en: "Newest" },
+                      { key: "oldest" as const, ku: "کۆنترین", ar: "الأقدم", en: "Oldest" },
+                      { key: "price_high" as const, ku: "گرانترین", ar: "الأغلى", en: "Highest" },
+                      { key: "price_low" as const, ku: "هەرزانترین", ar: "الأرخص", en: "Lowest" },
+                    ].map(s => (
+                      <button
+                        key={s.key}
+                        onClick={() => setSortBy(s.key)}
+                        className={cn(
+                          "shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                          sortBy === s.key
+                            ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-md"
+                            : isDark
+                              ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        )}
+                      >
+                        {isKurdish ? s.ku : language === "ar" ? s.ar : s.en}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Clear Filters */}
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={() => { setStatusFilter("all"); setSortBy("newest"); }}
+                    className={cn(
+                      "w-full py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2",
+                      isDark
+                        ? "bg-red-900/30 text-red-400 hover:bg-red-900/50"
+                        : "bg-red-50 text-red-600 hover:bg-red-100"
+                    )}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    {isKurdish ? "سڕینەوەی فلتەرەکان" : language === "ar" ? "مسح الفلاتر" : "Clear Filters"}
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Results count */}
+        {(statusFilter !== "all" || sortBy !== "newest" || searchQuery) && !isLoading && (
+          <p className={cn(
+            "text-sm mb-3",
+            isDark ? "text-slate-400" : "text-slate-500"
+          )}>
+            {filteredOrders.length} {isKurdish ? "ئەنجام" : language === "ar" ? "نتيجة" : "results"}
+          </p>
+        )}
+
         {/* Orders List */}
         {isLoading ? (
           <div className="space-y-4">
