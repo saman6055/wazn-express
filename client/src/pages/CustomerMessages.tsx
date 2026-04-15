@@ -24,7 +24,9 @@ import {
   Download,
   Loader2,
   Inbox,
+  Square,
 } from "lucide-react";
+import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 
 export default function CustomerMessages() {
   const { t } = useTranslation();
@@ -37,6 +39,7 @@ export default function CustomerMessages() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const { isRecording, formattedDuration, startRecording, stopRecording, cancelRecording } = useVoiceRecorder();
 
   const utils = trpc.useUtils();
 
@@ -177,6 +180,39 @@ export default function CustomerMessages() {
     }
   };
 
+  const handleVoiceSend = async () => {
+    const file = await stopRecording();
+    if (!file || !selectedChatId) return;
+
+    setIsUploading(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const result = await uploadMutation.mutateAsync({
+        fileName: file.name,
+        contentType: file.type,
+        base64Data: base64,
+      });
+
+      sendMessageMutation.mutate({
+        chatId: selectedChatId,
+        content: "🎤 Voice message",
+        messageType: "voice" as any,
+        attachmentUrl: result.url,
+        attachmentName: file.name,
+        attachmentType: file.type,
+      });
+    } catch {
+      toast.error("هەڵە لە ناردنی دەنگ");
+    }
+    setIsUploading(false);
+  };
+
   const formatTime = (date: any) => {
     const d = new Date(date);
     const now = new Date();
@@ -227,8 +263,17 @@ export default function CustomerMessages() {
           </a>
         )}
 
+        {/* Voice message */}
+        {msg.messageType === "voice" && msg.attachmentUrl && (
+          <div className="mb-1">
+            <audio controls className="max-w-[240px] h-8" preload="metadata">
+              <source src={msg.attachmentUrl} type={msg.attachmentType || "audio/webm"} />
+            </audio>
+          </div>
+        )}
+
         {/* Text content */}
-        {msg.content && !(msg.messageType !== "text" && msg.content.startsWith("📎")) && (
+        {msg.content && msg.messageType === "text" && (
           <p className="whitespace-pre-wrap">{msg.content}</p>
         )}
 
@@ -479,34 +524,69 @@ export default function CustomerMessages() {
                       </button>
                     </div>
 
-                    <Input
-                      placeholder="پەیامەکەت بنووسە..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                      className="flex-1"
-                      dir="rtl"
-                    />
-                    <Button
-                      onClick={handleSendMessage}
-                      disabled={
-                        (!newMessage.trim() && !attachmentFile) ||
-                        sendMessageMutation.isPending ||
-                        isUploading
-                      }
-                      className="bg-blue-600 hover:bg-blue-700 h-10 w-10 p-0"
-                    >
-                      {isUploading || sendMessageMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Send className="w-4 h-4" />
-                      )}
-                    </Button>
+                    {isRecording ? (
+                      /* Recording UI */
+                      <div className="flex-1 flex items-center gap-3">
+                        <button
+                          onClick={cancelRecording}
+                          className="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                        <div className="flex-1 flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                          <span className="text-sm font-mono font-medium">{formattedDuration}</span>
+                          <span className="text-xs text-gray-500">تۆمارکردن...</span>
+                        </div>
+                        <Button
+                          onClick={handleVoiceSend}
+                          disabled={isUploading}
+                          className="bg-blue-600 hover:bg-blue-700 h-10 w-10 p-0"
+                        >
+                          {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    ) : (
+                      /* Normal input */
+                      <>
+                        <Input
+                          placeholder="پەیامەکەت بنووسە..."
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendMessage();
+                            }
+                          }}
+                          className="flex-1"
+                          dir="rtl"
+                        />
+                        {newMessage.trim() || attachmentFile ? (
+                          <Button
+                            onClick={handleSendMessage}
+                            disabled={sendMessageMutation.isPending || isUploading}
+                            className="bg-blue-600 hover:bg-blue-700 h-10 w-10 p-0"
+                          >
+                            {isUploading || sendMessageMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Send className="w-4 h-4" />
+                            )}
+                          </Button>
+                        ) : (
+                          <button
+                            onClick={async () => {
+                              const ok = await startRecording();
+                              if (!ok) toast.error("ڕێگەپێدانی مایکرۆفۆن نییە");
+                            }}
+                            className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 hover:text-blue-600"
+                          >
+                            <Mic className="w-5 h-5" />
+                          </button>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   {/* Hidden file inputs */}

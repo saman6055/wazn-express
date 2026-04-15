@@ -39,8 +39,13 @@ import {
   Paperclip,
   FileText,
   Download,
-  X
+  X,
+  Mic,
+  Square,
+  Play,
+  Pause
 } from "lucide-react";
+import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { Link } from "wouter";
 import { toast } from "sonner";
 
@@ -62,6 +67,7 @@ export default function PortalMessages() {
   const inputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isRecording, formattedDuration, startRecording, stopRecording, cancelRecording } = useVoiceRecorder();
   
   const utils = trpc.useUtils();
   
@@ -210,6 +216,39 @@ export default function PortalMessages() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleVoiceSend = async () => {
+    const file = await stopRecording();
+    if (!file || !chatId) return;
+
+    setIsUploading(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const result = await uploadMutation.mutateAsync({
+        fileName: file.name,
+        contentType: file.type,
+        base64Data: base64,
+      });
+
+      sendMessage.mutate({
+        chatId,
+        content: "🎤 Voice message",
+        messageType: "voice" as any,
+        attachmentUrl: result.url,
+        attachmentName: file.name,
+        attachmentType: file.type,
+      });
+    } catch {
+      toast.error(isKurdish ? "هەڵە لە ناردنی دەنگ" : "Voice send failed");
+    }
+    setIsUploading(false);
   };
   
   const formatTime = (date: Date | string) => {
@@ -505,8 +544,16 @@ export default function PortalMessages() {
                                 <Download className="w-3.5 h-3.5 shrink-0 ms-auto" />
                               </a>
                             )}
+                            {/* Voice message */}
+                            {message.messageType === "voice" && message.attachmentUrl && (
+                              <div className="mb-1">
+                                <audio controls className="max-w-[220px] h-8" preload="metadata">
+                                  <source src={message.attachmentUrl} type={message.attachmentType || "audio/webm"} />
+                                </audio>
+                              </div>
+                            )}
                             {/* Text content */}
-                            {message.content && !(message.messageType !== "text" && message.content.startsWith("📎")) && (
+                            {message.content && message.messageType === "text" && (
                             <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                             )}
                             <div
@@ -610,34 +657,84 @@ export default function PortalMessages() {
                   <Paperclip className="w-5 h-5" />
                 </button>
 
-                <Input
-                  ref={inputRef}
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder={isKurdish ? "نامەکەت بنووسە..." : "Type a message..."}
-                  className={cn(
-                    "flex-1 rounded-full",
-                    isDark
-                      ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
-                      : "border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                  )}
-                  disabled={!chatId || sendMessage.isPending || isUploading}
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={(!newMessage.trim() && !attachmentFile) || !chatId || sendMessage.isPending || isUploading}
-                  className={cn(
-                    "rounded-full w-10 h-10 p-0",
-                    "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                  )}
-                >
-                  {sendMessage.isPending || isUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
+                {isRecording ? (
+                  /* Recording UI */
+                  <div className="flex-1 flex items-center gap-3">
+                    <button
+                      onClick={cancelRecording}
+                      className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                    <div className="flex-1 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                      <span className={cn("text-sm font-mono font-medium", isDark ? "text-white" : "text-gray-800")}>
+                        {formattedDuration}
+                      </span>
+                      <span className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-500")}>
+                        {isKurdish ? "تۆمارکردن..." : "Recording..."}
+                      </span>
+                    </div>
+                    <Button
+                      onClick={handleVoiceSend}
+                      disabled={isUploading}
+                      className={cn(
+                        "rounded-full w-10 h-10 p-0",
+                        "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                      )}
+                    >
+                      {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                ) : (
+                  /* Normal input UI */
+                  <>
+                    <Input
+                      ref={inputRef}
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder={isKurdish ? "نامەکەت بنووسە..." : "Type a message..."}
+                      className={cn(
+                        "flex-1 rounded-full",
+                        isDark
+                          ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                          : "border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                      )}
+                      disabled={!chatId || sendMessage.isPending || isUploading}
+                    />
+                    {newMessage.trim() || attachmentFile ? (
+                      <Button
+                        onClick={handleSendMessage}
+                        disabled={sendMessage.isPending || isUploading}
+                        className={cn(
+                          "rounded-full w-10 h-10 p-0",
+                          "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                        )}
+                      >
+                        {sendMessage.isPending || isUploading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                    ) : (
+                      <button
+                        onClick={async () => {
+                          const ok = await startRecording();
+                          if (!ok) toast.error(isKurdish ? "ڕێگەپێدانی مایکرۆفۆن نییە" : "Microphone permission denied");
+                        }}
+                        disabled={!chatId}
+                        className={cn(
+                          "rounded-full w-10 h-10 flex items-center justify-center transition",
+                          isDark ? "hover:bg-slate-800 text-slate-400 hover:text-purple-400" : "hover:bg-gray-100 text-gray-400 hover:text-purple-600"
+                        )}
+                      >
+                        <Mic className="w-5 h-5" />
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* Hidden file inputs */}

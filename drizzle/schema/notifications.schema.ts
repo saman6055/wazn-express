@@ -304,7 +304,7 @@ export const chatMessages = mysqlTable("chat_messages", {
   
   // Message content
   content: text("content").notNull(),
-  messageType: mysqlEnum("messageType", ["text", "image", "file", "system"]).default("text").notNull(),
+  messageType: mysqlEnum("messageType", ["text", "image", "file", "system", "voice"]).default("text").notNull(),
   
   // Attachments
   attachmentUrl: varchar("attachmentUrl", { length: 500 }),

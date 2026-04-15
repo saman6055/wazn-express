@@ -1878,6 +1878,7 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "serviceTypes.addToCustomerBalance", sql: "ALTER TABLE serviceTypes ADD COLUMN addToCustomerBalance BOOLEAN NOT NULL DEFAULT TRUE" },
   { name: "serviceTypes.createdById", sql: "ALTER TABLE serviceTypes ADD COLUMN createdById INT" },
   { name: "fullPackageOrders.productType", sql: "ALTER TABLE fullPackageOrders ADD COLUMN productType VARCHAR(200)" },
+  { name: "chatMessages.messageType.voice", sql: "ALTER TABLE chatMessages MODIFY COLUMN messageType ENUM('text','image','file','system','voice') NOT NULL DEFAULT 'text'" },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {

@@ -1179,7 +1179,7 @@ export const supportChatRouter = router({
       .input(z.object({
         chatId: z.number(),
         content: z.string().min(1),
-        messageType: z.enum(['text', 'image', 'file']).optional(),
+        messageType: z.enum(['text', 'image', 'file', 'voice']).optional(),
         attachmentUrl: z.string().optional(),
         attachmentName: z.string().optional(),
         attachmentType: z.string().optional(),
