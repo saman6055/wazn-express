@@ -50,6 +50,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { generateLabelsHtml, openLabelPrintWindow } from "@/lib/labelPrintUtils";
 import { generateBatchLabelsHtml, openBatchLabelPrintWindow } from "@/lib/batchLabelPrintUtils";
+import { BatchPrintBoxesSection } from "@/components/delivery/BatchPrintBoxesSection";
 
 function DownloadPDFButton({ batchId }: { batchId: number }) {
   const generatePDF = trpc.batches.generateFinancialPDF.useMutation({
@@ -1214,6 +1215,9 @@ export default function BatchFinancialReport() {
             )}
           </CardContent>
         </Card>
+
+        {/* بۆکسەکانی پرینت بۆ باچ — خۆکارانە بۆ هەر کڕیار بۆکسێک */}
+        {batch && <BatchPrintBoxesSection batchId={batch.id} batchCode={batch.batchCode} />}
 
         {/* پرینتی لەیبڵی باچ — یەک لەیبڵ بۆ هەر کڕیار */}
         <Card className="border border-slate-200/80 shadow-sm overflow-hidden">

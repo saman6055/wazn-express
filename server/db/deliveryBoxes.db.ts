@@ -1,6 +1,6 @@
-import { eq, desc, and, gte, lte, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, inArray, isNull } from "drizzle-orm";
 import { getDb } from "./connection";
-import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders } from "../../drizzle/schema";
+import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, batches, customers } from "../../drizzle/schema";
 import type { DeliveryBox, InsertDeliveryBox, DeliveryBoxItem, InsertDeliveryBoxItem } from "../../drizzle/schema/packages.schema";
 import { appLogger } from "../utils/logger";
 
@@ -79,6 +79,7 @@ export async function getAllDeliveryBoxes(filters?: {
   endDate?: Date;
   limit?: number;
   offset?: number;
+  batchId?: number | null;
 }): Promise<{ boxes: DeliveryBox[]; total: number }> {
   const db = await getDb();
   if (!db) return { boxes: [], total: 0 };
@@ -90,6 +91,9 @@ export async function getAllDeliveryBoxes(filters?: {
   if (filters?.search) conditions.push(sql`(${deliveryBoxes.boxCode} LIKE ${`%${filters.search}%`} OR ${deliveryBoxes.destinationCity} LIKE ${`%${filters.search}%`})`);
   if (filters?.startDate) conditions.push(gte(deliveryBoxes.createdAt, filters.startDate));
   if (filters?.endDate) conditions.push(lte(deliveryBoxes.createdAt, filters.endDate));
+  // batchId: explicit null means "manual boxes only"; a number means specific batch; undefined means don't filter
+  if (filters?.batchId === null) conditions.push(sql`${deliveryBoxes.batchId} IS NULL`);
+  else if (typeof filters?.batchId === 'number') conditions.push(eq(deliveryBoxes.batchId, filters.batchId));
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
   const [countResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(deliveryBoxes).where(where);
@@ -278,4 +282,138 @@ export async function getDeliveryBoxProfitBreakdown(startDate: Date, endDate: Da
     appLogger.error("getDeliveryBoxProfitBreakdown failed", { error: err instanceof Error ? err.message : String(err) });
     return { totalCharge: 0, totalCost: 0, totalProfit: 0, boxCount: 0, packageCount: 0 };
   }
+}
+
+// ============ BATCH AUTO-BOX CREATION ============
+
+/**
+ * Auto-create per-customer delivery boxes for all packages in a batch.
+ * Skips customers who already have a box for this batch.
+ * Returns summary + list of created boxes.
+ */
+export async function createDeliveryBoxesForBatch(
+  batchId: number,
+  deliveryMethod: "warehouse_pickup" | "home_delivery" | "city_transfer",
+  userId: number,
+): Promise<{ created: number; skipped: number; totalPackages: number; boxes: DeliveryBox[] }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const batch = await db.select().from(batches).where(eq(batches.id, batchId)).limit(1);
+  if (batch.length === 0) throw new Error("Batch not found");
+  const batchRow = batch[0];
+
+  // Get all packages in the batch
+  const batchPackages = await db.select().from(packages).where(eq(packages.batchId, batchId));
+  if (batchPackages.length === 0) {
+    return { created: 0, skipped: 0, totalPackages: 0, boxes: [] };
+  }
+
+  // Group packages by customerId
+  const packagesByCustomer = new Map<number, typeof batchPackages>();
+  for (const pkg of batchPackages) {
+    if (!pkg.customerId) continue;
+    const arr = packagesByCustomer.get(pkg.customerId) || [];
+    arr.push(pkg);
+    packagesByCustomer.set(pkg.customerId, arr);
+  }
+
+  // Existing boxes for this batch (skip duplicates)
+  const existingBoxes = await db.select()
+    .from(deliveryBoxes)
+    .where(eq(deliveryBoxes.batchId, batchId));
+  const existingCustomerIds = new Set(existingBoxes.map(b => b.customerId));
+
+  const createdBoxes: DeliveryBox[] = [];
+  let created = 0;
+  let skipped = 0;
+
+  for (const [customerId, pkgs] of packagesByCustomer.entries()) {
+    if (existingCustomerIds.has(customerId)) {
+      skipped++;
+      continue;
+    }
+
+    // Load customer for recipient info auto-fill
+    const [customer] = await db.select().from(customers).where(eq(customers.id, customerId)).limit(1);
+
+    // Create the box
+    const boxCode = await generateBoxCode();
+    const insertResult = await db.insert(deliveryBoxes).values({
+      boxCode,
+      customerId,
+      batchId,
+      deliveryMethod,
+      destinationCity: customer?.city || undefined,
+      recipientName: customer?.fullName || undefined,
+      recipientPhone: customer?.mobileNumber || undefined,
+      deliveryCostUsd: "0",
+      deliveryChargeUsd: "0",
+      deliveryProfitUsd: "0",
+      createdById: userId,
+      notes: `Auto-created from batch ${batchRow.batchCode}`,
+    });
+    const boxId = Number(insertResult[0].insertId);
+
+    // Insert items — reuse the pricing logic from scanning.router.ts addItem
+    for (const pkg of pkgs) {
+      // Determine pricing based on linked FP order (if any)
+      let itemType: 'regular' | 'full_package' | 'commission' = 'regular';
+      let sourceInfo = `باچ ${batchRow.batchCode}`;
+      let description = pkg.description || pkg.trackingNumber || '';
+      let calculatedCostUsd = pkg.calculatedCostUsd?.toString() || '0';
+
+      if (pkg.trackingNumber) {
+        const [linkedFP] = await db.select().from(fullPackageOrders)
+          .where(eq(fullPackageOrders.trackingNumber, pkg.trackingNumber))
+          .limit(1);
+        if (linkedFP) {
+          itemType = linkedFP.orderType === 'commission' ? 'commission' : 'full_package';
+          sourceInfo = `${linkedFP.orderCode} - ${sourceInfo}`;
+          description = linkedFP.productName || description;
+          const qty = linkedFP.quantity || 1;
+          if (linkedFP.orderType === 'commission') {
+            const itemPrice = Number(linkedFP.itemPriceUsd || 0);
+            const commFee = Number(linkedFP.commissionFeeUsd || linkedFP.commissionAmount || 0);
+            const shippingCost = Number(pkg.calculatedCostUsd || 0);
+            calculatedCostUsd = ((itemPrice * qty) + commFee + shippingCost).toFixed(2);
+            description = `${linkedFP.productName || ''} | نرخی بەرهەم: $${(itemPrice * qty).toFixed(2)} + عمولە: $${commFee.toFixed(2)} + گەیاندن: $${shippingCost.toFixed(2)}`;
+          } else {
+            const sellingPrice = Number(linkedFP.sellingPriceUsd || 0);
+            calculatedCostUsd = (sellingPrice * qty).toFixed(2);
+          }
+        }
+      }
+
+      await db.insert(deliveryBoxItems).values({
+        boxId,
+        packageId: pkg.id,
+        trackingNumber: pkg.trackingNumber || undefined,
+        packageCode: pkg.packageCode || undefined,
+        description,
+        weightKg: pkg.weightKg?.toString() || '0',
+        calculatedCostUsd,
+        itemType,
+        sourceInfo,
+        scannedById: userId,
+      });
+    }
+
+    // Recalculate totals (use inline calc since we're inside this function)
+    const items = await db.select().from(deliveryBoxItems).where(eq(deliveryBoxItems.boxId, boxId));
+    const totalPackages = items.length;
+    const totalWeightKg = items.reduce((s, i) => s + Number(i.weightKg || 0), 0);
+    const totalValueUsd = items.reduce((s, i) => s + Number(i.calculatedCostUsd || 0), 0);
+    await db.update(deliveryBoxes).set({
+      totalPackages,
+      totalWeightKg: totalWeightKg.toFixed(3),
+      totalValueUsd: totalValueUsd.toFixed(2),
+    }).where(eq(deliveryBoxes.id, boxId));
+
+    const [finalBox] = await db.select().from(deliveryBoxes).where(eq(deliveryBoxes.id, boxId));
+    createdBoxes.push(finalBox);
+    created++;
+  }
+
+  return { created, skipped, totalPackages: batchPackages.length, boxes: createdBoxes };
 }

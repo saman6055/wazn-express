@@ -262,6 +262,9 @@ export const deliveryBoxes = mysqlTable("deliveryBoxes", {
   // کڕیار
   customerId: int("customerId").notNull(),
 
+  // باچ — set when auto-created for a specific batch; null for manual delivery boxes
+  batchId: int("batchId"),
+
   // جۆری گەیاندن
   deliveryMethod: mysqlEnum("deliveryMethod", ["warehouse_pickup", "home_delivery", "city_transfer"]).default("warehouse_pickup").notNull(),
   destinationCity: varchar("destinationCity", { length: 100 }),

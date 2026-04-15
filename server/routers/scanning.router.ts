@@ -847,12 +847,16 @@ export const deliveryBoxRouter = router({
       endDate: z.string().optional(),
       limit: z.number().default(50),
       offset: z.number().default(0),
+      // batchId: number = filter to a specific batch; null (via 0) = manual boxes only
+      batchId: z.number().optional(),
+      manualOnly: z.boolean().optional(),
     }).optional())
     .query(async ({ input }) => {
       return db.getAllDeliveryBoxes({
         ...input,
         startDate: input?.startDate ? new Date(input.startDate) : undefined,
         endDate: input?.endDate ? new Date(input.endDate) : undefined,
+        batchId: input?.manualOnly ? null : input?.batchId,
       });
     }),
 
@@ -1142,6 +1146,16 @@ export const deliveryBoxRouter = router({
     }))
     .query(async ({ input }) => {
       return db.getDeliveryBoxProfitBreakdown(new Date(input.startDate), new Date(input.endDate));
+    }),
+
+  // Auto-create per-customer boxes for a batch
+  createBoxesForBatch: staffProcedure
+    .input(z.object({
+      batchId: z.number(),
+      deliveryMethod: z.enum(["warehouse_pickup", "home_delivery", "city_transfer"]).default("warehouse_pickup"),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      return db.createDeliveryBoxesForBatch(input.batchId, input.deliveryMethod, ctx.user.id);
     }),
 });
 
