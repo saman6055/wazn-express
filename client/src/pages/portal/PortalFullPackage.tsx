@@ -530,6 +530,14 @@ placeholder={isKurdish ? "گەڕان بە ناوی کاڵا..." : language === "
                                     {formatPrice(order.sellingPriceUsd || order.totalPrepaidUsd)}
                                   </span>
                                 )}
+                                {order.shippingChargedUsd && parseFloat(order.shippingChargedUsd) > 0 && (
+                                  <span className={cn(
+                                    "text-sm font-medium flex items-center gap-1",
+                                    isDark ? "text-blue-400" : "text-blue-600"
+                                  )}>
+                                    + {formatPrice(order.shippingChargedUsd)} <Truck className="w-3.5 h-3.5" />
+                                  </span>
+                                )}
                                 {order.quantity > 1 && (
                                   <span className={cn(
                                     "text-sm",
@@ -685,19 +693,18 @@ placeholder={isKurdish ? "گەڕان بە ناوی کاڵا..." : language === "
                   )}>
                     <div className="flex items-center justify-between mb-3">
                       <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-{isKurdish ? "نرخ" : language === "ar" ? "السعر" : "Price"}
+{isKurdish ? "نرخی کڕین" : language === "ar" ? "سعر الشراء" : "Purchase Price"}
                       </span>
                       <span className={cn(
                         "text-xl font-bold",
                         isDark ? "text-white" : "text-slate-800"
                       )}>
-                        {selectedOrder.orderType === 'commission' 
+                        {selectedOrder.orderType === 'commission'
                           ? formatPrice(selectedOrder.totalPrepaidUsd)
                           : formatPrice(selectedOrder.sellingPriceUsd || selectedOrder.totalPrepaidUsd)
                         }
                       </span>
                     </div>
-                    {/* For commission orders, only show total price - no item price or commission breakdown */}
                     <div className="flex items-center justify-between text-sm mt-1">
                       <span className={isDark ? "text-slate-500" : "text-slate-400"}>
 {isKurdish ? "ژمارە" : language === "ar" ? "الكمية" : "Quantity"}
@@ -707,6 +714,32 @@ placeholder={isKurdish ? "گەڕان بە ناوی کاڵا..." : language === "
                       </span>
                     </div>
                   </div>
+
+                  {/* Shipping Cost Info */}
+                  {selectedOrder.shippingChargedUsd && parseFloat(selectedOrder.shippingChargedUsd) > 0 && (
+                    <div className={cn(
+                      "p-4 rounded-2xl",
+                      isDark ? "bg-blue-900/30" : "bg-blue-50"
+                    )}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Truck className={cn(
+                            "w-4 h-4",
+                            isDark ? "text-blue-400" : "text-blue-500"
+                          )} />
+                          <span className={isDark ? "text-blue-300" : "text-blue-600"}>
+{isKurdish ? "نرخی گەیاندن" : language === "ar" ? "تكلفة الشحن" : "Shipping Cost"}
+                          </span>
+                        </div>
+                        <span className={cn(
+                          "text-lg font-bold",
+                          isDark ? "text-blue-300" : "text-blue-700"
+                        )}>
+                          {formatPrice(selectedOrder.shippingChargedUsd)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Tracking Info */}
                   {selectedOrder.trackingNumber && (
