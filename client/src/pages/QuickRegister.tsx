@@ -99,7 +99,8 @@ export default function QuickRegister() {
       if (result) {
         setFoundOrder(result);
         if (result.found) {
-          if (result.customer) {
+          // Only auto-fill customer if nothing is selected — preserve user's manual choice
+          if (result.customer && !customerId && !isUnclaimed) {
             setCustomerId(result.customer.id);
             setCustomerSearch(result.customer.customerCode || result.customer.fullName || "");
             setIsUnclaimed(false);
