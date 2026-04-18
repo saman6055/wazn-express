@@ -328,7 +328,7 @@ export async function createDeliveryBoxesForBatch(
   let created = 0;
   let skipped = 0;
 
-  for (const [customerId, pkgs] of packagesByCustomer.entries()) {
+  for (const [customerId, pkgs] of Array.from(packagesByCustomer.entries())) {
     if (existingCustomerIds.has(customerId)) {
       skipped++;
       continue;

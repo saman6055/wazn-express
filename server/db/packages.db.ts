@@ -152,12 +152,27 @@ export async function getAllPackages(options: {
   const conditions = [];
   
   if (search) {
-    conditions.push(
-      or(
-        like(packages.trackingNumber, `%${search}%`),
-        like(packages.packageCode, `%${search}%`)
-      )
-    );
+    const searchTerm = `%${search.trim()}%`;
+
+    // Find customer IDs matching the search term
+    const matchingCustomers = await db.select({ id: customers.id })
+      .from(customers)
+      .where(or(
+        like(customers.fullName, searchTerm),
+        like(customers.customerCode, searchTerm),
+        like(customers.mobileNumber, searchTerm),
+      ));
+    const matchingCustomerIds = matchingCustomers.map(c => c.id);
+
+    const orConditions: any[] = [
+      like(packages.trackingNumber, searchTerm),
+      like(packages.packageCode, searchTerm),
+      like(packages.description, searchTerm),
+    ];
+    if (matchingCustomerIds.length > 0) {
+      orConditions.push(inArray(packages.customerId, matchingCustomerIds));
+    }
+    conditions.push(or(...orConditions));
   }
   
   if (status && status !== 'all') {

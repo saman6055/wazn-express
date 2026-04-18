@@ -169,14 +169,38 @@ export async function getAllFullPackageOrders(filters?: {
     conditions.push(isNull(fullPackageOrders.batchId));
   }
   if (filters?.search) {
-    const searchTerm = `%${filters.search}%`;
-    conditions.push(
-      or(
-        like(fullPackageOrders.productName, searchTerm),
-        like(fullPackageOrders.orderCode, searchTerm),
-        like(fullPackageOrders.trackingNumber, searchTerm)
-      )
-    );
+    const rawSearch = filters.search.trim();
+    const searchTerm = `%${rawSearch}%`;
+
+    // Find customer IDs matching the search term (by fullName, customerCode, or mobileNumber)
+    const matchingCustomers = await db.select({ id: customers.id })
+      .from(customers)
+      .where(or(
+        like(customers.fullName, searchTerm),
+        like(customers.customerCode, searchTerm),
+        like(customers.mobileNumber, searchTerm),
+      ));
+    const matchingCustomerIds = matchingCustomers.map(c => c.id);
+
+    // Find order IDs that have the tracking number in the multi-tracking table
+    const matchingTrackingRows = await db.select({ fullPackageOrderId: fullPackageOrderTrackings.fullPackageOrderId })
+      .from(fullPackageOrderTrackings)
+      .where(like(fullPackageOrderTrackings.trackingNumber, searchTerm));
+    const matchingOrderIdsFromTrackings = matchingTrackingRows.map(r => r.fullPackageOrderId);
+
+    const orConditions: any[] = [
+      like(fullPackageOrders.productName, searchTerm),
+      like(fullPackageOrders.orderCode, searchTerm),
+      like(fullPackageOrders.trackingNumber, searchTerm),
+      like(fullPackageOrders.orderNumber, searchTerm),
+    ];
+    if (matchingCustomerIds.length > 0) {
+      orConditions.push(inArray(fullPackageOrders.customerId, matchingCustomerIds));
+    }
+    if (matchingOrderIdsFromTrackings.length > 0) {
+      orConditions.push(inArray(fullPackageOrders.id, matchingOrderIdsFromTrackings));
+    }
+    conditions.push(or(...orConditions));
   }
   
   // Query orders
