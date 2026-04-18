@@ -900,6 +900,59 @@ export default function PortalFullPackage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Advance Payment + Remaining */}
+                  {(() => {
+                    const advance = parseFloat(selectedOrder.advancePaidUsd || "0");
+                    if (advance <= 0) return null;
+                    const totalPrice = selectedOrder.orderType === "commission"
+                      ? parseFloat(selectedOrder.totalPrepaidUsd || "0")
+                      : parseFloat(selectedOrder.sellingPriceUsd || "0") * (selectedOrder.quantity || 1);
+                    const remaining = Math.max(0, totalPrice - advance);
+                    const isFullyPaid = advance >= totalPrice && totalPrice > 0;
+                    return (
+                      <div className={cn(
+                        "p-4 rounded-2xl space-y-2",
+                        isDark ? "bg-emerald-900/30" : "bg-emerald-50"
+                      )}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <DollarSign className={cn("w-4 h-4", isDark ? "text-emerald-400" : "text-emerald-600")} />
+                          <span className={cn("font-semibold", isDark ? "text-emerald-300" : "text-emerald-700")}>
+                            {isKurdish ? "پوختەی پارەدان" : language === "ar" ? "ملخص الدفع" : "Payment Summary"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                            {isKurdish ? "کۆی نرخ" : language === "ar" ? "السعر الإجمالي" : "Total"}
+                          </span>
+                          <span className="font-mono font-semibold">{formatPrice(totalPrice)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>
+                            {isKurdish ? "پێشەکی دراو" : language === "ar" ? "مدفوع مقدماً" : "Advance Paid"}
+                          </span>
+                          <span className={cn("font-mono font-semibold", isDark ? "text-emerald-400" : "text-emerald-600")}>-{formatPrice(advance)}</span>
+                        </div>
+                        <div className={cn("h-px", isDark ? "bg-emerald-800" : "bg-emerald-200")} />
+                        <div className="flex items-center justify-between">
+                          <span className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
+                            {isFullyPaid
+                              ? (isKurdish ? "ڕەوش" : language === "ar" ? "الحالة" : "Status")
+                              : (isKurdish ? "ماوە بۆ پارەدان" : language === "ar" ? "المتبقي" : "Remaining")}
+                          </span>
+                          {isFullyPaid ? (
+                            <span className={cn("font-bold", isDark ? "text-emerald-300" : "text-emerald-700")}>
+                              ✓ {isKurdish ? "تەواو پارەدراوە" : language === "ar" ? "مدفوع بالكامل" : "Fully Paid"}
+                            </span>
+                          ) : (
+                            <span className={cn("font-mono font-bold text-lg", isDark ? "text-amber-300" : "text-amber-700")}>
+                              {formatPrice(remaining)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   
                   {/* Tracking Info */}
                   {selectedOrder.trackingNumber && (

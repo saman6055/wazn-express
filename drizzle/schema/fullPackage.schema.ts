@@ -66,6 +66,12 @@ export const fullPackageOrders = mysqlTable("fullPackageOrders", {
   // Prepaid tracking
   isPrepaid: boolean("isPrepaid").default(false), // Whether customer has prepaid
   prepaidAt: timestamp("prepaidAt"), // When customer prepaid
+
+  // Advance payment tracking — paid at order creation time (partial or full)
+  advancePaidUsd: decimal("advancePaidUsd", { precision: 10, scale: 2 }).default("0"),
+  advancePaidAt: timestamp("advancePaidAt"),
+  advancePaymentMethod: mysqlEnum("advancePaymentMethod", ["CASH","BANK_TRANSFER","FIB","FASTPAY","ZAINCASH","ASIAHAWALA","CARD","OTHER"]),
+  advancePaymentTransactionId: int("advancePaymentTransactionId"),
   
   // Profit tracking
   grossProfitUsd: decimal("grossProfitUsd", { precision: 10, scale: 2 }), // Selling price - Purchase price

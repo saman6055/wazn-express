@@ -54,7 +54,9 @@
       "Bash(git commit -m ':*)",
       "Bash(git push:*)",
       "Bash(ls -1 /c/Users/saman/OneDrive/Desktop/wazn-express/drizzle/schema/*.schema.ts)",
-      "Bash(xargs -I {} basename {} .schema.ts)"
+      "Bash(xargs -I {} basename {} .schema.ts)",
+      "Bash(git commit -m 'fix: use FileReader.readAsDataURL for reliable image compression:*)",
+      "WebSearch"
     ]
   }
 }

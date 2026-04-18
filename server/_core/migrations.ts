@@ -1880,6 +1880,10 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "fullPackageOrders.productType", sql: "ALTER TABLE fullPackageOrders ADD COLUMN productType VARCHAR(200)" },
   { name: "chatMessages.messageType.voice", sql: "ALTER TABLE chatMessages MODIFY COLUMN messageType ENUM('text','image','file','system','voice') NOT NULL DEFAULT 'text'" },
   { name: "deliveryBoxes.batchId", sql: "ALTER TABLE deliveryBoxes ADD COLUMN batchId INT" },
+  { name: "fullPackageOrders.advancePaidUsd", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaidUsd DECIMAL(10,2) NOT NULL DEFAULT 0" },
+  { name: "fullPackageOrders.advancePaidAt", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaidAt TIMESTAMP NULL" },
+  { name: "fullPackageOrders.advancePaymentMethod", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaymentMethod ENUM('CASH','BANK_TRANSFER','FIB','FASTPAY','ZAINCASH','ASIAHAWALA','CARD','OTHER') NULL" },
+  { name: "fullPackageOrders.advancePaymentTransactionId", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaymentTransactionId INT NULL" },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator } from "lucide-react";
+import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet } from "lucide-react";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -45,6 +45,9 @@ export default function CommissionForm() {
     // Commission pricing
     itemPriceUsd: "",
     commissionFeeUsd: "",
+    // Advance payment (partial/full prepayment at order creation)
+    advancePaidUsd: "",
+    advancePaymentMethod: "CASH" as "CASH" | "BANK_TRANSFER" | "FIB" | "FASTPAY" | "ZAINCASH" | "ASIAHAWALA" | "CARD" | "OTHER",
     notes: "",
     // Shipping
     shippingType: "" as "" | "air_regular" | "air_irregular" | "sea",
@@ -97,14 +100,14 @@ export default function CommissionForm() {
   const syncFromPerUnit = (perUnit: string, q = qty) => {
     const v = parseFloat(perUnit) || 0;
     setIqdPerUnit(perUnit);
-    setIqdTotal(v > 0 ? (v * q).toFixed(0) : "");
+    setIqdTotal(v > 0 ? (v * q).toFixed(2) : "");
     setFormData(prev => ({ ...prev, itemPriceUsd: v > 0 && rmbRate > 0 ? (v / rmbRate).toFixed(4) : "" }));
   };
 
   const syncFromTotal = (total: string, q = qty) => {
     const v = parseFloat(total) || 0;
     setIqdTotal(total);
-    setIqdPerUnit(v > 0 && q > 0 ? (v / q).toFixed(0) : "");
+    setIqdPerUnit(v > 0 && q > 0 ? (v / q).toFixed(2) : "");
     setFormData(prev => ({ ...prev, itemPriceUsd: v > 0 && q > 0 && rmbRate > 0 ? (v / q / rmbRate).toFixed(4) : "" }));
   };
 
@@ -113,8 +116,8 @@ export default function CommissionForm() {
     const v = parseFloat(usd) || 0;
     if (v > 0 && rmbRate > 0) {
       const perUnit = v * rmbRate;
-      setIqdPerUnit(perUnit.toFixed(0));
-      setIqdTotal((perUnit * q).toFixed(0));
+      setIqdPerUnit(perUnit.toFixed(2));
+      setIqdTotal((perUnit * q).toFixed(2));
     } else {
       setIqdPerUnit(""); setIqdTotal("");
     }
@@ -189,6 +192,8 @@ export default function CommissionForm() {
       itemPriceUsd: formData.itemPriceUsd,
       commissionFeeUsd: formData.commissionFeeUsd,
       totalPrepaidUsd: totalPrepaid.toFixed(2),
+      advancePaidUsd: formData.advancePaidUsd || undefined,
+      advancePaymentMethod: formData.advancePaidUsd && parseFloat(formData.advancePaidUsd) > 0 ? formData.advancePaymentMethod : undefined,
       notes: formData.notes || undefined,
       shippingType: formData.shippingType || undefined,
       weightKg: formData.weightKg || undefined,
@@ -565,12 +570,13 @@ export default function CommissionForm() {
                         <Input
                           type="number"
                           min="0"
+                          step="0.01"
                           value={rmbPerUnit}
                           onChange={(e) => syncFromPerUnit(e.target.value)}
                           placeholder="٠"
                           className="pe-9 h-12 text-lg font-bold border-2 border-amber-200 focus:border-orange-400 bg-amber-50/40"
                           dir="ltr"
-                          
+
                         />
                       </div>
                       <p className="text-xs text-amber-500">نرخی یەک دانەی کاڵا</p>
@@ -584,12 +590,13 @@ export default function CommissionForm() {
                         <Input
                           type="number"
                           min="0"
+                          step="0.01"
                           value={rmbTotal}
                           onChange={(e) => syncFromTotal(e.target.value)}
                           placeholder="٠"
                           className="pe-9 h-12 text-lg font-bold border-2 border-orange-200 focus:border-orange-400 bg-orange-50/40"
                           dir="ltr"
-                          
+
                         />
                       </div>
                       <p className="text-xs text-orange-500">کۆی گشتی بۆ هەموو دانەکان</p>
@@ -670,6 +677,83 @@ export default function CommissionForm() {
                   <p className="text-xs text-center text-amber-600 mt-3 bg-white/50 rounded-lg py-2">
                     💡 قازانجی کۆمپانیا = ${(commissionFee * quantity).toFixed(2)} (عمولەی {formData.quantity || 1} دانە)
                   </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── Advance Payment Section ── */}
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-l from-teal-50 to-emerald-50 border-b">
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-teal-600" />
+                پارەدانی پێشەکی (ئاختیاری)
+              </CardTitle>
+              <CardDescription>ئەگەر کڕیار بەشێک یان هەموو پارەکەی پێشوەخت داوە، بڕی پارەکە دابنێ — ڕاستەوخۆ لە حسابی کڕیار کەم دەبێتەوە</CardDescription>
+            </CardHeader>
+            <CardContent className="p-5 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-teal-700">بڕی پارەی پێشەکی (USD)</Label>
+                  <div className="relative">
+                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-teal-500 font-bold select-none">$</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      max={totalPrepaid.toFixed(2)}
+                      value={formData.advancePaidUsd}
+                      onChange={(e) => setFormData({ ...formData, advancePaidUsd: e.target.value })}
+                      placeholder="0.00"
+                      className="ps-8 h-12 text-lg font-bold border-2 border-teal-200 focus:border-teal-400 bg-teal-50/40"
+                      dir="ltr"
+                    />
+                  </div>
+                  <p className="text-xs text-teal-600">بۆ بێ پارەدان دابمێنە بە 0</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-teal-700">شێوازی پارەدان</Label>
+                  <Select
+                    value={formData.advancePaymentMethod}
+                    onValueChange={(v) => setFormData({ ...formData, advancePaymentMethod: v as any })}
+                  >
+                    <SelectTrigger className="h-12 border-2 border-teal-200 bg-teal-50/40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CASH">کاش</SelectItem>
+                      <SelectItem value="BANK_TRANSFER">گواستنەوەی بانک</SelectItem>
+                      <SelectItem value="FIB">FIB</SelectItem>
+                      <SelectItem value="FASTPAY">FastPay</SelectItem>
+                      <SelectItem value="ZAINCASH">ZainCash</SelectItem>
+                      <SelectItem value="ASIAHAWALA">AsiaHawala</SelectItem>
+                      <SelectItem value="CARD">کارتی بانکی</SelectItem>
+                      <SelectItem value="OTHER">هیتر</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {parseFloat(formData.advancePaidUsd || "0") > 0 && totalPrepaid > 0 && (
+                <div className="rounded-xl bg-gradient-to-l from-teal-50 to-emerald-50 p-4 border-2 border-teal-200 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">کۆی نرخ</span>
+                    <span className="font-mono font-bold">${totalPrepaid.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-teal-700">پارەی پێشەکی</span>
+                    <span className="font-mono font-bold text-teal-700">-${parseFloat(formData.advancePaidUsd || "0").toFixed(2)}</span>
+                  </div>
+                  <div className="h-px bg-teal-200" />
+                  <div className="flex items-center justify-between text-base">
+                    <span className="font-semibold text-slate-800">ماوە بۆ پارەدان</span>
+                    <span className="font-mono font-bold text-xl text-emerald-700">
+                      ${Math.max(0, totalPrepaid - parseFloat(formData.advancePaidUsd || "0")).toFixed(2)}
+                    </span>
+                  </div>
+                  {parseFloat(formData.advancePaidUsd || "0") > totalPrepaid && (
+                    <p className="text-xs text-red-600 font-medium">⚠️ پارەی پێشەکی زیاترە لە کۆی نرخ</p>
+                  )}
                 </div>
               )}
             </CardContent>

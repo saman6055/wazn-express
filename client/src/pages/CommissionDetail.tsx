@@ -851,6 +851,43 @@ export default function CommissionDetail() {
                     </div>
                   </div>
 
+                  {/* Payment Summary — advance paid + remaining */}
+                  {(() => {
+                    const totalCost = (((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)) + ((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1)));
+                    const advancePaid = Number(order.advancePaidUsd || 0);
+                    const remaining = Math.max(0, totalCost - advancePaid);
+                    const isFullyPaid = advancePaid >= totalCost && totalCost > 0;
+                    if (advancePaid <= 0) return null;
+                    return (
+                      <div className="rounded-xl border-2 border-teal-200 bg-gradient-to-l from-teal-50 to-emerald-50 p-4 space-y-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <DollarSign className="h-4 w-4 text-teal-600" />
+                          <span className="text-sm font-bold text-teal-800">پوختەی پارەدان</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-600">کۆی نرخ</span>
+                          <span className="font-mono font-semibold">${totalCost.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-teal-700">پارەی پێشەکی دراو</span>
+                          <span className="font-mono font-semibold text-teal-700">-${advancePaid.toFixed(2)}</span>
+                        </div>
+                        <div className="h-px bg-teal-200" />
+                        <div className="flex justify-between text-base">
+                          <span className="font-semibold">{isFullyPaid ? "ڕەوشی پارەدان" : "ماوە بۆ پارەدان"}</span>
+                          {isFullyPaid ? (
+                            <span className="font-bold text-emerald-700">✓ تەواو پارەدراوە</span>
+                          ) : (
+                            <span className="font-mono font-bold text-xl text-amber-700">${remaining.toFixed(2)}</span>
+                          )}
+                        </div>
+                        {order.advancePaymentMethod && (
+                          <p className="text-xs text-teal-600">شێواز: {order.advancePaymentMethod}</p>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {/* Formula Explanation */}
                   <div className="text-xs text-muted-foreground text-center bg-purple-50 p-3 rounded-xl border border-purple-100">
                     <AlertCircle className="h-3 w-3 inline-block ms-1" />

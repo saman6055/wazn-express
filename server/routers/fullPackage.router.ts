@@ -144,6 +144,9 @@ export const fullPackageRouter = router({
         // Legacy commission fields
         commissionRate: z.string().optional(),
         commissionAmount: z.string().optional(),
+        // Advance payment at order creation (partial/full prepayment)
+        advancePaidUsd: z.string().optional(),
+        advancePaymentMethod: z.enum(['CASH','BANK_TRANSFER','FIB','FASTPAY','ZAINCASH','ASIAHAWALA','CARD','OTHER']).optional(),
         // Shipping
         shippingType: z.enum(["air_regular", "air_irregular", "sea"]).optional(),
         shippingCostUsd: z.string().optional(),
@@ -260,7 +263,38 @@ export const fullPackageRouter = router({
             appLogger.info("[Commission] Auto-charged customer for order", { customerCode: customer.customerCode, orderCode, totalAmount });
           }
         }
-        
+
+        // Advance payment — record as CREDIT_PAYMENT on customer account if provided
+        const advance = parseFloat(input.advancePaidUsd || '0');
+        if (advance > 0) {
+          const customer = await db.getCustomerById(input.customerId);
+          if (customer) {
+            try {
+              const paymentResult = await db.recordPaymentReceived(
+                input.customerId,
+                customer.customerCode,
+                advance,
+                0,
+                input.advancePaymentMethod || 'CASH',
+                ctx.user.id,
+                `پارەی پێشەکی بۆ ئۆردەری ${orderCode} - ${input.productName}`,
+                undefined,
+                undefined,
+                undefined,
+              );
+              await db.updateFullPackageOrder(order.id, {
+                advancePaidUsd: advance.toFixed(2),
+                advancePaidAt: new Date(),
+                advancePaymentMethod: input.advancePaymentMethod || 'CASH',
+                advancePaymentTransactionId: paymentResult.transaction.id,
+              });
+              appLogger.info("[Advance Payment] Recorded advance payment", { customerCode: customer.customerCode, orderCode, advance });
+            } catch (err) {
+              appLogger.error("[Advance Payment] Failed to record advance payment", { error: err instanceof Error ? err.message : String(err), orderCode, advance });
+            }
+          }
+        }
+
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
@@ -269,7 +303,7 @@ export const fullPackageRouter = router({
           entityId: order.id,
           newValues: input,
         });
-        
+
         return order;
       }),
 
