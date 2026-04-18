@@ -166,6 +166,8 @@ export default function FullPackageDetail() {
   const { data: suppliers } = trpc.suppliers.list.useQuery();
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
+  // ¥ exchange rate — MUST be declared before any early returns below
+  const { data: rmbRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "RMB" });
 
   useEffect(() => {
     if (order) {
@@ -370,8 +372,6 @@ export default function FullPackageDetail() {
     );
   }
 
-  // ¥ exchange rate for display
-  const { data: rmbRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "RMB" });
   const rmbRate = parseFloat(rmbRateData?.rate?.toString() || "0");
   const toRmb = (usd: number) => rmbRate > 0 ? Math.round(usd * rmbRate).toLocaleString("en-US") : null;
 
