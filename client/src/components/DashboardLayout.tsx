@@ -160,10 +160,12 @@ function DashboardLayoutContent({
 
   const userRole = user?.role || "user";
 
-  // Unread messages count for sidebar badge
-  const { data: unreadMsgCount } = trpc.supportChat.getUnreadCount.useQuery(undefined, {
+  // Unread messages count for sidebar badge — guarded against non-number values
+  const unreadQuery = trpc.supportChat.getUnreadCount.useQuery(undefined, {
     refetchInterval: 15000,
+    retry: false,
   });
+  const unreadMsgCount: number = typeof unreadQuery.data === "number" ? unreadQuery.data : 0;
 
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -217,7 +219,7 @@ function DashboardLayoutContent({
       items: [
         { icon: LayoutDashboard, label: t("nav.dashboard") || "داشبۆرد", path: "/dashboard" },
         { icon: Users, label: t("nav.customers") || "کڕیارەکان", path: "/customers" },
-        { icon: MessageCircle, label: t("nav.customerMessages") || "پەیامەکانی کڕیار", path: "/customer-messages", badge: (unreadMsgCount as number) || 0 },
+        { icon: MessageCircle, label: t("nav.customerMessages") || "پەیامەکانی کڕیار", path: "/customer-messages", badge: unreadMsgCount },
       ]
     });
 
