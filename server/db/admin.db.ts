@@ -1544,7 +1544,7 @@ export async function getDetailedDataCounts(): Promise<{
     db.select({ count: count() }).from(invoices).where(eq(invoices.status, 'issued')),
     // Payments
     db.select({ count: count() }).from(paymentRecords),
-    db.select({ sum: sql<number>`COALESCE(SUM(${paymentRecords.amountUsd}), 0)` }).from(paymentRecords),
+    db.select({ sum: sql<number>`COALESCE(SUM(${paymentRecords.amountUsd} - ${paymentRecords.reversedAmountUsd}), 0)` }).from(paymentRecords),
     // Expenses
     db.select({ count: count() }).from(expenses),
     db.select({ sum: sql<number>`COALESCE(SUM(amount), 0)` }).from(expenses),

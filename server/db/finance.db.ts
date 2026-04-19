@@ -856,12 +856,19 @@ export async function recordPaymentReceived(
 // Reverse an advance payment (or part of it) — creates an ADJUSTMENT_DEBIT
 // that neutralizes the original CREDIT_PAYMENT. Used when an order is
 // deleted, or when the advance amount is reduced/zeroed during edit.
+//
+// `originalTransactionId` is the ledger transaction ID of the CREDIT_PAYMENT
+// that's being reversed. When provided, the corresponding paymentRecord is
+// also updated (reversedAmountUsd increased, status flipped to 'refunded'
+// when fully reversed). This keeps revenue reports accurate — reports that
+// sum paymentRecords must compute (amountUsd - reversedAmountUsd).
 export async function reverseAdvancePayment(
   customerId: number,
   customerCode: string,
   amountUsd: number,
   reason: string,
   createdById: number,
+  originalTransactionId?: number,
 ): Promise<{ transaction: LedgerTransaction }> {
   if (amountUsd <= 0) throw new Error("Amount must be greater than zero");
 
@@ -918,6 +925,28 @@ export async function reverseAdvancePayment(
       currentBalanceUsd: newBalanceUsd.toFixed(2),
       lastTransactionAt: new Date(),
     }).where(eq(customerAccounts.id, account.id));
+
+    // Also update the related paymentRecord so revenue/payment reports stay accurate.
+    if (originalTransactionId) {
+      const [originalPayment] = await tx.select().from(paymentRecords)
+        .where(eq(paymentRecords.transactionId, originalTransactionId))
+        .limit(1);
+      if (originalPayment) {
+        const existingReversed = parseFloat(originalPayment.reversedAmountUsd || '0');
+        const newReversed = existingReversed + amountUsd;
+        const originalAmount = parseFloat(originalPayment.amountUsd || '0');
+        const isFullyReversed = newReversed >= originalAmount - 0.005; // tolerance for float rounding
+        await tx.update(paymentRecords).set({
+          reversedAmountUsd: Math.min(newReversed, originalAmount).toFixed(2),
+          reversedAt: new Date(),
+          reversalTransactionId: transaction.id,
+          paymentStatus: isFullyReversed ? 'refunded' : originalPayment.paymentStatus,
+          cancelledAt: isFullyReversed ? new Date() : originalPayment.cancelledAt,
+          cancelledById: isFullyReversed ? createdById : originalPayment.cancelledById,
+          cancelReason: isFullyReversed ? reason : originalPayment.cancelReason,
+        }).where(eq(paymentRecords.id, originalPayment.id));
+      }
+    }
 
     return { transaction };
   });
@@ -1692,9 +1721,9 @@ export async function getProfitAndLoss(startDate: Date, endDate: Date): Promise<
     netProfit: 0
   };
   
-  // Get revenue from payments received
+  // Get revenue from payments received — net of reversals
   const paymentsResult = await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(14,2))), 0)`
+    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(14,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(14,2))), 0)`
   }).from(paymentRecords)
     .where(and(
       gte(paymentRecords.createdAt, startDate),
@@ -1776,9 +1805,9 @@ export async function getDetailedProfitAndLoss(startDate: Date, endDate: Date) {
     orderCounts: { packages: 0, fullPackage: 0, commission: 0, services: 0 },
   };
 
-  // 1. Package shipping revenue (from confirmed payments)
+  // 1. Package shipping revenue (from confirmed payments, net of reversals)
   const packageResult = await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(14,2))), 0)`,
+    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(14,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(14,2))), 0)`,
     cnt: sql<number>`COUNT(DISTINCT ${paymentRecords.id})`,
   }).from(paymentRecords)
     .where(and(

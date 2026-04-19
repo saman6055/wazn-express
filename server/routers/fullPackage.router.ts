@@ -541,11 +541,12 @@ export const fullPackageRouter = router({
                   );
                   data.advancePaymentTransactionId = result.transaction.id;
                 } else {
-                  // Advance decreased — reverse the extra amount
+                  // Advance decreased — reverse the extra amount, linked to the original payment
                   await db.reverseAdvancePayment(
                     existing.customerId, customer.customerCode, Math.abs(delta),
                     `گەڕاندنەوەی بەشێک لە پارەی پێشەکی (-$${Math.abs(delta).toFixed(2)}) بۆ ئۆردەری ${existing.orderCode} - ${existing.productName}`,
                     ctx.user.id,
+                    (existing as any).advancePaymentTransactionId || undefined,
                   );
                 }
               } catch (err) {
@@ -772,6 +773,7 @@ export const fullPackageRouter = router({
                 existing.customerId, customer.customerCode, advance,
                 `گەڕاندنەوەی پارەی پێشەکی لەبەر سڕینەوەی ئۆردەری ${existing.orderCode} - ${existing.productName}`,
                 ctx.user.id,
+                (existing as any).advancePaymentTransactionId || undefined,
               );
               appLogger.info("[Advance Payment] Reversed advance due to order deletion", {
                 orderId: input.id, orderCode: existing.orderCode, advance,

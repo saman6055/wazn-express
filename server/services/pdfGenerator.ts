@@ -241,23 +241,23 @@ export async function getDashboardReportData(): Promise<DashboardReportData> {
 
   // Get revenue stats from payment records
   const todayPayments = db ? await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
   }).from(paymentRecords)
     .where(gte(paymentRecords.createdAt, todayStart)) : [{ total: '0' }];
 
   const weekPayments = db ? await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
   }).from(paymentRecords)
     .where(gte(paymentRecords.createdAt, weekStart)) : [{ total: '0' }];
 
   const monthPayments = db ? await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
   }).from(paymentRecords)
     .where(gte(paymentRecords.createdAt, monthStart)) : [{ total: '0' }];
 
   // Get yesterday's revenue for comparison
   const yesterdayPayments = db ? await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
   }).from(paymentRecords)
     .where(and(
       gte(paymentRecords.createdAt, yesterdayStart),

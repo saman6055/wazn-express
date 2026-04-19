@@ -167,7 +167,13 @@ export const paymentRecords = mysqlTable("paymentRecords", {
   amountUsd: decimal("amountUsd", { precision: 10, scale: 2 }).default("0"),
   amountIqd: decimal("amountIqd", { precision: 15, scale: 0 }).default("0"),
   exchangeRate: decimal("exchangeRate", { precision: 10, scale: 2 }),
-  
+
+  // Reversal tracking (used by advance payment reversals, partial refunds, etc.)
+  // effective net amount = amountUsd - reversedAmountUsd
+  reversedAmountUsd: decimal("reversedAmountUsd", { precision: 10, scale: 2 }).default("0").notNull(),
+  reversedAt: timestamp("reversedAt"),
+  reversalTransactionId: int("reversalTransactionId"), // FK → ledgerTransactions (last reversal)
+
   // Payment method
   paymentMethod: mysqlEnum("paymentMethod", [
     "CASH",

@@ -225,7 +225,7 @@ export async function getCustomerFinancialSummary(customerId: number) {
   
   // Get total paid
   const totalPaidData = await db.select({
-    total: sql<number>`SUM(${paymentRecords.amountUsd})`
+    total: sql<number>`SUM(${paymentRecords.amountUsd} - ${paymentRecords.reversedAmountUsd})`
   }).from(paymentRecords)
     .where(eq(paymentRecords.accountId, account.id));
   

@@ -1884,6 +1884,9 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "fullPackageOrders.advancePaidAt", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaidAt TIMESTAMP NULL" },
   { name: "fullPackageOrders.advancePaymentMethod", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaymentMethod ENUM('CASH','BANK_TRANSFER','FIB','FASTPAY','ZAINCASH','ASIAHAWALA','CARD','OTHER') NULL" },
   { name: "fullPackageOrders.advancePaymentTransactionId", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaymentTransactionId INT NULL" },
+  { name: "paymentRecords.reversedAmountUsd", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAmountUsd DECIMAL(10,2) NOT NULL DEFAULT 0" },
+  { name: "paymentRecords.reversedAt", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAt TIMESTAMP NULL" },
+  { name: "paymentRecords.reversalTransactionId", sql: "ALTER TABLE paymentRecords ADD COLUMN reversalTransactionId INT NULL" },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {

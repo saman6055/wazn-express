@@ -396,14 +396,14 @@ export async function getDashboardFinancialStats(): Promise<{
     let todayRevenue = 0, yesterdayRevenue = 0, weekRevenue = 0, lastWeekRevenue = 0, monthRevenue = 0, lastMonthRevenue = 0;
     try {
       const todayPayments = await db.select({
-        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
       }).from(paymentRecords).where(gte(paymentRecords.createdAt, todayStart));
       todayRevenue = parseFloat(todayPayments[0]?.total || '0');
     } catch (e) { appLogger.error('Dashboard: todayRevenue query failed', { error: e instanceof Error ? e.message : String(e) }); }
 
     try {
       const yesterdayPayments = await db.select({
-        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
       }).from(paymentRecords).where(and(
         gte(paymentRecords.createdAt, yesterdayStart),
         lt(paymentRecords.createdAt, todayStart)
@@ -413,14 +413,14 @@ export async function getDashboardFinancialStats(): Promise<{
 
     try {
       const weekPayments = await db.select({
-        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
       }).from(paymentRecords).where(gte(paymentRecords.createdAt, weekStart));
       weekRevenue = parseFloat(weekPayments[0]?.total || '0');
     } catch (e) { appLogger.error('Dashboard: weekRevenue query failed', { error: e instanceof Error ? e.message : String(e) }); }
 
     try {
       const lastWeekPayments = await db.select({
-        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
       }).from(paymentRecords).where(and(
         gte(paymentRecords.createdAt, lastWeekStart),
         lt(paymentRecords.createdAt, weekStart)
@@ -430,14 +430,14 @@ export async function getDashboardFinancialStats(): Promise<{
 
     try {
       const monthPayments = await db.select({
-        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
       }).from(paymentRecords).where(gte(paymentRecords.createdAt, monthStart));
       monthRevenue = parseFloat(monthPayments[0]?.total || '0');
     } catch (e) { appLogger.error('Dashboard: monthRevenue query failed', { error: e instanceof Error ? e.message : String(e) }); }
 
     try {
       const lastMonthPayments = await db.select({
-        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+        total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
       }).from(paymentRecords).where(and(
         gte(paymentRecords.createdAt, lastMonthStart),
         lt(paymentRecords.createdAt, monthStart)

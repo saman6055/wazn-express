@@ -73,7 +73,7 @@ export async function getCustomerReportData(customerId: number, startDate?: Date
 
   // Get total payments
   const [paymentsTotal] = await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
   }).from(paymentRecords).where(eq(paymentRecords.accountId, customerId));
 
   // Get packages with optional date filter
@@ -750,7 +750,7 @@ export async function getDateFilteredDashboardData(
 
   // Get total revenue in period
   const [revenueResult] = await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`
+    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
   }).from(paymentRecords)
     .where(and(
       gte(paymentRecords.createdAt, startDate),
@@ -789,7 +789,7 @@ export async function getDateFilteredDashboardData(
   // Get top customers in period
   const topCustomersRaw = await db.select({
     customerId: paymentRecords.accountId,
-    totalRevenue: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`,
+    totalRevenue: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`,
     packageCount: count()
   }).from(paymentRecords)
     .where(and(
@@ -797,7 +797,7 @@ export async function getDateFilteredDashboardData(
       lte(paymentRecords.createdAt, endDate)
     ))
     .groupBy(paymentRecords.accountId)
-    .orderBy(desc(sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2))), 0)`))
+    .orderBy(desc(sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`))
     .limit(10);
 
   const topCustomers = await Promise.all(topCustomersRaw.map(async (c) => {
