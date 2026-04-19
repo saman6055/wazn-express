@@ -27,6 +27,7 @@ import {
   PackagePlus,
   CheckCircle2,
   AlertCircle,
+  Wallet,
 } from "lucide-react";
 import {
   Select,
@@ -47,6 +48,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+type AdvancePaymentMethod = "CASH" | "BANK_TRANSFER" | "FIB" | "FASTPAY" | "ZAINCASH" | "ASIAHAWALA" | "CARD" | "OTHER";
+
 interface OrderItem {
   id: string;
   productType: string;
@@ -62,6 +65,9 @@ interface OrderItem {
   // Commission fields
   itemPriceUsd: string;
   commissionFeeUsd: string;
+  // Advance payment
+  advancePaidUsd: string;
+  advancePaymentMethod: AdvancePaymentMethod;
   // Common
   notes: string;
   supplierId: string;
@@ -81,6 +87,8 @@ const emptyItem = (): OrderItem => ({
   sellingPriceUsd: "",
   itemPriceUsd: "",
   commissionFeeUsd: "",
+  advancePaidUsd: "",
+  advancePaymentMethod: "CASH",
   notes: "",
   supplierId: "",
   orderNumber: "",
@@ -168,8 +176,8 @@ export default function BulkOrderForm() {
     });
   }, []);
 
-  const updateItem = useCallback((id: string, field: keyof OrderItem, value: string) => {
-    setItems(prev => prev.map(item => 
+  const updateItem = useCallback(<K extends keyof OrderItem>(id: string, field: K, value: OrderItem[K]) => {
+    setItems(prev => prev.map(item =>
       item.id === id ? { ...item, [field]: value } : item
     ));
   }, []);
@@ -280,6 +288,9 @@ export default function BulkOrderForm() {
         // Commission fields
         itemPriceUsd: isCommission ? item.itemPriceUsd || undefined : undefined,
         commissionFeeUsd: isCommission ? item.commissionFeeUsd || undefined : undefined,
+        // Advance payment
+        advancePaidUsd: item.advancePaidUsd || undefined,
+        advancePaymentMethod: item.advancePaidUsd && parseFloat(item.advancePaidUsd) > 0 ? item.advancePaymentMethod : undefined,
       })),
     });
   };
@@ -721,6 +732,74 @@ export default function BulkOrderForm() {
                         />
                       </div>
                     </div>
+
+                    {/* Advance Payment Section */}
+                    {(() => {
+                      const advanceNum = parseFloat(item.advancePaidUsd || "0");
+                      const hasAdvance = advanceNum > 0 && itemTotal > 0;
+                      const remaining = Math.max(0, itemTotal - advanceNum);
+                      const overpaid = advanceNum > itemTotal && itemTotal > 0;
+                      return (
+                        <div className="mt-3 rounded-lg border-2 border-teal-200 dark:border-teal-900/50 bg-gradient-to-l from-teal-50/60 to-emerald-50/60 dark:from-teal-950/20 dark:to-emerald-950/20 p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Wallet className="w-4 h-4 text-teal-600" />
+                            <span className="text-xs font-semibold text-teal-700 dark:text-teal-400">پارەدانی پێشەکی (ئاختیاری)</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs text-teal-700 dark:text-teal-400">بڕی پارەی پێشەکی ($)</Label>
+                              <div className="relative mt-1">
+                                <span className="absolute start-3 top-1/2 -translate-y-1/2 text-teal-500 font-bold select-none text-sm">$</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={item.advancePaidUsd}
+                                  onChange={e => updateItem(item.id, "advancePaidUsd", e.target.value)}
+                                  placeholder="0.00"
+                                  className="ps-7 h-9 text-sm border-teal-200 dark:border-teal-900/50 bg-white dark:bg-background"
+                                  dir="ltr"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-teal-700 dark:text-teal-400">شێوازی پارەدان</Label>
+                              <Select
+                                value={item.advancePaymentMethod}
+                                onValueChange={(v) => updateItem(item.id, "advancePaymentMethod", v as AdvancePaymentMethod)}
+                              >
+                                <SelectTrigger className="h-9 text-sm mt-1 border-teal-200 dark:border-teal-900/50 bg-white dark:bg-background">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="CASH">کاش</SelectItem>
+                                  <SelectItem value="BANK_TRANSFER">گواستنەوەی بانک</SelectItem>
+                                  <SelectItem value="FIB">FIB</SelectItem>
+                                  <SelectItem value="FASTPAY">FastPay</SelectItem>
+                                  <SelectItem value="ZAINCASH">ZainCash</SelectItem>
+                                  <SelectItem value="ASIAHAWALA">AsiaHawala</SelectItem>
+                                  <SelectItem value="CARD">کارتی بانکی</SelectItem>
+                                  <SelectItem value="OTHER">هیتر</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          {hasAdvance && (
+                            <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+                              <span className="text-teal-700 dark:text-teal-400">
+                                پێشەکی: <span className="font-mono font-bold">-${advanceNum.toFixed(2)}</span>
+                              </span>
+                              <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                                ماوە: <span className="font-mono font-bold">${remaining.toFixed(2)}</span>
+                              </span>
+                            </div>
+                          )}
+                          {overpaid && (
+                            <p className="text-xs text-red-600 dark:text-red-400 font-medium mt-2">⚠️ پارەی پێشەکی زیاترە لە کۆی نرخ</p>
+                          )}
+                        </div>
+                      );
+                    })()}
                     
                     {/* Item profit indicator */}
                     <div className="mt-3 flex items-center gap-4 text-sm">

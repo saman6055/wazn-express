@@ -336,6 +336,8 @@ export const fullPackageRouter = router({
           totalPrepaidUsd: z.string().optional(),
           commissionRate: z.string().optional(),
           commissionAmount: z.string().optional(),
+          advancePaidUsd: z.string().optional(),
+          advancePaymentMethod: z.enum(['CASH','BANK_TRANSFER','FIB','FASTPAY','ZAINCASH','ASIAHAWALA','CARD','OTHER']).optional(),
           shippingType: z.enum(["air_regular", "air_irregular", "sea"]).optional(),
           shippingCostUsd: z.string().optional(),
           weightKg: z.string().optional(),
@@ -441,7 +443,38 @@ export const fullPackageRouter = router({
                 );
               }
             }
-            
+
+            // Advance payment — record as CREDIT_PAYMENT on customer account if provided
+            const advance = parseFloat(item.advancePaidUsd || '0');
+            if (advance > 0) {
+              const customer = await db.getCustomerById(input.customerId);
+              if (customer) {
+                try {
+                  const paymentResult = await db.recordPaymentReceived(
+                    input.customerId,
+                    customer.customerCode,
+                    advance,
+                    0,
+                    item.advancePaymentMethod || 'CASH',
+                    ctx.user.id,
+                    `پارەی پێشەکی بۆ ئۆردەری ${orderCode} - ${item.productName}`,
+                    undefined,
+                    undefined,
+                    undefined,
+                  );
+                  await db.updateFullPackageOrder(order.id, {
+                    advancePaidUsd: advance.toFixed(2),
+                    advancePaidAt: new Date(),
+                    advancePaymentMethod: item.advancePaymentMethod || 'CASH',
+                    advancePaymentTransactionId: paymentResult.transaction.id,
+                  });
+                  appLogger.info("[Advance Payment] Recorded advance payment (bulk)", { customerCode: customer.customerCode, orderCode, advance });
+                } catch (err) {
+                  appLogger.error("[Advance Payment] Failed to record advance payment (bulk)", { error: err instanceof Error ? err.message : String(err), orderCode, advance });
+                }
+              }
+            }
+
             results.push(order);
           } catch (err: unknown) {
             errors.push({ index: i, error: err instanceof Error ? err.message : 'Unknown error' });
