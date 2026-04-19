@@ -508,16 +508,69 @@ export const fullPackageRouter = router({
         notes: z.string().optional(),
         customerNotes: z.string().optional(),
         internalNotes: z.string().optional(),
+        // Advance payment (can be edited)
+        advancePaidUsd: z.string().optional(),
+        advancePaymentMethod: z.enum(['CASH','BANK_TRANSFER','FIB','FASTPAY','ZAINCASH','ASIAHAWALA','CARD','OTHER']).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { id, ...data } = input;
+        const { id, advancePaidUsd, advancePaymentMethod, ...rest } = input;
         const existing = await db.getFullPackageOrderById(id);
         if (!existing) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
         }
-        
+
+        // Handle advance payment delta if changed
+        const data: any = { ...rest };
+        if (advancePaidUsd !== undefined) {
+          const newAdvance = parseFloat(advancePaidUsd || '0');
+          const oldAdvance = parseFloat(String(existing.advancePaidUsd || '0'));
+          const delta = newAdvance - oldAdvance;
+
+          if (Math.abs(delta) > 0.005) { // non-trivial change
+            const customer = await db.getCustomerById(existing.customerId);
+            if (customer) {
+              try {
+                if (delta > 0) {
+                  // Advance increased — record additional CREDIT_PAYMENT
+                  const result = await db.recordPaymentReceived(
+                    existing.customerId, customer.customerCode, delta, 0,
+                    advancePaymentMethod || (existing.advancePaymentMethod as any) || 'CASH',
+                    ctx.user.id,
+                    `گۆڕینی پارەی پێشەکی (+$${delta.toFixed(2)}) بۆ ئۆردەری ${existing.orderCode} - ${existing.productName}`,
+                    undefined, undefined, undefined,
+                  );
+                  data.advancePaymentTransactionId = result.transaction.id;
+                } else {
+                  // Advance decreased — reverse the extra amount
+                  await db.reverseAdvancePayment(
+                    existing.customerId, customer.customerCode, Math.abs(delta),
+                    `گەڕاندنەوەی بەشێک لە پارەی پێشەکی (-$${Math.abs(delta).toFixed(2)}) بۆ ئۆردەری ${existing.orderCode} - ${existing.productName}`,
+                    ctx.user.id,
+                  );
+                }
+              } catch (err) {
+                appLogger.error("[Advance Payment] Failed to adjust advance on order update", {
+                  error: err instanceof Error ? err.message : String(err),
+                  orderId: id,
+                });
+                throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "هەڵە لە گۆڕینی پارەی پێشەکی" });
+              }
+            }
+          }
+
+          data.advancePaidUsd = newAdvance.toFixed(2);
+          if (newAdvance > 0) {
+            data.advancePaidAt = existing.advancePaidAt || new Date();
+            if (advancePaymentMethod) data.advancePaymentMethod = advancePaymentMethod;
+          } else {
+            data.advancePaidAt = null;
+            data.advancePaymentMethod = null;
+            data.advancePaymentTransactionId = null;
+          }
+        }
+
         await db.updateFullPackageOrder(id, data, ctx.user.id);
-        
+
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
@@ -527,7 +580,7 @@ export const fullPackageRouter = router({
           oldValues: existing,
           newValues: data,
         });
-        
+
         return { success: true };
       }),
     
@@ -699,15 +752,42 @@ export const fullPackageRouter = router({
       }),
     
     delete: adminProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({
+        id: z.number(),
+        refundAdvance: z.boolean().default(true), // If true, reverses any advance payment
+      }))
       .mutation(async ({ input, ctx }) => {
         const existing = await db.getFullPackageOrderById(input.id);
         if (!existing) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
         }
-        
+
+        // Reverse advance payment if any
+        const advance = parseFloat(String(existing.advancePaidUsd || '0'));
+        if (input.refundAdvance && advance > 0) {
+          const customer = await db.getCustomerById(existing.customerId);
+          if (customer) {
+            try {
+              await db.reverseAdvancePayment(
+                existing.customerId, customer.customerCode, advance,
+                `گەڕاندنەوەی پارەی پێشەکی لەبەر سڕینەوەی ئۆردەری ${existing.orderCode} - ${existing.productName}`,
+                ctx.user.id,
+              );
+              appLogger.info("[Advance Payment] Reversed advance due to order deletion", {
+                orderId: input.id, orderCode: existing.orderCode, advance,
+              });
+            } catch (err) {
+              appLogger.error("[Advance Payment] Failed to reverse advance on delete", {
+                error: err instanceof Error ? err.message : String(err),
+                orderId: input.id,
+              });
+              throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "هەڵە لە گەڕاندنەوەی پارەی پێشەکی" });
+            }
+          }
+        }
+
         await db.deleteFullPackageOrder(input.id);
-        
+
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
@@ -715,9 +795,10 @@ export const fullPackageRouter = router({
           entityType: "full_package_order",
           entityId: input.id,
           oldValues: existing,
+          newValues: { refundAdvance: input.refundAdvance, reversedAdvanceUsd: advance },
         });
-        
-        return { success: true };
+
+        return { success: true, reversedAdvanceUsd: input.refundAdvance && advance > 0 ? advance : 0 };
       }),
     
     // Get orders needing tracking reminder

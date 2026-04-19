@@ -853,6 +853,76 @@ export async function recordPaymentReceived(
   });
 }
 
+// Reverse an advance payment (or part of it) — creates an ADJUSTMENT_DEBIT
+// that neutralizes the original CREDIT_PAYMENT. Used when an order is
+// deleted, or when the advance amount is reduced/zeroed during edit.
+export async function reverseAdvancePayment(
+  customerId: number,
+  customerCode: string,
+  amountUsd: number,
+  reason: string,
+  createdById: number,
+): Promise<{ transaction: LedgerTransaction }> {
+  if (amountUsd <= 0) throw new Error("Amount must be greater than zero");
+
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.transaction(async (tx) => {
+    let accountRows = await tx.select().from(customerAccounts)
+      .where(eq(customerAccounts.customerId, customerId))
+      .for('update')
+      .limit(1);
+
+    let account = accountRows[0];
+    if (!account) {
+      const accountNumber = `ACC-${customerCode}-${new Date().getFullYear()}`;
+      await tx.insert(customerAccounts).values({
+        customerId,
+        accountNumber,
+        currentBalanceUsd: "0",
+        currentBalanceIqd: "0",
+      });
+      accountRows = await tx.select().from(customerAccounts)
+        .where(eq(customerAccounts.customerId, customerId))
+        .for('update')
+        .limit(1);
+      account = accountRows[0];
+      if (!account) throw new Error("Failed to create or lock customer account");
+    }
+
+    const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
+    const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
+    // ADJUSTMENT_DEBIT increases balance (undoes the previous CREDIT_PAYMENT)
+    const newBalanceUsd = currentBalanceUsd + amountUsd;
+
+    const txnResult = await tx.insert(ledgerTransactions).values({
+      accountId: account.id,
+      transactionNumber: generateTransactionNumber(),
+      transactionType: 'ADJUSTMENT_DEBIT',
+      amountUsd: amountUsd.toFixed(2),
+      amountIqd: '0',
+      balanceBeforeUsd: currentBalanceUsd.toFixed(2),
+      balanceAfterUsd: newBalanceUsd.toFixed(2),
+      balanceBeforeIqd: currentBalanceIqd.toFixed(0),
+      balanceAfterIqd: currentBalanceIqd.toFixed(0),
+      referenceType: 'adjustment',
+      description: reason,
+      createdById,
+    });
+    const txnInsertId = Number(txnResult[0].insertId);
+    const [transaction] = await tx.select().from(ledgerTransactions).where(eq(ledgerTransactions.id, txnInsertId));
+    if (!transaction) throw new Error("Failed to read back reverse transaction");
+
+    await tx.update(customerAccounts).set({
+      currentBalanceUsd: newBalanceUsd.toFixed(2),
+      lastTransactionAt: new Date(),
+    }).where(eq(customerAccounts.id, account.id));
+
+    return { transaction };
+  });
+}
+
 // Get recent transactions across all accounts
 export async function getRecentTransactions(limit = 20): Promise<(LedgerTransaction & { customer?: Customer })[]> {
   const db = await getDb();
