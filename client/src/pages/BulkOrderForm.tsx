@@ -49,7 +49,7 @@ import {
 
 interface OrderItem {
   id: string;
-  productName: string;
+  productType: string;
   productLink: string;
   productDescription: string;
   productImages: string[];
@@ -70,7 +70,7 @@ interface OrderItem {
 
 const emptyItem = (): OrderItem => ({
   id: crypto.randomUUID(),
-  productName: "",
+  productType: "",
   productLink: "",
   productDescription: "",
   productImages: [],
@@ -111,6 +111,9 @@ export default function BulkOrderForm() {
 
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: suppliers } = trpc.suppliers.list.useQuery();
+  const { data: colorAttrs } = trpc.productAttributes.list.useQuery({ type: "color" });
+  const { data: sizeAttrs } = trpc.productAttributes.list.useQuery({ type: "size" });
+  const { data: typeAttrs } = trpc.productAttributes.list.useQuery({ type: "productType" });
 
   const filteredCustomers = customers?.filter((customer) => {
     if (!customerSearch) return true;
@@ -190,7 +193,7 @@ export default function BulkOrderForm() {
       const qty = parseInt(item.quantity) || 0;
       totalQuantity += qty;
       
-      if (item.productName.trim()) {
+      if (item.productType) {
         validItems++;
       }
 
@@ -240,7 +243,7 @@ export default function BulkOrderForm() {
       return;
     }
 
-    const validItems = items.filter(item => item.productName.trim());
+    const validItems = items.filter(item => item.productType);
     if (validItems.length === 0) {
       toast.error(t("toast.fillAtLeastOnePackage"));
       return;
@@ -259,7 +262,8 @@ export default function BulkOrderForm() {
       customerId: parseInt(customerId),
       orderType,
       items: validItems.map(item => ({
-        productName: item.productName,
+        productName: item.productType,
+        productType: item.productType || undefined,
         productLink: item.productLink || undefined,
         productImage: item.productImages[0] || undefined,
         productImages: item.productImages.length > 0 ? item.productImages : undefined,
@@ -488,14 +492,14 @@ export default function BulkOrderForm() {
             }
 
             return (
-              <Card 
-                key={item.id} 
+              <Card
+                key={item.id}
                 className={cn(
                   "transition-all duration-200",
-                  item.productName.trim() 
-                    ? "border-r-4" 
+                  item.productType
+                    ? "border-r-4"
                     : "border-r-4 border-r-gray-200 dark:border-r-gray-700",
-                  item.productName.trim() && (isCommission ? "border-r-amber-500" : "border-r-emerald-500")
+                  item.productType && (isCommission ? "border-r-amber-500" : "border-r-emerald-500")
                 )}
               >
                 {/* Compact Row Header */}
@@ -520,12 +524,20 @@ export default function BulkOrderForm() {
                   {/* Inline quick fields */}
                   <div className="flex-1 grid grid-cols-12 gap-2 items-center" onClick={e => e.stopPropagation()}>
                     <div className="col-span-4">
-                      <Input
-                        placeholder="ناوی کاڵا *"
-                        value={item.productName}
-                        onChange={e => updateItem(item.id, "productName", e.target.value)}
-                        className="h-9 text-sm"
-                      />
+                      <Select
+                        value={item.productType}
+                        onValueChange={(v) => updateItem(item.id, "productType", v === "__none__" ? "" : v)}
+                      >
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue placeholder="جۆری کاڵا *" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— بێ جۆر —</SelectItem>
+                          {typeAttrs?.map(a => (
+                            <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="col-span-1">
                       <Input
@@ -611,21 +623,37 @@ export default function BulkOrderForm() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">ڕەنگ</Label>
-                        <Input
-                          placeholder="ڕەنگ"
+                        <Select
                           value={item.color}
-                          onChange={e => updateItem(item.id, "color", e.target.value)}
-                          className="h-9 text-sm mt-1"
-                        />
+                          onValueChange={(v) => updateItem(item.id, "color", v === "__none__" ? "" : v)}
+                        >
+                          <SelectTrigger className="h-9 text-sm mt-1">
+                            <SelectValue placeholder="ڕەنگ هەڵبژێرە" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">— بێ ڕەنگ —</SelectItem>
+                            {colorAttrs?.map(a => (
+                              <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">قەبارە</Label>
-                        <Input
-                          placeholder="قەبارە"
+                        <Select
                           value={item.size}
-                          onChange={e => updateItem(item.id, "size", e.target.value)}
-                          className="h-9 text-sm mt-1"
-                        />
+                          onValueChange={(v) => updateItem(item.id, "size", v === "__none__" ? "" : v)}
+                        >
+                          <SelectTrigger className="h-9 text-sm mt-1">
+                            <SelectValue placeholder="قەبارە هەڵبژێرە" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">— بێ قەبارە —</SelectItem>
+                            {sizeAttrs?.map(a => (
+                              <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">ژمارەی ئۆردەر</Label>
@@ -662,6 +690,15 @@ export default function BulkOrderForm() {
                             ))}
                           </SelectContent>
                         </Select>
+                      </div>
+                      <div className="col-span-2 md:col-span-3">
+                        <Label className="text-xs text-muted-foreground">وەسف</Label>
+                        <Textarea
+                          placeholder="وەسفی کاڵا..."
+                          value={item.productDescription}
+                          onChange={e => updateItem(item.id, "productDescription", e.target.value)}
+                          className="text-sm mt-1 min-h-[60px]"
+                        />
                       </div>
                       <div className="col-span-2 md:col-span-3">
                         <Label className="text-xs text-muted-foreground">تێبینی</Label>
