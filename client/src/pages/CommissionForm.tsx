@@ -35,7 +35,6 @@ export default function CommissionForm() {
     customerId: "",
     supplierId: "",
     orderNumber: "",
-    productName: "",
     productLink: "",
     productDescription: "",
     quantity: "1",
@@ -159,8 +158,8 @@ export default function CommissionForm() {
       return;
     }
 
-    if (!formData.productName) {
-      toast.error("تکایە ناوی کاڵا داخڵ بکە");
+    if (!formData.productType) {
+      toast.error("تکایە جۆری کاڵا هەڵبژێرە");
       return;
     }
 
@@ -179,7 +178,7 @@ export default function CommissionForm() {
       supplierId: formData.supplierId && formData.supplierId !== "none" ? parseInt(formData.supplierId) : undefined,
 
       orderType: "commission",
-      productName: formData.productName,
+      productName: formData.productType,
       productLink: formData.productLink || undefined,
       productImage: productImages[0] || undefined,
       productImages: productImages.length > 0 ? productImages : undefined,
@@ -327,12 +326,21 @@ export default function CommissionForm() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>ناوی کاڵا *</Label>
-                  <Input
-                    value={formData.productName}
-                    onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                    placeholder="ناوی کاڵا"
-                  />
+                  <Label>جۆری کاڵا *</Label>
+                  <Select
+                    value={formData.productType}
+                    onValueChange={(v) => setFormData({ ...formData, productType: v === "__none__" ? "" : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="جۆر هەڵبژێرە" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— بێ جۆر —</SelectItem>
+                      {typeAttrs?.map(a => (
+                        <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>ئۆردەر نەمبەر</Label>
@@ -372,7 +380,7 @@ export default function CommissionForm() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Color */}
                 <div className="space-y-2">
                   <Label>ڕەنگ</Label>
@@ -404,24 +412,6 @@ export default function CommissionForm() {
                     <SelectContent>
                       <SelectItem value="__none__">— بێ قەبارە —</SelectItem>
                       {sizeAttrs?.map(a => (
-                        <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {/* Product Type */}
-                <div className="space-y-2">
-                  <Label>جۆری کاڵا</Label>
-                  <Select
-                    value={formData.productType}
-                    onValueChange={(v) => setFormData({ ...formData, productType: v === "__none__" ? "" : v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="جۆر هەڵبژێرە" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">— بێ جۆر —</SelectItem>
-                      {typeAttrs?.map(a => (
                         <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
                       ))}
                     </SelectContent>
