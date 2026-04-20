@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -84,6 +84,10 @@ export default function CommissionDetail() {
   const [, navigate] = useLocation();
   const isEditMode = mode === "edit";
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  // Plan v3: reason is required when prices or quantity change (server
+  // enforces it via computeOrderChargeAmount). Kept separate from notes so
+  // the audit-log row captures the EXACT operator-given justification.
+  const [editReason, setEditReason] = useState("");
 
   const statusLabels: Record<string, string> = {
     pending: t("fullPackage.status.pending"),
@@ -153,20 +157,63 @@ export default function CommissionDetail() {
   }, [order]);
 
   const updateMutation = trpc.fullPackage.update.useMutation({
-    onSuccess: () => {
-      toast.success("پەت نوێکرایەوە");
+    onSuccess: (res) => {
+      const delta = (res as any)?.chargeDeltaUsd ?? 0;
+      if (Math.abs(delta) > 0.005) {
+        toast.success(
+          `پەت نوێکرایەوە · ${delta > 0 ? "+" : ""}$${delta.toFixed(2)}`
+        );
+      } else {
+        toast.success("پەت نوێکرایەوە");
+      }
+      setEditReason("");
       utils.fullPackage.list.invalidate();
       refetch();
       navigate(`/commission/${id}`);
     },
     onError: (error) => {
-      toast.error(error.message);
+      // Plan v3: surface OCC conflicts distinctly so the operator reloads.
+      if (error.data?.code === "CONFLICT") {
+        toast.error(
+          "ئەم ئۆردەرە لەلایەن بەکارهێنەرێکی دیکە گۆڕدراوە. تکایە بیخوێنەرەوە و هەوڵ بدەرەوە. | This order was modified by someone else. Please reload and try again.",
+          { duration: 8000 }
+        );
+        refetch();
+        return;
+      }
+      // Non-empty fallback is important — some thrown errors have empty
+      // .message (esp. network / zod issues) and Sonner would render a
+      // blank toast otherwise.
+      const code = error.data?.code ? ` [${error.data.code}]` : "";
+      toast.error(
+        (error.message && error.message.trim()) ||
+          `هەڵە لە نوێکردنەوەی پەت | Failed to update order${code}`
+      );
     },
   });
 
   // Plan v3: delete is handled by <SafeDeleteOrderDialog/> (mounted below).
   // It enforces the required reason, previews the financial impact, and
   // navigates on success.
+
+  // Plan v3: detect whether any money-affecting field would be changed on save.
+  // Mirrors server-side computeOrderChargeAmount for commission orders:
+  //   charge = itemPrice * qty + commission
+  // If this says "money changes", the server will require a non-empty reason
+  // and will bump the OCC version.
+  const moneyChangeDetected = useMemo(() => {
+    if (!order) return false;
+    const normalize = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
+    const oldQty = order.quantity ?? 1;
+    const newQty = Number(formData.quantity) || 1;
+    const qtyChanged = oldQty !== newQty;
+    const itemChanged =
+      normalize((order as any).itemPriceUsd) !== normalize(formData.itemPriceUsd);
+    const commissionChanged =
+      normalize((order as any).commissionFeeUsd) !==
+      normalize(formData.commissionFeeUsd);
+    return qtyChanged || itemChanged || commissionChanged;
+  }, [order, formData.quantity, formData.itemPriceUsd, formData.commissionFeeUsd]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,8 +223,21 @@ export default function CommissionDetail() {
       return;
     }
 
+    // Plan v3: require a reason when the edit would shift the customer ledger.
+    // Without this, the server throws BAD_REQUEST and the toast was coming
+    // back blank because some validation errors ship with no .message body.
+    if (moneyChangeDetected && editReason.trim().length < 3) {
+      toast.error(
+        "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت) | Reason is required when prices change (min 3 chars)"
+      );
+      return;
+    }
+
     updateMutation.mutate({
       id: Number(id),
+      // Plan v3 — OCC + reason for audit trail on any money change.
+      expectedVersion: (order as any)?.version,
+      reason: moneyChangeDetected ? editReason.trim() : undefined,
       supplierId: formData.supplierId ? Number(formData.supplierId) : null,
       productName: formData.productName,
       productLink: formData.productLink || undefined,
@@ -187,6 +247,11 @@ export default function CommissionDetail() {
       quantity: Number(formData.quantity) || 1,
       color: formData.color || undefined,
       size: formData.size || undefined,
+      // Plan v3: price fields were omitted before — that's why server
+      // thought "nothing changed" on price-only edits and why qty edits
+      // raced against the charge-recompute without a reason.
+      itemPriceUsd: formData.itemPriceUsd || undefined,
+      commissionFeeUsd: formData.commissionFeeUsd || undefined,
       trackingNumber: formData.trackingNumber || undefined,
       notes: formData.notes || undefined,
     });
@@ -201,7 +266,10 @@ export default function CommissionDetail() {
   const quantity = Number(formData.quantity) || 1;
   const commissionFeeUsd = Number(formData.commissionFeeUsd) || 0;
   const itemSubtotal = itemPriceUsd * quantity;
-  const totalCommission = commissionFeeUsd * quantity;
+  // Commission is FLAT (once per order), not per-unit. This matches the
+  // server-side formula in server/db/fullPackage.db.ts
+  // computeOrderChargeAmount: `itemPrice * qty + commission`.
+  const totalCommission = commissionFeeUsd;
   const totalCost = itemSubtotal + totalCommission;
 
   // Filter batches to show only preparing status
@@ -517,7 +585,7 @@ export default function CommissionDetail() {
                   </div>
                 )}
                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span className="text-muted-foreground">کۆی عمولە</span>
+                  <span className="text-muted-foreground">عمولە (ڕێگری)</span>
                   <span className="font-mono font-medium text-purple-600">${totalCommission.toFixed(2)}</span>
                 </div>
                 <div className="p-3 bg-purple-50 rounded-lg">
@@ -538,6 +606,43 @@ export default function CommissionDetail() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Plan v3: reason card shown ONLY when the edit would shift the customer ledger */}
+            {moneyChangeDetected && (
+              <Card className="shadow-sm border-2 border-amber-300 bg-amber-50">
+                <CardHeader className="border-b border-amber-200 bg-amber-100">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-200 rounded-lg">
+                      <AlertCircle className="h-5 w-5 text-amber-800" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-amber-900">
+                        هۆکاری گۆڕینی نرخ | Reason for Price Change
+                      </CardTitle>
+                      <CardDescription className="text-amber-800">
+                        گۆڕانکاریت لە نرخ یان ژمارە کردووە، بۆیە پێویستە هۆکارێک بنووسیت بۆ ئەوەی
+                        دەفتەری هەژماری کڕیار ڕێکبخرێتەوە. | You changed a price or quantity, so
+                        we need a reason to log the customer-ledger adjustment.
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <Textarea
+                    value={editReason}
+                    onChange={(e) => setEditReason(e.target.value)}
+                    placeholder="بۆ نموونە: کڕیار داوای دابەزاندنی عمولەی کرد | e.g. Customer requested a commission discount"
+                    rows={2}
+                    dir="auto"
+                  />
+                  <div className="text-xs text-amber-800 mt-2 text-right">
+                    {editReason.trim().length < 3
+                      ? `بەلایەنی کەم ٣ پیت | Min 3 chars (${editReason.trim().length}/3)`
+                      : `${editReason.trim().length} پیت | chars`}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Submit */}
             <div className="flex gap-4">
@@ -763,7 +868,12 @@ export default function CommissionDetail() {
                   {/* Divider */}
                   <div className="border-t border-dashed my-3"></div>
 
-                  {/* Cost Breakdown */}
+                  {/* Cost Breakdown — commission is FLAT (once per order), NOT per-unit.
+                      This mirrors server/db/fullPackage.db.ts computeOrderChargeAmount:
+                        charge = (itemPrice * qty) + commissionFee
+                      Showing it per-unit here (which the page used to do) caused the
+                      displayed "total" to exceed the actual customer debit by
+                      commission × (qty − 1), confusing operators on multi-unit orders. */}
                   <div className="bg-gray-100 rounded-xl p-4 space-y-2">
                     <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{t("fullPackage.costBreakdown")}</p>
                     <div className="flex justify-between text-sm">
@@ -771,25 +881,25 @@ export default function CommissionDetail() {
                       <span className="font-mono">${((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">+ {t("commission.commission") || "عمولە"} × {order.quantity || 1}</span>
-                      <span className="font-mono text-purple-600">${((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1)).toFixed(2)}</span>
+                      <span className="text-muted-foreground">+ {t("commission.commission") || "عمولە"}</span>
+                      <span className="font-mono text-purple-600">${(Number(order.commissionFeeUsd) || 0).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm font-semibold border-t border-gray-200 pt-2 mt-2">
                       <span>{t("commission.totalCost") || "کۆی گشتی"}</span>
-                      <span className="font-mono">${(((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)) + ((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1))).toFixed(2)}</span>
+                      <span className="font-mono">${(((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)) + (Number(order.commissionFeeUsd) || 0)).toFixed(2)}</span>
                     </div>
                   </div>
 
-                  {/* Commission Income (Profit equivalent) */}
+                  {/* Commission Income (Profit equivalent) — flat per order */}
                   <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-l from-purple-100 to-purple-50 border border-purple-200">
                     <div>
                       <span className="font-semibold block">{t("commission.commissionIncome") || "داهاتی عمولە"}</span>
                       <span className="text-xs text-muted-foreground">
-                        ${Number(order.commissionFeeUsd || 0).toFixed(2)} × {order.quantity || 1}
+                        فلاتە بۆ هەر ئۆردەرێک | flat per order
                       </span>
                     </div>
                     <span className="font-mono font-bold text-2xl text-purple-700">
-                      ${((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1)).toFixed(2)}
+                      ${(Number(order.commissionFeeUsd) || 0).toFixed(2)}
                     </span>
                   </div>
 
@@ -798,14 +908,14 @@ export default function CommissionDetail() {
                     <div className="flex justify-between items-center">
                       <span className="font-medium text-purple-100">{t("commission.totalCost") || "کۆی گشتی"}</span>
                       <span className="font-mono font-bold text-2xl">
-                        ${(((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)) + ((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1))).toFixed(2)}
+                        ${(((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)) + (Number(order.commissionFeeUsd) || 0)).toFixed(2)}
                       </span>
                     </div>
                   </div>
 
                   {/* Payment Summary — advance paid + remaining */}
                   {(() => {
-                    const totalCost = (((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)) + ((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1)));
+                    const totalCost = (((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)) + (Number(order.commissionFeeUsd) || 0));
                     const advancePaid = Number(order.advancePaidUsd || 0);
                     const remaining = Math.max(0, totalCost - advancePaid);
                     const isFullyPaid = advancePaid >= totalCost && totalCost > 0;

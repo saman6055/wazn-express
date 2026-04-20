@@ -101,7 +101,23 @@ export default function SafeDeleteOrderDialog({
       onDeleted?.();
     },
     onError: (error) => {
-      toast.error(error.message || "هەڵە | Delete failed");
+      // Distinct toast for OCC conflicts so the operator knows to reload
+      // — "just retry" would silently clobber a concurrent edit.
+      if (error.data?.code === "CONFLICT") {
+        toast.error(
+          "ئەم ئۆردەرە لەلایەن بەکارهێنەرێکی دیکە گۆڕدراوە. تکایە پەڕەکە نوێ بکەرەوە و هەوڵ بدەرەوە. | This order was modified elsewhere. Reload the page and try again.",
+          { duration: 8000 }
+        );
+        return;
+      }
+      // Non-empty fallback — zod/validation errors sometimes surface with
+      // empty .message, and Sonner would render a blank toast otherwise.
+      const code = error.data?.code ? ` [${error.data.code}]` : "";
+      toast.error(
+        (error.message && error.message.trim()) ||
+          `هەڵە لە سڕینەوەی ئۆردەر | Delete failed${code}`,
+        { duration: 8000 }
+      );
     },
   });
 
