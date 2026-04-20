@@ -76,6 +76,13 @@ import {
   expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog
 } from "../../drizzle/schema";
 
+// ============ SOFT-DELETE HELPER (Plan v3, Phase 1) ============
+// Shared predicate used everywhere a user-facing query must hide rows that
+// have been soft-deleted via Phase 3's delete flow. Centralizing it in one
+// constant guarantees that if we ever need to change the policy (e.g. add
+// an includeDeleted flag), we only touch one line.
+const notDeleted = isNull(fullPackageOrders.deletedAt);
+
 // ============ FULL PACKAGE ORDER OPERATIONS ============
 
 export async function createFullPackageOrder(data: InsertFullPackageOrder): Promise<FullPackageOrder> {
@@ -129,7 +136,7 @@ export async function getFullPackageOrderById(id: number) {
   .leftJoin(customers, eq(fullPackageOrders.customerId, customers.id))
   .leftJoin(suppliers, eq(fullPackageOrders.supplierId, suppliers.id))
   .leftJoin(batches, eq(fullPackageOrders.batchId, batches.id))
-  .where(eq(fullPackageOrders.id, id))
+  .where(and(eq(fullPackageOrders.id, id), notDeleted))
   .limit(1);
   
   if (!result[0]) return undefined;
@@ -151,8 +158,11 @@ export async function getAllFullPackageOrders(filters?: {
 }) {
   const db = await getDb();
   if (!db) return [];
-  
-  const conditions = [];
+
+  // Plan v3: every list query hides soft-deleted orders by default.
+  // `any[]` matches the original implicit typing (the search branch pushes
+  // `or(...)` which drizzle types as SQL | undefined).
+  const conditions: any[] = [notDeleted];
   if (filters?.customerId) {
     conditions.push(eq(fullPackageOrders.customerId, filters.customerId));
   }
@@ -253,7 +263,7 @@ export async function getFullPackageOrderByTrackingNumber(trackingNumber: string
 
   // Fallback: legacy single tracking on order
   const result = await db.select().from(fullPackageOrders)
-    .where(eq(fullPackageOrders.trackingNumber, t))
+    .where(and(eq(fullPackageOrders.trackingNumber, t), notDeleted))
     .limit(1);
   return result[0];
 }
@@ -282,7 +292,7 @@ export async function getAllOrdersByTrackingNumber(trackingNumber: string): Prom
   // Fallback: legacy single tracking on order
   const fromLegacy = await db.select({ id: fullPackageOrders.id })
     .from(fullPackageOrders)
-    .where(eq(fullPackageOrders.trackingNumber, t));
+    .where(and(eq(fullPackageOrders.trackingNumber, t), notDeleted));
   for (const row of fromLegacy) {
     orderIdSet[row.id] = true;
   }
@@ -305,7 +315,8 @@ export async function getOrdersByBatchId(batchId: number): Promise<FullPackageOr
     .from(fullPackageOrders)
     .where(and(
       eq(fullPackageOrders.batchId, batchId),
-      isNotNull(fullPackageOrders.trackingNumber)
+      isNotNull(fullPackageOrders.trackingNumber),
+      notDeleted,
     ));
   const orders: FullPackageOrder[] = [];
   for (const row of results) {
@@ -478,14 +489,14 @@ export async function updateFullPackageOrder(id: number, data: Partial<InsertFul
         const qty = data.quantity ?? existing.quantity ?? 1;
         const perUnitPrice = chargeAmount / qty;
 
-        await applyCharge(
+        const deliveryChargeResult = await applyCharge(
           existing.customerId!,
           customer.customerCode,
           chargeType as any,
           existing.id,
           chargeAmount,
-          `${orderType === 'full_package' ? 'Full Package' : 
-             orderType === 'purchase_request' ? 'Purchase Request' : 
+          `${orderType === 'full_package' ? 'Full Package' :
+             orderType === 'purchase_request' ? 'Purchase Request' :
              'Commission'} Order ${existing.orderCode} delivered - Final Price: $${chargeAmount.toFixed(2)}`,
           userId,
           [{
@@ -495,13 +506,24 @@ export async function updateFullPackageOrder(id: number, data: Partial<InsertFul
             total: chargeAmount,
           }]
         );
-        
+
         data.isCharged = true;
         data.chargedToAccountAt = new Date();
+        // Plan v3: persist the DEBIT transaction id so future edit/delete
+        // can reverse/adjust the EXACT original charge. Only set if not
+        // already set (protects against accidental overwrite).
+        if (!existing.chargeTransactionId) {
+          data.chargeTransactionId = deliveryChargeResult.transaction.id;
+        }
       }
     }
   }
-  
+
+  // Plan v3: bump the OCC version on every write so stale client updates
+  // are rejected with CONFLICT at the router layer. Never written by caller
+  // directly — we override any incoming value.
+  (data as any).version = (existing.version ?? 1) + 1;
+
   await db.update(fullPackageOrders).set(data).where(eq(fullPackageOrders.id, id));
   return getFullPackageOrderById(id);
 }
@@ -512,6 +534,70 @@ export async function deleteFullPackageOrder(id: number) {
   await db.delete(fullPackageOrders).where(eq(fullPackageOrders.id, id));
 }
 
+/**
+ * Plan v3, Phase 3 — soft-delete an order.
+ *
+ * Never hard-deletes (that would lose audit history and break revenue/ledger
+ * reconciliation). Sets deletedAt, deletedById, deletionReason, bumps version.
+ * All read helpers already filter on `deletedAt IS NULL`, so deleted orders
+ * disappear from listings but stay in the DB for forensics.
+ */
+export async function softDeleteFullPackageOrder(
+  id: number,
+  deletedById: number,
+  reason: string,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await getFullPackageOrderById(id);
+  if (!existing) return;
+  if (existing.deletedAt) return; // already deleted — idempotent
+  await db.update(fullPackageOrders)
+    .set({
+      deletedAt: new Date(),
+      deletedById,
+      deletionReason: reason,
+      status: 'cancelled', // reflect in any legacy UI that still queries by status
+      version: (existing.version ?? 1) + 1,
+    } as any)
+    .where(eq(fullPackageOrders.id, id));
+}
+
+/**
+ * Plan v3, Phase 3 — compute the customer-facing charge amount for an order.
+ *
+ * This is the single source of truth for "what should the customer owe on
+ * this order?" and is used by the update mutation to decide if the ledger
+ * needs an ADJUSTMENT via adjustCharge().
+ *
+ * Must match the logic in applyCharge-at-delivery (see updateFullPackageOrder
+ * above) and the logic in create/approveQuote/createCommissionOrder in the
+ * router. If you change the formula, change it EVERYWHERE or the ledger will
+ * drift.
+ *
+ * Returns 0 for orders that aren't yet at a "chargeable" state (e.g.
+ * pending_quote purchase_request without a selling price).
+ */
+export function computeOrderChargeAmount(order: {
+  orderType: string;
+  sellingPriceUsd?: string | null;
+  itemPriceUsd?: string | null;
+  commissionFeeUsd?: string | null;
+  quantity?: number | null;
+}): number {
+  const qty = order.quantity ?? 1;
+  if (order.orderType === 'full_package' || order.orderType === 'purchase_request') {
+    const selling = parseFloat(String(order.sellingPriceUsd ?? '0')) || 0;
+    return selling * qty;
+  }
+  if (order.orderType === 'commission') {
+    const itemPrice = parseFloat(String(order.itemPriceUsd ?? '0')) || 0;
+    const commission = parseFloat(String(order.commissionFeeUsd ?? '0')) || 0;
+    return (itemPrice * qty) + commission;
+  }
+  return 0;
+}
+
 // Get full package orders by customer (for customer portal)
 export async function getFullPackageOrdersByCustomer(customerId: number, filters?: {
   orderType?: string;
@@ -520,15 +606,15 @@ export async function getFullPackageOrdersByCustomer(customerId: number, filters
   const db = await getDb();
   if (!db) return [];
   
-  const conditions = [eq(fullPackageOrders.customerId, customerId)];
-  
+  const conditions = [eq(fullPackageOrders.customerId, customerId), notDeleted];
+
   if (filters?.orderType) {
     conditions.push(eq(fullPackageOrders.orderType, filters.orderType as any));
   }
   if (filters?.status) {
     conditions.push(eq(fullPackageOrders.status, filters.status as any));
   }
-  
+
   return db.select().from(fullPackageOrders)
     .where(and(...conditions))
     .orderBy(desc(fullPackageOrders.createdAt));
@@ -547,7 +633,8 @@ export async function getOrdersNeedingTrackingReminder() {
       eq(fullPackageOrders.status, "ordered"),
       isNull(fullPackageOrders.trackingNumber),
       lte(fullPackageOrders.orderDate, tenDaysAgo),
-      eq(fullPackageOrders.trackingReminderSent, false)
+      eq(fullPackageOrders.trackingReminderSent, false),
+      notDeleted,
     )
   ).orderBy(fullPackageOrders.orderDate);
 }
@@ -636,7 +723,8 @@ export async function getOrdersPendingTracking() {
       or(
         isNull(fullPackageOrders.trackingNumber),
         eq(fullPackageOrders.trackingNumber, "")
-      )
+      ),
+      notDeleted,
     )
   ).orderBy(fullPackageOrders.createdAt);
 
@@ -647,14 +735,15 @@ export async function getOrdersPendingTracking() {
 export async function getOrdersByAlertLevel(alertLevel: "warning" | "urgent" | "critical") {
   const db = await getDb();
   if (!db) return [];
-  
+
   return db.select().from(fullPackageOrders).where(
     and(
       eq(fullPackageOrders.alertLevel, alertLevel),
       or(
         isNull(fullPackageOrders.trackingNumber),
         eq(fullPackageOrders.trackingNumber, "")
-      )
+      ),
+      notDeleted,
     )
   ).orderBy(fullPackageOrders.orderDate);
 }
@@ -685,7 +774,8 @@ export async function getTrackingAlertStats() {
       or(
         isNull(fullPackageOrders.trackingNumber),
         eq(fullPackageOrders.trackingNumber, "")
-      )
+      ),
+      notDeleted,
     )
   );
   const orders = candidates.filter((o) => !withMultiTracking.includes(o.id));
@@ -725,7 +815,8 @@ export async function processTrackingAlerts() {
       or(
         isNull(fullPackageOrders.trackingNumber),
         eq(fullPackageOrders.trackingNumber, "")
-      )
+      ),
+      notDeleted,
     )
   );
   const orders = candidates.filter((o) => !withMultiTracking.includes(o.id));
@@ -871,7 +962,7 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
   })
     .from(fullPackageOrders)
     .leftJoin(customers, eq(fullPackageOrders.customerId, customers.id))
-    .where(eq(fullPackageOrders.trackingNumber, trackingNumber))
+    .where(and(eq(fullPackageOrders.trackingNumber, trackingNumber), notDeleted))
     .limit(1);
 
   // Also check fullPackageOrderTrackings (multiple trackings per order)
@@ -888,7 +979,7 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
       })
         .from(fullPackageOrders)
         .leftJoin(customers, eq(fullPackageOrders.customerId, customers.id))
-        .where(eq(fullPackageOrders.id, trackingRow[0].fullPackageOrderId))
+        .where(and(eq(fullPackageOrders.id, trackingRow[0].fullPackageOrderId), notDeleted))
         .limit(1);
     }
   }

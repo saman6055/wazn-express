@@ -1887,6 +1887,18 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "paymentRecords.reversedAmountUsd", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAmountUsd DECIMAL(10,2) NOT NULL DEFAULT 0" },
   { name: "paymentRecords.reversedAt", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAt TIMESTAMP NULL" },
   { name: "paymentRecords.reversalTransactionId", sql: "ALTER TABLE paymentRecords ADD COLUMN reversalTransactionId INT NULL" },
+
+  // ============ Plan v3, Phase 1: Safe edit/delete infrastructure ============
+  // These five columns + two indexes on fullPackageOrders make order edits
+  // and deletions atomic, reversible, and free of customer-ledger drift.
+  // See drizzle/0033_safe_edit_delete_infra.sql for the full rationale.
+  { name: "fullPackageOrders.chargeTransactionId", sql: "ALTER TABLE fullPackageOrders ADD COLUMN chargeTransactionId INT NULL" },
+  { name: "fullPackageOrders.version", sql: "ALTER TABLE fullPackageOrders ADD COLUMN version INT NOT NULL DEFAULT 1" },
+  { name: "fullPackageOrders.deletedAt", sql: "ALTER TABLE fullPackageOrders ADD COLUMN deletedAt TIMESTAMP NULL" },
+  { name: "fullPackageOrders.deletedById", sql: "ALTER TABLE fullPackageOrders ADD COLUMN deletedById INT NULL" },
+  { name: "fullPackageOrders.deletionReason", sql: "ALTER TABLE fullPackageOrders ADD COLUMN deletionReason TEXT NULL" },
+  { name: "idx_fpo_deleted_at", sql: "CREATE INDEX idx_fpo_deleted_at ON fullPackageOrders (deletedAt)" },
+  { name: "idx_fpo_charge_txn_id", sql: "CREATE INDEX idx_fpo_charge_txn_id ON fullPackageOrders (chargeTransactionId)" },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {
@@ -1906,7 +1918,15 @@ export async function runSchemaPatches(config: MigrationConfig): Promise<{ appli
       applied.push(patch.name);
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      if (msg.includes("Duplicate column") || msg.includes("duplicate column")) {
+      const lower = msg.toLowerCase();
+      // Swallow "already exists" errors so patches are idempotent across restarts.
+      // MySQL reports them as "Duplicate column", "Duplicate key name", or
+      // generic "already exists" depending on statement type (ALTER vs CREATE INDEX).
+      if (
+        lower.includes("duplicate column") ||
+        lower.includes("duplicate key name") ||
+        lower.includes("already exists")
+      ) {
         skipped.push(patch.name);
       } else {
         log(`Schema patch failed ${patch.name}: ${msg}`, "warn");

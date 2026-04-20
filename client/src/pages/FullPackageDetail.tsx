@@ -3,6 +3,8 @@ import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import ImageGallery from "@/components/ImageGallery";
+import SafeDeleteOrderDialog from "@/components/SafeDeleteOrderDialog";
+import OrderAuditHistory from "@/components/OrderAuditHistory";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,17 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+// Plan v3: delete confirmation is now handled by SafeDeleteOrderDialog
+// (imported below), so the raw AlertDialog primitives are no longer needed here.
 import {
   ArrowRight,
   Package,
@@ -108,6 +101,8 @@ export default function FullPackageDetail() {
   const [splitDialogOpen, setSplitDialogOpen] = useState(false);
   const [splitShippingCost, setSplitShippingCost] = useState("");
   const [splitShippingType, setSplitShippingType] = useState<"air_regular" | "air_irregular" | "sea">("air_regular");
+  // Plan v3: reason for financial edits — required by server when money changes.
+  const [editReason, setEditReason] = useState("");
 
   const statusLabels: Record<string, string> = {
     pending: t("fullPackage.status.pending"),
@@ -199,13 +194,32 @@ export default function FullPackageDetail() {
   }, [order]);
 
   const updateMutation = trpc.fullPackage.update.useMutation({
-    onSuccess: () => {
-      toast.success(t("fullPackage.orderUpdatedSuccess"));
+    onSuccess: (res) => {
+      const delta = (res as any)?.chargeDeltaUsd ?? 0;
+      if (Math.abs(delta) > 0.005) {
+        toast.success(
+          `${t("fullPackage.orderUpdatedSuccess")} · ${
+            delta > 0 ? "+" : ""
+          }$${delta.toFixed(2)}`
+        );
+      } else {
+        toast.success(t("fullPackage.orderUpdatedSuccess"));
+      }
+      setEditReason("");
       utils.fullPackage.list.invalidate();
       refetch();
       navigate(`/full-package/${id}`);
     },
     onError: (error) => {
+      // Plan v3: surface OCC conflicts distinctly — user must reload stale data.
+      if (error.data?.code === "CONFLICT") {
+        toast.error(
+          "ئەم ئۆردەرە لەلایەن بەکارهێنەرێکی دیکە گۆڕدراوە. تکایە بیخوێنەرەوە و هەوڵ بدەرەوە. | This order was modified by someone else. Please reload and try again.",
+          { duration: 8000 }
+        );
+        refetch();
+        return;
+      }
       toast.error(error.message || t("errors.somethingWentWrong"));
     },
   });
@@ -280,20 +294,32 @@ export default function FullPackageDetail() {
     });
   }, [sharedOrders, splitShippingCost, splitShippingType]);
 
-  const deleteMutation = trpc.fullPackage.delete.useMutation({
-    onSuccess: () => {
-      toast.success(t("fullPackage.orderDeleted"));
-      utils.fullPackage.list.invalidate();
-      navigate("/full-package");
-    },
-    onError: (error) => {
-      toast.error(error.message || t("errors.deleteFailed"));
-    },
-  });
+  // Plan v3: the delete mutation is now encapsulated inside
+  // <SafeDeleteOrderDialog/>, which enforces the required reason,
+  // shows a financial-impact preview, and passes the OCC version.
+  // Navigation back to the list is handled via `onDeleted`.
+
+  // Plan v3: detect whether any money-affecting field would be changed on save.
+  // Mirrors server-side computeOrderChargeAmount — if this says "money changes",
+  // the server will require a non-empty reason.
+  const moneyChangeDetected = useMemo(() => {
+    if (!order) return false;
+    const normalize = (v: string | null | undefined) =>
+      parseFloat(String(v ?? "0")) || 0;
+    const oldQty = order.quantity ?? 1;
+    const newQty = Number(formData.quantity) || 1;
+    const qtyChanged = oldQty !== newQty;
+    const sellingChanged =
+      normalize(order.sellingPriceUsd as any) !== normalize(formData.sellingPriceUsd);
+    const purchaseChanged =
+      normalize(order.purchasePriceUsd as any) !== normalize(formData.purchasePriceUsd);
+    // For this form, the money inputs are purchase/selling × quantity.
+    return qtyChanged || sellingChanged || purchaseChanged;
+  }, [order, formData.quantity, formData.sellingPriceUsd, formData.purchasePriceUsd]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.customerId) {
       toast.error(t("fullPackage.selectCustomerError"));
       return;
@@ -304,9 +330,20 @@ export default function FullPackageDetail() {
       return;
     }
 
+    // Plan v3: require a reason when the edit would shift the customer ledger.
+    if (moneyChangeDetected && editReason.trim().length < 3) {
+      toast.error(
+        "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت) | Reason is required when prices change (min 3 chars)"
+      );
+      return;
+    }
+
     const cleanedTrackings = formData.trackingNumbers.filter((t) => t.trim() !== "");
     updateMutation.mutate({
       id: Number(id),
+      // Plan v3 — OCC + reason for audit trail on any money change.
+      expectedVersion: (order as any)?.version,
+      reason: moneyChangeDetected ? editReason.trim() : undefined,
       supplierId: formData.supplierId && formData.supplierId !== "none" ? Number(formData.supplierId) : null,
       productName: formData.productName,
       productLink: formData.productLink || undefined,
@@ -324,10 +361,7 @@ export default function FullPackageDetail() {
     });
   };
 
-  const handleDelete = () => {
-    deleteMutation.mutate({ id: Number(id) });
-    setDeleteDialogOpen(false);
-  };
+  // handleDelete removed — SafeDeleteOrderDialog manages its own mutation + nav.
 
   const profit = (Number(formData.sellingPriceUsd) || 0) - (Number(formData.purchasePriceUsd) || 0);
 
@@ -421,42 +455,14 @@ export default function FullPackageDetail() {
                     <Pencil className="h-4 w-4 ms-2" />
                     {t("common.edit")}
                   </Button>
-                  <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        className="bg-red-500 hover:bg-red-600 shadow-md"
-                      >
-                        <Trash2 className="h-4 w-4 ms-2" />
-                        {t("fullPackage.deleteOrder")}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-right">{t("fullPackage.confirmDelete")}</AlertDialogTitle>
-                        <AlertDialogDescription className="text-right">
-                          {t("fullPackage.deleteOrderDescription")}
-                          <br />
-                          <span className="font-bold text-red-600">{t("fullPackage.orderCode")}: {order.orderCode}</span>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter className="flex gap-2">
-                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDelete}
-                          className="bg-red-600 hover:bg-red-700"
-                          disabled={deleteMutation.isPending}
-                        >
-                          {deleteMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 ms-2 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4 ms-2" />
-                          )}
-                          {t("common.delete")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button
+                    variant="destructive"
+                    className="bg-red-500 hover:bg-red-600 shadow-md"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 ms-2" />
+                    {t("fullPackage.deleteOrder")}
+                  </Button>
                 </>
               ) : (
                 <Badge className={`${statusColors[order.status]} text-sm px-4 py-2 border`}>
@@ -704,6 +710,43 @@ export default function FullPackageDetail() {
                 />
               </CardContent>
             </Card>
+
+            {/* Plan v3: reason card shown ONLY when the edit would shift the customer ledger */}
+            {moneyChangeDetected && (
+              <Card className="shadow-sm border-2 border-amber-300 bg-amber-50">
+                <CardHeader className="border-b border-amber-200 bg-amber-100">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-200 rounded-lg">
+                      <AlertCircle className="h-5 w-5 text-amber-800" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-amber-900">
+                        هۆکاری گۆڕینی نرخ | Reason for Price Change
+                      </CardTitle>
+                      <CardDescription className="text-amber-800">
+                        گۆڕانکاریت لە نرخ یان ژمارە کردووە، بۆیە پێویستە هۆکارێک بنووسیت بۆ ئەوەی
+                        دەفتەری هەژماری کڕیار ڕێکبخرێتەوە. | You changed a price or quantity, so
+                        we need a reason to log the customer-ledger adjustment.
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <Textarea
+                    value={editReason}
+                    onChange={(e) => setEditReason(e.target.value)}
+                    placeholder="بۆ نموونە: کڕیار داوای دابەزاندنی ٥٪ی کرد | e.g. Customer requested a 5% discount"
+                    rows={2}
+                    dir="auto"
+                  />
+                  <div className="text-xs text-amber-800 mt-2 text-right">
+                    {editReason.trim().length < 3
+                      ? `بەلایەنی کەم ٣ پیت | Min 3 chars (${editReason.trim().length}/3)`
+                      : `${editReason.trim().length} پیت | chars`}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Submit */}
             <div className="flex gap-4 sticky bottom-4 bg-white p-4 rounded-xl shadow-lg border">
@@ -1121,6 +1164,9 @@ export default function FullPackageDetail() {
                 </CardContent>
               </Card>
 
+              {/* Plan v3, Phase 4: audit history — admins only */}
+              <OrderAuditHistory entityType="full_package_order" entityId={order.id} />
+
               {/* Quick Actions */}
               <Card className="shadow-sm border-0 bg-white overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-gray-50 to-white">
@@ -1143,42 +1189,14 @@ export default function FullPackageDetail() {
                     <User className="h-4 w-4 ms-2" />
                     {t("common.view")} {t("fullPackage.customer")}
                   </Button>
-                  <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4 ms-2" />
-                        {t("fullPackage.deleteOrder")}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-right">{t("fullPackage.confirmDelete")}</AlertDialogTitle>
-                        <AlertDialogDescription className="text-right">
-                          {t("fullPackage.deleteOrderDescription")}
-                          <br />
-                          <span className="font-bold text-red-600">{t("fullPackage.orderCode")}: {order.orderCode}</span>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter className="flex gap-2">
-                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDelete}
-                          className="bg-red-600 hover:bg-red-700"
-                          disabled={deleteMutation.isPending}
-                        >
-                          {deleteMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 ms-2 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4 ms-2" />
-                          )}
-                          {t("common.delete")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 ms-2" />
+                    {t("fullPackage.deleteOrder")}
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -1310,6 +1328,28 @@ export default function FullPackageDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Plan v3, Phase 4: safe delete dialog with reason + financial-impact preview */}
+      {order && (
+        <SafeDeleteOrderDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          order={{
+            id: order.id,
+            orderCode: order.orderCode,
+            productName: order.productName,
+            orderType: order.orderType,
+            quantity: order.quantity,
+            sellingPriceUsd: order.sellingPriceUsd as any,
+            itemPriceUsd: (order as any).itemPriceUsd,
+            commissionFeeUsd: (order as any).commissionFeeUsd,
+            advancePaidUsd: (order as any).advancePaidUsd,
+            chargeTransactionId: (order as any).chargeTransactionId,
+            version: (order as any).version,
+          }}
+          onDeleted={() => navigate("/full-package")}
+        />
+      )}
     </DashboardLayout>
   );
 }

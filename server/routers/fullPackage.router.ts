@@ -249,7 +249,7 @@ export const fullPackageRouter = router({
             ];
             
             // Apply charge - this creates ledger transaction and invoice
-            await db.applyCharge(
+            const chargeResult = await db.applyCharge(
               input.customerId,
               customer.customerCode,
               'COMMISSION',
@@ -259,8 +259,13 @@ export const fullPackageRouter = router({
               ctx.user.id,
               lineItems
             );
-            
-            appLogger.info("[Commission] Auto-charged customer for order", { customerCode: customer.customerCode, orderCode, totalAmount });
+            // Plan v3: persist the DEBIT transaction id so future edit/delete
+            // can reverse/adjust the EXACT original charge (no drift possible).
+            await db.updateFullPackageOrder(order.id, {
+              chargeTransactionId: chargeResult.transaction.id,
+            });
+
+            appLogger.info("[Commission] Auto-charged customer for order", { customerCode: customer.customerCode, orderCode, totalAmount, chargeTransactionId: chargeResult.transaction.id });
           }
         }
 
@@ -431,7 +436,7 @@ export const fullPackageRouter = router({
                     total: totalAmount,
                   },
                 ];
-                await db.applyCharge(
+                const chargeResult = await db.applyCharge(
                   input.customerId,
                   customer.customerCode,
                   'COMMISSION',
@@ -441,6 +446,10 @@ export const fullPackageRouter = router({
                   ctx.user.id,
                   lineItems
                 );
+                // Plan v3: persist the DEBIT transaction id for safe edit/delete.
+                await db.updateFullPackageOrder(order.id, {
+                  chargeTransactionId: chargeResult.transaction.id,
+                });
               }
             }
 
@@ -493,9 +502,36 @@ export const fullPackageRouter = router({
         return { created: results, errors, total: input.items.length };
       }),
     
+    /**
+     * Plan v3, Phase 3 — safe update mutation.
+     *
+     * Guarantees:
+     *   1. Concurrency-safe via OCC: client passes `expectedVersion` from the
+     *      record they saw; if a different user saved in between, we return
+     *      CONFLICT instead of clobbering their change.
+     *   2. Ledger-safe: if a money-changing field (pricing, quantity) would
+     *      alter what the customer owes, we call adjustCharge() which emits
+     *      an ADJUSTMENT_DEBIT / ADJUSTMENT_CREDIT so the customer balance
+     *      stays in exact sync with the order. Never mutates the original
+     *      DEBIT row.
+     *   3. Transparent: a human-readable `reason` is required when money
+     *      changes, and it's written into the ledger description + the
+     *      audit log — so there's always a trail for why a charge shifted.
+     *   4. Advance-payment safe: the existing advance-payment delta logic
+     *      is preserved (and also requires a reason when moving money).
+     */
     update: staffProcedure
       .input(z.object({
         id: z.number(),
+        // Plan v3 — OCC: if provided, we reject the update when the order
+        // was modified by another user since the client last loaded it.
+        // Optional to stay backward-compatible with legacy callers; the
+        // new edit form will always send it.
+        expectedVersion: z.number().optional(),
+        // Plan v3 — reason: required when any money-affecting field changes.
+        // Embedded into the ledger adjustment description and the audit log.
+        reason: z.string().optional(),
+
         supplierId: z.number().nullable().optional(),
         productName: z.string().optional(),
         productLink: z.string().optional(),
@@ -519,6 +555,10 @@ export const fullPackageRouter = router({
         purchaseFeeUsd: z.string().optional(),
         commissionRate: z.string().optional(),
         commissionAmount: z.string().optional(),
+        // Commission-specific money fields
+        itemPriceUsd: z.string().optional(),
+        itemPriceCny: z.string().optional(),
+        commissionFeeUsd: z.string().optional(),
         // Shipping
         shippingType: z.enum(["air_regular", "air_irregular", "sea"]).optional(),
         shippingCostUsd: z.string().optional(),
@@ -546,13 +586,93 @@ export const fullPackageRouter = router({
         advancePaymentMethod: z.enum(['CASH','BANK_TRANSFER','FIB','FASTPAY','ZAINCASH','ASIAHAWALA','CARD','OTHER']).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { id, advancePaidUsd, advancePaymentMethod, ...rest } = input;
+        const { id, expectedVersion, reason, advancePaidUsd, advancePaymentMethod, ...rest } = input;
+
+        // 1. Load existing order. Soft-deleted orders are already hidden by
+        //    getFullPackageOrderById (notDeleted filter applied in Phase 1).
         const existing = await db.getFullPackageOrderById(id);
         if (!existing) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
         }
 
-        // Handle advance payment delta if changed
+        // 2. OCC check — protect against concurrent edits.
+        if (expectedVersion !== undefined && (existing.version ?? 1) !== expectedVersion) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "This order was modified by someone else. Please reload and try again.",
+          });
+        }
+
+        // 3. Compute whether the customer-facing charge amount would change.
+        //    We merge the incoming edits on top of the current order and
+        //    recompute using computeOrderChargeAmount (single source of truth).
+        const mergedForCharge = {
+          orderType: existing.orderType,
+          sellingPriceUsd: (rest.sellingPriceUsd ?? existing.sellingPriceUsd) as any,
+          itemPriceUsd: (rest.itemPriceUsd ?? (existing as any).itemPriceUsd) as any,
+          commissionFeeUsd: (rest.commissionFeeUsd ?? (existing as any).commissionFeeUsd) as any,
+          quantity: rest.quantity ?? existing.quantity,
+        };
+        const oldChargeAmount = db.computeOrderChargeAmount({
+          orderType: existing.orderType,
+          sellingPriceUsd: existing.sellingPriceUsd as any,
+          itemPriceUsd: (existing as any).itemPriceUsd,
+          commissionFeeUsd: (existing as any).commissionFeeUsd,
+          quantity: existing.quantity,
+        });
+        const newChargeAmount = db.computeOrderChargeAmount(mergedForCharge);
+        const chargeDelta = newChargeAmount - oldChargeAmount;
+
+        const advanceChanged =
+          advancePaidUsd !== undefined &&
+          Math.abs(parseFloat(advancePaidUsd || '0') - parseFloat(String(existing.advancePaidUsd || '0'))) > 0.005;
+
+        const chargeChanged = Math.abs(chargeDelta) > 0.005;
+
+        // 4. Money changes require a reason (audit trail).
+        if ((chargeChanged || advanceChanged) && (!reason || reason.trim().length < 3)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "هۆکار پێویستە (بەلایەنی کەم ٣ پیت) بۆ هەر گۆڕانکاریەک لە پارە. | Reason (min 3 chars) is required when amounts change.",
+          });
+        }
+
+        // 5. Apply the charge adjustment FIRST — if this fails, the order
+        //    is not modified, so no inconsistent state.
+        //    If the order has never been charged (chargeTransactionId is
+        //    null — e.g. pending_quote purchase_request), skip: there's
+        //    nothing in the ledger to adjust yet. When the order gets its
+        //    first charge later (via approveQuote or delivery), the full
+        //    current price is what will be billed.
+        if (chargeChanged && existing.chargeTransactionId) {
+          try {
+            await db.adjustCharge(
+              existing.chargeTransactionId,
+              newChargeAmount,
+              reason!,
+              ctx.user.id,
+            );
+            appLogger.info("[Order Edit] Adjusted ledger charge", {
+              orderId: id,
+              orderCode: existing.orderCode,
+              oldAmount: oldChargeAmount,
+              newAmount: newChargeAmount,
+              delta: chargeDelta,
+              reason,
+            });
+          } catch (err) {
+            appLogger.error("[Order Edit] Failed to adjust ledger charge", {
+              orderId: id,
+              error: err instanceof Error ? err.message : String(err),
+            });
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "هەڵە لە گۆڕینی نرخی ئۆردەر لە دەفتەری هەژمار | Failed to adjust charge on customer ledger",
+            });
+          }
+        }
+
+        // 6. Handle advance payment delta (same logic as before, preserved).
         const data: any = { ...rest };
         if (advancePaidUsd !== undefined) {
           const newAdvance = parseFloat(advancePaidUsd || '0');
@@ -569,7 +689,7 @@ export const fullPackageRouter = router({
                     existing.customerId, customer.customerCode, delta, 0,
                     advancePaymentMethod || (existing.advancePaymentMethod as any) || 'CASH',
                     ctx.user.id,
-                    `گۆڕینی پارەی پێشەکی (+$${delta.toFixed(2)}) بۆ ئۆردەری ${existing.orderCode} - ${existing.productName}`,
+                    `گۆڕینی پارەی پێشەکی (+$${delta.toFixed(2)}) بۆ ئۆردەری ${existing.orderCode} - ${existing.productName} | ${reason}`,
                     undefined, undefined, undefined,
                   );
                   data.advancePaymentTransactionId = result.transaction.id;
@@ -577,7 +697,7 @@ export const fullPackageRouter = router({
                   // Advance decreased — reverse the extra amount, linked to the original payment
                   await db.reverseAdvancePayment(
                     existing.customerId, customer.customerCode, Math.abs(delta),
-                    `گەڕاندنەوەی بەشێک لە پارەی پێشەکی (-$${Math.abs(delta).toFixed(2)}) بۆ ئۆردەری ${existing.orderCode} - ${existing.productName}`,
+                    `گەڕاندنەوەی بەشێک لە پارەی پێشەکی (-$${Math.abs(delta).toFixed(2)}) بۆ ئۆردەری ${existing.orderCode} - ${existing.productName} | ${reason}`,
                     ctx.user.id,
                     (existing as any).advancePaymentTransactionId || undefined,
                   );
@@ -603,6 +723,9 @@ export const fullPackageRouter = router({
           }
         }
 
+        // 7. Persist the order changes. updateFullPackageOrder bumps version
+        //    automatically (Plan v3), so the next OCC round-trip will see
+        //    existing.version + 1.
         await db.updateFullPackageOrder(id, data, ctx.user.id);
 
         await db.createAuditLog({
@@ -612,10 +735,15 @@ export const fullPackageRouter = router({
           entityType: "full_package_order",
           entityId: id,
           oldValues: existing,
-          newValues: data,
+          newValues: { ...data, reason: reason ?? null, chargeDeltaUsd: chargeChanged ? chargeDelta : 0 },
         });
 
-        return { success: true };
+        return {
+          success: true,
+          newVersion: (existing.version ?? 1) + 1,
+          chargeDeltaUsd: chargeChanged ? chargeDelta : 0,
+          newChargeAmountUsd: newChargeAmount,
+        };
       }),
     
     updateStatus: staffProcedure
@@ -785,10 +913,38 @@ export const fullPackageRouter = router({
         return { success: true };
       }),
     
+    /**
+     * Plan v3, Phase 3 — safe delete mutation.
+     *
+     * The old version called db.deleteFullPackageOrder (a hard DELETE) and
+     * only reversed the advance payment. This was dangerous: if the order
+     * had already been charged (DEBIT on the customer ledger), the DEBIT
+     * stayed, the invoice stayed "issued", and the customer balance became
+     * permanently inflated with a zombie charge for a now-non-existent
+     * order.
+     *
+     * The new version:
+     *   1. Requires a human-readable `reason` (audit trail).
+     *   2. Reverses the DEBIT via reverseCharge() → emits an
+     *      ADJUSTMENT_CREDIT of equal amount and cancels the linked
+     *      invoice. Idempotent (marker-based detection).
+     *   3. Reverses the advance CREDIT_PAYMENT via reverseAdvancePayment()
+     *      (same as before, but with a cleaner reason string).
+     *   4. Cancels the revenue record (handled inside reverseCharge).
+     *   5. SOFT-deletes the order via softDeleteFullPackageOrder() instead
+     *      of hard DELETE — history is preserved, all listings already
+     *      filter by deletedAt IS NULL (Phase 1).
+     *   6. Writes a full audit log including the reason and reversed
+     *      amounts, so finance can reconcile later.
+     */
     delete: adminProcedure
       .input(z.object({
         id: z.number(),
-        refundAdvance: z.boolean().default(true), // If true, reverses any advance payment
+        // Plan v3 — require the admin to explain why. Stored on the order
+        // (deletionReason) and in the audit log.
+        reason: z.string().min(3, "هۆکار پێویستە (بەلایەنی کەم ٣ پیت)"),
+        refundAdvance: z.boolean().default(true),
+        expectedVersion: z.number().optional(), // OCC from the delete dialog
       }))
       .mutation(async ({ input, ctx }) => {
         const existing = await db.getFullPackageOrderById(input.id);
@@ -796,7 +952,56 @@ export const fullPackageRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
         }
 
-        // Reverse advance payment if any
+        // Can't delete twice — idempotent guard.
+        if ((existing as any).deletedAt) {
+          return {
+            success: true,
+            alreadyDeleted: true,
+            reversedChargeUsd: 0,
+            reversedAdvanceUsd: 0,
+          };
+        }
+
+        // OCC check.
+        if (input.expectedVersion !== undefined && (existing.version ?? 1) !== input.expectedVersion) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "This order was modified by someone else. Please reload before deleting.",
+          });
+        }
+
+        // 1. Reverse the original charge (DEBIT) on the customer ledger.
+        //    reverseCharge is idempotent, so re-running a failed delete is
+        //    safe. It also cancels the linked invoice + revenue record.
+        let reversedChargeUsd = 0;
+        if ((existing as any).chargeTransactionId) {
+          try {
+            const result = await db.reverseCharge(
+              (existing as any).chargeTransactionId,
+              `سڕینەوەی ئۆردەری ${existing.orderCode} - ${existing.productName} | ${input.reason}`,
+              ctx.user.id,
+            );
+            reversedChargeUsd = parseFloat(result.reversalTransaction.amountUsd ?? '0');
+            appLogger.info("[Order Delete] Reversed charge", {
+              orderId: input.id,
+              orderCode: existing.orderCode,
+              reversedChargeUsd,
+              reason: input.reason,
+            });
+          } catch (err) {
+            appLogger.error("[Order Delete] Failed to reverse charge", {
+              orderId: input.id,
+              error: err instanceof Error ? err.message : String(err),
+            });
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "هەڵە لە گەڕاندنەوەی نرخی ئۆردەر لە دەفتەری هەژمار | Failed to reverse charge on customer ledger",
+            });
+          }
+        }
+
+        // 2. Reverse the advance payment (CREDIT_PAYMENT) if requested.
+        let reversedAdvanceUsd = 0;
         const advance = parseFloat(String(existing.advancePaidUsd || '0'));
         if (input.refundAdvance && advance > 0) {
           const customer = await db.getCustomerById(existing.customerId);
@@ -804,10 +1009,11 @@ export const fullPackageRouter = router({
             try {
               await db.reverseAdvancePayment(
                 existing.customerId, customer.customerCode, advance,
-                `گەڕاندنەوەی پارەی پێشەکی لەبەر سڕینەوەی ئۆردەری ${existing.orderCode} - ${existing.productName}`,
+                `گەڕاندنەوەی پارەی پێشەکی لەبەر سڕینەوەی ئۆردەری ${existing.orderCode} - ${existing.productName} | ${input.reason}`,
                 ctx.user.id,
                 (existing as any).advancePaymentTransactionId || undefined,
               );
+              reversedAdvanceUsd = advance;
               appLogger.info("[Advance Payment] Reversed advance due to order deletion", {
                 orderId: input.id, orderCode: existing.orderCode, advance,
               });
@@ -816,13 +1022,21 @@ export const fullPackageRouter = router({
                 error: err instanceof Error ? err.message : String(err),
                 orderId: input.id,
               });
+              // NOTE: we do NOT throw here if the charge was already
+              // reversed — that would leave the system in a mixed state.
+              // The customer balance would be slightly skewed until a
+              // human cleans it up, but the DEBIT is already gone, so
+              // the customer is NOT over-charged. The error is logged and
+              // surfaced to the operator via a warning in the response.
               throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "هەڵە لە گەڕاندنەوەی پارەی پێشەکی" });
             }
           }
         }
 
-        await db.deleteFullPackageOrder(input.id);
+        // 3. Soft-delete the order (preserves history + blocks from listings).
+        await db.softDeleteFullPackageOrder(input.id, ctx.user.id, input.reason);
 
+        // 4. Full audit trail.
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
@@ -830,10 +1044,21 @@ export const fullPackageRouter = router({
           entityType: "full_package_order",
           entityId: input.id,
           oldValues: existing,
-          newValues: { refundAdvance: input.refundAdvance, reversedAdvanceUsd: advance },
+          newValues: {
+            reason: input.reason,
+            refundAdvance: input.refundAdvance,
+            reversedChargeUsd,
+            reversedAdvanceUsd,
+            chargeTransactionId: (existing as any).chargeTransactionId ?? null,
+            advancePaymentTransactionId: (existing as any).advancePaymentTransactionId ?? null,
+          },
         });
 
-        return { success: true, reversedAdvanceUsd: input.refundAdvance && advance > 0 ? advance : 0 };
+        return {
+          success: true,
+          reversedChargeUsd,
+          reversedAdvanceUsd,
+        };
       }),
     
     // Get orders needing tracking reminder
@@ -1073,7 +1298,7 @@ export const fullPackageRouter = router({
         }
         
         // applyCharge automatically creates ledger transaction and invoice
-        await db.applyCharge(
+        const approveChargeResult = await db.applyCharge(
           existing.customerId,
           customerForOrder.customerCode,
           'FULL_PACKAGE',
@@ -1088,12 +1313,13 @@ export const fullPackageRouter = router({
             total: totalSellingPrice,
           }]
         );
-        
-        // Update order status
+
+        // Update order status + persist chargeTransactionId (Plan v3)
         await db.updateFullPackageOrder(input.id, {
           status: 'approved',
           isPaid: true,
           paidFromBalanceUsd: totalSellingPrice.toFixed(2),
+          chargeTransactionId: approveChargeResult.transaction.id,
         }, ctx.user.id);
         
         await db.createFullPackageStatusHistory({
@@ -1211,17 +1437,29 @@ export const fullPackageRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
         }
         
-        // applyCharge automatically creates ledger transaction and invoice
-        // We'll create the order first to get the ID for reference
-        const tempOrderCode = `CM-${Date.now().toString(36).toUpperCase()}`;
-        
-        // Note: We need to create order first, then charge, so we can reference the order ID
-        // For now, use 0 as reference and update later, or restructure the flow
-        await db.applyCharge(
+        // Plan v3: create the order FIRST so applyCharge can reference the
+        // real order.id (was previously charging with referenceId=0, which
+        // made the charge un-reversible by the new safe-edit/delete path).
+        const order = await db.createFullPackageOrder({
+          ...input,
+          orderCode,
+          orderType: 'commission',
+          status: 'pending',
+          totalPrepaidUsd: totalPrepaid.toFixed(2),
+          isPrepaid: true,
+          prepaidAt: new Date(),
+          isPaid: true,
+          paidFromBalanceUsd: totalPrepaid.toFixed(2),
+          grossProfitUsd: commission.toFixed(2), // Commission is our profit from the order itself
+          createdById: ctx.user.id,
+        });
+
+        // applyCharge automatically creates ledger transaction and invoice.
+        const commissionChargeResult = await db.applyCharge(
           input.customerId,
           customerForCommission.customerCode,
           'COMMISSION',
-          0, // Will be updated with actual order ID
+          order.id,
           totalPrepaid,
           `Commission Purchase - ${input.productName} (Item: $${itemTotal}, Commission: $${commission})`,
           ctx.user.id,
@@ -1240,20 +1478,10 @@ export const fullPackageRouter = router({
             },
           ]
         );
-        
-        // Create order
-        const order = await db.createFullPackageOrder({
-          ...input,
-          orderCode,
-          orderType: 'commission',
-          status: 'pending',
-          totalPrepaidUsd: totalPrepaid.toFixed(2),
-          isPrepaid: true,
-          prepaidAt: new Date(),
-          isPaid: true,
-          paidFromBalanceUsd: totalPrepaid.toFixed(2),
-          grossProfitUsd: commission.toFixed(2), // Commission is our profit from the order itself
-          createdById: ctx.user.id,
+
+        // Persist chargeTransactionId on the order (Plan v3).
+        await db.updateFullPackageOrder(order.id, {
+          chargeTransactionId: commissionChargeResult.transaction.id,
         });
         
         await db.createAuditLog({

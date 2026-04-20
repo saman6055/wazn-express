@@ -185,10 +185,37 @@ export const fullPackageOrders = mysqlTable("fullPackageOrders", {
   // Staff Assignment
   createdById: int("createdById").notNull(),
   assignedToId: int("assignedToId"), // Staff assigned to handle this order
-  
+
+  // ============ SAFE EDIT/DELETE INFRASTRUCTURE (Plan v3, Phase 1) ============
+  // These three columns exist so that edit + delete can be made atomic and
+  // reversible without ever drifting the customer ledger.
+  //
+  // chargeTransactionId → FK to the DEBIT ledger transaction that originally
+  //   charged this order to the customer. When the order is deleted or its
+  //   price edited, we use this ID to locate and reverse/adjust the exact
+  //   original charge instead of guessing.
+  //
+  // version → optimistic concurrency lock. Every edit increments this. The
+  //   UI sends the version it loaded; if it doesn't match the DB row, we
+  //   reject the edit (409 Conflict) — two people can never silently
+  //   overwrite each other.
+  //
+  // deletedAt → soft-delete marker. We NEVER hard-delete order rows. All
+  //   list/detail queries filter WHERE deletedAt IS NULL. This keeps the
+  //   historical audit trail intact and makes deletions fully recoverable
+  //   if the user realizes it was a mistake.
+  chargeTransactionId: int("chargeTransactionId"), // FK → ledgerTransactions.id
+  version: int("version").default(1).notNull(),
+  deletedAt: timestamp("deletedAt"),
+  deletedById: int("deletedById"), // Who soft-deleted this order
+  deletionReason: text("deletionReason"), // Why it was deleted (shown in audit log)
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  deletedAtIdx: index("idx_fpo_deleted_at").on(table.deletedAt),
+  chargeTxnIdx: index("idx_fpo_charge_txn_id").on(table.chargeTransactionId),
+}));
 
 export type FullPackageOrder = typeof fullPackageOrders.$inferSelect;
 export type InsertFullPackageOrder = typeof fullPackageOrders.$inferInsert;

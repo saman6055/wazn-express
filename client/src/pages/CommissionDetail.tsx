@@ -40,17 +40,9 @@ import {
   AlertCircle,
   Trash2,
 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+// Plan v3: raw AlertDialog primitives replaced by <SafeDeleteOrderDialog/>.
+import SafeDeleteOrderDialog from "@/components/SafeDeleteOrderDialog";
+import OrderAuditHistory from "@/components/OrderAuditHistory";
 import { useTranslation } from "@/contexts/LanguageContext";
 import {
   Select,
@@ -172,21 +164,9 @@ export default function CommissionDetail() {
     },
   });
 
-  const deleteMutation = trpc.fullPackage.delete.useMutation({
-    onSuccess: () => {
-      toast.success(t("fullPackage.orderDeleted"));
-      utils.fullPackage.list.invalidate();
-      navigate("/commission");
-    },
-    onError: (error) => {
-      toast.error(error.message || t("errors.deleteFailed"));
-    },
-  });
-
-  const handleDelete = () => {
-    deleteMutation.mutate({ id: Number(id) });
-    setDeleteDialogOpen(false);
-  };
+  // Plan v3: delete is handled by <SafeDeleteOrderDialog/> (mounted below).
+  // It enforces the required reason, previews the financial impact, and
+  // navigates on success.
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -303,42 +283,14 @@ export default function CommissionDetail() {
                     <Pencil className="h-4 w-4 ms-2" />
                     {t("common.edit")}
                   </Button>
-                  <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        className="bg-red-500 hover:bg-red-600 shadow-md"
-                      >
-                        <Trash2 className="h-4 w-4 ms-2" />
-                        {t("fullPackage.deleteOrder")}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-right">{t("fullPackage.confirmDelete")}</AlertDialogTitle>
-                        <AlertDialogDescription className="text-right">
-                          {t("fullPackage.deleteOrderDescription")}
-                          <br />
-                          <span className="font-bold text-red-600">{t("commission.orderCode") || "کۆدی پەت"}: {order.orderCode}</span>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter className="flex gap-2">
-                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDelete}
-                          className="bg-red-600 hover:bg-red-700"
-                          disabled={deleteMutation.isPending}
-                        >
-                          {deleteMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 ms-2 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4 ms-2" />
-                          )}
-                          {t("common.delete")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button
+                    variant="destructive"
+                    className="bg-red-500 hover:bg-red-600 shadow-md"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 ms-2" />
+                    {t("fullPackage.deleteOrder")}
+                  </Button>
                 </>
               ) : (
                 <Badge className={`${statusColors[order.status]} text-sm px-4 py-2 border`}>
@@ -953,10 +905,35 @@ export default function CommissionDetail() {
                   </p>
                 </CardContent>
               </Card>
+
+              {/* Plan v3, Phase 4: audit history — admins only */}
+              <OrderAuditHistory entityType="full_package_order" entityId={order.id} />
             </div>
           </div>
         )}
       </div>
+
+      {/* Plan v3, Phase 4: safe delete dialog with reason + financial-impact preview */}
+      {order && (
+        <SafeDeleteOrderDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          order={{
+            id: order.id,
+            orderCode: order.orderCode,
+            productName: order.productName,
+            orderType: order.orderType,
+            quantity: order.quantity,
+            sellingPriceUsd: order.sellingPriceUsd as any,
+            itemPriceUsd: (order as any).itemPriceUsd,
+            commissionFeeUsd: (order as any).commissionFeeUsd,
+            advancePaidUsd: (order as any).advancePaidUsd,
+            chargeTransactionId: (order as any).chargeTransactionId,
+            version: (order as any).version,
+          }}
+          onDeleted={() => navigate("/commission")}
+        />
+      )}
     </DashboardLayout>
   );
 }

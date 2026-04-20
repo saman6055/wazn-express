@@ -952,6 +952,334 @@ export async function reverseAdvancePayment(
   });
 }
 
+// ============================================================================
+// PLAN v3, PHASE 2 — reverseCharge / adjustCharge
+// ----------------------------------------------------------------------------
+// These two helpers are the foundation of the safe edit/delete flow. They
+// mirror reverseAdvancePayment's proven pattern (row-locked update of
+// customerAccounts inside db.transaction) but operate on the DEBIT side of
+// the ledger.
+//
+//   reverseCharge(originalTxnId, reason, createdById)
+//     Fully cancels an existing DEBIT. Creates an ADJUSTMENT_CREDIT of equal
+//     size, decreases the customer balance, cancels the linked invoice, and
+//     cancels any revenueRecord that was later created from the same order
+//     (so P&L reports don't show fake profit after an order is deleted).
+//     Safe to call multiple times: it refuses to re-reverse a transaction
+//     that is already linked to a reversal (idempotent).
+//
+//   adjustCharge(originalTxnId, newAmountUsd, reason, createdById)
+//     Handles money edits during order update. If the new total is higher,
+//     creates an ADJUSTMENT_DEBIT for the delta. If lower, creates an
+//     ADJUSTMENT_CREDIT for the delta. If equal, is a no-op. The original
+//     charge row is NEVER mutated — the ledger stays immutable, drift-free,
+//     and fully auditable.
+//
+// Both helpers accept an optional `existingTx`. When Phase 3's router
+// wraps the whole order-edit or order-delete operation in its own
+// db.transaction, it passes that tx here so everything commits atomically.
+// When called standalone, they open and commit their own transaction.
+//
+// IMPORTANT: both helpers are written defensively:
+//   - Parameter validation happens BEFORE any DB work.
+//   - The customer account row is row-locked with .for('update') before any
+//     balance arithmetic, which eliminates race conditions.
+//   - The original transaction is re-read inside the tx to guarantee it
+//     still exists and hasn't been concurrently modified.
+//   - All balance math uses parseFloat + toFixed(2) to match the existing
+//     codebase; no Number.prototype.toString() flips to scientific notation.
+// ============================================================================
+
+/** Transaction handle as provided by db.transaction((tx) => …). We type it
+ *  as `any` to avoid depending on drizzle's internal `MySqlTransaction`
+ *  generic, matching the pattern used throughout finance.db.ts. */
+type DbTx = any;
+
+// Transaction types that represent an original DEBIT charge on a customer.
+// Only these may be reversed/adjusted — adjustment rows and credit rows are
+// never themselves reversible (you'd compose another adjustment instead).
+const DEBIT_CHARGE_TYPES = [
+  'DEBIT_PACKAGE',
+  'DEBIT_FULL_PACKAGE',
+  'DEBIT_PURCHASE_REQUEST',
+  'DEBIT_COMMISSION',
+  'DEBIT_SERVICE',
+  'DEBIT_PENALTY',
+  'DEBIT_OTHER',
+] as const;
+
+/** Shared helper: look up and row-lock the customer account for a given
+ *  accountId. Throws if not found. Returns the locked row.  */
+async function _lockAccount(tx: DbTx, accountId: number): Promise<CustomerAccount> {
+  const rows = await tx.select().from(customerAccounts)
+    .where(eq(customerAccounts.id, accountId))
+    .for('update')
+    .limit(1);
+  if (!rows[0]) throw new Error(`Customer account ${accountId} not found`);
+  return rows[0];
+}
+
+/**
+ * Fully reverse an original DEBIT charge.
+ *
+ * - Creates an `ADJUSTMENT_CREDIT` of equal size so the ledger ALWAYS
+ *   balances (balanceAfter = balanceBefore − amount).
+ * - Cancels the linked invoice (status → 'cancelled').
+ * - Cancels any matching revenueRecord rows (status → 'cancelled').
+ * - Idempotent: if a reversal already exists for this txn, returns that one
+ *   instead of creating a duplicate.
+ */
+export async function reverseCharge(
+  originalTransactionId: number,
+  reason: string,
+  createdById: number,
+  existingTx?: DbTx,
+): Promise<{ reversalTransaction: LedgerTransaction }> {
+  if (!originalTransactionId || originalTransactionId <= 0) {
+    throw new Error("reverseCharge: originalTransactionId is required");
+  }
+  if (!reason || reason.trim().length < 3) {
+    throw new Error("reverseCharge: reason (min 3 chars) is required for audit trail");
+  }
+
+  const run = async (tx: DbTx) => {
+    // 1. Load the original transaction.
+    const [original] = await tx.select().from(ledgerTransactions)
+      .where(eq(ledgerTransactions.id, originalTransactionId))
+      .limit(1);
+    if (!original) {
+      throw new Error(`reverseCharge: transaction ${originalTransactionId} not found`);
+    }
+    if (!(DEBIT_CHARGE_TYPES as readonly string[]).includes(original.transactionType)) {
+      throw new Error(
+        `reverseCharge: transaction ${originalTransactionId} is type ` +
+        `${original.transactionType}, which cannot be reversed. Only DEBIT_* ` +
+        `charges may be reversed.`,
+      );
+    }
+
+    const amountUsd = parseFloat(original.amountUsd || '0');
+    if (amountUsd <= 0) {
+      throw new Error(`reverseCharge: original transaction amount is ${amountUsd}, nothing to reverse`);
+    }
+
+    // 2. Idempotency — if we already created a reversal for this txn, return it.
+    //    We detect this by searching for an ADJUSTMENT_CREDIT whose description
+    //    references the original txn number.
+    const reversalMarker = `[REV:${original.transactionNumber}]`;
+    const [existingReversal] = await tx.select().from(ledgerTransactions)
+      .where(and(
+        eq(ledgerTransactions.accountId, original.accountId),
+        eq(ledgerTransactions.transactionType, 'ADJUSTMENT_CREDIT'),
+        like(ledgerTransactions.description, `%${reversalMarker}%`),
+      ))
+      .limit(1);
+    if (existingReversal) {
+      appLogger.info('[reverseCharge] Idempotent return — reversal already exists', {
+        originalTransactionId, existingReversalId: existingReversal.id,
+      });
+      return { reversalTransaction: existingReversal };
+    }
+
+    // 3. Lock the account and compute new balance.
+    const account = await _lockAccount(tx, original.accountId);
+    const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
+    const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
+    // ADJUSTMENT_CREDIT decreases balance (undoes the original DEBIT).
+    const newBalanceUsd = currentBalanceUsd - amountUsd;
+
+    // 4. Write the reversal transaction.
+    const description = `${reason} ${reversalMarker}`;
+    const insertRes = await tx.insert(ledgerTransactions).values({
+      accountId: account.id,
+      transactionNumber: generateTransactionNumber(),
+      transactionType: 'ADJUSTMENT_CREDIT',
+      amountUsd: amountUsd.toFixed(2),
+      amountIqd: '0',
+      balanceBeforeUsd: currentBalanceUsd.toFixed(2),
+      balanceAfterUsd: newBalanceUsd.toFixed(2),
+      balanceBeforeIqd: currentBalanceIqd.toFixed(0),
+      balanceAfterIqd: currentBalanceIqd.toFixed(0),
+      referenceType: original.referenceType,
+      referenceId: original.referenceId,
+      description,
+      createdById,
+    });
+    const reversalId = Number(insertRes[0].insertId);
+    const [reversalTransaction] = await tx.select().from(ledgerTransactions)
+      .where(eq(ledgerTransactions.id, reversalId));
+    if (!reversalTransaction) throw new Error("reverseCharge: failed to read back reversal");
+
+    // 5. Update account balance (row still locked).
+    await tx.update(customerAccounts).set({
+      currentBalanceUsd: newBalanceUsd.toFixed(2),
+      lastTransactionAt: new Date(),
+    }).where(eq(customerAccounts.id, account.id));
+
+    // 6. Cancel the linked invoice so it no longer appears as outstanding.
+    if (original.invoiceId) {
+      await tx.update(invoices).set({
+        status: 'cancelled',
+      }).where(eq(invoices.id, original.invoiceId));
+    }
+
+    // 7. Cancel any revenueRecord rows created from the same order. Revenue
+    //    records are written at delivery time (fullPackage.router.ts line
+    //    ~682), so they might or might not exist when an order is reversed.
+    //    Matching by (referenceType, referenceId) covers both cases safely.
+    //    We use fullPackageOrder type when the underlying order was a
+    //    fullPackage-style order; the map here mirrors ledger referenceType.
+    if (original.referenceType && original.referenceId) {
+      const revenueRefType =
+        original.referenceType === 'full_package' ||
+        original.referenceType === 'purchase_request' ||
+        original.referenceType === 'commission'
+          ? 'fullPackageOrder' as const
+          : original.referenceType === 'package'
+            ? 'package' as const
+            : null;
+      if (revenueRefType) {
+        await tx.update(revenueRecords).set({
+          status: 'cancelled',
+        }).where(and(
+          eq(revenueRecords.referenceType, revenueRefType),
+          eq(revenueRecords.referenceId, original.referenceId),
+          ne(revenueRecords.status, 'cancelled'), // don't re-cancel
+        ));
+      }
+    }
+
+    appLogger.info('[reverseCharge] Charge reversed', {
+      originalTransactionId, reversalId, amountUsd, accountId: account.id,
+    });
+    return { reversalTransaction };
+  };
+
+  if (existingTx) return run(existingTx);
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.transaction(run);
+}
+
+/**
+ * Adjust an existing DEBIT charge to a new target amount.
+ *
+ * - If `newAmountUsd > originalAmount` → emits an `ADJUSTMENT_DEBIT` for the
+ *   delta (balance increases).
+ * - If `newAmountUsd < originalAmount` → emits an `ADJUSTMENT_CREDIT` for
+ *   the delta (balance decreases).
+ * - If they match (within 1 cent) → no-op, returns null.
+ *
+ * The original transaction row is NEVER mutated; the ledger is append-only,
+ * so every historical balance remains reconstructable. This is what makes
+ * price edits drift-free: you can always sum all transactions for an
+ * account and arrive at the exact current balance.
+ */
+export async function adjustCharge(
+  originalTransactionId: number,
+  newAmountUsd: number,
+  reason: string,
+  createdById: number,
+  existingTx?: DbTx,
+): Promise<{ adjustmentTransaction: LedgerTransaction | null; deltaUsd: number }> {
+  if (!originalTransactionId || originalTransactionId <= 0) {
+    throw new Error("adjustCharge: originalTransactionId is required");
+  }
+  if (newAmountUsd < 0) {
+    throw new Error("adjustCharge: newAmountUsd cannot be negative");
+  }
+  if (!reason || reason.trim().length < 3) {
+    throw new Error("adjustCharge: reason (min 3 chars) is required for audit trail");
+  }
+
+  const run = async (tx: DbTx) => {
+    const [original] = await tx.select().from(ledgerTransactions)
+      .where(eq(ledgerTransactions.id, originalTransactionId))
+      .limit(1);
+    if (!original) {
+      throw new Error(`adjustCharge: transaction ${originalTransactionId} not found`);
+    }
+    if (!(DEBIT_CHARGE_TYPES as readonly string[]).includes(original.transactionType)) {
+      throw new Error(
+        `adjustCharge: transaction ${originalTransactionId} is type ` +
+        `${original.transactionType}, which cannot be adjusted.`,
+      );
+    }
+
+    const originalAmount = parseFloat(original.amountUsd || '0');
+    const delta = newAmountUsd - originalAmount;
+
+    // No-op when the change is within 1 cent (float tolerance + user saved
+    // the form without actually touching money fields).
+    if (Math.abs(delta) < 0.005) {
+      appLogger.info('[adjustCharge] No-op — amounts equal within tolerance', {
+        originalTransactionId, originalAmount, newAmountUsd,
+      });
+      return { adjustmentTransaction: null, deltaUsd: 0 };
+    }
+
+    const account = await _lockAccount(tx, original.accountId);
+    const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
+    const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
+
+    // Positive delta = extra debt. Negative delta = refund/reduction.
+    const adjustmentType: 'ADJUSTMENT_DEBIT' | 'ADJUSTMENT_CREDIT' =
+      delta > 0 ? 'ADJUSTMENT_DEBIT' : 'ADJUSTMENT_CREDIT';
+    const absoluteDelta = Math.abs(delta);
+    const newBalanceUsd = currentBalanceUsd + delta; // + for DEBIT, − for CREDIT
+
+    const adjMarker = `[ADJ:${original.transactionNumber}]`;
+    const description = `${reason} ${adjMarker}`;
+
+    const insertRes = await tx.insert(ledgerTransactions).values({
+      accountId: account.id,
+      transactionNumber: generateTransactionNumber(),
+      transactionType: adjustmentType,
+      amountUsd: absoluteDelta.toFixed(2),
+      amountIqd: '0',
+      balanceBeforeUsd: currentBalanceUsd.toFixed(2),
+      balanceAfterUsd: newBalanceUsd.toFixed(2),
+      balanceBeforeIqd: currentBalanceIqd.toFixed(0),
+      balanceAfterIqd: currentBalanceIqd.toFixed(0),
+      referenceType: original.referenceType,
+      referenceId: original.referenceId,
+      description,
+      createdById,
+    });
+    const adjId = Number(insertRes[0].insertId);
+    const [adjustmentTransaction] = await tx.select().from(ledgerTransactions)
+      .where(eq(ledgerTransactions.id, adjId));
+    if (!adjustmentTransaction) throw new Error("adjustCharge: failed to read back adjustment");
+
+    await tx.update(customerAccounts).set({
+      currentBalanceUsd: newBalanceUsd.toFixed(2),
+      lastTransactionAt: new Date(),
+    }).where(eq(customerAccounts.id, account.id));
+
+    // Update the invoice total so reports reflect the new price.
+    // We do NOT cancel the invoice — the order is still active, the price
+    // just changed. Keeping the invoice issued preserves the paper trail.
+    if (original.invoiceId) {
+      const newInvoiceTotal = newAmountUsd.toFixed(2);
+      await tx.update(invoices).set({
+        subtotalUsd: newInvoiceTotal,
+        totalUsd: newInvoiceTotal,
+      }).where(eq(invoices.id, original.invoiceId));
+    }
+
+    appLogger.info('[adjustCharge] Charge adjusted', {
+      originalTransactionId, adjustmentId: adjId, originalAmount, newAmountUsd,
+      delta, adjustmentType,
+    });
+    return { adjustmentTransaction, deltaUsd: delta };
+  };
+
+  if (existingTx) return run(existingTx);
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.transaction(run);
+}
+
 // Get recent transactions across all accounts
 export async function getRecentTransactions(limit = 20): Promise<(LedgerTransaction & { customer?: Customer })[]> {
   const db = await getDb();
