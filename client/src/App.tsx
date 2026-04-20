@@ -278,7 +278,11 @@ function Router() {
         <Route path="/commission/new" component={CommissionForm} />
         <Route path="/commission/bulk-create" component={BulkOrderForm} />
         <Route path="/commission/:id" component={CommissionDetail} />
-        <Route path="/commission/:id/edit" component={CommissionDetail} />
+        {/* `:mode` must be a wouter named param (not the literal word "edit"),
+            otherwise useParams({mode}) is always undefined and isEditMode
+            stays false — the URL flips to /edit but the page still renders
+            in view mode. Mirrors the /full-package/:id/:mode route above. */}
+        <Route path="/commission/:id/:mode" component={CommissionDetail} />
         <Route path="/suppliers" component={Suppliers} />
         <Route path="/tracking-alerts" component={TrackingAlerts} />
         <Route path="/customer-login" component={CustomerLogin} />
