@@ -102,32 +102,22 @@ const trpcClient = trpc.createClient({
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
+      // Only job here: make sure cookies ride along with every request for
+      // auth. Previously this fetch wrapper also tried to parse non-OK
+      // responses and re-throw as a plain Error — but that logic was written
+      // against tRPC v10's error shape, and with v11 + superjson the actual
+      // response body is `[{error: {json: {message, data: {code, httpStatus}}}}]`.
+      // The old parser always fell through to `res.statusText` (empty under
+      // HTTP/2) and the plain Error had no `.data.code` — so every mutation
+      // error surfaced as `{ message: "", data: undefined }` and the toast
+      // code had to fall back to "UNKNOWN". Letting tRPC parse the response
+      // natively gives us the real TRPCClientError with code, httpStatus,
+      // and message populated correctly.
       async fetch(input, init) {
-        const res = await globalThis.fetch(input, {
+        return globalThis.fetch(input, {
           ...(init ?? {}),
           credentials: "include",
         });
-        if (!res.ok) {
-          const text = await res.text();
-          let msg: string;
-          try {
-            const json = JSON.parse(text);
-            // tRPC/Express: error can be { message, data } or string; batch is array
-            const err = json?.error ?? (Array.isArray(json) ? json[0]?.error : null);
-            if (err != null) {
-              msg = typeof err === "string" ? err : (err?.message ?? res.statusText);
-            } else {
-              msg = json?.message ?? res.statusText;
-            }
-            if (typeof msg !== "string") msg = res.statusText || "Request failed";
-          } catch {
-            msg = res.status === 429 ? "Too many requests. Please try again later." : res.statusText || "Request failed";
-          }
-          const err = new Error(msg);
-          (err as Error & { httpStatus?: number }).httpStatus = res.status;
-          throw err;
-        }
-        return res;
       },
     }),
   ],
