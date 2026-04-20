@@ -1887,6 +1887,13 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "paymentRecords.reversedAmountUsd", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAmountUsd DECIMAL(10,2) NOT NULL DEFAULT 0" },
   { name: "paymentRecords.reversedAt", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAt TIMESTAMP NULL" },
   { name: "paymentRecords.reversalTransactionId", sql: "ALTER TABLE paymentRecords ADD COLUMN reversalTransactionId INT NULL" },
+  // paymentRecords.paymentStatus was originally ENUM('pending','confirmed','cancelled')
+  // (see CREATE TABLE above, pre-Plan-v3). The schema.ts definition now includes
+  // 'refunded' — used by reverseAdvancePayment when a paymentRecord is fully
+  // reversed. Without this ALTER, existing deployments hit MySQL strict-mode
+  // error 1265 (Data truncated for column 'paymentStatus') and every delete
+  // that fires reverseAdvancePayment blows up on the paymentRecords update.
+  { name: "paymentRecords.paymentStatus.refunded", sql: "ALTER TABLE paymentRecords MODIFY COLUMN paymentStatus ENUM('pending','confirmed','cancelled','refunded') NOT NULL DEFAULT 'confirmed'" },
 
   // ============ Plan v3, Phase 1: Safe edit/delete infrastructure ============
   // These five columns + two indexes on fullPackageOrders make order edits
