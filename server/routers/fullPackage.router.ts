@@ -989,13 +989,20 @@ export const fullPackageRouter = router({
               reason: input.reason,
             });
           } catch (err) {
+            const underlying = err instanceof Error ? err.message : String(err);
             appLogger.error("[Order Delete] Failed to reverse charge", {
               orderId: input.id,
-              error: err instanceof Error ? err.message : String(err),
+              error: underlying,
+              stack: err instanceof Error ? err.stack : undefined,
             });
+            // Include the underlying error message on the TRPCError so the
+            // operator-facing toast shows the real DB-level cause (e.g.
+            // "Duplicate entry", "FK constraint", "Transaction not found").
+            // Without this the client only sees the generic Kurdish prefix
+            // and we cannot diagnose the failure from the UI.
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "هەڵە لە گەڕاندنەوەی نرخی ئۆردەر لە دەفتەری هەژمار | Failed to reverse charge on customer ledger",
+              message: `هەڵە لە گەڕاندنەوەی نرخی ئۆردەر لە دەفتەری هەژمار | Failed to reverse charge on customer ledger: ${underlying}`,
             });
           }
         }
@@ -1018,17 +1025,29 @@ export const fullPackageRouter = router({
                 orderId: input.id, orderCode: existing.orderCode, advance,
               });
             } catch (err) {
+              const underlying = err instanceof Error ? err.message : String(err);
               appLogger.error("[Advance Payment] Failed to reverse advance on delete", {
-                error: err instanceof Error ? err.message : String(err),
+                error: underlying,
+                stack: err instanceof Error ? err.stack : undefined,
                 orderId: input.id,
               });
-              // NOTE: we do NOT throw here if the charge was already
-              // reversed — that would leave the system in a mixed state.
-              // The customer balance would be slightly skewed until a
-              // human cleans it up, but the DEBIT is already gone, so
-              // the customer is NOT over-charged. The error is logged and
-              // surfaced to the operator via a warning in the response.
-              throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "هەڵە لە گەڕاندنەوەی پارەی پێشەکی" });
+              // NOTE on partial state: by the time we get here the charge
+              // reversal above has already committed (it's in its own
+              // transaction). If the advance reversal then fails, the
+              // customer's DEBIT is already gone so they are NOT
+              // over-charged — but the advance credit that was booked
+              // against this order is still sitting on the account. An
+              // operator has to clean that up manually once we know why
+              // this is failing.
+              //
+              // Surface the real DB-level message so the toast actually
+              // tells us what happened (duplicate TXN number, FK
+              // violation, schema patch not run, etc.). Without this
+              // we are flying blind.
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: `هەڵە لە گەڕاندنەوەی پارەی پێشەکی | Advance reversal failed: ${underlying}`,
+              });
             }
           }
         }
