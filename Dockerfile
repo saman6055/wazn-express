@@ -16,25 +16,33 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
+# Raise Node heap ceiling so vite's transform step survives on
+# small-RAM build hosts (Coolify/VPS). Default ~1.5GB can OOM-kill
+# a mid-sized React build and exit code 255 with no error text.
+ENV NODE_OPTIONS=--max-old-space-size=4096
+
 # Build the application
 RUN pnpm build
+
+# Prune devDependencies IN PLACE so the runtime image can copy a
+# slim node_modules directly from this stage. This replaces the
+# previous approach of running a second `pnpm install --prod` in
+# the production stage — BuildKit was running both installs in
+# parallel, doubling peak RAM during image build and racing against
+# the vite build inside the builder stage.
+RUN pnpm prune --prod
 
 # Production stage
 FROM node:22-alpine AS production
 
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
-
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
-COPY patches ./patches/
-
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
-
-# Copy built files from builder (vite outputs to dist/public, server to dist/)
+# Reuse the slim (prod-only) node_modules produced by the builder.
+# No second `pnpm install` here on purpose: that was the main source
+# of OOM failures on the deployment host.
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/drizzle ./drizzle
 
