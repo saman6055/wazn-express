@@ -425,15 +425,24 @@ export default function CommissionDetail() {
 
                   <div className="space-y-2">
                     <Label>فرۆشیار</Label>
+                    {/* Radix Select forbids value="" on SelectItem — that value
+                        is reserved for "cleared selection". Use the sentinel
+                        "__none__" for the "no supplier" option and translate
+                        back to empty on submit. */}
                     <Select
-                      value={formData.supplierId}
-                      onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+                      value={formData.supplierId || "__none__"}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          supplierId: value === "__none__" ? "" : value,
+                        })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="فرۆشیارێک هەڵبژێرە" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">بێ فرۆشیار</SelectItem>
+                        <SelectItem value="__none__">بێ فرۆشیار</SelectItem>
                         {suppliers?.map((supplier) => (
                           <SelectItem key={supplier.id} value={supplier.id.toString()}>
                             {supplier.name}
@@ -457,15 +466,23 @@ export default function CommissionDetail() {
               <CardContent>
                 <div className="space-y-2">
                   <Label>باچ</Label>
+                  {/* Same sentinel pattern as the supplier select above —
+                      Radix Select treats value="" as "clear the selection"
+                      and forbids it on SelectItem. */}
                   <Select
-                    value={formData.batchId}
-                    onValueChange={(value) => setFormData({ ...formData, batchId: value })}
+                    value={formData.batchId || "__none__"}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        batchId: value === "__none__" ? "" : value,
+                      })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="باچێک هەڵبژێرە" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">بێ باچ</SelectItem>
+                      <SelectItem value="__none__">بێ باچ</SelectItem>
                       {availableBatches.map((batch) => (
                         <SelectItem key={batch.id} value={batch.id.toString()}>
                           {batch.batchCode}
