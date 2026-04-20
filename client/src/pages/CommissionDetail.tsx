@@ -172,11 +172,28 @@ export default function CommissionDetail() {
       navigate(`/commission/${id}`);
     },
     onError: (error) => {
+      // Always log the full error so the actual root cause lands in the
+      // browser DevTools console — critical when the toast UI is hidden
+      // or clipped (we've seen Sonner render empty in RTL layouts).
+      // eslint-disable-next-line no-console
+      console.error("[CommissionDetail] update mutation failed:", {
+        message: error.message,
+        code: error.data?.code,
+        httpStatus: error.data?.httpStatus,
+        path: error.data?.path,
+        data: error.data,
+        shape: error.shape,
+      });
+
       // Plan v3: surface OCC conflicts distinctly so the operator reloads.
       if (error.data?.code === "CONFLICT") {
         toast.error(
-          "ئەم ئۆردەرە لەلایەن بەکارهێنەرێکی دیکە گۆڕدراوە. تکایە بیخوێنەرەوە و هەوڵ بدەرەوە. | This order was modified by someone else. Please reload and try again.",
-          { duration: 8000 }
+          "ئۆردەرەکە لەلایەن کەسێکی دیکەوە گۆڕدراوە | Order changed elsewhere",
+          {
+            description:
+              "تکایە پەڕەکە نوێ بکەرەوە و هەوڵ بدەرەوە. | Please reload the page and try again.",
+            duration: 10000,
+          }
         );
         refetch();
         return;
@@ -184,11 +201,14 @@ export default function CommissionDetail() {
       // Non-empty fallback is important — some thrown errors have empty
       // .message (esp. network / zod issues) and Sonner would render a
       // blank toast otherwise.
-      const code = error.data?.code ? ` [${error.data.code}]` : "";
-      toast.error(
-        (error.message && error.message.trim()) ||
-          `هەڵە لە نوێکردنەوەی پەت | Failed to update order${code}`
-      );
+      const rawMsg =
+        typeof error.message === "string" ? error.message.trim() : "";
+      const code = error.data?.code ?? "UNKNOWN";
+      const title = rawMsg || `هەڵە لە نوێکردنەوەی پەت | Failed to update order`;
+      toast.error(title, {
+        description: `کۆدی هەڵە | Error code: ${code}`,
+        duration: 10000,
+      });
     },
   });
 

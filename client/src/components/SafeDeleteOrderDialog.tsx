@@ -101,23 +101,42 @@ export default function SafeDeleteOrderDialog({
       onDeleted?.();
     },
     onError: (error) => {
+      // Always log the full error so the actual root cause lands in the
+      // browser DevTools console — critical when the toast UI is hidden
+      // or clipped (we've seen Sonner render empty in RTL layouts).
+      // eslint-disable-next-line no-console
+      console.error("[SafeDeleteOrderDialog] delete mutation failed:", {
+        message: error.message,
+        code: error.data?.code,
+        httpStatus: error.data?.httpStatus,
+        path: error.data?.path,
+        data: error.data,
+        shape: error.shape,
+      });
+
       // Distinct toast for OCC conflicts so the operator knows to reload
       // — "just retry" would silently clobber a concurrent edit.
       if (error.data?.code === "CONFLICT") {
         toast.error(
-          "ئەم ئۆردەرە لەلایەن بەکارهێنەرێکی دیکە گۆڕدراوە. تکایە پەڕەکە نوێ بکەرەوە و هەوڵ بدەرەوە. | This order was modified elsewhere. Reload the page and try again.",
-          { duration: 8000 }
+          "ئۆردەرەکە لەلایەن کەسێکی دیکەوە گۆڕدراوە | Order changed elsewhere",
+          {
+            description:
+              "تکایە پەڕەکە نوێ بکەرەوە و هەوڵ بدەرەوە. | Please reload the page and try again.",
+            duration: 10000,
+          }
         );
         return;
       }
       // Non-empty fallback — zod/validation errors sometimes surface with
-      // empty .message, and Sonner would render a blank toast otherwise.
-      const code = error.data?.code ? ` [${error.data.code}]` : "";
-      toast.error(
-        (error.message && error.message.trim()) ||
-          `هەڵە لە سڕینەوەی ئۆردەر | Delete failed${code}`,
-        { duration: 8000 }
-      );
+      // empty .message, and Sonner renders an icon-only empty toast otherwise.
+      const rawMsg =
+        typeof error.message === "string" ? error.message.trim() : "";
+      const code = error.data?.code ?? "UNKNOWN";
+      const title = rawMsg || `هەڵە لە سڕینەوەی ئۆردەر | Delete failed`;
+      toast.error(title, {
+        description: `کۆدی هەڵە | Error code: ${code}`,
+        duration: 10000,
+      });
     },
   });
 
