@@ -1138,7 +1138,11 @@
     "orderNotFound": "الطلب غير موجود",
     "orderNotFoundDesc": "هذا الطلب غير موجود أو تم حذفه",
     "backToList": "العودة إلى القائمة",
-    "deleteOrderDescription": "لا يمكن التراجع عن هذا الإجراء. سيتم حذف هذا الطلب نهائياً."
+    "deleteOrderDescription": "لا يمكن التراجع عن هذا الإجراء. سيتم حذف هذا الطلب نهائياً.",
+    "productImages": "صور المنتج",
+    "imagesCount": "صور",
+    "noImages": "لا توجد صور",
+    "noNotes": "لا توجد ملاحظات"
   },
   "commission": {
     "title": "الشراء بالعمولة",
@@ -1204,6 +1208,13 @@
     "reportGeneratedBy": "هذا التقرير من إنشاء نظام Wazn Express",
     "copyright": "جميع الحقوق محفوظة",
     "totalItemValueLabel": "إجمالي قيمة المنتجات",
+    "orderDetails": "تفاصيل الطلب",
+    "editOrder": "تعديل الطلب",
+    "orderNotFound": "الطلب غير موجود",
+    "commission": "العمولة",
+    "commissionPerItem": "العمولة لكل قطعة",
+    "totalCost": "التكلفة الكلية",
+    "commissionIncome": "دخل العمولة",
     "status": {
       "pending": "قيد الانتظار",
       "pending_quote": "قيد الانتظار",

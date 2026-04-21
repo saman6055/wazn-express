@@ -1139,7 +1139,11 @@
     "orderNotFound": "未找到订单",
     "orderNotFoundDesc": "该订单不存在或已被删除",
     "backToList": "返回列表",
-    "deleteOrderDescription": "此操作无法撤销。该订单将被永久删除。"
+    "deleteOrderDescription": "此操作无法撤销。该订单将被永久删除。",
+    "productImages": "产品图片",
+    "imagesCount": "张图片",
+    "noImages": "无图片",
+    "noNotes": "无备注"
   },
   "commission": {
     "title": "佣金采购",
@@ -1205,6 +1209,13 @@
     "reportGeneratedBy": "本报告由 Wazn Express 系统生成",
     "copyright": "版权所有",
     "totalItemValueLabel": "产品价值总额",
+    "orderDetails": "订单详情",
+    "editOrder": "编辑订单",
+    "orderNotFound": "订单未找到",
+    "commission": "佣金",
+    "commissionPerItem": "每件佣金",
+    "totalCost": "总成本",
+    "commissionIncome": "佣金收入",
     "status": {
       "pending": "待处理",
       "pending_quote": "待处理",

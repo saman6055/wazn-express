@@ -1141,7 +1141,11 @@
     "orderNotFound": "پەت نەدۆزرایەوە",
     "orderNotFoundDesc": "ئەم پەتە بوونی نییە یان سڕاوەتەوە",
     "backToList": "گەڕانەوە بۆ لیست",
-    "deleteOrderDescription": "ئەم کردارە ناگەڕێتەوە. ئەم پەتە بە تەواوی دەسڕێتەوە و ناتوانرێت بگەڕێتەوە."
+    "deleteOrderDescription": "ئەم کردارە ناگەڕێتەوە. ئەم پەتە بە تەواوی دەسڕێتەوە و ناتوانرێت بگەڕێتەوە.",
+    "productImages": "وێنەکانی کاڵا",
+    "imagesCount": "وێنە",
+    "noImages": "هیچ وێنەیەک نییە",
+    "noNotes": "تێبینی نییە"
   },
   "commission": {
     "title": "کڕین بە عمولە",
@@ -1207,6 +1211,13 @@
     "reportGeneratedBy": "ئەم ڕاپۆرتە لە لایەن سیستەمی Wazn Express دروستکراوە",
     "copyright": "هەموو مافەکان پارێزراون",
     "totalItemValueLabel": "کۆی بەهای کاڵا",
+    "orderDetails": "وردەکاری پەت",
+    "editOrder": "دەستکاری پەت",
+    "orderNotFound": "پەت نەدۆزرایەوە",
+    "commission": "عمولە",
+    "commissionPerItem": "عمولەی هەر دانەیەک",
+    "totalCost": "کۆی گشتی",
+    "commissionIncome": "داهاتی عمولە",
     "status": {
       "pending": "چاوەڕوان",
       "pending_quote": "چاوەڕوان",
