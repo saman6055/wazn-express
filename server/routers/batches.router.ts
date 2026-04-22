@@ -395,37 +395,43 @@ export const batchesRouter = router({
               }
 
               // STEP 2: Calculate total ONLY for uncharged packages
+              //
+              // The invoice lineItems used to say only "پاکەت TRK-xxx - 5.5 KG × $2.5"
+              // which didn't let the customer reconcile: they couldn't see actual vs
+              // volumetric weight, dimensions, or CTN count. We now build a rich
+              // multi-line description per package so every billable data point is
+              // visible both in the admin PDF and on the portal.
               let totalAmount = 0;
+              let totalWeight = 0;
+              let totalCbm = 0;
               const lineItems = [];
 
               for (const pkg of unchargedPackages) {
-                // Calculate price from batch pricing
                 let pkgPrice = 0;
                 let quantity = 0;
                 let unit = 'KG';
 
+                // Raw package measurements — used both in the charge math and in the
+                // invoice description so the customer can verify the numbers.
+                const actualKg = parseFloat(pkg.weightKg?.toString() || "0");
+                const lengthCm = parseFloat(pkg.lengthCm?.toString() || "0");
+                const widthCm = parseFloat(pkg.widthCm?.toString() || "0");
+                const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
+                const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
+                const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+                const chargeableKg = Math.max(actualKg, volumetricKg);
+                const cartonCount = (pkg as any).cartonCount ?? 1;
+
                 if (isSea && pricePerCbm > 0) {
-                  // Sea shipping - use CBM
-                  const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
                   pkgPrice = cbm * pricePerCbm;
                   quantity = cbm;
                   unit = 'CBM';
                 } else if (pricePerKg > 0) {
-                  // Air shipping - use chargeable weight (max of actual weight and volumetric weight)
-                  const actualKg = parseFloat(pkg.weightKg?.toString() || "0");
-                  const lengthCm = parseFloat(pkg.lengthCm?.toString() || "0");
-                  const widthCm = parseFloat(pkg.widthCm?.toString() || "0");
-                  const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
-                  // Volumetric weight = (L × W × H) / 6000 for air shipping
-                  const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-                  // Chargeable weight is the higher of actual weight and volumetric weight
-                  const chargeableKg = Math.max(actualKg, volumetricKg);
                   pkgPrice = chargeableKg * pricePerKg;
                   quantity = chargeableKg;
                   unit = 'KG';
                 }
 
-                // Update package with calculated cost
                 if (pkgPrice > 0) {
                   await db.updatePackage(pkg.id, {
                     calculatedCostUsd: pkgPrice.toFixed(2)
@@ -433,18 +439,84 @@ export const batchesRouter = router({
                 }
 
                 totalAmount += pkgPrice;
+                totalWeight += actualKg;
+                totalCbm += cbm;
+
+                // Rich multi-line description. `\n` renders as <br/> in the invoice
+                // template and as a line break in the portal card — both call sites
+                // wrap with `white-space: pre-line`.
+                const descParts: string[] = [];
+                const trackingLabel = pkg.trackingNumber
+                  ? `📦 ${pkg.trackingNumber}`
+                  : `📦 ${pkg.packageCode}`;
+                descParts.push(trackingLabel);
+                if (pkg.trackingNumber && pkg.packageCode) {
+                  descParts.push(`کۆد: ${pkg.packageCode}`);
+                }
+                if ((pkg as any).productDescription) {
+                  descParts.push(`ناوەرۆک: ${(pkg as any).productDescription}`);
+                }
+
+                // Measurements line — tailored to shipping type so we don't show
+                // irrelevant data (e.g. volumetric weight for sea freight).
+                if (isSea) {
+                  const measureParts = [`CBM: ${cbm.toFixed(3)} m³`];
+                  if (actualKg > 0) measureParts.push(`کێش: ${actualKg.toFixed(2)} kg`);
+                  if (lengthCm > 0) measureParts.push(`${lengthCm}×${widthCm}×${heightCm} cm`);
+                  if (cartonCount > 1) measureParts.push(`CTN: ${cartonCount}`);
+                  descParts.push(measureParts.join(' · '));
+                  descParts.push(`نرخ: ${cbm.toFixed(3)} m³ × $${pricePerCbm.toFixed(2)}/m³ = $${pkgPrice.toFixed(2)}`);
+                } else {
+                  const measureParts: string[] = [];
+                  if (actualKg > 0) measureParts.push(`کێشی ڕاستەقینە: ${actualKg.toFixed(2)} kg`);
+                  if (volumetricKg > 0) measureParts.push(`کێشی قەبارەیی: ${volumetricKg.toFixed(2)} kg`);
+                  if (lengthCm > 0) measureParts.push(`${lengthCm}×${widthCm}×${heightCm} cm`);
+                  if (cartonCount > 1) measureParts.push(`CTN: ${cartonCount}`);
+                  if (measureParts.length) descParts.push(measureParts.join(' · '));
+                  // Always show which weight was used for billing so the customer
+                  // understands the higher-of rule without having to ask.
+                  descParts.push(
+                    `نرخ: ${chargeableKg.toFixed(2)} kg (${chargeableKg === volumetricKg && volumetricKg > actualKg ? 'قەبارەیی' : 'ڕاستەقینە'}) × $${pricePerKg.toFixed(2)}/kg = $${pkgPrice.toFixed(2)}`
+                  );
+                }
 
                 lineItems.push({
-                  description: `پاکەت ${pkg.trackingNumber || pkg.packageCode} - ${quantity.toFixed(2)} ${unit} × $${isSea ? pricePerCbm : pricePerKg}`,
+                  description: descParts.join('\n'),
                   quantity: 1,
                   unitPrice: pkgPrice,
-                  total: pkgPrice
+                  total: pkgPrice,
                 });
               }
 
               if (totalAmount > 0) {
                 // STEP 3: Create ONE consolidated invoice ONLY for uncharged packages
                 const invoiceNumber = `INV-${Date.now()}-${customerId}`;
+                // Richer notes field — the portal already shows `notes` above the
+                // table, so give customers a quick batch summary they can scan
+                // before diving into per-package rows.
+                const notesParts: string[] = [];
+                notesParts.push(`پسووڵەی باچ ${batch?.batchCode || ''}`);
+                if (batch?.shippingType) {
+                  const typeLabel = batch.shippingType === 'sea' ? 'دەریایی'
+                    : batch.shippingType === 'air_irregular' ? 'ئاسمانی نائاسایی'
+                    : 'ئاسمانی ئاسایی';
+                  notesParts.push(`جۆری گواستنەوە: ${typeLabel}`);
+                }
+                notesParts.push(`ژمارەی پاکەت: ${unchargedPackages.length}`);
+                if (totalWeight > 0) notesParts.push(`کۆی کێش: ${totalWeight.toFixed(2)} kg`);
+                if (totalCbm > 0) notesParts.push(`کۆی قەبارە: ${totalCbm.toFixed(3)} m³`);
+                if (isSea && pricePerCbm > 0) notesParts.push(`نرخی m³: $${pricePerCbm.toFixed(2)}`);
+                if (!isSea && pricePerKg > 0) notesParts.push(`نرخی kg: $${pricePerKg.toFixed(2)}`);
+                notesParts.push(`کۆی گشتی: $${totalAmount.toFixed(2)}`);
+                // Tracking-number list at the end so customers can ctrl-F match
+                // their external tracking references without scrolling through
+                // every line item.
+                const trackingList = unchargedPackages
+                  .map(p => p.trackingNumber || p.packageCode)
+                  .filter(Boolean)
+                  .join(', ');
+                if (trackingList) notesParts.push(`تراکینگ نەمبەرەکان: ${trackingList}`);
+
                 const invoice = await db.createInvoice({
                   invoiceNumber,
                   customerId,
@@ -454,7 +526,7 @@ export const batchesRouter = router({
                   status: "issued",
                   issuedAt: new Date(),
                   lineItems: lineItems as { description: string; quantity: number; unitPrice: number; total: number; }[],
-                  notes: `پسووڵەی باچ ${batch?.batchCode || ''} - ${unchargedPackages.length} پاکەت - کۆی $${totalAmount.toFixed(2)}`,
+                  notes: notesParts.join('\n'),
                   createdById: ctx.user.id,
                 });
 

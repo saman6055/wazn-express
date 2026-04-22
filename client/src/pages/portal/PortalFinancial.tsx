@@ -914,7 +914,11 @@ const { t, language } = useLanguage();
                     )}
                   </div>
                   
-                  {/* Line Items */}
+                  {/* Line Items — per-package detail with multi-line description.
+                      Batch-generated invoices pack weight, dimensions, CBM, charge
+                      formula and cartons into `description` separated by \n, so
+                      we render with `whitespace-pre-line` and a bordered card per
+                      row to keep it scannable. */}
                   {invoice.lineItems && invoice.lineItems.length > 0 && (
                     <div className={cn("rounded-xl p-3", isDark ? "bg-slate-700" : "bg-slate-50")}>
                       <p className={cn("text-xs font-medium mb-2", isDark ? "text-slate-400" : "text-slate-500")}>
@@ -922,11 +926,25 @@ const { t, language } = useLanguage();
                       </p>
                       <div className="space-y-2">
                         {invoice.lineItems.map((item: any, idx: number) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span className={isDark ? "text-slate-300" : "text-slate-700"}>
-                              {item.description} x{item.quantity}
+                          <div
+                            key={idx}
+                            className={cn(
+                              "flex justify-between items-start gap-3 text-sm p-2.5 rounded-lg border",
+                              isDark
+                                ? "bg-slate-800 border-slate-600"
+                                : "bg-white border-slate-200",
+                            )}
+                          >
+                            <span className={cn(
+                              "whitespace-pre-line leading-relaxed flex-1 min-w-0",
+                              isDark ? "text-slate-300" : "text-slate-700",
+                            )}>
+                              {item.description}
                             </span>
-                            <span className={cn("font-medium", isDark ? "text-white" : "")}>
+                            <span className={cn(
+                              "font-mono font-semibold text-sm shrink-0",
+                              isDark ? "text-white" : "text-slate-900",
+                            )}>
                               ${Number(item.total).toFixed(2)}
                             </span>
                           </div>
@@ -934,14 +952,17 @@ const { t, language } = useLanguage();
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Notes */}
                   {invoice.notes && (
                     <div className={cn("rounded-xl p-3", isDark ? "bg-slate-700" : "bg-slate-50")}>
                       <p className={cn("text-xs font-medium mb-1", isDark ? "text-slate-400" : "text-slate-500")}>
                         {language === "ku" ? "تێبینی" : "Notes"}
                       </p>
-                      <p className={cn("text-sm", isDark ? "text-slate-300" : "text-slate-700")}>
+                      <p className={cn(
+                        "text-sm whitespace-pre-line leading-relaxed",
+                        isDark ? "text-slate-300" : "text-slate-700",
+                      )}>
                         {invoice.notes}
                       </p>
                     </div>

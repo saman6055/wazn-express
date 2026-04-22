@@ -192,7 +192,7 @@ export default function InvoiceView() {
                   {lineItems.length > 0 ? lineItems.map((item: { description?: string; quantity?: number; unitPrice?: number; total?: number }, i: number) => (
                     <tr key={i} style={{ background:i%2===0?'#fff':'#f8fafc',borderBottom:'1px solid #e2e8f0' }}>
                       <td style={{ padding:'10px 14px',color:'#94a3b8' }}>{i+1}</td>
-                      <td style={{ padding:'10px 14px',color:'#334155' }}>{item.description}</td>
+                      <td style={{ padding:'10px 14px',color:'#334155',whiteSpace:'pre-line',lineHeight:1.6 }}>{item.description}</td>
                       <td style={{ padding:'10px 14px',textAlign:'center',color:'#64748b' }}>{item.quantity}</td>
                       <td style={{ padding:'10px 14px',textAlign:'center',fontFamily:'monospace',color:'#64748b' }}>${Number(item.unitPrice || 0).toFixed(2)}</td>
                       <td style={{ padding:'10px 14px',textAlign:textEnd as "left" | "right",fontFamily:'monospace',fontWeight:600,color:'#1e293b' }}>${Number(item.total || 0).toFixed(2)}</td>
@@ -226,7 +226,7 @@ export default function InvoiceView() {
               {/* NOTES */}
               {invoice.notes && <div style={{ background:'#fffbeb',border:'1px solid #fde68a',borderRadius:'8px',padding:'14px 18px',marginBottom:'24px' }}>
                 <p style={{ fontWeight:600,color:'#92400e',fontSize:'12px',marginBottom:'4px' }}>{t('invoiceView.notes')}:</p>
-                <p style={{ color:'#a16207',fontSize:'12px',lineHeight:'1.6' }}>{invoice.notes}</p>
+                <p style={{ color:'#a16207',fontSize:'12px',lineHeight:'1.6',whiteSpace:'pre-line' }}>{invoice.notes}</p>
               </div>}
 
               {/* BALANCE */}
