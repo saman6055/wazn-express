@@ -14,11 +14,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   Save, Loader2, Eye, Settings, Plane, Wrench, DollarSign, Tag, Info,
   Ship, Zap, Package, Truck, Sparkles, TrendingUp, Flame, Star, Rocket,
-  Award, ShoppingBag, Globe, Clock, Layers,
+  Award, ShoppingBag, Globe, Clock, Layers, Plus,
 } from "lucide-react";
 import { PriceListSection } from "@/components/portal/PriceListSection";
 
@@ -351,11 +354,21 @@ export default function PortalPriceListSettings() {
           <TabsContent value="shipping">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plane className="h-5 w-5 text-purple-600" />
-                  {t("priceList.admin.tabShipping")}
-                </CardTitle>
-                <CardDescription>{t("priceList.admin.pageSubtitle")}</CardDescription>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Plane className="h-5 w-5 text-purple-600" />
+                      {t("priceList.admin.tabShipping")}
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      {t("priceList.admin.shippingTabHint") || "نرخە گواستنەوەکان لێرە دادەنرێن و ڕێکدەخرێن بۆ نیشاندان لە پۆرتاڵ."}
+                    </CardDescription>
+                  </div>
+                  <AddShippingRateDialog t={t} onCreated={() => {
+                    utils.portalPriceList.listShippingRatesWithMeta.invalidate();
+                    utils.customerPortal.getPriceList.invalidate();
+                  }} />
+                </div>
               </CardHeader>
               <CardContent>
                 {shippingLoading ? (
@@ -375,7 +388,19 @@ export default function PortalPriceListSettings() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">{t("priceList.noRates")}</p>
+                  <div className="text-center py-12 px-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+                    <div className="inline-flex p-4 rounded-2xl bg-purple-100 dark:bg-purple-900/30 mb-4">
+                      <Plane className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <h3 className="text-base font-bold mb-1">{t("priceList.noRates")}</h3>
+                    <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
+                      {t("priceList.admin.noRatesHint") || "هێشتا نرخێکت زیاد نەکردووە. کرتە لە دوگمەی خوارەوە بکە بۆ دانانی یەکەم نرخ."}
+                    </p>
+                    <AddShippingRateDialog t={t} onCreated={() => {
+                      utils.portalPriceList.listShippingRatesWithMeta.invalidate();
+                      utils.customerPortal.getPriceList.invalidate();
+                    }} />
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -385,10 +410,21 @@ export default function PortalPriceListSettings() {
           <TabsContent value="services">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wrench className="h-5 w-5 text-purple-600" />
-                  {t("priceList.admin.tabServices")}
-                </CardTitle>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Wrench className="h-5 w-5 text-purple-600" />
+                      {t("priceList.admin.tabServices")}
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      {t("priceList.admin.servicesTabHint") || "خزمەتگوزاریەکان لێرە دادەنرێن و ڕێکدەخرێن بۆ نیشاندان لە پۆرتاڵ."}
+                    </CardDescription>
+                  </div>
+                  <AddServiceTypeDialog t={t} onCreated={() => {
+                    utils.portalPriceList.listServicesWithMeta.invalidate();
+                    utils.customerPortal.getPriceList.invalidate();
+                  }} />
+                </div>
               </CardHeader>
               <CardContent>
                 {servicesLoading ? (
@@ -408,7 +444,19 @@ export default function PortalPriceListSettings() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">{t("priceList.noServices")}</p>
+                  <div className="text-center py-12 px-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+                    <div className="inline-flex p-4 rounded-2xl bg-purple-100 dark:bg-purple-900/30 mb-4">
+                      <Wrench className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <h3 className="text-base font-bold mb-1">{t("priceList.noServices")}</h3>
+                    <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
+                      {t("priceList.admin.noServicesHint") || "هێشتا خزمەتگوزاریت زیاد نەکردووە."}
+                    </p>
+                    <AddServiceTypeDialog t={t} onCreated={() => {
+                      utils.portalPriceList.listServicesWithMeta.invalidate();
+                      utils.customerPortal.getPriceList.invalidate();
+                    }} />
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -789,5 +837,488 @@ function ServiceTypeEditor({
         </div>
       </div>
     </div>
+  );
+}
+
+
+// ---------------------------------------------------------------------------
+// Create dialogs — admins add new shipping rates and services directly from
+// this page; no need to navigate to /settings/pricing or /service-types.
+// Each dialog chains two mutations:
+//   1. Creates the base record (pricingRule or serviceType) via existing API.
+//   2. Saves portal-display fields (showOnPortal, label/icon/color/badge).
+// Then invalidates caches so both admin list and portal page refresh.
+// ---------------------------------------------------------------------------
+
+function AddShippingRateDialog({ t, onCreated }: { t: (k: string) => string; onCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+  const { data: countries } = trpc.countries.list.useQuery({ activeOnly: true });
+
+  const [form, setForm] = useState({
+    originCountryId: "",
+    destinationCountryId: "",
+    shippingType: "air_regular" as "air_regular" | "air_irregular" | "sea",
+    pricePerUnit: "",
+    effectiveFrom: new Date().toISOString().split("T")[0],
+    showOnPortal: true,
+    portalLabelKu: "",
+    portalLabelEn: "",
+    portalLabelAr: "",
+    portalLabelZh: "",
+    portalIcon: "",
+    portalColor: "",
+    portalBadge: "",
+    notes: "",
+  });
+
+  // Suggest sensible icon/color defaults based on shipping type so admins
+  // don't start from a blank picker. Only fills when empty.
+  useEffect(() => {
+    setForm(f => {
+      if (f.portalIcon) return f;
+      if (f.shippingType === "sea") return { ...f, portalIcon: "Ship", portalColor: "teal" };
+      if (f.shippingType === "air_irregular") return { ...f, portalIcon: "Zap", portalColor: "amber" };
+      return { ...f, portalIcon: "Plane", portalColor: "sky" };
+    });
+  }, [form.shippingType]);
+
+  const createRule = trpc.pricing.create.useMutation();
+  const updatePortalFields = trpc.portalPriceList.updatePricingRulePortalFields.useMutation();
+  const isSaving = createRule.isPending || updatePortalFields.isPending;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.originCountryId || !form.destinationCountryId || !form.pricePerUnit) {
+      toast.error(t("priceList.admin.fillAllRequired") || "هەموو خانە پێویستییەکان پڕ بکەرەوە");
+      return;
+    }
+    try {
+      const unit = form.shippingType === "sea" ? ("cbm" as const) : ("kg" as const);
+      const rule = await createRule.mutateAsync({
+        originCountryId: parseInt(form.originCountryId),
+        destinationCountryId: parseInt(form.destinationCountryId),
+        shippingType: form.shippingType,
+        pricePerUnit: form.pricePerUnit,
+        unit,
+        effectiveFrom: new Date(form.effectiveFrom),
+        notes: form.notes || undefined,
+      });
+      await updatePortalFields.mutateAsync({
+        id: rule.id,
+        showOnPortal: form.showOnPortal,
+        portalLabelKu: form.portalLabelKu || null,
+        portalLabelEn: form.portalLabelEn || null,
+        portalLabelAr: form.portalLabelAr || null,
+        portalLabelZh: form.portalLabelZh || null,
+        portalIcon: form.portalIcon || null,
+        portalColor: form.portalColor || null,
+        portalBadge: form.portalBadge || null,
+        portalSortOrder: 0,
+      });
+      toast.success(t("priceList.admin.saved"));
+      setOpen(false);
+      onCreated();
+      setForm({
+        originCountryId: "", destinationCountryId: "", shippingType: "air_regular",
+        pricePerUnit: "", effectiveFrom: new Date().toISOString().split("T")[0],
+        showOnPortal: true, portalLabelKu: "", portalLabelEn: "", portalLabelAr: "",
+        portalLabelZh: "", portalIcon: "", portalColor: "", portalBadge: "", notes: "",
+      });
+    } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error("[AddShippingRateDialog] save failed:", err);
+      toast.error(t("priceList.admin.saveFailed"), { description: err?.message });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-purple-600 hover:bg-purple-700 text-white shadow-md">
+          <Plus className="h-4 w-4 me-2" />
+          {t("priceList.admin.addRate") || "زیادکردنی نرخی نوێ"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Plane className="h-5 w-5 text-purple-600" />
+            {t("priceList.admin.addRate") || "زیادکردنی نرخی گواستنەوە"}
+          </DialogTitle>
+          <DialogDescription>
+            {t("priceList.admin.addRateDesc") || "نرخی نوێ بۆ ڕێگایەک دابنێ. ئەگەر خوازیاربیت ڕاستەوخۆ لە پۆرتاڵ نیشانی بدەیت، توگڵی \"نیشاندان لە پۆرتاڵ\" هەڵبکە."}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-5 py-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>{t("priceList.admin.originCountry") || "وڵاتی سەرچاوە"} *</Label>
+              <Select value={form.originCountryId} onValueChange={(v) => setForm({ ...form, originCountryId: v })}>
+                <SelectTrigger><SelectValue placeholder="وڵاتێک هەڵبژێرە" /></SelectTrigger>
+                <SelectContent>
+                  {countries?.filter(c => c.isOrigin).map(c => (
+                    <SelectItem key={c.id} value={c.id.toString()}>{c.nameKu || c.nameEn}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("priceList.admin.destinationCountry") || "وڵاتی مەبەست"} *</Label>
+              <Select value={form.destinationCountryId} onValueChange={(v) => setForm({ ...form, destinationCountryId: v })}>
+                <SelectTrigger><SelectValue placeholder="وڵاتێک هەڵبژێرە" /></SelectTrigger>
+                <SelectContent>
+                  {countries?.filter(c => c.isDestination).map(c => (
+                    <SelectItem key={c.id} value={c.id.toString()}>{c.nameKu || c.nameEn}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <Label>{t("priceList.admin.shippingType") || "جۆری گواستنەوە"} *</Label>
+              <Select value={form.shippingType} onValueChange={(v: any) => setForm({ ...form, shippingType: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="air_regular">{t("priceList.shippingTypes.air_regular")} ($/kg)</SelectItem>
+                  <SelectItem value="air_irregular">{t("priceList.shippingTypes.air_irregular")} ($/kg)</SelectItem>
+                  <SelectItem value="sea">{t("priceList.shippingTypes.sea")} ($/m³)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("priceList.admin.price") || "نرخ"} (USD) *</Label>
+              <div className="relative">
+                <DollarSign className="absolute start-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input type="number" step="0.01" min="0" required
+                  className="ps-8" placeholder="0.00"
+                  value={form.pricePerUnit}
+                  onChange={(e) => setForm({ ...form, pricePerUnit: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("priceList.admin.effectiveFrom") || "دەستپێک"} *</Label>
+              <Input type="date" required
+                value={form.effectiveFrom}
+                onChange={(e) => setForm({ ...form, effectiveFrom: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 py-1">
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {t("priceList.admin.portalDisplay") || "نیشاندانی پۆرتاڵ"}
+            </span>
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-800/40">
+            <Label className="text-sm font-semibold">{t("priceList.admin.showOnPortal")}</Label>
+            <Switch checked={form.showOnPortal} onCheckedChange={(v) => setForm({ ...form, showOnPortal: v })} />
+          </div>
+
+          <LanguageFourField
+            label={t("priceList.admin.portalLabel")}
+            values={{ ku: form.portalLabelKu, en: form.portalLabelEn, ar: form.portalLabelAr, zh: form.portalLabelZh }}
+            onChange={(lang, v) => setForm({ ...form, [`portalLabel${lang}`]: v })}
+            t={t}
+          />
+
+          <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">{t("priceList.admin.portalIcon")}</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {ICON_OPTIONS.map((name) => {
+                  const I = ICON_COMPONENTS[name];
+                  const active = form.portalIcon === name;
+                  return (
+                    <button key={name} type="button"
+                      onClick={() => setForm({ ...form, portalIcon: active ? "" : name })}
+                      className={`p-1.5 rounded-lg border transition-all ${
+                        active ? "border-purple-500 bg-purple-50 dark:bg-purple-950 ring-2 ring-purple-200 dark:ring-purple-800"
+                          : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                      }`}
+                    ><I className="h-4 w-4" /></button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">{t("priceList.admin.portalColor")}</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {COLOR_OPTIONS.map((c) => {
+                    const active = form.portalColor === c.key;
+                    return (
+                      <button key={c.key} type="button"
+                        onClick={() => setForm({ ...form, portalColor: active ? "" : c.key })}
+                        className={`w-7 h-7 rounded-lg transition-all ${c.swatch} ${
+                          active ? "ring-2 ring-offset-2 ring-slate-900 dark:ring-white scale-110" : "hover:scale-110"
+                        }`}
+                        title={c.label}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground">{t("priceList.admin.portalBadge")}</Label>
+                <Select value={form.portalBadge || "__none__"}
+                  onValueChange={(v) => setForm({ ...form, portalBadge: v === "__none__" ? "" : v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">{t("priceList.admin.noneBadge")}</SelectItem>
+                    <SelectItem value="POPULAR">🔥 {t("priceList.admin.badgePopular")}</SelectItem>
+                    <SelectItem value="NEW">✨ {t("priceList.admin.badgeNew")}</SelectItem>
+                    <SelectItem value="RECOMMENDED">⭐ {t("priceList.admin.badgeRecommended")}</SelectItem>
+                    <SelectItem value="FAST">⚡ {t("priceList.admin.badgeFast")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              {t("common.cancel") || "پاشگەزبوونەوە"}
+            </Button>
+            <Button type="submit" disabled={isSaving} className="bg-purple-600 hover:bg-purple-700 text-white">
+              {isSaving ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Save className="h-4 w-4 me-2" />}
+              {isSaving ? t("priceList.admin.saving") : t("priceList.admin.save")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+function AddServiceTypeDialog({ t, onCreated }: { t: (k: string) => string; onCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+
+  const [form, setForm] = useState({
+    nameEn: "",
+    nameKu: "",
+    nameAr: "",
+    icon: "Wrench",
+    color: "#7c3aed",
+    defaultCost: "",
+    defaultPrice: "",
+    requiresCustomer: true,
+    addToCustomerBalance: true,
+    sortOrder: 0,
+    isActive: true,
+    showOnPortal: true,
+    portalDescriptionKu: "",
+    portalDescriptionEn: "",
+    portalDescriptionAr: "",
+    portalDescriptionZh: "",
+    portalBadge: "",
+    portalPriceLabelKu: "",
+    portalPriceLabelEn: "",
+    portalPriceLabelAr: "",
+    portalPriceLabelZh: "",
+  });
+
+  const createServiceType = trpc.extraServices.createServiceType.useMutation();
+  const updatePortalFields = trpc.portalPriceList.updateServiceTypePortalFields.useMutation();
+  const isSaving = createServiceType.isPending || updatePortalFields.isPending;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.nameEn && !form.nameKu && !form.nameAr) {
+      toast.error(t("priceList.admin.nameRequired") || "ناوی خزمەتگوزاری پێویستە (بە هەر زمانێک)");
+      return;
+    }
+    try {
+      const service = await createServiceType.mutateAsync({
+        // nameEn is required server-side; fall back to any filled language so
+        // admins can type Kurdish-only if they want.
+        nameEn: form.nameEn || form.nameKu || form.nameAr,
+        nameKu: form.nameKu || undefined,
+        nameAr: form.nameAr || undefined,
+        icon: form.icon || undefined,
+        color: form.color || undefined,
+        defaultCost: form.defaultCost || undefined,
+        defaultPrice: form.defaultPrice || undefined,
+        requiresCustomer: form.requiresCustomer,
+        addToCustomerBalance: form.addToCustomerBalance,
+        sortOrder: form.sortOrder,
+        isActive: form.isActive,
+      });
+      await updatePortalFields.mutateAsync({
+        id: service.id,
+        showOnPortal: form.showOnPortal,
+        portalDescriptionKu: form.portalDescriptionKu || null,
+        portalDescriptionEn: form.portalDescriptionEn || null,
+        portalDescriptionAr: form.portalDescriptionAr || null,
+        portalDescriptionZh: form.portalDescriptionZh || null,
+        portalBadge: form.portalBadge || null,
+        portalPriceLabelKu: form.portalPriceLabelKu || null,
+        portalPriceLabelEn: form.portalPriceLabelEn || null,
+        portalPriceLabelAr: form.portalPriceLabelAr || null,
+        portalPriceLabelZh: form.portalPriceLabelZh || null,
+      });
+      toast.success(t("priceList.admin.saved"));
+      setOpen(false);
+      onCreated();
+      setForm({
+        nameEn: "", nameKu: "", nameAr: "", icon: "Wrench", color: "#7c3aed",
+        defaultCost: "", defaultPrice: "", requiresCustomer: true, addToCustomerBalance: true,
+        sortOrder: 0, isActive: true,
+        showOnPortal: true, portalDescriptionKu: "", portalDescriptionEn: "",
+        portalDescriptionAr: "", portalDescriptionZh: "", portalBadge: "",
+        portalPriceLabelKu: "", portalPriceLabelEn: "", portalPriceLabelAr: "", portalPriceLabelZh: "",
+      });
+    } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error("[AddServiceTypeDialog] save failed:", err);
+      toast.error(t("priceList.admin.saveFailed"), { description: err?.message });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-purple-600 hover:bg-purple-700 text-white shadow-md">
+          <Plus className="h-4 w-4 me-2" />
+          {t("priceList.admin.addService") || "زیادکردنی خزمەتگوزاری"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Wrench className="h-5 w-5 text-purple-600" />
+            {t("priceList.admin.addService") || "زیادکردنی خزمەتگوزاری"}
+          </DialogTitle>
+          <DialogDescription>
+            {t("priceList.admin.addServiceDesc") || "خزمەتگوزاری نوێ دابنێ بە نرخی پێشبڕکێ. ئەگەر خوازیاربیت ڕاستەوخۆ لە پۆرتاڵ نیشانی بدەیت، توگڵی \"نیشاندان لە پۆرتاڵ\" هەڵبکە."}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-5 py-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-muted-foreground">
+              {t("priceList.admin.serviceName") || "ناوی خزمەتگوزاری"} *
+            </Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Input placeholder="کوردی" dir="rtl"
+                value={form.nameKu} onChange={(e) => setForm({ ...form, nameKu: e.target.value })} />
+              <Input placeholder="English"
+                value={form.nameEn} onChange={(e) => setForm({ ...form, nameEn: e.target.value })} />
+              <Input placeholder="عربي" dir="rtl"
+                value={form.nameAr} onChange={(e) => setForm({ ...form, nameAr: e.target.value })} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>{t("priceList.admin.defaultCost") || "تێچووی بنەڕەتی"} (USD)</Label>
+              <div className="relative">
+                <DollarSign className="absolute start-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input type="number" step="0.01" className="ps-8" placeholder="0.00"
+                  value={form.defaultCost} onChange={(e) => setForm({ ...form, defaultCost: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("priceList.admin.defaultPrice") || "نرخی بنەڕەتی"} (USD)</Label>
+              <div className="relative">
+                <DollarSign className="absolute start-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input type="number" step="0.01" className="ps-8" placeholder="0.00"
+                  value={form.defaultPrice} onChange={(e) => setForm({ ...form, defaultPrice: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">{t("priceList.admin.portalIcon")}</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {ICON_OPTIONS.map((name) => {
+                  const I = ICON_COMPONENTS[name];
+                  const active = form.icon === name;
+                  return (
+                    <button key={name} type="button"
+                      onClick={() => setForm({ ...form, icon: active ? "" : name })}
+                      className={`p-1.5 rounded-lg border transition-all ${
+                        active ? "border-purple-500 bg-purple-50 dark:bg-purple-950 ring-2 ring-purple-200 dark:ring-purple-800"
+                          : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                      }`}
+                    ><I className="h-4 w-4" /></button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">{t("priceList.admin.portalColor")}</Label>
+              <div className="flex items-center gap-2">
+                <Input type="color" className="w-12 h-10 p-1 cursor-pointer"
+                  value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })}
+                />
+                <Input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })}
+                  placeholder="#7c3aed" className="font-mono" />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 py-1">
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {t("priceList.admin.portalDisplay") || "نیشاندانی پۆرتاڵ"}
+            </span>
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-800/40">
+            <Label className="text-sm font-semibold">{t("priceList.admin.showOnPortal")}</Label>
+            <Switch checked={form.showOnPortal} onCheckedChange={(v) => setForm({ ...form, showOnPortal: v })} />
+          </div>
+
+          <LanguageFourTextarea
+            values={{
+              ku: form.portalDescriptionKu, en: form.portalDescriptionEn,
+              ar: form.portalDescriptionAr, zh: form.portalDescriptionZh,
+            }}
+            onChange={(lang, v) => setForm({ ...form, [`portalDescription${lang}`]: v })}
+            t={t}
+          />
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-muted-foreground">{t("priceList.admin.portalBadge")}</Label>
+            <Select value={form.portalBadge || "__none__"}
+              onValueChange={(v) => setForm({ ...form, portalBadge: v === "__none__" ? "" : v })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">{t("priceList.admin.noneBadge")}</SelectItem>
+                <SelectItem value="POPULAR">🔥 {t("priceList.admin.badgePopular")}</SelectItem>
+                <SelectItem value="NEW">✨ {t("priceList.admin.badgeNew")}</SelectItem>
+                <SelectItem value="RECOMMENDED">⭐ {t("priceList.admin.badgeRecommended")}</SelectItem>
+                <SelectItem value="FAST">⚡ {t("priceList.admin.badgeFast")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              {t("common.cancel") || "پاشگەزبوونەوە"}
+            </Button>
+            <Button type="submit" disabled={isSaving} className="bg-purple-600 hover:bg-purple-700 text-white">
+              {isSaving ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Save className="h-4 w-4 me-2" />}
+              {isSaving ? t("priceList.admin.saving") : t("priceList.admin.save")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
