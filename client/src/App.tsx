@@ -123,6 +123,7 @@ const EmailTemplatesManagement = lazy(() => import("./pages/EmailTemplatesManage
 const IpWhitelistManagement = lazy(() => import("./pages/IpWhitelistManagement"));
 const AdvancedSettings = lazy(() => import("./pages/AdvancedSettings"));
 const CustomerCodePrefixSettings = lazy(() => import("./pages/CustomerCodePrefixSettings"));
+const PortalPriceListSettings = lazy(() => import("./pages/PortalPriceListSettings"));
 
 // ---------------------------------------------------------------------------
 // Labels, VIP, Products, Services, Blog, Payments
@@ -259,6 +260,7 @@ function Router() {
         <Route path="/settings/ip-whitelist" component={IpWhitelistManagement} />
         <Route path="/settings/advanced" component={AdvancedSettings} />
         <Route path="/settings/code-prefixes" component={CustomerCodePrefixSettings} />
+        <Route path="/settings/portal-price-list" component={PortalPriceListSettings} />
         <Route path="/label-printing" component={LabelPrinting} />
         <Route path="/vip-customers" component={VipCustomers} />
         <Route path="/product-categories" component={ProductCategories} />

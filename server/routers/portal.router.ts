@@ -393,16 +393,176 @@ export const customerPortalRouter = router({
       .input(z.object({ addressId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const address = await db.getCustomerAddressById(input.addressId);
-        
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
+
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
           (await db.getCustomerByUserId(ctx.user.id))?.id;
-        
+
         if (!address || address.customerId !== customerId) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Address not found' });
         }
-        
+
         await db.setDefaultAddress(input.addressId, customerId);
         return { success: true };
       }),
+
+    // -----------------------------------------------------------------
+    // Price List — public read endpoint used by the portal home banner.
+    // -----------------------------------------------------------------
+    // Deliberately `publicProcedure` so the price list can also be rendered
+    // on the logged-out landing page / customer login screen in a future
+    // iteration. Today it is only called from authenticated portal pages,
+    // but keeping it public avoids a refactor later.
+    //
+    // Returns { settings, shipping[], services[], rates: { rmb, iqd } } —
+    // the UI picks the right language client-side from the `t()` hook so we
+    // ship all four translations in one payload.
+    getPriceList: publicProcedure.query(async () => {
+      const settings = await db.getPortalPriceListSettings();
+      if (!settings || !settings.isEnabled) {
+        return {
+          settings: settings ?? null,
+          shipping: [],
+          services: [],
+          rates: { rmb: null as string | null, iqd: null as string | null },
+        };
+      }
+
+      const [shipping, services, rmbRate, iqdRate] = await Promise.all([
+        settings.showShippingRates ? db.getPortalShippingRates() : Promise.resolve([]),
+        settings.showServices ? db.getPortalServiceTypes() : Promise.resolve([]),
+        settings.showRmbEquivalent ? db.getCurrentExchangeRate("RMB") : Promise.resolve(undefined),
+        settings.showIqdEquivalent ? db.getCurrentExchangeRate("IQD") : Promise.resolve(undefined),
+      ]);
+
+      return {
+        settings,
+        shipping,
+        services,
+        rates: {
+          rmb: rmbRate?.rate ?? null,
+          iqd: iqdRate?.rate ?? null,
+        },
+      };
+    }),
+});
+
+
+// ============================================================================
+// Portal Price List — ADMIN management router
+// ----------------------------------------------------------------------------
+// Exposes CRUD over `portalPriceListSettings` plus per-row toggles on
+// pricingRules and serviceTypes' portal-display fields. Admin-only; staff
+// cannot curate what customers see.
+// ============================================================================
+
+export const portalPriceListAdminRouter = router({
+  // ---- Settings (single row) ----
+  getSettings: adminProcedure.query(async () => {
+    return db.getPortalPriceListSettings();
+  }),
+
+  updateSettings: adminProcedure
+    .input(z.object({
+      isEnabled: z.boolean().optional(),
+      titleKu: z.string().max(200).nullable().optional(),
+      titleEn: z.string().max(200).nullable().optional(),
+      titleAr: z.string().max(200).nullable().optional(),
+      titleZh: z.string().max(200).nullable().optional(),
+      subtitleKu: z.string().max(400).nullable().optional(),
+      subtitleEn: z.string().max(400).nullable().optional(),
+      subtitleAr: z.string().max(400).nullable().optional(),
+      subtitleZh: z.string().max(400).nullable().optional(),
+      showShippingRates: z.boolean().optional(),
+      showServices: z.boolean().optional(),
+      showRmbEquivalent: z.boolean().optional(),
+      showIqdEquivalent: z.boolean().optional(),
+      layoutVariant: z.enum(["tabs", "stacked", "compact"]).optional(),
+      position: z.enum(["top", "belowHeader", "belowStats"]).optional(),
+      accentColor: z.string().max(30).optional(),
+      disclaimerKu: z.string().nullable().optional(),
+      disclaimerEn: z.string().nullable().optional(),
+      disclaimerAr: z.string().nullable().optional(),
+      disclaimerZh: z.string().nullable().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const updated = await db.updatePortalPriceListSettings(input, ctx.user.id);
+      if (!updated) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to save settings" });
+      }
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "update_portal_price_list_settings",
+        entityType: "portal_price_list_settings",
+        entityId: updated.id,
+        newValues: input,
+      });
+      return updated;
+    }),
+
+  // ---- Shipping rates (pricingRules with portal metadata) ----
+  listShippingRatesWithMeta: adminProcedure.query(async () => {
+    return db.getPricingRulesWithPortalMeta();
+  }),
+
+  updatePricingRulePortalFields: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      showOnPortal: z.boolean().optional(),
+      portalLabelKu: z.string().max(150).nullable().optional(),
+      portalLabelEn: z.string().max(150).nullable().optional(),
+      portalLabelAr: z.string().max(150).nullable().optional(),
+      portalLabelZh: z.string().max(150).nullable().optional(),
+      portalIcon: z.string().max(50).nullable().optional(),
+      portalColor: z.string().max(30).nullable().optional(),
+      portalBadge: z.string().max(30).nullable().optional(),
+      portalSortOrder: z.number().int().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { id, ...fields } = input;
+      await db.updatePricingRulePortalFields(id, fields);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "update_pricing_rule_portal",
+        entityType: "pricing_rule",
+        entityId: id,
+        newValues: fields,
+      });
+      return { success: true };
+    }),
+
+  // ---- Services (serviceTypes with portal metadata) ----
+  listServicesWithMeta: adminProcedure.query(async () => {
+    return db.getAllServiceTypes();
+  }),
+
+  updateServiceTypePortalFields: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      showOnPortal: z.boolean().optional(),
+      portalDescriptionKu: z.string().nullable().optional(),
+      portalDescriptionEn: z.string().nullable().optional(),
+      portalDescriptionAr: z.string().nullable().optional(),
+      portalDescriptionZh: z.string().nullable().optional(),
+      portalBadge: z.string().max(30).nullable().optional(),
+      portalPriceLabelKu: z.string().max(100).nullable().optional(),
+      portalPriceLabelEn: z.string().max(100).nullable().optional(),
+      portalPriceLabelAr: z.string().max(100).nullable().optional(),
+      portalPriceLabelZh: z.string().max(100).nullable().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { id, ...fields } = input;
+      await db.updateServiceTypePortalFields(id, fields);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "update_service_type_portal",
+        entityType: "service_type",
+        entityId: id,
+        newValues: fields,
+      });
+      return { success: true };
+    }),
 });
 

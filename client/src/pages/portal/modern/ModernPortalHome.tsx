@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { PriceListSection } from "@/components/portal/PriceListSection";
 
 // Animated Counter Component
 function AnimatedCounter({
@@ -340,6 +341,11 @@ export default function ModernPortalHome() {
               </Link>
             </div>
           </div>
+        </motion.div>
+
+        {/* ===== Price List Section — admin-curated ===== */}
+        <motion.div variants={itemVariants} className="-mx-5">
+          <PriceListSection />
         </motion.div>
 
         {/* ===== Stats Row (horizontal scroll) ===== */}

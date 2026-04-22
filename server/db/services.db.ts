@@ -181,19 +181,31 @@ export async function deleteProductCategory(id: number): Promise<void> {
 
 /** Map raw row (old schema) to ServiceType shape for API */
 function mapRowToServiceType(row: Record<string, unknown>): ServiceType {
+  const asStr = (v: unknown) => v != null ? String(v) : null;
   return {
     id: Number(row.id),
     nameEn: String(row.nameEn ?? ""),
-    nameKu: row.nameKu != null ? String(row.nameKu) : null,
-    nameAr: row.nameAr != null ? String(row.nameAr) : null,
-    icon: row.icon != null ? String(row.icon) : null,
-    color: row.color != null ? String(row.color) : null,
-    defaultCost: row.defaultCost != null ? String(row.defaultCost) : null,
+    nameKu: asStr(row.nameKu),
+    nameAr: asStr(row.nameAr),
+    icon: asStr(row.icon),
+    color: asStr(row.color),
+    defaultCost: asStr(row.defaultCost),
     defaultPrice: row.defaultPrice != null ? String(row.defaultPrice) : row.basePrice != null ? String(row.basePrice) : null,
     requiresCustomer: row.requiresCustomer != null ? Boolean(row.requiresCustomer) : true,
     addToCustomerBalance: row.addToCustomerBalance != null ? Boolean(row.addToCustomerBalance) : true,
     sortOrder: row.sortOrder != null ? Number(row.sortOrder) : 0,
     isActive: Boolean(row.isActive ?? true),
+    // Portal-display fields (nullable — may not exist in old schema)
+    showOnPortal: row.showOnPortal != null ? Boolean(row.showOnPortal) : false,
+    portalDescriptionKu: asStr(row.portalDescriptionKu),
+    portalDescriptionEn: asStr(row.portalDescriptionEn),
+    portalDescriptionAr: asStr(row.portalDescriptionAr),
+    portalDescriptionZh: asStr(row.portalDescriptionZh),
+    portalBadge: asStr(row.portalBadge),
+    portalPriceLabelKu: asStr(row.portalPriceLabelKu),
+    portalPriceLabelEn: asStr(row.portalPriceLabelEn),
+    portalPriceLabelAr: asStr(row.portalPriceLabelAr),
+    portalPriceLabelZh: asStr(row.portalPriceLabelZh),
     createdById: row.createdById != null ? Number(row.createdById) : null,
     createdAt: row.createdAt as Date,
     updatedAt: row.updatedAt as Date,
@@ -1145,5 +1157,51 @@ export async function getBlogPostsByCategory(category: string): Promise<BlogPost
       )
     ))
     .orderBy(desc(blogPosts.publishedAt));
+}
+
+
+// ============ PORTAL-FACING SERVICE TYPES ============
+// Returns ONLY service types the admin has opted into showing on the customer
+// portal price list. Active-only. Sorted by the existing sortOrder so the
+// admin's manual arrangement in ServiceTypesManagement is respected.
+
+export async function getPortalServiceTypes(): Promise<ServiceType[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(serviceTypes)
+      .where(and(
+        eq(serviceTypes.isActive, true),
+        eq(serviceTypes.showOnPortal, true),
+      ))
+      .orderBy(asc(serviceTypes.sortOrder));
+  } catch {
+    // New columns not yet migrated → render an empty list rather than crash.
+    return [];
+  }
+}
+
+/**
+ * Patch ONLY the portal-display fields on a service type. Leaves defaultPrice,
+ * defaultCost, nameEn/Ku/Ar, etc. untouched (those go through updateServiceType).
+ */
+export async function updateServiceTypePortalFields(
+  id: number,
+  fields: {
+    showOnPortal?: boolean;
+    portalDescriptionKu?: string | null;
+    portalDescriptionEn?: string | null;
+    portalDescriptionAr?: string | null;
+    portalDescriptionZh?: string | null;
+    portalBadge?: string | null;
+    portalPriceLabelKu?: string | null;
+    portalPriceLabelEn?: string | null;
+    portalPriceLabelAr?: string | null;
+    portalPriceLabelZh?: string | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(serviceTypes).set(fields).where(eq(serviceTypes.id, id));
 }
 

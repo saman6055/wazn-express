@@ -70,7 +70,8 @@ import {
   chatMessages, InsertChatMessage, ChatMessage,
   backups, InsertBackup, Backup,
   expenseAlerts, InsertExpenseAlert, ExpenseAlert,
-  expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog
+  expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog,
+  portalPriceListSettings, InsertPortalPriceListSettings, PortalPriceListSettings
 } from "../../drizzle/schema";
 
 // ============ COUNTRY OPERATIONS ============
@@ -683,8 +684,123 @@ export async function updateEmailTemplate(id: number, data: Partial<{
 export async function deleteEmailTemplate(id: number) {
   const database = await getDb();
   if (!database) throw new Error("Database connection failed");
-  
+
   await database.delete(emailTemplates).where(eq(emailTemplates.id, id));
   return { success: true };
+}
+
+
+// ============ PORTAL PRICE LIST (لیستی نرخی پۆرتاڵ) ============
+// The settings table is single-row by convention (id=1 seeded by migration).
+// If for some reason the row is missing we lazily create one with defaults so
+// the portal never renders against a null config.
+
+const DEFAULT_PORTAL_PRICE_LIST_SETTINGS: Omit<PortalPriceListSettings, "id" | "updatedAt" | "updatedById"> = {
+  isEnabled: true,
+  titleKu: "لیستی نرخی خزمەتگوزاری",
+  titleEn: "Price List",
+  titleAr: "قائمة الأسعار",
+  titleZh: "价格表",
+  subtitleKu: "نرخە نوێکراوەکانی گواستنەوە و خزمەتگوزاری",
+  subtitleEn: "Up-to-date shipping & service rates",
+  subtitleAr: "أحدث أسعار الشحن والخدمات",
+  subtitleZh: "最新运费和服务价格",
+  showShippingRates: true,
+  showServices: true,
+  showRmbEquivalent: true,
+  showIqdEquivalent: false,
+  layoutVariant: "tabs",
+  position: "belowHeader",
+  accentColor: "purple",
+  disclaimerKu: "ئەم نرخانە ڕێنماییکارن و لەوانەیە بەپێی کێش، قەبارە و وڵاتی مەبەست بگۆڕێن.",
+  disclaimerEn: "These rates are indicative and may vary based on weight, volume and destination.",
+  disclaimerAr: "هذه الأسعار تقريبية وقد تختلف حسب الوزن والحجم والوجهة.",
+  disclaimerZh: "以上价格为参考价格，可能因重量、体积和目的地而异。",
+};
+
+export async function getPortalPriceListSettings(): Promise<PortalPriceListSettings | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select().from(portalPriceListSettings).limit(1);
+  if (row) return row;
+  // Lazy-seed if the migration has not run (or the row was wiped manually).
+  await db.insert(portalPriceListSettings).values(DEFAULT_PORTAL_PRICE_LIST_SETTINGS);
+  const [inserted] = await db.select().from(portalPriceListSettings).limit(1);
+  return inserted ?? null;
+}
+
+export async function updatePortalPriceListSettings(
+  data: Partial<InsertPortalPriceListSettings>,
+  updatedById: number,
+): Promise<PortalPriceListSettings | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const existing = await getPortalPriceListSettings();
+  if (!existing) return null;
+  await db.update(portalPriceListSettings)
+    .set({ ...data, updatedById })
+    .where(eq(portalPriceListSettings.id, existing.id));
+  const [updated] = await db.select().from(portalPriceListSettings)
+    .where(eq(portalPriceListSettings.id, existing.id)).limit(1);
+  return updated ?? null;
+}
+
+/**
+ * Portal-facing pricing rules — only rows the admin has explicitly opted into
+ * showing on the customer portal. Filters out expired rules as of `now`.
+ */
+export async function getPortalShippingRates() {
+  const db = await getDb();
+  if (!db) return [];
+  const now = new Date();
+  try {
+    return await db.select().from(pricingRules).where(
+      and(
+        eq(pricingRules.showOnPortal, true),
+        eq(pricingRules.isActive, true),
+        lte(pricingRules.effectiveFrom, now),
+        or(isNull(pricingRules.effectiveTo), gte(pricingRules.effectiveTo, now)),
+      )
+    ).orderBy(asc(pricingRules.portalSortOrder), asc(pricingRules.shippingType));
+  } catch {
+    // If the new columns haven't migrated yet we silently return empty so the
+    // portal renders a "coming soon" state instead of crashing.
+    return [];
+  }
+}
+
+/**
+ * Admin-facing list of ALL pricing rules with portal metadata, regardless of
+ * visibility or active state — used by the settings page to let admins toggle
+ * and curate.
+ */
+export async function getPricingRulesWithPortalMeta() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(pricingRules).orderBy(asc(pricingRules.portalSortOrder), desc(pricingRules.effectiveFrom));
+}
+
+/**
+ * Patch ONLY the portal-display fields on a pricing rule. Does not touch
+ * pricePerUnit / effectiveFrom / shippingType etc. — those flow through the
+ * existing updatePricingRule path with audit logging.
+ */
+export async function updatePricingRulePortalFields(
+  id: number,
+  fields: {
+    showOnPortal?: boolean;
+    portalLabelKu?: string | null;
+    portalLabelEn?: string | null;
+    portalLabelAr?: string | null;
+    portalLabelZh?: string | null;
+    portalIcon?: string | null;
+    portalColor?: string | null;
+    portalBadge?: string | null;
+    portalSortOrder?: number;
+  }
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(pricingRules).set(fields).where(eq(pricingRules.id, id));
 }
 

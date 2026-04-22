@@ -48,7 +48,19 @@ export const serviceTypes = mysqlTable("serviceTypes", {
   // Status
   sortOrder: int("sortOrder").default(0).notNull(),
   isActive: boolean("isActive").default(true).notNull(),
-  
+
+  // ---- Portal display (service list on customer portal) ----
+  showOnPortal: boolean("showOnPortal").default(false).notNull(),
+  portalDescriptionKu: text("portalDescriptionKu"),
+  portalDescriptionEn: text("portalDescriptionEn"),
+  portalDescriptionAr: text("portalDescriptionAr"),
+  portalDescriptionZh: text("portalDescriptionZh"),
+  portalBadge: varchar("portalBadge", { length: 30 }), // POPULAR|NEW|RECOMMENDED|null
+  portalPriceLabelKu: varchar("portalPriceLabelKu", { length: 100 }), // "بە دۆلار/عدد"
+  portalPriceLabelEn: varchar("portalPriceLabelEn", { length: 100 }), // "per item"
+  portalPriceLabelAr: varchar("portalPriceLabelAr", { length: 100 }),
+  portalPriceLabelZh: varchar("portalPriceLabelZh", { length: 100 }),
+
   // Metadata
   createdById: int("createdById"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

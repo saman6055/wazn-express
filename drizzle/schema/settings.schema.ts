@@ -66,6 +66,17 @@ export const pricingRules = mysqlTable("pricingRules", {
   effectiveTo: timestamp("effectiveTo"),
   isActive: boolean("isActive").default(true).notNull(),
   notes: text("notes"),
+  // ---- Portal display (price list on customer portal) ----
+  showOnPortal: boolean("showOnPortal").default(false).notNull(),
+  portalLabelKu: varchar("portalLabelKu", { length: 150 }),
+  portalLabelEn: varchar("portalLabelEn", { length: 150 }),
+  portalLabelAr: varchar("portalLabelAr", { length: 150 }),
+  portalLabelZh: varchar("portalLabelZh", { length: 150 }),
+  portalIcon: varchar("portalIcon", { length: 50 }),  // lucide icon name (Plane, Ship, Zap, etc.)
+  portalColor: varchar("portalColor", { length: 30 }), // sky|teal|amber|purple|emerald|rose
+  portalBadge: varchar("portalBadge", { length: 30 }), // POPULAR|NEW|RECOMMENDED|FAST
+  portalSortOrder: int("portalSortOrder").default(0).notNull(),
+  // ---- Audit ----
   createdById: int("createdById").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -73,6 +84,45 @@ export const pricingRules = mysqlTable("pricingRules", {
 
 export type PricingRule = typeof pricingRules.$inferSelect;
 export type InsertPricingRule = typeof pricingRules.$inferInsert;
+
+// ============ PORTAL PRICE LIST SETTINGS (ڕێکخستنی لیستی نرخی پۆرتاڵ) ============
+// Global settings for the customer-facing price list section shown on portal home.
+// There is exactly ONE row (id=1). Admin edits it to customize section title,
+// subtitle, visibility toggles, layout variant, and disclaimer per language.
+
+export const portalPriceListSettings = mysqlTable("portalPriceListSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  isEnabled: boolean("isEnabled").default(true).notNull(),
+  // Titles & subtitles (4 languages)
+  titleKu: varchar("titleKu", { length: 200 }),
+  titleEn: varchar("titleEn", { length: 200 }),
+  titleAr: varchar("titleAr", { length: 200 }),
+  titleZh: varchar("titleZh", { length: 200 }),
+  subtitleKu: varchar("subtitleKu", { length: 400 }),
+  subtitleEn: varchar("subtitleEn", { length: 400 }),
+  subtitleAr: varchar("subtitleAr", { length: 400 }),
+  subtitleZh: varchar("subtitleZh", { length: 400 }),
+  // Content toggles
+  showShippingRates: boolean("showShippingRates").default(true).notNull(),
+  showServices: boolean("showServices").default(true).notNull(),
+  showRmbEquivalent: boolean("showRmbEquivalent").default(true).notNull(),
+  showIqdEquivalent: boolean("showIqdEquivalent").default(false).notNull(),
+  // Layout
+  layoutVariant: mysqlEnum("layoutVariant", ["tabs", "stacked", "compact"]).default("tabs").notNull(),
+  position: mysqlEnum("position", ["top", "belowHeader", "belowStats"]).default("belowHeader").notNull(),
+  accentColor: varchar("accentColor", { length: 30 }).default("purple").notNull(),
+  // Disclaimer (4 languages)
+  disclaimerKu: text("disclaimerKu"),
+  disclaimerEn: text("disclaimerEn"),
+  disclaimerAr: text("disclaimerAr"),
+  disclaimerZh: text("disclaimerZh"),
+  // Audit
+  updatedById: int("updatedById"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PortalPriceListSettings = typeof portalPriceListSettings.$inferSelect;
+export type InsertPortalPriceListSettings = typeof portalPriceListSettings.$inferInsert;
 
 // ============ BATCHES (Shipment Groups) ============
 

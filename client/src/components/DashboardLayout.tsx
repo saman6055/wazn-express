@@ -361,6 +361,7 @@ function DashboardLayoutContent({
           { icon: Tags, label: t("nav.productCategories") || "جۆری بەرهەم", path: "/product-categories" },
           { icon: Wrench, label: t("nav.serviceTypes") || "جۆری خزمەتگوزاری", path: "/service-types" },
           { icon: Code, label: t("nav.customerCodePrefixes") || "پشگیری کۆدی کڕیار", path: "/settings/code-prefixes" },
+          { icon: DollarSign, label: t("priceList.admin.pageTitle") || "لیستی نرخی پۆرتاڵ", path: "/settings/portal-price-list" },
         ]
       });
     }

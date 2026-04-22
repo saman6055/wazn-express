@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useState, useEffect } from "react";
+import { PriceListSection } from "@/components/portal/PriceListSection";
 
 // Animated Counter Component
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
@@ -496,6 +497,9 @@ const { t, language } = useLanguage();
           </div>
         </Link>
       </div>
+
+      {/* Price List Section — admin-curated shipping rates & services */}
+      <PriceListSection />
 
       {/* Stats Cards */}
       <div className="px-4 mt-4">

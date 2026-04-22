@@ -10,7 +10,7 @@ import { packagesRouter } from "./packages.router";
 import { invoicesRouters } from "./invoices.router";
 import { financeRouters } from "./finance.router";
 import { reportsRouter } from "./reports.router";
-import { customerPortalRouter } from "./portal.router";
+import { customerPortalRouter, portalPriceListAdminRouter } from "./portal.router";
 import { settingsRouters } from "./settings.router";
 import { fullPackageRouter } from "./fullPackage.router";
 import { scanningRouters } from "./scanning.router";
@@ -27,6 +27,7 @@ export const appRouter = router({
   ...financeRouters,
   reports: reportsRouter,
   customerPortal: customerPortalRouter,
+  portalPriceList: portalPriceListAdminRouter,
   ...settingsRouters,
   fullPackage: fullPackageRouter,
   ...scanningRouters,
