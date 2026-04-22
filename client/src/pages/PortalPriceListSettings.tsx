@@ -551,7 +551,23 @@ function ShippingRateEditor({
   isSaving: boolean;
   t: (k: string) => string;
 }) {
+  const utils = trpc.useUtils();
+  // Also edit base pricingRule fields — price and isActive — inline so the
+  // admin doesn't need to navigate to /settings/pricing.
+  const updateBase = trpc.pricing.update.useMutation({
+    onSuccess: () => {
+      toast.success(t("priceList.admin.saved"));
+      utils.portalPriceList.listShippingRatesWithMeta.invalidate();
+      utils.customerPortal.getPriceList.invalidate();
+    },
+    onError: (err) => toast.error(t("priceList.admin.saveFailed"), { description: err.message }),
+  });
+
   const [local, setLocal] = useState({
+    // Base fields (price + active state)
+    pricePerUnit: rate.pricePerUnit?.toString() ?? "0",
+    isActive: rate.isActive ?? true,
+    // Portal display fields
     showOnPortal: rate.showOnPortal ?? false,
     portalLabelKu: rate.portalLabelKu ?? "",
     portalLabelEn: rate.portalLabelEn ?? "",
@@ -564,7 +580,12 @@ function ShippingRateEditor({
   });
 
   const PreviewIcon = useMemo(() => ICON_COMPONENTS[local.portalIcon] ?? Plane, [local.portalIcon]);
-  const isDirty = useMemo(() => {
+  const baseDirty = useMemo(() => {
+    const pricesDiffer = (parseFloat(local.pricePerUnit) || 0) !== (parseFloat(rate.pricePerUnit?.toString() ?? "0") || 0);
+    return pricesDiffer || local.isActive !== (rate.isActive ?? true);
+  }, [local, rate]);
+
+  const portalDirty = useMemo(() => {
     return (
       local.showOnPortal !== (rate.showOnPortal ?? false) ||
       (local.portalLabelKu || "") !== (rate.portalLabelKu || "") ||
@@ -578,32 +599,92 @@ function ShippingRateEditor({
     );
   }, [local, rate]);
 
+  const isDirty = baseDirty || portalDirty;
+
+  async function handleSave() {
+    try {
+      // Save base fields first (if dirty) via pricing.update, then portal fields
+      // (if dirty) via the existing onSave callback. Two separate mutations so
+      // audit logs cleanly split "price change" from "portal display change".
+      if (baseDirty) {
+        await updateBase.mutateAsync({
+          id: rate.id,
+          pricePerUnit: local.pricePerUnit,
+          isActive: local.isActive,
+        });
+      }
+      if (portalDirty) {
+        onSave({
+          showOnPortal: local.showOnPortal,
+          portalLabelKu: local.portalLabelKu || null,
+          portalLabelEn: local.portalLabelEn || null,
+          portalLabelAr: local.portalLabelAr || null,
+          portalLabelZh: local.portalLabelZh || null,
+          portalIcon: local.portalIcon || null,
+          portalColor: local.portalColor || null,
+          portalBadge: local.portalBadge || null,
+          portalSortOrder: local.portalSortOrder,
+        });
+      }
+    } catch (err) {
+      // Errors are surfaced by the mutation's onError; swallow here so the UI
+      // doesn't blow up on a rejected promise.
+    }
+  }
+
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900">
-      {/* Header row */}
-      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex items-center gap-3">
+    <div className={`rounded-2xl border overflow-hidden transition-colors ${
+      local.isActive
+        ? "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+        : "border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 opacity-70"
+    }`}>
+      {/* Header row — price + isActive + showOnPortal */}
+      <div className="flex items-center justify-between gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex-wrap">
+        <div className="flex items-center gap-3 flex-1 min-w-[180px]">
           <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
             <PreviewIcon className="h-5 w-5 text-slate-700 dark:text-slate-300" />
           </div>
-          <div>
-            <p className="text-sm font-bold">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate">
               {t(`priceList.shippingTypes.${rate.shippingType}`)}
-              {" · "}
-              <span className="font-mono text-purple-600">${Number(rate.pricePerUnit).toFixed(2)}</span>
-              <span className="text-xs text-muted-foreground ms-1">
-                / {rate.unit === "cbm" ? "m³" : "kg"}
-              </span>
             </p>
             <p className="text-[11px] text-muted-foreground">#{rate.id}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Label className="text-sm">{t("priceList.admin.showOnPortal")}</Label>
-          <Switch
-            checked={local.showOnPortal}
-            onCheckedChange={(v) => setLocal({ ...local, showOnPortal: v })}
-          />
+        <div className="flex items-center gap-2">
+          {/* Inline price editor */}
+          <div className="relative">
+            <DollarSign className="absolute start-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={local.pricePerUnit}
+              onChange={(e) => setLocal({ ...local, pricePerUnit: e.target.value })}
+              className="ps-7 w-28 font-mono font-bold"
+            />
+          </div>
+          <span className="text-xs font-medium text-muted-foreground">
+            / {rate.unit === "cbm" ? "m³" : "kg"}
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">
+              {local.isActive ? t("priceList.admin.active") : t("priceList.admin.inactive")}
+            </Label>
+            <Switch
+              checked={local.isActive}
+              onCheckedChange={(v) => setLocal({ ...local, isActive: v })}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">{t("priceList.admin.showOnPortal")}</Label>
+            <Switch
+              checked={local.showOnPortal}
+              onCheckedChange={(v) => setLocal({ ...local, showOnPortal: v })}
+            />
+          </div>
         </div>
       </div>
 
@@ -699,12 +780,12 @@ function ShippingRateEditor({
         <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
           <Button
             size="sm"
-            onClick={() => onSave(local)}
-            disabled={!isDirty || isSaving}
+            onClick={handleSave}
+            disabled={!isDirty || isSaving || updateBase.isPending}
             className="bg-purple-600 hover:bg-purple-700 text-white"
           >
-            {isSaving ? <Loader2 className="h-3.5 w-3.5 me-1.5 animate-spin" /> : <Save className="h-3.5 w-3.5 me-1.5" />}
-            {isSaving ? t("priceList.admin.saving") : t("priceList.admin.save")}
+            {(isSaving || updateBase.isPending) ? <Loader2 className="h-3.5 w-3.5 me-1.5 animate-spin" /> : <Save className="h-3.5 w-3.5 me-1.5" />}
+            {(isSaving || updateBase.isPending) ? t("priceList.admin.saving") : t("priceList.admin.save")}
           </Button>
         </div>
       </div>
@@ -720,7 +801,26 @@ function ServiceTypeEditor({
   isSaving: boolean;
   t: (k: string) => string;
 }) {
+  const utils = trpc.useUtils();
+  // Admins edit the service's name, price and active flag inline; chained
+  // with portal fields so the save button updates both at once.
+  const updateBase = trpc.extraServices.updateServiceType.useMutation({
+    onSuccess: () => {
+      toast.success(t("priceList.admin.saved"));
+      utils.portalPriceList.listServicesWithMeta.invalidate();
+      utils.customerPortal.getPriceList.invalidate();
+    },
+    onError: (err) => toast.error(t("priceList.admin.saveFailed"), { description: err.message }),
+  });
+
   const [local, setLocal] = useState({
+    // Base fields
+    nameKu: service.nameKu ?? "",
+    nameEn: service.nameEn ?? "",
+    nameAr: service.nameAr ?? "",
+    defaultPrice: service.defaultPrice?.toString() ?? "",
+    isActive: service.isActive ?? true,
+    // Portal display fields
     showOnPortal: service.showOnPortal ?? false,
     portalDescriptionKu: service.portalDescriptionKu ?? "",
     portalDescriptionEn: service.portalDescriptionEn ?? "",
@@ -735,7 +835,18 @@ function ServiceTypeEditor({
 
   const ServiceIcon = useMemo(() => ICON_COMPONENTS[service.icon] ?? Wrench, [service.icon]);
 
-  const isDirty = useMemo(() => {
+  const baseDirty = useMemo(() => {
+    const priceDiffers = (parseFloat(local.defaultPrice) || 0) !== (parseFloat(service.defaultPrice?.toString() ?? "0") || 0);
+    return (
+      priceDiffers ||
+      local.isActive !== (service.isActive ?? true) ||
+      (local.nameKu || "") !== (service.nameKu || "") ||
+      (local.nameEn || "") !== (service.nameEn || "") ||
+      (local.nameAr || "") !== (service.nameAr || "")
+    );
+  }, [local, service]);
+
+  const portalDirty = useMemo(() => {
     return (
       local.showOnPortal !== (service.showOnPortal ?? false) ||
       (local.portalDescriptionKu || "") !== (service.portalDescriptionKu || "") ||
@@ -750,42 +861,113 @@ function ServiceTypeEditor({
     );
   }, [local, service]);
 
+  const isDirty = baseDirty || portalDirty;
+
+  async function handleSave() {
+    try {
+      if (baseDirty) {
+        await updateBase.mutateAsync({
+          id: service.id,
+          nameEn: local.nameEn || local.nameKu || local.nameAr,
+          nameKu: local.nameKu || undefined,
+          nameAr: local.nameAr || undefined,
+          defaultPrice: local.defaultPrice || undefined,
+          isActive: local.isActive,
+        });
+      }
+      if (portalDirty) {
+        onSave({
+          showOnPortal: local.showOnPortal,
+          portalDescriptionKu: local.portalDescriptionKu || null,
+          portalDescriptionEn: local.portalDescriptionEn || null,
+          portalDescriptionAr: local.portalDescriptionAr || null,
+          portalDescriptionZh: local.portalDescriptionZh || null,
+          portalBadge: local.portalBadge || null,
+          portalPriceLabelKu: local.portalPriceLabelKu || null,
+          portalPriceLabelEn: local.portalPriceLabelEn || null,
+          portalPriceLabelAr: local.portalPriceLabelAr || null,
+          portalPriceLabelZh: local.portalPriceLabelZh || null,
+        });
+      }
+    } catch {
+      // mutation onError already surfaces to the user via toast
+    }
+  }
+
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex items-center gap-3">
+    <div className={`rounded-2xl border overflow-hidden transition-colors ${
+      local.isActive
+        ? "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+        : "border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 opacity-70"
+    }`}>
+      {/* Header — price + isActive + showOnPortal */}
+      <div className="flex items-center justify-between gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex-wrap">
+        <div className="flex items-center gap-3 flex-1 min-w-[180px]">
           <div
-            className="p-2 rounded-lg text-white shadow-md"
+            className="p-2 rounded-lg text-white shadow-md flex-shrink-0"
             style={{ backgroundColor: service.color || "#7c3aed" }}
           >
             <ServiceIcon className="h-5 w-5" />
           </div>
-          <div>
-            <p className="text-sm font-bold">
-              {service.nameKu || service.nameEn || service.nameAr}
-              {service.defaultPrice && (
-                <>
-                  {" · "}
-                  <span className="font-mono text-purple-600">${Number(service.defaultPrice).toFixed(2)}</span>
-                </>
-              )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate">
+              {local.nameKu || local.nameEn || local.nameAr}
             </p>
-            <p className="text-[11px] text-muted-foreground">
-              {service.nameEn} · #{service.id}
+            <p className="text-[11px] text-muted-foreground truncate">
+              {local.nameEn !== (local.nameKu || local.nameAr) ? local.nameEn + " · " : ""}#{service.id}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Label className="text-sm">{t("priceList.admin.showOnPortal")}</Label>
-          <Switch
-            checked={local.showOnPortal}
-            onCheckedChange={(v) => setLocal({ ...local, showOnPortal: v })}
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <DollarSign className="absolute start-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={local.defaultPrice}
+              onChange={(e) => setLocal({ ...local, defaultPrice: e.target.value })}
+              className="ps-7 w-28 font-mono font-bold"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">
+              {local.isActive ? t("priceList.admin.active") : t("priceList.admin.inactive")}
+            </Label>
+            <Switch
+              checked={local.isActive}
+              onCheckedChange={(v) => setLocal({ ...local, isActive: v })}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">{t("priceList.admin.showOnPortal")}</Label>
+            <Switch
+              checked={local.showOnPortal}
+              onCheckedChange={(v) => setLocal({ ...local, showOnPortal: v })}
+            />
+          </div>
         </div>
       </div>
 
       <div className="p-4 space-y-4">
+        {/* Editable names */}
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold text-muted-foreground">
+            {t("priceList.admin.serviceName") || "ناوی خزمەتگوزاری"}
+          </Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <Input placeholder="کوردی" dir="rtl" value={local.nameKu}
+              onChange={(e) => setLocal({ ...local, nameKu: e.target.value })} />
+            <Input placeholder="English" value={local.nameEn}
+              onChange={(e) => setLocal({ ...local, nameEn: e.target.value })} />
+            <Input placeholder="عربي" dir="rtl" value={local.nameAr}
+              onChange={(e) => setLocal({ ...local, nameAr: e.target.value })} />
+          </div>
+        </div>
+
         <LanguageFourTextarea
           values={{
             ku: local.portalDescriptionKu, en: local.portalDescriptionEn,
@@ -827,12 +1009,12 @@ function ServiceTypeEditor({
         <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
           <Button
             size="sm"
-            onClick={() => onSave(local)}
-            disabled={!isDirty || isSaving}
+            onClick={handleSave}
+            disabled={!isDirty || isSaving || updateBase.isPending}
             className="bg-purple-600 hover:bg-purple-700 text-white"
           >
-            {isSaving ? <Loader2 className="h-3.5 w-3.5 me-1.5 animate-spin" /> : <Save className="h-3.5 w-3.5 me-1.5" />}
-            {isSaving ? t("priceList.admin.saving") : t("priceList.admin.save")}
+            {(isSaving || updateBase.isPending) ? <Loader2 className="h-3.5 w-3.5 me-1.5 animate-spin" /> : <Save className="h-3.5 w-3.5 me-1.5" />}
+            {(isSaving || updateBase.isPending) ? t("priceList.admin.saving") : t("priceList.admin.save")}
           </Button>
         </div>
       </div>

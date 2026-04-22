@@ -106,55 +106,66 @@ function ShippingRateCard({
 
   return (
     <div className={cn(
-      "relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl group",
+      "relative overflow-hidden rounded-2xl bg-gradient-to-br text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl group",
       palette.bg, palette.glow,
     )}>
-      {/* Decorative pattern */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22><g fill=%22%23fff%22 fill-opacity=%22.2%22><circle cx=%2220%22 cy=%2220%22 r=%222%22/><circle cx=%2260%22 cy=%2260%22 r=%222%22/><circle cx=%22100%22 cy=%22100%22 r=%222%22/></g></svg>')]" />
-      {/* Big decorative orb */}
-      <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 group-hover:scale-125 transition-transform duration-500" />
+      {/* Subtle dot pattern overlay */}
+      <div className="absolute inset-0 opacity-[0.08] pointer-events-none bg-[radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:16px_16px]" />
+      {/* Big decorative orb — positioned outside the text area so it never overlaps the price */}
+      <div className="absolute -bottom-16 -end-16 w-40 h-40 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-500 pointer-events-none" />
 
-      {rate.portalBadge && (
-        <div className="absolute top-3 end-3 z-10">
-          <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 text-[10px] font-bold tracking-wide">
+      {/* --- Top row: icon + badge --- */}
+      <div className="relative flex items-start justify-between p-5 pb-2">
+        <div className={cn(
+          "p-3 rounded-2xl backdrop-blur-sm ring-1 shadow-sm",
+          palette.icon, palette.ring,
+        )}>
+          <Icon className="w-6 h-6" />
+        </div>
+        {rate.portalBadge && (
+          <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 text-[10px] font-black tracking-wide shadow-sm">
             {rate.portalBadge === "POPULAR" ? t("priceList.popular") :
               rate.portalBadge === "NEW" ? t("priceList.new") :
               rate.portalBadge === "RECOMMENDED" ? t("priceList.recommended") :
               rate.portalBadge === "FAST" ? t("priceList.fast") :
               rate.portalBadge}
           </Badge>
-        </div>
-      )}
-
-      <div className="relative flex items-start gap-3 mb-4">
-        <div className={cn("p-2.5 rounded-xl backdrop-blur-sm ring-1", palette.icon, palette.ring)}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className={cn("text-xs font-semibold uppercase tracking-wider opacity-80", palette.text)}>
-            {t("priceList.startingFrom")}
-          </p>
-          <h3 className={cn("text-base font-bold truncate mt-0.5", palette.text)}>
-            {label}
-          </h3>
-        </div>
+        )}
       </div>
 
-      <div className="relative">
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-black tracking-tight">${price.toFixed(2)}</span>
-          <span className="text-xs font-medium opacity-80">{unitLabel}</span>
+      {/* --- Label (full width, its own line) --- */}
+      <div className="relative px-5 pb-3">
+        <h3 className={cn("text-base font-bold leading-tight line-clamp-2", palette.text)}>
+          {label}
+        </h3>
+      </div>
+
+      {/* --- Price block (dominant) --- */}
+      <div className="relative px-5 pb-5">
+        <div className="flex items-baseline gap-1.5 flex-wrap">
+          <span className="text-4xl font-black tracking-tight drop-shadow-sm">
+            ${price.toFixed(2)}
+          </span>
+          <span className="text-sm font-semibold opacity-90">
+            {unitLabel}
+          </span>
         </div>
-        {(showRmb && rmbValue) || (showIqd && iqdValue) ? (
-          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] font-medium opacity-85">
+        {((showRmb && rmbValue !== null) || (showIqd && iqdValue !== null)) && (
+          <div className="mt-2 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] font-semibold opacity-90">
             {showRmb && rmbValue !== null && (
-              <span>{t("priceList.approximately")} ¥{Math.round(rmbValue).toLocaleString("en-US")}</span>
+              <span className="inline-flex items-center gap-0.5">
+                <span className="opacity-70">≈</span>
+                ¥{Math.round(rmbValue).toLocaleString("en-US")}
+              </span>
             )}
             {showIqd && iqdValue !== null && (
-              <span>{t("priceList.approximately")} {Math.round(iqdValue).toLocaleString("en-US")} د.ع</span>
+              <span className="inline-flex items-center gap-0.5">
+                <span className="opacity-70">≈</span>
+                {Math.round(iqdValue).toLocaleString("en-US")} د.ع
+              </span>
             )}
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
