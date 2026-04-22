@@ -237,25 +237,47 @@ export const fullPackageRouter = router({
           if (customer) {
             const totalAmount = parseFloat(totalPrepaid);
             const quantity = input.quantity || 1;
-            
-            // Create line items for invoice - show only total price
+            const itemSubtotal = itemPrice * quantity;
+
+            // Build rich line items — customers couldn't reconcile the charge
+            // when we collapsed everything into a single row. Now we always
+            // emit two rows (item + commission) so the invoice transparently
+            // shows the composition: item × qty + flat commission = total.
+            // We also embed color, size, tracking, order code into the
+            // product-line description so the customer has the full context
+            // without needing to open the order page.
+            const productDescParts: string[] = [`🛍️ ${input.productName}`];
+            productDescParts.push(`کۆدی ئۆردەر: ${orderCode}`);
+            if (input.color) productDescParts.push(`ڕەنگ: ${input.color}`);
+            if (input.size) productDescParts.push(`قەبارە: ${input.size}`);
+            if (input.trackingNumber) productDescParts.push(`تراکینگ: ${input.trackingNumber}`);
+            productDescParts.push(`نرخ: ${quantity} × $${itemPrice.toFixed(2)} = $${itemSubtotal.toFixed(2)}`);
+
             const lineItems = [
               {
-                description: `${input.productName}`,
+                description: productDescParts.join('\n'),
                 quantity: quantity,
-                unitPrice: totalAmount / quantity,
-                total: totalAmount,
+                unitPrice: itemPrice,
+                total: itemSubtotal,
+              },
+              {
+                description: `💼 عمولەی کڕین\nفلاتە بۆ هەر ئۆردەرێک | Flat commission per order`,
+                quantity: 1,
+                unitPrice: commissionFee,
+                total: commissionFee,
               },
             ];
-            
-            // Apply charge - this creates ledger transaction and invoice
+
+            // Apply charge — description summarises the composition so the
+            // ledger line (visible in customer finance) also explains itself.
+            const chargeDescription = `کڕینی عمولە - ${input.productName} (کاڵا: $${itemSubtotal.toFixed(2)} + عمولە: $${commissionFee.toFixed(2)} = $${totalAmount.toFixed(2)})`;
             const chargeResult = await db.applyCharge(
               input.customerId,
               customer.customerCode,
               'COMMISSION',
               order.id,
               totalAmount,
-              `کڕینی عمولە - ${input.productName}`,
+              chargeDescription,
               ctx.user.id,
               lineItems
             );
@@ -1474,23 +1496,33 @@ export const fullPackageRouter = router({
         });
 
         // applyCharge automatically creates ledger transaction and invoice.
+        // Build rich multi-line descriptions so the customer can reconcile the
+        // invoice without opening the order — same shape as the generic
+        // commission-order path above.
+        const productDescParts: string[] = [`🛍️ ${input.productName}`];
+        productDescParts.push(`کۆدی ئۆردەر: ${orderCode}`);
+        if (input.color) productDescParts.push(`ڕەنگ: ${input.color}`);
+        if (input.size) productDescParts.push(`قەبارە: ${input.size}`);
+        if (input.productDescription) productDescParts.push(`وەسف: ${input.productDescription}`);
+        productDescParts.push(`نرخ: ${quantity} × $${itemPricePerUnit.toFixed(2)} = $${itemTotal.toFixed(2)}`);
+
         const commissionChargeResult = await db.applyCharge(
           input.customerId,
           customerForCommission.customerCode,
           'COMMISSION',
           order.id,
           totalPrepaid,
-          `Commission Purchase - ${input.productName} (Item: $${itemTotal}, Commission: $${commission})`,
+          `کڕینی عمولە - ${input.productName} (کاڵا: $${itemTotal.toFixed(2)} + عمولە: $${commission.toFixed(2)} = $${totalPrepaid.toFixed(2)})`,
           ctx.user.id,
           [
             {
-              description: `${input.productName} - Item Price`,
+              description: productDescParts.join('\n'),
               quantity: quantity,
               unitPrice: itemPricePerUnit,
               total: itemTotal,
             },
             {
-              description: 'Commission Fee',
+              description: `💼 عمولەی کڕین\nفلاتە بۆ هەر ئۆردەرێک | Flat commission per order`,
               quantity: 1,
               unitPrice: commission,
               total: commission,

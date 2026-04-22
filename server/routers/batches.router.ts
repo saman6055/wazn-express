@@ -309,6 +309,44 @@ export const batchesRouter = router({
                         // Use the split shipping cost (not full package cost)
                         const chargeableShippingCost = orderShippingCost;
 
+                        // Shipping invoice for a commission order — now carries
+                        // the full product context (color/size/tracking) plus
+                        // the original item + commission totals so the customer
+                        // sees the end-to-end cost breakdown in one document
+                        // (prepaid at order time + shipping at delivery).
+                        const shipDescParts: string[] = [];
+                        shipDescParts.push(`🚢 نرخی گواستنەوە — ${refreshedForCommission.productName}`);
+                        shipDescParts.push(`کۆدی ئۆردەر: ${refreshedForCommission.orderCode}`);
+                        if ((refreshedForCommission as any).trackingNumber) {
+                          shipDescParts.push(`تراکینگ: ${(refreshedForCommission as any).trackingNumber}`);
+                        }
+                        // Measurements from the linked package
+                        const sActualKg = parseFloat(pkg.weightKg?.toString() || "0");
+                        const sCbm = parseFloat(pkg.volumeCbm?.toString() || "0");
+                        const sL = parseFloat(pkg.lengthCm?.toString() || "0");
+                        const sW = parseFloat(pkg.widthCm?.toString() || "0");
+                        const sH = parseFloat(pkg.heightCm?.toString() || "0");
+                        const measureParts: string[] = [];
+                        if (isSea) {
+                          if (sCbm > 0) measureParts.push(`CBM: ${sCbm.toFixed(3)} m³`);
+                          if (sActualKg > 0) measureParts.push(`کێش: ${sActualKg.toFixed(2)} kg`);
+                        } else {
+                          if (sActualKg > 0) measureParts.push(`کێش: ${sActualKg.toFixed(2)} kg`);
+                        }
+                        if (sL > 0) measureParts.push(`${sL}×${sW}×${sH} cm`);
+                        if (measureParts.length) shipDescParts.push(measureParts.join(' · '));
+                        shipDescParts.push(`باچ: ${batch?.batchCode || ''}`);
+                        shipDescParts.push(`شیپینگی دابەشکراو: $${chargeableShippingCost.toFixed(2)}`);
+
+                        // Notes — tie this shipping invoice back to the prepaid
+                        // item+commission so the customer sees the overall
+                        // cost story across both invoices.
+                        const itemUsd = parseFloat(refreshedForCommission.itemPriceUsd?.toString() || "0");
+                        const commUsd = parseFloat(refreshedForCommission.commissionFeeUsd?.toString() || "0");
+                        const qty = refreshedForCommission.quantity || 1;
+                        const itemSub = itemUsd * qty;
+                        const grandTotal = itemSub + commUsd + chargeableShippingCost;
+
                         const invoiceNumber = `INV-CM-SHIP-${Date.now()}-${refreshedForCommission.id}`;
                         await db.createInvoice({
                           invoiceNumber,
@@ -319,12 +357,19 @@ export const batchesRouter = router({
                           status: "issued",
                           issuedAt: new Date(),
                           lineItems: [{
-                            description: `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە`,
+                            description: shipDescParts.join('\n'),
                             quantity: 1,
                             unitPrice: chargeableShippingCost,
                             total: chargeableShippingCost,
                           }],
-                          notes: `پسووڵەی گواستنەوەی کڕین بە عمولە ${refreshedForCommission.orderCode} - باچ ${batch?.batchCode || ''} - شیپینگی دابەشکراو $${chargeableShippingCost.toFixed(2)}`,
+                          notes: [
+                            `پسووڵەی گواستنەوەی کڕین بە عمولە ${refreshedForCommission.orderCode}`,
+                            `باچ: ${batch?.batchCode || ''}`,
+                            `کاڵا: ${qty} × $${itemUsd.toFixed(2)} = $${itemSub.toFixed(2)}`,
+                            `عمولە: $${commUsd.toFixed(2)}`,
+                            `گواستنەوە: $${chargeableShippingCost.toFixed(2)}`,
+                            `کۆی گشتی (لەگەڵ پێشەکی): $${grandTotal.toFixed(2)}`,
+                          ].join('\n'),
                           createdById: ctx.user.id,
                         });
 
