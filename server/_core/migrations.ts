@@ -203,8 +203,52 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       addToCustomerBalance BOOLEAN NOT NULL DEFAULT TRUE,
       sortOrder INT NOT NULL DEFAULT 0,
       isActive BOOLEAN NOT NULL DEFAULT TRUE,
+      showOnPortal BOOLEAN NOT NULL DEFAULT FALSE,
+      portalDescriptionKu TEXT,
+      portalDescriptionEn TEXT,
+      portalDescriptionAr TEXT,
+      portalDescriptionZh TEXT,
+      portalBadge VARCHAR(30),
+      portalPriceLabelKu VARCHAR(100),
+      portalPriceLabelEn VARCHAR(100),
+      portalPriceLabelAr VARCHAR(100),
+      portalPriceLabelZh VARCHAR(100),
       createdById INT,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
+    // Portal price list — single-row settings table. Lazily seeded by
+    // getPortalPriceListSettings() in server/db/settings.db.ts, so no
+    // initial INSERT is needed here. The portal gracefully hides the
+    // section when the row is missing.
+    name: "portalPriceListSettings",
+    dependencies: [],
+    sql: `CREATE TABLE IF NOT EXISTS portalPriceListSettings (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      isEnabled BOOLEAN NOT NULL DEFAULT TRUE,
+      titleKu VARCHAR(200),
+      titleEn VARCHAR(200),
+      titleAr VARCHAR(200),
+      titleZh VARCHAR(200),
+      subtitleKu VARCHAR(400),
+      subtitleEn VARCHAR(400),
+      subtitleAr VARCHAR(400),
+      subtitleZh VARCHAR(400),
+      showShippingRates BOOLEAN NOT NULL DEFAULT TRUE,
+      showServices BOOLEAN NOT NULL DEFAULT TRUE,
+      showRmbEquivalent BOOLEAN NOT NULL DEFAULT TRUE,
+      showIqdEquivalent BOOLEAN NOT NULL DEFAULT FALSE,
+      layoutVariant ENUM('tabs','stacked','compact') NOT NULL DEFAULT 'tabs',
+      position ENUM('top','belowHeader','belowStats') NOT NULL DEFAULT 'belowHeader',
+      accentColor VARCHAR(30) NOT NULL DEFAULT 'purple',
+      disclaimerKu TEXT,
+      disclaimerEn TEXT,
+      disclaimerAr TEXT,
+      disclaimerZh TEXT,
+      updatedById INT,
       updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
@@ -1906,6 +1950,33 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "fullPackageOrders.deletionReason", sql: "ALTER TABLE fullPackageOrders ADD COLUMN deletionReason TEXT NULL" },
   { name: "idx_fpo_deleted_at", sql: "CREATE INDEX idx_fpo_deleted_at ON fullPackageOrders (deletedAt)" },
   { name: "idx_fpo_charge_txn_id", sql: "CREATE INDEX idx_fpo_charge_txn_id ON fullPackageOrders (chargeTransactionId)" },
+
+  // ============ Portal Price List — portal display metadata ============
+  // Existing deployments already have pricingRules and serviceTypes; these
+  // ALTERs add the per-row "show on customer portal" flag plus label/icon/
+  // color/badge fields the admin uses to curate what customers see.
+  // Each patch is idempotent — runSchemaPatches swallows "duplicate column"
+  // errors on reruns, so re-deploys are safe.
+  { name: "pricingRules.showOnPortal",       sql: "ALTER TABLE pricingRules ADD COLUMN showOnPortal BOOLEAN NOT NULL DEFAULT FALSE" },
+  { name: "pricingRules.portalLabelKu",      sql: "ALTER TABLE pricingRules ADD COLUMN portalLabelKu VARCHAR(150)" },
+  { name: "pricingRules.portalLabelEn",      sql: "ALTER TABLE pricingRules ADD COLUMN portalLabelEn VARCHAR(150)" },
+  { name: "pricingRules.portalLabelAr",      sql: "ALTER TABLE pricingRules ADD COLUMN portalLabelAr VARCHAR(150)" },
+  { name: "pricingRules.portalLabelZh",      sql: "ALTER TABLE pricingRules ADD COLUMN portalLabelZh VARCHAR(150)" },
+  { name: "pricingRules.portalIcon",         sql: "ALTER TABLE pricingRules ADD COLUMN portalIcon VARCHAR(50)" },
+  { name: "pricingRules.portalColor",        sql: "ALTER TABLE pricingRules ADD COLUMN portalColor VARCHAR(30)" },
+  { name: "pricingRules.portalBadge",        sql: "ALTER TABLE pricingRules ADD COLUMN portalBadge VARCHAR(30)" },
+  { name: "pricingRules.portalSortOrder",    sql: "ALTER TABLE pricingRules ADD COLUMN portalSortOrder INT NOT NULL DEFAULT 0" },
+
+  { name: "serviceTypes.showOnPortal",          sql: "ALTER TABLE serviceTypes ADD COLUMN showOnPortal BOOLEAN NOT NULL DEFAULT FALSE" },
+  { name: "serviceTypes.portalDescriptionKu",   sql: "ALTER TABLE serviceTypes ADD COLUMN portalDescriptionKu TEXT" },
+  { name: "serviceTypes.portalDescriptionEn",   sql: "ALTER TABLE serviceTypes ADD COLUMN portalDescriptionEn TEXT" },
+  { name: "serviceTypes.portalDescriptionAr",   sql: "ALTER TABLE serviceTypes ADD COLUMN portalDescriptionAr TEXT" },
+  { name: "serviceTypes.portalDescriptionZh",   sql: "ALTER TABLE serviceTypes ADD COLUMN portalDescriptionZh TEXT" },
+  { name: "serviceTypes.portalBadge",           sql: "ALTER TABLE serviceTypes ADD COLUMN portalBadge VARCHAR(30)" },
+  { name: "serviceTypes.portalPriceLabelKu",    sql: "ALTER TABLE serviceTypes ADD COLUMN portalPriceLabelKu VARCHAR(100)" },
+  { name: "serviceTypes.portalPriceLabelEn",    sql: "ALTER TABLE serviceTypes ADD COLUMN portalPriceLabelEn VARCHAR(100)" },
+  { name: "serviceTypes.portalPriceLabelAr",    sql: "ALTER TABLE serviceTypes ADD COLUMN portalPriceLabelAr VARCHAR(100)" },
+  { name: "serviceTypes.portalPriceLabelZh",    sql: "ALTER TABLE serviceTypes ADD COLUMN portalPriceLabelZh VARCHAR(100)" },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {
