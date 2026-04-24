@@ -168,6 +168,7 @@ export default function CommissionDetail() {
       }
       setEditReason("");
       utils.fullPackage.list.invalidate();
+      utils.fullPackage.getCustomerPendingOrders.invalidate();
       refetch();
       navigate(`/commission/${id}`);
     },
@@ -217,12 +218,17 @@ export default function CommissionDetail() {
   // navigates on success.
 
   // Plan v3: detect whether any money-affecting field would be changed on save.
+  // Uncharged/pending orders can be edited freely without a reason.
+  const isPendingCharge = !(order as any)?.isCharged && !(order as any)?.chargeTransactionId;
+
   // Mirrors server-side computeOrderChargeAmount for commission orders:
   //   charge = itemPrice * qty + commission
   // If this says "money changes", the server will require a non-empty reason
   // and will bump the OCC version.
+  // NOTE: Only applies to already-charged orders — pending orders skip this check.
   const moneyChangeDetected = useMemo(() => {
     if (!order) return false;
+    if (isPendingCharge) return false;
     const normalize = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
     const oldQty = order.quantity ?? 1;
     const newQty = Number(formData.quantity) || 1;
@@ -233,7 +239,7 @@ export default function CommissionDetail() {
       normalize((order as any).commissionFeeUsd) !==
       normalize(formData.commissionFeeUsd);
     return qtyChanged || itemChanged || commissionChanged;
-  }, [order, formData.quantity, formData.itemPriceUsd, formData.commissionFeeUsd]);
+  }, [order, isPendingCharge, formData.quantity, formData.itemPriceUsd, formData.commissionFeeUsd]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -358,6 +364,12 @@ export default function CommissionDetail() {
                 <p className="text-purple-100 flex items-center gap-2 mt-1">
                   <Hash className="h-4 w-4" />
                   {t("commission.orderCode") || "کۆدی پەت"}: <span className="font-mono font-bold">{order.orderCode}</span>
+                  {isPendingCharge && (
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 ms-2">
+                      <Clock className="h-3 w-3 me-1" />
+                      {t("fullPackage.pendingCharge")}
+                    </Badge>
+                  )}
                 </p>
               </div>
             </div>
@@ -389,6 +401,17 @@ export default function CommissionDetail() {
             </div>
           </div>
         </div>
+
+        {/* Pending charge banner — shown for both view and edit mode */}
+        {isPendingCharge && (
+          <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
+            <Clock className="h-5 w-5 text-amber-700 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-900">
+              <p className="font-semibold mb-1">{t("fullPackage.pendingChargeTitle")}</p>
+              <p>{t("fullPackage.pendingChargeDesc")}</p>
+            </div>
+          </div>
+        )}
 
         {isEditMode ? (
           /* Edit Form */

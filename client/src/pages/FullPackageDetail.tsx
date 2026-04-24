@@ -207,6 +207,7 @@ export default function FullPackageDetail() {
       }
       setEditReason("");
       utils.fullPackage.list.invalidate();
+      utils.fullPackage.getCustomerPendingOrders.invalidate();
       refetch();
       navigate(`/full-package/${id}`);
     },
@@ -241,6 +242,7 @@ export default function FullPackageDetail() {
       setSplitShippingCost("");
       refetch();
       utils.fullPackage.list.invalidate();
+      utils.fullPackage.getCustomerPendingOrders.invalidate();
     },
     onError: (error) => {
       toast.error(error.message || t("errors.somethingWentWrong"));
@@ -299,11 +301,17 @@ export default function FullPackageDetail() {
   // shows a financial-impact preview, and passes the OCC version.
   // Navigation back to the list is handled via `onDeleted`.
 
+  // Detect whether the order has been charged yet. Uncharged/pending orders
+  // can be edited freely without a reason (no ledger impact).
+  const isPendingCharge = !(order as any)?.isCharged && !(order as any)?.chargeTransactionId;
+
   // Plan v3: detect whether any money-affecting field would be changed on save.
   // Mirrors server-side computeOrderChargeAmount — if this says "money changes",
-  // the server will require a non-empty reason.
+  // the server will require a non-empty reason (ONLY for already-charged orders).
   const moneyChangeDetected = useMemo(() => {
     if (!order) return false;
+    // Uncharged orders never need a reason.
+    if (isPendingCharge) return false;
     const normalize = (v: string | null | undefined) =>
       parseFloat(String(v ?? "0")) || 0;
     const oldQty = order.quantity ?? 1;
@@ -315,7 +323,7 @@ export default function FullPackageDetail() {
       normalize(order.purchasePriceUsd as any) !== normalize(formData.purchasePriceUsd);
     // For this form, the money inputs are purchase/selling × quantity.
     return qtyChanged || sellingChanged || purchaseChanged;
-  }, [order, formData.quantity, formData.sellingPriceUsd, formData.purchasePriceUsd]);
+  }, [order, isPendingCharge, formData.quantity, formData.sellingPriceUsd, formData.purchasePriceUsd]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -442,6 +450,12 @@ export default function FullPackageDetail() {
                 <p className="text-emerald-100 flex items-center gap-2 mt-1">
                   <Hash className="h-4 w-4" />
                   {t("fullPackage.orderCode")}: <span className="font-mono font-bold">{order.orderCode}</span>
+                  {isPendingCharge && (
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 ms-2">
+                      <Clock className="h-3 w-3 me-1" />
+                      {t("fullPackage.pendingCharge")}
+                    </Badge>
+                  )}
                 </p>
               </div>
             </div>
@@ -473,6 +487,17 @@ export default function FullPackageDetail() {
             </div>
           </div>
         </div>
+
+        {/* Pending charge banner — shown for both view and edit mode */}
+        {isPendingCharge && (
+          <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
+            <Clock className="h-5 w-5 text-amber-700 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-900">
+              <p className="font-semibold mb-1">{t("fullPackage.pendingChargeTitle")}</p>
+              <p>{t("fullPackage.pendingChargeDesc")}</p>
+            </div>
+          </div>
+        )}
 
         {isEditMode ? (
           /* Edit Form */

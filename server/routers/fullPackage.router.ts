@@ -100,6 +100,62 @@ export const fullPackageRouter = router({
         return db.getAllFullPackageOrders(input);
       }),
     
+    /**
+     * Get all pending (uncharged, not-yet-delivered) orders for a customer.
+     * Used by the Customer Finance tab's "Pending Orders" section to show
+     * everything still flowing through the pipeline before an invoice exists.
+     *
+     * An order is "pending" when:
+     *   - isCharged = false (no ledger DEBIT yet)
+     *   - status NOT IN ('delivered', 'cancelled', 'refunded', 'returned')
+     *   - not soft-deleted (list() already filters deletedAt)
+     *
+     * Also returns an aggregate summary (count, total estimated value, oldest
+     * order age) so the UI can render stat cards without re-computing.
+     */
+    getCustomerPendingOrders: staffProcedure
+      .input(z.object({ customerId: z.number() }))
+      .query(async ({ input }) => {
+        const rawOrders = await db.getAllFullPackageOrders({ customerId: input.customerId });
+        const list = Array.isArray(rawOrders) ? rawOrders : (rawOrders as any)?.data ?? [];
+        const TERMINAL = new Set(['delivered', 'cancelled', 'refunded', 'returned']);
+        const pending = list.filter((o: any) =>
+          !o.isCharged && !o.isChargedToCustomer && !TERMINAL.has(o.status || '')
+        );
+
+        let totalPriceUsd = 0;
+        let oldestAt: Date | null = null;
+        const byType = { full_package: 0, commission: 0, purchase_request: 0 };
+
+        for (const o of pending) {
+          const amount = db.computeOrderChargeAmount({
+            orderType: o.orderType,
+            sellingPriceUsd: o.sellingPriceUsd,
+            itemPriceUsd: o.itemPriceUsd,
+            commissionFeeUsd: o.commissionFeeUsd,
+            quantity: o.quantity,
+          });
+          totalPriceUsd += amount;
+
+          const createdAt = o.createdAt ? new Date(o.createdAt) : null;
+          if (createdAt && (!oldestAt || createdAt < oldestAt)) oldestAt = createdAt;
+
+          if (o.orderType === 'commission') byType.commission++;
+          else if (o.orderType === 'purchase_request') byType.purchase_request++;
+          else byType.full_package++;
+        }
+
+        return {
+          orders: pending,
+          summary: {
+            count: pending.length,
+            totalPriceUsd: Math.round(totalPriceUsd * 100) / 100,
+            oldestAt: oldestAt ? oldestAt.toISOString() : null,
+            byType,
+          },
+        };
+      }),
+
     // Get dashboard statistics (enhanced)
     getStats: staffProcedure.query(async () => {
       return db.getFullPackageStats();
@@ -219,77 +275,11 @@ export const fullPackageRouter = router({
           totalPrepaidUsd: totalPrepaid,
           orderDate: input.orderDate || (input.orderNumber ? new Date() : undefined),
           createdById: ctx.user.id,
-          // Mark as paid for commission orders
-          isPrepaid: input.orderType === 'commission' ? true : undefined,
-          prepaidAt: input.orderType === 'commission' ? new Date() : undefined,
-          isPaid: input.orderType === 'commission' ? true : undefined,
-          paidFromBalanceUsd: input.orderType === 'commission' ? totalPrepaid : undefined,
-          // IMPORTANT: Mark commission orders as charged at creation to prevent double charging at delivery
-          // Commission orders are charged upfront (itemPrice + commissionFee), shipping is charged separately at delivery
-          isCharged: input.orderType === 'commission' ? true : undefined,
-          isChargedToCustomer: input.orderType === 'commission' ? true : undefined,
-          chargedAt: input.orderType === 'commission' ? new Date() : undefined,
+          // NOTE: Commission orders are NO LONGER charged at creation.
+          // Both commission and full_package are charged at batch delivery
+          // (see batches.router.ts). This allows safe edit/delete of pending
+          // orders without polluting the customer's ledger.
         });
-        
-        // For commission orders, automatically charge customer and create invoice
-        if (input.orderType === 'commission' && totalPrepaid) {
-          const customer = await db.getCustomerById(input.customerId);
-          if (customer) {
-            const totalAmount = parseFloat(totalPrepaid);
-            const quantity = input.quantity || 1;
-            const itemSubtotal = itemPrice * quantity;
-
-            // Build rich line items — customers couldn't reconcile the charge
-            // when we collapsed everything into a single row. Now we always
-            // emit two rows (item + commission) so the invoice transparently
-            // shows the composition: item × qty + flat commission = total.
-            // We also embed color, size, tracking, order code into the
-            // product-line description so the customer has the full context
-            // without needing to open the order page.
-            const productDescParts: string[] = [`🛍️ ${input.productName}`];
-            productDescParts.push(`کۆدی ئۆردەر: ${orderCode}`);
-            if (input.color) productDescParts.push(`ڕەنگ: ${input.color}`);
-            if (input.size) productDescParts.push(`قەبارە: ${input.size}`);
-            if (input.trackingNumber) productDescParts.push(`تراکینگ: ${input.trackingNumber}`);
-            productDescParts.push(`نرخ: ${quantity} × $${itemPrice.toFixed(2)} = $${itemSubtotal.toFixed(2)}`);
-
-            const lineItems = [
-              {
-                description: productDescParts.join('\n'),
-                quantity: quantity,
-                unitPrice: itemPrice,
-                total: itemSubtotal,
-              },
-              {
-                description: `💼 عمولەی کڕین\nفلاتە بۆ هەر ئۆردەرێک | Flat commission per order`,
-                quantity: 1,
-                unitPrice: commissionFee,
-                total: commissionFee,
-              },
-            ];
-
-            // Apply charge — description summarises the composition so the
-            // ledger line (visible in customer finance) also explains itself.
-            const chargeDescription = `کڕینی عمولە - ${input.productName} (کاڵا: $${itemSubtotal.toFixed(2)} + عمولە: $${commissionFee.toFixed(2)} = $${totalAmount.toFixed(2)})`;
-            const chargeResult = await db.applyCharge(
-              input.customerId,
-              customer.customerCode,
-              'COMMISSION',
-              order.id,
-              totalAmount,
-              chargeDescription,
-              ctx.user.id,
-              lineItems
-            );
-            // Plan v3: persist the DEBIT transaction id so future edit/delete
-            // can reverse/adjust the EXACT original charge (no drift possible).
-            await db.updateFullPackageOrder(order.id, {
-              chargeTransactionId: chargeResult.transaction.id,
-            });
-
-            appLogger.info("[Commission] Auto-charged customer for order", { customerCode: customer.customerCode, orderCode, totalAmount, chargeTransactionId: chargeResult.transaction.id });
-          }
-        }
 
         // Advance payment — record as CREDIT_PAYMENT on customer account if provided
         const advance = parseFloat(input.advancePaidUsd || '0');
@@ -435,45 +425,12 @@ export const fullPackageRouter = router({
               totalPrepaidUsd: totalPrepaid,
               orderDate: item.orderDate || (item.orderNumber ? new Date() : undefined),
               createdById: ctx.user.id,
-              isPrepaid: input.orderType === 'commission' ? true : undefined,
-              prepaidAt: input.orderType === 'commission' ? new Date() : undefined,
-              isPaid: input.orderType === 'commission' ? true : undefined,
-              paidFromBalanceUsd: input.orderType === 'commission' ? totalPrepaid : undefined,
-              isCharged: input.orderType === 'commission' ? true : undefined,
-              isChargedToCustomer: input.orderType === 'commission' ? true : undefined,
-              chargedAt: input.orderType === 'commission' ? new Date() : undefined,
+              // NOTE: Commission orders are NO LONGER charged at creation.
+              // Both commission and full_package are charged at batch delivery.
             });
-            
-            // For commission orders, charge customer
-            if (input.orderType === 'commission' && totalPrepaid) {
-              const customer = await db.getCustomerById(input.customerId);
-              if (customer) {
-                const totalAmount = parseFloat(totalPrepaid);
-                const quantity = item.quantity || 1;
-                const lineItems = [
-                  {
-                    description: `${item.productName}`,
-                    quantity: quantity,
-                    unitPrice: totalAmount / quantity,
-                    total: totalAmount,
-                  },
-                ];
-                const chargeResult = await db.applyCharge(
-                  input.customerId,
-                  customer.customerCode,
-                  'COMMISSION',
-                  order.id,
-                  totalAmount,
-                  `کڕینی عمولە - ${item.productName}`,
-                  ctx.user.id,
-                  lineItems
-                );
-                // Plan v3: persist the DEBIT transaction id for safe edit/delete.
-                await db.updateFullPackageOrder(order.id, {
-                  chargeTransactionId: chargeResult.transaction.id,
-                });
-              }
-            }
+            // itemPrice/commissionFee used above for grossProfitUsd calculation
+            void itemPrice;
+            void commissionFee;
 
             // Advance payment — record as CREDIT_PAYMENT on customer account if provided
             const advance = parseFloat(item.advancePaidUsd || '0');
@@ -651,8 +608,11 @@ export const fullPackageRouter = router({
 
         const chargeChanged = Math.abs(chargeDelta) > 0.005;
 
-        // 4. Money changes require a reason (audit trail).
-        if ((chargeChanged || advanceChanged) && (!reason || reason.trim().length < 3)) {
+        // 4. Money changes require a reason (audit trail) — BUT only for
+        //    orders that have already been charged. Pending orders (never
+        //    charged, no ledger impact) can be freely edited without a reason.
+        const isUncharged = !existing.isCharged && !existing.chargeTransactionId;
+        if (!isUncharged && (chargeChanged || advanceChanged) && (!reason || reason.trim().length < 3)) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "هۆکار پێویستە (بەلایەنی کەم ٣ پیت) بۆ هەر گۆڕانکاریەک لە پارە. | Reason (min 3 chars) is required when amounts change.",
@@ -994,7 +954,15 @@ export const fullPackageRouter = router({
 
         // 1. Reverse the original charge (DEBIT) on the customer ledger.
         //    reverseCharge is idempotent, so re-running a failed delete is
-        //    safe. It also cancels the linked invoice + revenue record.
+        //    safe. For consolidated invoices, it skips invoice cancellation
+        //    when other orders are still active on the same invoice.
+        //
+        // Edge case: legacy orders may have isCharged=true without a
+        // chargeTransactionId (old data before Plan v3). We cannot reverse
+        // without the txn id, so we log a warning and proceed with the
+        // soft-delete — the ledger for that order stays as-is (it was
+        // already baked into the balance). Operators can manually adjust
+        // if needed.
         let reversedChargeUsd = 0;
         if ((existing as any).chargeTransactionId) {
           try {
@@ -1027,6 +995,16 @@ export const fullPackageRouter = router({
               message: `هەڵە لە گەڕاندنەوەی نرخی ئۆردەر لە دەفتەری هەژمار | Failed to reverse charge on customer ledger: ${underlying}`,
             });
           }
+        } else if ((existing as any).isCharged || (existing as any).isChargedToCustomer) {
+          // Legacy inconsistent state: order was marked charged but has no
+          // chargeTransactionId to reverse. Log loudly so ops can manually
+          // reconcile. The soft-delete continues so the UI isn't blocked.
+          appLogger.warn("[Order Delete] Legacy order marked isCharged but has no chargeTransactionId — skipping ledger reversal", {
+            orderId: input.id,
+            orderCode: existing.orderCode,
+            isCharged: (existing as any).isCharged,
+            isChargedToCustomer: (existing as any).isChargedToCustomer,
+          });
         }
 
         // 2. Reverse the advance payment (CREDIT_PAYMENT) if requested.

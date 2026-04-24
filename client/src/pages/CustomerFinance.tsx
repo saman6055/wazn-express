@@ -2,6 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import DashboardLayout from "@/components/DashboardLayout";
+import { CustomerPendingOrdersSection } from "@/components/customers/CustomerPendingOrdersSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1295,7 +1296,16 @@ export default function CustomerFinance() {
                 </Card>
               </motion.div>
             )}
-            
+
+            {/* Pending Orders — orders not yet delivered, no invoice yet */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+            >
+              <CustomerPendingOrdersSection customerId={customerId} />
+            </motion.div>
+
             {/* Transactions & Payments Tabs */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}

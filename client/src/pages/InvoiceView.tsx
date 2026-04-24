@@ -97,11 +97,16 @@ export default function InvoiceView() {
   const subtotal = Number(invoice.subtotalUsd) || 0;
   const tax = Number(invoice.taxUsd) || 0;
   const total = Number(invoice.totalUsd) || 0;
+  const advancePaid = Number((invoice as any).paidAmountUsd) || 0;
+  const remainingDue = Number((invoice as any).remainingAmountUsd ?? (total - advancePaid)) || 0;
+  const hasAdvancePayment = advancePaid > 0;
+  const isFullyPaid = hasAdvancePayment && remainingDue <= 0;
   const balance = customerBalance ?? 0;
   const isDebt = balance > 0;
   const isCredit = balance < 0;
 
   const statusLabel = invoice.status === 'paid' ? t('invoiceView.paid')
+    : invoice.status === 'partially_paid' ? t('invoiceView.partiallyPaid')
     : invoice.status === 'issued' ? t('invoiceView.issued')
     : invoice.status === 'draft' ? t('invoiceView.draft')
     : invoice.status === 'cancelled' ? t('invoiceView.cancelled') : invoice.status;
@@ -205,7 +210,7 @@ export default function InvoiceView() {
 
               {/* TOTALS */}
               <div style={{ display:'flex',justifyContent:isRTL?'flex-start':'flex-end',marginBottom:'28px' }}>
-                <div style={{ width:'280px' }}>
+                <div style={{ width:'300px' }}>
                   <div style={{ display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid #e2e8f0' }}>
                     <span style={{ color:'#64748b',fontSize:'13px' }}>{t('invoiceView.subtotal')}:</span>
                     <span style={{ fontFamily:'monospace',fontSize:'13px' }}>${subtotal.toFixed(2)}</span>
@@ -214,11 +219,28 @@ export default function InvoiceView() {
                     <span style={{ color:'#64748b',fontSize:'13px' }}>{t('invoiceView.tax')}:</span>
                     <span style={{ fontFamily:'monospace',fontSize:'13px' }}>${tax.toFixed(2)}</span>
                   </div>}
+                  {/* Grand total (what was owed before any advance) */}
+                  <div style={{ display:'flex',justifyContent:'space-between',padding:'10px 0',borderBottom:'2px solid #cbd5e1' }}>
+                    <span style={{ color:'#334155',fontSize:'14px',fontWeight:600 }}>{t('invoiceView.grandTotal')}:</span>
+                    <span style={{ fontFamily:'monospace',fontSize:'16px',fontWeight:700,color:'#1e293b' }}>${total.toFixed(2)}</span>
+                  </div>
+                  {/* Advance paid (only shown when there is any) */}
+                  {hasAdvancePayment && (
+                    <div style={{ display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid #e2e8f0' }}>
+                      <span style={{ color:'#059669',fontSize:'13px',fontWeight:500 }}>💰 {t('invoiceView.advancePaid')}:</span>
+                      <span style={{ fontFamily:'monospace',fontSize:'13px',color:'#059669',fontWeight:600 }}>−${advancePaid.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {/* Remaining due / Fully paid — prominent box */}
                   <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',
-                    background:`linear-gradient(135deg,${primaryColor},${secondaryColor})`,
+                    background: isFullyPaid ? 'linear-gradient(135deg,#10b981,#059669)' : `linear-gradient(135deg,${primaryColor},${secondaryColor})`,
                     color:'white',padding:'14px 18px',borderRadius:'10px',marginTop:'12px' }}>
-                    <span style={{ fontWeight:600,fontSize:'15px' }}>{t('invoiceView.grandTotal')}:</span>
-                    <span style={{ fontFamily:'monospace',fontSize:'22px',fontWeight:700 }}>${total.toFixed(2)}</span>
+                    <span style={{ fontWeight:600,fontSize:'15px' }}>
+                      {isFullyPaid ? t('invoiceView.fullyPaid') : hasAdvancePayment ? t('invoiceView.remainingDue') : t('invoiceView.grandTotal')}:
+                    </span>
+                    <span style={{ fontFamily:'monospace',fontSize:'22px',fontWeight:700 }}>
+                      ${hasAdvancePayment ? remainingDue.toFixed(2) : total.toFixed(2)}
+                    </span>
                   </div>
                 </div>
               </div>

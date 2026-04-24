@@ -83,11 +83,66 @@ export const customerPortalRouter = router({
         status: z.string().optional(),
       }).optional())
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
           (await db.getCustomerByUserId(ctx.user.id))?.id;
         if (!customerId) return [];
         return db.getFullPackageOrdersByCustomer(customerId, input);
       }),
+
+    /**
+     * Customer-facing summary of pending (not-yet-delivered, uncharged) orders.
+     * Powers the "Awaiting Delivery" card on the portal home — so customers
+     * can see at a glance how many orders are still flowing through the
+     * pipeline and what the estimated invoice total will be.
+     */
+    getMyPendingOrders: protectedProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.user.isCustomer ? ctx.user.id :
+        (await db.getCustomerByUserId(ctx.user.id))?.id;
+      if (!customerId) {
+        return {
+          count: 0,
+          totalPriceUsd: 0,
+          oldestAt: null,
+          byType: { full_package: 0, commission: 0, purchase_request: 0 },
+        };
+      }
+
+      const raw = await db.getFullPackageOrdersByCustomer(customerId);
+      const list = Array.isArray(raw) ? raw : ((raw as any)?.data ?? []);
+      const TERMINAL = new Set(['delivered', 'cancelled', 'refunded', 'returned']);
+      const pending = list.filter((o: any) =>
+        !o.isCharged && !o.isChargedToCustomer && !TERMINAL.has(o.status || '')
+      );
+
+      let totalPriceUsd = 0;
+      let oldestAt: Date | null = null;
+      const byType = { full_package: 0, commission: 0, purchase_request: 0 };
+
+      for (const o of pending) {
+        const amount = db.computeOrderChargeAmount({
+          orderType: o.orderType,
+          sellingPriceUsd: o.sellingPriceUsd,
+          itemPriceUsd: o.itemPriceUsd,
+          commissionFeeUsd: o.commissionFeeUsd,
+          quantity: o.quantity,
+        });
+        totalPriceUsd += amount;
+
+        const createdAt = o.createdAt ? new Date(o.createdAt) : null;
+        if (createdAt && (!oldestAt || createdAt < oldestAt)) oldestAt = createdAt;
+
+        if (o.orderType === 'commission') byType.commission++;
+        else if (o.orderType === 'purchase_request') byType.purchase_request++;
+        else byType.full_package++;
+      }
+
+      return {
+        count: pending.length,
+        totalPriceUsd: Math.round(totalPriceUsd * 100) / 100,
+        oldestAt: oldestAt ? oldestAt.toISOString() : null,
+        byType,
+      };
+    }),
     
     // Get financial summary
     getMyFinancialSummary: protectedProcedure.query(async ({ ctx }) => {

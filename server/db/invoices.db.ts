@@ -83,11 +83,51 @@ export async function createInvoice(data: InsertInvoice): Promise<Invoice> {
   return inserted[0];
 }
 
-export async function getInvoiceById(id: number): Promise<Invoice | undefined> {
+export async function getInvoiceById(id: number): Promise<(Invoice & { paidAmountUsd?: number; remainingAmountUsd?: number }) | undefined> {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(invoices).where(eq(invoices.id, id)).limit(1);
-  return result[0];
+  const invoice = result[0];
+  if (!invoice) return undefined;
+
+  // Aggregate all CREDIT_PAYMENT transactions linked to this invoice —
+  // includes advance payments applied at order creation and any later
+  // settlements. DEBITs are the invoice charge itself (totalUsd) and are
+  // not netted here.
+  //
+  // We also subtract any ADJUSTMENT_DEBIT rows linked to this invoice —
+  // those represent advance reversals (e.g. when an order is deleted
+  // post-delivery and its advance is refunded). Without this netting,
+  // a reversed advance would still show as "paid" on the invoice.
+  const creditRows = await db.select({
+    total: sql<string>`COALESCE(SUM(${ledgerTransactions.amountUsd}), 0)`,
+  })
+    .from(ledgerTransactions)
+    .where(and(
+      eq(ledgerTransactions.invoiceId, id),
+      eq(ledgerTransactions.transactionType, 'CREDIT_PAYMENT' as any),
+    ));
+
+  const reversalRows = await db.select({
+    total: sql<string>`COALESCE(SUM(${ledgerTransactions.amountUsd}), 0)`,
+  })
+    .from(ledgerTransactions)
+    .where(and(
+      eq(ledgerTransactions.invoiceId, id),
+      eq(ledgerTransactions.transactionType, 'ADJUSTMENT_DEBIT' as any),
+    ));
+
+  const gross = parseFloat(creditRows[0]?.total?.toString() || '0') || 0;
+  const reversed = parseFloat(reversalRows[0]?.total?.toString() || '0') || 0;
+  const paidAmountUsd = Math.max(0, gross - reversed);
+  const totalUsd = parseFloat(invoice.totalUsd?.toString() || '0') || 0;
+  const remainingAmountUsd = Math.max(0, totalUsd - paidAmountUsd);
+
+  return {
+    ...invoice,
+    paidAmountUsd,
+    remainingAmountUsd,
+  };
 }
 
 const INVOICE_DEFAULT_LIMIT = 50;

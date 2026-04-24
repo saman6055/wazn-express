@@ -733,6 +733,115 @@ export async function recordPackageChargeWithoutInvoice(
   });
 }
 
+/**
+ * Generic charge-to-existing-invoice helper. Use this when you've already
+ * created a consolidated invoice (one per customer per batch per type) and
+ * now want to append a ledger transaction for each order/package that's on
+ * that invoice. Creates ONLY the ledger transaction + balance update — does
+ * NOT create a new invoice. Caller must pass the existing `invoiceId`.
+ *
+ * This is the multi-item analog of `applyCharge` (which creates its own
+ * 1-line invoice) and the generic cousin of `recordPackageChargeWithoutInvoice`
+ * (which hardcodes DEBIT_PACKAGE / 'package' references).
+ */
+export async function applyChargeToInvoice(
+  customerId: number,
+  customerCode: string,
+  chargeType: 'PACKAGE' | 'FULL_PACKAGE' | 'PURCHASE_REQUEST' | 'COMMISSION' | 'SERVICE',
+  referenceId: number,
+  amountUsd: number,
+  description: string,
+  createdById: number,
+  invoiceId: number
+): Promise<LedgerTransaction> {
+  if (amountUsd < 0) throw new Error("Amount cannot be negative");
+  if (amountUsd === 0) throw new Error("Amount must be greater than zero");
+
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const typeMapping: Record<typeof chargeType, { transactionType: string; referenceType: string }> = {
+    'PACKAGE': { transactionType: 'DEBIT_PACKAGE', referenceType: 'package' },
+    'FULL_PACKAGE': { transactionType: 'DEBIT_FULL_PACKAGE', referenceType: 'full_package' },
+    'PURCHASE_REQUEST': { transactionType: 'DEBIT_PURCHASE_REQUEST', referenceType: 'purchase_request' },
+    'COMMISSION': { transactionType: 'DEBIT_COMMISSION', referenceType: 'commission' },
+    'SERVICE': { transactionType: 'DEBIT_SERVICE', referenceType: 'service' }
+  };
+  const { transactionType, referenceType } = typeMapping[chargeType];
+
+  return await db.transaction(async (tx) => {
+    let accountRows = await tx.select().from(customerAccounts)
+      .where(eq(customerAccounts.customerId, customerId))
+      .for('update')
+      .limit(1);
+
+    let account = accountRows[0];
+    if (!account) {
+      const accountNumber = generateAccountNumber(customerCode);
+      await tx.insert(customerAccounts).values({
+        customerId,
+        accountNumber,
+        currentBalanceUsd: "0",
+        currentBalanceIqd: "0",
+      });
+      accountRows = await tx.select().from(customerAccounts)
+        .where(eq(customerAccounts.customerId, customerId))
+        .for('update')
+        .limit(1);
+      account = accountRows[0];
+      if (!account) throw new Error("Failed to create or lock customer account");
+    }
+
+    const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
+    const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
+    const newBalanceUsd = currentBalanceUsd + amountUsd;
+
+    const txnResult = await tx.insert(ledgerTransactions).values({
+      accountId: account.id,
+      transactionNumber: generateTransactionNumber(),
+      transactionType: transactionType as any,
+      amountUsd: amountUsd.toFixed(2),
+      amountIqd: '0',
+      balanceBeforeUsd: currentBalanceUsd.toFixed(2),
+      balanceAfterUsd: newBalanceUsd.toFixed(2),
+      balanceBeforeIqd: currentBalanceIqd.toFixed(0),
+      balanceAfterIqd: currentBalanceIqd.toFixed(0),
+      referenceType: referenceType as any,
+      referenceId,
+      description,
+      invoiceId,
+      createdById,
+    });
+    const txnInsertId = Number(txnResult[0].insertId);
+
+    await tx.update(customerAccounts).set({
+      currentBalanceUsd: newBalanceUsd.toFixed(2),
+      lastTransactionAt: new Date(),
+    }).where(eq(customerAccounts.id, account.id));
+
+    const [transaction] = await tx.select().from(ledgerTransactions).where(eq(ledgerTransactions.id, txnInsertId));
+    if (!transaction) throw new Error("Failed to read back created ledger transaction");
+    return transaction;
+  });
+}
+
+/**
+ * Link an existing ledger transaction (typically an advance CREDIT_PAYMENT)
+ * to a newly-created consolidated invoice. Used at batch delivery so the
+ * advance paid earlier "belongs to" the invoice that now covers the order.
+ * Safe to call multiple times — only updates rows where invoiceId is NULL.
+ */
+export async function linkTransactionToInvoice(
+  transactionId: number,
+  invoiceId: number,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(ledgerTransactions)
+    .set({ invoiceId })
+    .where(eq(ledgerTransactions.id, transactionId));
+}
+
 // Record payment received (optionally record cash account deposit in same transaction)
 export async function recordPaymentReceived(
   customerId: number,
@@ -903,6 +1012,18 @@ export async function reverseAdvancePayment(
     // ADJUSTMENT_DEBIT increases balance (undoes the previous CREDIT_PAYMENT)
     const newBalanceUsd = currentBalanceUsd + amountUsd;
 
+    // If the original advance was already linked to a consolidated invoice
+    // (via linkTransactionToInvoice at delivery time), propagate the invoice
+    // link to the reversal so `getInvoiceById.paidAmountUsd` nets correctly.
+    let linkedInvoiceId: number | null = null;
+    if (originalTransactionId) {
+      const [originalTxn] = await tx.select({ invoiceId: ledgerTransactions.invoiceId })
+        .from(ledgerTransactions)
+        .where(eq(ledgerTransactions.id, originalTransactionId))
+        .limit(1);
+      if (originalTxn?.invoiceId) linkedInvoiceId = originalTxn.invoiceId;
+    }
+
     const txnResult = await tx.insert(ledgerTransactions).values({
       accountId: account.id,
       transactionNumber: generateTransactionNumber(),
@@ -915,6 +1036,7 @@ export async function reverseAdvancePayment(
       balanceAfterIqd: currentBalanceIqd.toFixed(0),
       referenceType: 'adjustment',
       description: reason,
+      invoiceId: linkedInvoiceId,
       createdById,
     });
     const txnInsertId = Number(txnResult[0].insertId);
@@ -1116,11 +1238,55 @@ export async function reverseCharge(
       lastTransactionAt: new Date(),
     }).where(eq(customerAccounts.id, account.id));
 
-    // 6. Cancel the linked invoice so it no longer appears as outstanding.
+    // 6. Handle the linked invoice.
+    //
+    // Critical consideration: with consolidated invoices (one per customer per
+    // batch per order-type), a single invoice can have MULTIPLE DEBIT
+    // transactions — one per order. Cancelling the whole invoice when only
+    // ONE order is reversed would wipe out the status for the surviving
+    // orders and break customer accounting.
+    //
+    // Rule:
+    //   - If this was the ONLY remaining DEBIT on the invoice → cancel it.
+    //   - Otherwise → leave the invoice open. The reversal is already
+    //     recorded in the ledger, and `getInvoiceById` recomputes the paid
+    //     amount from linked transactions. We do NOT change invoice status
+    //     because other orders on the same invoice are still active.
     if (original.invoiceId) {
-      await tx.update(invoices).set({
-        status: 'cancelled',
-      }).where(eq(invoices.id, original.invoiceId));
+      const otherActiveDebits = await tx.select({ id: ledgerTransactions.id })
+        .from(ledgerTransactions)
+        .where(and(
+          eq(ledgerTransactions.invoiceId, original.invoiceId),
+          inArray(ledgerTransactions.transactionType, DEBIT_CHARGE_TYPES as any),
+          ne(ledgerTransactions.id, originalTransactionId),
+        ))
+        .limit(2);
+
+      // Also check we haven't already emitted a matching reversal for them
+      // (the marker-based idempotency check at step 2 covers our own reversal).
+      const reversalsAgainstOthers = otherActiveDebits.length === 0 ? [] :
+        await tx.select({ id: ledgerTransactions.id })
+          .from(ledgerTransactions)
+          .where(and(
+            eq(ledgerTransactions.accountId, original.accountId),
+            eq(ledgerTransactions.transactionType, 'ADJUSTMENT_CREDIT'),
+            like(ledgerTransactions.description, `%[REV:%`),
+          ));
+
+      const otherUnreversedDebits = otherActiveDebits.length - reversalsAgainstOthers.length;
+
+      if (otherActiveDebits.length === 0) {
+        // Truly the only DEBIT on this invoice → safe to cancel
+        await tx.update(invoices).set({ status: 'cancelled' })
+          .where(eq(invoices.id, original.invoiceId));
+      } else {
+        // Consolidated invoice with multiple orders — leave it open.
+        // The ledger reversal is enough; paidAmount / remainingAmount
+        // are recomputed dynamically from linked transactions.
+        appLogger.info('[reverseCharge] Skipping invoice cancellation — invoice has other active DEBITs', {
+          invoiceId: original.invoiceId, otherDebitCount: otherActiveDebits.length, otherUnreversedDebits,
+        });
+      }
     }
 
     // 7. Cancel any revenueRecord rows created from the same order. Revenue

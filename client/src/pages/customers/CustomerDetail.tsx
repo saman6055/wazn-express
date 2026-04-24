@@ -37,6 +37,7 @@ import { useCustomerDetail } from "@/hooks/useCustomerDetail";
 import { CustomerInfoCard } from "@/components/customers/CustomerInfoCard";
 import { CustomerPackagesTab } from "@/components/customers/CustomerPackagesTab";
 import { CustomerFinanceTab } from "@/components/customers/CustomerFinanceTab";
+import { CustomerPendingOrdersSection } from "@/components/customers/CustomerPendingOrdersSection";
 import { CustomerDocumentsTab } from "@/components/customers/CustomerDocumentsTab";
 import { CustomerActivityTab } from "@/components/customers/CustomerActivityTab";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -549,6 +550,7 @@ export default function CustomerDetail() {
               </TabsContent>
 
               <TabsContent value="finance" className="mt-4">
+                <CustomerPendingOrdersSection customerId={customerId} />
                 <CustomerFinanceTab
                   ledger={ledger as any}
                   invoices={invoices as any}

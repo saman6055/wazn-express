@@ -96,6 +96,7 @@ export default function SafeDeleteOrderDialog({
       }
       toast.success(parts.join(" · "));
       utils.fullPackage.list.invalidate();
+      utils.fullPackage.getCustomerPendingOrders.invalidate();
       setReason("");
       onOpenChange(false);
       onDeleted?.();
@@ -145,14 +146,20 @@ export default function SafeDeleteOrderDialog({
   const totalReversal = previewCharge + (refundAdvance ? advance : 0);
   const hasFinancialImpact = previewCharge > 0 || (refundAdvance && advance > 0);
 
-  const reasonValid = reason.trim().length >= 3;
+  // Pending orders (not charged, no advance) have no financial impact —
+  // the reason field becomes optional and the dialog is a simple confirm.
+  const isPendingOrder = !order.chargeTransactionId && advance === 0;
+  const reasonValid = isPendingOrder ? true : reason.trim().length >= 3;
   const isBusy = deleteMutation.isPending;
 
   const handleConfirm = () => {
     if (!reasonValid) return;
+    const effectiveReason = isPendingOrder && reason.trim().length < 3
+      ? "Pending order — no accounting impact"
+      : reason.trim();
     deleteMutation.mutate({
       id: order.id,
-      reason: reason.trim(),
+      reason: effectiveReason,
       refundAdvance,
       expectedVersion: order.version ?? undefined,
     });
@@ -238,26 +245,28 @@ export default function SafeDeleteOrderDialog({
           </div>
         )}
 
-        {/* Reason input */}
-        <div className="space-y-2">
-          <Label htmlFor="delete-reason" className="text-right block">
-            هۆکاری سڕینەوە | Reason for deletion <span className="text-red-600">*</span>
-          </Label>
-          <Textarea
-            id="delete-reason"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="بۆ نموونە: کڕیار ئۆردەرەکەی هەڵوەشاندەوە | e.g. Customer cancelled the order"
-            rows={3}
-            disabled={isBusy}
-            dir="auto"
-          />
-          <div className="text-xs text-muted-foreground text-right">
-            {reason.trim().length < 3
-              ? `بەلایەنی کەم ٣ پیت | At least 3 characters (${reason.trim().length}/3)`
-              : `${reason.trim().length} پیت | chars`}
+        {/* Reason input — required only when the order has financial impact */}
+        {!isPendingOrder && (
+          <div className="space-y-2">
+            <Label htmlFor="delete-reason" className="text-right block">
+              هۆکاری سڕینەوە | Reason for deletion <span className="text-red-600">*</span>
+            </Label>
+            <Textarea
+              id="delete-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="بۆ نموونە: کڕیار ئۆردەرەکەی هەڵوەشاندەوە | e.g. Customer cancelled the order"
+              rows={3}
+              disabled={isBusy}
+              dir="auto"
+            />
+            <div className="text-xs text-muted-foreground text-right">
+              {reason.trim().length < 3
+                ? `بەلایەنی کەم ٣ پیت | At least 3 characters (${reason.trim().length}/3)`
+                : `${reason.trim().length} پیت | chars`}
+            </div>
           </div>
-        </div>
+        )}
 
         <AlertDialogFooter className="flex gap-2">
           <AlertDialogCancel disabled={isBusy}>پاشگەزبوونەوە | Cancel</AlertDialogCancel>
@@ -271,7 +280,9 @@ export default function SafeDeleteOrderDialog({
             ) : (
               <Trash2 className="h-4 w-4 ms-2" />
             )}
-            سڕینەوە بە کاریگەری دارایی | Delete with Financial Reversal
+            {isPendingOrder
+              ? "سڕینەوە | Delete"
+              : "سڕینەوە بە کاریگەری دارایی | Delete with Financial Reversal"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

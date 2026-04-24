@@ -157,37 +157,54 @@ export const batchesRouter = router({
             appLogger.error("[Notification] Failed to send batch arrival notification", { error: e instanceof Error ? e.message : String(e) });
           }
         } else if (input.status === "delivered" || input.status === "closed") {
-          // When batch is delivered or closed:
-          // 1. Update all packages to delivered
-          // 2. Calculate and charge each package (EXCEPT those linked to Full Package)
-          // 3. Create invoices for each customer
+          // When batch is delivered or closed (CONSOLIDATED INVOICE MODEL):
+          //
+          // For each customer in this batch, we generate AT MOST 3 invoices:
+          //   1. INV-PKG-*  — all normal packages (not linked to FP/commission)
+          //   2. INV-FP-*   — all Full Package / Purchase Request orders
+          //   3. INV-CM-*   — all Commission orders (item + commission + shipping, combined)
+          //
+          // Two-phase design:
+          //   Phase 1 — collect (no invoices/ledger side effects except package status)
+          //   Phase 2 — build one invoice per (customer, type), linking all relevant
+          //             ledger transactions to it via applyChargeToInvoice().
+          //
+          // Legacy orders that were already charged at creation (isCharged=true)
+          // are skipped — their old invoices stay untouched.
           const packages = await db.getPackagesByBatch(id);
           const batch = await db.getBatchById(id);
-          
-          // Group packages by customer (only non-Full Package linked packages)
+
+          // Batch-level pricing (used for per-package shipping calculation)
+          const pricePerKg = batch ? parseFloat(batch.pricePerKg?.toString() || "0") : 0;
+          const pricePerCbm = batch ? parseFloat(batch.pricePerCbm?.toString() || "0") : 0;
+          const isSea = batch?.shippingType === 'sea';
+
+          // Consolidation buckets — one entry per (customer, order/pkg).
+          type FpItem = { order: any; chargeAmount: number; shippingShare: number; pkg: any };
+          type CmItem = { order: any; chargeAmount: number; shippingShare: number; pkg: any };
+          const fpOrdersByCustomer = new Map<number, FpItem[]>();
+          const commissionOrdersByCustomer = new Map<number, CmItem[]>();
           const packagesByCustomer = new Map<number, typeof packages>();
-          
+
+          // ===== PHASE 1: COLLECT =====
           for (const pkg of packages) {
             // Update package status to delivered
-            await db.updatePackage(pkg.id, { 
+            await db.updatePackage(pkg.id, {
               status: "delivered",
               deliveredAt: new Date()
             });
-            
-            // Check if this package is linked to a Full Package order or Purchase Request
+
+            // Check if this package is linked to a Full Package order or Commission
             let isLinkedToFullPackage = false;
 
             
             if (pkg.trackingNumber) {
-              // Check Full Package - find ALL orders sharing this tracking (same carton)
+              // Check Full Package / Commission — find ALL orders sharing this tracking (same carton)
               const linkedFPOrders = await db.getAllOrdersByTrackingNumber(pkg.trackingNumber);
               if (linkedFPOrders.length > 0) {
                 isLinkedToFullPackage = true;
-                // Calculate total shipping cost for this package
-                const pricePerKg = batch ? parseFloat(batch.pricePerKg?.toString() || "0") : 0;
-                const pricePerCbm = batch ? parseFloat(batch.pricePerCbm?.toString() || "0") : 0;
-                const isSea = batch?.shippingType === 'sea';
 
+                // 1. Calculate total shipping cost for this package
                 let shippingCost = 0;
                 if (isSea && pricePerCbm > 0) {
                   const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
@@ -202,14 +219,14 @@ export const batchesRouter = router({
                   shippingCost = chargeableKg * pricePerKg;
                 }
 
-                // Calculate shipping shares for all orders
-                const shares: { order: typeof linkedFPOrders[0]; share: number }[] = [];
-
+                // 2. Save calculated shipping to package (for reference)
                 if (shippingCost > 0) {
-                  // Save calculated cost to package for reference
                   await db.updatePackage(pkg.id, { calculatedCostUsd: shippingCost.toFixed(2) });
+                }
 
-                  // Split shipping cost across all orders sharing this tracking
+                // 3. Split shipping across orders by weight/CBM
+                const shares: { order: typeof linkedFPOrders[0]; share: number }[] = [];
+                if (shippingCost > 0) {
                   let totalMeasure = 0;
                   const orderMeasures: { order: typeof linkedFPOrders[0]; measure: number }[] = [];
                   for (const fpOrder of linkedFPOrders) {
@@ -228,198 +245,405 @@ export const batchesRouter = router({
                     totalMeasure += measure;
                   }
                   const useEqual = totalMeasure === 0;
-
-                  // Calculate shares and fix rounding
                   for (const { order, measure } of orderMeasures) {
                     const ratio = useEqual ? (1 / linkedFPOrders.length) : (measure / totalMeasure);
                     shares.push({ order, share: Math.round(shippingCost * ratio * 100) / 100 });
                   }
+                  // Fix rounding drift so shares sum exactly to shippingCost
                   const totalAssigned = shares.reduce((s, r) => s + r.share, 0);
                   const diff = Math.round((shippingCost - totalAssigned) * 100) / 100;
                   if (diff !== 0 && shares.length > 0) shares[0].share += diff;
-
-                  for (const { order: fpOrder, share } of shares) {
-                    await db.updateFullPackageOrder(fpOrder.id, {
-                      status: 'delivered',
-                      shippingCostUsd: share.toFixed(2),
-                      deliveredDate: new Date(),
-                      batchId: id,
-                    }, ctx.user.id);
-                    appLogger.info("[FullPackage] Shipping split across shared tracking", {
-                      packageCode: pkg.packageCode, orderCode: fpOrder.orderCode,
-                      share, totalShipping: shippingCost, orderCount: linkedFPOrders.length,
-                      splitMethod: useEqual ? 'equal' : (isSea ? 'cbm' : 'weight'),
-                    });
-                  }
                 }
 
-                // Charge ALL orders sharing this tracking (not just the first)
-                for (const linkedFPOrder of linkedFPOrders) {
-                  // Find this order's share from the split
-                  const orderShare = shares.find((s: { order: { id: number }; share: number }) => s.order.id === linkedFPOrder.id);
-                  const orderShippingCost = orderShare?.share ?? 0;
+                // 4. Collect each order into the appropriate bucket
+                //    (skip legacy orders that were already charged at creation —
+                //     their old invoices stay untouched, and we don't want to
+                //     double-charge them. For commission, we still need to
+                //     charge shipping on legacy orders if not yet charged.)
+                for (const fpOrder of linkedFPOrders) {
+                  if (!fpOrder.customerId) continue;
+                  const share = shares.find(s => s.order.id === fpOrder.id)?.share ?? 0;
 
-                  // Auto-charge customer balance for full package / purchase request delivery
-                  const refreshedFPOrder = await db.getFullPackageOrderById(linkedFPOrder.id);
-                  if (refreshedFPOrder && refreshedFPOrder.customerId && refreshedFPOrder.sellingPriceUsd && !refreshedFPOrder.isCharged && !refreshedFPOrder.isChargedToCustomer) {
-                    try {
-                      const customer = await db.getCustomerById(refreshedFPOrder.customerId);
-                      if (customer) {
-                        const sellingPricePerUnit = parseFloat(refreshedFPOrder.sellingPriceUsd?.toString() || '0');
-                        const fpQuantity = refreshedFPOrder.quantity || 1;
-                        const totalCharge = sellingPricePerUnit * fpQuantity;
-
-                        await db.applyCharge(
-                          refreshedFPOrder.customerId,
-                          customer.customerCode,
-                          'FULL_PACKAGE',
-                          refreshedFPOrder.id,
-                          totalCharge,
-                          `فول پاکێج ${refreshedFPOrder.orderCode} - ${refreshedFPOrder.productName} - گەیاندن`,
-                          ctx.user.id,
-                          [{
-                            description: `فول پاکێج ${refreshedFPOrder.orderCode} - ${refreshedFPOrder.productName}`,
-                            quantity: fpQuantity,
-                            unitPrice: sellingPricePerUnit,
-                            total: totalCharge
-                          }]
-                        );
-
-                        await db.updateFullPackageOrder(refreshedFPOrder.id, {
-                          isCharged: true,
-                          isChargedToCustomer: true,
-                          chargedAt: new Date(),
-                          paidFromBalanceUsd: totalCharge.toFixed(2),
-                          batchId: id,
-                        }, ctx.user.id);
-
-                        appLogger.info("[FullPackage] Charged customer for FP", { customerCode: customer.customerCode, totalCharge, orderCode: refreshedFPOrder.orderCode });
+                  if (fpOrder.isCharged || fpOrder.isChargedToCustomer) {
+                    // Legacy path: still charge shipping separately for commission
+                    if (fpOrder.orderType === 'commission' && share > 0 && !fpOrder.isShippingCharged) {
+                      try {
+                        const customer = await db.getCustomerById(fpOrder.customerId);
+                        if (customer) {
+                          const invoiceNumber = `INV-CM-SHIP-${Date.now()}-${fpOrder.id}`;
+                          const invoice = await db.createInvoice({
+                            invoiceNumber,
+                            customerId: fpOrder.customerId,
+                            batchId: id,
+                            subtotalUsd: share.toFixed(2),
+                            totalUsd: share.toFixed(2),
+                            status: "issued",
+                            issuedAt: new Date(),
+                            lineItems: [{
+                              description: `🚚 کرێی گواستنەوە — ${fpOrder.productName}\nکۆدی ئۆردەر: ${fpOrder.orderCode}\nباچ: ${batch?.batchCode || ''}\nشیپینگی دابەشکراو: $${share.toFixed(2)}`,
+                              quantity: 1, unitPrice: share, total: share,
+                            }],
+                            notes: `پسووڵەی گواستنەوەی کڕین بە عمولە ${fpOrder.orderCode} — باچ ${batch?.batchCode || ''}`,
+                            createdById: ctx.user.id,
+                          });
+                          await db.applyChargeToInvoice(
+                            fpOrder.customerId, customer.customerCode, 'PACKAGE',
+                            fpOrder.id, share,
+                            `کڕین بە عمولە ${fpOrder.orderCode} - کرێی گواستنەوە`,
+                            ctx.user.id, invoice.id,
+                          );
+                          const grossProfit = parseFloat(fpOrder.grossProfitUsd || '0');
+                          await db.updateFullPackageOrder(fpOrder.id, {
+                            isShippingCharged: true,
+                            shippingChargedAt: new Date(),
+                            shippingChargedUsd: share.toFixed(2),
+                            shippingCostUsd: share.toFixed(2),
+                            netProfitUsd: (grossProfit - share).toFixed(2),
+                            batchId: id,
+                          }, ctx.user.id);
+                        }
+                      } catch (e) {
+                        appLogger.error("[Legacy Commission Shipping] Failed", { orderCode: fpOrder.orderCode, error: e instanceof Error ? e.message : String(e) });
                       }
-                    } catch (chargeError) {
-                      appLogger.error("[FullPackage] Failed to charge customer for FP", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
                     }
+                    continue;
                   }
 
-                  // For commission orders: charge their SPLIT shipping cost to customer wallet
-                  const refreshedForCommission = refreshedFPOrder || await db.getFullPackageOrderById(linkedFPOrder.id);
-                  if (refreshedForCommission && refreshedForCommission.orderType === 'commission' && refreshedForCommission.customerId && orderShippingCost > 0 && !refreshedForCommission.isShippingCharged) {
-                    try {
-                      const customer = await db.getCustomerById(refreshedForCommission.customerId);
-                      if (customer) {
-                        // Use the split shipping cost (not full package cost)
-                        const chargeableShippingCost = orderShippingCost;
-
-                        // Shipping invoice for a commission order — now carries
-                        // the full product context (color/size/tracking) plus
-                        // the original item + commission totals so the customer
-                        // sees the end-to-end cost breakdown in one document
-                        // (prepaid at order time + shipping at delivery).
-                        const shipDescParts: string[] = [];
-                        shipDescParts.push(`🚢 نرخی گواستنەوە — ${refreshedForCommission.productName}`);
-                        shipDescParts.push(`کۆدی ئۆردەر: ${refreshedForCommission.orderCode}`);
-                        if ((refreshedForCommission as any).trackingNumber) {
-                          shipDescParts.push(`تراکینگ: ${(refreshedForCommission as any).trackingNumber}`);
-                        }
-                        // Measurements from the linked package
-                        const sActualKg = parseFloat(pkg.weightKg?.toString() || "0");
-                        const sCbm = parseFloat(pkg.volumeCbm?.toString() || "0");
-                        const sL = parseFloat(pkg.lengthCm?.toString() || "0");
-                        const sW = parseFloat(pkg.widthCm?.toString() || "0");
-                        const sH = parseFloat(pkg.heightCm?.toString() || "0");
-                        const measureParts: string[] = [];
-                        if (isSea) {
-                          if (sCbm > 0) measureParts.push(`CBM: ${sCbm.toFixed(3)} m³`);
-                          if (sActualKg > 0) measureParts.push(`کێش: ${sActualKg.toFixed(2)} kg`);
-                        } else {
-                          if (sActualKg > 0) measureParts.push(`کێش: ${sActualKg.toFixed(2)} kg`);
-                        }
-                        if (sL > 0) measureParts.push(`${sL}×${sW}×${sH} cm`);
-                        if (measureParts.length) shipDescParts.push(measureParts.join(' · '));
-                        shipDescParts.push(`باچ: ${batch?.batchCode || ''}`);
-                        shipDescParts.push(`شیپینگی دابەشکراو: $${chargeableShippingCost.toFixed(2)}`);
-
-                        // Notes — tie this shipping invoice back to the prepaid
-                        // item+commission so the customer sees the overall
-                        // cost story across both invoices.
-                        const itemUsd = parseFloat(refreshedForCommission.itemPriceUsd?.toString() || "0");
-                        const commUsd = parseFloat(refreshedForCommission.commissionFeeUsd?.toString() || "0");
-                        const qty = refreshedForCommission.quantity || 1;
-                        const itemSub = itemUsd * qty;
-                        const grandTotal = itemSub + commUsd + chargeableShippingCost;
-
-                        const invoiceNumber = `INV-CM-SHIP-${Date.now()}-${refreshedForCommission.id}`;
-                        await db.createInvoice({
-                          invoiceNumber,
-                          customerId: refreshedForCommission.customerId,
-                          batchId: id,
-                          subtotalUsd: chargeableShippingCost.toFixed(2),
-                          totalUsd: chargeableShippingCost.toFixed(2),
-                          status: "issued",
-                          issuedAt: new Date(),
-                          lineItems: [{
-                            description: shipDescParts.join('\n'),
-                            quantity: 1,
-                            unitPrice: chargeableShippingCost,
-                            total: chargeableShippingCost,
-                          }],
-                          notes: [
-                            `پسووڵەی گواستنەوەی کڕین بە عمولە ${refreshedForCommission.orderCode}`,
-                            `باچ: ${batch?.batchCode || ''}`,
-                            `کاڵا: ${qty} × $${itemUsd.toFixed(2)} = $${itemSub.toFixed(2)}`,
-                            `عمولە: $${commUsd.toFixed(2)}`,
-                            `گواستنەوە: $${chargeableShippingCost.toFixed(2)}`,
-                            `کۆی گشتی (لەگەڵ پێشەکی): $${grandTotal.toFixed(2)}`,
-                          ].join('\n'),
-                          createdById: ctx.user.id,
-                        });
-
-                        await db.recordPackageChargeWithoutInvoice(
-                          refreshedForCommission.customerId,
-                          customer.customerCode,
-                          pkg.id,
-                          chargeableShippingCost,
-                          `کڕین بە عمولە ${refreshedForCommission.orderCode} - ${refreshedForCommission.productName} - نرخی گواستنەوە (دابەشکراو)`,
-                          ctx.user.id
-                        );
-
-                        const grossProfit = parseFloat(refreshedForCommission.grossProfitUsd || '0');
-                        const netProfitUsd = (grossProfit - orderShippingCost).toFixed(2);
-
-                        await db.updateFullPackageOrder(refreshedForCommission.id, {
-                          isShippingCharged: true,
-                          shippingChargedAt: new Date(),
-                          shippingChargedUsd: chargeableShippingCost.toFixed(2),
-                          netProfitUsd,
-                          batchId: id,
-                        }, ctx.user.id);
-
-                        appLogger.info("[Commission] Charged split shipping for CM", { customerCode: customer.customerCode, chargeableShippingCost, orderCode: refreshedForCommission.orderCode, totalShipping: shippingCost, orderCount: linkedFPOrders.length });
-                      }
-                    } catch (chargeError) {
-                      appLogger.error("[Commission] Failed to charge shipping for CM", { orderCode: linkedFPOrder.orderCode, error: chargeError instanceof Error ? chargeError.message : String(chargeError) });
-                    }
+                  // Fresh (pending) order — collect for consolidation
+                  const chargeAmount = db.computeOrderChargeAmount({
+                    orderType: fpOrder.orderType,
+                    sellingPriceUsd: fpOrder.sellingPriceUsd as any,
+                    itemPriceUsd: (fpOrder as any).itemPriceUsd,
+                    commissionFeeUsd: (fpOrder as any).commissionFeeUsd,
+                    quantity: fpOrder.quantity,
+                  });
+                  if (chargeAmount <= 0) {
+                    appLogger.warn("[Delivery] Order has zero charge amount — skipping", { orderCode: fpOrder.orderCode });
+                    continue;
                   }
-                } // end for each linkedFPOrder
+
+                  const item = { order: fpOrder, chargeAmount, shippingShare: share, pkg };
+                  if (fpOrder.orderType === 'commission') {
+                    const arr = commissionOrdersByCustomer.get(fpOrder.customerId) || [];
+                    arr.push(item);
+                    commissionOrdersByCustomer.set(fpOrder.customerId, arr);
+                  } else {
+                    const arr = fpOrdersByCustomer.get(fpOrder.customerId) || [];
+                    arr.push(item);
+                    fpOrdersByCustomer.set(fpOrder.customerId, arr);
+                  }
+                }
               }
-              
-              // Purchase Request logic removed
             }
-            
-            // Group by customer for invoice generation (only packages NOT linked to Full Package)
+
+            // Normal package (not linked to any FP/commission order) — existing consolidation
             if (pkg.customerId && !isLinkedToFullPackage) {
               const existing = packagesByCustomer.get(pkg.customerId) || [];
               existing.push(pkg);
               packagesByCustomer.set(pkg.customerId, existing);
             }
           }
-          
-          // Get batch pricing info
-          const pricePerKg = batch ? parseFloat(batch.pricePerKg?.toString() || "0") : 0;
-          const pricePerCbm = batch ? parseFloat(batch.pricePerCbm?.toString() || "0") : 0;
-          const isSea = batch?.shippingType === 'sea';
-          
-          // Create invoice for each customer with packages in this batch
-          // IMPORTANT: Filter out already-charged packages FIRST to prevent duplicate invoices on re-delivery
+
+          // ===== PHASE 2: CREATE CONSOLIDATED INVOICES =====
+
+          // --- 2A. ONE INVOICE per customer for all Full Package / Purchase Request orders
+          for (const [customerId, fpItems] of Array.from(fpOrdersByCustomer.entries())) {
+            try {
+              const customer = await db.getCustomerById(customerId);
+              if (!customer) continue;
+
+              const lineItems: { description: string; quantity: number; unitPrice: number; total: number }[] = [];
+              let totalAmount = 0;
+
+              for (const { order, chargeAmount } of fpItems) {
+                const sellingPrice = parseFloat((order.sellingPriceUsd || '0').toString()) || 0;
+                const qty = order.quantity || 1;
+                const descParts: string[] = [`📦 ${order.productName}`];
+                descParts.push(`کۆدی ئۆردەر: ${order.orderCode}`);
+                if (order.color) descParts.push(`ڕەنگ: ${order.color}`);
+                if (order.size) descParts.push(`قەبارە: ${order.size}`);
+                if (order.trackingNumber) descParts.push(`تراکینگ: ${order.trackingNumber}`);
+                descParts.push(`نرخی فرۆشتن: ${qty} × $${sellingPrice.toFixed(2)} = $${chargeAmount.toFixed(2)}`);
+                lineItems.push({
+                  description: descParts.join('\n'),
+                  quantity: qty,
+                  unitPrice: sellingPrice,
+                  total: chargeAmount,
+                });
+                totalAmount += chargeAmount;
+              }
+
+              if (totalAmount <= 0) continue;
+
+              // Sum advance payments across all orders in this FP invoice
+              let totalAdvancePaid = 0;
+              const advanceTxnIds: number[] = [];
+              const advanceDetails: { orderCode: string; amount: number; method: string }[] = [];
+              for (const { order } of fpItems) {
+                const adv = parseFloat((order.advancePaidUsd || '0').toString()) || 0;
+                if (adv > 0) {
+                  totalAdvancePaid += adv;
+                  if ((order as any).advancePaymentTransactionId) {
+                    advanceTxnIds.push((order as any).advancePaymentTransactionId);
+                  }
+                  advanceDetails.push({
+                    orderCode: order.orderCode,
+                    amount: adv,
+                    method: (order as any).advancePaymentMethod || 'CASH',
+                  });
+                }
+              }
+              const remainingDue = Math.max(0, totalAmount - totalAdvancePaid);
+              const invoiceStatus: 'issued' | 'partially_paid' | 'paid' =
+                totalAdvancePaid <= 0 ? 'issued'
+                  : totalAdvancePaid >= totalAmount ? 'paid'
+                    : 'partially_paid';
+
+              const typeLabel = isSea ? 'دەریایی' : (batch?.shippingType === 'air_irregular' ? 'ئاسمانی نائاسایی' : 'ئاسمانی ئاسایی');
+              const invoiceNumber = `INV-FP-${batch?.batchCode || 'B'}-${customer.customerCode}-${Date.now()}`;
+              const invoice = await db.createInvoice({
+                invoiceNumber,
+                customerId,
+                batchId: id,
+                subtotalUsd: totalAmount.toFixed(2),
+                totalUsd: totalAmount.toFixed(2),
+                status: invoiceStatus,
+                issuedAt: new Date(),
+                paidAt: invoiceStatus === 'paid' ? new Date() : null,
+                lineItems,
+                notes: [
+                  `📦 پسووڵەی گەیاندنی فول پاکیج`,
+                  `باچ: ${batch?.batchCode || ''} (${typeLabel})`,
+                  `ژمارەی ئۆردەر: ${fpItems.length}`,
+                  `کۆی گشتی: $${totalAmount.toFixed(2)}`,
+                  ...(totalAdvancePaid > 0 ? [
+                    `─────────────`,
+                    `💰 پارەی پێشەکی دراو: $${totalAdvancePaid.toFixed(2)}`,
+                    ...advanceDetails.map(a => `  • ${a.orderCode}: $${a.amount.toFixed(2)} (${a.method})`),
+                    `🧾 ماوە بۆ کۆمپانیا: $${remainingDue.toFixed(2)}`,
+                  ] : []),
+                  `─────────────`,
+                  `تێبینی: کرێی گەیاندن لە کۆمپانیاوە دەدرێت و لەسەر کەستمەر دانانرێت.`,
+                ].join('\n'),
+                createdById: ctx.user.id,
+              });
+
+              // Link advance payment transactions (CREDIT_PAYMENT) to this invoice
+              for (const txnId of advanceTxnIds) {
+                try {
+                  await db.linkTransactionToInvoice(txnId, invoice.id);
+                } catch (e) {
+                  appLogger.error("[Delivery FP] Failed to link advance txn to invoice", {
+                    txnId, invoiceId: invoice.id, error: e instanceof Error ? e.message : String(e),
+                  });
+                }
+              }
+
+              for (const { order, chargeAmount, shippingShare } of fpItems) {
+                try {
+                  const txn = await db.applyChargeToInvoice(
+                    customerId, customer.customerCode, 'FULL_PACKAGE',
+                    order.id, chargeAmount,
+                    `فول پاکێج ${order.orderCode} - ${order.productName} - گەیاندن`,
+                    ctx.user.id, invoice.id,
+                  );
+                  await db.updateFullPackageOrder(order.id, {
+                    status: 'delivered',
+                    shippingCostUsd: shippingShare.toFixed(2),
+                    deliveredDate: new Date(),
+                    isCharged: true,
+                    isChargedToCustomer: true,
+                    chargedAt: new Date(),
+                    chargeTransactionId: txn.id,
+                    paidFromBalanceUsd: chargeAmount.toFixed(2),
+                    batchId: id,
+                  }, ctx.user.id);
+                  appLogger.info("[Delivery FP] Charged and linked to consolidated invoice", {
+                    customerCode: customer.customerCode, orderCode: order.orderCode, chargeAmount, invoiceNumber,
+                  });
+                } catch (e) {
+                  appLogger.error("[Delivery FP] Failed to record charge for order", {
+                    orderCode: order.orderCode, error: e instanceof Error ? e.message : String(e),
+                  });
+                }
+              }
+            } catch (e) {
+              appLogger.error("[Delivery FP] Failed to create consolidated FP invoice for customer", {
+                customerId, error: e instanceof Error ? e.message : String(e),
+              });
+            }
+          }
+
+          // --- 2B. ONE INVOICE per customer for all Commission orders (item + commission + shipping combined)
+          for (const [customerId, cmItems] of Array.from(commissionOrdersByCustomer.entries())) {
+            try {
+              const customer = await db.getCustomerById(customerId);
+              if (!customer) continue;
+
+              const lineItems: { description: string; quantity: number; unitPrice: number; total: number }[] = [];
+              let totalAmount = 0;
+
+              for (const { order, shippingShare } of cmItems) {
+                const itemPrice = parseFloat(((order as any).itemPriceUsd || '0').toString()) || 0;
+                const commissionFee = parseFloat(((order as any).commissionFeeUsd || '0').toString()) || 0;
+                const qty = order.quantity || 1;
+                const itemSubtotal = itemPrice * qty;
+
+                // Line 1: Product with all context
+                const productParts: string[] = [`🛍️ ${order.productName}`];
+                productParts.push(`کۆدی ئۆردەر: ${order.orderCode}`);
+                if (order.color) productParts.push(`ڕەنگ: ${order.color}`);
+                if (order.size) productParts.push(`قەبارە: ${order.size}`);
+                if (order.trackingNumber) productParts.push(`تراکینگ: ${order.trackingNumber}`);
+                productParts.push(`${qty} × $${itemPrice.toFixed(2)} = $${itemSubtotal.toFixed(2)}`);
+                if (itemSubtotal > 0) {
+                  lineItems.push({
+                    description: productParts.join('\n'),
+                    quantity: qty, unitPrice: itemPrice, total: itemSubtotal,
+                  });
+                  totalAmount += itemSubtotal;
+                }
+
+                // Line 2: Commission (flat)
+                if (commissionFee > 0) {
+                  lineItems.push({
+                    description: `💼 عمولەی کڕین — ${order.orderCode}\nفلاتە | Flat commission per order`,
+                    quantity: 1, unitPrice: commissionFee, total: commissionFee,
+                  });
+                  totalAmount += commissionFee;
+                }
+
+                // Line 3: Shipping (split share)
+                if (shippingShare > 0) {
+                  lineItems.push({
+                    description: `🚚 کرێی گواستنەوە — ${order.orderCode}\nدابەشکراو بەپێی کێش/CBM`,
+                    quantity: 1, unitPrice: shippingShare, total: shippingShare,
+                  });
+                  totalAmount += shippingShare;
+                }
+              }
+
+              if (totalAmount <= 0) continue;
+
+              // Sum advance payments across all orders in this commission invoice
+              let totalAdvancePaid = 0;
+              const advanceTxnIds: number[] = [];
+              const advanceDetails: { orderCode: string; amount: number; method: string }[] = [];
+              for (const { order } of cmItems) {
+                const adv = parseFloat(((order as any).advancePaidUsd || '0').toString()) || 0;
+                if (adv > 0) {
+                  totalAdvancePaid += adv;
+                  if ((order as any).advancePaymentTransactionId) {
+                    advanceTxnIds.push((order as any).advancePaymentTransactionId);
+                  }
+                  advanceDetails.push({
+                    orderCode: order.orderCode,
+                    amount: adv,
+                    method: (order as any).advancePaymentMethod || 'CASH',
+                  });
+                }
+              }
+              const remainingDue = Math.max(0, totalAmount - totalAdvancePaid);
+              const invoiceStatus: 'issued' | 'partially_paid' | 'paid' =
+                totalAdvancePaid <= 0 ? 'issued'
+                  : totalAdvancePaid >= totalAmount ? 'paid'
+                    : 'partially_paid';
+
+              const typeLabel = isSea ? 'دەریایی' : (batch?.shippingType === 'air_irregular' ? 'ئاسمانی نائاسایی' : 'ئاسمانی ئاسایی');
+              const invoiceNumber = `INV-CM-${batch?.batchCode || 'B'}-${customer.customerCode}-${Date.now()}`;
+              const invoice = await db.createInvoice({
+                invoiceNumber,
+                customerId,
+                batchId: id,
+                subtotalUsd: totalAmount.toFixed(2),
+                totalUsd: totalAmount.toFixed(2),
+                status: invoiceStatus,
+                issuedAt: new Date(),
+                paidAt: invoiceStatus === 'paid' ? new Date() : null,
+                lineItems,
+                notes: [
+                  `🛍️ پسووڵەی گەیاندنی کڕین بە عمولە`,
+                  `باچ: ${batch?.batchCode || ''} (${typeLabel})`,
+                  `ژمارەی ئۆردەر: ${cmItems.length}`,
+                  `کۆی کاڵا + عمولە + شیپینگ: $${totalAmount.toFixed(2)}`,
+                  ...(totalAdvancePaid > 0 ? [
+                    `─────────────`,
+                    `💰 پارەی پێشەکی دراو: $${totalAdvancePaid.toFixed(2)}`,
+                    ...advanceDetails.map(a => `  • ${a.orderCode}: $${a.amount.toFixed(2)} (${a.method})`),
+                    `🧾 ماوە بۆ کۆمپانیا: $${remainingDue.toFixed(2)}`,
+                  ] : []),
+                ].join('\n'),
+                createdById: ctx.user.id,
+              });
+
+              // Link advance payment transactions (CREDIT_PAYMENT) to this invoice
+              for (const txnId of advanceTxnIds) {
+                try {
+                  await db.linkTransactionToInvoice(txnId, invoice.id);
+                } catch (e) {
+                  appLogger.error("[Delivery CM] Failed to link advance txn to invoice", {
+                    txnId, invoiceId: invoice.id, error: e instanceof Error ? e.message : String(e),
+                  });
+                }
+              }
+
+              for (const { order, chargeAmount, shippingShare } of cmItems) {
+                try {
+                  // Main DEBIT: item + commission
+                  const mainTxn = await db.applyChargeToInvoice(
+                    customerId, customer.customerCode, 'COMMISSION',
+                    order.id, chargeAmount,
+                    `کڕین بە عمولە ${order.orderCode} - ${order.productName} (کاڵا + عمولە)`,
+                    ctx.user.id, invoice.id,
+                  );
+
+                  // Separate DEBIT for shipping (linked to same invoice)
+                  if (shippingShare > 0) {
+                    await db.applyChargeToInvoice(
+                      customerId, customer.customerCode, 'PACKAGE',
+                      order.id, shippingShare,
+                      `کڕین بە عمولە ${order.orderCode} - کرێی گواستنەوە`,
+                      ctx.user.id, invoice.id,
+                    );
+                  }
+
+                  const grossProfit = parseFloat(order.grossProfitUsd || '0');
+                  const netProfitUsd = (grossProfit - shippingShare).toFixed(2);
+
+                  await db.updateFullPackageOrder(order.id, {
+                    status: 'delivered',
+                    shippingCostUsd: shippingShare.toFixed(2),
+                    deliveredDate: new Date(),
+                    isCharged: true,
+                    isChargedToCustomer: true,
+                    chargedAt: new Date(),
+                    chargeTransactionId: mainTxn.id,
+                    paidFromBalanceUsd: chargeAmount.toFixed(2),
+                    isShippingCharged: shippingShare > 0,
+                    shippingChargedAt: shippingShare > 0 ? new Date() : null,
+                    shippingChargedUsd: shippingShare.toFixed(2),
+                    netProfitUsd,
+                    batchId: id,
+                  }, ctx.user.id);
+
+                  appLogger.info("[Delivery CM] Charged and linked to consolidated invoice", {
+                    customerCode: customer.customerCode, orderCode: order.orderCode,
+                    chargeAmount, shippingShare, invoiceNumber,
+                  });
+                } catch (e) {
+                  appLogger.error("[Delivery CM] Failed to record charges for order", {
+                    orderCode: order.orderCode, error: e instanceof Error ? e.message : String(e),
+                  });
+                }
+              }
+            } catch (e) {
+              appLogger.error("[Delivery CM] Failed to create consolidated CM invoice for customer", {
+                customerId, error: e instanceof Error ? e.message : String(e),
+              });
+            }
+          }
+
+          // --- 2C. ONE INVOICE per customer for all normal packages (existing logic preserved)
           for (const [customerId, customerPackages] of Array.from(packagesByCustomer.entries())) {
             try {
               // STEP 1: Separate uncharged packages from already-charged ones

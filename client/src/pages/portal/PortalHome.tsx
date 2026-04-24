@@ -279,6 +279,7 @@ const { t, language } = useLanguage();
   const { data: batches, isLoading: batchesLoading } = trpc.customerPortal.getMyBatches.useQuery();
   const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
   const { data: financialSummary } = trpc.customerPortal.getMyFinancialSummary.useQuery();
+  const { data: pendingOrders } = trpc.customerPortal.getMyPendingOrders.useQuery();
 
   // Get recent batches (last 3)
   const recentBatches = batches?.slice(0, 3) || [];
@@ -618,6 +619,78 @@ const { t, language } = useLanguage();
           </div>
         </div>
       </div>
+
+      {/* Pending Orders — orders not yet delivered, no invoice yet */}
+      {pendingOrders && pendingOrders.count > 0 && (
+        <div className="px-4 mt-6">
+          <Link href="/portal/full-package">
+            <div className={cn(
+              "relative overflow-hidden rounded-2xl p-5 shadow-lg cursor-pointer hover:scale-[1.01] transition-all",
+              isDark
+                ? "bg-gradient-to-br from-amber-900/60 to-orange-900/60 border border-amber-700/50"
+                : "bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200"
+            )}>
+              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+              <div className="relative flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={cn(
+                      "p-2 rounded-xl",
+                      isDark ? "bg-amber-600/30" : "bg-amber-500/20"
+                    )}>
+                      <Clock className={cn("w-5 h-5", isDark ? "text-amber-300" : "text-amber-700")} />
+                    </div>
+                    <div>
+                      <h3 className={cn("font-bold text-base", isDark ? "text-amber-100" : "text-amber-900")}>
+                        {t("portal.pendingOrdersTitle")}
+                      </h3>
+                      <p className={cn("text-xs", isDark ? "text-amber-300/80" : "text-amber-700")}>
+                        {t("portal.pendingOrdersSubtitle")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 mt-4">
+                    <div className="text-center">
+                      <p className={cn("text-xs font-medium", isDark ? "text-amber-300/80" : "text-amber-700")}>📦 FP</p>
+                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900")}>
+                        <AnimatedCounter value={pendingOrders.byType.full_package} />
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className={cn("text-xs font-medium", isDark ? "text-amber-300/80" : "text-amber-700")}>🛍️ CM</p>
+                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900")}>
+                        <AnimatedCounter value={pendingOrders.byType.commission} />
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className={cn("text-xs font-medium", isDark ? "text-amber-300/80" : "text-amber-700")}>📝 PR</p>
+                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900")}>
+                        <AnimatedCounter value={pendingOrders.byType.purchase_request} />
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-end">
+                  <p className={cn("text-xs font-medium mb-1", isDark ? "text-amber-300/80" : "text-amber-700")}>
+                    {t("portal.estimatedTotal")}
+                  </p>
+                  <p className={cn("text-2xl font-bold font-mono", isDark ? "text-amber-100" : "text-amber-900")}>
+                    ${pendingOrders.totalPriceUsd.toFixed(2)}
+                  </p>
+                  <div className={cn(
+                    "mt-2 px-2 py-0.5 rounded-full text-xs font-semibold inline-block",
+                    isDark ? "bg-amber-600/30 text-amber-200" : "bg-amber-200 text-amber-900"
+                  )}>
+                    {pendingOrders.count} {t("portal.orders")}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+      )}
 
       {/* Recent Shipments */}
       <div className="px-4 mt-6">
