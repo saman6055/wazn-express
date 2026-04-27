@@ -951,6 +951,109 @@ export const batchesRouter = router({
             }
           }
           
+          // ===== PHASE 3: SAFETY NET =====
+          //
+          // Walk every package in the batch one more time and verify the
+          // linked FP/Commission order ended up actually charged. This
+          // catches orders that fell through Phase 2 — e.g. when
+          // packages.db.ts updatePackage's auto-sync side effect
+          // pre-marked the order as 'delivered' (without charging),
+          // or when an exception silently aborted Phase 2 for that order.
+          //
+          // For any uncharged order found here we fall back to the
+          // LEGACY per-order charge path: updateFullPackageOrder(...,
+          // { status:'delivered' }, userId) — that path inspects
+          // `isCharged` and triggers applyCharge() inside the function.
+          // Idempotent: orders already charged in Phase 2 are skipped
+          // because their isCharged flag is true.
+          appLogger.info("[BatchDelivered Phase3] Safety-net check starting", { batchId: id });
+          const refreshedPackages = await db.getPackagesByBatch(id);
+          const orderIdsToVerify = new Set<number>();
+          for (const pkg of refreshedPackages) {
+            if (pkg.fullPackageOrderId) orderIdsToVerify.add(pkg.fullPackageOrderId);
+            if (pkg.trackingNumber) {
+              try {
+                const linkedByTracking = await db.getAllOrdersByTrackingNumber(pkg.trackingNumber);
+                for (const o of linkedByTracking) orderIdsToVerify.add(o.id);
+              } catch (e) {
+                appLogger.error("[BatchDelivered Phase3] tracking lookup failed", {
+                  trackingNumber: pkg.trackingNumber,
+                  error: e instanceof Error ? e.message : String(e),
+                });
+              }
+            }
+          }
+
+          let safetyNetFixed = 0;
+          let safetyNetFailed = 0;
+          for (const orderId of Array.from(orderIdsToVerify)) {
+            try {
+              const order = await db.getFullPackageOrderById(orderId);
+              if (!order) continue;
+              if ((order as any).deletedAt) continue;
+              if (order.isCharged || (order as any).isChargedToCustomer) continue; // already charged
+
+              // Compute charge amount to verify it's worth charging
+              const chargeAmount = db.computeOrderChargeAmount({
+                orderType: order.orderType,
+                sellingPriceUsd: order.sellingPriceUsd as any,
+                itemPriceUsd: (order as any).itemPriceUsd,
+                commissionFeeUsd: (order as any).commissionFeeUsd,
+                quantity: order.quantity,
+              });
+              if (chargeAmount <= 0) continue;
+
+              appLogger.warn("[BatchDelivered Phase3] Found uncharged order — applying legacy charge fallback", {
+                orderId, orderCode: order.orderCode, orderType: order.orderType,
+                currentStatus: order.status, chargeAmount,
+              });
+
+              // Force the order through the legacy delivery+charge path.
+              // updateFullPackageOrder() at fullPackage.db.ts checks
+              // `isBeingDelivered = data.status === 'delivered' && existing.status !== 'delivered'`,
+              // so if the order is already 'delivered' the legacy path won't
+              // fire. Bump it back to 'in_transit' first to trigger the
+              // transition, then deliver+charge.
+              if (order.status === 'delivered') {
+                await db.updateFullPackageOrder(orderId, { status: 'in_transit' as any }, ctx.user.id);
+              }
+              const updated = await db.updateFullPackageOrder(
+                orderId,
+                {
+                  status: 'delivered',
+                  deliveredDate: new Date(),
+                  batchId: id,
+                },
+                ctx.user.id,
+              );
+
+              // Verify the charge actually happened
+              const after = await db.getFullPackageOrderById(orderId);
+              if (after?.isCharged) {
+                safetyNetFixed++;
+                appLogger.info("[BatchDelivered Phase3] Safety-net charge applied", {
+                  orderId, orderCode: order.orderCode,
+                  chargeTransactionId: (after as any).chargeTransactionId,
+                });
+              } else {
+                safetyNetFailed++;
+                appLogger.error("[BatchDelivered Phase3] Safety-net failed to charge order", {
+                  orderId, orderCode: order.orderCode, after,
+                });
+              }
+            } catch (e) {
+              safetyNetFailed++;
+              appLogger.error("[BatchDelivered Phase3] Safety-net exception", {
+                orderId, error: e instanceof Error ? e.message : String(e),
+                stack: e instanceof Error ? e.stack : undefined,
+              });
+            }
+          }
+          appLogger.info("[BatchDelivered Phase3] Safety-net complete", {
+            batchId: id, ordersVerified: orderIdsToVerify.size,
+            fixed: safetyNetFixed, failed: safetyNetFailed,
+          });
+
           // Notify customers about delivery
           try {
             await notifyBatchStatusChange(id, "batch_arrived"); // Use arrived notification for now
