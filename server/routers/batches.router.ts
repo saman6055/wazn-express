@@ -194,14 +194,43 @@ export const batchesRouter = router({
               deliveredAt: new Date()
             });
 
-            // Check if this package is linked to a Full Package order or Commission
+            // Check if this package is linked to a Full Package order or Commission.
+            //
+            // Two sources of linkage (in priority order):
+            //   1. pkg.fullPackageOrderId — direct FK set when the package was
+            //      created (auto-linked via packages.db.ts createPackage). This
+            //      is the most reliable signal: the package PHYSICALLY belongs
+            //      to this one order.
+            //   2. pkg.trackingNumber — string match against orders. Only used
+            //      to discover ADDITIONAL orders that share the same carton
+            //      (multi-order tracking). Falls back to this when there's no
+            //      direct FK (some legacy packages may not have one).
+            //
+            // We merge both into a deduped `linkedFPOrders` so the rest of the
+            // pipeline doesn't have to care which path the order arrived from.
             let isLinkedToFullPackage = false;
+            const linkedFPOrdersMap = new Map<number, any>();
 
-            
+            // Path 1: direct FK
+            if (pkg.fullPackageOrderId) {
+              const direct = await db.getFullPackageOrderById(pkg.fullPackageOrderId);
+              if (direct && !(direct as any).deletedAt) {
+                linkedFPOrdersMap.set(direct.id, direct);
+              }
+            }
+
+            // Path 2: tracking-number lookup (for shared-carton scenario)
             if (pkg.trackingNumber) {
-              // Check Full Package / Commission — find ALL orders sharing this tracking (same carton)
-              const linkedFPOrders = await db.getAllOrdersByTrackingNumber(pkg.trackingNumber);
-              if (linkedFPOrders.length > 0) {
+              const byTracking = await db.getAllOrdersByTrackingNumber(pkg.trackingNumber);
+              for (const o of byTracking) {
+                if (!linkedFPOrdersMap.has(o.id)) linkedFPOrdersMap.set(o.id, o);
+              }
+            }
+
+            const linkedFPOrders = Array.from(linkedFPOrdersMap.values());
+
+            if (linkedFPOrders.length > 0) {
+              {
                 isLinkedToFullPackage = true;
 
                 // 1. Calculate total shipping cost for this package
