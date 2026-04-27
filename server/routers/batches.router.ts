@@ -186,8 +186,21 @@ export const batchesRouter = router({
           const commissionOrdersByCustomer = new Map<number, CmItem[]>();
           const packagesByCustomer = new Map<number, typeof packages>();
 
+          appLogger.info("[BatchDelivered] Starting consolidated delivery flow", {
+            batchId: id,
+            batchCode: batch?.batchCode,
+            packageCount: packages.length,
+            shippingType: batch?.shippingType,
+            pricePerKg, pricePerCbm,
+          });
+
           // ===== PHASE 1: COLLECT =====
+          // Each iteration is wrapped in try/catch so a single package failure
+          // (e.g. a corrupt FK, a deleted order) can't stop us from processing
+          // the rest of the batch. Without this, one bad row would silently
+          // prevent any invoice from being created.
           for (const pkg of packages) {
+           try {
             // Update package status to delivered
             await db.updatePackage(pkg.id, {
               status: "delivered",
@@ -228,6 +241,16 @@ export const batchesRouter = router({
             }
 
             const linkedFPOrders = Array.from(linkedFPOrdersMap.values());
+
+            appLogger.info("[BatchDelivered] Phase 1 — package linkage", {
+              packageCode: pkg.packageCode,
+              packageId: pkg.id,
+              fullPackageOrderId: pkg.fullPackageOrderId ?? null,
+              trackingNumber: pkg.trackingNumber ?? null,
+              linkedOrdersCount: linkedFPOrders.length,
+              linkedOrderCodes: linkedFPOrders.map((o: any) => o.orderCode),
+              customerId: pkg.customerId,
+            });
 
             if (linkedFPOrders.length > 0) {
               {
@@ -371,15 +394,42 @@ export const batchesRouter = router({
               existing.push(pkg);
               packagesByCustomer.set(pkg.customerId, existing);
             }
+           } catch (pkgErr) {
+             appLogger.error("[BatchDelivered Phase1] Failed to process package — continuing with rest of batch", {
+               packageId: pkg.id,
+               packageCode: pkg.packageCode,
+               trackingNumber: pkg.trackingNumber,
+               fullPackageOrderId: pkg.fullPackageOrderId,
+               error: pkgErr instanceof Error ? pkgErr.message : String(pkgErr),
+               stack: pkgErr instanceof Error ? pkgErr.stack : undefined,
+             });
+           }
           }
+
+          appLogger.info("[BatchDelivered] Phase 1 complete — collected buckets", {
+            batchId: id,
+            fpCustomers: fpOrdersByCustomer.size,
+            fpOrdersTotal: Array.from(fpOrdersByCustomer.values()).reduce((s, arr) => s + arr.length, 0),
+            commissionCustomers: commissionOrdersByCustomer.size,
+            commissionOrdersTotal: Array.from(commissionOrdersByCustomer.values()).reduce((s, arr) => s + arr.length, 0),
+            normalPkgCustomers: packagesByCustomer.size,
+            normalPkgsTotal: Array.from(packagesByCustomer.values()).reduce((s, arr) => s + arr.length, 0),
+          });
 
           // ===== PHASE 2: CREATE CONSOLIDATED INVOICES =====
 
           // --- 2A. ONE INVOICE per customer for all Full Package / Purchase Request orders
           for (const [customerId, fpItems] of Array.from(fpOrdersByCustomer.entries())) {
             try {
+              appLogger.info("[BatchDelivered 2A-FP] Processing customer", {
+                customerId, ordersCount: fpItems.length,
+                orderCodes: fpItems.map(i => i.order.orderCode),
+              });
               const customer = await db.getCustomerById(customerId);
-              if (!customer) continue;
+              if (!customer) {
+                appLogger.warn("[BatchDelivered 2A-FP] Customer not found, skipping", { customerId });
+                continue;
+              }
 
               const lineItems: { description: string; quantity: number; unitPrice: number; total: number }[] = [];
               let totalAmount = 0;
@@ -438,7 +488,7 @@ export const batchesRouter = router({
                 totalUsd: totalAmount.toFixed(2),
                 status: invoiceStatus,
                 issuedAt: new Date(),
-                paidAt: invoiceStatus === 'paid' ? new Date() : null,
+                paidAt: invoiceStatus === 'paid' ? new Date() : undefined,
                 lineItems,
                 notes: [
                   `📦 پسووڵەی گەیاندنی فول پاکیج`,
@@ -455,6 +505,10 @@ export const batchesRouter = router({
                   `تێبینی: کرێی گەیاندن لە کۆمپانیاوە دەدرێت و لەسەر کەستمەر دانانرێت.`,
                 ].join('\n'),
                 createdById: ctx.user.id,
+              });
+
+              appLogger.info("[BatchDelivered 2A-FP] Invoice created", {
+                invoiceId: invoice.id, invoiceNumber, totalAmount, fpCount: fpItems.length,
               });
 
               // Link advance payment transactions (CREDIT_PAYMENT) to this invoice
@@ -506,8 +560,15 @@ export const batchesRouter = router({
           // --- 2B. ONE INVOICE per customer for all Commission orders (item + commission + shipping combined)
           for (const [customerId, cmItems] of Array.from(commissionOrdersByCustomer.entries())) {
             try {
+              appLogger.info("[BatchDelivered 2B-CM] Processing customer", {
+                customerId, ordersCount: cmItems.length,
+                orderCodes: cmItems.map(i => i.order.orderCode),
+              });
               const customer = await db.getCustomerById(customerId);
-              if (!customer) continue;
+              if (!customer) {
+                appLogger.warn("[BatchDelivered 2B-CM] Customer not found, skipping", { customerId });
+                continue;
+              }
 
               const lineItems: { description: string; quantity: number; unitPrice: number; total: number }[] = [];
               let totalAmount = 0;
@@ -588,7 +649,7 @@ export const batchesRouter = router({
                 totalUsd: totalAmount.toFixed(2),
                 status: invoiceStatus,
                 issuedAt: new Date(),
-                paidAt: invoiceStatus === 'paid' ? new Date() : null,
+                paidAt: invoiceStatus === 'paid' ? new Date() : undefined,
                 lineItems,
                 notes: [
                   `🛍️ پسووڵەی گەیاندنی کڕین بە عمولە`,
@@ -603,6 +664,10 @@ export const batchesRouter = router({
                   ] : []),
                 ].join('\n'),
                 createdById: ctx.user.id,
+              });
+
+              appLogger.info("[BatchDelivered 2B-CM] Invoice created", {
+                invoiceId: invoice.id, invoiceNumber, totalAmount, cmCount: cmItems.length,
               });
 
               // Link advance payment transactions (CREDIT_PAYMENT) to this invoice
