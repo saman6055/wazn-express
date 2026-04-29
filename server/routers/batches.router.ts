@@ -116,7 +116,11 @@ async function emitFpInvoices(
             : 'partially_paid';
 
       const typeLabel = isSea ? 'دەریایی' : (batch?.shippingType === 'air_irregular' ? 'ئاسمانی نائاسایی' : 'ئاسمانی ئاسایی');
-      const invoiceNumber = `INV-FP-${batch?.batchCode || 'B'}-${customer.customerCode}-${Date.now()}${invoiceSuffix}`;
+      // invoiceNumber must fit in `invoices.invoiceNumber` (varchar 50). Use
+      // numeric customerId — customer.customerCode in this system can be up
+      // to ~30 chars (e.g. "AZ003(Saman Ibrahim Hamad)") which blew past
+      // the limit and caused the INSERT to fail silently inside Phase 2.
+      const invoiceNumber = `INV-FP-${batch?.batchCode || 'B'}-${customerId}-${Date.now()}${invoiceSuffix}`.substring(0, 50);
       const invoice = await db.createInvoice({
         invoiceNumber,
         customerId,
@@ -327,7 +331,8 @@ async function emitCmInvoices(
             : 'partially_paid';
 
       const typeLabel = isSea ? 'دەریایی' : (batch?.shippingType === 'air_irregular' ? 'ئاسمانی نائاسایی' : 'ئاسمانی ئاسایی');
-      const invoiceNumber = `INV-CM-${batch?.batchCode || 'B'}-${customer.customerCode}-${Date.now()}${invoiceSuffix}`;
+      // varchar(50) safe — same reason as INV-FP construction above.
+      const invoiceNumber = `INV-CM-${batch?.batchCode || 'B'}-${customerId}-${Date.now()}${invoiceSuffix}`.substring(0, 50);
       const invoice = await db.createInvoice({
         invoiceNumber,
         customerId,
