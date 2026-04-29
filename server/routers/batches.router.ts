@@ -686,10 +686,18 @@ export const batchesRouter = router({
             appLogger.error("[Notification] Failed to send batch arrival notification", { error: e instanceof Error ? e.message : String(e) });
           }
         } else if (input.status === "delivered" || input.status === "closed") {
+          // Wrap the ENTIRE delivered/closed flow in a single try/catch so
+          // any unexpected error bubbles back to the UI as a structured
+          // diagnostic instead of vanishing into server logs. Without this,
+          // a single throw in Phase 1/2/3 produced a generic "status updated"
+          // toast even when zero invoices got created.
+          let topLevelError: string | null = null;
+          try {
           // Build a diagnostic report so the caller can see exactly what
           // happened in the consolidated invoice flow without needing
           // server logs. Surfaced back to the UI as part of the response.
           const diag = {
+            version: 'v10-consolidated-2026-04-29',
             batchId: id,
             batchCode: '' as string,
             packageCount: 0,
@@ -982,10 +990,34 @@ export const batchesRouter = router({
           // ===== PHASE 2: CREATE CONSOLIDATED INVOICES =====
 
           // --- 2A. Full Package / Purchase Request — ONE consolidated invoice per customer
-          await emitFpInvoices(fpOrdersByCustomer, ctx, id, batch);
+          appLogger.info("[BatchDelivered Phase2A] Calling emitFpInvoices", {
+            customerCount: fpOrdersByCustomer.size,
+            ordersCount: Array.from(fpOrdersByCustomer.values()).reduce((s, a) => s + a.length, 0),
+          });
+          try {
+            await emitFpInvoices(fpOrdersByCustomer, ctx, id, batch);
+            diag.phase2.fpInvoicesCreated = fpOrdersByCustomer.size;
+            diag.phase2.fpOrdersCharged = Array.from(fpOrdersByCustomer.values()).reduce((s, a) => s + a.length, 0);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            appLogger.error("[BatchDelivered Phase2A] emitFpInvoices THREW", { error: msg, stack: e instanceof Error ? e.stack : undefined });
+            diag.phase2.errors.push(`Phase2A FP invoice failure: ${msg}`);
+          }
 
           // --- 2B. Commission — ONE consolidated invoice per customer (combined goods+commission line + separate shipping line)
-          await emitCmInvoices(commissionOrdersByCustomer, ctx, id, batch);
+          appLogger.info("[BatchDelivered Phase2B] Calling emitCmInvoices", {
+            customerCount: commissionOrdersByCustomer.size,
+            ordersCount: Array.from(commissionOrdersByCustomer.values()).reduce((s, a) => s + a.length, 0),
+          });
+          try {
+            await emitCmInvoices(commissionOrdersByCustomer, ctx, id, batch);
+            diag.phase2.cmInvoicesCreated = commissionOrdersByCustomer.size;
+            diag.phase2.cmOrdersCharged = Array.from(commissionOrdersByCustomer.values()).reduce((s, a) => s + a.length, 0);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            appLogger.error("[BatchDelivered Phase2B] emitCmInvoices THREW", { error: msg, stack: e instanceof Error ? e.stack : undefined });
+            diag.phase2.errors.push(`Phase2B CM invoice failure: ${msg}`);
+          }
 
           // --- 2C. ONE INVOICE per customer for all normal packages (existing logic preserved)
           for (const [customerId, customerPackages] of Array.from(packagesByCustomer.entries())) {
@@ -1291,6 +1323,23 @@ export const batchesRouter = router({
 
           // Surface the consolidated-invoice diagnostics back to the UI
           diagOut = diag;
+          } catch (e) {
+            // Top-level catch: ensure ANY error surfaces to the UI rather
+            // than failing silently. The user has reported "no invoice
+            // created" too many times for us to keep relying on logs.
+            topLevelError = e instanceof Error ? e.message : String(e);
+            appLogger.error("[BatchDelivered] TOP-LEVEL ERROR — entire delivery flow aborted", {
+              batchId: id,
+              error: topLevelError,
+              stack: e instanceof Error ? e.stack : undefined,
+            });
+            diagOut = {
+              version: 'v10-consolidated-2026-04-29',
+              error: topLevelError,
+              batchId: id,
+              note: 'Critical failure during consolidated invoice flow — see server logs',
+            };
+          }
         }
 
         await db.createAuditLog({

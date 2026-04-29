@@ -148,6 +148,20 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     toast.error(msg);
   };
   const onBatchStatusSuccess = (data?: any) => {
+    const diag = data?.diagnostics;
+
+    // Critical-error path: the server caught an unhandled exception during
+    // the delivered/closed flow. Surface it as a long red toast so the
+    // operator doesn't think it succeeded.
+    if (diag?.error) {
+      toast.error(
+        `❌ هەڵە لە چاکسازی باچ\nVersion: ${diag.version || 'unknown'}\n${diag.note || ''}\nError: ${diag.error}`,
+        { duration: 30000 }
+      );
+      refetch();
+      return;
+    }
+
     toast.success(t("batches.statusUpdated"));
 
     // If the batch just transitioned to delivered/closed, the server returns
@@ -155,7 +169,6 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     // flow did. Surface it as a longer-duration toast so the operator can
     // immediately see how many orders were charged + invoices created
     // without needing server logs.
-    const diag = data?.diagnostics;
     if (diag) {
       const totalNew =
         (diag.phase2?.fpInvoicesCreated || 0) +
@@ -168,6 +181,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         (diag.phase2?.cmOrdersCharged || 0) +
         (diag.phase3?.stragglersFound || 0);
       const summary = [
+        `🏷️ Version: ${diag.version || 'unknown'}`,
         `📦 پاکەت: ${diag.packageCount} (${diag.packagesWithOrderId} لینک کراون، ${diag.packagesUnlinked} بێ لینک)`,
         `📥 کۆکراوە: ${diag.phase1?.fpOrdersCollected || 0} FP, ${diag.phase1?.cmOrdersCollected || 0} CM, ${diag.phase1?.normalPkgsCollected || 0} پاکەت`,
         `🧾 ئینڤۆیسی نوێ: ~${totalNew}`,
@@ -176,7 +190,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       if (diag.phase3?.stragglersFound > 0) {
         summary.push(`⚠️ ${diag.phase3.stragglersFound} ئۆردەر لە Phase 3 (recovery) چاکراون`);
       }
-      toast.info(summary.join('\n'), { duration: 12000 });
+      // Surface Phase-2 errors as a separate toast so they don't get lost
+      const phase2Errors: string[] = diag.phase2?.errors || [];
+      if (phase2Errors.length > 0) {
+        summary.push(`❌ ${phase2Errors.length} هەڵە لە Phase 2`);
+        toast.error(`Phase 2 Errors:\n${phase2Errors.join('\n')}`, { duration: 30000 });
+      }
+      toast.info(summary.join('\n'), { duration: 15000 });
     }
     refetch();
   };
