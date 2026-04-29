@@ -19,9 +19,15 @@ import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, ba
 
 type DeliveryItem = {
   order: any;
-  chargeAmount: number;   // computeOrderChargeAmount(order)
+  chargeAmount: number;   // computeOrderChargeAmount(order); 0 for legacy shipping-only items
   shippingShare: number;  // 0 for Phase 3 stragglers (shipping was already split in Phase 1)
   pkg: any;
+  /** Legacy commission orders that were already charged at creation under
+   *  the old flow (isCharged=true, but isShippingCharged=false). For these,
+   *  emitCmInvoices renders ONLY the shipping line and applies ONLY the
+   *  shipping DEBIT — never re-charges item+commission. Keeps everything
+   *  consolidated on the same INV-CM-* invoice with fresh orders. */
+  isLegacyShippingOnly?: boolean;
 };
 
 /**
@@ -214,8 +220,32 @@ async function emitCmInvoices(
 
       const lineItems: { description: string; quantity: number; unitPrice: number; total: number }[] = [];
       let totalAmount = 0;
+      let legacyOnlyCount = 0;
 
-      for (const { order, shippingShare } of cmItems) {
+      for (const item of cmItems) {
+        const { order, shippingShare, isLegacyShippingOnly } = item;
+
+        if (isLegacyShippingOnly) {
+          // Legacy commission order: item+commission already paid on the
+          // creation-time invoice. Render ONLY a shipping line on this
+          // consolidated invoice; never re-charge goods.
+          legacyOnlyCount++;
+          if (shippingShare > 0) {
+            const legacyParts: string[] = [`🚚 کرێی گواستنەوە — ${order.productName}`];
+            legacyParts.push(`کۆدی ئۆردەر: ${order.orderCode}`);
+            if (order.trackingNumber) legacyParts.push(`تراکینگ: ${order.trackingNumber}`);
+            legacyParts.push(`(ئۆردەری پێشتر چارجکراو، تەنها شیپینگ ماوە)`);
+            legacyParts.push(`دابەشکراو بەپێی کێش/CBM`);
+            lineItems.push({
+              description: legacyParts.join('\n'),
+              quantity: 1, unitPrice: shippingShare, total: shippingShare,
+            });
+            totalAmount += shippingShare;
+          }
+          continue;
+        }
+
+        // Fresh order — 2-line format (combined goods + separate shipping)
         const itemPrice = parseFloat(((order as any).itemPriceUsd || '0').toString()) || 0;
         const commissionFee = parseFloat(((order as any).commissionFeeUsd || '0').toString()) || 0;
         const qty = order.quantity || 1;
@@ -290,7 +320,7 @@ async function emitCmInvoices(
         notes: [
           `🛍️ پسووڵەی گەیاندنی کڕین بە عمولە`,
           `باچ: ${batch?.batchCode || ''} (${typeLabel})`,
-          `ژمارەی ئۆردەر: ${cmItems.length}`,
+          `ژمارەی ئۆردەر: ${cmItems.length}${legacyOnlyCount > 0 ? ` (${legacyOnlyCount} ئۆردەری پێشتر چارجکراو، تەنها شیپینگ)` : ''}`,
           `کۆی نرخی کاڵا + شیپینگ: $${totalAmount.toFixed(2)}`,
           ...(totalAdvancePaid > 0 ? [
             `─────────────`,
@@ -316,9 +346,39 @@ async function emitCmInvoices(
         }
       }
 
-      for (const { order, chargeAmount, shippingShare } of cmItems) {
+      for (const item of cmItems) {
+        const { order, chargeAmount, shippingShare, isLegacyShippingOnly } = item;
         try {
-          // Main DEBIT: item + commission (chargeAmount = itemPrice*qty + commissionFee)
+          if (isLegacyShippingOnly) {
+            // Legacy: only shipping DEBIT, no main charge (already done at creation)
+            if (shippingShare > 0) {
+              await db.applyChargeToInvoice(
+                customerId, customer.customerCode, 'PACKAGE',
+                order.id, shippingShare,
+                `کڕین بە عمولە ${order.orderCode} - کرێی گواستنەوە (پاشاکەوتکراو)`,
+                ctx.user.id, invoice.id,
+              );
+
+              const grossProfit = parseFloat(order.grossProfitUsd || '0');
+              await db.updateFullPackageOrder(order.id, {
+                isShippingCharged: true,
+                shippingChargedAt: new Date(),
+                shippingChargedUsd: shippingShare.toFixed(2),
+                shippingCostUsd: shippingShare.toFixed(2),
+                netProfitUsd: (grossProfit - shippingShare).toFixed(2),
+                batchId,
+                // status already 'delivered' or higher from auto-sync; do NOT
+                // re-set isCharged here — it was set at creation
+              });
+
+              appLogger.info("[BatchDelivered CM Legacy] Shipping-only DEBIT applied", {
+                orderCode: order.orderCode, shippingShare, invoiceNumber,
+              });
+            }
+            continue;
+          }
+
+          // Fresh order: full charge + shipping
           const mainTxn = await db.applyChargeToInvoice(
             customerId, customer.customerCode, 'COMMISSION',
             order.id, chargeAmount,
@@ -326,7 +386,6 @@ async function emitCmInvoices(
             ctx.user.id, invoice.id,
           );
 
-          // Separate DEBIT for shipping
           if (shippingShare > 0) {
             await db.applyChargeToInvoice(
               customerId, customer.customerCode, 'PACKAGE',
@@ -836,46 +895,27 @@ export const batchesRouter = router({
                   const share = shares.find(s => s.order.id === fpOrder.id)?.share ?? 0;
 
                   if (fpOrder.isCharged || fpOrder.isChargedToCustomer) {
-                    // Legacy path: still charge shipping separately for commission
+                    // Legacy commission orders that still need shipping charged:
+                    // route through the SAME consolidated CM invoice as fresh
+                    // orders, but only charge shipping (item+commission already
+                    // paid on the old per-order invoice from creation time).
+                    // Marker `isLegacyShippingOnly` tells emitCmInvoices to
+                    // render only the shipping line and apply only the
+                    // shipping DEBIT.
                     if (fpOrder.orderType === 'commission' && share > 0 && !fpOrder.isShippingCharged) {
-                      try {
-                        const customer = await db.getCustomerById(fpOrder.customerId);
-                        if (customer) {
-                          const invoiceNumber = `INV-CM-SHIP-${Date.now()}-${fpOrder.id}`;
-                          const invoice = await db.createInvoice({
-                            invoiceNumber,
-                            customerId: fpOrder.customerId,
-                            batchId: id,
-                            subtotalUsd: share.toFixed(2),
-                            totalUsd: share.toFixed(2),
-                            status: "issued",
-                            issuedAt: new Date(),
-                            lineItems: [{
-                              description: `🚚 کرێی گواستنەوە — ${fpOrder.productName}\nکۆدی ئۆردەر: ${fpOrder.orderCode}\nباچ: ${batch?.batchCode || ''}\nشیپینگی دابەشکراو: $${share.toFixed(2)}`,
-                              quantity: 1, unitPrice: share, total: share,
-                            }],
-                            notes: `پسووڵەی گواستنەوەی کڕین بە عمولە ${fpOrder.orderCode} — باچ ${batch?.batchCode || ''}`,
-                            createdById: ctx.user.id,
-                          });
-                          await db.applyChargeToInvoice(
-                            fpOrder.customerId, customer.customerCode, 'PACKAGE',
-                            fpOrder.id, share,
-                            `کڕین بە عمولە ${fpOrder.orderCode} - کرێی گواستنەوە`,
-                            ctx.user.id, invoice.id,
-                          );
-                          const grossProfit = parseFloat(fpOrder.grossProfitUsd || '0');
-                          await db.updateFullPackageOrder(fpOrder.id, {
-                            isShippingCharged: true,
-                            shippingChargedAt: new Date(),
-                            shippingChargedUsd: share.toFixed(2),
-                            shippingCostUsd: share.toFixed(2),
-                            netProfitUsd: (grossProfit - share).toFixed(2),
-                            batchId: id,
-                          }, ctx.user.id);
-                        }
-                      } catch (e) {
-                        appLogger.error("[Legacy Commission Shipping] Failed", { orderCode: fpOrder.orderCode, error: e instanceof Error ? e.message : String(e) });
-                      }
+                      const item: DeliveryItem = {
+                        order: fpOrder,
+                        chargeAmount: 0,           // already paid at creation
+                        shippingShare: share,
+                        pkg,
+                        isLegacyShippingOnly: true,
+                      };
+                      const arr = commissionOrdersByCustomer.get(fpOrder.customerId) || [];
+                      arr.push(item);
+                      commissionOrdersByCustomer.set(fpOrder.customerId, arr);
+                      appLogger.info("[BatchDelivered] Legacy CM order routed to consolidated invoice", {
+                        orderCode: fpOrder.orderCode, share,
+                      });
                     }
                     continue;
                   }
