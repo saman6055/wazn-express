@@ -36,13 +36,24 @@ type DeliveryItem = {
  * is the sum of `sellingPrice × qty` across all orders. Shipping is
  * COMPANY cost for FP — NOT charged to customer here.
  */
+/** Result of emitting a batch of consolidated invoices. Counts ONLY actual
+ *  successes, not bucket sizes — so the diag report can never lie about
+ *  what made it into the database. */
+type EmitResult = {
+  invoicesCreated: number;
+  ordersCharged: number;
+  errors: string[];
+  invoiceNumbers: string[];
+};
+
 async function emitFpInvoices(
   buckets: Map<number, DeliveryItem[]>,
   ctx: { user: { id: number; role: string } },
   batchId: number,
   batch: any,
   invoiceSuffix: string = '',
-): Promise<void> {
+): Promise<EmitResult> {
+  const result: EmitResult = { invoicesCreated: 0, ordersCharged: 0, errors: [], invoiceNumbers: [] };
   const isSea = batch?.shippingType === 'sea';
 
   for (const [customerId, fpItems] of Array.from(buckets.entries())) {
@@ -133,6 +144,8 @@ async function emitFpInvoices(
         createdById: ctx.user.id,
       });
 
+      result.invoicesCreated++;
+      result.invoiceNumbers.push(invoiceNumber);
       appLogger.info("[BatchDelivered FP] Invoice created", {
         invoiceId: invoice.id, invoiceNumber, totalAmount, fpCount: fpItems.length,
       });
@@ -170,22 +183,29 @@ async function emitFpInvoices(
             // Set status last so any pre-status-set side effects already ran
             status: 'delivered',
           });
+          result.ordersCharged++;
           appLogger.info("[BatchDelivered FP] Charged + linked", {
             customerCode: customer.customerCode, orderCode: order.orderCode,
             chargeAmount, invoiceNumber,
           });
         } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          result.errors.push(`FP order ${order.orderCode}: ${msg}`);
           appLogger.error("[BatchDelivered FP] Failed to charge order", {
             orderCode: order.orderCode, error: e instanceof Error ? e.message : String(e),
           });
         }
       }
     } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      result.errors.push(`FP customer ${customerId}: ${msg}`);
       appLogger.error("[BatchDelivered FP] Failed to create consolidated invoice", {
-        customerId, error: e instanceof Error ? e.message : String(e),
+        customerId, error: msg,
+        stack: e instanceof Error ? e.stack : undefined,
       });
     }
   }
+  return result;
 }
 
 /**
@@ -203,7 +223,8 @@ async function emitCmInvoices(
   batchId: number,
   batch: any,
   invoiceSuffix: string = '',
-): Promise<void> {
+): Promise<EmitResult> {
+  const result: EmitResult = { invoicesCreated: 0, ordersCharged: 0, errors: [], invoiceNumbers: [] };
   const isSea = batch?.shippingType === 'sea';
 
   for (const [customerId, cmItems] of Array.from(buckets.entries())) {
@@ -332,6 +353,8 @@ async function emitCmInvoices(
         createdById: ctx.user.id,
       });
 
+      result.invoicesCreated++;
+      result.invoiceNumbers.push(invoiceNumber);
       appLogger.info("[BatchDelivered CM] Invoice created", {
         invoiceId: invoice.id, invoiceNumber, totalAmount, cmCount: cmItems.length,
       });
@@ -371,6 +394,7 @@ async function emitCmInvoices(
                 // re-set isCharged here — it was set at creation
               });
 
+              result.ordersCharged++;
               appLogger.info("[BatchDelivered CM Legacy] Shipping-only DEBIT applied", {
                 orderCode: order.orderCode, shippingShare, invoiceNumber,
               });
@@ -414,22 +438,30 @@ async function emitCmInvoices(
             status: 'delivered',
           });
 
+          result.ordersCharged++;
           appLogger.info("[BatchDelivered CM] Charged + linked", {
             customerCode: customer.customerCode, orderCode: order.orderCode,
             chargeAmount, shippingShare, invoiceNumber,
           });
         } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          result.errors.push(`CM order ${order.orderCode}: ${msg}`);
           appLogger.error("[BatchDelivered CM] Failed to charge order", {
-            orderCode: order.orderCode, error: e instanceof Error ? e.message : String(e),
+            orderCode: order.orderCode, error: msg,
+            stack: e instanceof Error ? e.stack : undefined,
           });
         }
       }
     } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      result.errors.push(`CM customer ${customerId}: ${msg}`);
       appLogger.error("[BatchDelivered CM] Failed to create consolidated invoice", {
-        customerId, error: e instanceof Error ? e.message : String(e),
+        customerId, error: msg,
+        stack: e instanceof Error ? e.stack : undefined,
       });
     }
   }
+  return result;
 }
 
 export const batchesRouter = router({
@@ -547,10 +579,18 @@ export const batchesRouter = router({
           }
         }
 
-        diag.recoveryFpInvoices = stragglerFp.size;
-        diag.recoveryCmInvoices = stragglerCm.size;
-        if (stragglerFp.size > 0) await emitFpInvoices(stragglerFp, ctx, id, batch, '-RECOVER');
-        if (stragglerCm.size > 0) await emitCmInvoices(stragglerCm, ctx, id, batch, '-RECOVER');
+        const reprocessErrors: string[] = [];
+        if (stragglerFp.size > 0) {
+          const r = await emitFpInvoices(stragglerFp, ctx, id, batch, '-RECOVER');
+          diag.recoveryFpInvoices = r.invoicesCreated;
+          reprocessErrors.push(...r.errors);
+        }
+        if (stragglerCm.size > 0) {
+          const r = await emitCmInvoices(stragglerCm, ctx, id, batch, '-RECOVER');
+          diag.recoveryCmInvoices = r.invoicesCreated;
+          reprocessErrors.push(...r.errors);
+        }
+        (diag as any).errors = reprocessErrors;
 
         appLogger.info("[Reprocess] complete", diag);
 
@@ -995,9 +1035,12 @@ export const batchesRouter = router({
             ordersCount: Array.from(fpOrdersByCustomer.values()).reduce((s, a) => s + a.length, 0),
           });
           try {
-            await emitFpInvoices(fpOrdersByCustomer, ctx, id, batch);
-            diag.phase2.fpInvoicesCreated = fpOrdersByCustomer.size;
-            diag.phase2.fpOrdersCharged = Array.from(fpOrdersByCustomer.values()).reduce((s, a) => s + a.length, 0);
+            const fpResult = await emitFpInvoices(fpOrdersByCustomer, ctx, id, batch);
+            // Counters are populated from ACTUAL successes — never from bucket sizes.
+            diag.phase2.fpInvoicesCreated = fpResult.invoicesCreated;
+            diag.phase2.fpOrdersCharged = fpResult.ordersCharged;
+            diag.phase2.errors.push(...fpResult.errors);
+            appLogger.info("[BatchDelivered Phase2A] emitFpInvoices result", fpResult);
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
             appLogger.error("[BatchDelivered Phase2A] emitFpInvoices THREW", { error: msg, stack: e instanceof Error ? e.stack : undefined });
@@ -1010,9 +1053,11 @@ export const batchesRouter = router({
             ordersCount: Array.from(commissionOrdersByCustomer.values()).reduce((s, a) => s + a.length, 0),
           });
           try {
-            await emitCmInvoices(commissionOrdersByCustomer, ctx, id, batch);
-            diag.phase2.cmInvoicesCreated = commissionOrdersByCustomer.size;
-            diag.phase2.cmOrdersCharged = Array.from(commissionOrdersByCustomer.values()).reduce((s, a) => s + a.length, 0);
+            const cmResult = await emitCmInvoices(commissionOrdersByCustomer, ctx, id, batch);
+            diag.phase2.cmInvoicesCreated = cmResult.invoicesCreated;
+            diag.phase2.cmOrdersCharged = cmResult.ordersCharged;
+            diag.phase2.errors.push(...cmResult.errors);
+            appLogger.info("[BatchDelivered Phase2B] emitCmInvoices result", cmResult);
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e);
             appLogger.error("[BatchDelivered Phase2B] emitCmInvoices THREW", { error: msg, stack: e instanceof Error ? e.stack : undefined });
@@ -1301,16 +1346,24 @@ export const batchesRouter = router({
           const stragglerFpTotal = Array.from(stragglerFp.values()).reduce((s, a) => s + a.length, 0);
           const stragglerCmTotal = Array.from(stragglerCm.values()).reduce((s, a) => s + a.length, 0);
           diag.phase3.stragglersFound = stragglerFpTotal + stragglerCmTotal;
-          diag.phase3.recoveryFpInvoices = stragglerFp.size;
-          diag.phase3.recoveryCmInvoices = stragglerCm.size;
 
           appLogger.info("[BatchDelivered Phase3] Stragglers found", {
             fpCustomers: stragglerFp.size, cmCustomers: stragglerCm.size,
             fpOrdersTotal: stragglerFpTotal, cmOrdersTotal: stragglerCmTotal,
           });
 
-          if (stragglerFp.size > 0) await emitFpInvoices(stragglerFp, ctx, id, batch, '-RECOVER');
-          if (stragglerCm.size > 0) await emitCmInvoices(stragglerCm, ctx, id, batch, '-RECOVER');
+          if (stragglerFp.size > 0) {
+            const r = await emitFpInvoices(stragglerFp, ctx, id, batch, '-RECOVER');
+            diag.phase3.recoveryFpInvoices = r.invoicesCreated;
+            diag.phase2.errors.push(...r.errors);
+            appLogger.info("[BatchDelivered Phase3] FP recovery result", r);
+          }
+          if (stragglerCm.size > 0) {
+            const r = await emitCmInvoices(stragglerCm, ctx, id, batch, '-RECOVER');
+            diag.phase3.recoveryCmInvoices = r.invoicesCreated;
+            diag.phase2.errors.push(...r.errors);
+            appLogger.info("[BatchDelivered Phase3] CM recovery result", r);
+          }
 
           appLogger.info("[BatchDelivered Phase3] Safety-net complete", { diag });
 
