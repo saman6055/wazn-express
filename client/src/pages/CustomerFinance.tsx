@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -77,8 +77,10 @@ import {
   PieChart,
   Sparkles,
   ChevronsUpDown,
+  ChevronDown,
   Check,
   Landmark,
+  Layers,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { toast } from "sonner";
@@ -101,6 +103,10 @@ export default function CustomerFinance() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  // Tracks which invoice groups are currently expanded in the ledger table.
+  // Keyed by invoiceId; absent = collapsed (default). Standalone rows
+  // (invoiceId == null) are never grouped, so they ignore this set.
+  const [expandedInvoices, setExpandedInvoices] = useState<Set<number>>(new Set());
   
   const utils = trpc.useUtils();
   
@@ -121,6 +127,13 @@ export default function CustomerFinance() {
     { enabled: !!account?.id }
   );
   const { data: settings } = trpc.settings.list.useQuery();
+  // Used only to resolve invoiceId → invoiceNumber for grouped row headers.
+  // Same page size as transactions so a 1:1 lookup map is realistic for the
+  // visible window. Read-only — never written back.
+  const { data: customerInvoicesResponse } = trpc.invoices.getByCustomer.useQuery(
+    { customerId, limit: 100 },
+    { enabled: !!customer }
+  );
   
   const getOrCreateAccount = trpc.ledger.getOrCreateAccount.useMutation({
     onSuccess: () => {
@@ -243,6 +256,96 @@ export default function CustomerFinance() {
     if (typeFilter === 'all') return true;
     return txn.transactionType === typeFilter;
   });
+
+  // Map invoiceId → { invoiceNumber, batchId } for the grouped header. Only
+  // a display lookup; ledger integrity does not depend on this query.
+  const invoiceMap = useMemo(() => {
+    const map = new Map<number, { invoiceNumber: string; batchId: number | null }>();
+    const list = Array.isArray(customerInvoicesResponse)
+      ? customerInvoicesResponse
+      : (customerInvoicesResponse?.data ?? []);
+    for (const inv of list) {
+      if (inv?.id != null) {
+        map.set(inv.id, {
+          invoiceNumber: inv.invoiceNumber || `#${inv.id}`,
+          batchId: (inv as any).batchId ?? null,
+        });
+      }
+    }
+    return map;
+  }, [customerInvoicesResponse]);
+
+  // Group consecutive transactions by invoiceId. Order from the API is
+  // preserved (newest-first), so groups also surface newest-first.
+  // - rows with invoiceId === null  → standalone group (manual credits, etc.)
+  // - rows with same invoiceId      → one collapsible group
+  // - groups of size 1 are still rendered as a normal row (no toggle)
+  type LedgerTxn = NonNullable<typeof filteredTransactions>[number];
+  type LedgerGroup =
+    | { kind: 'standalone'; key: string; row: LedgerTxn }
+    | {
+        kind: 'invoice';
+        key: string;
+        invoiceId: number;
+        invoiceNumber: string;
+        batchId: number | null;
+        rows: LedgerTxn[];
+        netAmountUsd: number;       // signed: + for net debit, − for net credit
+        balanceAfterUsd: number;    // post-state of newest row (group head)
+        latestCreatedAt: Date;
+      };
+
+  const ledgerGroups = useMemo<LedgerGroup[]>(() => {
+    const txns = filteredTransactions ?? [];
+    const byInvoice = new Map<number, LedgerTxn[]>();
+    const order: Array<{ kind: 'standalone'; row: LedgerTxn } | { kind: 'invoice'; invoiceId: number }> = [];
+
+    for (const txn of txns) {
+      const invId = (txn as any).invoiceId as number | null | undefined;
+      if (invId == null) {
+        order.push({ kind: 'standalone', row: txn });
+        continue;
+      }
+      if (!byInvoice.has(invId)) {
+        byInvoice.set(invId, []);
+        order.push({ kind: 'invoice', invoiceId: invId });
+      }
+      byInvoice.get(invId)!.push(txn);
+    }
+
+    return order.map((slot, idx): LedgerGroup => {
+      if (slot.kind === 'standalone') {
+        return { kind: 'standalone', key: `s-${slot.row.id}`, row: slot.row };
+      }
+      const rows = byInvoice.get(slot.invoiceId) ?? [];
+      const head = rows[0]; // newest first per API ordering
+      const netAmountUsd = rows.reduce((sum, t) => {
+        const amt = parseFloat(t.amountUsd || '0') || 0;
+        return sum + (t.transactionType.startsWith('DEBIT') ? amt : -amt);
+      }, 0);
+      const meta = invoiceMap.get(slot.invoiceId);
+      return {
+        kind: 'invoice',
+        key: `i-${slot.invoiceId}-${idx}`,
+        invoiceId: slot.invoiceId,
+        invoiceNumber: meta?.invoiceNumber ?? `#${slot.invoiceId}`,
+        batchId: meta?.batchId ?? null,
+        rows,
+        netAmountUsd,
+        balanceAfterUsd: parseFloat(head?.balanceAfterUsd || '0') || 0,
+        latestCreatedAt: head?.createdAt ? new Date(head.createdAt) : new Date(),
+      };
+    });
+  }, [filteredTransactions, invoiceMap]);
+
+  const toggleInvoiceGroup = (invoiceId: number) => {
+    setExpandedInvoices(prev => {
+      const next = new Set(prev);
+      if (next.has(invoiceId)) next.delete(invoiceId);
+      else next.add(invoiceId);
+      return next;
+    });
+  };
 
   // Get transaction type icon
   const getTransactionTypeIcon = (type: string) => {
@@ -1405,59 +1508,272 @@ export default function CustomerFinance() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {filteredTransactions.map((txn) => (
-                                <TableRow 
-                                  key={txn.id} 
-                                  className="hover:bg-muted/30 cursor-pointer transition-colors"
-                                  onClick={() => openTransactionDetails(txn)}
-                                >
-                                  <TableCell className="font-mono text-sm text-muted-foreground">
-                                    {txn.transactionNumber}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge 
-                                      variant="outline" 
+                              {ledgerGroups.map((group) => {
+                                // Standalone row — manual credits, refunds, advance
+                                // payments not yet linked, etc. invoiceId is null,
+                                // nothing to group under.
+                                if (group.kind === 'standalone') {
+                                  const txn = group.row;
+                                  return (
+                                    <TableRow
+                                      key={group.key}
+                                      className="hover:bg-muted/30 cursor-pointer transition-colors"
+                                      onClick={() => openTransactionDetails(txn)}
+                                    >
+                                      <TableCell className="font-mono text-sm text-muted-foreground">
+                                        {txn.transactionNumber}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge
+                                          variant="outline"
+                                          className={cn(
+                                            "gap-1 font-normal",
+                                            txn.transactionType.startsWith('DEBIT')
+                                              ? "bg-red-50 text-red-700 border-red-200"
+                                              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                          )}
+                                        >
+                                          {getTransactionTypeIcon(txn.transactionType)}
+                                          {getTransactionTypeLabel(txn.transactionType)}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className={cn(
+                                        "font-semibold",
+                                        txn.transactionType.startsWith('DEBIT') ? "text-red-600" : "text-emerald-600"
+                                      )}>
+                                        {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(txn.amountUsd || '0').toFixed(2)}
+                                      </TableCell>
+                                      <TableCell className="font-semibold">
+                                        ${parseFloat(txn.balanceAfterUsd || '0').toFixed(2)}
+                                      </TableCell>
+                                      <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">
+                                        {txn.description || '-'}
+                                      </TableCell>
+                                      <TableCell className="text-muted-foreground text-sm">
+                                        {new Date(txn.createdAt).toLocaleDateString('ku-IQ')}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0 rounded-lg hover:bg-emerald-100"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            openTransactionDetails(txn);
+                                          }}
+                                        >
+                                          <Eye className="w-4 h-4 text-emerald-600" />
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                }
+
+                                // Invoice group with a single transaction — render
+                                // as a flat row, no toggle (avoids "expand to see
+                                // 1 thing" noise).
+                                if (group.rows.length === 1) {
+                                  const txn = group.rows[0];
+                                  return (
+                                    <TableRow
+                                      key={group.key}
+                                      className="hover:bg-muted/30 cursor-pointer transition-colors"
+                                      onClick={() => openTransactionDetails(txn)}
+                                    >
+                                      <TableCell className="font-mono text-sm text-muted-foreground">
+                                        {txn.transactionNumber}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge
+                                          variant="outline"
+                                          className={cn(
+                                            "gap-1 font-normal",
+                                            txn.transactionType.startsWith('DEBIT')
+                                              ? "bg-red-50 text-red-700 border-red-200"
+                                              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                          )}
+                                        >
+                                          {getTransactionTypeIcon(txn.transactionType)}
+                                          {getTransactionTypeLabel(txn.transactionType)}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className={cn(
+                                        "font-semibold",
+                                        txn.transactionType.startsWith('DEBIT') ? "text-red-600" : "text-emerald-600"
+                                      )}>
+                                        {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(txn.amountUsd || '0').toFixed(2)}
+                                      </TableCell>
+                                      <TableCell className="font-semibold">
+                                        ${parseFloat(txn.balanceAfterUsd || '0').toFixed(2)}
+                                      </TableCell>
+                                      <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">
+                                        {txn.description || '-'}
+                                      </TableCell>
+                                      <TableCell className="text-muted-foreground text-sm">
+                                        {new Date(txn.createdAt).toLocaleDateString('ku-IQ')}
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="flex items-center gap-1">
+                                          <Link href={`/invoices/${group.invoiceId}`}>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-8 w-8 p-0 rounded-lg hover:bg-blue-100"
+                                              title="بینینی پسووڵە"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <ExternalLink className="w-4 h-4 text-blue-600" />
+                                            </Button>
+                                          </Link>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0 rounded-lg hover:bg-emerald-100"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openTransactionDetails(txn);
+                                            }}
+                                          >
+                                            <Eye className="w-4 h-4 text-emerald-600" />
+                                          </Button>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                }
+
+                                // Multi-transaction invoice group — collapsible.
+                                // Header row shows aggregate; clicking toggles the
+                                // child rows. Net amount is signed: a batch with
+                                // both DEBIT_PACKAGE and a linked CREDIT_PAYMENT
+                                // shows the net.
+                                const isExpanded = expandedInvoices.has(group.invoiceId);
+                                const isNetDebit = group.netAmountUsd >= 0;
+                                const absNet = Math.abs(group.netAmountUsd);
+
+                                return (
+                                  <Fragment key={group.key}>
+                                    <TableRow
                                       className={cn(
-                                        "gap-1 font-normal",
-                                        txn.transactionType.startsWith('DEBIT') 
-                                          ? "bg-red-50 text-red-700 border-red-200" 
-                                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                        "cursor-pointer transition-colors border-l-4",
+                                        isExpanded
+                                          ? "bg-emerald-50/40 hover:bg-emerald-50/60 border-l-emerald-500"
+                                          : "hover:bg-muted/30 border-l-transparent"
                                       )}
+                                      onClick={() => toggleInvoiceGroup(group.invoiceId)}
                                     >
-                                      {getTransactionTypeIcon(txn.transactionType)}
-                                      {getTransactionTypeLabel(txn.transactionType)}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className={cn(
-                                    "font-semibold",
-                                    txn.transactionType.startsWith('DEBIT') ? "text-red-600" : "text-emerald-600"
-                                  )}>
-                                    {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(txn.amountUsd || '0').toFixed(2)}
-                                  </TableCell>
-                                  <TableCell className="font-semibold">
-                                    ${parseFloat(txn.balanceAfterUsd || '0').toFixed(2)}
-                                  </TableCell>
-                                  <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">
-                                    {txn.description || '-'}
-                                  </TableCell>
-                                  <TableCell className="text-muted-foreground text-sm">
-                                    {new Date(txn.createdAt).toLocaleDateString('ku-IQ')}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm" 
-                                      className="h-8 w-8 p-0 rounded-lg hover:bg-emerald-100"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openTransactionDetails(txn);
-                                      }}
-                                    >
-                                      <Eye className="w-4 h-4 text-emerald-600" />
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
+                                      <TableCell className="font-mono text-sm">
+                                        <div className="flex items-center gap-2">
+                                          <ChevronDown
+                                            className={cn(
+                                              "w-4 h-4 text-muted-foreground transition-transform shrink-0",
+                                              isExpanded ? "rotate-0" : "-rotate-90"
+                                            )}
+                                          />
+                                          <span className="text-emerald-700 font-semibold truncate max-w-[180px]" title={group.invoiceNumber}>
+                                            {group.invoiceNumber}
+                                          </span>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge
+                                          variant="outline"
+                                          className="gap-1 font-normal bg-emerald-50 text-emerald-700 border-emerald-200"
+                                        >
+                                          <Layers className="w-3.5 h-3.5" />
+                                          {group.rows.length} جوڵە
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className={cn(
+                                        "font-bold text-base",
+                                        isNetDebit ? "text-red-600" : "text-emerald-600"
+                                      )}>
+                                        {isNetDebit ? '+' : '-'}${absNet.toFixed(2)}
+                                      </TableCell>
+                                      <TableCell className="font-semibold">
+                                        ${group.balanceAfterUsd.toFixed(2)}
+                                      </TableCell>
+                                      <TableCell className="max-w-[240px] truncate text-muted-foreground text-sm">
+                                        پسووڵەی کۆکراوە — {group.rows.length} مامەڵە
+                                      </TableCell>
+                                      <TableCell className="text-muted-foreground text-sm">
+                                        {group.latestCreatedAt.toLocaleDateString('ku-IQ')}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Link href={`/invoices/${group.invoiceId}`}>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0 rounded-lg hover:bg-blue-100"
+                                            title="بینینی پسووڵە"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <ExternalLink className="w-4 h-4 text-blue-600" />
+                                          </Button>
+                                        </Link>
+                                      </TableCell>
+                                    </TableRow>
+
+                                    {isExpanded && group.rows.map((txn, childIdx) => (
+                                      <TableRow
+                                        key={`${group.key}-${txn.id}`}
+                                        className={cn(
+                                          "cursor-pointer transition-colors bg-muted/10 hover:bg-muted/40 border-l-4 border-l-emerald-200",
+                                          childIdx === group.rows.length - 1 && "border-b-2 border-b-emerald-100"
+                                        )}
+                                        onClick={() => openTransactionDetails(txn)}
+                                      >
+                                        <TableCell className="font-mono text-xs text-muted-foreground ps-8">
+                                          <span className="text-muted-foreground/60 me-2">└─</span>
+                                          {txn.transactionNumber}
+                                        </TableCell>
+                                        <TableCell>
+                                          <Badge
+                                            variant="outline"
+                                            className={cn(
+                                              "gap-1 font-normal text-xs",
+                                              txn.transactionType.startsWith('DEBIT')
+                                                ? "bg-red-50/70 text-red-700 border-red-200"
+                                                : "bg-emerald-50/70 text-emerald-700 border-emerald-200"
+                                            )}
+                                          >
+                                            {getTransactionTypeIcon(txn.transactionType)}
+                                            {getTransactionTypeLabel(txn.transactionType)}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell className={cn(
+                                          "font-semibold text-sm",
+                                          txn.transactionType.startsWith('DEBIT') ? "text-red-600" : "text-emerald-600"
+                                        )}>
+                                          {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(txn.amountUsd || '0').toFixed(2)}
+                                        </TableCell>
+                                        <TableCell className="font-medium text-sm">
+                                          ${parseFloat(txn.balanceAfterUsd || '0').toFixed(2)}
+                                        </TableCell>
+                                        <TableCell className="max-w-[240px] truncate text-muted-foreground text-xs">
+                                          {txn.description || '-'}
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground text-xs">
+                                          {new Date(txn.createdAt).toLocaleDateString('ku-IQ')}
+                                        </TableCell>
+                                        <TableCell>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0 rounded-lg hover:bg-emerald-100"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openTransactionDetails(txn);
+                                            }}
+                                          >
+                                            <Eye className="w-4 h-4 text-emerald-600" />
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </Fragment>
+                                );
+                              })}
                             </TableBody>
                           </Table>
                         </div>
