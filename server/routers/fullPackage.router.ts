@@ -1474,15 +1474,15 @@ export const fullPackageRouter = router({
         });
 
         // applyCharge automatically creates ledger transaction and invoice.
-        // Build rich multi-line descriptions so the customer can reconcile the
-        // invoice without opening the order — same shape as the generic
-        // commission-order path above.
+        // Per spec: render ONE combined "item price" line that already
+        // includes commission — no separate commission line item, no
+        // qty × unit + commission breakdown. The unitPrice/total columns on
+        // the rendered invoice carry the combined number directly.
         const productDescParts: string[] = [`🛍️ ${input.productName}`];
         productDescParts.push(`کۆدی ئۆردەر: ${orderCode}`);
         if (input.color) productDescParts.push(`ڕەنگ: ${input.color}`);
         if (input.size) productDescParts.push(`قەبارە: ${input.size}`);
         if (input.productDescription) productDescParts.push(`وەسف: ${input.productDescription}`);
-        productDescParts.push(`نرخ: ${quantity} × $${itemPricePerUnit.toFixed(2)} = $${itemTotal.toFixed(2)}`);
 
         const commissionChargeResult = await db.applyCharge(
           input.customerId,
@@ -1490,20 +1490,14 @@ export const fullPackageRouter = router({
           'COMMISSION',
           order.id,
           totalPrepaid,
-          `کڕینی عمولە - ${input.productName} (کاڵا: $${itemTotal.toFixed(2)} + عمولە: $${commission.toFixed(2)} = $${totalPrepaid.toFixed(2)})`,
+          `کڕینی عمولە - ${input.productName} (نرخی کاڵا: $${totalPrepaid.toFixed(2)})`,
           ctx.user.id,
           [
             {
               description: productDescParts.join('\n'),
               quantity: quantity,
-              unitPrice: itemPricePerUnit,
-              total: itemTotal,
-            },
-            {
-              description: `💼 عمولەی کڕین\nفلاتە بۆ هەر ئۆردەرێک | Flat commission per order`,
-              quantity: 1,
-              unitPrice: commission,
-              total: commission,
+              unitPrice: quantity > 0 ? totalPrepaid / quantity : totalPrepaid,
+              total: totalPrepaid,
             },
           ]
         );

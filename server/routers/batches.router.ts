@@ -230,6 +230,42 @@ async function emitCmInvoices(
 ): Promise<EmitResult> {
   const result: EmitResult = { invoicesCreated: 0, ordersCharged: 0, errors: [], invoiceNumbers: [] };
   const isSea = batch?.shippingType === 'sea';
+  const pricePerKg = parseFloat(batch?.pricePerKg?.toString() || "0") || 0;
+  const pricePerCbm = parseFloat(batch?.pricePerCbm?.toString() || "0") || 0;
+
+  // Build a shipping-line description with weight/CBM + per-unit rate so the
+  // customer can verify what they're being charged for. Used for both fresh
+  // and legacy shipping-only lines on the consolidated CM invoice.
+  const buildShippingDesc = (order: any, isLegacy: boolean): string => {
+    const parts: string[] = isLegacy
+      ? [`🚚 کرێی گواستنەوە — ${order.productName}`, `کۆدی ئۆردەر: ${order.orderCode}`]
+      : [`🚚 شیپینگ — ${order.orderCode}`];
+    if (order.trackingNumber) parts.push(`تراکینگ: ${order.trackingNumber}`);
+
+    if (isSea) {
+      const cbm = parseFloat(order.volumeCbm?.toString() || "0") || 0;
+      if (cbm > 0) parts.push(`قەبارە: ${cbm.toFixed(3)} m³`);
+      if (pricePerCbm > 0) parts.push(`نرخی هێنانەوە: $${pricePerCbm.toFixed(2)}/m³`);
+    } else {
+      const actualKg = parseFloat(order.weightKg?.toString() || "0") || 0;
+      const oL = parseFloat(order.dimensionLength?.toString() || "0") || 0;
+      const oW = parseFloat(order.dimensionWidth?.toString() || "0") || 0;
+      const oH = parseFloat(order.dimensionHeight?.toString() || "0") || 0;
+      const volumetricKg = (oL * oW * oH) / 6000;
+      const chargeableKg = Math.max(actualKg, volumetricKg);
+      if (oL > 0 && oW > 0 && oH > 0) {
+        parts.push(`قەبارە: ${oL.toFixed(0)}×${oW.toFixed(0)}×${oH.toFixed(0)} cm`);
+      }
+      if (chargeableKg > 0) {
+        const which = (volumetricKg > actualKg && volumetricKg > 0) ? 'قەبارەیی' : 'ڕاستەقینە';
+        parts.push(`کێش: ${chargeableKg.toFixed(2)} kg (${which})`);
+      }
+      if (pricePerKg > 0) parts.push(`نرخی هێنانەوە: $${pricePerKg.toFixed(2)}/kg`);
+    }
+
+    if (isLegacy) parts.push(`(ئۆردەری پێشتر چارجکراو، تەنها شیپینگ ماوە)`);
+    return parts.join('\n');
+  };
 
   for (const [customerId, cmItems] of Array.from(buckets.entries())) {
     try {
@@ -256,13 +292,8 @@ async function emitCmInvoices(
           // consolidated invoice; never re-charge goods.
           legacyOnlyCount++;
           if (shippingShare > 0) {
-            const legacyParts: string[] = [`🚚 کرێی گواستنەوە — ${order.productName}`];
-            legacyParts.push(`کۆدی ئۆردەر: ${order.orderCode}`);
-            if (order.trackingNumber) legacyParts.push(`تراکینگ: ${order.trackingNumber}`);
-            legacyParts.push(`(ئۆردەری پێشتر چارجکراو، تەنها شیپینگ ماوە)`);
-            legacyParts.push(`دابەشکراو بەپێی کێش/CBM`);
             lineItems.push({
-              description: legacyParts.join('\n'),
+              description: buildShippingDesc(order, true),
               quantity: 1, unitPrice: shippingShare, total: shippingShare,
             });
             totalAmount += shippingShare;
@@ -277,13 +308,14 @@ async function emitCmInvoices(
         const itemSubtotal = itemPrice * qty;
         const goodsLine = itemSubtotal + commissionFee; // combined "نرخی کاڵا"
 
-        // Line 1: combined goods + commission (per user spec)
+        // Line 1: combined goods + commission rolled into a single
+        // "item price" total. No qty × unit + commission breakdown — the
+        // table's unitPrice/total columns already show the combined number.
         const goodsParts: string[] = [`🛍️ ${order.productName}`];
         goodsParts.push(`کۆدی ئۆردەر: ${order.orderCode}`);
         if (order.color) goodsParts.push(`ڕەنگ: ${order.color}`);
         if (order.size) goodsParts.push(`قەبارە: ${order.size}`);
         if (order.trackingNumber) goodsParts.push(`تراکینگ: ${order.trackingNumber}`);
-        goodsParts.push(`نرخی کاڵا: ${qty} × $${itemPrice.toFixed(2)} + عمولە $${commissionFee.toFixed(2)} = $${goodsLine.toFixed(2)}`);
         if (goodsLine > 0) {
           lineItems.push({
             description: goodsParts.join('\n'),
@@ -294,10 +326,10 @@ async function emitCmInvoices(
           totalAmount += goodsLine;
         }
 
-        // Line 2: shipping (separate, per order)
+        // Line 2: shipping (separate, per order) — full weight/CBM + rate
         if (shippingShare > 0) {
           lineItems.push({
-            description: `🚚 شیپینگ — ${order.orderCode}\nدابەشکراو بەپێی کێش/CBM`,
+            description: buildShippingDesc(order, false),
             quantity: 1, unitPrice: shippingShare, total: shippingShare,
           });
           totalAmount += shippingShare;
