@@ -407,6 +407,105 @@ export const batchesRouter = router({
       .query(async ({ input }) => {
         return db.getPackagesByBatch(input.batchId);
       }),
+
+    /**
+     * Manual recovery: re-run the consolidated invoice flow against an
+     * already-delivered batch. Useful when the original delivery left
+     * orders uncharged (e.g. a Phase 2 silent failure in production
+     * before the safety net was added).
+     *
+     * Idempotent: orders that were charged successfully on the first run
+     * are skipped because their `isCharged` flag is true. Stragglers go
+     * through the same Phase 3 logic and end up on a `-RECOVER` invoice.
+     *
+     * Returns the same diagnostic report as the delivered status update,
+     * so the UI can show "X orders recovered, Y new invoices".
+     */
+    reprocessInvoicing: staffProcedure
+      .input(z.object({ batchId: idSchema }))
+      .mutation(async ({ input, ctx }) => {
+        const id = input.batchId;
+        const batch = await db.getBatchById(id);
+        if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: "Batch not found" });
+
+        const refreshedPackages = await db.getPackagesByBatch(id);
+        const stragglerFp = new Map<number, DeliveryItem[]>();
+        const stragglerCm = new Map<number, DeliveryItem[]>();
+        const diag = {
+          batchId: id,
+          batchCode: batch.batchCode || '',
+          packageCount: refreshedPackages.length,
+          ordersChecked: 0,
+          alreadyCharged: 0,
+          stragglersFound: 0,
+          recoveryFpInvoices: 0,
+          recoveryCmInvoices: 0,
+        };
+
+        for (const pkg of refreshedPackages) {
+          const orderIds = new Set<number>();
+          if (pkg.fullPackageOrderId) orderIds.add(pkg.fullPackageOrderId);
+          if (pkg.trackingNumber) {
+            try {
+              const linked = await db.getAllOrdersByTrackingNumber(pkg.trackingNumber);
+              for (const o of linked) orderIds.add(o.id);
+            } catch (e) {
+              appLogger.error("[Reprocess] tracking lookup failed", {
+                trackingNumber: pkg.trackingNumber,
+                error: e instanceof Error ? e.message : String(e),
+              });
+            }
+          }
+          for (const oid of Array.from(orderIds)) {
+            try {
+              const order = await db.getFullPackageOrderById(oid);
+              if (!order || (order as any).deletedAt) continue;
+              diag.ordersChecked++;
+              if (order.isCharged || (order as any).isChargedToCustomer) {
+                diag.alreadyCharged++;
+                continue;
+              }
+              if (!order.customerId) continue;
+              const chargeAmount = db.computeOrderChargeAmount({
+                orderType: order.orderType,
+                sellingPriceUsd: order.sellingPriceUsd as any,
+                itemPriceUsd: (order as any).itemPriceUsd,
+                commissionFeeUsd: (order as any).commissionFeeUsd,
+                quantity: order.quantity,
+              });
+              if (chargeAmount <= 0) continue;
+              const item: DeliveryItem = { order, chargeAmount, shippingShare: 0, pkg };
+              const target = order.orderType === 'commission' ? stragglerCm : stragglerFp;
+              const arr = target.get(order.customerId) || [];
+              arr.push(item);
+              target.set(order.customerId, arr);
+              diag.stragglersFound++;
+            } catch (e) {
+              appLogger.error("[Reprocess] failed evaluating order", {
+                orderId: oid, error: e instanceof Error ? e.message : String(e),
+              });
+            }
+          }
+        }
+
+        diag.recoveryFpInvoices = stragglerFp.size;
+        diag.recoveryCmInvoices = stragglerCm.size;
+        if (stragglerFp.size > 0) await emitFpInvoices(stragglerFp, ctx, id, batch, '-RECOVER');
+        if (stragglerCm.size > 0) await emitCmInvoices(stragglerCm, ctx, id, batch, '-RECOVER');
+
+        appLogger.info("[Reprocess] complete", diag);
+
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "reprocess_batch_invoicing",
+          entityType: "batch",
+          entityId: id,
+          newValues: diag as any,
+        });
+
+        return { success: true, diagnostics: diag };
+      }),
     create: staffProcedure
       .input(z.object({
         batchCode: batchCodeSchema,
@@ -498,7 +597,12 @@ export const batchesRouter = router({
       .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
         await db.updateBatch(id, data);
-        
+
+        // Diagnostic report — populated by the delivered/closed branch and
+        // returned to the UI so the caller can immediately see what happened
+        // (without having to grep server logs). Stays empty for other statuses.
+        let diagOut: any = null;
+
         // Update all packages in batch if status changes
         if (input.status === "in_transit") {
           const packages = await db.getPackagesByBatch(id);
@@ -523,6 +627,39 @@ export const batchesRouter = router({
             appLogger.error("[Notification] Failed to send batch arrival notification", { error: e instanceof Error ? e.message : String(e) });
           }
         } else if (input.status === "delivered" || input.status === "closed") {
+          // Build a diagnostic report so the caller can see exactly what
+          // happened in the consolidated invoice flow without needing
+          // server logs. Surfaced back to the UI as part of the response.
+          const diag = {
+            batchId: id,
+            batchCode: '' as string,
+            packageCount: 0,
+            packagesWithOrderId: 0,
+            packagesWithTracking: 0,
+            packagesUnlinked: 0,
+            phase1: {
+              fpOrdersCollected: 0,
+              cmOrdersCollected: 0,
+              normalPkgsCollected: 0,
+              alreadyChargedSkipped: 0,
+              zeroAmountSkipped: 0,
+              packageErrors: 0,
+            },
+            phase2: {
+              fpInvoicesCreated: 0,
+              cmInvoicesCreated: 0,
+              pkgInvoicesCreated: 0,
+              fpOrdersCharged: 0,
+              cmOrdersCharged: 0,
+              errors: [] as string[],
+            },
+            phase3: {
+              stragglersFound: 0,
+              recoveryFpInvoices: 0,
+              recoveryCmInvoices: 0,
+            },
+          };
+
           // When batch is delivered or closed (CONSOLIDATED INVOICE MODEL):
           //
           // For each customer in this batch, we generate AT MOST 3 invoices:
@@ -552,10 +689,19 @@ export const batchesRouter = router({
           const commissionOrdersByCustomer = new Map<number, CmItem[]>();
           const packagesByCustomer = new Map<number, typeof packages>();
 
+          diag.batchCode = batch?.batchCode || '';
+          diag.packageCount = packages.length;
+          diag.packagesWithOrderId = packages.filter(p => p.fullPackageOrderId).length;
+          diag.packagesWithTracking = packages.filter(p => p.trackingNumber).length;
+          diag.packagesUnlinked = packages.filter(p => !p.fullPackageOrderId && !p.trackingNumber).length;
+
           appLogger.info("[BatchDelivered] Starting consolidated delivery flow", {
             batchId: id,
             batchCode: batch?.batchCode,
             packageCount: packages.length,
+            packagesWithOrderId: diag.packagesWithOrderId,
+            packagesWithTracking: diag.packagesWithTracking,
+            packagesUnlinked: diag.packagesUnlinked,
             shippingType: batch?.shippingType,
             pricePerKg, pricePerCbm,
           });
@@ -779,14 +925,18 @@ export const batchesRouter = router({
            }
           }
 
+          diag.phase1.fpOrdersCollected = Array.from(fpOrdersByCustomer.values()).reduce((s, arr) => s + arr.length, 0);
+          diag.phase1.cmOrdersCollected = Array.from(commissionOrdersByCustomer.values()).reduce((s, arr) => s + arr.length, 0);
+          diag.phase1.normalPkgsCollected = Array.from(packagesByCustomer.values()).reduce((s, arr) => s + arr.length, 0);
+
           appLogger.info("[BatchDelivered] Phase 1 complete — collected buckets", {
             batchId: id,
             fpCustomers: fpOrdersByCustomer.size,
-            fpOrdersTotal: Array.from(fpOrdersByCustomer.values()).reduce((s, arr) => s + arr.length, 0),
+            fpOrdersTotal: diag.phase1.fpOrdersCollected,
             commissionCustomers: commissionOrdersByCustomer.size,
-            commissionOrdersTotal: Array.from(commissionOrdersByCustomer.values()).reduce((s, arr) => s + arr.length, 0),
+            commissionOrdersTotal: diag.phase1.cmOrdersCollected,
             normalPkgCustomers: packagesByCustomer.size,
-            normalPkgsTotal: Array.from(packagesByCustomer.values()).reduce((s, arr) => s + arr.length, 0),
+            normalPkgsTotal: diag.phase1.normalPkgsCollected,
           });
 
           // ===== PHASE 2: CREATE CONSOLIDATED INVOICES =====
@@ -1076,16 +1226,21 @@ export const batchesRouter = router({
             }
           }
 
+          const stragglerFpTotal = Array.from(stragglerFp.values()).reduce((s, a) => s + a.length, 0);
+          const stragglerCmTotal = Array.from(stragglerCm.values()).reduce((s, a) => s + a.length, 0);
+          diag.phase3.stragglersFound = stragglerFpTotal + stragglerCmTotal;
+          diag.phase3.recoveryFpInvoices = stragglerFp.size;
+          diag.phase3.recoveryCmInvoices = stragglerCm.size;
+
           appLogger.info("[BatchDelivered Phase3] Stragglers found", {
             fpCustomers: stragglerFp.size, cmCustomers: stragglerCm.size,
-            fpOrdersTotal: Array.from(stragglerFp.values()).reduce((s, a) => s + a.length, 0),
-            cmOrdersTotal: Array.from(stragglerCm.values()).reduce((s, a) => s + a.length, 0),
+            fpOrdersTotal: stragglerFpTotal, cmOrdersTotal: stragglerCmTotal,
           });
 
           if (stragglerFp.size > 0) await emitFpInvoices(stragglerFp, ctx, id, batch, '-RECOVER');
           if (stragglerCm.size > 0) await emitCmInvoices(stragglerCm, ctx, id, batch, '-RECOVER');
 
-          appLogger.info("[BatchDelivered Phase3] Safety-net complete", { batchId: id });
+          appLogger.info("[BatchDelivered Phase3] Safety-net complete", { diag });
 
           // Notify customers about delivery
           try {
@@ -1093,8 +1248,11 @@ export const batchesRouter = router({
           } catch (e) {
             appLogger.error("[Notification] Failed to send batch delivery notification", { error: e instanceof Error ? e.message : String(e) });
           }
+
+          // Surface the consolidated-invoice diagnostics back to the UI
+          diagOut = diag;
         }
-        
+
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
@@ -1103,7 +1261,7 @@ export const batchesRouter = router({
           entityId: id,
           newValues: data,
         });
-        return { success: true };
+        return { success: true, diagnostics: diagOut };
       }),
     update: staffProcedure
       .input(z.object({

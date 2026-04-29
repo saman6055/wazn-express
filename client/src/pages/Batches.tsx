@@ -142,10 +142,56 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     resetForm();
     refetch();
   };
-  const onBatchStatusSuccess = () => {
+  const onMutationErrorEarly = (error: unknown) => {
+    const err = error as { message?: string; data?: { zodError?: { errors?: { message: string }[] } } };
+    const msg = err.data?.zodError?.errors?.[0]?.message || err.message || t("common.error");
+    toast.error(msg);
+  };
+  const onBatchStatusSuccess = (data?: any) => {
     toast.success(t("batches.statusUpdated"));
+
+    // If the batch just transitioned to delivered/closed, the server returns
+    // a diagnostic report describing exactly what the consolidated invoice
+    // flow did. Surface it as a longer-duration toast so the operator can
+    // immediately see how many orders were charged + invoices created
+    // without needing server logs.
+    const diag = data?.diagnostics;
+    if (diag) {
+      const totalNew =
+        (diag.phase2?.fpInvoicesCreated || 0) +
+        (diag.phase2?.cmInvoicesCreated || 0) +
+        (diag.phase2?.pkgInvoicesCreated || 0) +
+        (diag.phase3?.recoveryFpInvoices || 0) +
+        (diag.phase3?.recoveryCmInvoices || 0);
+      const totalCharged =
+        (diag.phase2?.fpOrdersCharged || 0) +
+        (diag.phase2?.cmOrdersCharged || 0) +
+        (diag.phase3?.stragglersFound || 0);
+      const summary = [
+        `📦 پاکەت: ${diag.packageCount} (${diag.packagesWithOrderId} لینک کراون، ${diag.packagesUnlinked} بێ لینک)`,
+        `📥 کۆکراوە: ${diag.phase1?.fpOrdersCollected || 0} FP, ${diag.phase1?.cmOrdersCollected || 0} CM, ${diag.phase1?.normalPkgsCollected || 0} پاکەت`,
+        `🧾 ئینڤۆیسی نوێ: ~${totalNew}`,
+        `💰 ئۆردەری چارجکراو: ~${totalCharged}`,
+      ];
+      if (diag.phase3?.stragglersFound > 0) {
+        summary.push(`⚠️ ${diag.phase3.stragglersFound} ئۆردەر لە Phase 3 (recovery) چاکراون`);
+      }
+      toast.info(summary.join('\n'), { duration: 12000 });
+    }
     refetch();
   };
+
+  const reprocessMutation = trpc.batches.reprocessInvoicing.useMutation({
+    onSuccess: (data) => {
+      const d = data?.diagnostics;
+      const msg = d
+        ? `✅ پشکنی تەواو بوو\n📦 پاکەت: ${d.packageCount}\n🔍 ئۆردەری پشکنیکراو: ${d.ordersChecked}\n✓ پێشتر چارجکراو: ${d.alreadyCharged}\n⚠️ ماوە بۆ چارج: ${d.stragglersFound}\n🧾 ئینڤۆیسی نوێ: ${(d.recoveryFpInvoices || 0) + (d.recoveryCmInvoices || 0)}`
+        : `پشکنی تەواو بوو`;
+      toast.success(msg, { duration: 12000 });
+      refetch();
+    },
+    onError: onMutationErrorEarly,
+  });
   const onMutationError = (error: unknown) => {
     const err = error as { message?: string; data?: { zodError?: { errors?: { message: string }[] } } };
     const msg = err.data?.zodError?.errors?.[0]?.message || err.message || t("common.error");
@@ -970,7 +1016,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         {batch.status !== "closed" && (
                           <Select
                             value={batch.status}
-                            onValueChange={(value) => updateStatusMutation.mutate({ id: batch.id, status: value as any }, { onSuccess: onBatchStatusSuccess, onError: onMutationError })}
+                            onValueChange={(value) => updateStatusMutation.mutate({ id: batch.id, status: value as any }, { onSuccess: (data) => onBatchStatusSuccess(data), onError: onMutationError })}
                           >
                             <SelectTrigger className="w-[110px] h-8">
                               <SelectValue />
@@ -984,6 +1030,22 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               <SelectItem value="closed">Closed</SelectItem>
                             </SelectContent>
                           </Select>
+                        )}
+                        {(batch.status === "delivered" || batch.status === "closed") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            disabled={reprocessMutation.isPending}
+                            onClick={() => {
+                              if (window.confirm("دووبارە چارجکردنی ئۆردەرە چارج نەکراوەکانی ئەم باچە؟ (Idempotent)")) {
+                                reprocessMutation.mutate({ batchId: batch.id });
+                              }
+                            }}
+                            title="دووبارە پرۆسێسکردنی ئینڤۆیسی ئۆردەرە چارجنەکراوەکان"
+                          >
+                            {reprocessMutation.isPending ? "..." : "🧾 Reprocess"}
+                          </Button>
                         )}
                       </div>
                     </TableCell>
