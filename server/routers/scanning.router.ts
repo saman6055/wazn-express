@@ -919,6 +919,24 @@ export const deliveryBoxRouter = router({
       const t_itemPrice = 'نرخی بەرهەم';
       const t_shipping = 'نرخی گواستنەوە';
 
+      // Chargeable weight = max(actual, volumetric). Box receipts must
+      // surface the weight the customer is actually billed for, not the
+      // raw scale reading. Volumetric divisor 6000 is the air-freight
+      // industry standard (cm³ → kg).
+      const computeChargeableKg = (
+        actual: unknown,
+        l: unknown,
+        w: unknown,
+        h: unknown,
+      ): string => {
+        const a = parseFloat(actual?.toString() || '0') || 0;
+        const lN = parseFloat(l?.toString() || '0') || 0;
+        const wN = parseFloat(w?.toString() || '0') || 0;
+        const hN = parseFloat(h?.toString() || '0') || 0;
+        const vol = (lN * wN * hN) / 6000;
+        return Math.max(a, vol).toFixed(2);
+      };
+
       // Determine item type, source, and CORRECT price per item type
       let itemType: 'regular' | 'full_package' | 'commission' = 'regular';
       let sourceInfo = '';
@@ -930,7 +948,7 @@ export const deliveryBoxRouter = router({
         const batch = pkg.batchId ? await db.getBatchById(pkg.batchId) : null;
         sourceInfo = batch ? `باچ ${batch.batchCode}` : 'بێ باچ';
         description = pkg.description || pkg.trackingNumber || '';
-        weightKg = pkg.weightKg?.toString() || '0';
+        weightKg = computeChargeableKg(pkg.weightKg, pkg.lengthCm, pkg.widthCm, pkg.heightCm);
         calculatedCostUsd = pkg.calculatedCostUsd?.toString() || '0';
 
         // Check if linked to FP order — use FP pricing instead of shipping cost
@@ -963,7 +981,12 @@ export const deliveryBoxRouter = router({
         itemType = fpOrder.orderType === 'commission' ? 'commission' : 'full_package';
         sourceInfo = fpOrder.orderCode;
         description = fpOrder.productName || '';
-        weightKg = fpOrder.weightKg?.toString() || '0';
+        weightKg = computeChargeableKg(
+          fpOrder.weightKg,
+          (fpOrder as any).dimensionLength,
+          (fpOrder as any).dimensionWidth,
+          (fpOrder as any).dimensionHeight,
+        );
 
         if (fpOrder.orderType === 'commission') {
           // Commission: item price + commission fee combined into a single

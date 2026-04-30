@@ -390,13 +390,22 @@ export async function createDeliveryBoxesForBatch(
         }
       }
 
+      // Chargeable weight = max(actual, volumetric). Box receipts must
+      // show what the customer is billed for, not the raw scale reading.
+      const actualKg = parseFloat(pkg.weightKg?.toString() || '0') || 0;
+      const lN = parseFloat((pkg as any).lengthCm?.toString() || '0') || 0;
+      const wN = parseFloat((pkg as any).widthCm?.toString() || '0') || 0;
+      const hN = parseFloat((pkg as any).heightCm?.toString() || '0') || 0;
+      const volumetricKg = (lN * wN * hN) / 6000;
+      const chargeableKg = Math.max(actualKg, volumetricKg).toFixed(2);
+
       await db.insert(deliveryBoxItems).values({
         boxId,
         packageId: pkg.id,
         trackingNumber: pkg.trackingNumber || undefined,
         packageCode: pkg.packageCode || undefined,
         description,
-        weightKg: pkg.weightKg?.toString() || '0',
+        weightKg: chargeableKg,
         calculatedCostUsd,
         itemType,
         sourceInfo,

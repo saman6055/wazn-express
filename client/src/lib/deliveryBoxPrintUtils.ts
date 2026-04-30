@@ -105,6 +105,50 @@ function itemTypeLabel(type: string, t: TFunc): string {
   return t(map[type] || map.regular);
 }
 
+/**
+ * Normalize a commission box-item description so it always shows ONE
+ * combined "نرخی بەرهەم" total (item + commission) plus shipping when
+ * present. Box items scanned BEFORE the breakdown-fix landed still have
+ * the legacy 3-part text in their stored description; this re-renders
+ * them in the new shape on the fly so receipts and the in-app box panel
+ * stay consistent.
+ *
+ * Inputs handled:
+ *   1. New format (no عمولە token) → passed through unchanged.
+ *   2. Legacy with shipping  ("نرخی بەرهەم: $A + عمولە: $B + گەیاندن: $C")
+ *      → "نرخی بەرهەم: $(A+B) + نرخی گواستنەوە: $C"
+ *   3. Legacy without shipping ("نرخی بەرهەم: $A + عمولە: $B")
+ *      → "نرخی بەرهەم: $(A+B)"
+ *   4. Non-breakdown descriptions (no "نرخی بەرهەم:" token) → unchanged.
+ */
+export function normalizeCommissionDescription(description?: string | null): string {
+  if (!description) return "-";
+  // Strict signal: only touch strings that look like our breakdown.
+  if (!description.includes("نرخی بەرهەم")) return description;
+
+  // Split on the first "|" so productName is preserved verbatim.
+  const pipeIdx = description.indexOf("|");
+  const productName = pipeIdx >= 0 ? description.slice(0, pipeIdx).trim() : "";
+  const breakdown = pipeIdx >= 0 ? description.slice(pipeIdx + 1).trim() : description.trim();
+
+  const itemMatch = breakdown.match(/نرخی\s+بەرهەم\s*:\s*\$?([\d.]+)/);
+  if (!itemMatch) return description;
+  const item = parseFloat(itemMatch[1]) || 0;
+
+  const commMatch = breakdown.match(/عمولە\s*:\s*\$?([\d.]+)/);
+  const comm = commMatch ? (parseFloat(commMatch[1]) || 0) : 0;
+
+  const shipMatch = breakdown.match(/(?:گەیاندن|نرخی\s+گواستنەوە)\s*:\s*\$?([\d.]+)/);
+  const ship = shipMatch ? (parseFloat(shipMatch[1]) || 0) : 0;
+
+  const goods = (item + comm).toFixed(2);
+  const prefix = productName ? `${productName} | ` : "";
+  if (ship > 0) {
+    return `${prefix}نرخی بەرهەم: $${goods} + نرخی گواستنەوە: $${ship.toFixed(2)}`;
+  }
+  return `${prefix}نرخی بەرهەم: $${goods}`;
+}
+
 function deliveryMethodIcon(method: string): string {
   if (method === "home_delivery") return "&#x1F3E0;"; // house
   if (method === "city_transfer") return "&#x1F69A;"; // truck
@@ -359,28 +403,39 @@ export function printBoxReceipt(
   items: BoxItemForPrint[],
   customer: CustomerForPrint | null,
   t: TFunc,
+  options?: { documentTitle?: string },
 ): void {
   const totalWeight = formatNum(box.totalWeightKg);
   const totalValue = formatNum(box.totalValueUsd);
   const deliveryCharge = formatNum(box.deliveryChargeUsd);
   const grandTotal = (Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0)).toFixed(2);
 
-  const itemsRows = items.map((item, idx) => `
+  const itemsRows = items.map((item, idx) => {
+    const description = item.itemType === "commission"
+      ? normalizeCommissionDescription(item.description)
+      : (item.description || "-");
+    return `
     <tr style="${idx % 2 === 0 ? "background:#f9fafb;" : ""}">
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">${idx + 1}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; font-size:12px; font-family:monospace; direction:ltr; text-align:left;">${item.trackingNumber || "-"}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">${itemTypeLabel(item.itemType, t)}</td>
-      <td style="border:1px solid #e5e7eb; padding:8px 12px; font-size:12px;">${item.description || "-"}</td>
+      <td style="border:1px solid #e5e7eb; padding:8px 12px; font-size:12px;">${description}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">${formatNum(item.weightKg)} kg</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">$${formatNum(item.calculatedCostUsd)}</td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 
+  // Document title doubles as the suggested filename when the user picks
+  // "Save as PDF" from the browser's print dialog. The PDF download path
+  // overrides this with `${box.boxCode}.pdf`; the print path leaves it as
+  // a human-readable label.
+  const documentTitle = options?.documentTitle || `${t("delivery.receipt")} - ${box.boxCode}`;
   const html = `<!DOCTYPE html>
 <html dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>${t("delivery.receipt")} - ${box.boxCode}</title>
+  <title>${documentTitle}</title>
   <style>
     ${sharedStyles}
     body { padding: 20px; max-width: 210mm; margin: 0 auto; }
@@ -681,4 +736,23 @@ export function printBoxReceipt(
     w.document.write(html);
     w.document.close();
   }
+}
+
+/**
+ * Open the box receipt and trigger the print dialog with the title set
+ * to `${boxCode}.pdf` — browsers use `document.title` as the default
+ * filename when the user picks "Save as PDF" from the destination
+ * dropdown. Same HTML and behavior as `printBoxReceipt`; only the
+ * suggested filename differs, so users get a sensible save name without
+ * us shipping a bundled PDF library.
+ */
+export function downloadBoxReceiptPDF(
+  box: BoxForPrint,
+  items: BoxItemForPrint[],
+  customer: CustomerForPrint | null,
+  t: TFunc,
+): void {
+  printBoxReceipt(box, items, customer, t, {
+    documentTitle: `${box.boxCode}.pdf`,
+  });
 }

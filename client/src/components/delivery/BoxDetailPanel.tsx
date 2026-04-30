@@ -25,6 +25,7 @@ import {
   Ban,
   Printer,
   FileText,
+  FileDown,
   Trash2,
   Package,
   Loader2,
@@ -32,7 +33,7 @@ import {
   Weight,
   DollarSign,
 } from "lucide-react";
-import { printBoxLabel, printBoxReceipt } from "@/lib/deliveryBoxPrintUtils";
+import { printBoxLabel, printBoxReceipt, downloadBoxReceiptPDF, normalizeCommissionDescription } from "@/lib/deliveryBoxPrintUtils";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
 
@@ -238,8 +239,11 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     );
   };
 
-  const handlePrintReceipt = () => {
-    printBoxReceipt(
+  // Receipt and PDF share the same payload — the only difference is the
+  // suggested filename (downloadBoxReceiptPDF sets document.title to
+  // `${boxCode}.pdf` so the browser's "Save as PDF" picks that name).
+  const buildReceiptArgs = () =>
+    [
       {
         boxCode: box.boxCode,
         status: box.status,
@@ -272,8 +276,17 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             address: customer.address,
           }
         : null,
-      t
-    );
+      t,
+    ] as const;
+
+  const handlePrintReceipt = () => {
+    const [b, its, c, tt] = buildReceiptArgs();
+    printBoxReceipt(b, its, c, tt);
+  };
+
+  const handleDownloadReceiptPDF = () => {
+    const [b, its, c, tt] = buildReceiptArgs();
+    downloadBoxReceiptPDF(b, its, c, tt);
   };
 
   return (
@@ -362,11 +375,19 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                     <TableCell className="font-mono text-xs" dir="ltr">
                       {item.trackingNumber || "-"}
                     </TableCell>
-                    {/* Details — varies by item type */}
+                    {/* Details — varies by item type. Commission descriptions
+                        are normalized so legacy 3-part breakdowns show in
+                        the new combined shape (item+commission as a single
+                        "نرخی بەرهەم"). */}
                     <TableCell className="text-xs max-w-[200px]">
-                      {item.description && (
-                        <p className="font-medium truncate" title={item.description}>{item.description}</p>
-                      )}
+                      {(() => {
+                        const displayDesc = item.itemType === 'commission'
+                          ? normalizeCommissionDescription(item.description)
+                          : (item.description || '');
+                        return displayDesc ? (
+                          <p className="font-medium truncate" title={displayDesc}>{displayDesc}</p>
+                        ) : null;
+                      })()}
                       {item.itemType === 'commission' && item.calculatedCostUsd && (
                         <p className="text-muted-foreground">{t("delivery.totalWithCommission")}: <span className="font-mono font-semibold text-amber-600">${Number(item.calculatedCostUsd || 0).toFixed(2)}</span></p>
                       )}
@@ -502,6 +523,15 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           <Button variant="outline" size="sm" onClick={handlePrintReceipt}>
             <FileText className="h-4 w-4 me-1" />
             {t("delivery.printReceipt")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadReceiptPDF}
+            className="text-red-700 hover:text-red-800 hover:bg-red-50 hover:border-red-200"
+          >
+            <FileDown className="h-4 w-4 me-1" />
+            PDF
           </Button>
         </div>
       </CardContent>
