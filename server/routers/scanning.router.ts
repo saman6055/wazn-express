@@ -913,10 +913,11 @@ export const deliveryBoxRouter = router({
         if (check.inBox) throw new TRPCError({ code: "CONFLICT", message: `ئەم ئۆردەرە لە بۆکسی ${check.boxCode} دایە` });
       }
 
-      // Labels for description breakdown
+      // Labels for description breakdown. Per spec, commission orders roll
+      // item price + commission into a single `t_itemPrice` total — no
+      // separate commission line on box receipts.
       const t_itemPrice = 'نرخی بەرهەم';
-      const t_commission = 'عمولە';
-      const t_shipping = 'گەیاندن';
+      const t_shipping = 'نرخی گواستنەوە';
 
       // Determine item type, source, and CORRECT price per item type
       let itemType: 'regular' | 'full_package' | 'commission' = 'regular';
@@ -941,13 +942,15 @@ export const deliveryBoxRouter = router({
             description = linkedFP.productName || description;
 
             if (linkedFP.orderType === 'commission') {
-              // Commission: total = item price + commission fee
+              // Commission: item price + commission fee combined; shipping
+              // on its own line.
               const itemPrice = Number(linkedFP.itemPriceUsd || 0);
               const commFee = Number(linkedFP.commissionFeeUsd || linkedFP.commissionAmount || 0);
               const shippingCost = Number(pkg.calculatedCostUsd || 0);
               const qty = linkedFP.quantity || 1;
-              calculatedCostUsd = ((itemPrice * qty) + commFee + shippingCost).toFixed(2);
-              description = `${linkedFP.productName || ''} | ${t_itemPrice}: $${(itemPrice * qty).toFixed(2)} + ${t_commission}: $${commFee.toFixed(2)} + ${t_shipping}: $${shippingCost.toFixed(2)}`;
+              const goodsTotal = (itemPrice * qty) + commFee;
+              calculatedCostUsd = (goodsTotal + shippingCost).toFixed(2);
+              description = `${linkedFP.productName || ''} | ${t_itemPrice}: $${goodsTotal.toFixed(2)} + ${t_shipping}: $${shippingCost.toFixed(2)}`;
             } else {
               // Full Package: selling price × quantity
               const sellingPrice = Number(linkedFP.sellingPriceUsd || 0);
@@ -963,12 +966,14 @@ export const deliveryBoxRouter = router({
         weightKg = fpOrder.weightKg?.toString() || '0';
 
         if (fpOrder.orderType === 'commission') {
-          // Commission: item price + commission fee
+          // Commission: item price + commission fee combined into a single
+          // total; no separate commission line on the box receipt.
           const itemPrice = Number(fpOrder.itemPriceUsd || 0);
           const commFee = Number(fpOrder.commissionFeeUsd || fpOrder.commissionAmount || 0);
           const qty = fpOrder.quantity || 1;
-          calculatedCostUsd = ((itemPrice * qty) + commFee).toFixed(2);
-          description = `${fpOrder.productName || ''} | ${t_itemPrice}: $${(itemPrice * qty).toFixed(2)} + ${t_commission}: $${commFee.toFixed(2)}`;
+          const goodsTotal = (itemPrice * qty) + commFee;
+          calculatedCostUsd = goodsTotal.toFixed(2);
+          description = `${fpOrder.productName || ''} | ${t_itemPrice}: $${goodsTotal.toFixed(2)}`;
         } else {
           // Full Package: selling price × quantity
           const sellingPrice = Number(fpOrder.sellingPriceUsd || 0);

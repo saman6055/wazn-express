@@ -376,8 +376,13 @@ export async function createDeliveryBoxesForBatch(
             const itemPrice = Number(linkedFP.itemPriceUsd || 0);
             const commFee = Number(linkedFP.commissionFeeUsd || linkedFP.commissionAmount || 0);
             const shippingCost = Number(pkg.calculatedCostUsd || 0);
-            calculatedCostUsd = ((itemPrice * qty) + commFee + shippingCost).toFixed(2);
-            description = `${linkedFP.productName || ''} | نرخی بەرهەم: $${(itemPrice * qty).toFixed(2)} + عمولە: $${commFee.toFixed(2)} + گەیاندن: $${shippingCost.toFixed(2)}`;
+            // Per spec: commission rolls into a single "نرخی بەرهەم" total
+            // on box receipts — no separate commission line. Shipping stays
+            // on its own line so the customer can still see what they paid
+            // for transport vs. goods.
+            const goodsTotal = (itemPrice * qty) + commFee;
+            calculatedCostUsd = (goodsTotal + shippingCost).toFixed(2);
+            description = `${linkedFP.productName || ''} | نرخی بەرهەم: $${goodsTotal.toFixed(2)} + نرخی گواستنەوە: $${shippingCost.toFixed(2)}`;
           } else {
             const sellingPrice = Number(linkedFP.sellingPriceUsd || 0);
             calculatedCostUsd = (sellingPrice * qty).toFixed(2);
