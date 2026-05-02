@@ -115,6 +115,7 @@ export default function CommissionDashboard() {
   // Fetch commission orders
   const { data: orders, isLoading, refetch } = trpc.fullPackage.list.useQuery({
     orderType: "commission",
+    search: searchQuery || undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
   });
 
@@ -137,18 +138,7 @@ export default function CommissionDashboard() {
   // Filter and sort orders
   const filteredOrders = useMemo(() => {
     let result = orders || [];
-    
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(order =>
-        order.productName?.toLowerCase().includes(query) ||
-        order.orderCode?.toLowerCase().includes(query) ||
-        (order as any).customer?.fullName?.toLowerCase().includes(query) ||
-        (order as any).customer?.customerCode?.toLowerCase().includes(query)
-      );
-    }
-    
+
     // Customer filter
     if (customerFilter !== "all") {
       result = result.filter(o => (o as any).customerId?.toString() === customerFilter);
