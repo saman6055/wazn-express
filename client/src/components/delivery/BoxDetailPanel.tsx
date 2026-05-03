@@ -200,6 +200,13 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const totalItemValue = items.reduce((sum: number, i: any) => sum + Number(i.calculatedCostUsd || 0), 0);
   const deliveryCharge = Number(box.deliveryChargeUsd || 0);
   const grandTotal = totalItemValue + deliveryCharge;
+  // Advance / prepaid sum across commission and full-package items (the
+  // server enriches each item with `advanceAppliedUsd`). Shown as a
+  // negative chip next to the grand total + a separate "remaining due"
+  // chip so the staff member knows what to actually collect.
+  const advanceTotal = items.reduce((sum: number, i: any) => sum + (Number(i.advanceAppliedUsd || 0) || 0), 0);
+  const hasAdvance = advanceTotal > 0;
+  const remainingDue = Math.max(0, grandTotal - advanceTotal);
 
   const handlePrintLabel = () => {
     printBoxLabel(
@@ -266,6 +273,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         calculatedCostUsd: i.calculatedCostUsd,
         description: i.description,
         sourceInfo: i.sourceInfo,
+        advanceAppliedUsd: i.advanceAppliedUsd,
       })),
       customer
         ? {
@@ -467,6 +475,22 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             <p className="text-xl font-extrabold text-primary">${grandTotal.toFixed(2)}</p>
           </div>
         </div>
+
+        {/* Advance / prepaid summary — only rendered when at least one
+            commission or full-package item in the box was prepaid. Keeps
+            the staff member from collecting twice. */}
+        {hasAdvance && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-center">
+              <p className="text-xs text-emerald-700 font-medium">💰 پارەی پێشەکی دراو</p>
+              <p className="text-lg font-bold text-emerald-700">−${advanceTotal.toFixed(2)}</p>
+            </div>
+            <div className="rounded-lg bg-amber-50 border-2 border-amber-300 p-3 text-center">
+              <p className="text-xs text-amber-800 font-medium">ماوە بۆ دان</p>
+              <p className="text-xl font-extrabold text-amber-700">${remainingDue.toFixed(2)}</p>
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 border-t pt-4">

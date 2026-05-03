@@ -180,12 +180,72 @@ export async function removeItemFromBox(itemId: number): Promise<void> {
   await recalculateBoxTotals(item.boxId);
 }
 
-export async function getBoxItems(boxId: number): Promise<DeliveryBoxItem[]> {
+/**
+ * Box items enriched with the prepayment that should be credited on the
+ * receipt. Pulls from the linked Full-Package order (by id, falling back
+ * to tracking-number lookup for items scanned via package), then picks
+ * the right field per order type:
+ *
+ *  - commission   → `totalPrepaidUsd` (item + commission, paid at order
+ *                    creation; baked into the goods portion of
+ *                    `calculatedCostUsd`).
+ *  - full_package /
+ *    purchase_request → `advancePaidUsd` (partial or full advance paid
+ *                       at order creation; nullable, defaults to 0).
+ *  - regular packages → 0 (no upstream FP order).
+ *
+ * The receipt subtracts the SUM of these from the grand total so the
+ * customer sees only the balance still owed at delivery.
+ */
+export type BoxItemWithAdvance = DeliveryBoxItem & {
+  advanceAppliedUsd: string;
+};
+
+export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(deliveryBoxItems)
+  const items = await db.select().from(deliveryBoxItems)
     .where(eq(deliveryBoxItems.boxId, boxId))
     .orderBy(deliveryBoxItems.scannedAt);
+  if (items.length === 0) return [];
+
+  const trackingNumbers = items
+    .map(i => i.trackingNumber)
+    .filter((t): t is string => !!t);
+  const fpOrderIds = items
+    .map(i => i.fullPackageOrderId)
+    .filter((id): id is number => !!id);
+
+  const fpByTracking = new Map<string, typeof fullPackageOrders.$inferSelect>();
+  const fpById = new Map<number, typeof fullPackageOrders.$inferSelect>();
+
+  if (trackingNumbers.length > 0) {
+    const fps = await db.select().from(fullPackageOrders)
+      .where(inArray(fullPackageOrders.trackingNumber, trackingNumbers));
+    for (const fp of fps) {
+      if (fp.trackingNumber) fpByTracking.set(fp.trackingNumber, fp);
+      fpById.set(fp.id, fp);
+    }
+  }
+  if (fpOrderIds.length > 0) {
+    const fps = await db.select().from(fullPackageOrders)
+      .where(inArray(fullPackageOrders.id, fpOrderIds));
+    for (const fp of fps) fpById.set(fp.id, fp);
+  }
+
+  return items.map((item): BoxItemWithAdvance => {
+    let advanceAppliedUsd = '0';
+    const directFp = item.fullPackageOrderId ? fpById.get(item.fullPackageOrderId) : null;
+    const fp = directFp || (item.trackingNumber ? fpByTracking.get(item.trackingNumber) : null);
+    if (fp) {
+      if (fp.orderType === 'commission') {
+        advanceAppliedUsd = fp.totalPrepaidUsd?.toString() || '0';
+      } else if (fp.orderType === 'full_package' || fp.orderType === 'purchase_request') {
+        advanceAppliedUsd = (fp as any).advancePaidUsd?.toString() || '0';
+      }
+    }
+    return { ...item, advanceAppliedUsd };
+  });
 }
 
 export async function isPackageInAnyBox(packageId: number): Promise<{ inBox: boolean; boxCode?: string; boxId?: number }> {
