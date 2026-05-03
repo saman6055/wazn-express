@@ -705,6 +705,27 @@ export default function QuickRegister() {
                         placeholder="تراکینگ نەمبەر..."
                         value={trackingNumber}
                         onChange={(e) => handleTrackingChange(e.target.value)}
+                        onKeyDown={(e) => {
+                          // Barcode scanners send Enter at the end of the
+                          // scan. Without this handler the Enter bubbles to
+                          // the form's outer onKeyDown and triggers
+                          // handleSubmit — which (because customerId is
+                          // sticky between registrations) succeeds with an
+                          // empty weight on every package after the first.
+                          // Intercept Enter here, run the search
+                          // immediately (cancelling the 300ms debounce),
+                          // and let handleTrackingSearch's success path
+                          // move focus to the weight field.
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (searchTimeout) {
+                              clearTimeout(searchTimeout);
+                              setSearchTimeout(null);
+                            }
+                            handleTrackingSearch();
+                          }
+                        }}
                         className="font-mono text-base h-12 flex-1 border-2 border-amber-200 focus:border-amber-400"
                         autoFocus
                       />
