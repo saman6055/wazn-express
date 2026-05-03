@@ -913,6 +913,29 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "customerPushSubscriptions",
+    dependencies: ["customers"],
+    sql: `CREATE TABLE IF NOT EXISTS customer_push_subscriptions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerId INT NOT NULL,
+      endpoint VARCHAR(500) NOT NULL UNIQUE,
+      p256dh VARCHAR(255) NOT NULL,
+      auth VARCHAR(255) NOT NULL,
+      userAgent VARCHAR(500),
+      platform VARCHAR(50),
+      language VARCHAR(10),
+      isActive BOOLEAN NOT NULL DEFAULT TRUE,
+      failureCount INT NOT NULL DEFAULT 0,
+      lastUsedAt TIMESTAMP NULL,
+      lastFailedAt TIMESTAMP NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX customerPushSubscriptions_customerId_idx (customerId),
+      INDEX customerPushSubscriptions_active_idx (isActive)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "supportChats",
     dependencies: ["customers", "users"],
     sql: `CREATE TABLE IF NOT EXISTS support_chats (
@@ -1019,14 +1042,40 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   {
     name: "fullPackageOrderTrackings",
     dependencies: ["fullPackageOrders"],
+    // NOTE: trackingNumber is intentionally NOT unique here — multiple orders
+    // may legitimately share one tracking (the "same carton" scenario from
+    // commit 48259fd). Older deployments still have a leftover UNIQUE index
+    // from an earlier schema; SCHEMA_PATCHES below drops it idempotently.
     sql: `CREATE TABLE IF NOT EXISTS fullPackageOrderTrackings (
       id INT AUTO_INCREMENT PRIMARY KEY,
       fullPackageOrderId INT NOT NULL,
       trackingNumber VARCHAR(100) NOT NULL,
       cartonIndex INT,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY fullPackageOrderTrackings_trackingNumber_unique (trackingNumber),
-      KEY idx_fpot_order_id (fullPackageOrderId)
+      KEY idx_fpot_order_id (fullPackageOrderId),
+      KEY idx_fpot_tracking_number (trackingNumber)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
+    name: "packageOrderLinks",
+    dependencies: ["packages", "fullPackageOrders"],
+    // Why: one package ↔ many full-package-orders, and one order ↔ many packages.
+    // The legacy packages.fullPackageOrderId remains as a fast lookup for the
+    // "primary" link; this table captures every other linkage exactly once.
+    // The single-customer business rule is enforced in app code, not DB.
+    sql: `CREATE TABLE IF NOT EXISTS packageOrderLinks (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      packageId INT NOT NULL,
+      fullPackageOrderId INT NOT NULL,
+      cartonIndex INT NOT NULL DEFAULT 1,
+      isPrimary BOOLEAN NOT NULL DEFAULT FALSE,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_pol_pkg_order (packageId, fullPackageOrderId),
+      KEY idx_pol_package_id (packageId),
+      KEY idx_pol_order_id (fullPackageOrderId),
+      CONSTRAINT fk_pol_package FOREIGN KEY (packageId) REFERENCES packages(id) ON DELETE CASCADE,
+      CONSTRAINT fk_pol_order FOREIGN KEY (fullPackageOrderId) REFERENCES fullPackageOrders(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -1977,6 +2026,18 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "serviceTypes.portalPriceLabelEn",    sql: "ALTER TABLE serviceTypes ADD COLUMN portalPriceLabelEn VARCHAR(100)" },
   { name: "serviceTypes.portalPriceLabelAr",    sql: "ALTER TABLE serviceTypes ADD COLUMN portalPriceLabelAr VARCHAR(100)" },
   { name: "serviceTypes.portalPriceLabelZh",    sql: "ALTER TABLE serviceTypes ADD COLUMN portalPriceLabelZh VARCHAR(100)" },
+
+  // ============ Multi-tracking / shared-tracking infrastructure ============
+  // Older deployments still carry a UNIQUE constraint on
+  // fullPackageOrderTrackings.trackingNumber from an earlier schema. The
+  // shared-tracking feature (commit 48259fd) dropped it from drizzle but
+  // never added a corresponding ALTER, so production DBs that ran the old
+  // CREATE TABLE block still reject any second order trying to attach the
+  // same tracking. These two patches make existing deployments match the
+  // current schema. Both are idempotent: MySQL "duplicate key name" /
+  // "check that column/key exists" errors are swallowed in runSchemaPatches.
+  { name: "fpot.drop_unique_trackingNumber", sql: "ALTER TABLE fullPackageOrderTrackings DROP INDEX fullPackageOrderTrackings_trackingNumber_unique" },
+  { name: "fpot.idx_tracking_number",        sql: "CREATE INDEX idx_fpot_tracking_number ON fullPackageOrderTrackings (trackingNumber)" },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {
@@ -2000,10 +2061,15 @@ export async function runSchemaPatches(config: MigrationConfig): Promise<{ appli
       // Swallow "already exists" errors so patches are idempotent across restarts.
       // MySQL reports them as "Duplicate column", "Duplicate key name", or
       // generic "already exists" depending on statement type (ALTER vs CREATE INDEX).
+      // For DROP INDEX/COLUMN statements, "check that column/key exists" (1091)
+      // and "doesn't exist" mean the patch was already applied (or never needed).
       if (
         lower.includes("duplicate column") ||
         lower.includes("duplicate key name") ||
-        lower.includes("already exists")
+        lower.includes("already exists") ||
+        lower.includes("check that column/key exists") ||
+        lower.includes("doesn't exist") ||
+        lower.includes("does not exist")
       ) {
         skipped.push(patch.name);
       } else {

@@ -59,6 +59,38 @@ export const packages = mysqlTable("packages", {
 export type Package = typeof packages.$inferSelect;
 export type InsertPackage = typeof packages.$inferInsert;
 
+// ============ PACKAGE ↔ FULL-PACKAGE-ORDER LINKS (multi-link) ============
+// Why this table exists:
+//   - One physical package can carry items from N orders (shared tracking, "same carton").
+//   - One full-package order can be split across N physical packages (multi-tracking).
+//   - The legacy single FK packages.fullPackageOrderId only models 1-to-1.
+// This join table makes both relationships first-class so batch sync, status
+// reconciliation, and accounting all see every linked order, not just the first.
+//
+// Invariants enforced elsewhere (not at DB level):
+//   - All orders linked to one package share the SAME customerId (single-customer rule).
+//   - Exactly one row per package has isPrimary=TRUE (the one mirrored into
+//     packages.fullPackageOrderId for legacy code paths).
+export const packageOrderLinks = mysqlTable("packageOrderLinks", {
+  id: int("id").autoincrement().primaryKey(),
+  packageId: int("packageId").notNull(),
+  fullPackageOrderId: int("fullPackageOrderId").notNull(),
+  // For multi-tracking case: which carton (1..N) within the order this package represents.
+  // For shared-tracking case: same cartonIndex across the linked orders (it's their shared carton).
+  cartonIndex: int("cartonIndex").default(1).notNull(),
+  // The "canonical" link for legacy FK compatibility (packages.fullPackageOrderId).
+  isPrimary: boolean("isPrimary").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  // One package cannot link to the same order twice.
+  uniqPackageOrder: index("uniq_pol_pkg_order").on(table.packageId, table.fullPackageOrderId),
+  packageIdIdx: index("idx_pol_package_id").on(table.packageId),
+  orderIdIdx: index("idx_pol_order_id").on(table.fullPackageOrderId),
+}));
+
+export type PackageOrderLink = typeof packageOrderLinks.$inferSelect;
+export type InsertPackageOrderLink = typeof packageOrderLinks.$inferInsert;
+
 // ============ LEDGER ENTRIES - REMOVED ============
 // The ledgerEntries table has been completely removed.
 // All financial transactions now use the unified ledgerTransactions table.

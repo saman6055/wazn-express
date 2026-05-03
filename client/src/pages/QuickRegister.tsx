@@ -27,6 +27,21 @@ export default function QuickRegister() {
     customer: any;
     package: any;
   } | null>(null);
+  // Expanded lookup result so we can render shared / multi / conflict
+  // banners and decide which order IDs to link at submit time.
+  const [expandedLookup, setExpandedLookup] = useState<{
+    case: 'single' | 'shared' | 'multi' | 'duplicate' | 'regular';
+    orders: Array<{
+      order: { id: number; orderCode: string; orderType: string; productName: string; quantity: number; status: string; customerId: number | null; batchId: number | null; trackingNumber: string | null };
+      customer: { id: number; customerCode: string | null; fullName: string | null } | null;
+      batch: { id: number; batchCode: string | null; status: string } | null;
+      trackings: Array<{ id: number; trackingNumber: string; cartonIndex: number }>;
+    }>;
+    existingPackages: Array<{ trackingNumber: string; id: number; packageCode: string; status: string }>;
+    flags: { customerMismatch: boolean; batchConflict: boolean; cartonsRegistered: number | null; cartonsTotal: number | null };
+  } | null>(null);
+  // Default: link package to ALL sharing orders. Staff can opt out per scan.
+  const [linkAllSharingOrders, setLinkAllSharingOrders] = useState(true);
   
   // Form state
   const [customerId, setCustomerId] = useState<number | null>(null);
@@ -98,6 +113,24 @@ export default function QuickRegister() {
 
       if (result) {
         setFoundOrder(result);
+        // Fan out to the expanded procedure so we know if this tracking is
+        // shared, multi-tracking, or has any conflict flags. Failures here
+        // never block the existing flow — we just leave expandedLookup null.
+        try {
+          if (result.found && (result.source === 'full_package' || result.source === 'commission')) {
+            const exp = await trpcUtils.packages.lookupTrackingExpanded.fetch({
+              trackingNumber: currentTracking.trim(),
+            });
+            if (searchVersionRef.current === thisSearchVersion && exp) {
+              setExpandedLookup(exp as any);
+              setLinkAllSharingOrders(true);
+            }
+          } else {
+            setExpandedLookup(null);
+          }
+        } catch {
+          setExpandedLookup(null);
+        }
         if (result.found) {
           // Customer policy:
           // • FP / commission orders → ALWAYS lock the customer to the
@@ -488,6 +521,8 @@ export default function QuickRegister() {
     searchVersionRef.current++;
     setTrackingNumber("");
     setFoundOrder(null);
+    setExpandedLookup(null);
+    setLinkAllSharingOrders(true);
     setIsSearching(false);
     setWeightKg("");
     setLengthCm("");
@@ -584,12 +619,26 @@ export default function QuickRegister() {
       photos: photos.length > 0 ? photos : undefined,
     };
     
-    if (foundOrder?.found && foundOrder.order) {
-      if (foundOrder.source === "full_package") {
-        packageData.fullPackageOrderId = foundOrder.order.id;
-      }
+    // Block submit on customer-mismatch — single-customer rule.
+    if (expandedLookup?.flags?.customerMismatch) {
+      soundManager.playError();
+      toast.error("ئەم تراکینگە بۆ ئۆردەری کڕیاری جیاوازە. تکایە لە سەرچاوە چاکی بکەرەوە.");
+      return;
     }
-    
+
+    // Build linkedOrderIds[] from the expanded lookup. Falls back to the
+    // legacy single-link fullPackageOrderId for old "regular package found"
+    // paths the expanded procedure does not cover.
+    if (expandedLookup && (expandedLookup.case === 'single' || expandedLookup.case === 'shared' || expandedLookup.case === 'multi')) {
+      if (expandedLookup.case === 'shared' && linkAllSharingOrders) {
+        packageData.linkedOrderIds = expandedLookup.orders.map((o) => o.order.id);
+      } else if (expandedLookup.orders[0]) {
+        packageData.linkedOrderIds = [expandedLookup.orders[0].order.id];
+      }
+    } else if (foundOrder?.found && foundOrder.order && foundOrder.source === "full_package") {
+      packageData.fullPackageOrderId = foundOrder.order.id;
+    }
+
     registerMutation.mutate(packageData);
   };
   // Handle Enter key for form submission
@@ -758,8 +807,8 @@ export default function QuickRegister() {
                     {foundOrder?.found && (
                       <div className={cn(
                         "mt-3 p-3 rounded-lg text-sm",
-                        foundOrder.source === "package" 
-                          ? "bg-yellow-50 border border-yellow-200" 
+                        foundOrder.source === "package"
+                          ? "bg-yellow-50 border border-yellow-200"
                           : "bg-green-50 border border-green-200"
                       )}>
                         <div className="flex items-center gap-2">
@@ -780,6 +829,94 @@ export default function QuickRegister() {
                             کڕیار: <span className="font-bold text-primary">{foundOrder.customer.customerCode}</span>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {/* Shared / multi / mismatch panel — only shown when the
+                        expanded lookup found something interesting. Mirrors
+                        the inline panel from BulkRegister but adapted to the
+                        single-row, scanner-friendly layout of QuickRegister. */}
+                    {expandedLookup && expandedLookup.flags?.customerMismatch && (
+                      <div className="mt-3 p-3 rounded-lg border-2 border-rose-300 bg-rose-50 dark:bg-rose-950/30">
+                        <div className="flex items-start gap-2 text-rose-900 dark:text-rose-200">
+                          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                          <div>
+                            <div className="font-bold">تراکینگی هاوبەش بۆ کڕیاری جیاواز</div>
+                            <div className="text-xs opacity-90">submit بەردەست نییە. تکایە لە لاپەرەی Tracking Alerts چاکی بکەرەوە.</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {expandedLookup?.case === 'shared' && !expandedLookup.flags?.customerMismatch && (
+                      <div className="mt-3 p-3 rounded-lg border-2 border-orange-300 bg-orange-50 dark:bg-orange-950/30">
+                        <div className="flex items-center gap-2 text-orange-900 dark:text-orange-200 mb-2">
+                          <span>🔗</span>
+                          <span className="font-bold">تراکی هاوبەش • {expandedLookup.orders.length} ئۆردەر</span>
+                        </div>
+                        <div className="space-y-1 mb-2">
+                          {expandedLookup.orders.map((od) => (
+                            <div key={od.order.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-white/70 dark:bg-black/30 border border-orange-200/60 dark:border-orange-800/40">
+                              <span className="font-mono font-medium">{od.order.orderCode}</span>
+                              <span className="truncate">{od.order.productName}</span>
+                              {od.order.quantity > 1 && <span className="text-muted-foreground">×{od.order.quantity}</span>}
+                              <span className="text-primary ms-auto font-medium">{od.customer?.customerCode ?? '?'}</span>
+                              {od.batch && (
+                                <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px]">
+                                  {od.batch.batchCode}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {expandedLookup.flags?.batchConflict && (
+                          <div className="text-xs text-amber-800 dark:text-amber-300 mb-2">
+                            ⚠ ئۆردەرە گرێدراوەکان لە کۆمەڵەی جیاوازدان.
+                          </div>
+                        )}
+                        <label className="flex items-center gap-2 cursor-pointer text-xs">
+                          <input
+                            type="checkbox"
+                            checked={linkAllSharingOrders}
+                            onChange={(e) => setLinkAllSharingOrders(e.target.checked)}
+                            className="h-3.5 w-3.5 cursor-pointer"
+                          />
+                          <span>
+                            {linkAllSharingOrders
+                              ? `هەموو ${expandedLookup.orders.length} ئۆردەر گرێ بدە (پێشنیار)`
+                              : `تەنها ئۆردەری سەرەکی`}
+                          </span>
+                        </label>
+                      </div>
+                    )}
+                    {expandedLookup?.case === 'multi' && expandedLookup.orders[0] && !expandedLookup.flags?.customerMismatch && (
+                      <div className="mt-3 p-3 rounded-lg border-2 border-blue-300 bg-blue-50 dark:bg-blue-950/30">
+                        <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 mb-2">
+                          <span>📦</span>
+                          <span className="font-bold">
+                            ئۆردەری {expandedLookup.orders[0].order.orderCode} بە {expandedLookup.orders[0].trackings.length} کارتۆن
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          {expandedLookup.orders[0].trackings.map((tr) => {
+                            const reg = expandedLookup.existingPackages.find((p) => p.trackingNumber === tr.trackingNumber);
+                            const isThis = tr.trackingNumber === trackingNumber.trim();
+                            return (
+                              <div key={tr.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-white/70 dark:bg-black/30 border border-blue-200/60 dark:border-blue-800/40">
+                                <span className="font-mono w-12">کارتۆن {tr.cartonIndex}</span>
+                                <span className="font-mono truncate">{tr.trackingNumber}</span>
+                                <span className="ms-auto">
+                                  {isThis ? (
+                                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px]">ئێستا</span>
+                                  ) : reg ? (
+                                    <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px]">✅ {reg.packageCode}</span>
+                                  ) : (
+                                    <span className="px-1.5 py-0.5 rounded border border-muted text-muted-foreground text-[10px]">⏳ چاوەڕێ</span>
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -1275,20 +1412,28 @@ export default function QuickRegister() {
                     size="lg"
                     className={cn(
                       "w-full h-14 text-lg font-bold shadow-xl mt-5 transition-all",
-                      !trackingNumber.trim() || foundOrder?.source === "package"
+                      !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-gradient-to-r from-primary via-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                     )}
-                    disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package"}
+                    disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
                   >
                     {registerMutation.isPending ? (
                       <Loader2 className="h-6 w-6 animate-spin ms-2" />
                     ) : foundOrder?.source === "package" ? (
                       <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600" />
+                    ) : expandedLookup?.flags?.customerMismatch ? (
+                      <AlertTriangle className="h-6 w-6 ms-2 text-rose-600" />
                     ) : (
                       <Plus className="h-6 w-6 ms-2" />
                     )}
-                    {foundOrder?.source === "package" ? "دووبارە!" : !trackingNumber.trim() ? "تراکینگ داخل بکە" : "تۆمار (Enter)"}                  
+                    {foundOrder?.source === "package"
+                      ? "دووبارە!"
+                      : expandedLookup?.flags?.customerMismatch
+                        ? "کێشەی کڕیار"
+                        : !trackingNumber.trim()
+                          ? "تراکینگ داخل بکە"
+                          : "تۆمار (Enter)"}
                   </Button>
                   
                   <p className="text-xs text-center text-muted-foreground mt-3">

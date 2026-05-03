@@ -2,8 +2,8 @@ import { getDb } from './connection';
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getCustomerById } from './customers.db';
-import { getPackageById } from './packages.db';
-import { getFullPackageOrderByTrackingNumber, updateFullPackageOrder } from './fullPackage.db';
+import { getPackageById, getPackageOrderLinks } from './packages.db';
+import { getFullPackageOrderByTrackingNumber, getAllOrdersByTrackingNumber, updateFullPackageOrder } from './fullPackage.db';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -381,16 +381,42 @@ export async function updatePackageFields(packageId: number, data: {
   
   await db.update(packages).set(updateData).where(eq(packages.id, packageId));
   
-  // Sync batchId to fullPackageOrder if batchId changed
+  // Sync batchId to EVERY linked full-package order, not just the first one.
+  // Resolution order:
+  //   1. packageOrderLinks rows (canonical source from Phase 4 onward)
+  //   2. shared-tracking fan-out via getAllOrdersByTrackingNumber (catches
+  //      legacy rows that pre-date the link table; backfill only mirrors the
+  //      primary, so siblings still need the tracking-based lookup)
+  //   3. legacy single fullPackageOrderId via tracking (last resort)
   if (data.batchId !== undefined) {
     try {
       const pkg = await getPackageById(packageId);
-      if (pkg?.trackingNumber) {
-        const fullPackageOrder = await getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
-        if (fullPackageOrder) {
-          await updateFullPackageOrder(fullPackageOrder.id, { batchId: data.batchId });
-          appLogger.info("[FullPackage] Synced batchId from package fields update to order", { batchId: data.batchId, orderId: fullPackageOrder.id });
+      const targetOrderIds = new Set<number>();
+      if (pkg) {
+        const links = await getPackageOrderLinks(packageId);
+        for (const l of links) targetOrderIds.add(l.fullPackageOrderId);
+        if (pkg.trackingNumber) {
+          // Pick up shared-tracking siblings even if not yet in the link table.
+          const shared = await getAllOrdersByTrackingNumber(pkg.trackingNumber);
+          for (const o of shared) targetOrderIds.add(o.id);
+          // Fallback for very old rows that have neither links nor multi-tracking entries.
+          if (targetOrderIds.size === 0) {
+            const legacy = await getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
+            if (legacy) targetOrderIds.add(legacy.id);
+          }
         }
+        if (pkg.fullPackageOrderId) targetOrderIds.add(pkg.fullPackageOrderId);
+      }
+      for (const orderId of Array.from(targetOrderIds)) {
+        await updateFullPackageOrder(orderId, { batchId: data.batchId });
+      }
+      if (targetOrderIds.size > 0) {
+        appLogger.info("[FullPackage] Synced batchId to all linked orders", {
+          packageId,
+          batchId: data.batchId,
+          orderCount: targetOrderIds.size,
+          orderIds: Array.from(targetOrderIds),
+        });
       }
     } catch (e) {
       appLogger.error('[FullPackage] Failed to sync batchId from updatePackageFields', { error: e instanceof Error ? e.message : String(e) });

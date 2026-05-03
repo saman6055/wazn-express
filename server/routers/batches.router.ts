@@ -537,6 +537,180 @@ export const batchesRouter = router({
       }),
 
     /**
+     * Pre-delivery audit (Phase 7).
+     *
+     * Run before marking a batch as delivered to surface multi-tracking and
+     * shared-tracking situations the operator should resolve first. The goal
+     * is "no order silently left out of a batch" — every shared-tracking
+     * sibling and every still-pending carton is reported here, with severity.
+     *
+     * Findings:
+     *   - sharedSiblingNotInBatch: an order in this batch has a tracking
+     *     shared with another order that is NOT in this batch (or in any
+     *     batch). The other order would not get its invoice / charge
+     *     emitted at delivery unless added to this batch first.
+     *   - multiCartonIncomplete: an order in this batch has more cartons
+     *     than packages registered. The remaining cartons are still in
+     *     transit (or lost). Operator decides whether to wait or proceed.
+     *   - customerMismatch: defensive — if any package in this batch is
+     *     somehow linked to orders of different customers, we report it
+     *     here so it can be fixed before money moves.
+     *
+     * Read-only — never mutates anything. Safe to call repeatedly.
+     */
+    getPreDeliveryAudit: staffProcedure
+      .input(z.object({ batchId: idSchema }))
+      .query(async ({ input }) => {
+        const batch = await db.getBatchById(input.batchId);
+        if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: "Batch not found" });
+
+        const pkgs = await db.getPackagesByBatch(input.batchId);
+
+        // Resolve every order linked to packages in this batch — both via
+        // packageOrderLinks (Phase 4 onward) and via tracking-number lookup
+        // (legacy + shared siblings). Track which order-id was reached via
+        // which package so the audit can name them in the warning rows.
+        type OrderRef = { orderId: number; viaPackageId: number; viaPackageCode: string };
+        const orderRefs: OrderRef[] = [];
+        const packageOrdersMap = new Map<number, Set<number>>(); // pkgId -> orderIds
+        for (const pkg of pkgs) {
+          const set = new Set<number>();
+          const links = await db.getPackageOrderLinks(pkg.id);
+          for (const l of links) set.add(l.fullPackageOrderId);
+          if (pkg.trackingNumber) {
+            const shared = await db.getAllOrdersByTrackingNumber(pkg.trackingNumber);
+            for (const o of shared) set.add(o.id);
+          }
+          if (pkg.fullPackageOrderId) set.add(pkg.fullPackageOrderId);
+          packageOrdersMap.set(pkg.id, set);
+          for (const oid of Array.from(set)) {
+            orderRefs.push({ orderId: oid, viaPackageId: pkg.id, viaPackageCode: pkg.packageCode });
+          }
+        }
+
+        const orderIdsInBatchSet = new Set<number>(orderRefs.map((r) => r.orderId));
+
+        // ---- Finding 1: shared-tracking sibling NOT in this batch ----
+        type SharedFinding = {
+          packageCode: string;
+          packageId: number;
+          orderInBatch: { id: number; orderCode: string; productName: string; customerCode: string | null };
+          siblingOutsideBatch: { id: number; orderCode: string; productName: string; customerCode: string | null; batchId: number | null; batchCode: string | null };
+        };
+        const sharedSiblingNotInBatch: SharedFinding[] = [];
+        for (const pkg of pkgs) {
+          if (!pkg.trackingNumber) continue;
+          const shared = await db.getAllOrdersByTrackingNumber(pkg.trackingNumber);
+          if (shared.length <= 1) continue;
+          // Find the order in THIS batch (the "anchor") and any others outside.
+          const anchorOrder = shared.find((o) => o.batchId === input.batchId);
+          if (!anchorOrder) continue;
+          const anchorCustomer = anchorOrder.customerId ? await db.getCustomerById(anchorOrder.customerId) : null;
+          for (const sib of shared) {
+            if (sib.id === anchorOrder.id) continue;
+            if (sib.batchId === input.batchId) continue;
+            const sibCustomer = sib.customerId ? await db.getCustomerById(sib.customerId) : null;
+            const sibBatch = sib.batchId ? await db.getBatchById(sib.batchId) : null;
+            sharedSiblingNotInBatch.push({
+              packageCode: pkg.packageCode,
+              packageId: pkg.id,
+              orderInBatch: {
+                id: anchorOrder.id,
+                orderCode: anchorOrder.orderCode,
+                productName: anchorOrder.productName,
+                customerCode: anchorCustomer?.customerCode ?? null,
+              },
+              siblingOutsideBatch: {
+                id: sib.id,
+                orderCode: sib.orderCode,
+                productName: sib.productName,
+                customerCode: sibCustomer?.customerCode ?? null,
+                batchId: sib.batchId ?? null,
+                batchCode: sibBatch?.batchCode ?? null,
+              },
+            });
+          }
+        }
+
+        // ---- Finding 2: multi-carton orders with cartons still pending ----
+        type IncompleteFinding = {
+          orderId: number;
+          orderCode: string;
+          productName: string;
+          customerCode: string | null;
+          cartonsRegistered: number;
+          cartonsTotal: number;
+          pendingTrackings: string[];
+        };
+        const multiCartonIncomplete: IncompleteFinding[] = [];
+        const seenForIncomplete = new Set<number>();
+        for (const oid of Array.from(orderIdsInBatchSet)) {
+          if (seenForIncomplete.has(oid)) continue;
+          seenForIncomplete.add(oid);
+          const cartons = await db.getOrderCartonStatus(oid);
+          if (cartons.total > 1 && cartons.registered < cartons.total) {
+            const order = await db.getFullPackageOrderById(oid);
+            const customer = order?.customerId ? await db.getCustomerById(order.customerId) : null;
+            multiCartonIncomplete.push({
+              orderId: oid,
+              orderCode: order?.orderCode ?? "?",
+              productName: order?.productName ?? "?",
+              customerCode: customer?.customerCode ?? null,
+              cartonsRegistered: cartons.registered,
+              cartonsTotal: cartons.total,
+              pendingTrackings: cartons.pending,
+            });
+          }
+        }
+
+        // ---- Finding 3: defensive customer-mismatch check ----
+        type MismatchFinding = {
+          packageCode: string;
+          packageId: number;
+          orders: Array<{ id: number; orderCode: string; customerCode: string | null }>;
+        };
+        const customerMismatch: MismatchFinding[] = [];
+        for (const pkg of pkgs) {
+          const orderIds = packageOrdersMap.get(pkg.id);
+          if (!orderIds || orderIds.size <= 1) continue;
+          const customerIds = new Set<number>();
+          const detail: Array<{ id: number; orderCode: string; customerCode: string | null }> = [];
+          for (const oid of Array.from(orderIds)) {
+            const o = await db.getFullPackageOrderById(oid);
+            if (!o) continue;
+            if (o.customerId) customerIds.add(o.customerId);
+            const c = o.customerId ? await db.getCustomerById(o.customerId) : null;
+            detail.push({ id: o.id, orderCode: o.orderCode, customerCode: c?.customerCode ?? null });
+          }
+          if (customerIds.size > 1) {
+            customerMismatch.push({ packageCode: pkg.packageCode, packageId: pkg.id, orders: detail });
+          }
+        }
+
+        const blocking = customerMismatch.length > 0;
+        const warning = sharedSiblingNotInBatch.length > 0 || multiCartonIncomplete.length > 0;
+
+        return {
+          batchId: input.batchId,
+          batchCode: batch.batchCode,
+          packageCount: pkgs.length,
+          orderCount: orderIdsInBatchSet.size,
+          summary: {
+            blocking,
+            warning,
+            sharedSiblingCount: sharedSiblingNotInBatch.length,
+            multiCartonIncompleteCount: multiCartonIncomplete.length,
+            customerMismatchCount: customerMismatch.length,
+          },
+          findings: {
+            sharedSiblingNotInBatch,
+            multiCartonIncomplete,
+            customerMismatch,
+          },
+        };
+      }),
+
+    /**
      * Manual recovery: re-run the consolidated invoice flow against an
      * already-delivered batch. Useful when the original delivery left
      * orders uncharged (e.g. a Phase 2 silent failure in production

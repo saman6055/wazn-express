@@ -151,6 +151,24 @@ export async function autoMigrate(config: AutoMigrateConfig): Promise<AutoMigrat
       log(`Schema patches applied: ${patchResult.applied.length}`, 'success');
     }
 
+    // Data-level backfill: idempotent. Mirrors packages.fullPackageOrderId into
+    // packageOrderLinks so the multi-link layer is consistent for legacy rows.
+    // Runs every startup but only does work on the first deploy after the
+    // packageOrderLinks table is introduced; subsequent runs are no-ops.
+    try {
+      // Lazy import to keep autoMigrate's CJS/ESM shape unchanged.
+      const { backfillPackageOrderLinks } = await import("../db/packages.db");
+      const r = await backfillPackageOrderLinks();
+      if (r.inserted > 0 || r.errors > 0) {
+        log(
+          `[Backfill] packageOrderLinks: ${r.inserted} inserted, ${r.alreadyLinked} already linked, ${r.errors} errors (of ${r.totalCandidates} candidates)`,
+          r.errors > 0 ? 'warn' : 'success',
+        );
+      }
+    } catch (err) {
+      log(`[Backfill] packageOrderLinks skipped: ${err instanceof Error ? err.message : String(err)}`, 'warn');
+    }
+
     if (status.missingTables.length === 0) {
       result.success = true;
     }

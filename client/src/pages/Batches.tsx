@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
-import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2 } from "lucide-react";
+import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -54,6 +54,18 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [customerPricing, setCustomerPricing] = useState<CustomerPricing[]>([]);
   const [exportingBatchId, setExportingBatchId] = useState<number | null>(null);
+
+  // Pre-delivery audit dialog state. Holds the batchId+target status the
+  // operator is trying to switch to, plus the audit findings the server
+  // returned. The actual status update is deferred until the operator
+  // confirms inside the dialog.
+  const [pendingDeliveryConfirm, setPendingDeliveryConfirm] = useState<{
+    batchId: number;
+    targetStatus: string;
+  } | null>(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const trpcUtilsForAudit = trpc.useUtils();
+  const [auditData, setAuditData] = useState<any>(null);
 
   // PDF Export mutation
   const exportBatchPDF = trpc.dashboard.exportBatchPDF.useMutation({
@@ -1036,7 +1048,30 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         {batch.status !== "closed" && (
                           <Select
                             value={batch.status}
-                            onValueChange={(value) => updateStatusMutation.mutate({ id: batch.id, status: value as any }, { onSuccess: (data) => onBatchStatusSuccess(data), onError: onMutationError })}
+                            onValueChange={async (value) => {
+                              // For "delivered" / "closed" — run the pre-delivery
+                              // audit first and let the operator confirm. For
+                              // other transitions, fire directly.
+                              if (value === "delivered" || value === "closed") {
+                                setPendingDeliveryConfirm({ batchId: batch.id, targetStatus: value });
+                                setAuditLoading(true);
+                                setAuditData(null);
+                                try {
+                                  const data = await trpcUtilsForAudit.batches.getPreDeliveryAudit.fetch({ batchId: batch.id });
+                                  setAuditData(data);
+                                } catch (e: any) {
+                                  toast.error(e?.message || "هەڵە لە audit");
+                                  setPendingDeliveryConfirm(null);
+                                } finally {
+                                  setAuditLoading(false);
+                                }
+                                return;
+                              }
+                              updateStatusMutation.mutate(
+                                { id: batch.id, status: value as any },
+                                { onSuccess: (data) => onBatchStatusSuccess(data), onError: onMutationError },
+                              );
+                            }}
                           >
                             <SelectTrigger className="w-[110px] h-8">
                               <SelectValue />
@@ -1562,6 +1597,205 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 </DialogFooter>
               </form>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Pre-delivery audit dialog (Phase 7).
+            Surfaces shared-tracking siblings outside this batch, multi-carton
+            orders with cartons still pending, and any (defensive) customer
+            mismatches before the operator marks the batch as delivered. */}
+        <Dialog
+          open={pendingDeliveryConfirm !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPendingDeliveryConfirm(null);
+              setAuditData(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {auditData?.summary?.blocking ? (
+                  <AlertTriangle className="h-5 w-5 text-rose-600" />
+                ) : auditData?.summary?.warning ? (
+                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                ) : (
+                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                )}
+                پێش-پشکنینی گەیاندن
+                {auditData && <Badge variant="outline" className="font-mono">{auditData.batchCode}</Badge>}
+              </DialogTitle>
+              <DialogDescription>
+                {pendingDeliveryConfirm?.targetStatus === "delivered"
+                  ? "پێش گۆڕینی دۆخی کۆمەڵە بۆ Delivered، تکایە ئەم پشکنینە سەیر بکە."
+                  : "پێش داخستنی کۆمەڵە، تکایە ئەم پشکنینە سەیر بکە."}
+              </DialogDescription>
+            </DialogHeader>
+
+            {auditLoading || !auditData ? (
+              <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-sm">پشکنین جێبەجێ دەکرێ...</span>
+              </div>
+            ) : (
+              <div className="space-y-4 text-sm">
+                {/* Summary tile */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 rounded border bg-muted/30">
+                    <div className="text-[11px] text-muted-foreground">پاکەت لە کۆمەڵە</div>
+                    <div className="font-bold text-lg">{auditData.packageCount}</div>
+                  </div>
+                  <div className="p-2 rounded border bg-muted/30">
+                    <div className="text-[11px] text-muted-foreground">ئۆردەری گرێدراو</div>
+                    <div className="font-bold text-lg">{auditData.orderCount}</div>
+                  </div>
+                </div>
+
+                {/* No findings — green light */}
+                {!auditData.summary.blocking && !auditData.summary.warning && (
+                  <div className="p-3 rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
+                    <ShieldCheck className="h-4 w-4" />
+                    <span className="font-semibold">هیچ هەشداریەک نییە — کۆمەڵە ئامادەیە</span>
+                  </div>
+                )}
+
+                {/* Blocking: customer mismatch */}
+                {auditData.findings.customerMismatch?.length > 0 && (
+                  <div className="p-3 rounded-lg border-2 border-rose-300 bg-rose-50 dark:bg-rose-950/30">
+                    <div className="font-bold text-rose-900 dark:text-rose-200 mb-2 flex items-center gap-1">
+                      <AlertTriangle className="h-4 w-4" />
+                      هەڵەی کڕیار ({auditData.findings.customerMismatch.length}) — submit بەردەست نییە
+                    </div>
+                    <div className="space-y-1.5">
+                      {auditData.findings.customerMismatch.map((f: any) => (
+                        <div key={f.packageId} className="text-xs p-2 rounded bg-white/60 dark:bg-black/30">
+                          <div className="font-mono font-medium mb-1">{f.packageCode}</div>
+                          <div className="space-y-0.5">
+                            {f.orders.map((o: any) => (
+                              <div key={o.id} className="flex items-center gap-2">
+                                <span className="font-mono">{o.orderCode}</span>
+                                <span className="text-muted-foreground">→</span>
+                                <span className="text-primary">{o.customerCode ?? '?'}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Warning: shared-tracking siblings outside batch */}
+                {auditData.findings.sharedSiblingNotInBatch?.length > 0 && (
+                  <div className="p-3 rounded-lg border-2 border-orange-300 bg-orange-50 dark:bg-orange-950/30">
+                    <div className="font-bold text-orange-900 dark:text-orange-200 mb-2 flex items-center gap-1">
+                      🔗 ئۆردەری هاوبەش لە دەرەوەی کۆمەڵە ({auditData.findings.sharedSiblingNotInBatch.length})
+                    </div>
+                    <div className="text-[11px] text-orange-800/80 dark:text-orange-300/80 mb-2">
+                      ئەم ئۆردەرانە تراکینگیان لەگەڵ ئۆردەرەکانی ئەم کۆمەڵە هاوبەشە بەڵام لە کۆمەڵە نین. ئەگەر گەیاندن ئەنجام بدرێ بەبێ یەکخستنیان، ئینڤۆیسیان دەرناچێ.
+                    </div>
+                    <div className="space-y-1.5">
+                      {auditData.findings.sharedSiblingNotInBatch.map((f: any, i: number) => (
+                        <div key={i} className="text-xs p-2 rounded bg-white/60 dark:bg-black/30">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="font-mono text-[10px]">{f.packageCode}</Badge>
+                            <span className="text-[10px] text-muted-foreground">لە کۆمەڵە:</span>
+                            <span className="font-mono">{f.orderInBatch.orderCode}</span>
+                            <span className="text-primary">{f.orderInBatch.customerCode}</span>
+                          </div>
+                          <div className="ms-4 flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground">↳ خوشک:</span>
+                            <span className="font-mono">{f.siblingOutsideBatch.orderCode}</span>
+                            <span>{f.siblingOutsideBatch.productName}</span>
+                            {f.siblingOutsideBatch.batchCode ? (
+                              <Badge variant="secondary" className="text-[9px]">لە کۆمەڵەی {f.siblingOutsideBatch.batchCode}</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[9px]">بێ کۆمەڵە</Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Warning: incomplete multi-carton orders */}
+                {auditData.findings.multiCartonIncomplete?.length > 0 && (
+                  <div className="p-3 rounded-lg border-2 border-blue-300 bg-blue-50 dark:bg-blue-950/30">
+                    <div className="font-bold text-blue-900 dark:text-blue-200 mb-2 flex items-center gap-1">
+                      📦 ئۆردەری چەند-کارتۆن کە کارتۆنی چاوەڕیی ماوە ({auditData.findings.multiCartonIncomplete.length})
+                    </div>
+                    <div className="text-[11px] text-blue-800/80 dark:text-blue-300/80 mb-2">
+                      ئەم ئۆردەرانە ٢ کارتۆن یان زیاتر هەن، بەڵام هەموویان هێشتا تۆمار نەکراون. ڕەنگە کارتۆن لە ڕێگە بێت.
+                    </div>
+                    <div className="space-y-1.5">
+                      {auditData.findings.multiCartonIncomplete.map((f: any) => (
+                        <div key={f.orderId} className="text-xs p-2 rounded bg-white/60 dark:bg-black/30">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="font-mono text-[10px]">{f.orderCode}</Badge>
+                            <span>{f.productName}</span>
+                            <span className="text-primary text-[10px]">{f.customerCode}</span>
+                            <span className="ms-auto font-bold">{f.cartonsRegistered}/{f.cartonsTotal}</span>
+                          </div>
+                          <div className="ms-4 flex flex-wrap gap-1">
+                            {f.pendingTrackings.map((tn: string) => (
+                              <span key={tn} className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-blue-200/60 dark:bg-blue-900/40">
+                                ⏳ {tn}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 mt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPendingDeliveryConfirm(null);
+                  setAuditData(null);
+                }}
+              >
+                وازهێنان
+              </Button>
+              <Button
+                disabled={auditLoading || !auditData || auditData.summary?.blocking || updateStatusMutation.isPending}
+                onClick={() => {
+                  if (!pendingDeliveryConfirm || !auditData) return;
+                  updateStatusMutation.mutate(
+                    { id: pendingDeliveryConfirm.batchId, status: pendingDeliveryConfirm.targetStatus as any },
+                    {
+                      onSuccess: (data) => {
+                        setPendingDeliveryConfirm(null);
+                        setAuditData(null);
+                        onBatchStatusSuccess(data);
+                      },
+                      onError: (err) => {
+                        setPendingDeliveryConfirm(null);
+                        setAuditData(null);
+                        onMutationError(err);
+                      },
+                    },
+                  );
+                }}
+                className={
+                  auditData?.summary?.warning && !auditData?.summary?.blocking
+                    ? "bg-amber-600 hover:bg-amber-700 text-white"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                }
+              >
+                {auditData?.summary?.blocking
+                  ? "پاش چاکی هەڵەی کڕیار، دووبارە هەوڵ بدە"
+                  : auditData?.summary?.warning
+                    ? "بەردەوام بە، دەزانم"
+                    : "بەردەوام بە بۆ گەیاندن"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

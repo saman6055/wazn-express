@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, Fragment } from "react";
 import { toast } from "sonner";
 import {
   Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Trash2,
@@ -18,6 +18,10 @@ import {
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
 
+// Legacy shape consumed by the existing badge / inline hint UI. We keep it
+// stable so the rest of the page renders unchanged for the "normal" case;
+// the new shared / multi-tracking surfaces are rendered separately from
+// `expandedLookup` below.
 interface TrackingLookupResult {
   found: boolean;
   type: 'regular' | 'full_package' | 'commission' | 'duplicate';
@@ -31,6 +35,38 @@ interface TrackingLookupResult {
   existingPackageCode?: string;
 }
 
+// Expanded result (Phase 1 procedure). The UI uses this to render badges and
+// inline panels for shared / multi-tracking situations and to compute which
+// order IDs go in linkedOrderIds[] at submit time.
+interface ExpandedLookup {
+  case: 'single' | 'shared' | 'multi' | 'duplicate' | 'regular';
+  orders: Array<{
+    order: {
+      id: number;
+      orderCode: string;
+      orderType: 'full_package' | 'commission' | 'purchase_request' | string;
+      orderNumber: string | null;
+      productName: string;
+      productImage: string | null;
+      quantity: number;
+      status: string;
+      customerId: number | null;
+      batchId: number | null;
+      trackingNumber: string | null;
+    };
+    customer: { id: number; customerCode: string | null; fullName: string | null } | null;
+    batch: { id: number; batchCode: string | null; status: string } | null;
+    trackings: Array<{ id: number; trackingNumber: string; cartonIndex: number }>;
+  }>;
+  existingPackages: Array<{ trackingNumber: string; id: number; packageCode: string; status: string; registeredAt: string | Date }>;
+  flags: {
+    customerMismatch: boolean;
+    batchConflict: boolean;
+    cartonsRegistered: number | null;
+    cartonsTotal: number | null;
+  };
+}
+
 interface PackageRow {
   id: string;
   trackingNumber: string;
@@ -39,6 +75,13 @@ interface PackageRow {
   widthCm: string;
   heightCm: string;
   trackingLookup?: TrackingLookupResult | null;
+  expandedLookup?: ExpandedLookup | null;
+  // For "shared" rows: should this package link to ALL sharing orders, or
+  // only the primary one? Defaults to true (link all) — that's the safe path
+  // for the same-carton scenario the feature was built for.
+  linkAllSharingOrders?: boolean;
+  // Inline detail panel toggle.
+  expanded?: boolean;
   isLookingUp?: boolean;
 }
 
@@ -50,11 +93,67 @@ const createEmptyRow = (): PackageRow => ({
   widthCm: "",
   heightCm: "",
   trackingLookup: null,
+  expandedLookup: null,
+  linkAllSharingOrders: true,
+  expanded: false,
   isLookingUp: false,
 });
 
-// Package type badge component
-function PackageTypeBadge({ lookup }: { lookup: TrackingLookupResult | null | undefined }) {
+// Map the expanded server response back to the legacy lookup shape so the
+// existing PackageTypeBadge and inline-hint UI keep rendering without churn.
+function deriveLegacyLookup(exp: ExpandedLookup | null | undefined): TrackingLookupResult | null {
+  if (!exp) return null;
+  if (exp.case === 'duplicate') {
+    return { found: false, type: 'duplicate', existingPackageCode: undefined };
+  }
+  if (exp.case === 'regular') {
+    return { found: false, type: 'regular' };
+  }
+  // single / shared / multi all surface the primary order in legacy fields.
+  const primary = exp.orders[0];
+  if (!primary) return { found: false, type: 'regular' };
+  const t = (primary.order.orderType === 'commission') ? 'commission' as const : 'full_package' as const;
+  return {
+    found: true,
+    type: t,
+    orderId: primary.order.id,
+    orderCode: primary.order.orderCode,
+    productName: primary.order.productName,
+    status: primary.order.status,
+    customerId: primary.customer?.id,
+    customerCode: primary.customer?.customerCode ?? undefined,
+    customerName: primary.customer?.fullName ?? undefined,
+  };
+}
+
+// Package type badge component. Reads both legacy and expanded shapes so we
+// can render the new "shared / multi" badges without disturbing existing
+// "regular / commission / full_package / duplicate" rendering.
+function PackageTypeBadge({
+  lookup,
+  expanded,
+}: {
+  lookup: TrackingLookupResult | null | undefined;
+  expanded?: ExpandedLookup | null;
+}) {
+  // Shared tracking takes priority over the per-type badge — staff needs to
+  // see "this carton has 3 orders" before seeing "it's a full-package order".
+  if (expanded?.case === 'shared') {
+    return (
+      <Badge className="text-[10px] px-1.5 py-0 font-normal bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 border-orange-300">
+        🔗 هاوبەش • {expanded.orders.length} ئۆردەر
+      </Badge>
+    );
+  }
+  if (expanded?.case === 'multi' && expanded.flags.cartonsTotal) {
+    const got = expanded.flags.cartonsRegistered ?? 0;
+    return (
+      <Badge className="text-[10px] px-1.5 py-0 font-normal bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300">
+        📦 کارتۆن {got + 1}/{expanded.flags.cartonsTotal}
+      </Badge>
+    );
+  }
+
   if (!lookup || !lookup.found) {
     return (
       <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-700">
@@ -62,7 +161,7 @@ function PackageTypeBadge({ lookup }: { lookup: TrackingLookupResult | null | un
       </Badge>
     );
   }
-  
+
   if (lookup.type === 'duplicate') {
     return (
       <Badge variant="destructive" className="text-[10px] px-1.5 py-0 font-normal">
@@ -70,7 +169,7 @@ function PackageTypeBadge({ lookup }: { lookup: TrackingLookupResult | null | un
       </Badge>
     );
   }
-  
+
   if (lookup.type === 'commission') {
     return (
       <Badge className="text-[10px] px-1.5 py-0 font-normal bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 border-amber-300">
@@ -78,7 +177,7 @@ function PackageTypeBadge({ lookup }: { lookup: TrackingLookupResult | null | un
       </Badge>
     );
   }
-  
+
   if (lookup.type === 'full_package') {
     return (
       <Badge className="text-[10px] px-1.5 py-0 font-normal bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 border-purple-300">
@@ -86,7 +185,7 @@ function PackageTypeBadge({ lookup }: { lookup: TrackingLookupResult | null | un
       </Badge>
     );
   }
-  
+
   return null;
 }
 
@@ -218,36 +317,52 @@ export default function BulkRegister() {
     return { totalActualWeight, totalVolumetricWeight, totalChargeableWeight, totalCbm, totalCost, validPackages };
   }, [packages, selectedBatch, shippingType, cbmDivisor]);
   
-  // Tracking number lookup with debounce
+  // Tracking number lookup with debounce. Uses the expanded procedure so we
+  // get shared/multi context in one round-trip; the legacy lookup shape is
+  // derived for the existing badge / inline-hint code paths.
   const lookupTracking = useCallback(async (pkgId: string, trackingNumber: string) => {
     if (!trackingNumber || trackingNumber.length < 2) {
-      setPackages(prev => prev.map(p => 
-        p.id === pkgId ? { ...p, trackingLookup: null, isLookingUp: false } : p
+      setPackages(prev => prev.map(p =>
+        p.id === pkgId ? { ...p, trackingLookup: null, expandedLookup: null, isLookingUp: false } : p
       ));
       return;
     }
-    
-    setPackages(prev => prev.map(p => 
+
+    setPackages(prev => prev.map(p =>
       p.id === pkgId ? { ...p, isLookingUp: true } : p
     ));
-    
+
     try {
-      const result = await utils.packages.lookupTracking.fetch({ trackingNumber });
-      setPackages(prev => prev.map(p => 
-        p.id === pkgId ? { ...p, trackingLookup: result as TrackingLookupResult, isLookingUp: false } : p
+      const expanded = await utils.packages.lookupTrackingExpanded.fetch({ trackingNumber });
+      const exp = expanded as ExpandedLookup;
+      const legacy = deriveLegacyLookup(exp);
+
+      // Auto-expand the inline panel when there's something staff really
+      // needs to see (shared, multi, customer mismatch, batch conflict).
+      const shouldAutoExpand = exp.case === 'shared'
+        || exp.case === 'multi'
+        || exp.flags?.customerMismatch === true
+        || exp.flags?.batchConflict === true;
+
+      setPackages(prev => prev.map(p =>
+        p.id === pkgId
+          ? { ...p, trackingLookup: legacy, expandedLookup: exp, isLookingUp: false, expanded: shouldAutoExpand || p.expanded }
+          : p
       ));
-      
-      // Auto-set customer if found from order
-      if (result.found && result.customerId && !customerId && !isUnclaimed) {
-        setCustomerId(result.customerId);
-        const customer = customers?.find(c => c.id === result.customerId);
+
+      // Auto-set customer when found, only if staff hasn't already chosen.
+      // Single-customer rule guarantees every linked order shares one customer
+      // so picking the primary one is safe.
+      if (legacy?.found && legacy.customerId && !customerId && !isUnclaimed) {
+        setCustomerId(legacy.customerId);
+        const customer = customers?.find(c => c.id === legacy.customerId);
         if (customer) {
           setCustomerSearch(customer.customerCode || customer.fullName || "");
         }
       }
     } catch {
-      setPackages(prev => prev.map(p => 
-        p.id === pkgId ? { ...p, trackingLookup: null, isLookingUp: false } : p
+      setPackages(prev => prev.map(p =>
+        p.id === pkgId ? { ...p, trackingLookup: null, expandedLookup: null, isLookingUp: false } : p
       ));
     }
   }, [utils, customerId, isUnclaimed, customers]);
@@ -321,26 +436,50 @@ export default function BulkRegister() {
       toast.error("تراکینگ نەمبەری دووبارە هەیە، تکایە چاکی بکەرەوە");
       return;
     }
-    
+
+    // Block submit if any row has a customer-mismatch flag — the single-
+    // customer rule is enforced server-side too, but failing here is a much
+    // friendlier UX than letting the request go and rolling back.
+    const mismatchRow = packages.find(p => p.expandedLookup?.flags?.customerMismatch);
+    if (mismatchRow) {
+      toast.error("تراکینگێک هەیە کە بۆ کڕیاری جیاوازە. تکایە لە سەرچاوە چاکی بکەرەوە.");
+      return;
+    }
+
     const validPackages = packages.filter(pkg => pkg.weightKg || pkg.trackingNumber);
     if (validPackages.length === 0) {
       toast.error("تکایە لانیکەم یەک پاکەت زیاد بکە");
       return;
     }
-    
+
     setIsSubmitting(true);
     setRegisteredCount(0);
-    
+
     let successCount = 0;
     let errorCount = 0;
-    
+
     for (const pkg of validPackages) {
       try {
-        // Determine customer from tracking lookup or manual selection
+        // Build linkedOrderIds[] from the expanded lookup. For shared rows,
+        // honor staff's per-row "link all" toggle (default true). For multi
+        // and single, only the primary order is the right link for THIS
+        // tracking — other cartons get linked when their packages register.
+        const exp = pkg.expandedLookup;
+        let linkedOrderIds: number[] | undefined;
+        if (exp && (exp.case === 'shared' || exp.case === 'multi' || exp.case === 'single')) {
+          if (exp.case === 'shared' && pkg.linkAllSharingOrders !== false) {
+            linkedOrderIds = exp.orders.map(o => o.order.id);
+          } else if (exp.orders[0]) {
+            linkedOrderIds = [exp.orders[0].order.id];
+          }
+        }
+
+        // Determine customer: tracking lookup wins (single-customer rule
+        // guarantees every linked order shares one customerId).
         const effectiveCustomerId = pkg.trackingLookup?.found && pkg.trackingLookup.customerId
           ? pkg.trackingLookup.customerId
           : (isUnclaimed ? undefined : customerId!);
-        
+
         await registerMutation.mutateAsync({
           customerId: effectiveCustomerId,
           isUnclaimed: !effectiveCustomerId ? true : isUnclaimed,
@@ -353,7 +492,8 @@ export default function BulkRegister() {
           heightCm: pkg.heightCm || undefined,
           batchId: batchId && batchId !== "none" ? parseInt(batchId) : undefined,
           categoryId: categoryId && categoryId !== "none" ? parseInt(categoryId) : undefined,
-          fullPackageOrderId: pkg.trackingLookup?.found ? pkg.trackingLookup.orderId : undefined,
+          // Send the new array; legacy field remains accepted server-side.
+          linkedOrderIds,
         });
         successCount++;
         setRegisteredCount(successCount);
@@ -745,12 +885,23 @@ export default function BulkRegister() {
                           const isVolumetricHigher = volumetricKg > actualKg && volumetricKg > 0;
                           const isDuplicate = pkg.trackingLookup?.type === 'duplicate';
                           
+                          const exp = pkg.expandedLookup;
+                          const isShared = exp?.case === 'shared';
+                          const isMulti = exp?.case === 'multi';
+                          const customerMismatch = exp?.flags?.customerMismatch === true;
+                          const batchConflict = exp?.flags?.batchConflict === true;
+                          const hasInlinePanel = isShared || isMulti || customerMismatch || batchConflict;
+
                           return (
-                            <tr key={pkg.id} className={cn(
+                            <Fragment key={pkg.id}>
+                            <tr className={cn(
                               "border-b last:border-b-0 transition-colors",
                               isDuplicate && "bg-red-50 dark:bg-red-950/30",
-                              pkg.trackingLookup?.found && pkg.trackingLookup.type === 'commission' && "bg-amber-50/50 dark:bg-amber-950/20",
-                              pkg.trackingLookup?.found && pkg.trackingLookup.type === 'full_package' && "bg-purple-50/50 dark:bg-purple-950/20",
+                              customerMismatch && "bg-rose-50 dark:bg-rose-950/30",
+                              !customerMismatch && isShared && "bg-orange-50/60 dark:bg-orange-950/20",
+                              !customerMismatch && isMulti && "bg-blue-50/60 dark:bg-blue-950/20",
+                              !customerMismatch && !isShared && !isMulti && pkg.trackingLookup?.found && pkg.trackingLookup.type === 'commission' && "bg-amber-50/50 dark:bg-amber-950/20",
+                              !customerMismatch && !isShared && !isMulti && pkg.trackingLookup?.found && pkg.trackingLookup.type === 'full_package' && "bg-purple-50/50 dark:bg-purple-950/20",
                             )}>
                               <td className="px-2 py-1.5 text-center text-xs text-muted-foreground font-mono">
                                 {index + 1}
@@ -796,7 +947,19 @@ export default function BulkRegister() {
                                 )}
                               </td>
                               <td className="px-2 py-1.5 text-center">
-                                <PackageTypeBadge lookup={pkg.trackingLookup} />
+                                {hasInlinePanel ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setPackages(prev => prev.map(p => p.id === pkg.id ? { ...p, expanded: !p.expanded } : p))}
+                                    className="inline-flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+                                    title={pkg.expanded ? "بشاردنەوە" : "وردەکارییەکان نیشان بدە"}
+                                  >
+                                    <PackageTypeBadge lookup={pkg.trackingLookup} expanded={pkg.expandedLookup} />
+                                    {pkg.expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                  </button>
+                                ) : (
+                                  <PackageTypeBadge lookup={pkg.trackingLookup} expanded={pkg.expandedLookup} />
+                                )}
                               </td>
                               <td className="px-2 py-1.5">
                                 <Input
@@ -877,6 +1040,105 @@ export default function BulkRegister() {
                                 </Button>
                               </td>
                             </tr>
+                            {hasInlinePanel && pkg.expanded && exp && (
+                              <tr className={cn(
+                                "border-b",
+                                customerMismatch ? "bg-rose-50/80 dark:bg-rose-950/40"
+                                  : isShared ? "bg-orange-50/80 dark:bg-orange-950/30"
+                                  : isMulti ? "bg-blue-50/80 dark:bg-blue-950/30"
+                                  : "bg-muted/30",
+                              )}>
+                                <td colSpan={9} className="px-3 py-2 text-xs">
+                                  {customerMismatch && (
+                                    <div className="mb-2 p-2 rounded border border-rose-300 bg-rose-100/80 text-rose-900 dark:bg-rose-900/40 dark:text-rose-100 flex items-start gap-2">
+                                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                                      <div>
+                                        <div className="font-bold">تراکینگی هاوبەش بۆ کڕیاری جیاواز</div>
+                                        <div className="text-[11px] opacity-90">ئەم تراکینگە بۆ ئۆردەری چەند کڕیاری جیایە. یاسای کاری ڕێگری دەکات لە تۆمارکردنی پاکەتێکی هاوبەش بۆ کڕیاری جیاواز. تکایە لە سەرچاوە چاکی بکەرەوە.</div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {batchConflict && !customerMismatch && (
+                                    <div className="mb-2 p-2 rounded border border-amber-300 bg-amber-100/80 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100 flex items-start gap-2">
+                                      <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                                      <div>
+                                        <div className="font-bold">کۆمەڵەی جیاواز</div>
+                                        <div className="text-[11px] opacity-90">ئۆردەرە گرێدراوەکان لە کۆمەڵەی جیاوازدان. ئەگەر ئەم پاکەتە دەخەیتە کۆمەڵە، ئۆردەرەکان لە کۆمەڵەی نوێ یەکدەگرتنەوە.</div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {isShared && (
+                                    <>
+                                      <div className="font-semibold text-orange-900 dark:text-orange-200 mb-1">
+                                        🔗 ئەم تراکینگە بۆ {exp.orders.length} ئۆردەرە:
+                                      </div>
+                                      <div className="space-y-1 mb-2">
+                                        {exp.orders.map((od) => {
+                                          const alreadyRegistered = exp.existingPackages.some(p => p.trackingNumber === pkg.trackingNumber);
+                                          return (
+                                            <div key={od.order.id} className="flex items-center gap-2 p-1.5 rounded bg-white/60 dark:bg-black/20 border border-orange-200/60 dark:border-orange-800/40">
+                                              <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">{od.order.orderCode}</Badge>
+                                              <span className="text-[11px]">{od.order.productName}</span>
+                                              {od.order.quantity > 1 && <span className="text-[10px] text-muted-foreground">×{od.order.quantity}</span>}
+                                              <span className="text-[10px] text-muted-foreground">•</span>
+                                              <span className="text-[11px] text-primary font-medium">{od.customer?.customerCode ?? '?'}</span>
+                                              <span className="text-[10px] text-muted-foreground ms-auto">
+                                                {od.batch ? <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">کۆمەڵە: {od.batch.batchCode}</span> : <span>بێ کۆمەڵە</span>}
+                                              </span>
+                                              {alreadyRegistered && (
+                                                <Badge variant="secondary" className="text-[9px] px-1 py-0">پاکەتی هاوبەش هەیە</Badge>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                      <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={pkg.linkAllSharingOrders !== false}
+                                          onChange={(e) => setPackages(prev => prev.map(p => p.id === pkg.id ? { ...p, linkAllSharingOrders: e.target.checked } : p))}
+                                          className="h-3.5 w-3.5 cursor-pointer"
+                                        />
+                                        <span className="text-[11px]">
+                                          {pkg.linkAllSharingOrders !== false
+                                            ? `هەموو ${exp.orders.length} ئۆردەرەکە بە ئەم پاکەتە گرێ بدە (پێشنیار)`
+                                            : `تەنها ئۆردەری سەرەکی (${exp.orders[0]?.order.orderCode})`}
+                                        </span>
+                                      </label>
+                                    </>
+                                  )}
+                                  {isMulti && exp.orders[0] && (
+                                    <>
+                                      <div className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
+                                        📦 ئۆردەری {exp.orders[0].order.orderCode} بە {exp.orders[0].trackings.length} کارتۆن:
+                                      </div>
+                                      <div className="space-y-1">
+                                        {exp.orders[0].trackings.map((tr) => {
+                                          const reg = exp.existingPackages.find(p => p.trackingNumber === tr.trackingNumber);
+                                          const isThis = tr.trackingNumber === pkg.trackingNumber;
+                                          return (
+                                            <div key={tr.id} className="flex items-center gap-2 p-1.5 rounded bg-white/60 dark:bg-black/20 border border-blue-200/60 dark:border-blue-800/40">
+                                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">کارتۆن {tr.cartonIndex}</Badge>
+                                              <span className="text-[11px] font-mono">{tr.trackingNumber}</span>
+                                              <span className="ms-auto">
+                                                {isThis ? (
+                                                  <Badge className="text-[9px] bg-emerald-100 text-emerald-800 border-emerald-300">ئێستا تۆمار دەکرێ</Badge>
+                                                ) : reg ? (
+                                                  <Badge variant="secondary" className="text-[9px]">✅ تۆمار کراوە ({reg.packageCode})</Badge>
+                                                ) : (
+                                                  <Badge variant="outline" className="text-[9px] text-muted-foreground">⏳ چاوەڕێ</Badge>
+                                                )}
+                                              </span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </>
+                                  )}
+                                </td>
+                              </tr>
+                            )}
+                            </Fragment>
                           );
                         })}
                       </tbody>
@@ -884,6 +1146,38 @@ export default function BulkRegister() {
                   </div>
                 </div>
                 
+                {/* Pre-submit advisory banner: surface counts of shared / multi
+                    rows and any blocking issues so staff scans them before the
+                    button click instead of clicking and reading toasts. */}
+                {(() => {
+                  const sharedCount = packages.filter(p => p.expandedLookup?.case === 'shared').length;
+                  const multiCount = packages.filter(p => p.expandedLookup?.case === 'multi').length;
+                  const mismatchCount = packages.filter(p => p.expandedLookup?.flags?.customerMismatch).length;
+                  if (sharedCount === 0 && multiCount === 0 && mismatchCount === 0) return null;
+                  return (
+                    <div className="mt-3 mb-1 p-2.5 rounded-lg border bg-muted/40 text-xs space-y-1">
+                      {mismatchCount > 0 && (
+                        <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-semibold">
+                          <AlertTriangle className="h-3.5 w-3.5" />
+                          {mismatchCount} ڕیز کێشەی کڕیاری جیاوازی هەیە — submit بەردەست نییە
+                        </div>
+                      )}
+                      {sharedCount > 0 && (
+                        <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                          <span>🔗</span>
+                          <span>{sharedCount} ڕیز تراکی هاوبەشە — لە پانێڵی هەر ڕیزدا checkbox-ەکە پشکنە پێش submit</span>
+                        </div>
+                      )}
+                      {multiCount > 0 && (
+                        <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                          <span>📦</span>
+                          <span>{multiCount} ڕیز کارتۆنێکە لە ئۆردەرێکی چەند-کارتۆنە</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* Footer with register button */}
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -897,7 +1191,13 @@ export default function BulkRegister() {
                   </div>
                   <Button
                     onClick={handleSubmit}
-                    disabled={isSubmitting || (!isUnclaimed && !customerId) || totals.validPackages === 0 || !selectedWarehouse}
+                    disabled={
+                      isSubmitting
+                      || (!isUnclaimed && !customerId)
+                      || totals.validPackages === 0
+                      || !selectedWarehouse
+                      || packages.some(p => p.expandedLookup?.flags?.customerMismatch)
+                    }
                     size="lg"
                     className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-md"
                   >

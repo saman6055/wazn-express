@@ -139,10 +139,154 @@ export const packagesRouter = router({
             existingPackageCode: existingPkg[0].packageCode,
           };
         }
-        
+
         return { found: false as const, type: 'regular' as const };
       }),
-    
+
+    /**
+     * Expanded tracking lookup for the new BulkRegister / QuickRegister UX.
+     *
+     * Resolves four scenarios at once so the UI can render the right banner
+     * without a second round-trip:
+     *
+     *   - "single"     — exactly one order, one tracking. Normal case.
+     *   - "shared"     — multiple orders share this tracking number
+     *                    (same physical carton holds items for N orders).
+     *   - "multi"      — one order, but it has N tracking numbers
+     *                    (one order spread across N cartons).
+     *   - "duplicate"  — a package with this tracking already exists.
+     *   - "regular"    — tracking is not in any FP/Commission order.
+     *
+     * For "shared" and "multi" the response includes every related order and
+     * tracking, with per-tracking flags showing which cartons already have a
+     * registered package, so the UI can show progress like "3/5 cartons in".
+     *
+     * The single-customer business invariant is also checked here: if the
+     * sharing orders belong to >1 customer the response surfaces it as a
+     * `customerMismatch` flag — the UI must block submit and ask staff to
+     * fix the source data, since allowing it would let one customer be
+     * charged for goods another customer takes home.
+     */
+    lookupTrackingExpanded: staffProcedure
+      .input(z.object({ trackingNumber: z.string().min(1).max(100) }))
+      .query(async ({ input }) => {
+        const tn = input.trackingNumber.trim();
+
+        // Duplicate-package short-circuit comes first so we never silently
+        // overwrite a package row from a typo'd tracking entry.
+        const existingPkg = await db.getPackageByTrackingNumber(tn);
+        if (existingPkg) {
+          return {
+            case: "duplicate" as const,
+            existingPackage: {
+              id: existingPkg.id,
+              packageCode: existingPkg.packageCode,
+              trackingNumber: existingPkg.trackingNumber,
+              status: existingPkg.status,
+              registeredAt: existingPkg.registeredAt,
+            },
+          };
+        }
+
+        // Pull every order that this tracking maps to (covers both the new
+        // multi-tracking table and the legacy single-tracking field).
+        const sharingOrders = await db.getAllOrdersByTrackingNumber(tn);
+        if (sharingOrders.length === 0) {
+          return { case: "regular" as const };
+        }
+
+        // For each order, fan out to all of its trackings (multi-tracking case)
+        // and collect customer + batch metadata.
+        const ordersDetail = await Promise.all(
+          sharingOrders.map(async (o) => {
+            const trackings = await db.getOrderTrackings(o.id);
+            const customer = o.customerId ? await db.getCustomerById(o.customerId) : null;
+            const batch = o.batchId ? await db.getBatchById(o.batchId) : null;
+            return {
+              order: {
+                id: o.id,
+                orderCode: o.orderCode,
+                orderType: o.orderType,
+                orderNumber: (o as { orderNumber?: string | null }).orderNumber ?? null,
+                productName: o.productName,
+                productImage: (o as { productImage?: string | null }).productImage ?? null,
+                quantity: o.quantity,
+                status: o.status,
+                customerId: o.customerId ?? null,
+                batchId: o.batchId ?? null,
+                trackingNumber: o.trackingNumber ?? null,
+              },
+              customer: customer
+                ? { id: customer.id, customerCode: customer.customerCode, fullName: customer.fullName }
+                : null,
+              batch: batch ? { id: batch.id, batchCode: batch.batchCode, status: batch.status } : null,
+              trackings: trackings.map((t) => ({
+                id: t.id,
+                trackingNumber: t.trackingNumber,
+                cartonIndex: t.cartonIndex ?? 1,
+              })),
+            };
+          })
+        );
+
+        // Bulk lookup: which of every tracking we just collected already has
+        // a registered package? One query, then a Map for O(1) per-row hits.
+        const allTrackingsSet = new Set<string>();
+        for (const od of ordersDetail) {
+          if (od.order.trackingNumber) allTrackingsSet.add(od.order.trackingNumber);
+          for (const t of od.trackings) allTrackingsSet.add(t.trackingNumber);
+        }
+        const existingPackages = await db.getPackagesByTrackingNumbers(Array.from(allTrackingsSet));
+        const packageByTracking = new Map<string, { id: number; packageCode: string; status: string; registeredAt: Date }>();
+        for (const p of existingPackages) {
+          if (p.trackingNumber) {
+            packageByTracking.set(p.trackingNumber, {
+              id: p.id,
+              packageCode: p.packageCode,
+              status: p.status,
+              registeredAt: p.registeredAt,
+            });
+          }
+        }
+
+        // Single-customer rule check.
+        const customerIdSet = new Set<number>();
+        for (const od of ordersDetail) {
+          if (od.order.customerId) customerIdSet.add(od.order.customerId);
+        }
+        const customerMismatch = customerIdSet.size > 1;
+
+        // Multi-batch conflict: if the sharing orders are split across
+        // different batches, register-into-batch from the package side will
+        // be ambiguous; surface it so the UI can warn before submit.
+        const batchIdSet = new Set<number>();
+        for (const od of ordersDetail) {
+          if (od.order.batchId) batchIdSet.add(od.order.batchId);
+        }
+        const batchConflict = batchIdSet.size > 1;
+
+        // Decide the headline case the UI should render.
+        const headlineCase: "single" | "shared" | "multi" =
+          ordersDetail.length > 1
+            ? "shared"
+            : (ordersDetail[0].trackings.length > 1 ? "multi" : "single");
+
+        return {
+          case: headlineCase,
+          orders: ordersDetail,
+          existingPackages: Array.from(packageByTracking.entries()).map(([trackingNumber, p]) => ({ trackingNumber, ...p })),
+          flags: {
+            customerMismatch,
+            batchConflict,
+            // For "multi" — quick progress count for the badge "X/Y cartons in".
+            cartonsRegistered: ordersDetail.length === 1
+              ? ordersDetail[0].trackings.filter(t => packageByTracking.has(t.trackingNumber)).length
+              : null,
+            cartonsTotal: ordersDetail.length === 1 ? ordersDetail[0].trackings.length : null,
+          },
+        };
+      }),
+
     // Get CBM divisor setting
     getCbmDivisor: staffProcedure
       .query(async () => {
@@ -180,7 +324,12 @@ export const packagesRouter = router({
         photos: z.array(z.string().max(2048)).optional(),
         batchId: idSchema.optional(),
         categoryId: idSchema.optional(),
-        fullPackageOrderId: idSchema.optional(), // Link to full package order if tracking matched
+        fullPackageOrderId: idSchema.optional(), // Legacy: kept for backwards compat
+        // New: every order this physical package should be linked to. Covers
+        // both "shared tracking" (one carton, multiple orders) and the implicit
+        // single-link case (one order). When omitted, falls back to
+        // [fullPackageOrderId] if present, else no links.
+        linkedOrderIds: z.array(idSchema).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const warehouse = await db.getWarehouseById(input.originWarehouseId);
@@ -210,10 +359,51 @@ export const packagesRouter = router({
           }
         }
 
+        // ----- Resolve & validate linked orders -----
+        // Caller may pass either the new linkedOrderIds[] or the legacy
+        // single fullPackageOrderId. Normalize to one ordered, deduped list.
+        const orderIdsRaw: number[] = input.linkedOrderIds && input.linkedOrderIds.length > 0
+          ? input.linkedOrderIds
+          : (input.fullPackageOrderId ? [input.fullPackageOrderId] : []);
+        const linkedOrderIds = Array.from(new Set(orderIdsRaw));
+
+        // Single-customer business rule:
+        //   The package row carries one customerId. Linking it to orders that
+        //   belong to different customers would mean charging customer B for a
+        //   package that physically goes home with customer A. Reject before
+        //   any insert touches the DB.
+        let primaryOrder: Awaited<ReturnType<typeof db.getFullPackageOrderById>> | undefined;
+        if (linkedOrderIds.length > 0) {
+          const orders = await Promise.all(linkedOrderIds.map((id) => db.getFullPackageOrderById(id)));
+          const missing = orders.findIndex((o) => !o);
+          if (missing !== -1) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: `ئۆردەری گرێدراو نەدۆزرایەوە (id=${linkedOrderIds[missing]})`,
+            });
+          }
+          const customerIds = new Set<number>();
+          for (const o of orders) {
+            if (o?.customerId != null) customerIds.add(o.customerId);
+          }
+          if (customerIds.size > 1) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "ئۆردەرە گرێدراوەکان دەبێ هەر یەک کڕیاریان هەبێ. تکایە لە سەرچاوە چاکی بکەرەوە.",
+            });
+          }
+          primaryOrder = orders[0]!;
+        }
+
         // For unclaimed packages, customer is optional
         let customer = null;
-        if (input.customerId && !input.isUnclaimed) {
-          customer = await db.getCustomerById(input.customerId);
+        // If the staff omitted customerId but the linked order resolves one,
+        // adopt it — keeps existing behavior of QuickRegister where the FP
+        // order's customer is canonical.
+        const effectiveCustomerId = input.customerId
+          ?? (primaryOrder?.customerId ?? undefined);
+        if (effectiveCustomerId && !input.isUnclaimed) {
+          customer = await db.getCustomerById(effectiveCustomerId);
           if (!customer) {
             throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە. تکایە کڕیارێکی دروست هەڵبژێرە یان بێ خاوەن دیاری بکە." });
           }
@@ -276,7 +466,7 @@ export const packagesRouter = router({
             pkg = await db.createPackage({
               packageCode,
               trackingNumber: input.trackingNumber,
-              customerId: input.isUnclaimed ? undefined : input.customerId,
+              customerId: input.isUnclaimed ? undefined : effectiveCustomerId,
               originWarehouseId: input.originWarehouseId,
               qrCodeData: qrData,
               qrCodeSignature: qrSignature,
@@ -294,7 +484,8 @@ export const packagesRouter = router({
               batchId: input.batchId,
               categoryId: input.categoryId,
               isUnclaimed: input.isUnclaimed || false,
-              fullPackageOrderId: input.fullPackageOrderId,
+              // Mirror the first linked order into the legacy FK for back-compat.
+              fullPackageOrderId: linkedOrderIds[0] ?? input.fullPackageOrderId,
             });
             break;
           } catch (err: unknown) {
@@ -319,6 +510,46 @@ export const packagesRouter = router({
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create package" });
         }
 
+        // Persist every package↔order link in the new join table. Index 0 is
+        // the primary (mirrored into packages.fullPackageOrderId above) so any
+        // legacy code path that reads only the FK still sees the same order
+        // it would have seen pre-Phase-4. The join table is the source of
+        // truth for "every order linked to this package" going forward.
+        if (linkedOrderIds.length > 0) {
+          try {
+            await db.createPackageOrderLinks(
+              pkg.id,
+              linkedOrderIds.map((orderId, idx) => ({
+                fullPackageOrderId: orderId,
+                cartonIndex: 1, // shared-tracking case: all share carton 1 by convention
+                isPrimary: idx === 0,
+              })),
+            );
+          } catch (err) {
+            appLogger.error("[Register] Failed to write packageOrderLinks", {
+              packageId: pkg.id, linkedOrderIds,
+              error: err instanceof Error ? err.message : String(err),
+            });
+            // Don't fail the package registration over a link write — the
+            // primary FK still points to the right order via createPackage.
+          }
+
+          // Phase 6 — auto status promotion. After registering this carton,
+          // check every linked order: if it has now received ALL its expected
+          // cartons, advance to `in_china_warehouse` automatically. Failures
+          // are non-fatal — the package row itself is already saved.
+          for (const orderId of linkedOrderIds) {
+            try {
+              await db.promoteOrderStatusIfFullyReceived(orderId);
+            } catch (err) {
+              appLogger.warn("[Register] Status promotion check failed", {
+                orderId,
+                error: err instanceof Error ? err.message : String(err),
+              });
+            }
+          }
+        }
+
         // Cost is already saved to package (calculatedCostUsd). Charge happens at batch delivery only.
 
         await db.createAuditLog({
@@ -327,7 +558,11 @@ export const packagesRouter = router({
           action: "register_package",
           entityType: "package",
           entityId: pkg.id,
-          newValues: { packageCode, customerId: input.customerId },
+          newValues: {
+            packageCode,
+            customerId: input.customerId ?? effectiveCustomerId,
+            linkedOrderIds,
+          },
         });
 
         return pkg;
