@@ -99,11 +99,26 @@ export default function QuickRegister() {
       if (result) {
         setFoundOrder(result);
         if (result.found) {
-          // Only auto-fill customer if nothing is selected — preserve user's manual choice
-          if (result.customer && !customerId && !isUnclaimed) {
-            setCustomerId(result.customer.id);
-            setCustomerSearch(result.customer.customerCode || result.customer.fullName || "");
-            setIsUnclaimed(false);
+          // Customer policy:
+          // • FP / commission orders → ALWAYS lock the customer to the
+          //   order's owner. The package belongs to that customer by
+          //   contract; staff cannot reassign it. Overrides any earlier
+          //   manual selection or "بێ خاوەن" toggle.
+          // • Regular packages (existing tracking, no linked order) →
+          //   only auto-fill if the staff member has not already
+          //   selected someone, so manual choices on regular packages
+          //   are preserved.
+          if (result.customer) {
+            const isLinkedOrder = result.source === 'full_package' || result.source === 'commission';
+            if (isLinkedOrder) {
+              setCustomerId(result.customer.id);
+              setCustomerSearch(result.customer.customerCode || result.customer.fullName || "");
+              setIsUnclaimed(false);
+            } else if (!customerId && !isUnclaimed) {
+              setCustomerId(result.customer.id);
+              setCustomerSearch(result.customer.customerCode || result.customer.fullName || "");
+              setIsUnclaimed(false);
+            }
           }
           const sourceLabels: Record<string, string> = {
             full_package: "فول پاکێج",
@@ -828,14 +843,23 @@ export default function QuickRegister() {
                         <AlertTriangle className="h-4 w-4" />
                       </Button>
                     </div>
-                    {(customerId || isUnclaimed) && (
-                      <div className={cn("mt-3 p-2 rounded-lg text-sm flex items-center gap-2", 
-                        isUnclaimed ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-green-50 text-green-700 border border-green-200"
-                      )}>
-                        {isUnclaimed ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                        <span className="font-bold">{isUnclaimed ? "بێ خاوەن" : customers?.find(c => c.id === customerId)?.customerCode}</span>
-                      </div>
-                    )}
+                    {(customerId || isUnclaimed) && (() => {
+                      const lockedByOrder = foundOrder?.customer != null
+                        && (foundOrder.source === 'full_package' || foundOrder.source === 'commission');
+                      return (
+                        <div className={cn("mt-3 p-2 rounded-lg text-sm flex items-center gap-2",
+                          isUnclaimed ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-green-50 text-green-700 border border-green-200"
+                        )}>
+                          {isUnclaimed ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                          <span className="font-bold">{isUnclaimed ? "بێ خاوەن" : customers?.find(c => c.id === customerId)?.customerCode}</span>
+                          {lockedByOrder && (
+                            <span className="ms-auto text-[11px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-semibold">
+                              🔒 لۆککراو
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
 

@@ -771,12 +771,22 @@ export default function BulkRegister() {
                                     <Loader2 className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 animate-spin text-muted-foreground" />
                                   )}
                                 </div>
-                                {/* Show tracking info below */}
+                                {/* Show tracking info below. For FP / commission lookups
+                                    we additionally surface a "🔒 لۆککراو" hint so the
+                                    staff knows this row is forced under the order's
+                                    customer regardless of the page-level customer
+                                    selection (the submit handler enforces this; the UI
+                                    just makes it visible). */}
                                 {pkg.trackingLookup?.found && (
-                                  <div className="mt-0.5 text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <div className="mt-0.5 text-[10px] text-muted-foreground flex items-center gap-1 flex-wrap">
                                     <ShoppingBag className="h-3 w-3" />
                                     <span className="truncate">{pkg.trackingLookup.productName}</span>
                                     <span className="text-primary font-medium">({pkg.trackingLookup.customerCode})</span>
+                                    {(pkg.trackingLookup.type === 'full_package' || pkg.trackingLookup.type === 'commission') && (
+                                      <span className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-1.5 py-0.5 rounded-full font-semibold">
+                                        🔒 لۆککراو لەسەر کریاری ئۆردەر
+                                      </span>
+                                    )}
                                   </div>
                                 )}
                                 {isDuplicate && (
