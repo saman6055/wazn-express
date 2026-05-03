@@ -303,6 +303,16 @@ export async function createDeliveryBoxesForBatch(
   if (batch.length === 0) throw new Error("Batch not found");
   const batchRow = batch[0];
 
+  // Batch-level shipping rates — used to recompute each package's shipping
+  // cost fresh at box-create time. Falling back to `pkg.calculatedCostUsd`
+  // alone is unsafe: that field is only written by Phase 1 delivery if
+  // weight was non-zero at the time, so packages weighed AFTER delivery
+  // ran end up with stale `0` values and would render as $0 on the box
+  // receipt.
+  const batchPricePerKg = parseFloat(batchRow.pricePerKg?.toString() || "0") || 0;
+  const batchPricePerCbm = parseFloat(batchRow.pricePerCbm?.toString() || "0") || 0;
+  const batchIsSea = batchRow.shippingType === 'sea';
+
   // Get all packages in the batch
   const batchPackages = await db.select().from(packages).where(eq(packages.batchId, batchId));
   if (batchPackages.length === 0) {
@@ -361,7 +371,37 @@ export async function createDeliveryBoxesForBatch(
       let itemType: 'regular' | 'full_package' | 'commission' = 'regular';
       let sourceInfo = `باچ ${batchRow.batchCode}`;
       let description = pkg.description || pkg.trackingNumber || '';
-      let calculatedCostUsd = pkg.calculatedCostUsd?.toString() || '0';
+
+      // Chargeable weight = max(actual, volumetric). Box receipts must
+      // show what the customer is billed for, not the raw scale reading.
+      const actualKg = parseFloat(pkg.weightKg?.toString() || '0') || 0;
+      const lN = parseFloat((pkg as any).lengthCm?.toString() || '0') || 0;
+      const wN = parseFloat((pkg as any).widthCm?.toString() || '0') || 0;
+      const hN = parseFloat((pkg as any).heightCm?.toString() || '0') || 0;
+      const volumetricKg = (lN * wN * hN) / 6000;
+      const chargeableKgNum = Math.max(actualKg, volumetricKg);
+      const chargeableKg = chargeableKgNum.toFixed(2);
+
+      // Recompute shipping cost FRESH from current pkg measurements ×
+      // batch rate. The package's persisted `calculatedCostUsd` is too
+      // unreliable to trust here — it's only set during Phase 1 delivery
+      // and only when chargeable weight was non-zero at that moment, so
+      // packages weighed afterwards have stale 0s. Recomputing means box
+      // prices stay correct regardless of when measurements were entered.
+      let freshShippingCost = 0;
+      if (batchIsSea && batchPricePerCbm > 0) {
+        const pkgCbm = parseFloat((pkg as any).volumeCbm?.toString() || '0') || 0;
+        freshShippingCost = pkgCbm * batchPricePerCbm;
+      } else if (batchPricePerKg > 0) {
+        freshShippingCost = chargeableKgNum * batchPricePerKg;
+      }
+      // Fall back to the persisted value only when the rate is missing —
+      // that way un-priced batches still render whatever was stored
+      // rather than zeroing out everything.
+      const persistedCost = parseFloat(pkg.calculatedCostUsd?.toString() || '0') || 0;
+      const shippingCost = freshShippingCost > 0 ? freshShippingCost : persistedCost;
+
+      let calculatedCostUsd = shippingCost.toFixed(2);
 
       if (pkg.trackingNumber) {
         const [linkedFP] = await db.select().from(fullPackageOrders)
@@ -375,7 +415,6 @@ export async function createDeliveryBoxesForBatch(
           if (linkedFP.orderType === 'commission') {
             const itemPrice = Number(linkedFP.itemPriceUsd || 0);
             const commFee = Number(linkedFP.commissionFeeUsd || linkedFP.commissionAmount || 0);
-            const shippingCost = Number(pkg.calculatedCostUsd || 0);
             // Per spec: commission rolls into a single "نرخی بەرهەم" total
             // on box receipts — no separate commission line. Shipping stays
             // on its own line so the customer can still see what they paid
@@ -389,15 +428,6 @@ export async function createDeliveryBoxesForBatch(
           }
         }
       }
-
-      // Chargeable weight = max(actual, volumetric). Box receipts must
-      // show what the customer is billed for, not the raw scale reading.
-      const actualKg = parseFloat(pkg.weightKg?.toString() || '0') || 0;
-      const lN = parseFloat((pkg as any).lengthCm?.toString() || '0') || 0;
-      const wN = parseFloat((pkg as any).widthCm?.toString() || '0') || 0;
-      const hN = parseFloat((pkg as any).heightCm?.toString() || '0') || 0;
-      const volumetricKg = (lN * wN * hN) / 6000;
-      const chargeableKg = Math.max(actualKg, volumetricKg).toFixed(2);
 
       await db.insert(deliveryBoxItems).values({
         boxId,

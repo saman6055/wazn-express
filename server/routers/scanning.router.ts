@@ -949,7 +949,26 @@ export const deliveryBoxRouter = router({
         sourceInfo = batch ? `باچ ${batch.batchCode}` : 'بێ باچ';
         description = pkg.description || pkg.trackingNumber || '';
         weightKg = computeChargeableKg(pkg.weightKg, pkg.lengthCm, pkg.widthCm, pkg.heightCm);
-        calculatedCostUsd = pkg.calculatedCostUsd?.toString() || '0';
+
+        // Recompute shipping cost FRESH from current measurements × batch
+        // rate. `pkg.calculatedCostUsd` alone is unreliable: it is only
+        // written by Phase 1 delivery and only when chargeable weight was
+        // non-zero at that moment, so packages weighed/measured afterwards
+        // keep a stale `0` and would price as $0 in the box.
+        const chargeableKgNum = parseFloat(weightKg) || 0;
+        const batchPricePerKg = parseFloat(batch?.pricePerKg?.toString() || '0') || 0;
+        const batchPricePerCbm = parseFloat(batch?.pricePerCbm?.toString() || '0') || 0;
+        const batchIsSea = batch?.shippingType === 'sea';
+        let freshShippingCost = 0;
+        if (batchIsSea && batchPricePerCbm > 0) {
+          const pkgCbm = parseFloat((pkg as any).volumeCbm?.toString() || '0') || 0;
+          freshShippingCost = pkgCbm * batchPricePerCbm;
+        } else if (batchPricePerKg > 0) {
+          freshShippingCost = chargeableKgNum * batchPricePerKg;
+        }
+        const persistedCost = parseFloat(pkg.calculatedCostUsd?.toString() || '0') || 0;
+        const shippingCost = freshShippingCost > 0 ? freshShippingCost : persistedCost;
+        calculatedCostUsd = shippingCost.toFixed(2);
 
         // Check if linked to FP order — use FP pricing instead of shipping cost
         if (pkg.trackingNumber) {
@@ -961,10 +980,10 @@ export const deliveryBoxRouter = router({
 
             if (linkedFP.orderType === 'commission') {
               // Commission: item price + commission fee combined; shipping
-              // on its own line.
+              // on its own line. Use fresh shippingCost so commission
+              // boxes also benefit from the recompute fix.
               const itemPrice = Number(linkedFP.itemPriceUsd || 0);
               const commFee = Number(linkedFP.commissionFeeUsd || linkedFP.commissionAmount || 0);
-              const shippingCost = Number(pkg.calculatedCostUsd || 0);
               const qty = linkedFP.quantity || 1;
               const goodsTotal = (itemPrice * qty) + commFee;
               calculatedCostUsd = (goodsTotal + shippingCost).toFixed(2);
