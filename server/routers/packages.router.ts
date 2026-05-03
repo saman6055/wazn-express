@@ -468,44 +468,170 @@ export const packagesRouter = router({
         }
         
         const updated = await db.claimPackage(input.packageId, input.customerId, ctx.user.id);
-        
-        // Calculate and apply pricing if batch has pricing
+
+        // Pricing + late-charge for already-delivered batches.
+        //
+        // The standard flow is: package gets a batch → batch is delivered →
+        // Phase 2C in batches.router.ts runs `recordPackageChargeWithoutInvoice`
+        // for every uncharged package + creates one consolidated invoice.
+        // That flow only sees packages whose customer is known at delivery
+        // time. An unclaimed package whose owner appears LATER (after the
+        // batch already left "delivered") falls through every gate — its
+        // calculatedCostUsd was set, but no ledger debit and no invoice
+        // ever happened. This block plugs that hole: when claim happens
+        // post-delivery, recreate the same charge here so the customer's
+        // balance and the invoice list reflect reality.
+        let lateCharge: { invoiceNumber: string; amountUsd: number } | null = null;
         if (updated && updated.batchId) {
           const batch = await db.getBatchById(updated.batchId);
           if (batch) {
+            // Compute chargeable cost from current measurements × batch rate.
+            // Mirrors batches.router.ts Phase 2C exactly so a late-claim
+            // and a normal-flow charge produce the same number.
+            const isSea = batch.shippingType === 'sea';
+            const pricePerKg = parseFloat(batch.pricePerKg?.toString() || '0') || 0;
+            const pricePerCbm = parseFloat(batch.pricePerCbm?.toString() || '0') || 0;
+            const actualKg = parseFloat(updated.weightKg?.toString() || '0') || 0;
+            const lengthCm = parseFloat(updated.lengthCm?.toString() || '0') || 0;
+            const widthCm = parseFloat(updated.widthCm?.toString() || '0') || 0;
+            const heightCm = parseFloat(updated.heightCm?.toString() || '0') || 0;
+            const cbm = parseFloat(updated.volumeCbm?.toString() || '0') || 0;
+            const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+            const chargeableKg = Math.max(actualKg, volumetricKg);
+
             let calculatedCost = 0;
-            if (batch.pricePerKg && updated.weightKg) {
-              // Use chargeable weight (max of actual and volumetric)
-              const actualKg = parseFloat(updated.weightKg?.toString() || "0");
-              const lengthCm = parseFloat(updated.lengthCm?.toString() || "0");
-              const widthCm = parseFloat(updated.widthCm?.toString() || "0");
-              const heightCm = parseFloat(updated.heightCm?.toString() || "0");
-              const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-              const chargeableKg = Math.max(actualKg, volumetricKg);
-              calculatedCost = parseFloat(batch.pricePerKg) * chargeableKg;
-            } else if (batch.pricePerCbm && updated.volumeCbm) {
-              calculatedCost = parseFloat(batch.pricePerCbm) * parseFloat(updated.volumeCbm);
+            if (isSea && pricePerCbm > 0 && cbm > 0) {
+              calculatedCost = pricePerCbm * cbm;
+            } else if (pricePerKg > 0 && chargeableKg > 0) {
+              calculatedCost = pricePerKg * chargeableKg;
             }
-            
+
             if (calculatedCost > 0) {
               await db.updatePackage(input.packageId, {
                 calculatedCostUsd: calculatedCost.toFixed(2),
               });
-              // Charge happens when batch is delivered — NOT here
+            }
+
+            // Skip the late-charge if the package belongs to a Full Package
+            // order — FP shipping is a company cost, not the customer's.
+            // Defensive check; unclaimed packages don't normally link to FP,
+            // but being explicit prevents accidental double-charging if
+            // someone wires a tracking number both ways.
+            let isLinkedToFP = false;
+            if (updated.trackingNumber) {
+              const linkedFp = await db.getFullPackageOrderByTrackingNumber(updated.trackingNumber);
+              if (linkedFp) isLinkedToFP = true;
+            }
+
+            const isBatchDelivered = batch.status === 'delivered';
+            const alreadyCharged = updated.isCharged === true;
+            const shouldLateCharge =
+              isBatchDelivered &&
+              !alreadyCharged &&
+              !isLinkedToFP &&
+              calculatedCost > 0;
+
+            if (shouldLateCharge) {
+              try {
+                // Build the same rich line-item shape that Phase 2C uses,
+                // so the invoice that lands in the customer's history is
+                // visually identical to one they would have received had
+                // they claimed before delivery.
+                const descParts: string[] = [];
+                const trackingLabel = updated.trackingNumber
+                  ? `📦 ${updated.trackingNumber}`
+                  : `📦 ${updated.packageCode}`;
+                descParts.push(trackingLabel);
+                if (updated.trackingNumber && updated.packageCode) {
+                  descParts.push(`کۆد: ${updated.packageCode}`);
+                }
+                if ((updated as any).productDescription) {
+                  descParts.push(`ناوەرۆک: ${(updated as any).productDescription}`);
+                }
+                if (isSea) {
+                  const measureParts = [`CBM: ${cbm.toFixed(3)} m³`];
+                  if (actualKg > 0) measureParts.push(`کێش: ${actualKg.toFixed(2)} kg`);
+                  if (lengthCm > 0) measureParts.push(`${lengthCm}×${widthCm}×${heightCm} cm`);
+                  descParts.push(measureParts.join(' · '));
+                  descParts.push(`نرخ: ${cbm.toFixed(3)} m³ × $${pricePerCbm.toFixed(2)}/m³ = $${calculatedCost.toFixed(2)}`);
+                } else {
+                  const measureParts: string[] = [];
+                  if (actualKg > 0) measureParts.push(`کێشی ڕاستەقینە: ${actualKg.toFixed(2)} kg`);
+                  if (volumetricKg > 0) measureParts.push(`کێشی قەبارەیی: ${volumetricKg.toFixed(2)} kg`);
+                  if (lengthCm > 0) measureParts.push(`${lengthCm}×${widthCm}×${heightCm} cm`);
+                  if (measureParts.length) descParts.push(measureParts.join(' · '));
+                  descParts.push(
+                    `نرخ: ${chargeableKg.toFixed(2)} kg (${chargeableKg === volumetricKg && volumetricKg > actualKg ? 'قەبارەیی' : 'ڕاستەقینە'}) × $${pricePerKg.toFixed(2)}/kg = $${calculatedCost.toFixed(2)}`
+                  );
+                }
+                descParts.push(`(چارجی دواکەوتوو — پاکەت پاش گەیشتنی باچ خاوەنی پەیداکراوە)`);
+
+                const description = `پاکەت ${updated.trackingNumber || updated.packageCode} - باچ ${batch.batchCode || ''} (چارجی دواکەوتوو)`;
+                const result = await db.applyCharge(
+                  input.customerId,
+                  customer.customerCode,
+                  'PACKAGE',
+                  input.packageId,
+                  calculatedCost,
+                  description,
+                  ctx.user.id,
+                  [{
+                    description: descParts.join('\n'),
+                    quantity: 1,
+                    unitPrice: calculatedCost,
+                    total: calculatedCost,
+                  }],
+                );
+
+                // packages table only has `isCharged`; the transaction
+                // <-> invoice link lives on ledger_transactions.invoiceId
+                // (set by applyCharge), so cross-reference is preserved
+                // even without per-package transaction id columns.
+                await db.updatePackage(input.packageId, {
+                  isCharged: true,
+                });
+
+                lateCharge = {
+                  invoiceNumber: result.invoice.invoiceNumber,
+                  amountUsd: calculatedCost,
+                };
+
+                appLogger.info('[claimPackage] Late charge applied', {
+                  packageId: input.packageId,
+                  packageCode: updated.packageCode,
+                  customerId: input.customerId,
+                  batchCode: batch.batchCode,
+                  amountUsd: calculatedCost,
+                  invoiceNumber: result.invoice.invoiceNumber,
+                });
+              } catch (e) {
+                // Don't fail the whole claim if charging fails — the
+                // package is already assigned to the customer at this
+                // point. Surface the error in logs so accounting can
+                // reconcile manually.
+                appLogger.error('[claimPackage] Late charge FAILED — claim succeeded but no invoice created', {
+                  packageId: input.packageId,
+                  customerId: input.customerId,
+                  error: e instanceof Error ? e.message : String(e),
+                });
+              }
             }
           }
         }
-        
+
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
           action: "claim_package",
           entityType: "package",
           entityId: input.packageId,
-          newValues: { customerId: input.customerId },
+          newValues: {
+            customerId: input.customerId,
+            ...(lateCharge ? { lateCharge } : {}),
+          },
         });
-        
-        return updated;
+
+        return { ...updated, lateCharge };
       }),
     assignToBatch: staffProcedure
       .input(z.object({
