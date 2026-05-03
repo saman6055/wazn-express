@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import {
   Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Trash2,
   Layers, Calculator, AlertTriangle, Tags, ChevronDown, ChevronUp,
-  Scale, Ruler, Box, Settings2, ArrowRightLeft, Info, Zap, ShoppingBag
+  Scale, Ruler, Box, Settings2, ArrowRightLeft, Info, Zap, ShoppingBag, Warehouse
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -98,6 +98,10 @@ export default function BulkRegister() {
   const [customerSearch, setCustomerSearch] = useState("");
   const [shippingType, setShippingType] = useState<"air_regular" | "air_irregular" | "sea">("air_regular");
   const [batchId, setBatchId] = useState<string>("");
+  // Explicit warehouse selection (was silently using warehouses[0]). null
+  // until the list loads; the useEffect below picks the first available
+  // warehouse as a sensible default while letting the user override it.
+  const [originWarehouseId, setOriginWarehouseId] = useState<number | null>(null);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [packages, setPackages] = useState<PackageRow[]>([createEmptyRow(), createEmptyRow(), createEmptyRow()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -120,7 +124,18 @@ export default function BulkRegister() {
   const { data: cbmDivisorData } = trpc.packages.getCbmDivisor.useQuery();
   
   const cbmDivisor = cbmDivisorData?.divisor || 6000;
-  const defaultWarehouse = warehouses?.[0];
+  // Auto-select first warehouse once list loads; preserve manual selection
+  // if user already picked one. This stops the silent failure where
+  // defaultWarehouse was undefined for the first render(s) after mount.
+  useEffect(() => {
+    if (warehouses?.length && originWarehouseId === null) {
+      setOriginWarehouseId(warehouses[0].id);
+    }
+  }, [warehouses, originWarehouseId]);
+  const selectedWarehouse = useMemo(
+    () => (warehouses?.find((w) => w.id === originWarehouseId) ?? warehouses?.[0]) ?? null,
+    [warehouses, originWarehouseId]
+  );
   
   // Mutations
   const registerMutation = trpc.packages.register.useMutation();
@@ -290,11 +305,11 @@ export default function BulkRegister() {
   };
   
   const handleSubmit = async () => {
-    if (!defaultWarehouse) {
+    if (!selectedWarehouse) {
       toast.error("هیچ کۆگایەک ڕێکنەخراوە");
       return;
     }
-    
+
     if (!isUnclaimed && !customerId) {
       toast.error("تکایە کڕیارێک هەڵبژێرە یان وەک بێ خاوەن دیاری بکە");
       return;
@@ -329,7 +344,7 @@ export default function BulkRegister() {
         await registerMutation.mutateAsync({
           customerId: effectiveCustomerId,
           isUnclaimed: !effectiveCustomerId ? true : isUnclaimed,
-          originWarehouseId: defaultWarehouse.id,
+          originWarehouseId: selectedWarehouse.id,
           trackingNumber: pkg.trackingNumber || undefined,
           shippingType,
           weightKg: pkg.weightKg || undefined,
@@ -469,6 +484,52 @@ export default function BulkRegister() {
                       {customers?.find(c => c.id === customerId)?.customerCode} - {customers?.find(c => c.id === customerId)?.fullName}
                     </span>
                   </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Warehouse Selection — explicit picker so the user always
+                knows which origin warehouse the bulk batch will be tagged
+                to, instead of silently consuming warehouses[0] (which
+                produced the "no warehouse" error when the list was empty
+                or still loading). */}
+            <Card>
+              <CardHeader className="pb-2 pt-3 px-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Warehouse className="h-3.5 w-3.5 text-primary" />
+                  کۆگا
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3">
+                <Select
+                  value={originWarehouseId != null ? String(originWarehouseId) : ""}
+                  onValueChange={(v) => setOriginWarehouseId(v ? parseInt(v, 10) : null)}
+                  disabled={!warehouses?.length}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder={warehouses?.length ? "کۆگا هەڵبژێرە..." : "هیچ کۆگایەک نییە"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses?.map((w) => (
+                      <SelectItem key={w.id} value={String(w.id)}>
+                        <span className="font-medium">{w.nameEn ?? w.nameKu ?? `کۆگا ${w.id}`}</span>
+                        {w.codePrefix && <span className="text-muted-foreground me-2">({w.codePrefix})</span>}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedWarehouse && (
+                  <div className="mt-2 flex items-center gap-1.5 p-1.5 bg-slate-50 dark:bg-slate-900 rounded-md">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-slate-600 shrink-0" />
+                    <span className="text-[11px] text-slate-700 dark:text-slate-300 font-medium truncate">
+                      {selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? `کۆگا ${selectedWarehouse.id}`}
+                    </span>
+                  </div>
+                )}
+                {!warehouses?.length && (
+                  <p className="mt-2 text-[10px] text-amber-600">
+                    تکایە لە ڕێکخستنەکان کۆگا زیاد بکە.
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -824,9 +885,9 @@ export default function BulkRegister() {
                       </span>
                     )}
                   </div>
-                  <Button 
+                  <Button
                     onClick={handleSubmit}
-                    disabled={isSubmitting || (!isUnclaimed && !customerId) || totals.validPackages === 0}
+                    disabled={isSubmitting || (!isUnclaimed && !customerId) || totals.validPackages === 0 || !selectedWarehouse}
                     size="lg"
                     className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-md"
                   >
