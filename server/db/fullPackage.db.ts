@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getCustomerById } from './customers.db';
 import { applyCharge } from './finance.db';
@@ -88,20 +89,20 @@ const notDeleted = isNull(fullPackageOrders.deletedAt);
 export async function createFullPackageOrder(data: InsertFullPackageOrder): Promise<FullPackageOrder> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   // UNIFIED FINANCIAL MODEL:
   // Full Package & Purchase Request: Customer pays sellingPriceUsd (final price) only
   // Shipping cost is OUR cost, deducted from profit, NOT charged to customer
   // profit = (sellingPrice - purchasePrice) * quantity - shippingCost
   // Commission: Customer pays itemPrice + commissionFee, shipping is our cost
   // profit = commissionFee - shippingCost
-  
+
   const orderType = data.orderType || 'full_package';
   const quantity = data.quantity || 1;
   const shippingCost = parseFloat(data.shippingCostUsd as string || "0") || 0;
-  
+
   let profit = 0;
-  
+
   if (orderType === 'full_package' || orderType === 'purchase_request') {
     // Full Package & Purchase Request use SAME formula
     const purchasePrice = parseFloat(data.purchasePriceUsd as string) || 0;
@@ -112,13 +113,137 @@ export async function createFullPackageOrder(data: InsertFullPackageOrder): Prom
     const commissionFee = parseFloat(data.commissionFeeUsd as string || "0") || 0;
     profit = commissionFee - shippingCost;
   }
-  
+
   const result = await db.insert(fullPackageOrders).values({
     ...data,
     profitUsd: profit.toFixed(2),
   });
-  const inserted = await db.select().from(fullPackageOrders).where(eq(fullPackageOrders.id, Number(result[0].insertId)));
-  return inserted[0];
+  const insertedId = Number(result[0].insertId);
+  const inserted = await db.select().from(fullPackageOrders).where(eq(fullPackageOrders.id, insertedId));
+  const order = inserted[0];
+
+  // Mirror trackingNumbers[] (the JSON column) into the
+  // fullPackageOrderTrackings join table so QuickRegister / BulkRegister and
+  // every `getAllOrdersByTrackingNumber`-based lookup can find the order by
+  // ANY of its trackings, not only the first one written to the legacy
+  // single-tracking column. Silently ignored if the array is empty / absent.
+  const list = (data.trackingNumbers as string[] | undefined) ?? [];
+  if (Array.isArray(list) && list.length > 0) {
+    try {
+      await syncOrderTrackingsTable(insertedId, list, data.trackingNumber as string | undefined);
+    } catch (err) {
+      appLogger.warn("[FullPackage] Failed to mirror trackingNumbers JSON into multi-tracking table on create", {
+        orderId: insertedId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  return order;
+}
+
+/**
+ * Mirror an order's `trackingNumbers` array (JSON column on the order row)
+ * into the `fullPackageOrderTrackings` table. Idempotent — duplicates per
+ * (orderId, trackingNumber) are silently skipped via the per-order
+ * existence check inside the loop. The legacy single-tracking column
+ * (`order.trackingNumber`) is included as carton 1 if present.
+ *
+ * Called from createFullPackageOrder / updateFullPackageOrder whenever
+ * trackingNumbers changes, and once at startup as a backfill for orders
+ * that were written before this sync existed.
+ */
+async function syncOrderTrackingsTable(
+  fullPackageOrderId: number,
+  trackingNumbers: string[],
+  legacySingle?: string | null,
+): Promise<{ inserted: number; skipped: number }> {
+  const db = await getDb();
+  if (!db) return { inserted: 0, skipped: 0 };
+  // Build one ordered list with the legacy field as carton 1 (matching how
+  // create flows have always populated it) and dedupe.
+  const ordered: string[] = [];
+  if (legacySingle && legacySingle.trim()) ordered.push(legacySingle.trim());
+  for (const tn of trackingNumbers) {
+    const t = (tn ?? "").trim();
+    if (t && !ordered.includes(t)) ordered.push(t);
+  }
+  if (ordered.length === 0) return { inserted: 0, skipped: 0 };
+
+  let inserted = 0;
+  let skipped = 0;
+  for (let i = 0; i < ordered.length; i++) {
+    const tn = ordered[i];
+    const dup = await db.select({ id: fullPackageOrderTrackings.id })
+      .from(fullPackageOrderTrackings)
+      .where(and(
+        eq(fullPackageOrderTrackings.fullPackageOrderId, fullPackageOrderId),
+        eq(fullPackageOrderTrackings.trackingNumber, tn),
+      )).limit(1);
+    if (dup.length > 0) {
+      skipped++;
+      continue;
+    }
+    await db.insert(fullPackageOrderTrackings).values({
+      fullPackageOrderId,
+      trackingNumber: tn,
+      cartonIndex: i + 1,
+    });
+    inserted++;
+  }
+  return { inserted, skipped };
+}
+
+/**
+ * One-shot, idempotent backfill: walk every order, if its trackingNumbers
+ * JSON is populated but the multi-tracking table has fewer rows for that
+ * order than the JSON has entries, mirror the missing ones in. Safe to
+ * run on every startup — uniqueness is enforced by the per-order existence
+ * check inside syncOrderTrackingsTable.
+ *
+ * Fixes the historical bug where `create` / `update` wrote trackingNumbers
+ * only to the JSON column on the order, leaving QuickRegister scans of
+ * tracking #2, #3, ... with no way to resolve the order.
+ */
+export async function backfillTrackingsFromJson(): Promise<{
+  ordersScanned: number;
+  ordersTouched: number;
+  trackingsInserted: number;
+  errors: number;
+}> {
+  const db = await getDb();
+  if (!db) return { ordersScanned: 0, ordersTouched: 0, trackingsInserted: 0, errors: 0 };
+
+  // Fetch only orders whose trackingNumbers JSON has at least one element.
+  // notDeleted is intentionally NOT applied — soft-deleted orders should
+  // still have correct linkage in case they're restored later.
+  const candidates = await db.select({
+    id: fullPackageOrders.id,
+    trackingNumber: fullPackageOrders.trackingNumber,
+    trackingNumbers: fullPackageOrders.trackingNumbers,
+  }).from(fullPackageOrders);
+
+  let ordersTouched = 0;
+  let trackingsInserted = 0;
+  let errors = 0;
+  for (const c of candidates) {
+    const list = (c.trackingNumbers as string[] | null) ?? [];
+    if ((!list || list.length === 0) && !c.trackingNumber) continue;
+    try {
+      const r = await syncOrderTrackingsTable(c.id, list ?? [], c.trackingNumber ?? undefined);
+      if (r.inserted > 0) {
+        ordersTouched++;
+        trackingsInserted += r.inserted;
+      }
+    } catch (err) {
+      errors++;
+      appLogger.warn("[Backfill] trackings-json sync failed for order", {
+        orderId: c.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+  return { ordersScanned: candidates.length, ordersTouched, trackingsInserted, errors };
 }
 
 export async function getFullPackageOrderById(id: number) {
@@ -525,6 +650,31 @@ export async function updateFullPackageOrder(id: number, data: Partial<InsertFul
   (data as any).version = (existing.version ?? 1) + 1;
 
   await db.update(fullPackageOrders).set(data).where(eq(fullPackageOrders.id, id));
+
+  // Whenever the trackingNumbers JSON or the legacy single trackingNumber
+  // changes, mirror the resulting list into fullPackageOrderTrackings so
+  // every tracking is searchable via the multi-tracking lookup paths.
+  // Skip when the caller didn't touch tracking fields, to avoid extra
+  // writes on price-only / status-only updates.
+  if (data.trackingNumbers !== undefined || data.trackingNumber !== undefined) {
+    try {
+      const refreshed = await db.select({
+        trackingNumber: fullPackageOrders.trackingNumber,
+        trackingNumbers: fullPackageOrders.trackingNumbers,
+      }).from(fullPackageOrders).where(eq(fullPackageOrders.id, id)).limit(1);
+      const list = (refreshed[0]?.trackingNumbers as string[] | null) ?? [];
+      const single = refreshed[0]?.trackingNumber ?? undefined;
+      if (list.length > 0 || single) {
+        await syncOrderTrackingsTable(id, list ?? [], single);
+      }
+    } catch (err) {
+      appLogger.warn("[FullPackage] Failed to mirror trackingNumbers JSON into multi-tracking table on update", {
+        orderId: id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
   return getFullPackageOrderById(id);
 }
 

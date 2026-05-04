@@ -169,6 +169,24 @@ export async function autoMigrate(config: AutoMigrateConfig): Promise<AutoMigrat
       log(`[Backfill] packageOrderLinks skipped: ${err instanceof Error ? err.message : String(err)}`, 'warn');
     }
 
+    // Mirror every order's trackingNumbers JSON column into the
+    // fullPackageOrderTrackings table. Fixes the historical bug where
+    // create / update wrote tracking arrays only to JSON, leaving
+    // QuickRegister scans of tracking #2, #3, ... unable to resolve the
+    // order. Idempotent — already-mirrored rows are silently skipped.
+    try {
+      const { backfillTrackingsFromJson } = await import("../db/fullPackage.db");
+      const r = await backfillTrackingsFromJson();
+      if (r.trackingsInserted > 0 || r.errors > 0) {
+        log(
+          `[Backfill] tracking-json sync: ${r.trackingsInserted} trackings inserted across ${r.ordersTouched} orders, ${r.errors} errors (scanned ${r.ordersScanned})`,
+          r.errors > 0 ? 'warn' : 'success',
+        );
+      }
+    } catch (err) {
+      log(`[Backfill] tracking-json sync skipped: ${err instanceof Error ? err.message : String(err)}`, 'warn');
+    }
+
     if (status.missingTables.length === 0) {
       result.success = true;
     }
