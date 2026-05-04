@@ -12,6 +12,7 @@ import { createContext } from "./context";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
 import { runMigration } from "../services/migration.service";
 import { initializeScheduledBackups } from "../services/scheduledBackups.service";
+import { startScheduledCampaignsPoller } from "../services/push.service";
 import { serveStatic } from "./static";
 import { loadConfig, getConfig } from "../config";
 import { globalLimiter, authLimiterMiddleware } from "../middleware/rateLimiter";
@@ -168,6 +169,14 @@ async function startServer() {
     appLogger.info("Scheduled backups initialized");
   } catch (error) {
     appLogger.error("Failed to start backup scheduler", { error: error instanceof Error ? error.message : String(error) });
+  }
+
+  // Start push notification campaign scheduler (60s tick)
+  try {
+    startScheduledCampaignsPoller();
+    appLogger.info("Push campaign scheduler started");
+  } catch (error) {
+    appLogger.error("Failed to start push campaign scheduler", { error: error instanceof Error ? error.message : String(error) });
   }
 
   // Bind to port LAST - after all schedulers

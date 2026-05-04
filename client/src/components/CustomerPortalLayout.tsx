@@ -6,6 +6,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
+import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { Input } from "@/components/ui/input";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 import { usePortalSSE } from "@/hooks/usePortalSSE";
@@ -271,10 +272,13 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       {!isChatOpen && (
         <ChatFloatingButton onClick={() => setIsChatOpen(true)} />
       )}
-      <LiveChatSupport 
-        isOpen={isChatOpen} 
-        onClose={() => setIsChatOpen(false)} 
+      <LiveChatSupport
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
       />
+
+      {/* Web Push enable prompt — only renders when supported, server-enabled, and not dismissed */}
+      <PushNotificationPrompt enabled={true} />
     </div>
   );
 }

@@ -62,6 +62,8 @@ import {
   labelTemplates, InsertLabelTemplate, LabelTemplate,
   invoiceTemplates, InsertInvoiceTemplate, InvoiceTemplate,
   customerNotifications, InsertCustomerNotification, CustomerNotification,
+  customerPushSubscriptions, InsertCustomerPushSubscription, CustomerPushSubscription,
+  pushNotificationCampaigns, InsertPushNotificationCampaign, PushNotificationCampaign,
   revenueRecords, InsertRevenueRecord, RevenueRecord,
   dailyFinancialSummary, InsertDailyFinancialSummary, DailyFinancialSummary,
   blogPosts, InsertBlogPost, BlogPost,
@@ -747,6 +749,273 @@ export async function getUnreadNotificationCount(customerId: number): Promise<nu
   return result?.count || 0;
 }
 
+
+// ============ CUSTOMER PUSH SUBSCRIPTIONS ============
+
+export async function upsertPushSubscription(data: InsertCustomerPushSubscription): Promise<CustomerPushSubscription | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [existing] = await db.select()
+    .from(customerPushSubscriptions)
+    .where(eq(customerPushSubscriptions.endpoint, data.endpoint))
+    .limit(1);
+
+  if (existing) {
+    await db.update(customerPushSubscriptions)
+      .set({
+        customerId: data.customerId,
+        p256dh: data.p256dh,
+        auth: data.auth,
+        userAgent: data.userAgent,
+        platform: data.platform,
+        language: data.language,
+        isActive: true,
+        failureCount: 0,
+        lastUsedAt: new Date(),
+      })
+      .where(eq(customerPushSubscriptions.id, existing.id));
+    const [updated] = await db.select()
+      .from(customerPushSubscriptions)
+      .where(eq(customerPushSubscriptions.id, existing.id));
+    return updated || null;
+  }
+
+  const [result] = await db.insert(customerPushSubscriptions).values({
+    ...data,
+    isActive: true,
+    failureCount: 0,
+    lastUsedAt: new Date(),
+  });
+  const [created] = await db.select()
+    .from(customerPushSubscriptions)
+    .where(eq(customerPushSubscriptions.id, result.insertId));
+  return created || null;
+}
+
+export async function getActivePushSubscriptionsForCustomer(customerId: number): Promise<CustomerPushSubscription[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select()
+    .from(customerPushSubscriptions)
+    .where(and(
+      eq(customerPushSubscriptions.customerId, customerId),
+      eq(customerPushSubscriptions.isActive, true)
+    ));
+}
+
+export async function deletePushSubscriptionByEndpoint(endpoint: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.delete(customerPushSubscriptions)
+    .where(eq(customerPushSubscriptions.endpoint, endpoint));
+}
+
+export async function markPushSubscriptionUsed(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(customerPushSubscriptions)
+    .set({ lastUsedAt: new Date(), failureCount: 0 })
+    .where(eq(customerPushSubscriptions.id, id));
+}
+
+export async function incrementPushSubscriptionFailure(id: number, deactivate: boolean): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  if (deactivate) {
+    await db.update(customerPushSubscriptions)
+      .set({ isActive: false, lastFailedAt: new Date(), failureCount: sql`${customerPushSubscriptions.failureCount} + 1` })
+      .where(eq(customerPushSubscriptions.id, id));
+  } else {
+    await db.update(customerPushSubscriptions)
+      .set({ lastFailedAt: new Date(), failureCount: sql`${customerPushSubscriptions.failureCount} + 1` })
+      .where(eq(customerPushSubscriptions.id, id));
+  }
+}
+
+// ============ PUSH NOTIFICATION CAMPAIGNS ============
+
+export type PushTargetSegment = "active_customers" | "with_pending_packages" | "with_unpaid_invoices" | "vip_customers" | "inactive_30d";
+
+export async function createPushCampaign(data: InsertPushNotificationCampaign): Promise<PushNotificationCampaign | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(pushNotificationCampaigns).values(data);
+  const [created] = await db.select().from(pushNotificationCampaigns).where(eq(pushNotificationCampaigns.id, result.insertId));
+  return created || null;
+}
+
+export async function updatePushCampaign(id: number, patch: Partial<InsertPushNotificationCampaign>): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(pushNotificationCampaigns).set(patch).where(eq(pushNotificationCampaigns.id, id));
+}
+
+export async function getPushCampaignById(id: number): Promise<PushNotificationCampaign | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select().from(pushNotificationCampaigns).where(eq(pushNotificationCampaigns.id, id));
+  return row || null;
+}
+
+export async function listPushCampaigns(options?: { limit?: number; offset?: number; status?: string }): Promise<{ data: PushNotificationCampaign[]; total: number }> {
+  const db = await getDb();
+  if (!db) return { data: [], total: 0 };
+  const limit = options?.limit ?? 50;
+  const offset = options?.offset ?? 0;
+  const where = options?.status ? eq(pushNotificationCampaigns.status, options.status as PushNotificationCampaign["status"]) : undefined;
+
+  const [rows, totalRow] = await Promise.all([
+    where
+      ? db.select().from(pushNotificationCampaigns).where(where).orderBy(desc(pushNotificationCampaigns.createdAt)).limit(limit).offset(offset)
+      : db.select().from(pushNotificationCampaigns).orderBy(desc(pushNotificationCampaigns.createdAt)).limit(limit).offset(offset),
+    where
+      ? db.select({ count: count() }).from(pushNotificationCampaigns).where(where)
+      : db.select({ count: count() }).from(pushNotificationCampaigns),
+  ]);
+  return { data: rows, total: totalRow[0]?.count || 0 };
+}
+
+export async function getDuePushCampaigns(now: Date): Promise<PushNotificationCampaign[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(pushNotificationCampaigns).where(and(
+    eq(pushNotificationCampaigns.status, "scheduled"),
+    lte(pushNotificationCampaigns.scheduledAt, now),
+  ));
+}
+
+export async function getPushCampaignStats(): Promise<{
+  totalSubscriptions: number;
+  activeSubscriptions: number;
+  uniqueCustomers: number;
+  byPlatform: { platform: string; count: number }[];
+  campaignsLast30Days: number;
+  totalPushesSent: number;
+}> {
+  const db = await getDb();
+  if (!db) {
+    return { totalSubscriptions: 0, activeSubscriptions: 0, uniqueCustomers: 0, byPlatform: [], campaignsLast30Days: 0, totalPushesSent: 0 };
+  }
+
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const [totalSubs, activeSubs, uniqueCustRow, platformRows, recentCampaignsRow, sentRow] = await Promise.all([
+    db.select({ count: count() }).from(customerPushSubscriptions),
+    db.select({ count: count() }).from(customerPushSubscriptions).where(eq(customerPushSubscriptions.isActive, true)),
+    db.select({ count: sql<number>`COUNT(DISTINCT ${customerPushSubscriptions.customerId})` }).from(customerPushSubscriptions).where(eq(customerPushSubscriptions.isActive, true)),
+    db.select({
+      platform: customerPushSubscriptions.platform,
+      count: count(),
+    }).from(customerPushSubscriptions).where(eq(customerPushSubscriptions.isActive, true)).groupBy(customerPushSubscriptions.platform),
+    db.select({ count: count() }).from(pushNotificationCampaigns).where(gte(pushNotificationCampaigns.createdAt, thirtyDaysAgo)),
+    db.select({ total: sql<number>`COALESCE(SUM(${pushNotificationCampaigns.sentCount}), 0)` }).from(pushNotificationCampaigns),
+  ]);
+
+  return {
+    totalSubscriptions: totalSubs[0]?.count || 0,
+    activeSubscriptions: activeSubs[0]?.count || 0,
+    uniqueCustomers: Number(uniqueCustRow[0]?.count || 0),
+    byPlatform: platformRows.map(r => ({ platform: r.platform || "unknown", count: r.count })),
+    campaignsLast30Days: recentCampaignsRow[0]?.count || 0,
+    totalPushesSent: Number(sentRow[0]?.total || 0),
+  };
+}
+
+/**
+ * Resolve target customer IDs for a campaign. Returns DISTINCT customer IDs that
+ * (a) exist in `customers` and (b) have at least one ACTIVE push subscription.
+ * For "all" we return only customers with subs (no point sending where nobody can receive).
+ */
+export async function resolvePushTargetCustomerIds(opts: {
+  targetType: "all" | "customer" | "batch" | "segment";
+  targetCustomerId?: number | null;
+  targetBatchId?: number | null;
+  targetSegment?: PushTargetSegment | null;
+}): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Anchor: only customers with at least one active push subscription
+  const subscribedCustomerIds = await db
+    .selectDistinct({ id: customerPushSubscriptions.customerId })
+    .from(customerPushSubscriptions)
+    .where(eq(customerPushSubscriptions.isActive, true));
+  const subscribedSet = new Set(subscribedCustomerIds.map(r => r.id));
+  if (subscribedSet.size === 0) return [];
+
+  if (opts.targetType === "customer") {
+    if (!opts.targetCustomerId) return [];
+    return subscribedSet.has(opts.targetCustomerId) ? [opts.targetCustomerId] : [];
+  }
+
+  if (opts.targetType === "batch") {
+    if (!opts.targetBatchId) return [];
+    const rows = await db
+      .selectDistinct({ id: packages.customerId })
+      .from(packages)
+      .where(and(eq(packages.batchId, opts.targetBatchId), isNotNull(packages.customerId)));
+    return rows.map(r => r.id!).filter(id => subscribedSet.has(id));
+  }
+
+  if (opts.targetType === "segment") {
+    const seg = opts.targetSegment;
+    if (!seg) return [];
+
+    if (seg === "active_customers") {
+      const rows = await db.select({ id: customers.id }).from(customers).where(eq(customers.isActive, true));
+      return rows.map(r => r.id).filter(id => subscribedSet.has(id));
+    }
+
+    if (seg === "with_pending_packages") {
+      const rows = await db
+        .selectDistinct({ id: packages.customerId })
+        .from(packages)
+        .where(and(
+          isNotNull(packages.customerId),
+          notInArray(packages.status, ["delivered", "cancelled"] as Package["status"][]),
+        ));
+      return rows.map(r => r.id!).filter(id => subscribedSet.has(id));
+    }
+
+    if (seg === "with_unpaid_invoices") {
+      const rows = await db
+        .selectDistinct({ id: invoices.customerId })
+        .from(invoices)
+        .where(and(
+          isNotNull(invoices.customerId),
+          notInArray(invoices.status, ["paid", "cancelled"] as Invoice["status"][]),
+        ));
+      return rows.map(r => r.id!).filter(id => subscribedSet.has(id));
+    }
+
+    if (seg === "vip_customers") {
+      const rows = await db.select({ id: vipCustomers.customerId }).from(vipCustomers);
+      return rows.map(r => r.id).filter(id => subscribedSet.has(id));
+    }
+
+    if (seg === "inactive_30d") {
+      const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      // Customers whose last push was >30d ago (or never) — based on subs.
+      const rows = await db
+        .selectDistinct({ id: customerPushSubscriptions.customerId })
+        .from(customerPushSubscriptions)
+        .where(and(
+          eq(customerPushSubscriptions.isActive, true),
+          or(isNull(customerPushSubscriptions.lastUsedAt), lte(customerPushSubscriptions.lastUsedAt, cutoff)),
+        ));
+      return rows.map(r => r.id);
+    }
+    return [];
+  }
+
+  // "all"
+  return Array.from(subscribedSet);
+}
 
 // ============ CUSTOMER ADDRESSES ============
 

@@ -109,6 +109,7 @@ const AuditLogs = lazy(() => import("./pages/AuditLogs"));
 // ---------------------------------------------------------------------------
 const Settings = lazy(() => import("./pages/Settings"));
 const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
+const AdminPushNotificationCenter = lazy(() => import("./pages/AdminPushNotificationCenter"));
 const InvoiceTemplateSettings = lazy(() => import("./pages/InvoiceTemplateSettings"));
 const LabelTemplateSettings = lazy(() => import("./pages/LabelTemplateSettings"));
 const BatchLabelTemplateSettings = lazy(() => import("./pages/BatchLabelTemplateSettings"));
@@ -247,6 +248,7 @@ function Router() {
         <Route path="/audit-logs" component={AuditLogs} />
         <Route path="/settings" component={Settings} />
         <Route path="/settings/notifications" component={NotificationSettings} />
+        <Route path="/admin/push-notifications" component={AdminPushNotificationCenter} />
         <Route path="/settings/invoice-template" component={InvoiceTemplateSettings} />
         <Route path="/settings/label-templates" component={LabelTemplateSettings} />
         <Route path="/settings/batch-label-template" component={BatchLabelTemplateSettings} />

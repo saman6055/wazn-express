@@ -10,7 +10,7 @@ const REQUIRED = [
   "MIGRATION_SECRET",
 ] as const;
 
-const OPTIONAL = ["S3_BUCKET", "RESEND_API_KEY"] as const;
+const OPTIONAL = ["S3_BUCKET", "RESEND_API_KEY", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT"] as const;
 
 export type Config = {
   databaseUrl: string;
@@ -18,6 +18,9 @@ export type Config = {
   migrationSecret: string;
   s3Bucket: string | undefined;
   resendApiKey: string | undefined;
+  vapidPublicKey: string | undefined;
+  vapidPrivateKey: string | undefined;
+  vapidSubject: string | undefined;
 };
 
 const state: { loaded: boolean; config: Config | null } = {
@@ -46,6 +49,9 @@ function validate(): Config {
     migrationSecret: process.env.MIGRATION_SECRET!,
     s3Bucket: process.env.S3_BUCKET?.trim() || undefined,
     resendApiKey: process.env.RESEND_API_KEY?.trim() || undefined,
+    vapidPublicKey: process.env.VAPID_PUBLIC_KEY?.trim() || undefined,
+    vapidPrivateKey: process.env.VAPID_PRIVATE_KEY?.trim() || undefined,
+    vapidSubject: process.env.VAPID_SUBJECT?.trim() || undefined,
   };
 }
 

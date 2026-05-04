@@ -4,6 +4,7 @@ import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
+import { getVapidPublicKey, isPushEnabled, sendPushToCustomer } from "../services/push.service";
 
 export const customerPortalRouter = router({
     getMyAccount: protectedProcedure.query(async ({ ctx }) => {
@@ -459,6 +460,59 @@ export const customerPortalRouter = router({
         await db.setDefaultAddress(input.addressId, customerId);
         return { success: true };
       }),
+
+    // -----------------------------------------------------------------
+    // Web Push — VAPID key + subscription management
+    // -----------------------------------------------------------------
+    getPushPublicKey: publicProcedure.query(() => {
+      const key = getVapidPublicKey();
+      return { publicKey: key, enabled: isPushEnabled() };
+    }),
+
+    subscribePush: protectedProcedure
+      .input(z.object({
+        endpoint: z.string().url().max(500),
+        p256dh: z.string().min(1).max(255),
+        auth: z.string().min(1).max(255),
+        userAgent: z.string().max(500).optional(),
+        platform: z.string().max(50).optional(),
+        language: z.string().max(10).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.isCustomer) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Customer login required" });
+        }
+        const sub = await db.upsertPushSubscription({
+          customerId: ctx.user.id,
+          endpoint: input.endpoint,
+          p256dh: input.p256dh,
+          auth: input.auth,
+          userAgent: input.userAgent,
+          platform: input.platform,
+          language: input.language,
+        });
+        return { success: true, id: sub?.id ?? null };
+      }),
+
+    unsubscribePush: protectedProcedure
+      .input(z.object({ endpoint: z.string().url().max(500) }))
+      .mutation(async ({ input }) => {
+        await db.deletePushSubscriptionByEndpoint(input.endpoint);
+        return { success: true };
+      }),
+
+    sendTestPush: protectedProcedure.mutation(async ({ ctx }) => {
+      if (!ctx.user.isCustomer) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Customer login required" });
+      }
+      const result = await sendPushToCustomer(ctx.user.id, {
+        title: "Wazn Express",
+        body: "ئاگادارکردنەوە چالاکە ✓",
+        url: "/portal",
+        tag: "test-push",
+      });
+      return result;
+    }),
 
     // -----------------------------------------------------------------
     // Price List — public read endpoint used by the portal home banner.

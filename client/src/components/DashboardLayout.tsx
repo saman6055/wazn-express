@@ -65,6 +65,7 @@ import {
   Code,
   Boxes,
   CreditCard,
+  Send,
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -396,6 +397,7 @@ function DashboardLayoutContent({
           { icon: Printer, label: t("nav.labelPrinting") || "چاپکردنی لەیبڵ", path: "/label-printing" },
           { icon: FileSignature, label: t("nav.invoiceTemplate") || "داڕشتەی پسووڵە", path: "/settings/invoice-template" },
           { icon: Bell, label: t("nav.notificationSettings") || "ئاگادارکردنەوەکان", path: "/settings/notifications" },
+          { icon: Send, label: t("nav.pushCenter") || "ناردنی ئاگادارکردنەوە", path: "/admin/push-notifications" },
           { icon: Database, label: t("nav.dataManagement") || "بەڕێوەبردنی داتا", path: "/settings/data-management" },
           { icon: HardDrive, label: t("nav.backupManagement") || "بەڕێوەبردنی بەکاپ", path: "/backup-management" },
           { icon: Clock, label: t("nav.scheduledBackups") || "بەکاپی خۆکار", path: "/scheduled-backups" },

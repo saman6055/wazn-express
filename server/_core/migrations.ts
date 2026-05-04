@@ -936,6 +936,42 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "pushNotificationCampaigns",
+    dependencies: ["customers", "users"],
+    sql: `CREATE TABLE IF NOT EXISTS push_notification_campaigns (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      titleKu VARCHAR(200),
+      titleEn VARCHAR(200),
+      titleAr VARCHAR(200),
+      titleZh VARCHAR(200),
+      bodyKu TEXT,
+      bodyEn TEXT,
+      bodyAr TEXT,
+      bodyZh TEXT,
+      url VARCHAR(500),
+      targetType ENUM('all','customer','batch','segment') NOT NULL,
+      targetCustomerId INT,
+      targetBatchId INT,
+      targetSegment ENUM('active_customers','with_pending_packages','with_unpaid_invoices','vip_customers','inactive_30d'),
+      status ENUM('draft','scheduled','sending','completed','failed','cancelled') NOT NULL DEFAULT 'draft',
+      scheduledAt TIMESTAMP NULL,
+      startedAt TIMESTAMP NULL,
+      completedAt TIMESTAMP NULL,
+      totalRecipients INT NOT NULL DEFAULT 0,
+      sentCount INT NOT NULL DEFAULT 0,
+      failedCount INT NOT NULL DEFAULT 0,
+      expiredRemovedCount INT NOT NULL DEFAULT 0,
+      createdById INT NOT NULL,
+      errorMessage TEXT,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX pushCampaigns_status_idx (status),
+      INDEX pushCampaigns_scheduled_idx (scheduledAt),
+      INDEX pushCampaigns_created_idx (createdAt)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "supportChats",
     dependencies: ["customers", "users"],
     sql: `CREATE TABLE IF NOT EXISTS support_chats (

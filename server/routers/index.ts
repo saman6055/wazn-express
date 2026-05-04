@@ -11,6 +11,7 @@ import { invoicesRouters } from "./invoices.router";
 import { financeRouters } from "./finance.router";
 import { reportsRouter } from "./reports.router";
 import { customerPortalRouter, portalPriceListAdminRouter } from "./portal.router";
+import { pushAdminRouter } from "./pushAdmin.router";
 import { settingsRouters } from "./settings.router";
 import { fullPackageRouter } from "./fullPackage.router";
 import { scanningRouters } from "./scanning.router";
@@ -28,6 +29,7 @@ export const appRouter = router({
   reports: reportsRouter,
   customerPortal: customerPortalRouter,
   portalPriceList: portalPriceListAdminRouter,
+  pushAdmin: pushAdminRouter,
   ...settingsRouters,
   fullPackage: fullPackageRouter,
   ...scanningRouters,

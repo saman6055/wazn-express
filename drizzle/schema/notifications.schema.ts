@@ -150,6 +150,93 @@ export type CustomerNotification = typeof customerNotifications.$inferSelect;
 export type InsertCustomerNotification = typeof customerNotifications.$inferInsert;
 
 
+// ============ CUSTOMER WEB PUSH SUBSCRIPTIONS ============
+
+export const customerPushSubscriptions = mysqlTable("customer_push_subscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+
+  endpoint: varchar("endpoint", { length: 500 }).notNull().unique(),
+  p256dh: varchar("p256dh", { length: 255 }).notNull(),
+  auth: varchar("auth", { length: 255 }).notNull(),
+
+  userAgent: varchar("userAgent", { length: 500 }),
+  platform: varchar("platform", { length: 50 }),
+  language: varchar("language", { length: 10 }),
+
+  isActive: boolean("isActive").default(true).notNull(),
+  failureCount: int("failureCount").default(0).notNull(),
+  lastUsedAt: timestamp("lastUsedAt"),
+  lastFailedAt: timestamp("lastFailedAt"),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  customerIdx: index("customerPushSubscriptions_customerId_idx").on(table.customerId),
+  activeIdx: index("customerPushSubscriptions_active_idx").on(table.isActive),
+}));
+
+export type CustomerPushSubscription = typeof customerPushSubscriptions.$inferSelect;
+export type InsertCustomerPushSubscription = typeof customerPushSubscriptions.$inferInsert;
+
+// ============ PUSH NOTIFICATION CAMPAIGNS ============
+
+export const pushNotificationCampaigns = mysqlTable("push_notification_campaigns", {
+  id: int("id").autoincrement().primaryKey(),
+
+  // Multilingual content (one of these MUST be present; UI shows the right language client-side)
+  titleKu: varchar("titleKu", { length: 200 }),
+  titleEn: varchar("titleEn", { length: 200 }),
+  titleAr: varchar("titleAr", { length: 200 }),
+  titleZh: varchar("titleZh", { length: 200 }),
+  bodyKu: text("bodyKu"),
+  bodyEn: text("bodyEn"),
+  bodyAr: text("bodyAr"),
+  bodyZh: text("bodyZh"),
+
+  // Click destination (deep link inside portal)
+  url: varchar("url", { length: 500 }),
+
+  // Targeting
+  targetType: mysqlEnum("targetType", ["all", "customer", "batch", "segment"]).notNull(),
+  targetCustomerId: int("targetCustomerId"),
+  targetBatchId: int("targetBatchId"),
+  targetSegment: mysqlEnum("targetSegment", [
+    "active_customers",
+    "with_pending_packages",
+    "with_unpaid_invoices",
+    "vip_customers",
+    "inactive_30d",
+  ]),
+
+  // Scheduling & status
+  status: mysqlEnum("status", ["draft", "scheduled", "sending", "completed", "failed", "cancelled"])
+    .default("draft").notNull(),
+  scheduledAt: timestamp("scheduledAt"),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+
+  // Delivery counters
+  totalRecipients: int("totalRecipients").default(0).notNull(),
+  sentCount: int("sentCount").default(0).notNull(),
+  failedCount: int("failedCount").default(0).notNull(),
+  expiredRemovedCount: int("expiredRemovedCount").default(0).notNull(),
+
+  // Audit
+  createdById: int("createdById").notNull(),
+  errorMessage: text("errorMessage"),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  statusIdx: index("pushCampaigns_status_idx").on(table.status),
+  scheduledIdx: index("pushCampaigns_scheduled_idx").on(table.scheduledAt),
+  createdIdx: index("pushCampaigns_created_idx").on(table.createdAt),
+}));
+
+export type PushNotificationCampaign = typeof pushNotificationCampaigns.$inferSelect;
+export type InsertPushNotificationCampaign = typeof pushNotificationCampaigns.$inferInsert;
+
 // ============ INVOICE TEMPLATES ============
 
 

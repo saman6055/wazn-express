@@ -3,6 +3,7 @@ import { getDb } from "../db";
 import { appLogger } from "../utils/logger";
 import { notificationLogs, customers, packages, batches, type Batch } from "../../drizzle/schema";
 import { Resend } from "resend";
+import { sendPushToCustomer, isPushEnabled } from "./push.service";
 
 // Initialize Resend client
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -304,14 +305,37 @@ async function sendSms(to: string, message: string): Promise<boolean> {
   }
 }
 
+// Short Kurdish push titles per event type — kept tiny to fit native notification UI.
+const pushTitles: Partial<Record<NotificationEventType, string>> = {
+  package_registered: "📦 پاکێجی نوێ تۆمارکرا",
+  package_in_batch: "📦 پاکێج خرایە ناو باچ",
+  package_in_transit: "✈️ پاکێج لە ڕێگادایە",
+  package_customs: "🛃 پاکێج لە گومرگدایە",
+  package_ready_delivery: "📬 پاکێج ئامادەیە بۆ گەیاندن",
+  package_out_delivery: "🚚 پاکێج بەڕێوەیە",
+  package_delivered: "✅ پاکێج گەیشت",
+  batch_departed: "✈️ باچ ڕۆیشت",
+  batch_arrived: "📍 باچ گەیشت",
+  invoice_created: "🧾 پسوولەی نوێ",
+  payment_received: "💰 پارە وەرگیرا",
+  account_created: "🎉 ئەکاونتەکەت دروستکرا",
+  purchase_request_created: "🛒 داواکاریت تۆمارکرا",
+  purchase_request_quoted: "💰 نرخی داواکاری ئامادەیە",
+  purchase_request_accepted: "✅ داواکاریت قبوڵکرا",
+  purchase_request_ordered: "🛍️ بەرهەمەکەت کڕدرا",
+  purchase_request_shipped: "✈️ بەرهەمەکەت نێردرا",
+  purchase_request_delivered: "📦 بەرهەمەکەت گەیشت",
+};
+
 // Main notification function
 export async function sendNotification(params: {
   customerId: number;
   eventType: NotificationEventType;
   variables: Record<string, string>;
-  channels?: ("email" | "sms")[];
-}): Promise<{ email?: boolean; sms?: boolean }> {
-  const { customerId, eventType, variables, channels = ["email"] } = params;
+  channels?: ("email" | "sms" | "push")[];
+  pushUrl?: string;
+}): Promise<{ email?: boolean; sms?: boolean; push?: boolean }> {
+  const { customerId, eventType, variables, channels = ["email", "push"], pushUrl } = params;
   const db = await getDb();
   if (!db) return {};
 
@@ -344,7 +368,7 @@ export async function sendNotification(params: {
   const subject = replaceTemplateVars(template.subject, allVars);
   const body = replaceTemplateVars(template.body, allVars);
 
-  const results: { email?: boolean; sms?: boolean } = {};
+  const results: { email?: boolean; sms?: boolean; push?: boolean } = {};
 
   // Send email if customer has email and email channel is requested
   if (channels.includes("email") && customer.email) {
@@ -382,6 +406,30 @@ export async function sendNotification(params: {
       status: smsSent ? "sent" : "pending", // SMS might be queued
       sentAt: smsSent ? new Date() : null,
     });
+  }
+
+  // Send push notification — independent of email/sms, fails silently if no subs.
+  if (channels.includes("push") && isPushEnabled()) {
+    const pushTitle = pushTitles[eventType] || "Wazn Express";
+    // Strip emoji from subject for the push body (the title carries the icon).
+    const pushBody = subject.replace(/[📦✈️🛃📬🚚✅📍🧾💰🎉🛒🛍️]/g, "").trim();
+    try {
+      const pushResult = await sendPushToCustomer(customerId, {
+        title: pushTitle,
+        body: pushBody,
+        url: pushUrl || "/portal",
+        tag: `${eventType}-${customerId}`,
+        data: { eventType, ...variables },
+      });
+      results.push = pushResult.sent > 0;
+    } catch (err) {
+      appLogger.warn("[Notification] push send failed", {
+        customerId,
+        eventType,
+        message: err instanceof Error ? err.message : String(err),
+      });
+      results.push = false;
+    }
   }
 
   return results;
@@ -437,7 +485,8 @@ export async function notifyPackageStatusChange(
       customerId: pkg.customerId,
       eventType,
       variables,
-      channels: ["email", "sms"],
+      channels: ["email", "sms", "push"],
+      pushUrl: `/portal/search?q=${encodeURIComponent(pkg.trackingNumber || pkg.packageCode)}`,
     });
   }
 }
@@ -479,7 +528,8 @@ export async function notifyBatchStatusChange(
       customerId,
       eventType,
       variables,
-      channels: ["email", "sms"],
+      channels: ["email", "sms", "push"],
+      pushUrl: "/portal/shipments",
     });
   }
 }
