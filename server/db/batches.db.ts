@@ -439,16 +439,29 @@ export async function getBatchFinancialSummary(batchId: number) {
     // Use totalChargeableWeight (sum of max(actual, volumetric) for each package)
     totalCost = totalChargeableWeight * costPerKg;
   }
-  
-  // Calculate total revenue from packages
-  const totalRevenue = batchPackages.reduce((sum, pkg) => sum + (Number(pkg.calculatedCostUsd) || 0), 0);
-  
-  // Get per-customer breakdown
+
+  // Per-customer breakdown — built in TWO passes:
+  //  1. Sum chargeable weight / cbm per customer.
+  //  2. Resolve each customer's rate (override → tier → batch default) and
+  //     compute revenue = customer_total × rate.
+  //
+  // We do NOT trust `pkg.calculatedCostUsd` for in-flight batches: that field
+  // is set at registration using raw actualKg (not chargeable kg) and at
+  // whatever rate was current then, so it goes stale whenever pricing or
+  // dimensions change. For delivered/closed batches we DO honor the stored
+  // value because it represents the actual amount billed to the customer.
+  const isSea = batchData.shippingType === 'sea';
+  const unit: 'kg' | 'cbm' = isSea ? 'cbm' : 'kg';
+  const batchDefaultRate = isSea
+    ? Number(batchData.pricePerCbm) || 0
+    : Number(batchData.pricePerKg) || 0;
+  const isFinalized = batchData.status === 'delivered' || batchData.status === 'closed';
+
   const customerBreakdown: Record<number, { customerId: number; packages: number; weight: number; chargeableWeight: number; cbm: number; revenue: number }> = {};
-  
+
   for (const pkg of batchPackages) {
     if (!pkg.customerId) continue;
-    
+
     if (!customerBreakdown[pkg.customerId]) {
       customerBreakdown[pkg.customerId] = {
         customerId: pkg.customerId,
@@ -459,21 +472,57 @@ export async function getBatchFinancialSummary(batchId: number) {
         revenue: 0
       };
     }
-    
-    // Calculate chargeable weight for this package
+
     const actualKg = Number(pkg.weightKg) || 0;
     const lengthCm = Number(pkg.lengthCm) || 0;
     const widthCm = Number(pkg.widthCm) || 0;
     const heightCm = Number(pkg.heightCm) || 0;
     const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
     const chargeableKg = Math.max(actualKg, volumetricKg);
-    
+
     customerBreakdown[pkg.customerId].packages++;
     customerBreakdown[pkg.customerId].weight += actualKg;
     customerBreakdown[pkg.customerId].chargeableWeight += chargeableKg;
     customerBreakdown[pkg.customerId].cbm += Number(pkg.volumeCbm) || 0;
+    // Stored revenue accumulator — only consulted when the batch is finalized.
     customerBreakdown[pkg.customerId].revenue += Number(pkg.calculatedCostUsd) || 0;
   }
+
+  // Pass 2 — recompute revenue from current rates for in-flight batches.
+  if (!isFinalized) {
+    // Pull customer overrides once, build a lookup map.
+    const overrides = await db.select().from(batchCustomerPricing)
+      .where(eq(batchCustomerPricing.batchId, batchId));
+    const overrideMap = new Map<number, { pricePerKg?: string | null; pricePerCbm?: string | null }>();
+    for (const o of overrides) {
+      overrideMap.set(o.customerId, { pricePerKg: o.pricePerKg, pricePerCbm: o.pricePerCbm });
+    }
+
+    for (const customerEntry of Object.values(customerBreakdown)) {
+      const customerTotal = unit === 'kg' ? customerEntry.chargeableWeight : customerEntry.cbm;
+      let rate: number | null = null;
+
+      // 1. Customer-specific override
+      const override = overrideMap.get(customerEntry.customerId);
+      if (override) {
+        const v = unit === 'kg' ? override.pricePerKg : override.pricePerCbm;
+        if (v != null && v !== '') rate = Number(v);
+      }
+
+      // 2. Tiered pricing (rate depends on this customer's total in the batch)
+      if (rate === null && batchData.useTieredPricing) {
+        rate = await getApplicableTierPrice(batchId, customerTotal);
+      }
+
+      // 3. Batch default
+      if (rate === null) rate = batchDefaultRate;
+
+      customerEntry.revenue = (rate || 0) * customerTotal;
+    }
+  }
+
+  const totalRevenue = Object.values(customerBreakdown)
+    .reduce((sum, c) => sum + c.revenue, 0);
   
   return {
     batchId,
