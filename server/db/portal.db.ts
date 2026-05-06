@@ -149,35 +149,119 @@ export async function getCustomerBatches(customerId: number) {
 export async function getCustomerPackagesInBatch(customerId: number, batchId: number) {
   const db = await getDb();
   if (!db) return [];
-  
+
   const customerPackages = await db.select().from(packages)
     .where(and(
       eq(packages.customerId, customerId),
       eq(packages.batchId, batchId)
     ))
     .orderBy(desc(packages.createdAt));
-  
+
+  // Per-package price: for in-flight batches we recompute on the fly so the
+  // modal/labels match what the customer will be billed at delivery. The
+  // stored `calculatedCostUsd` is set at registration with raw actualKg and
+  // can drift when dimensions/pricing change — which is why a 1.44 KG
+  // volumetric package was showing $10.80 ($7.50/kg) instead of $17.28
+  // ($12 × 1.44). For delivered/closed batches we keep the stored value
+  // because that's the real amount that hit the customer's ledger.
+  const batchRow = await db.select().from(batches).where(eq(batches.id, batchId)).limit(1);
+  const batch = batchRow[0];
+  let liveRate: number | null = null;
+
+  if (batch && batch.status !== 'delivered' && batch.status !== 'closed') {
+    const isSea = batch.shippingType === 'sea';
+    const unit: 'kg' | 'cbm' = isSea ? 'cbm' : 'kg';
+
+    // Compute this customer's total chargeable kg/cbm in the batch (needed
+    // to pick the right tier and to mirror billing math exactly).
+    let customerTotal = 0;
+    for (const p of customerPackages) {
+      if (unit === 'kg') {
+        const actualKg = Number(p.weightKg) || 0;
+        const lengthCm = Number(p.lengthCm) || 0;
+        const widthCm = Number(p.widthCm) || 0;
+        const heightCm = Number(p.heightCm) || 0;
+        const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+        customerTotal += Math.max(actualKg, volumetricKg);
+      } else {
+        customerTotal += Number(p.volumeCbm) || 0;
+      }
+    }
+
+    // 1. Customer-specific override.
+    const override = await db.select().from(batchCustomerPricing)
+      .where(and(
+        eq(batchCustomerPricing.batchId, batchId),
+        eq(batchCustomerPricing.customerId, customerId)
+      ))
+      .limit(1);
+    if (override[0]) {
+      const v = unit === 'kg' ? override[0].pricePerKg : override[0].pricePerCbm;
+      if (v != null && v !== '') liveRate = Number(v);
+    }
+
+    // 2. Tier price based on this customer's total.
+    if (liveRate === null && batch.useTieredPricing) {
+      const tiers = await db.select().from(batchPricingTiers)
+        .where(eq(batchPricingTiers.batchId, batchId))
+        .orderBy(batchPricingTiers.sortOrder);
+      if (tiers.length > 0) {
+        for (const tier of tiers) {
+          const minVal = Number(tier.minValue);
+          const maxVal = tier.maxValue ? Number(tier.maxValue) : Infinity;
+          if (customerTotal >= minVal && customerTotal < maxVal) {
+            liveRate = Number(tier.pricePerUnit);
+            break;
+          }
+        }
+        if (liveRate === null) liveRate = Number(tiers[tiers.length - 1].pricePerUnit);
+      }
+    }
+
+    // 3. Batch default.
+    if (liveRate === null) {
+      liveRate = isSea ? Number(batch.pricePerCbm) || 0 : Number(batch.pricePerKg) || 0;
+    }
+  }
+
   // Check if each package is linked to a Full Package order
   const result = [];
   for (const pkg of customerPackages) {
     let isFullPackage = false;
     let fullPackageOrderId = null;
     let fullPackageOrderType: 'full_package' | 'commission' | null = null;
-    
+
     if (pkg.trackingNumber) {
       // Check if this tracking number is linked to a Full Package order
       const fpOrder = await db.select()
         .from(fullPackageOrders)
         .where(eq(fullPackageOrders.trackingNumber, pkg.trackingNumber))
         .limit(1);
-      
+
       if (fpOrder[0]) {
         isFullPackage = true;
         fullPackageOrderId = fpOrder[0].id;
         fullPackageOrderType = fpOrder[0].orderType as 'full_package' | 'commission';
       }
     }
-    
+
+    // Live-computed cost for in-flight batches; stored value otherwise.
+    let calculatedCostUsd = Number(pkg.calculatedCostUsd) || 0;
+    if (liveRate !== null && batch) {
+      const isSea = batch.shippingType === 'sea';
+      if (isSea) {
+        calculatedCostUsd = liveRate * (Number(pkg.volumeCbm) || 0);
+      } else {
+        const actualKg = Number(pkg.weightKg) || 0;
+        const lengthCm = Number(pkg.lengthCm) || 0;
+        const widthCm = Number(pkg.widthCm) || 0;
+        const heightCm = Number(pkg.heightCm) || 0;
+        const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+        const chargeableKg = Math.max(actualKg, volumetricKg);
+        calculatedCostUsd = liveRate * chargeableKg;
+      }
+    }
+
     result.push({
       ...pkg,
       weightKg: Number(pkg.weightKg) || 0,
@@ -185,13 +269,13 @@ export async function getCustomerPackagesInBatch(customerId: number, batchId: nu
       lengthCm: Number(pkg.lengthCm) || 0,
       widthCm: Number(pkg.widthCm) || 0,
       heightCm: Number(pkg.heightCm) || 0,
-      calculatedCostUsd: Number(pkg.calculatedCostUsd) || 0,
+      calculatedCostUsd,
       isFullPackage,
       fullPackageOrderId,
       fullPackageOrderType,
     });
   }
-  
+
   return result;
 }
 
