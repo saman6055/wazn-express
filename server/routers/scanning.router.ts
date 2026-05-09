@@ -970,29 +970,46 @@ export const deliveryBoxRouter = router({
         const shippingCost = freshShippingCost > 0 ? freshShippingCost : persistedCost;
         calculatedCostUsd = shippingCost.toFixed(2);
 
-        // Check if linked to FP order — use FP pricing instead of shipping cost
+        // Check if linked to FP order(s) — a single physical package can
+        // fulfil multiple commission orders that share the carton (shared
+        // trackings). The previous single-order lookup silently dropped
+        // the siblings and understated the box total. Sum every linked
+        // order so the receipt charges for everything that's actually in
+        // the carton.
         if (pkg.trackingNumber) {
-          const linkedFP = await db.getFullPackageOrderByTrackingNumber(pkg.trackingNumber);
-          if (linkedFP) {
-            itemType = linkedFP.orderType === 'commission' ? 'commission' : 'full_package';
-            sourceInfo = `${linkedFP.orderCode} - ${sourceInfo}`;
-            description = linkedFP.productName || description;
+          const linkedOrders = await db.getAllOrdersByTrackingNumber(pkg.trackingNumber);
+          if (linkedOrders.length > 0) {
+            const isAnyCommission = linkedOrders.some(o => o.orderType === 'commission');
+            itemType = isAnyCommission ? 'commission' : 'full_package';
 
-            if (linkedFP.orderType === 'commission') {
-              // Commission: item price + commission fee combined; shipping
-              // on its own line. Use fresh shippingCost so commission
-              // boxes also benefit from the recompute fix.
-              const itemPrice = Number(linkedFP.itemPriceUsd || 0);
-              const commFee = Number(linkedFP.commissionFeeUsd || linkedFP.commissionAmount || 0);
-              const qty = linkedFP.quantity || 1;
-              const goodsTotal = (itemPrice * qty) + commFee;
+            const orderCodes = linkedOrders.map(o => o.orderCode).join(' + ');
+            const productNames = Array.from(new Set(linkedOrders.map(o => o.productName).filter(Boolean))).join(' + ');
+            sourceInfo = `${orderCodes} - ${sourceInfo}`;
+            description = productNames || description;
+
+            // One physical package = one shipping fee, regardless of how
+            // many orders share it.
+            let goodsTotal = 0;
+            for (const o of linkedOrders) {
+              const qty = o.quantity || 1;
+              if (o.orderType === 'commission') {
+                const itemPrice = Number(o.itemPriceUsd || 0);
+                const commFee = Number(o.commissionFeeUsd || o.commissionAmount || 0);
+                goodsTotal += (itemPrice * qty) + commFee;
+              } else {
+                const sellingPrice = Number(o.sellingPriceUsd || 0);
+                goodsTotal += sellingPrice * qty;
+              }
+            }
+
+            if (isAnyCommission) {
               calculatedCostUsd = (goodsTotal + shippingCost).toFixed(2);
-              description = `${linkedFP.productName || ''} | ${t_itemPrice}: $${goodsTotal.toFixed(2)} + ${t_shipping}: $${shippingCost.toFixed(2)}`;
+              const head = productNames || linkedOrders[0].productName || '';
+              description = linkedOrders.length > 1
+                ? `${head} (${linkedOrders.length} ئۆردەری هاوبەش) | ${t_itemPrice}: $${goodsTotal.toFixed(2)} + ${t_shipping}: $${shippingCost.toFixed(2)}`
+                : `${head} | ${t_itemPrice}: $${goodsTotal.toFixed(2)} + ${t_shipping}: $${shippingCost.toFixed(2)}`;
             } else {
-              // Full Package: selling price × quantity
-              const sellingPrice = Number(linkedFP.sellingPriceUsd || 0);
-              const qty = linkedFP.quantity || 1;
-              calculatedCostUsd = (sellingPrice * qty).toFixed(2);
+              calculatedCostUsd = goodsTotal.toFixed(2);
             }
           }
         }

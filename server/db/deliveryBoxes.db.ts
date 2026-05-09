@@ -1,6 +1,6 @@
 import { eq, desc, and, gte, lte, sql, inArray, isNull } from "drizzle-orm";
 import { getDb } from "./connection";
-import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, batches, customers } from "../../drizzle/schema";
+import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, fullPackageOrderTrackings, batches, customers } from "../../drizzle/schema";
 import type { DeliveryBox, InsertDeliveryBox, DeliveryBoxItem, InsertDeliveryBoxItem } from "../../drizzle/schema/packages.schema";
 import { appLogger } from "../utils/logger";
 
@@ -464,27 +464,71 @@ export async function createDeliveryBoxesForBatch(
       let calculatedCostUsd = shippingCost.toFixed(2);
 
       if (pkg.trackingNumber) {
-        const [linkedFP] = await db.select().from(fullPackageOrders)
-          .where(eq(fullPackageOrders.trackingNumber, pkg.trackingNumber))
-          .limit(1);
-        if (linkedFP) {
-          itemType = linkedFP.orderType === 'commission' ? 'commission' : 'full_package';
-          sourceInfo = `${linkedFP.orderCode} - ${sourceInfo}`;
-          description = linkedFP.productName || description;
-          const qty = linkedFP.quantity || 1;
-          if (linkedFP.orderType === 'commission') {
-            const itemPrice = Number(linkedFP.itemPriceUsd || 0);
-            const commFee = Number(linkedFP.commissionFeeUsd || linkedFP.commissionAmount || 0);
-            // Per spec: commission rolls into a single "نرخی بەرهەم" total
-            // on box receipts — no separate commission line. Shipping stays
-            // on its own line so the customer can still see what they paid
-            // for transport vs. goods.
-            const goodsTotal = (itemPrice * qty) + commFee;
+        // Resolve EVERY FP order linked to this tracking number — a single
+        // physical package can fulfil multiple commission/full-package
+        // orders that share the carton (shared trackings). The previous
+        // `.limit(1)` lookup picked one order and silently dropped the
+        // others, which made the box total understate by the missing
+        // orders' goods value (e.g. 53 commission orders → 51 packages,
+        // 2 orders' prices vanished).
+        const orderIdSet: Record<number, true> = {};
+        const fromMulti = await db.select({ id: fullPackageOrderTrackings.fullPackageOrderId })
+          .from(fullPackageOrderTrackings)
+          .where(eq(fullPackageOrderTrackings.trackingNumber, pkg.trackingNumber));
+        for (const r of fromMulti) orderIdSet[r.id] = true;
+        const fromLegacy = await db.select({ id: fullPackageOrders.id })
+          .from(fullPackageOrders)
+          .where(eq(fullPackageOrders.trackingNumber, pkg.trackingNumber));
+        for (const r of fromLegacy) orderIdSet[r.id] = true;
+
+        const orderIds = Object.keys(orderIdSet).map(Number);
+        const linkedOrders: typeof fullPackageOrders.$inferSelect[] = [];
+        if (orderIds.length > 0) {
+          const rows = await db.select().from(fullPackageOrders)
+            .where(inArray(fullPackageOrders.id, orderIds));
+          linkedOrders.push(...rows);
+        }
+
+        if (linkedOrders.length > 0) {
+          const isAnyCommission = linkedOrders.some(o => o.orderType === 'commission');
+          // If any sibling is commission, treat the whole carton as commission
+          // for ledger/charge purposes — full-package siblings (rare on a
+          // shared carton) still get their selling price added below.
+          itemType = isAnyCommission ? 'commission'
+            : (linkedOrders[0].orderType === 'commission' ? 'commission' : 'full_package');
+
+          // Combine order codes + product names so the receipt shows every
+          // order that lives in this package.
+          const orderCodes = linkedOrders.map(o => o.orderCode).join(' + ');
+          const productNames = Array.from(new Set(linkedOrders.map(o => o.productName).filter(Boolean))).join(' + ');
+          sourceInfo = `${orderCodes} - ${sourceInfo}`;
+          description = productNames || description;
+
+          // Sum every linked order's goods/commission/selling price into one
+          // box-item total. Shipping is added once (one physical package =
+          // one shipping fee) regardless of how many orders share it.
+          let goodsTotal = 0;
+          for (const o of linkedOrders) {
+            const qty = o.quantity || 1;
+            if (o.orderType === 'commission') {
+              const itemPrice = Number(o.itemPriceUsd || 0);
+              const commFee = Number(o.commissionFeeUsd || o.commissionAmount || 0);
+              goodsTotal += (itemPrice * qty) + commFee;
+            } else {
+              const sellingPrice = Number(o.sellingPriceUsd || 0);
+              goodsTotal += sellingPrice * qty;
+            }
+          }
+
+          if (isAnyCommission) {
             calculatedCostUsd = (goodsTotal + shippingCost).toFixed(2);
-            description = `${linkedFP.productName || ''} | نرخی بەرهەم: $${goodsTotal.toFixed(2)} + نرخی گواستنەوە: $${shippingCost.toFixed(2)}`;
+            const head = productNames || linkedOrders[0].productName || '';
+            description = linkedOrders.length > 1
+              ? `${head} (${linkedOrders.length} ئۆردەری هاوبەش) | نرخی بەرهەم: $${goodsTotal.toFixed(2)} + نرخی گواستنەوە: $${shippingCost.toFixed(2)}`
+              : `${head} | نرخی بەرهەم: $${goodsTotal.toFixed(2)} + نرخی گواستنەوە: $${shippingCost.toFixed(2)}`;
           } else {
-            const sellingPrice = Number(linkedFP.sellingPriceUsd || 0);
-            calculatedCostUsd = (sellingPrice * qty).toFixed(2);
+            // Pure full-package carton: selling price already covers shipping.
+            calculatedCostUsd = goodsTotal.toFixed(2);
           }
         }
       }
