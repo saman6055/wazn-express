@@ -182,10 +182,12 @@ export async function removeItemFromBox(itemId: number): Promise<void> {
 
 /**
  * Box items enriched with the prepayment that should be credited on the
- * receipt. Pulls from the linked Full-Package order (by id, falling back
- * to tracking-number lookup for items scanned via package), then picks
- * the right field per order type:
+ * receipt. Pulls from EVERY Full-Package order linked to the item — a
+ * single physical package (one tracking number) can fulfil multiple
+ * commission orders that share the carton, and the receipt's
+ * `calculatedCostUsd` already sums all of them, so the advance must too.
  *
+ * Per order type:
  *  - commission   → `totalPrepaidUsd` (item + commission, paid at order
  *                    creation; baked into the goods portion of
  *                    `calculatedCostUsd`).
@@ -194,12 +196,34 @@ export async function removeItemFromBox(itemId: number): Promise<void> {
  *                       at order creation; nullable, defaults to 0).
  *  - regular packages → 0 (no upstream FP order).
  *
+ * Lookup priority per item:
+ *  1. `item.fullPackageOrderId` — explicit single-order link (set when
+ *     the item was scanned to a specific FP order, not a package). Use
+ *     ONLY that order's advance because the item represents that order
+ *     in isolation; sibling orders sharing the tracking are NOT in this
+ *     box item.
+ *  2. `item.trackingNumber` — sum advances of every order that owns this
+ *     tracking via `fullPackageOrders.trackingNumber` OR the multi-
+ *     tracking table. This is the path auto-create-from-batch and
+ *     package-scanned flows take, and is where shared-tracking siblings
+ *     used to silently drop out (single-result Map collision).
+ *
  * The receipt subtracts the SUM of these from the grand total so the
  * customer sees only the balance still owed at delivery.
  */
 export type BoxItemWithAdvance = DeliveryBoxItem & {
   advanceAppliedUsd: string;
 };
+
+function fpAdvance(fp: typeof fullPackageOrders.$inferSelect): number {
+  if (fp.orderType === 'commission') {
+    return Number(fp.totalPrepaidUsd || 0) || 0;
+  }
+  if (fp.orderType === 'full_package' || fp.orderType === 'purchase_request') {
+    return Number((fp as any).advancePaidUsd || 0) || 0;
+  }
+  return 0;
+}
 
 export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> {
   const db = await getDb();
@@ -209,42 +233,78 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     .orderBy(deliveryBoxItems.scannedAt);
   if (items.length === 0) return [];
 
-  const trackingNumbers = items
-    .map(i => i.trackingNumber)
-    .filter((t): t is string => !!t);
-  const fpOrderIds = items
-    .map(i => i.fullPackageOrderId)
-    .filter((id): id is number => !!id);
+  const trackingNumbers = Array.from(new Set(
+    items.map(i => i.trackingNumber).filter((t): t is string => !!t)
+  ));
+  const fpOrderIds = Array.from(new Set(
+    items.map(i => i.fullPackageOrderId).filter((id): id is number => !!id)
+  ));
 
-  const fpByTracking = new Map<string, typeof fullPackageOrders.$inferSelect>();
+  // tracking → list of FP orders (multi-tracking + legacy single field).
+  // List, not scalar — shared trackings produce >1 row.
+  const fpsByTracking = new Map<string, typeof fullPackageOrders.$inferSelect[]>();
   const fpById = new Map<number, typeof fullPackageOrders.$inferSelect>();
 
   if (trackingNumbers.length > 0) {
-    const fps = await db.select().from(fullPackageOrders)
+    // 1. Legacy single-tracking field on the order itself.
+    const legacy = await db.select().from(fullPackageOrders)
       .where(inArray(fullPackageOrders.trackingNumber, trackingNumbers));
-    for (const fp of fps) {
-      if (fp.trackingNumber) fpByTracking.set(fp.trackingNumber, fp);
+    for (const fp of legacy) {
       fpById.set(fp.id, fp);
+      if (fp.trackingNumber) {
+        const list = fpsByTracking.get(fp.trackingNumber) || [];
+        list.push(fp);
+        fpsByTracking.set(fp.trackingNumber, list);
+      }
+    }
+
+    // 2. Multi-tracking table — picks up shared trackings + multi-carton
+    //    orders whose primary tracking is different from the carton tracking.
+    const trackRows = await db.select({
+      trackingNumber: fullPackageOrderTrackings.trackingNumber,
+      orderId: fullPackageOrderTrackings.fullPackageOrderId,
+    }).from(fullPackageOrderTrackings)
+      .where(inArray(fullPackageOrderTrackings.trackingNumber, trackingNumbers));
+    const extraOrderIds = Array.from(new Set(trackRows.map(r => r.orderId).filter(id => !fpById.has(id))));
+    if (extraOrderIds.length > 0) {
+      const extras = await db.select().from(fullPackageOrders)
+        .where(inArray(fullPackageOrders.id, extraOrderIds));
+      for (const fp of extras) fpById.set(fp.id, fp);
+    }
+    for (const r of trackRows) {
+      const fp = fpById.get(r.orderId);
+      if (!fp) continue;
+      const list = fpsByTracking.get(r.trackingNumber) || [];
+      // Dedup by id — an order can sit in both legacy and multi-tracking.
+      if (!list.some(o => o.id === fp.id)) list.push(fp);
+      fpsByTracking.set(r.trackingNumber, list);
     }
   }
+
   if (fpOrderIds.length > 0) {
-    const fps = await db.select().from(fullPackageOrders)
-      .where(inArray(fullPackageOrders.id, fpOrderIds));
-    for (const fp of fps) fpById.set(fp.id, fp);
+    const missing = fpOrderIds.filter(id => !fpById.has(id));
+    if (missing.length > 0) {
+      const fps = await db.select().from(fullPackageOrders)
+        .where(inArray(fullPackageOrders.id, missing));
+      for (const fp of fps) fpById.set(fp.id, fp);
+    }
   }
 
   return items.map((item): BoxItemWithAdvance => {
-    let advanceAppliedUsd = '0';
-    const directFp = item.fullPackageOrderId ? fpById.get(item.fullPackageOrderId) : null;
-    const fp = directFp || (item.trackingNumber ? fpByTracking.get(item.trackingNumber) : null);
-    if (fp) {
-      if (fp.orderType === 'commission') {
-        advanceAppliedUsd = fp.totalPrepaidUsd?.toString() || '0';
-      } else if (fp.orderType === 'full_package' || fp.orderType === 'purchase_request') {
-        advanceAppliedUsd = (fp as any).advancePaidUsd?.toString() || '0';
-      }
+    // Direct FP-order scan path — single order owns the item, no sibling sum.
+    if (item.fullPackageOrderId) {
+      const fp = fpById.get(item.fullPackageOrderId);
+      return { ...item, advanceAppliedUsd: fp ? fpAdvance(fp).toFixed(2) : '0' };
     }
-    return { ...item, advanceAppliedUsd };
+
+    // Tracking-based path — sum every linked order's advance.
+    if (item.trackingNumber) {
+      const linked = fpsByTracking.get(item.trackingNumber) || [];
+      const total = linked.reduce((s, fp) => s + fpAdvance(fp), 0);
+      return { ...item, advanceAppliedUsd: total.toFixed(2) };
+    }
+
+    return { ...item, advanceAppliedUsd: '0' };
   });
 }
 
