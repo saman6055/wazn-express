@@ -187,13 +187,28 @@ export async function removeItemFromBox(itemId: number): Promise<void> {
  * commission orders that share the carton, and the receipt's
  * `calculatedCostUsd` already sums all of them, so the advance must too.
  *
- * Per order type:
- *  - commission   → `totalPrepaidUsd` (item + commission, paid at order
- *                    creation; baked into the goods portion of
- *                    `calculatedCostUsd`).
+ * Per order type, "what has the customer already paid for this order's
+ * goods?":
+ *  - commission       → `totalPrepaidUsd` (item × qty + commission,
+ *                        paid at order creation; this is the source of
+ *                        truth, populated even when payment came from
+ *                        the wallet).
  *  - full_package /
- *    purchase_request → `advancePaidUsd` (partial or full advance paid
- *                       at order creation; nullable, defaults to 0).
+ *    purchase_request → MAX(`paidFromBalanceUsd`, `advancePaidUsd`).
+ *                        - `advancePaidUsd` is set when a CASH advance
+ *                          is recorded at order creation (line 285 in
+ *                          fullPackage.router.ts).
+ *                        - `paidFromBalanceUsd` is set when the order is
+ *                          approved and the wallet is debited for the
+ *                          full selling price (line 1340). The approve
+ *                          flow does NOT mirror into advancePaidUsd, so
+ *                          using only advancePaidUsd misses every
+ *                          approved-from-wallet order — receipt then
+ *                          shows $0 paid and bills the customer twice.
+ *                        Taking MAX captures both pathways without
+ *                        double-counting on commission-quickcreate
+ *                        orders that mirror the same value into both
+ *                        fields.
  *  - regular packages → 0 (no upstream FP order).
  *
  * Lookup priority per item:
@@ -217,10 +232,18 @@ export type BoxItemWithAdvance = DeliveryBoxItem & {
 
 function fpAdvance(fp: typeof fullPackageOrders.$inferSelect): number {
   if (fp.orderType === 'commission') {
-    return Number(fp.totalPrepaidUsd || 0) || 0;
+    // Commission quickcreate sets totalPrepaidUsd AND paidFromBalanceUsd
+    // to the same value (item + commission). totalPrepaidUsd is the
+    // canonical field; falling back to paidFromBalanceUsd protects against
+    // any future commission flow that forgets to mirror.
+    const t = Number(fp.totalPrepaidUsd || 0) || 0;
+    const p = Number((fp as any).paidFromBalanceUsd || 0) || 0;
+    return Math.max(t, p);
   }
   if (fp.orderType === 'full_package' || fp.orderType === 'purchase_request') {
-    return Number((fp as any).advancePaidUsd || 0) || 0;
+    const a = Number((fp as any).advancePaidUsd || 0) || 0;
+    const p = Number((fp as any).paidFromBalanceUsd || 0) || 0;
+    return Math.max(a, p);
   }
   return 0;
 }
