@@ -1187,6 +1187,24 @@ export default function CustomerFinance() {
               
               {/* Action Buttons */}
               <div className="flex items-center gap-2">
+                {/* Refund: top-level entry point. Opens the same modal as
+                    the per-row reverse button but starts at the picker
+                    step so staff can search/choose any reversible payment
+                    without scrolling to the payments tab. */}
+                <Button
+                  className="bg-white text-amber-700 hover:bg-amber-50 rounded-xl shadow-lg"
+                  onClick={() => {
+                    setReverseTargetPayment(null);
+                    setReverseMode('mistake');
+                    setReverseAmount("");
+                    setReverseReason("");
+                    setReverseCashAccountId("");
+                    setReverseDialogOpen(true);
+                  }}
+                >
+                  <RotateCcw className="w-4 h-4 me-2" />
+                  ریفاوند
+                </Button>
                 <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl shadow-lg">
@@ -2035,6 +2053,93 @@ export default function CustomerFinance() {
               گەڕاندنەوەی پارەدان
             </DialogTitle>
           </DialogHeader>
+
+          {/* Picker step — shown only when the dialog is opened from the
+              top-level "ریفاوند" button (no payment pre-selected). Lists
+              every payment that still has remaining un-reversed amount;
+              clicking one transitions the dialog into the form step. The
+              per-row "گەڕاندنەوە" button skips this step entirely. */}
+          {!reverseTargetPayment && (
+            <div className="space-y-3 mt-2">
+              <p className="text-sm text-muted-foreground">
+                پارەدانێک هەڵبژێرە بۆ گەڕاندنەوە یاخود ریفاوند:
+              </p>
+              {!payments || payments.length === 0 ? (
+                <div className="p-6 text-center rounded-lg border border-dashed text-sm text-muted-foreground">
+                  هیچ پارەدانێکی تۆمارکراو نییە.
+                </div>
+              ) : (() => {
+                const reversible = (payments as any[]).filter((p) => {
+                  const orig = parseFloat(p.amountUsd || '0') || 0;
+                  const rev = parseFloat(p.reversedAmountUsd || '0') || 0;
+                  return orig - rev > 0.005;
+                });
+                if (reversible.length === 0) {
+                  return (
+                    <div className="p-6 text-center rounded-lg border border-dashed text-sm text-muted-foreground">
+                      هەموو پارەدانەکان پێشتر گەڕێنراونەتەوە.
+                    </div>
+                  );
+                }
+                return (
+                  <div className="max-h-80 overflow-y-auto rounded-lg border divide-y">
+                    {reversible.map((p) => {
+                      const orig = parseFloat(p.amountUsd || '0') || 0;
+                      const rev = parseFloat(p.reversedAmountUsd || '0') || 0;
+                      const remaining = orig - rev;
+                      const isPartial = rev > 0;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => openReverseDialog(p)}
+                          className="w-full p-3 text-right hover:bg-amber-50 transition-colors flex items-center justify-between gap-3"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs text-muted-foreground truncate">
+                                {p.paymentNumber}
+                              </span>
+                              <Badge variant="outline" className="text-[10px] py-0 bg-emerald-50 text-emerald-700 border-emerald-200">
+                                {getPaymentMethodLabel(p.paymentMethod)}
+                              </Badge>
+                              {isPartial && (
+                                <Badge variant="outline" className="text-[10px] py-0 bg-amber-50 text-amber-700 border-amber-200">
+                                  بە بەشێ
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                              {new Date(p.createdAt).toLocaleDateString('ku-IQ')}
+                              {p.notes ? ` • ${p.notes}` : ''}
+                            </div>
+                          </div>
+                          <div className="text-end shrink-0">
+                            <div className="font-mono font-bold text-emerald-700">
+                              ${remaining.toFixed(2)}
+                            </div>
+                            {isPartial && (
+                              <div className="text-[10px] text-muted-foreground">
+                                لە کۆی ${orig.toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setReverseDialogOpen(false)}
+              >
+                پاشگەزبوونەوە
+              </Button>
+            </div>
+          )}
+
           {reverseTargetPayment && (
             <div className="space-y-4 mt-2">
               {/* Payment summary */}
