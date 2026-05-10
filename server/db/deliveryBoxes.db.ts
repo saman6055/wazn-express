@@ -446,16 +446,6 @@ export async function createDeliveryBoxesForBatch(
   if (batch.length === 0) throw new Error("Batch not found");
   const batchRow = batch[0];
 
-  // Batch-level shipping rates — used to recompute each package's shipping
-  // cost fresh at box-create time. Falling back to `pkg.calculatedCostUsd`
-  // alone is unsafe: that field is only written by Phase 1 delivery if
-  // weight was non-zero at the time, so packages weighed AFTER delivery
-  // ran end up with stale `0` values and would render as $0 on the box
-  // receipt.
-  const batchPricePerKg = parseFloat(batchRow.pricePerKg?.toString() || "0") || 0;
-  const batchPricePerCbm = parseFloat(batchRow.pricePerCbm?.toString() || "0") || 0;
-  const batchIsSea = batchRow.shippingType === 'sea';
-
   // Get all packages in the batch
   const batchPackages = await db.select().from(packages).where(eq(packages.batchId, batchId));
   if (batchPackages.length === 0) {
@@ -508,126 +498,12 @@ export async function createDeliveryBoxesForBatch(
     });
     const boxId = Number(insertResult[0].insertId);
 
-    // Insert items — reuse the pricing logic from scanning.router.ts addItem
+    // Build one item per package via the shared helper — keeps shared-tracking
+    // sum, fresh shipping recompute, and chargeable-weight logic in a single
+    // place that recompute also calls.
     for (const pkg of pkgs) {
-      // Determine pricing based on linked FP order (if any)
-      let itemType: 'regular' | 'full_package' | 'commission' = 'regular';
-      let sourceInfo = `باچ ${batchRow.batchCode}`;
-      let description = pkg.description || pkg.trackingNumber || '';
-
-      // Chargeable weight = max(actual, volumetric). Box receipts must
-      // show what the customer is billed for, not the raw scale reading.
-      const actualKg = parseFloat(pkg.weightKg?.toString() || '0') || 0;
-      const lN = parseFloat((pkg as any).lengthCm?.toString() || '0') || 0;
-      const wN = parseFloat((pkg as any).widthCm?.toString() || '0') || 0;
-      const hN = parseFloat((pkg as any).heightCm?.toString() || '0') || 0;
-      const volumetricKg = (lN * wN * hN) / 6000;
-      const chargeableKgNum = Math.max(actualKg, volumetricKg);
-      const chargeableKg = chargeableKgNum.toFixed(2);
-
-      // Recompute shipping cost FRESH from current pkg measurements ×
-      // batch rate. The package's persisted `calculatedCostUsd` is too
-      // unreliable to trust here — it's only set during Phase 1 delivery
-      // and only when chargeable weight was non-zero at that moment, so
-      // packages weighed afterwards have stale 0s. Recomputing means box
-      // prices stay correct regardless of when measurements were entered.
-      let freshShippingCost = 0;
-      if (batchIsSea && batchPricePerCbm > 0) {
-        const pkgCbm = parseFloat((pkg as any).volumeCbm?.toString() || '0') || 0;
-        freshShippingCost = pkgCbm * batchPricePerCbm;
-      } else if (batchPricePerKg > 0) {
-        freshShippingCost = chargeableKgNum * batchPricePerKg;
-      }
-      // Fall back to the persisted value only when the rate is missing —
-      // that way un-priced batches still render whatever was stored
-      // rather than zeroing out everything.
-      const persistedCost = parseFloat(pkg.calculatedCostUsd?.toString() || '0') || 0;
-      const shippingCost = freshShippingCost > 0 ? freshShippingCost : persistedCost;
-
-      let calculatedCostUsd = shippingCost.toFixed(2);
-
-      if (pkg.trackingNumber) {
-        // Resolve EVERY FP order linked to this tracking number — a single
-        // physical package can fulfil multiple commission/full-package
-        // orders that share the carton (shared trackings). The previous
-        // `.limit(1)` lookup picked one order and silently dropped the
-        // others, which made the box total understate by the missing
-        // orders' goods value (e.g. 53 commission orders → 51 packages,
-        // 2 orders' prices vanished).
-        const orderIdSet: Record<number, true> = {};
-        const fromMulti = await db.select({ id: fullPackageOrderTrackings.fullPackageOrderId })
-          .from(fullPackageOrderTrackings)
-          .where(eq(fullPackageOrderTrackings.trackingNumber, pkg.trackingNumber));
-        for (const r of fromMulti) orderIdSet[r.id] = true;
-        const fromLegacy = await db.select({ id: fullPackageOrders.id })
-          .from(fullPackageOrders)
-          .where(eq(fullPackageOrders.trackingNumber, pkg.trackingNumber));
-        for (const r of fromLegacy) orderIdSet[r.id] = true;
-
-        const orderIds = Object.keys(orderIdSet).map(Number);
-        const linkedOrders: typeof fullPackageOrders.$inferSelect[] = [];
-        if (orderIds.length > 0) {
-          const rows = await db.select().from(fullPackageOrders)
-            .where(inArray(fullPackageOrders.id, orderIds));
-          linkedOrders.push(...rows);
-        }
-
-        if (linkedOrders.length > 0) {
-          const isAnyCommission = linkedOrders.some(o => o.orderType === 'commission');
-          // If any sibling is commission, treat the whole carton as commission
-          // for ledger/charge purposes — full-package siblings (rare on a
-          // shared carton) still get their selling price added below.
-          itemType = isAnyCommission ? 'commission'
-            : (linkedOrders[0].orderType === 'commission' ? 'commission' : 'full_package');
-
-          // Combine order codes + product names so the receipt shows every
-          // order that lives in this package.
-          const orderCodes = linkedOrders.map(o => o.orderCode).join(' + ');
-          const productNames = Array.from(new Set(linkedOrders.map(o => o.productName).filter(Boolean))).join(' + ');
-          sourceInfo = `${orderCodes} - ${sourceInfo}`;
-          description = productNames || description;
-
-          // Sum every linked order's goods/commission/selling price into one
-          // box-item total. Shipping is added once (one physical package =
-          // one shipping fee) regardless of how many orders share it.
-          let goodsTotal = 0;
-          for (const o of linkedOrders) {
-            const qty = o.quantity || 1;
-            if (o.orderType === 'commission') {
-              const itemPrice = Number(o.itemPriceUsd || 0);
-              const commFee = Number(o.commissionFeeUsd || o.commissionAmount || 0);
-              goodsTotal += (itemPrice * qty) + commFee;
-            } else {
-              const sellingPrice = Number(o.sellingPriceUsd || 0);
-              goodsTotal += sellingPrice * qty;
-            }
-          }
-
-          if (isAnyCommission) {
-            calculatedCostUsd = (goodsTotal + shippingCost).toFixed(2);
-            const head = productNames || linkedOrders[0].productName || '';
-            description = linkedOrders.length > 1
-              ? `${head} (${linkedOrders.length} ئۆردەری هاوبەش) | نرخی بەرهەم: $${goodsTotal.toFixed(2)} + نرخی گواستنەوە: $${shippingCost.toFixed(2)}`
-              : `${head} | نرخی بەرهەم: $${goodsTotal.toFixed(2)} + نرخی گواستنەوە: $${shippingCost.toFixed(2)}`;
-          } else {
-            // Pure full-package carton: selling price already covers shipping.
-            calculatedCostUsd = goodsTotal.toFixed(2);
-          }
-        }
-      }
-
-      await db.insert(deliveryBoxItems).values({
-        boxId,
-        packageId: pkg.id,
-        trackingNumber: pkg.trackingNumber || undefined,
-        packageCode: pkg.packageCode || undefined,
-        description,
-        weightKg: chargeableKg,
-        calculatedCostUsd,
-        itemType,
-        sourceInfo,
-        scannedById: userId,
-      });
+      const values = await buildBoxItemValuesFromPackage(pkg, batchRow, userId);
+      await db.insert(deliveryBoxItems).values({ boxId, ...values });
     }
 
     // Recalculate totals (use inline calc since we're inside this function)
@@ -647,4 +523,253 @@ export async function createDeliveryBoxesForBatch(
   }
 
   return { created, skipped, totalPackages: batchPackages.length, boxes: createdBoxes };
+}
+
+// ============ ITEM BUILDER (shared by create + recompute) ============
+
+/**
+ * Resolve the values for a delivery-box item built from a single package.
+ *
+ * Centralises the pricing logic that was previously inlined in both
+ * `createDeliveryBoxesForBatch` and `scanning.addItem`. Two callers means
+ * two places where shared-tracking sibling orders could be silently
+ * dropped — the historical bug fixed by 1d11fa1. Keeping a single source
+ * of truth here means future fixes apply uniformly to fresh boxes,
+ * recomputed boxes, and manually scanned items.
+ *
+ * Behaviour:
+ *  - Chargeable weight = max(actual, volumetric).
+ *  - Shipping recomputed FRESH from the batch's current per-kg/per-cbm rate
+ *    (falling back to the package's persisted `calculatedCostUsd` only when
+ *    the rate is missing — see the `freshShippingCost` comment block in
+ *    `createDeliveryBoxesForBatch` for why).
+ *  - Resolves EVERY FP order linked to `pkg.trackingNumber` via both the
+ *    multi-tracking table and the legacy single field, then sums their
+ *    goods/commission so shared-tracking cartons charge for all siblings.
+ *  - Commission cartons: `calculatedCostUsd = goods + shippingCost`.
+ *    Full-package cartons: selling price already covers shipping → just goods.
+ */
+async function buildBoxItemValuesFromPackage(
+  pkg: typeof packages.$inferSelect,
+  batchRow: typeof batches.$inferSelect,
+  userId: number,
+): Promise<Omit<InsertDeliveryBoxItem, 'boxId'>> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const batchPricePerKg = parseFloat(batchRow.pricePerKg?.toString() || "0") || 0;
+  const batchPricePerCbm = parseFloat(batchRow.pricePerCbm?.toString() || "0") || 0;
+  const batchIsSea = batchRow.shippingType === 'sea';
+
+  let itemType: 'regular' | 'full_package' | 'commission' = 'regular';
+  let sourceInfo = `باچ ${batchRow.batchCode}`;
+  let description = pkg.description || pkg.trackingNumber || '';
+
+  // Chargeable weight = max(actual, volumetric).
+  const actualKg = parseFloat(pkg.weightKg?.toString() || '0') || 0;
+  const lN = parseFloat((pkg as any).lengthCm?.toString() || '0') || 0;
+  const wN = parseFloat((pkg as any).widthCm?.toString() || '0') || 0;
+  const hN = parseFloat((pkg as any).heightCm?.toString() || '0') || 0;
+  const volumetricKg = (lN * wN * hN) / 6000;
+  const chargeableKgNum = Math.max(actualKg, volumetricKg);
+  const chargeableKg = chargeableKgNum.toFixed(2);
+
+  // Recompute shipping cost FRESH from current pkg measurements × batch rate.
+  let freshShippingCost = 0;
+  if (batchIsSea && batchPricePerCbm > 0) {
+    const pkgCbm = parseFloat((pkg as any).volumeCbm?.toString() || '0') || 0;
+    freshShippingCost = pkgCbm * batchPricePerCbm;
+  } else if (batchPricePerKg > 0) {
+    freshShippingCost = chargeableKgNum * batchPricePerKg;
+  }
+  const persistedCost = parseFloat(pkg.calculatedCostUsd?.toString() || '0') || 0;
+  const shippingCost = freshShippingCost > 0 ? freshShippingCost : persistedCost;
+
+  let calculatedCostUsd = shippingCost.toFixed(2);
+
+  if (pkg.trackingNumber) {
+    // Resolve EVERY FP order linked to this tracking number — a single
+    // physical package can fulfil multiple commission/full-package orders
+    // that share the carton (shared trackings).
+    const orderIdSet: Record<number, true> = {};
+    const fromMulti = await db.select({ id: fullPackageOrderTrackings.fullPackageOrderId })
+      .from(fullPackageOrderTrackings)
+      .where(eq(fullPackageOrderTrackings.trackingNumber, pkg.trackingNumber));
+    for (const r of fromMulti) orderIdSet[r.id] = true;
+    const fromLegacy = await db.select({ id: fullPackageOrders.id })
+      .from(fullPackageOrders)
+      .where(eq(fullPackageOrders.trackingNumber, pkg.trackingNumber));
+    for (const r of fromLegacy) orderIdSet[r.id] = true;
+
+    const orderIds = Object.keys(orderIdSet).map(Number);
+    const linkedOrders: typeof fullPackageOrders.$inferSelect[] = [];
+    if (orderIds.length > 0) {
+      const rows = await db.select().from(fullPackageOrders)
+        .where(inArray(fullPackageOrders.id, orderIds));
+      linkedOrders.push(...rows);
+    }
+
+    if (linkedOrders.length > 0) {
+      const isAnyCommission = linkedOrders.some(o => o.orderType === 'commission');
+      itemType = isAnyCommission ? 'commission'
+        : (linkedOrders[0].orderType === 'commission' ? 'commission' : 'full_package');
+
+      const orderCodes = linkedOrders.map(o => o.orderCode).join(' + ');
+      const productNames = Array.from(new Set(linkedOrders.map(o => o.productName).filter(Boolean))).join(' + ');
+      sourceInfo = `${orderCodes} - ${sourceInfo}`;
+      description = productNames || description;
+
+      let goodsTotal = 0;
+      for (const o of linkedOrders) {
+        const qty = o.quantity || 1;
+        if (o.orderType === 'commission') {
+          const itemPrice = Number(o.itemPriceUsd || 0);
+          const commFee = Number(o.commissionFeeUsd || o.commissionAmount || 0);
+          goodsTotal += (itemPrice * qty) + commFee;
+        } else {
+          const sellingPrice = Number(o.sellingPriceUsd || 0);
+          goodsTotal += sellingPrice * qty;
+        }
+      }
+
+      if (isAnyCommission) {
+        calculatedCostUsd = (goodsTotal + shippingCost).toFixed(2);
+        const head = productNames || linkedOrders[0].productName || '';
+        description = linkedOrders.length > 1
+          ? `${head} (${linkedOrders.length} ئۆردەری هاوبەش) | نرخی بەرهەم: $${goodsTotal.toFixed(2)} + نرخی گواستنەوە: $${shippingCost.toFixed(2)}`
+          : `${head} | نرخی بەرهەم: $${goodsTotal.toFixed(2)} + نرخی گواستنەوە: $${shippingCost.toFixed(2)}`;
+      } else {
+        calculatedCostUsd = goodsTotal.toFixed(2);
+      }
+    }
+  }
+
+  return {
+    packageId: pkg.id,
+    trackingNumber: pkg.trackingNumber || undefined,
+    packageCode: pkg.packageCode || undefined,
+    description,
+    weightKg: chargeableKg,
+    calculatedCostUsd,
+    itemType,
+    sourceInfo,
+    scannedById: userId,
+  };
+}
+
+// ============ RECOMPUTE EXISTING BOX ============
+
+/**
+ * Recompute every package-linked item in an existing box.
+ *
+ * Why this exists: `createDeliveryBoxesForBatch` is "create once" — it
+ * skips customers who already have a box (deliveryBoxes.db.ts:484-488).
+ * That meant any pricing/tracking fix that landed AFTER a box was
+ * created (e.g. the shared-tracking sum from 1d11fa1, or an updated
+ * batch rate) never reached the existing box. Boxes silently undercharged.
+ *
+ * What this does:
+ *  - Validates the box is in a mutable state (open/sealed only — never
+ *    delivered/cancelled).
+ *  - Re-fetches the batch's packages for the box's customer.
+ *  - For each package: rebuilds the item values via the shared helper.
+ *    - If an item already exists for that package: UPDATE in place.
+ *    - Otherwise: INSERT new.
+ *  - Removes package-linked items whose package is no longer in the batch
+ *    or no longer assigned to this customer.
+ *  - Preserves items that have NO `packageId` (manual scans entered by
+ *    `scanning.addItem` without a batch package — those are out of scope).
+ *  - Recomputes box-level totals.
+ *
+ * Returns counts so the UI can show "X added, Y updated, Z removed".
+ */
+export async function recomputeBoxItems(
+  boxId: number,
+  userId: number,
+): Promise<{
+  added: number;
+  updated: number;
+  removed: number;
+  totalPackages: number;
+  totalWeightKg: number;
+  totalValueUsd: number;
+}> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [box] = await db.select().from(deliveryBoxes).where(eq(deliveryBoxes.id, boxId)).limit(1);
+  if (!box) throw new Error("Box not found");
+  if (box.status === 'delivered' || box.status === 'cancelled') {
+    throw new Error("بۆکسی گەیاندراو/هەڵوەشاوە نوێ ناکرێتەوە");
+  }
+  if (!box.batchId || !box.customerId) {
+    throw new Error("بۆکس بەستراو نییە بە باچ یاخود کریار");
+  }
+
+  const [batchRow] = await db.select().from(batches).where(eq(batches.id, box.batchId)).limit(1);
+  if (!batchRow) throw new Error("Batch not found");
+
+  // All packages in the batch belonging to this customer.
+  const customerPkgs = await db.select().from(packages)
+    .where(and(eq(packages.batchId, box.batchId), eq(packages.customerId, box.customerId)));
+  const pkgIds = new Set(customerPkgs.map(p => p.id));
+
+  // Existing items in the box, split into package-linked vs manual.
+  const existingItems = await db.select().from(deliveryBoxItems)
+    .where(eq(deliveryBoxItems.boxId, boxId));
+  const existingByPkgId = new Map<number, typeof existingItems[number]>();
+  for (const it of existingItems) {
+    if (it.packageId) existingByPkgId.set(it.packageId, it);
+  }
+
+  let added = 0;
+  let updated = 0;
+  let removed = 0;
+
+  // Remove package-linked items whose package is no longer in scope.
+  for (const it of existingItems) {
+    if (it.packageId && !pkgIds.has(it.packageId)) {
+      await db.delete(deliveryBoxItems).where(eq(deliveryBoxItems.id, it.id));
+      removed++;
+    }
+  }
+
+  // Insert/update one item per package using the shared builder.
+  for (const pkg of customerPkgs) {
+    const values = await buildBoxItemValuesFromPackage(pkg, batchRow, userId);
+    const existing = existingByPkgId.get(pkg.id);
+    if (existing) {
+      await db.update(deliveryBoxItems).set({
+        trackingNumber: values.trackingNumber,
+        packageCode: values.packageCode,
+        description: values.description,
+        weightKg: values.weightKg,
+        calculatedCostUsd: values.calculatedCostUsd,
+        itemType: values.itemType,
+        sourceInfo: values.sourceInfo,
+      }).where(eq(deliveryBoxItems.id, existing.id));
+      updated++;
+    } else {
+      await db.insert(deliveryBoxItems).values({ boxId, ...values });
+      added++;
+    }
+  }
+
+  // Recompute box totals from the (now refreshed) items.
+  const items = await db.select().from(deliveryBoxItems).where(eq(deliveryBoxItems.boxId, boxId));
+  const totalPackages = items.length;
+  const totalWeightKg = items.reduce((s, i) => s + Number(i.weightKg || 0), 0);
+  const totalValueUsd = items.reduce((s, i) => s + Number(i.calculatedCostUsd || 0), 0);
+  await db.update(deliveryBoxes).set({
+    totalPackages,
+    totalWeightKg: totalWeightKg.toFixed(3),
+    totalValueUsd: totalValueUsd.toFixed(2),
+  }).where(eq(deliveryBoxes.id, boxId));
+
+  appLogger.info("[DeliveryBox] Recomputed box items", {
+    boxId, boxCode: box.boxCode, added, updated, removed,
+    totalPackages, totalWeightKg, totalValueUsd,
+  });
+
+  return { added, updated, removed, totalPackages, totalWeightKg, totalValueUsd };
 }

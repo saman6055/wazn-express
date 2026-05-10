@@ -32,6 +32,7 @@ import {
   Hash,
   Weight,
   DollarSign,
+  RefreshCw,
 } from "lucide-react";
 import { printBoxLabel, printBoxReceipt, downloadBoxReceiptPDF, normalizeCommissionDescription } from "@/lib/deliveryBoxPrintUtils";
 
@@ -152,6 +153,27 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       onClose();
     },
     onError: (err) => toast.error(err.message),
+  });
+
+  // Recompute every package-linked item against current batch state. Used
+  // to pull in packages added to the batch after the box was created and
+  // to apply pricing/shared-tracking fixes that landed after the original
+  // box build (the historical "missing sibling orders" issue).
+  const recomputeItems = trpc.deliveryBox.recomputeItems.useMutation({
+    onSuccess: (data: any) => {
+      const parts: string[] = [];
+      if (data.added > 0) parts.push(`+${data.added}`);
+      if (data.updated > 0) parts.push(`✎${data.updated}`);
+      if (data.removed > 0) parts.push(`−${data.removed}`);
+      const summary = parts.length > 0 ? ` (${parts.join(" / ")})` : "";
+      toast.success(`${t("delivery.toastBoxRefreshed")}${summary}`);
+      soundManager.playSuccess();
+      refetchBox();
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      soundManager.playError();
+    },
   });
 
   // Auto-focus scan input
@@ -539,6 +561,28 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           )}
 
           <div className="flex-1" />
+
+          {(isOpen || isReady) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (window.confirm(t("delivery.confirmRefresh"))) {
+                  recomputeItems.mutate({ id: boxId });
+                }
+              }}
+              disabled={recomputeItems.isPending}
+              className="text-blue-700 hover:text-blue-800 hover:bg-blue-50 hover:border-blue-200"
+              title={t("delivery.refreshBoxTooltip")}
+            >
+              {recomputeItems.isPending ? (
+                <Loader2 className="h-4 w-4 me-1 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 me-1" />
+              )}
+              {t("delivery.refreshBox")}
+            </Button>
+          )}
 
           <Button variant="outline" size="sm" onClick={handlePrintLabel}>
             <Printer className="h-4 w-4 me-1" />

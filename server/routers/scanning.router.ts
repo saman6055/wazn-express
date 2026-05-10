@@ -1221,6 +1221,17 @@ export const deliveryBoxRouter = router({
     .mutation(async ({ input, ctx }) => {
       return db.createDeliveryBoxesForBatch(input.batchId, input.deliveryMethod, ctx.user.id);
     }),
+
+  // Recompute every package-linked item for an existing box. Use this when
+  // the batch has new packages added after the box was created, when batch
+  // rates have changed, or when shared-tracking siblings were linked after
+  // the original box build (the historical 1d11fa1 / "missing sibling
+  // orders" bug). Refuses to run on delivered/cancelled boxes.
+  recomputeItems: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      return db.recomputeBoxItems(input.id, ctx.user.id);
+    }),
 });
 
 export const scanningRouters = {
