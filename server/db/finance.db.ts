@@ -1084,6 +1084,96 @@ export async function reverseAdvancePayment(
 }
 
 /**
+ * Manually adjust a customer's balance by posting an ADJUSTMENT_DEBIT or
+ * ADJUSTMENT_CREDIT directly — without referencing a paymentRecord, an
+ * order, or a cashbox. Used to correct orphaned balances that arose
+ * before reversal/refund tooling existed (e.g. a payment was recorded by
+ * mistake and then its paymentRecord was hard-deleted, leaving the ledger
+ * out of sync). Should NOT be used in place of reverse/refund when a
+ * proper paymentRecord still exists — those flows preserve more audit
+ * context.
+ *
+ * `direction = 'debit'`  → balance INCREASES (use to undo a stray credit
+ *                          balance the customer doesn't actually own).
+ * `direction = 'credit'` → balance DECREASES (use to undo a stray debt
+ *                          the customer doesn't actually owe).
+ *
+ * Reason is required and stored verbatim on the transaction's description
+ * so it shows up in every report and ledger view. Audit log is the
+ * caller's responsibility.
+ */
+export async function adjustCustomerBalance(
+  customerId: number,
+  customerCode: string,
+  amountUsd: number,
+  direction: 'debit' | 'credit',
+  reason: string,
+  createdById: number,
+): Promise<{ transaction: LedgerTransaction; newBalanceUsd: number }> {
+  if (amountUsd <= 0) throw new Error("Amount must be greater than zero");
+  if (!reason || reason.trim().length < 5) {
+    throw new Error("Reason is required (minimum 5 characters)");
+  }
+
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.transaction(async (tx) => {
+    let accountRows = await tx.select().from(customerAccounts)
+      .where(eq(customerAccounts.customerId, customerId))
+      .for('update')
+      .limit(1);
+    let account = accountRows[0];
+    if (!account) {
+      const accountNumber = `ACC-${customerCode}-${new Date().getFullYear()}`;
+      await tx.insert(customerAccounts).values({
+        customerId,
+        accountNumber,
+        currentBalanceUsd: "0",
+        currentBalanceIqd: "0",
+      });
+      accountRows = await tx.select().from(customerAccounts)
+        .where(eq(customerAccounts.customerId, customerId))
+        .for('update')
+        .limit(1);
+      account = accountRows[0];
+      if (!account) throw new Error("Failed to create or lock customer account");
+    }
+
+    const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
+    const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
+    const delta = direction === 'debit' ? amountUsd : -amountUsd;
+    const newBalanceUsd = currentBalanceUsd + delta;
+    const transactionType = direction === 'debit' ? 'ADJUSTMENT_DEBIT' : 'ADJUSTMENT_CREDIT';
+
+    const txnResult = await tx.insert(ledgerTransactions).values({
+      accountId: account.id,
+      transactionNumber: generateTransactionNumber(),
+      transactionType,
+      amountUsd: amountUsd.toFixed(2),
+      amountIqd: '0',
+      balanceBeforeUsd: currentBalanceUsd.toFixed(2),
+      balanceAfterUsd: newBalanceUsd.toFixed(2),
+      balanceBeforeIqd: currentBalanceIqd.toFixed(0),
+      balanceAfterIqd: currentBalanceIqd.toFixed(0),
+      referenceType: 'adjustment',
+      description: `[ڕێکخستنی دەستی] ${reason.trim()}`,
+      createdById,
+    });
+    const txnInsertId = Number(txnResult[0].insertId);
+    const [transaction] = await tx.select().from(ledgerTransactions).where(eq(ledgerTransactions.id, txnInsertId));
+    if (!transaction) throw new Error("Failed to read back adjustment transaction");
+
+    await tx.update(customerAccounts).set({
+      currentBalanceUsd: newBalanceUsd.toFixed(2),
+      lastTransactionAt: new Date(),
+    }).where(eq(customerAccounts.id, account.id));
+
+    return { transaction, newBalanceUsd };
+  });
+}
+
+/**
  * Refund a previously-recorded customer payment by issuing real cash back
  * out of one of our cashbox accounts. Distinct from `reverseAdvancePayment`:
  *

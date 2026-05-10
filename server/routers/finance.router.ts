@@ -319,6 +319,60 @@ export const ledgerRouter = router({
         return result;
       }),
 
+    /**
+     * Manual balance adjustment — posts an ADJUSTMENT_DEBIT or
+     * ADJUSTMENT_CREDIT directly without reference to any payment, order,
+     * or cashbox. Use ONLY when a balance is orphaned (e.g. payment record
+     * was hard-deleted before we had reversal tooling) and the standard
+     * reverse / refund flow can't be applied. Reason is mandatory and
+     * stored on the ledger transaction so the correction is traceable.
+     *
+     * Restricted to accountantProcedure for the same reason as reverse /
+     * refund: it directly mutates the customer's balance.
+     */
+    adjustBalance: accountantProcedure
+      .input(z.object({
+        customerId: idSchema,
+        direction: z.enum(['debit', 'credit']),
+        amountUsd: amountSchema,
+        reason: z.string().min(5).max(500),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (input.amountUsd <= 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "بڕی ڕێکخستن پێویستە لە سفر زیاتر بێت" });
+        }
+        const customer = await db.getCustomerById(input.customerId);
+        if (!customer) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "کریار نەدۆزرایەوە" });
+        }
+
+        const result = await db.adjustCustomerBalance(
+          input.customerId,
+          customer.customerCode || `C${input.customerId}`,
+          input.amountUsd,
+          input.direction,
+          input.reason,
+          ctx.user.id,
+        );
+
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "adjust_balance",
+          entityType: "customer_account",
+          entityId: input.customerId,
+          newValues: {
+            direction: input.direction,
+            amountUsd: input.amountUsd,
+            reason: input.reason,
+            adjustmentTransactionId: result.transaction.id,
+            newBalanceUsd: result.newBalanceUsd,
+          },
+        });
+
+        return result;
+      }),
+
     // Record package charge (manual)
     recordCharge: staffProcedure
       .input(z.object({

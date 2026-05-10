@@ -120,6 +120,15 @@ export default function CustomerFinance() {
   const [reverseAmount, setReverseAmount] = useState<string>("");
   const [reverseReason, setReverseReason] = useState<string>("");
   const [reverseCashAccountId, setReverseCashAccountId] = useState<string>("");
+
+  // Manual balance adjustment — for orphaned balances where the payment
+  // record no longer exists (so reverse/refund can't be used). Adjustment
+  // posts an ADJUSTMENT_DEBIT or ADJUSTMENT_CREDIT directly to the ledger
+  // with a mandatory reason.
+  const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
+  const [adjustDirection, setAdjustDirection] = useState<'debit' | 'credit'>('debit');
+  const [adjustAmount, setAdjustAmount] = useState<string>("");
+  const [adjustReason, setAdjustReason] = useState<string>("");
   
   const utils = trpc.useUtils();
   
@@ -183,6 +192,21 @@ export default function CustomerFinance() {
     onSuccess: () => {
       toast.success("Refund بە سەرکەوتوویی جێبەجێکرا");
       refreshAfterReversal();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    }
+  });
+
+  const adjustBalance = trpc.ledger.adjustBalance.useMutation({
+    onSuccess: () => {
+      toast.success("بالانس بە سەرکەوتوویی ڕاستکرایەوە");
+      setAdjustDialogOpen(false);
+      setAdjustAmount("");
+      setAdjustReason("");
+      utils.ledger.getAccountByCustomer.invalidate({ customerId });
+      utils.ledger.getTransactions.invalidate();
+      utils.ledger.getAccountBreakdown.invalidate();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -253,6 +277,50 @@ export default function CustomerFinance() {
     const original = parseFloat(reverseTargetPayment.amountUsd || '0') || 0;
     const reversed = parseFloat(reverseTargetPayment.reversedAmountUsd || '0') || 0;
     return Math.max(0, original - reversed);
+  })();
+
+  // Quick action: pre-fill the adjustment form with whatever amount &
+  // direction would bring the current balance to exactly zero. Common case
+  // for orphaned negative balances (we owe customer but no payment record
+  // exists to refund against) and orphaned positive balances (customer
+  // owes us but the underlying charge is gone).
+  const openAdjustDialogToZero = () => {
+    const balance = parseFloat(account?.currentBalanceUsd || '0') || 0;
+    if (balance === 0) {
+      toast.info("بالانس پێشتر سفرە");
+      return;
+    }
+    // balance > 0 → customer owes us → CREDIT decreases balance to 0
+    // balance < 0 → we owe customer → DEBIT increases balance to 0
+    setAdjustDirection(balance > 0 ? 'credit' : 'debit');
+    setAdjustAmount(Math.abs(balance).toFixed(2));
+    setAdjustReason("");
+    setAdjustDialogOpen(true);
+  };
+
+  const handleSubmitAdjust = () => {
+    if (!customer) return;
+    if (!adjustReason || adjustReason.trim().length < 5) {
+      toast.error("هۆکار پێویستە لانیکەم ٥ پیت بێت");
+      return;
+    }
+    const amount = parseFloat(adjustAmount) || 0;
+    if (amount <= 0) {
+      toast.error("بڕ پێویستە لە سفر زیاتر بێت");
+      return;
+    }
+    adjustBalance.mutate({
+      customerId: customer.id,
+      direction: adjustDirection,
+      amountUsd: amount,
+      reason: adjustReason.trim(),
+    });
+  };
+
+  const adjustPreviewBalance = (() => {
+    const current = parseFloat(account?.currentBalanceUsd || '0') || 0;
+    const amount = parseFloat(adjustAmount) || 0;
+    return adjustDirection === 'debit' ? current + amount : current - amount;
   })();
 
   const handleSubmitReverse = () => {
@@ -1187,6 +1255,19 @@ export default function CustomerFinance() {
               
               {/* Action Buttons */}
               <div className="flex items-center gap-2">
+                {/* Manual Balance Adjustment: for orphaned balances where
+                    the payment record was hard-deleted before reversal
+                    tooling existed. Posts an ADJUSTMENT_DEBIT/CREDIT
+                    directly to the ledger with a mandatory reason. The
+                    "هێنانە سفر" quick-mode pre-fills the form with the
+                    exact amount + direction needed to zero the balance. */}
+                <Button
+                  className="bg-white text-purple-700 hover:bg-purple-50 rounded-xl shadow-lg"
+                  onClick={openAdjustDialogToZero}
+                >
+                  <Activity className="w-4 h-4 me-2" />
+                  ڕاستکردنەوەی بالانس
+                </Button>
                 {/* Refund: top-level entry point. Opens the same modal as
                     the per-row reverse button but starts at the picker
                     step so staff can search/choose any reversible payment
@@ -2029,6 +2110,160 @@ export default function CustomerFinance() {
         )}
       </div>
       
+      {/* Manual Balance Adjustment Dialog
+          Last-resort tool for orphaned balances where the payment record
+          was hard-deleted before the reverse/refund flow existed. Posts
+          an ADJUSTMENT_DEBIT/CREDIT directly to the ledger with a
+          mandatory reason. The header button pre-fills the form with the
+          exact amount + direction needed to zero the balance, but staff
+          can edit either field for partial corrections. */}
+      <Dialog open={adjustDialogOpen} onOpenChange={(open) => {
+        setAdjustDialogOpen(open);
+        if (!open) {
+          setAdjustAmount("");
+          setAdjustReason("");
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-purple-600" />
+              ڕاستکردنەوەی بالانس بە دەستی
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            {/* Warning banner — this tool is for emergencies only */}
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold mb-1">ئاگاداربە:</p>
+                <p>ئەم ئامرازە تەنها بۆ دۆخە تایبەتییەکانە (بۆ نمونە: تۆماری پارەدان لابراوە بەڵام بالانس ماوە). ئەگەر paymentRecord هەنووکە هەیە، بەکارهێنانی «ریفاوند» باشترە — context ـی زیاتر دەپارێزێت.</p>
+              </div>
+            </div>
+
+            {/* Balance preview: current → new */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-3 rounded-lg bg-muted/40 border text-center">
+                <div className="text-[10px] text-muted-foreground uppercase">بالانسی ئێستا</div>
+                <div className={cn(
+                  "font-mono font-bold text-lg mt-1",
+                  parseFloat(account?.currentBalanceUsd || '0') > 0 ? "text-red-600"
+                    : parseFloat(account?.currentBalanceUsd || '0') < 0 ? "text-emerald-600"
+                    : "text-muted-foreground"
+                )}>
+                  ${parseFloat(account?.currentBalanceUsd || '0').toFixed(2)}
+                </div>
+              </div>
+              <div className="p-3 rounded-lg bg-purple-50 border-2 border-purple-200 text-center">
+                <div className="text-[10px] text-purple-700 uppercase">بالانس دوای ڕاستکردنەوە</div>
+                <div className={cn(
+                  "font-mono font-bold text-lg mt-1",
+                  adjustPreviewBalance > 0 ? "text-red-600"
+                    : adjustPreviewBalance < 0 ? "text-emerald-600"
+                    : "text-purple-700"
+                )}>
+                  ${adjustPreviewBalance.toFixed(2)}
+                </div>
+              </div>
+            </div>
+
+            {/* Direction selector */}
+            <div>
+              <Label className="text-sm">ئاراستە</Label>
+              <div className="grid grid-cols-2 gap-2 mt-1.5">
+                <button
+                  type="button"
+                  onClick={() => setAdjustDirection('debit')}
+                  className={cn(
+                    "p-3 rounded-lg border-2 text-sm transition-all text-right",
+                    adjustDirection === 'debit'
+                      ? "border-red-500 bg-red-50 shadow"
+                      : "border-muted hover:border-red-300"
+                  )}
+                >
+                  <div className="font-bold flex items-center gap-1">
+                    <TrendingUp className="w-4 h-4 text-red-600" />
+                    DEBIT (+)
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    بالانس بەرز دەکاتەوە (سڕینەوەی credit)
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdjustDirection('credit')}
+                  className={cn(
+                    "p-3 rounded-lg border-2 text-sm transition-all text-right",
+                    adjustDirection === 'credit'
+                      ? "border-emerald-500 bg-emerald-50 shadow"
+                      : "border-muted hover:border-emerald-300"
+                  )}
+                >
+                  <div className="font-bold flex items-center gap-1">
+                    <TrendingDown className="w-4 h-4 text-emerald-600" />
+                    CREDIT (−)
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    بالانس کەم دەکاتەوە (سڕینەوەی قەرز)
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Amount */}
+            <div>
+              <Label className="text-sm">بڕ (USD)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={adjustAmount}
+                onChange={(e) => setAdjustAmount(e.target.value)}
+                placeholder="0.00"
+                className="mt-1 font-mono"
+              />
+            </div>
+
+            {/* Reason — required */}
+            <div>
+              <Label className="text-sm">
+                هۆکار <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                value={adjustReason}
+                onChange={(e) => setAdjustReason(e.target.value)}
+                placeholder="بۆ نمونە: تۆماری پارەدانێکی هەڵە لاسرابوو بەڵام بالانس مابوو..."
+                rows={3}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                لانیکەم ٥ پیت. لە audit log و سەر ledger دەنوسرێت.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setAdjustDialogOpen(false)}
+                disabled={adjustBalance.isPending}
+              >
+                پاشگەزبوونەوە
+              </Button>
+              <Button
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                onClick={handleSubmitAdjust}
+                disabled={adjustBalance.isPending}
+              >
+                {adjustBalance.isPending
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : "ڕاستکردنەوە"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Reverse / Refund Payment Dialog
           Two modes share one form:
             - 'mistake' calls trpc.ledger.reversePayment — ledger-only undo,
