@@ -182,11 +182,16 @@ export default function CommissionDashboard() {
                        (parseFloat(b.itemPriceUsd || "0") * (b.quantity || 1));
           break;
         case "commission":
-          comparison = (parseFloat(a.commissionFeeUsd || "0") * (a.quantity || 1)) - (parseFloat(b.commissionFeeUsd || "0") * (b.quantity || 1));
+          // Commission is a flat per-order fee — order creation
+          // (fullPackage.router.ts createCommissionOrder) and the box
+          // builder (deliveryBoxes.db.ts buildBoxItemValuesFromPackage)
+          // both treat it that way. Multiplying by qty inflates the
+          // sort key and produces wrong order on multi-qty rows.
+          comparison = parseFloat(a.commissionFeeUsd || "0") - parseFloat(b.commissionFeeUsd || "0");
           break;
         case "total":
-          const totalA = (parseFloat(a.itemPriceUsd || "0") * (a.quantity || 1)) + (parseFloat(a.commissionFeeUsd || "0") * (a.quantity || 1));
-          const totalB = (parseFloat(b.itemPriceUsd || "0") * (b.quantity || 1)) + (parseFloat(b.commissionFeeUsd || "0") * (b.quantity || 1));
+          const totalA = (parseFloat(a.itemPriceUsd || "0") * (a.quantity || 1)) + parseFloat(a.commissionFeeUsd || "0");
+          const totalB = (parseFloat(b.itemPriceUsd || "0") * (b.quantity || 1)) + parseFloat(b.commissionFeeUsd || "0");
           comparison = totalA - totalB;
           break;
         case "customer":
@@ -209,8 +214,15 @@ export default function CommissionDashboard() {
     return sum + (parseFloat(o.itemPriceUsd || "0") * (o.quantity || 1));
   }, 0);
   
+  // Commission fee is a flat per-order amount (see commission order creation
+  // at fullPackage.router.ts:1451 and the box builder at
+  // deliveryBoxes.db.ts buildBoxItemValuesFromPackage — both add it once,
+  // not once-per-unit). Multiplying by qty here inflated the dashboard
+  // total against what the customer was actually charged, which is what
+  // the box receipt shows. Sum without the qty multiplier so reports,
+  // exports, and on-screen stats agree with the box and the ledger.
   const totalCommission = filteredOrders.reduce((sum, o) => {
-    return sum + (parseFloat(o.commissionFeeUsd || "0") * (o.quantity || 1));
+    return sum + parseFloat(o.commissionFeeUsd || "0");
   }, 0);
   
   const totalCost = totalItemValue + totalCommission;
@@ -252,8 +264,10 @@ export default function CommissionDashboard() {
       [t("commission.quantity")]: order.quantity,
       [t("commission.batchLabel")]: (order as any).batch?.batchCode || t("commission.noBatch"),
       [t("commission.itemPrice") + " ($)"]: (parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2),
-      [t("commission.commissionAmount") + " ($)"]: (parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2),
-      [t("commission.grandTotal") + " ($)"]: ((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + (parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1))).toFixed(2),
+      // Commission is flat per-order — do NOT multiply by quantity, that
+      // diverges from what the customer is actually charged at delivery.
+      [t("commission.commissionAmount") + " ($)"]: parseFloat(order.commissionFeeUsd || "0").toFixed(2),
+      [t("commission.grandTotal") + " ($)"]: ((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + parseFloat(order.commissionFeeUsd || "0")).toFixed(2),
       [t("commission.tracking")]: order.trackingNumber || "",
       [t("commission.statusColumn")]: statusLabels[order.status] || order.status,
       [t("commission.dateColumn")]: new Date(order.createdAt).toLocaleDateString("ku"),
@@ -369,8 +383,8 @@ export default function CommissionDashboard() {
                 <td>${order.productName}</td>
                 <td>${order.quantity}</td>
                 <td>$${(parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
-                <td>$${(parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
-                <td>$${((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + (parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1))).toFixed(2)}</td>
+                <td>$${parseFloat(order.commissionFeeUsd || "0").toFixed(2)}</td>
+                <td>$${((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + parseFloat(order.commissionFeeUsd || "0")).toFixed(2)}</td>
                 <td>${statusLabels[order.status] || order.status}</td>
                 <td>${new Date(order.createdAt).toLocaleDateString("ku")}</td>
               </tr>
@@ -882,7 +896,7 @@ export default function CommissionDashboard() {
                           ${(parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2)}
                         </TableCell>
                         <TableCell className="font-mono text-amber-600">
-                          ${(parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2)}
+                          ${parseFloat(order.commissionFeeUsd || "0").toFixed(2)}
                         </TableCell>
                         <TableCell>
                           {order.trackingNumber ? (
