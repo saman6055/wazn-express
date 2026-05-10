@@ -81,6 +81,9 @@ import {
   Check,
   Landmark,
   Layers,
+  RotateCcw,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { toast } from "sonner";
@@ -107,6 +110,16 @@ export default function CustomerFinance() {
   // Keyed by invoiceId; absent = collapsed (default). Standalone rows
   // (invoiceId == null) are never grouped, so they ignore this set.
   const [expandedInvoices, setExpandedInvoices] = useState<Set<number>>(new Set());
+
+  // Reverse / Refund modal state — opened from a row's action button on the
+  // payments tab. `mode` decides which tRPC endpoint runs; `mistake` only
+  // touches the customer ledger, `refund` also deducts a chosen cashbox.
+  const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
+  const [reverseTargetPayment, setReverseTargetPayment] = useState<any>(null);
+  const [reverseMode, setReverseMode] = useState<'mistake' | 'refund'>('mistake');
+  const [reverseAmount, setReverseAmount] = useState<string>("");
+  const [reverseReason, setReverseReason] = useState<string>("");
+  const [reverseCashAccountId, setReverseCashAccountId] = useState<string>("");
   
   const utils = trpc.useUtils();
   
@@ -141,6 +154,41 @@ export default function CustomerFinance() {
     }
   });
   
+  // Re-used by both reverse + refund mutations to refresh every dependent
+  // view (balance, transactions, payments, breakdown) and close the modal.
+  const refreshAfterReversal = () => {
+    utils.ledger.getAccountByCustomer.invalidate({ customerId });
+    utils.ledger.getTransactions.invalidate();
+    utils.ledger.getPayments.invalidate();
+    utils.ledger.getAccountBreakdown.invalidate();
+    utils.invoices.getByCustomer.invalidate();
+    setReverseDialogOpen(false);
+    setReverseTargetPayment(null);
+    setReverseAmount("");
+    setReverseReason("");
+    setReverseCashAccountId("");
+  };
+
+  const reversePayment = trpc.ledger.reversePayment.useMutation({
+    onSuccess: () => {
+      toast.success("پارەدان بە سەرکەوتوویی گەڕێنرایەوە");
+      refreshAfterReversal();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    }
+  });
+
+  const refundPayment = trpc.ledger.refundPayment.useMutation({
+    onSuccess: () => {
+      toast.success("Refund بە سەرکەوتوویی جێبەجێکرا");
+      refreshAfterReversal();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    }
+  });
+
   const recordPayment = trpc.ledger.recordPayment.useMutation({
     onSuccess: () => {
       toast.success(t("finance.paymentRecorded"));
@@ -172,7 +220,7 @@ export default function CustomerFinance() {
   
   const handleRecordPayment = () => {
     if (!customer || !paymentMethod) return;
-    
+
     recordPayment.mutate({
       customerId: customer.id,
       customerCode: customer.customerCode || `C${customer.id}`,
@@ -183,6 +231,63 @@ export default function CustomerFinance() {
       receiptNumber: receiptNumber || undefined,
       cashAccountId: paymentCashAccountId && paymentCashAccountId !== 'none' ? parseInt(paymentCashAccountId) : undefined,
     });
+  };
+
+  // Open the reverse / refund modal pre-filled with the target payment's
+  // remaining amount. `reversedAmountUsd` may be > 0 if a previous partial
+  // reversal happened, so we offer only the remaining portion as default.
+  const openReverseDialog = (payment: any) => {
+    const original = parseFloat(payment.amountUsd || '0') || 0;
+    const reversed = parseFloat(payment.reversedAmountUsd || '0') || 0;
+    const remaining = Math.max(0, original - reversed);
+    setReverseTargetPayment(payment);
+    setReverseMode('mistake');
+    setReverseAmount(remaining.toFixed(2));
+    setReverseReason("");
+    setReverseCashAccountId("");
+    setReverseDialogOpen(true);
+  };
+
+  const reverseRemainingUsd = (() => {
+    if (!reverseTargetPayment) return 0;
+    const original = parseFloat(reverseTargetPayment.amountUsd || '0') || 0;
+    const reversed = parseFloat(reverseTargetPayment.reversedAmountUsd || '0') || 0;
+    return Math.max(0, original - reversed);
+  })();
+
+  const handleSubmitReverse = () => {
+    if (!reverseTargetPayment) return;
+    if (!reverseReason || reverseReason.trim().length < 5) {
+      toast.error("هۆکار پێویستە لانیکەم ٥ پیت بێت");
+      return;
+    }
+    const amount = parseFloat(reverseAmount) || 0;
+    if (amount <= 0) {
+      toast.error("بڕی گەڕاندنەوە پێویستە لە سفر زیاتر بێت");
+      return;
+    }
+    if (amount > reverseRemainingUsd + 0.005) {
+      toast.error(`بڕی داواکراو ($${amount.toFixed(2)}) لە ماوە ($${reverseRemainingUsd.toFixed(2)}) زیاترە`);
+      return;
+    }
+    if (reverseMode === 'mistake') {
+      reversePayment.mutate({
+        paymentId: reverseTargetPayment.id,
+        amountUsd: amount,
+        reason: reverseReason.trim(),
+      });
+    } else {
+      if (!reverseCashAccountId || reverseCashAccountId === 'none') {
+        toast.error("تکایە حسابێکی نقدی هەڵبژێرە بۆ Refund");
+        return;
+      }
+      refundPayment.mutate({
+        paymentId: reverseTargetPayment.id,
+        amountUsd: amount,
+        cashAccountId: parseInt(reverseCashAccountId, 10),
+        reason: reverseReason.trim(),
+      });
+    }
   };
   
   const formatCurrency = (amount: string | number, currency: string = "USD") => {
@@ -1811,37 +1916,88 @@ export default function CustomerFinance() {
                                 <TableHead className="text-right font-semibold">ژمارە</TableHead>
                                 <TableHead className="text-right font-semibold">شێواز</TableHead>
                                 <TableHead className="text-right font-semibold">بڕی USD</TableHead>
+                                <TableHead className="text-right font-semibold">دۆخ</TableHead>
                                 <TableHead className="text-right font-semibold">ژمارەی پسوڵە</TableHead>
                                 <TableHead className="text-right font-semibold">تێبینی</TableHead>
                                 <TableHead className="text-right font-semibold">بەروار</TableHead>
+                                <TableHead className="text-right font-semibold">کردارەکان</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {payments.map((payment) => (
-                                <TableRow key={payment.id} className="hover:bg-muted/30">
-                                  <TableCell className="font-mono text-sm text-muted-foreground">
-                                    {payment.paymentNumber}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                                      {getPaymentMethodLabel(payment.paymentMethod)}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="font-semibold text-emerald-600">
-                                    ${parseFloat(payment.amountUsd || '0').toFixed(2)}
-                                  </TableCell>
-
-                                  <TableCell className="font-mono text-sm">
-                                    {payment.receiptNumber || '-'}
-                                  </TableCell>
-                                  <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">
-                                    {payment.notes || '-'}
-                                  </TableCell>
-                                  <TableCell className="text-muted-foreground text-sm">
-                                    {new Date(payment.createdAt).toLocaleDateString('ku-IQ')}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
+                              {payments.map((payment: any) => {
+                                const original = parseFloat(payment.amountUsd || '0') || 0;
+                                const reversed = parseFloat(payment.reversedAmountUsd || '0') || 0;
+                                const remaining = Math.max(0, original - reversed);
+                                const isFullyReversed = remaining <= 0.005 && reversed > 0;
+                                const isPartiallyReversed = reversed > 0 && !isFullyReversed;
+                                return (
+                                  <TableRow
+                                    key={payment.id}
+                                    className={cn(
+                                      "hover:bg-muted/30",
+                                      isFullyReversed && "opacity-60",
+                                    )}
+                                  >
+                                    <TableCell className="font-mono text-sm text-muted-foreground">
+                                      {payment.paymentNumber}
+                                    </TableCell>
+                                    <TableCell>
+                                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                                        {getPaymentMethodLabel(payment.paymentMethod)}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell className={cn(
+                                      "font-semibold",
+                                      isFullyReversed ? "text-muted-foreground line-through" : "text-emerald-600"
+                                    )}>
+                                      ${original.toFixed(2)}
+                                      {isPartiallyReversed && (
+                                        <span className="block text-xs text-amber-700 font-normal">
+                                          (ماوە: ${remaining.toFixed(2)})
+                                        </span>
+                                      )}
+                                    </TableCell>
+                                    <TableCell>
+                                      {isFullyReversed ? (
+                                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
+                                          <RotateCcw className="w-3 h-3" /> گەڕێنراوەتەوە
+                                        </Badge>
+                                      ) : isPartiallyReversed ? (
+                                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1">
+                                          <RotateCcw className="w-3 h-3" /> بە بەشێ
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1">
+                                          <CheckCircle className="w-3 h-3" /> چالاک
+                                        </Badge>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="font-mono text-sm">
+                                      {payment.receiptNumber || '-'}
+                                    </TableCell>
+                                    <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">
+                                      {payment.notes || '-'}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground text-sm">
+                                      {new Date(payment.createdAt).toLocaleDateString('ku-IQ')}
+                                    </TableCell>
+                                    <TableCell>
+                                      {!isFullyReversed && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 px-3 rounded-lg hover:bg-amber-100 hover:text-amber-700 gap-1"
+                                          onClick={() => openReverseDialog(payment)}
+                                          title="گەڕاندنەوە یاخود Refund"
+                                        >
+                                          <RotateCcw className="w-4 h-4" />
+                                          <span className="text-xs">گەڕاندنەوە</span>
+                                        </Button>
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
                             </TableBody>
                           </Table>
                         </div>
@@ -1855,6 +2011,203 @@ export default function CustomerFinance() {
         )}
       </div>
       
+      {/* Reverse / Refund Payment Dialog
+          Two modes share one form:
+            - 'mistake' calls trpc.ledger.reversePayment — ledger-only undo,
+              cashbox is NOT touched (because no cash physically moved).
+            - 'refund'  calls trpc.ledger.refundPayment   — same ledger
+              undo PLUS deducts the chosen cashbox (real cash going back).
+          The amount input lets staff do partial reversals; the badge on
+          the payments row shows partial state on subsequent visits. */}
+      <Dialog open={reverseDialogOpen} onOpenChange={(open) => {
+        setReverseDialogOpen(open);
+        if (!open) {
+          setReverseTargetPayment(null);
+          setReverseAmount("");
+          setReverseReason("");
+          setReverseCashAccountId("");
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="w-5 h-5 text-amber-600" />
+              گەڕاندنەوەی پارەدان
+            </DialogTitle>
+          </DialogHeader>
+          {reverseTargetPayment && (
+            <div className="space-y-4 mt-2">
+              {/* Payment summary */}
+              <div className="p-3 rounded-lg bg-muted/40 border text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">ژمارە:</span>
+                  <span className="font-mono">{reverseTargetPayment.paymentNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">بڕی پارەدان:</span>
+                  <span className="font-bold">${parseFloat(reverseTargetPayment.amountUsd || '0').toFixed(2)}</span>
+                </div>
+                {parseFloat(reverseTargetPayment.reversedAmountUsd || '0') > 0 && (
+                  <div className="flex justify-between text-amber-700">
+                    <span>پێشتر گەڕێنراوەتەوە:</span>
+                    <span className="font-bold">${parseFloat(reverseTargetPayment.reversedAmountUsd || '0').toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t pt-1 mt-1">
+                  <span className="text-muted-foreground">ماوە بۆ گەڕاندنەوە:</span>
+                  <span className="font-bold text-emerald-700">${reverseRemainingUsd.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Mode selector */}
+              <div>
+                <Label className="text-sm">جۆری گەڕاندنەوە</Label>
+                <div className="grid grid-cols-2 gap-2 mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setReverseMode('mistake')}
+                    className={cn(
+                      "p-3 rounded-lg border-2 text-sm transition-all text-right",
+                      reverseMode === 'mistake'
+                        ? "border-amber-500 bg-amber-50 shadow"
+                        : "border-muted hover:border-amber-300"
+                    )}
+                  >
+                    <div className="font-bold flex items-center gap-1">
+                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      هەڵە
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      پارە بە هەڵە تۆمارکراوە. کاش وەرنەگیراوە.
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReverseMode('refund')}
+                    className={cn(
+                      "p-3 rounded-lg border-2 text-sm transition-all text-right",
+                      reverseMode === 'refund'
+                        ? "border-red-500 bg-red-50 shadow"
+                        : "border-muted hover:border-red-300"
+                    )}
+                  >
+                    <div className="font-bold flex items-center gap-1">
+                      <Banknote className="w-4 h-4 text-red-600" />
+                      Refund
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      پارە بە کریار دەگەڕێتەوە. لە کاش کەم دەبیت.
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Amount input */}
+              <div>
+                <Label className="text-sm">بڕ (USD)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max={reverseRemainingUsd}
+                  value={reverseAmount}
+                  onChange={(e) => setReverseAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="mt-1 font-mono"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  هەرە زۆر: ${reverseRemainingUsd.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Cash account selector — only for refund */}
+              {reverseMode === 'refund' && (
+                <div>
+                  <Label className="text-sm">حسابی نقدی (کاش لێی دەردەچێت)</Label>
+                  <Popover modal={true}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" className="mt-1 w-full justify-between font-normal">
+                        {reverseCashAccountId && reverseCashAccountId !== 'none'
+                          ? (() => {
+                              const acc = activeCashAccounts?.find(a => a.id.toString() === reverseCashAccountId);
+                              return acc ? `${acc.accountNameKu || acc.accountName} ($${Number(acc.currentBalance).toLocaleString()})` : "حسابێک هەڵبژێرە";
+                            })()
+                          : "حسابێک هەڵبژێرە"}
+                        <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
+                      <Command>
+                        <CommandList>
+                          <CommandGroup>
+                            {activeCashAccounts?.map((acc) => (
+                              <CommandItem
+                                key={acc.id}
+                                onSelect={() => setReverseCashAccountId(acc.id.toString())}
+                                className="cursor-pointer"
+                              >
+                                <Check className={`me-2 h-4 w-4 ${reverseCashAccountId === acc.id.toString() ? 'opacity-100' : 'opacity-0'}`} />
+                                <div className="flex items-center gap-2">
+                                  <Landmark className="h-4 w-4 text-muted-foreground" />
+                                  <span>{acc.accountNameKu || acc.accountName}</span>
+                                  <Badge variant="secondary" className="text-xs">${Number(acc.currentBalance).toLocaleString()}</Badge>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+
+              {/* Reason — required */}
+              <div>
+                <Label className="text-sm">
+                  هۆکار <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  value={reverseReason}
+                  onChange={(e) => setReverseReason(e.target.value)}
+                  placeholder="بۆ نمونە: تایپی هەڵە، کریاری هەڵە، کریار داوای پارەکەی کردووە..."
+                  rows={3}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  لانیکەم ٥ پیت. ئەم هۆکارە لە audit log و بەسەر invoice دەنوسرێت.
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setReverseDialogOpen(false)}
+                  disabled={reversePayment.isPending || refundPayment.isPending}
+                >
+                  پاشگەزبوونەوە
+                </Button>
+                <Button
+                  className={cn(
+                    "flex-1",
+                    reverseMode === 'mistake'
+                      ? "bg-amber-600 hover:bg-amber-700"
+                      : "bg-red-600 hover:bg-red-700"
+                  )}
+                  onClick={handleSubmitReverse}
+                  disabled={reversePayment.isPending || refundPayment.isPending}
+                >
+                  {(reversePayment.isPending || refundPayment.isPending)
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : reverseMode === 'mistake' ? "گەڕاندنەوە" : "Refund"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Transaction Details Dialog */}
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
         <DialogContent className="max-w-lg">

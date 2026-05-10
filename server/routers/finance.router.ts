@@ -157,6 +157,168 @@ export const ledgerRouter = router({
         return result;
       }),
     
+    /**
+     * Reverse a previously-recorded customer payment because it was
+     * entered by mistake (typo / wrong customer / wrong amount). NO
+     * cash physically leaves the cashbox — only the ledger is corrected.
+     *
+     * Restricted to accountantProcedure: this is a financially sensitive
+     * operation that staff-tier users must not perform.
+     */
+    reversePayment: accountantProcedure
+      .input(z.object({
+        paymentId: idSchema,
+        amountUsd: amountSchema.optional(), // omit ⇒ reverse the full remaining
+        reason: z.string().min(5).max(500),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const payment = await db.getPaymentRecordById(input.paymentId);
+        if (!payment) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "پارەدان نەدۆزرایەوە" });
+        }
+        if (payment.transactionId == null) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "ئەم پارەدانە لینکی ledger transaction-ـی نییە، ناتوانرێت بگەڕێنرێتەوە",
+          });
+        }
+        const original = parseFloat(payment.amountUsd || '0');
+        const alreadyReversed = parseFloat(payment.reversedAmountUsd || '0');
+        const remaining = original - alreadyReversed;
+        if (remaining <= 0.005) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم پارەدانە پێشتر گەڕێنراوەتەوە" });
+        }
+        const requested = input.amountUsd ?? remaining;
+        if (requested > remaining + 0.005) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `بڕی داواکراو ($${requested.toFixed(2)}) لە ماوە ($${remaining.toFixed(2)}) زیاترە`,
+          });
+        }
+
+        const account = await db.getCustomerAccountById(payment.accountId);
+        if (!account) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "حسابی کڕیار نەدۆزرایەوە" });
+        }
+        const customer = await db.getCustomerById(account.customerId);
+        if (!customer) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+        }
+
+        const result = await db.reverseAdvancePayment(
+          account.customerId,
+          customer.customerCode || `C${account.customerId}`,
+          requested,
+          `[هەڵە] ${input.reason}`,
+          ctx.user.id,
+          payment.transactionId,
+        );
+
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "reverse_payment",
+          entityType: "payment",
+          entityId: input.paymentId,
+          newValues: {
+            reversedAmountUsd: requested,
+            reason: input.reason,
+            reversalTransactionId: result.transaction.id,
+          },
+        });
+
+        return result;
+      }),
+
+    /**
+     * Refund a customer's prior payment by handing real cash back from
+     * one of our cashboxes. Updates BOTH the customer ledger (mirror of
+     * reversePayment) AND the chosen cashbox (withdrawal).
+     *
+     * Restricted to accountantProcedure for the same reason as reverse.
+     */
+    refundPayment: accountantProcedure
+      .input(z.object({
+        paymentId: idSchema,
+        amountUsd: amountSchema, // explicit — refund must always state the amount
+        cashAccountId: idSchema,
+        reason: z.string().min(5).max(500),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (input.amountUsd <= 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "بڕی Refund پێویستە لە سفر زیاتر بێت" });
+        }
+        const payment = await db.getPaymentRecordById(input.paymentId);
+        if (!payment) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "پارەدان نەدۆزرایەوە" });
+        }
+        if (payment.transactionId == null) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "ئەم پارەدانە لینکی ledger transaction-ـی نییە، ناتوانرێت refund بکرێت",
+          });
+        }
+        const original = parseFloat(payment.amountUsd || '0');
+        const alreadyReversed = parseFloat(payment.reversedAmountUsd || '0');
+        const remaining = original - alreadyReversed;
+        if (remaining <= 0.005) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم پارەدانە پێشتر گەڕێنراوەتەوە" });
+        }
+        if (input.amountUsd > remaining + 0.005) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `بڕی داواکراو ($${input.amountUsd.toFixed(2)}) لە ماوە ($${remaining.toFixed(2)}) زیاترە`,
+          });
+        }
+
+        const account = await db.getCustomerAccountById(payment.accountId);
+        if (!account) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "حسابی کڕیار نەدۆزرایەوە" });
+        }
+        const customer = await db.getCustomerById(account.customerId);
+        if (!customer) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+        }
+
+        let result;
+        try {
+          result = await db.refundPaymentToCustomer(
+            account.customerId,
+            customer.customerCode || `C${account.customerId}`,
+            input.amountUsd,
+            input.reason,
+            input.cashAccountId,
+            ctx.user.id,
+            payment.transactionId,
+          );
+        } catch (e) {
+          // Insufficient-funds and missing-account errors are user-fixable —
+          // surface them as BAD_REQUEST instead of an opaque 500.
+          const msg = e instanceof Error ? e.message : String(e);
+          if (msg.includes('insufficient') || msg.includes('not found')) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: msg });
+          }
+          throw e;
+        }
+
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "refund_payment",
+          entityType: "payment",
+          entityId: input.paymentId,
+          newValues: {
+            refundedAmountUsd: input.amountUsd,
+            cashAccountId: input.cashAccountId,
+            reason: input.reason,
+            reversalTransactionId: result.transaction.id,
+            cashTransactionId: result.cashTransactionId,
+          },
+        });
+
+        return result;
+      }),
+
     // Record package charge (manual)
     recordCharge: staffProcedure
       .input(z.object({

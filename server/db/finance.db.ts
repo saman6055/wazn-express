@@ -231,6 +231,15 @@ export async function getCustomerAccountByCustomerId(customerId: number): Promis
   return account || null;
 }
 
+// Get customer account by primary key
+export async function getCustomerAccountById(id: number): Promise<CustomerAccount | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [account] = await db.select().from(customerAccounts).where(eq(customerAccounts.id, id));
+  return account || null;
+}
+
 // Get customer account by account number
 export async function getCustomerAccountByNumber(accountNumber: string): Promise<CustomerAccount | null> {
   const db = await getDb();
@@ -1071,6 +1080,156 @@ export async function reverseAdvancePayment(
     }
 
     return { transaction };
+  });
+}
+
+/**
+ * Refund a previously-recorded customer payment by issuing real cash back
+ * out of one of our cashbox accounts. Distinct from `reverseAdvancePayment`:
+ *
+ *   reverseAdvancePayment(paymentId) → "the entry was a mistake" — undo the
+ *     ledger only. No cash physically moved, so no cashbox is touched.
+ *
+ *   refundPaymentToCustomer(paymentId, cashAccountId) → "the customer
+ *     wants their balance back as actual cash" — undo the ledger AND
+ *     deduct the cashbox we hand the money out of.
+ *
+ * Both produce an `ADJUSTMENT_DEBIT` on the customer ledger that
+ * neutralises the original `CREDIT_PAYMENT`, so balance and reports
+ * settle the same way. The only difference is whether a `cashTransactions`
+ * row is also written (and the cash-account row updated).
+ *
+ * Idempotency guard: caller MUST check `paymentRecords.reversedAmountUsd`
+ * before invoking and refuse if the requested amount would push the total
+ * reversed past the original. This function trusts that gate to keep
+ * the math sound; it just executes the move atomically.
+ */
+export async function refundPaymentToCustomer(
+  customerId: number,
+  customerCode: string,
+  amountUsd: number,
+  reason: string,
+  cashAccountId: number,
+  createdById: number,
+  originalTransactionId: number,
+): Promise<{ transaction: LedgerTransaction; cashTransactionId: number }> {
+  if (amountUsd <= 0) throw new Error("Amount must be greater than zero");
+
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.transaction(async (tx) => {
+    // ── 1. Lock customer account, compute new balance ────────────────
+    let accountRows = await tx.select().from(customerAccounts)
+      .where(eq(customerAccounts.customerId, customerId))
+      .for('update')
+      .limit(1);
+    let account = accountRows[0];
+    if (!account) {
+      const accountNumber = `ACC-${customerCode}-${new Date().getFullYear()}`;
+      await tx.insert(customerAccounts).values({
+        customerId,
+        accountNumber,
+        currentBalanceUsd: "0",
+        currentBalanceIqd: "0",
+      });
+      accountRows = await tx.select().from(customerAccounts)
+        .where(eq(customerAccounts.customerId, customerId))
+        .for('update')
+        .limit(1);
+      account = accountRows[0];
+      if (!account) throw new Error("Failed to create or lock customer account");
+    }
+
+    const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
+    const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
+    const newBalanceUsd = currentBalanceUsd + amountUsd;
+
+    // ── 2. Lock cashbox row, validate funds, compute new balance ──────
+    const cashRows = await tx.select().from(cashAccounts)
+      .where(eq(cashAccounts.id, cashAccountId))
+      .for('update')
+      .limit(1);
+    const cashAccount = cashRows[0];
+    if (!cashAccount) throw new Error(`Cash account ${cashAccountId} not found`);
+    const cashBalance = Number(cashAccount.currentBalance);
+    if (cashBalance < amountUsd) {
+      throw new Error(`Cashbox "${cashAccount.accountNameKu || cashAccount.accountName}" has insufficient balance ($${cashBalance.toFixed(2)}) for refund of $${amountUsd.toFixed(2)}`);
+    }
+    const cashNewBalance = cashBalance - amountUsd;
+
+    // ── 3. Carry the original txn's invoice link onto the reversal ───
+    let linkedInvoiceId: number | null = null;
+    const [originalTxn] = await tx.select({ invoiceId: ledgerTransactions.invoiceId })
+      .from(ledgerTransactions)
+      .where(eq(ledgerTransactions.id, originalTransactionId))
+      .limit(1);
+    if (originalTxn?.invoiceId) linkedInvoiceId = originalTxn.invoiceId;
+
+    // ── 4. Insert the customer-side ADJUSTMENT_DEBIT ─────────────────
+    const txnResult = await tx.insert(ledgerTransactions).values({
+      accountId: account.id,
+      transactionNumber: generateTransactionNumber(),
+      transactionType: 'ADJUSTMENT_DEBIT',
+      amountUsd: amountUsd.toFixed(2),
+      amountIqd: '0',
+      balanceBeforeUsd: currentBalanceUsd.toFixed(2),
+      balanceAfterUsd: newBalanceUsd.toFixed(2),
+      balanceBeforeIqd: currentBalanceIqd.toFixed(0),
+      balanceAfterIqd: currentBalanceIqd.toFixed(0),
+      referenceType: 'adjustment',
+      description: `[REFUND] ${reason}`,
+      invoiceId: linkedInvoiceId,
+      createdById,
+    });
+    const txnInsertId = Number(txnResult[0].insertId);
+    const [transaction] = await tx.select().from(ledgerTransactions).where(eq(ledgerTransactions.id, txnInsertId));
+    if (!transaction) throw new Error("Failed to read back refund transaction");
+
+    // ── 5. Update customer balance ──────────────────────────────────
+    await tx.update(customerAccounts).set({
+      currentBalanceUsd: newBalanceUsd.toFixed(2),
+      lastTransactionAt: new Date(),
+    }).where(eq(customerAccounts.id, account.id));
+
+    // ── 6. Insert cashbox withdrawal + update cashbox balance ────────
+    const cashResult = await tx.insert(cashTransactions).values({
+      accountId: cashAccountId,
+      transactionType: 'withdrawal',
+      amount: amountUsd.toFixed(2),
+      balanceBefore: cashBalance.toFixed(2),
+      balanceAfter: cashNewBalance.toFixed(2),
+      relatedEntityType: 'customer',
+      relatedEntityId: customerId,
+      description: `گەڕاندنەوەی پارە بۆ کڕیار ${customerCode}: ${reason}`,
+      transactionDate: new Date(),
+      createdById,
+    });
+    await tx.update(cashAccounts).set({
+      currentBalance: cashNewBalance.toFixed(2),
+    }).where(eq(cashAccounts.id, cashAccountId));
+
+    // ── 7. Mark the original payment record as (partially) refunded ──
+    const [originalPayment] = await tx.select().from(paymentRecords)
+      .where(eq(paymentRecords.transactionId, originalTransactionId))
+      .limit(1);
+    if (originalPayment) {
+      const existingReversed = parseFloat(originalPayment.reversedAmountUsd || '0');
+      const newReversed = existingReversed + amountUsd;
+      const originalAmount = parseFloat(originalPayment.amountUsd || '0');
+      const isFullyReversed = newReversed >= originalAmount - 0.005;
+      await tx.update(paymentRecords).set({
+        reversedAmountUsd: Math.min(newReversed, originalAmount).toFixed(2),
+        reversedAt: new Date(),
+        reversalTransactionId: transaction.id,
+        paymentStatus: isFullyReversed ? 'refunded' : originalPayment.paymentStatus,
+        cancelledAt: isFullyReversed ? new Date() : originalPayment.cancelledAt,
+        cancelledById: isFullyReversed ? createdById : originalPayment.cancelledById,
+        cancelReason: isFullyReversed ? reason : originalPayment.cancelReason,
+      }).where(eq(paymentRecords.id, originalPayment.id));
+    }
+
+    return { transaction, cashTransactionId: Number(cashResult[0].insertId) };
   });
 }
 
