@@ -105,19 +105,37 @@ export async function createPackage(data: InsertPackage): Promise<Package> {
     }
   }
 
-  // Strip explicit `undefined` values BEFORE handing off to Drizzle. When
-  // a key is present with the value `undefined`, Drizzle's MySQL builder
-  // includes the column in the INSERT and writes the literal `DEFAULT`
-  // keyword in the VALUES list. For columns that have no DB-level default
-  // (e.g. `customerId` is nullable but has no explicit `DEFAULT NULL`),
-  // MySQL raises ER_NO_DEFAULT_FOR_FIELD even though the column is
-  // nullable. Omitting the key entirely lets MySQL apply NULL / its own
-  // default cleanly. This single line is the root-cause fix for the
-  // "Failed query: insert into packages (id, packageCode, ...)" error
-  // observed on QuickRegister/BulkRegister after the multi-tracking
-  // refactor introduced extra `undefined` fields on the data path.
+  // ── Root cause of the "Failed query: insert into packages (..." crash ──
+  //
+  // Drizzle MySQL's buildInsertQuery (drizzle-orm/mysql-core/dialect.cjs)
+  // iterates EVERY column on the schema and, for any column whose value
+  // is `undefined`, emits the literal SQL keyword `DEFAULT` in the
+  // VALUES list. In MySQL with sql_mode=STRICT_TRANS_TABLES (the default
+  // on most managed hosts including PlanetScale/RDS), `DEFAULT` raises
+  // ER_NO_DEFAULT_FOR_FIELD on any column that doesn't have an explicit
+  // DEFAULT clause — even on nullable columns. Most of our nullable
+  // columns (categoryId, claimedAt, lengthCm, widthCm, heightCm,
+  // description, photos, etc.) are nullable WITHOUT a DEFAULT clause,
+  // so every claimed-package insert blew up the moment Drizzle wrote
+  // `DEFAULT` for any of them.
+  //
+  // The fix: map any `undefined` value to `null`. Drizzle then wraps it
+  // as a Param and emits `?` with a NULL binding, which is always valid
+  // for nullable columns. Keys completely absent from `data` still fall
+  // back to Drizzle's `DEFAULT` keyword — and those are exclusively
+  // columns that ARE missing because the handler doesn't pass them, all
+  // of which have explicit DEFAULT clauses in the schema (status,
+  // packageOwnership, isCharged, registeredAt, createdAt, updatedAt),
+  // so `DEFAULT` resolves cleanly.
+  //
+  // Why claimed packages failed but unclaimed worked: unclaimed and
+  // claimed paths build the same shape of data object; the trigger was
+  // simply that the strict-mode error surfaced on the FIRST nullable-
+  // no-default column with `undefined` to appear in column order. Both
+  // paths hit it; the bug report focused on claimed because that's the
+  // path staff used most.
   const cleanData = Object.fromEntries(
-    Object.entries(data).filter(([, v]) => v !== undefined),
+    Object.entries(data).map(([k, v]) => [k, v === undefined ? null : v]),
   ) as InsertPackage;
 
   const result = await db.insert(packages).values(cleanData);
