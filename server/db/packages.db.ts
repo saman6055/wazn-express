@@ -88,14 +88,14 @@ import {
 export async function createPackage(data: InsertPackage): Promise<Package> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   // Auto-link to full package order if tracking number matches
   if (data.trackingNumber && !data.fullPackageOrderId) {
     const matchingOrder = await db.select({ id: fullPackageOrders.id, orderType: fullPackageOrders.orderType, customerId: fullPackageOrders.customerId })
       .from(fullPackageOrders)
       .where(eq(fullPackageOrders.trackingNumber, data.trackingNumber))
       .limit(1);
-    
+
     if (matchingOrder.length > 0) {
       data.fullPackageOrderId = matchingOrder[0].id;
       // Also set the customer from the order if not already set
@@ -104,8 +104,23 @@ export async function createPackage(data: InsertPackage): Promise<Package> {
       }
     }
   }
-  
-  const result = await db.insert(packages).values(data);
+
+  // Strip explicit `undefined` values BEFORE handing off to Drizzle. When
+  // a key is present with the value `undefined`, Drizzle's MySQL builder
+  // includes the column in the INSERT and writes the literal `DEFAULT`
+  // keyword in the VALUES list. For columns that have no DB-level default
+  // (e.g. `customerId` is nullable but has no explicit `DEFAULT NULL`),
+  // MySQL raises ER_NO_DEFAULT_FOR_FIELD even though the column is
+  // nullable. Omitting the key entirely lets MySQL apply NULL / its own
+  // default cleanly. This single line is the root-cause fix for the
+  // "Failed query: insert into packages (id, packageCode, ...)" error
+  // observed on QuickRegister/BulkRegister after the multi-tracking
+  // refactor introduced extra `undefined` fields on the data path.
+  const cleanData = Object.fromEntries(
+    Object.entries(data).filter(([, v]) => v !== undefined),
+  ) as InsertPackage;
+
+  const result = await db.insert(packages).values(cleanData);
   const insertId = Number(result[0].insertId);
   if (!insertId) throw new Error("Failed to insert package");
   const inserted = await db.select().from(packages).where(eq(packages.id, insertId)).limit(1);

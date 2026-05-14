@@ -489,19 +489,60 @@ export const packagesRouter = router({
             });
             break;
           } catch (err: unknown) {
-            const msg = err && typeof err === "object" && "message" in err ? String((err as { message: unknown }).message) : "";
-            const code = err && typeof err === "object" && "code" in err ? (err as { code: unknown }).code : "";
-            const errno = err && typeof err === "object" && "errno" in err ? (err as { errno: unknown }).errno : "";
-            const isDuplicate = code === "ER_DUP_ENTRY" || errno === 1062 || /duplicate|unique/i.test(msg);
-            const isDuplicateTracking = isDuplicate && /tracking|trackingNumber/i.test(msg);
+            // MySQL drivers expose three useful fields on InsertError:
+            //   - code        e.g. "ER_DUP_ENTRY", "ER_NO_DEFAULT_FOR_FIELD"
+            //   - errno       e.g. 1062 (duplicate), 1364 (no default),
+            //                       1452 (FK violation), 1048 (NULL on NOT NULL)
+            //   - sqlMessage  human-readable reason WITHOUT the SQL text
+            //                 (much more useful than `message`, which prepends
+            //                 the full INSERT and gets unhelpfully truncated)
+            const errObj = (err && typeof err === "object") ? err as Record<string, unknown> : {};
+            const msg = typeof errObj.message === "string" ? errObj.message : "";
+            const sqlMessage = typeof errObj.sqlMessage === "string" ? errObj.sqlMessage : "";
+            const code = typeof errObj.code === "string" ? errObj.code : "";
+            const errno = typeof errObj.errno === "number" ? errObj.errno : 0;
+            const reason = sqlMessage || msg;
+            const isDuplicate = code === "ER_DUP_ENTRY" || errno === 1062 || /duplicate|unique/i.test(reason);
+            const isDuplicateTracking = isDuplicate && /tracking|trackingNumber/i.test(reason);
+
+            // Always log the full error server-side so we keep diagnostic
+            // history even when the user-facing message has to stay short.
+            appLogger.error("[register] createPackage failed", {
+              attempt, packageCode, code, errno, sqlMessage, msg: msg.slice(0, 400),
+              input: {
+                customerId: input.customerId, isUnclaimed: input.isUnclaimed,
+                originWarehouseId: input.originWarehouseId, batchId: input.batchId,
+                shippingType: input.shippingType, trackingNumber: input.trackingNumber,
+              },
+            });
+
             if (isDuplicateTracking) {
               throw new TRPCError({ code: "CONFLICT", message: "ئەم تراکینگە پێشتر تۆمار کراوە. ناتوانرێت دووبارە تۆماری بکەیت." });
             }
             if (!isDuplicate || attempt === maxAttempts - 1) {
-              if (msg && !msg.includes("کۆگا") && !msg.includes("کڕیار") && !msg.includes("گرووپ") && !msg.includes("جۆری")) {
-                throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `هەڵەی داتابەیس: ${msg.slice(0, 120)}` });
+              // Translate common MySQL errors to Kurdish before falling
+              // back to the raw sqlMessage. Anything thrown by upstream
+              // validation (کۆگا/کڕیار/گرووپ/جۆری) is already a TRPCError
+              // and is re-thrown untouched.
+              if (msg.includes("کۆگا") || msg.includes("کڕیار") || msg.includes("گرووپ") || msg.includes("جۆری")) {
+                throw err;
               }
-              throw err;
+              let friendly = reason || "هەڵەی نەناسراو لە تۆمارکردن";
+              if (errno === 1364 || /doesn't have a default value/i.test(reason)) {
+                const field = reason.match(/Field '([^']+)'/)?.[1] ?? "نەناسراو";
+                friendly = `بەهای ستوونی پێویست داخل نەکراوە: ${field}`;
+              } else if (errno === 1048 || /cannot be null/i.test(reason)) {
+                const field = reason.match(/Column '([^']+)'/)?.[1] ?? "نەناسراو";
+                friendly = `ستوونی پێویست بەهای نییە: ${field} (NULL ـی پێ نادرێت)`;
+              } else if (errno === 1452 || /foreign key constraint fails/i.test(reason)) {
+                friendly = `بەهای پەیوەندیدار نەدۆزرایەوە (کۆگا، باچ، کڕیار، یاخود ئۆردەر) — تکایە دڵنیابە کە هەموو بەهاکان دروستن`;
+              } else if (errno === 1062 || code === "ER_DUP_ENTRY") {
+                friendly = `بەها دووبارەیە لە DB: ${reason.slice(0, 200)}`;
+              }
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: `هەڵەی داتابەیس: ${friendly.slice(0, 300)}`,
+              });
             }
           }
         }
