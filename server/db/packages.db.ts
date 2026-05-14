@@ -105,45 +105,93 @@ export async function createPackage(data: InsertPackage): Promise<Package> {
     }
   }
 
-  // ── Root cause of the "Failed query: insert into packages (..." crash ──
+  // ── Root cause of the "Failed query: insert into packages ..." crash ──
   //
-  // Drizzle MySQL's buildInsertQuery (drizzle-orm/mysql-core/dialect.cjs)
-  // iterates EVERY column on the schema and, for any column whose value
+  // Drizzle MySQL's buildInsertQuery iterates EVERY column on the schema
+  // and, for any key that's missing from the data object OR whose value
   // is `undefined`, emits the literal SQL keyword `DEFAULT` in the
-  // VALUES list. In MySQL with sql_mode=STRICT_TRANS_TABLES (the default
-  // on most managed hosts including PlanetScale/RDS), `DEFAULT` raises
-  // ER_NO_DEFAULT_FOR_FIELD on any column that doesn't have an explicit
-  // DEFAULT clause — even on nullable columns. Most of our nullable
-  // columns (categoryId, claimedAt, lengthCm, widthCm, heightCm,
-  // description, photos, etc.) are nullable WITHOUT a DEFAULT clause,
-  // so every claimed-package insert blew up the moment Drizzle wrote
-  // `DEFAULT` for any of them.
+  // VALUES list. In MySQL with sql_mode=STRICT_TRANS_TABLES (the
+  // production default on PlanetScale, RDS, and most managed hosts),
+  // `DEFAULT` is rejected for any column that doesn't have an explicit
+  // DEFAULT clause — including nullable columns. The packages table
+  // has many such columns: trackingNumber, customerId, batchId,
+  // claimedAt, claimedById, deliveryType, deliveredAt, deliveredById,
+  // recipientName, recipientSignature, deliveryPhoto, notes, etc. Any
+  // INSERT where the handler doesn't pass values for all of them
+  // crashes on the first `DEFAULT` written for one of these columns.
   //
-  // The fix: map any `undefined` value to `null`. Drizzle then wraps it
-  // as a Param and emits `?` with a NULL binding, which is always valid
-  // for nullable columns. Keys completely absent from `data` still fall
-  // back to Drizzle's `DEFAULT` keyword — and those are exclusively
-  // columns that ARE missing because the handler doesn't pass them, all
-  // of which have explicit DEFAULT clauses in the schema (status,
-  // packageOwnership, isCharged, registeredAt, createdAt, updatedAt),
-  // so `DEFAULT` resolves cleanly.
+  // Fix in two layers:
   //
-  // Why claimed packages failed but unclaimed worked: unclaimed and
-  // claimed paths build the same shape of data object; the trigger was
-  // simply that the strict-mode error surfaced on the FIRST nullable-
-  // no-default column with `undefined` to appear in column order. Both
-  // paths hit it; the bug report focused on claimed because that's the
-  // path staff used most.
+  //  1. Pre-seed every nullable-without-DEFAULT column with `null`. The
+  //     spread `{ ...nullableDefaults, ...data }` then lets any value
+  //     the handler actually supplied override the null. This guarantees
+  //     none of these columns ever fall through to Drizzle's `DEFAULT`.
+  //
+  //  2. For keys the handler DID pass but with the value `undefined`
+  //     (e.g. an optional input that wasn't filled in), map to `null`
+  //     too. Drizzle then emits `?` with a NULL binding instead of
+  //     `DEFAULT`. NULL is always valid for nullable columns.
+  //
+  // Columns intentionally absent (id, packageOwnership, isCharged,
+  // status, registeredAt, createdAt, updatedAt) all HAVE explicit DB
+  // defaults, so Drizzle's `DEFAULT` keyword resolves cleanly for them.
+  const nullableDefaults: Partial<InsertPackage> = {
+    trackingNumber: null,
+    customerId: null,
+    batchId: null,
+    fullPackageOrderId: null,
+    categoryId: null,
+    claimedAt: null,
+    claimedById: null,
+    qrCodeData: null,
+    qrCodeSignature: null,
+    weightKg: null,
+    lengthCm: null,
+    widthCm: null,
+    heightCm: null,
+    volumeCbm: null,
+    description: null,
+    photos: null,
+    calculatedCostUsd: null,
+    appliedPricingRuleId: null,
+    deliveryType: null,
+    deliveredAt: null,
+    deliveredById: null,
+    recipientName: null,
+    recipientSignature: null,
+    deliveryPhoto: null,
+    notes: null,
+  };
+
+  const merged = { ...nullableDefaults, ...data };
   const cleanData = Object.fromEntries(
-    Object.entries(data).map(([k, v]) => [k, v === undefined ? null : v]),
+    Object.entries(merged).map(([k, v]) => [k, v === undefined ? null : v]),
   ) as InsertPackage;
 
-  const result = await db.insert(packages).values(cleanData);
-  const insertId = Number(result[0].insertId);
-  if (!insertId) throw new Error("Failed to insert package");
-  const inserted = await db.select().from(packages).where(eq(packages.id, insertId)).limit(1);
-  if (!inserted[0]) throw new Error("Failed to retrieve inserted package");
-  return inserted[0];
+  try {
+    const result = await db.insert(packages).values(cleanData);
+    const insertId = Number(result[0].insertId);
+    if (!insertId) throw new Error("Failed to insert package");
+    const inserted = await db.select().from(packages).where(eq(packages.id, insertId)).limit(1);
+    if (!inserted[0]) throw new Error("Failed to retrieve inserted package");
+    return inserted[0];
+  } catch (err: unknown) {
+    // Surface the full structured error to logs so we can diagnose the
+    // exact MySQL reason on next deploy if anything else is still wrong.
+    // mysql2 attaches code/errno/sqlMessage either directly on the
+    // thrown error or on err.cause (depending on Drizzle's wrapper).
+    const errObj = (err && typeof err === "object") ? err as Record<string, unknown> : {};
+    const cause = (errObj.cause && typeof errObj.cause === "object") ? errObj.cause as Record<string, unknown> : {};
+    appLogger.error("[createPackage] DB insert failed", {
+      code: errObj.code ?? cause.code,
+      errno: errObj.errno ?? cause.errno,
+      sqlMessage: errObj.sqlMessage ?? cause.sqlMessage,
+      sqlState: errObj.sqlState ?? cause.sqlState,
+      message: typeof errObj.message === "string" ? errObj.message.slice(0, 1500) : "",
+      keysProvided: Object.keys(cleanData),
+    });
+    throw err;
+  }
 }
 
 export async function getPackageById(id: number): Promise<Package | undefined> {

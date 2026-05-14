@@ -496,11 +496,22 @@ export const packagesRouter = router({
             //   - sqlMessage  human-readable reason WITHOUT the SQL text
             //                 (much more useful than `message`, which prepends
             //                 the full INSERT and gets unhelpfully truncated)
+            //
+            // Drizzle wraps the underlying mysql2 error and may move these
+            // onto `err.cause`, so we check both the direct error and its
+            // cause chain before falling back to `message`.
             const errObj = (err && typeof err === "object") ? err as Record<string, unknown> : {};
+            const cause = (errObj.cause && typeof errObj.cause === "object") ? errObj.cause as Record<string, unknown> : {};
             const msg = typeof errObj.message === "string" ? errObj.message : "";
-            const sqlMessage = typeof errObj.sqlMessage === "string" ? errObj.sqlMessage : "";
-            const code = typeof errObj.code === "string" ? errObj.code : "";
-            const errno = typeof errObj.errno === "number" ? errObj.errno : 0;
+            const sqlMessage =
+              (typeof errObj.sqlMessage === "string" ? errObj.sqlMessage : "") ||
+              (typeof cause.sqlMessage === "string" ? cause.sqlMessage : "");
+            const code =
+              (typeof errObj.code === "string" ? errObj.code : "") ||
+              (typeof cause.code === "string" ? cause.code : "");
+            const errno =
+              (typeof errObj.errno === "number" ? errObj.errno : 0) ||
+              (typeof cause.errno === "number" ? cause.errno : 0);
             const reason = sqlMessage || msg;
             const isDuplicate = code === "ER_DUP_ENTRY" || errno === 1062 || /duplicate|unique/i.test(reason);
             const isDuplicateTracking = isDuplicate && /tracking|trackingNumber/i.test(reason);
