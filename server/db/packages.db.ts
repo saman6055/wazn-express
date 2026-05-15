@@ -572,9 +572,37 @@ export async function getPackagesByStatus(status: string) {
 export async function getNextPackageCode(prefix: string): Promise<string> {
   const db = await getDb();
   if (!db) return `${prefix}001`;
-  const result = await db.select({ count: sql<number>`COUNT(*)` }).from(packages).where(like(packages.packageCode, `${prefix}%`));
-  const count = (result[0]?.count || 0) + 1;
-  return `${prefix}${count.toString().padStart(6, '0')}`;
+
+  // Gap-safe code generator.
+  //
+  // Previous impl used `COUNT(*) WHERE packageCode LIKE 'prefix%'` + 1.
+  // That is wrong whenever any row in the sequence has been deleted:
+  // with N rows remaining, COUNT+1 = N+1, but suffix N+1 was already
+  // assigned to an earlier (still-existing) row, so the INSERT crashes
+  // with ER_DUP_ENTRY on packageCode. The retry loop in
+  // packages.router.ts re-calls this function on duplicate errors, but
+  // COUNT-based logic deterministically returns the SAME duplicate code
+  // every retry, so the loop spins until it gives up — surfacing the
+  // duplicate as a hard error to the user. (Production symptom: every
+  // claimed-package register failed with "Duplicate entry 'EB000016'
+  // for key 'packages.packageCode'" while unclaimed packages worked
+  // because getNextUnclaimedPackageCode uses MAX-based logic.)
+  //
+  // Fix: pick the next number from MAX(numeric_suffix) + 1. Gap-safe
+  // and idempotent across deletes. MySQL CAST('000016' AS UNSIGNED)
+  // returns 16; CAST on a non-numeric suffix returns 0, so unrelated
+  // formats are silently ignored. COALESCE handles the empty-table
+  // case (no rows yet → start at 1).
+  const prefixLen = prefix.length + 1; // SUBSTRING is 1-indexed in MySQL
+  const result = await db
+    .select({
+      maxSuffix: sql<number>`COALESCE(MAX(CAST(SUBSTRING(${packages.packageCode}, ${prefixLen}) AS UNSIGNED)), 0)`,
+    })
+    .from(packages)
+    .where(like(packages.packageCode, `${prefix}%`));
+
+  const nextNum = Number(result[0]?.maxSuffix || 0) + 1;
+  return `${prefix}${nextNum.toString().padStart(6, '0')}`;
 }
 
 
