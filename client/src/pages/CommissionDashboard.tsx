@@ -549,7 +549,14 @@ export default function CommissionDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-red-600 font-medium">{t("commission.totalCostLabel")}</p>
-                  <p className="text-xl font-bold text-red-700">${totalCost.toFixed(2)}</p>
+                  {/* "کۆی کڕین" must show the goods-only purchase total,
+                      NOT goods + commission. Commission has its own card
+                      below; lumping them together here was confusing
+                      because every other commission-flow document
+                      (box receipt, invoice, ledger description) lists
+                      the two separately. The grand total is still
+                      available in the Excel and PDF exports. */}
+                  <p className="text-xl font-bold text-red-700">${totalItemValue.toFixed(2)}</p>
                 </div>
                 <div className="p-2 bg-red-100 rounded-xl">
                   <ShoppingCart className="h-5 w-5 text-red-600" />
