@@ -313,17 +313,45 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     }
   }
 
+  // ── Dedup-once-per-box guard ──
+  //
+  // One full-package or commission order's advance is a SINGLE credit on
+  // the customer's wallet, regardless of how many physical cartons that
+  // order spans. Previously, the per-item map summed advance N times
+  // when an order had N cartons in the same box (very common for
+  // multi-tracking commission orders), so receipts showed an inflated
+  // credit and customers were under-billed at the delivery step.
+  //
+  // Production bug report: "زۆربەی کات کە پارەی پێشەکی دراو دەنوسیت
+  // بەهەڵە دەینوسیت". Reproduction: commission CM-X with totalPrepaidUsd
+  // = $50, two cartons sharing the order, both in one box → receipt
+  // showed `-$100 پارەی پێشەکی دراو` but the customer only ever paid $50.
+  //
+  // Fix: track which FP order ids we've already credited within this box
+  // and attribute the advance to the FIRST item that resolves to that
+  // order (in scan order). Subsequent items linked to the same order get
+  // `advanceAppliedUsd: '0'` so the client-side SUM lands at the correct
+  // single-credit total. The math is the same; the attribution is what
+  // changes.
+  const creditedOrderIds = new Set<number>();
+  const advanceOnce = (fp: typeof fullPackageOrders.$inferSelect): number => {
+    if (creditedOrderIds.has(fp.id)) return 0;
+    creditedOrderIds.add(fp.id);
+    return fpAdvance(fp);
+  };
+
   return items.map((item): BoxItemWithAdvance => {
     // Direct FP-order scan path — single order owns the item, no sibling sum.
     if (item.fullPackageOrderId) {
       const fp = fpById.get(item.fullPackageOrderId);
-      return { ...item, advanceAppliedUsd: fp ? fpAdvance(fp).toFixed(2) : '0' };
+      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0' };
     }
 
-    // Tracking-based path — sum every linked order's advance.
+    // Tracking-based path — sum every linked order's advance, but skip
+    // orders already credited on an earlier item in this same box.
     if (item.trackingNumber) {
       const linked = fpsByTracking.get(item.trackingNumber) || [];
-      const total = linked.reduce((s, fp) => s + fpAdvance(fp), 0);
+      const total = linked.reduce((s, fp) => s + advanceOnce(fp), 0);
       return { ...item, advanceAppliedUsd: total.toFixed(2) };
     }
 
