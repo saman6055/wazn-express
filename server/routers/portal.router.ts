@@ -306,9 +306,13 @@ export const customerPortalRouter = router({
     sendMessage: protectedProcedure
       .input(z.object({ message: z.string().min(1) }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
           (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Customer not found' });
+        // BAD_REQUEST, not FORBIDDEN: the user IS authenticated, they
+        // just don't have a customer profile attached to their account.
+        // Throwing FORBIDDEN used to trip QueryErrorBoundary's auth
+        // heuristics and bounce the user to login mid-session.
+        if (!customerId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'پرۆفایلی کریار نەدۆزرایەوە بۆ ئەم هەژمارە. تکایە لەگەڵ پشتگیرییەوە پەیوەندی بکە.' });
         
         return db.createCustomerMessage({
           conversationId: `CONV-${customerId}`,
@@ -389,10 +393,11 @@ export const customerPortalRouter = router({
         isDefault: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
           (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Customer not found' });
-        
+        // BAD_REQUEST instead of FORBIDDEN — see sendMessage comment.
+        if (!customerId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'پرۆفایلی کریار نەدۆزرایەوە بۆ ئەم هەژمارە. تکایە لەگەڵ پشتگیرییەوە پەیوەندی بکە.' });
+
         return db.createCustomerAddress({
           ...input,
           customerId,
@@ -479,8 +484,13 @@ export const customerPortalRouter = router({
         language: z.string().max(10).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // BAD_REQUEST instead of FORBIDDEN: a staff user accidentally
+        // hitting subscribePush (e.g. via a stale browser tab) used to
+        // get force-logged-out because FORBIDDEN tripped the auth
+        // boundary. They're authenticated — just on the wrong role —
+        // so return a non-auth error.
         if (!ctx.user.isCustomer) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Customer login required" });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم تایبەتمەندیە تەنها بۆ هەژماری کریار بەردەستە" });
         }
         const sub = await db.upsertPushSubscription({
           customerId: ctx.user.id,
@@ -502,8 +512,9 @@ export const customerPortalRouter = router({
       }),
 
     sendTestPush: protectedProcedure.mutation(async ({ ctx }) => {
+      // BAD_REQUEST instead of FORBIDDEN — see subscribePush comment.
       if (!ctx.user.isCustomer) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Customer login required" });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم تایبەتمەندیە تەنها بۆ هەژماری کریار بەردەستە" });
       }
       const result = await sendPushToCustomer(ctx.user.id, {
         title: "Wazn Express",

@@ -792,9 +792,31 @@ export async function getCustomerNotifications(customerId: number, options?: { l
 export async function createCustomerNotification(data: InsertCustomerNotification): Promise<CustomerNotification | null> {
   const db = await getDb();
   if (!db) return null;
-  
+
   const [result] = await db.insert(customerNotifications).values(data);
   const [notification] = await db.select().from(customerNotifications).where(eq(customerNotifications.id, result.insertId));
+
+  // Fire-and-forget SSE push so any portal tab open for this customer
+  // gets a live toast. Lazy-imported so this module doesn't pull in
+  // the event broker on bootstrap if it isn't needed yet, and wrapped
+  // in try/catch so a broker failure can't block notification storage.
+  if (notification && data.customerId) {
+    try {
+      const { publishPortalEvent } = await import("../services/portalEvents.service");
+      publishPortalEvent(data.customerId, {
+        type: "notification",
+        notificationId: notification.id,
+        title: notification.title || "",
+        // Schema column is `message`, not `body` — the SSE event uses
+        // `body` to match the public PortalSSEEvent contract on the
+        // client (which mirrors browser Notification semantics).
+        body: notification.message || "",
+      });
+    } catch {
+      // Never block notification creation on the live-push side channel.
+    }
+  }
+
   return notification || null;
 }
 

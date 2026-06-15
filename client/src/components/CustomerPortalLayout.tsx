@@ -37,7 +37,9 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     if (q) setLocation(`/portal/search?q=${encodeURIComponent(q)}`);
   };
 
-  // Real-time notifications (SSE). Server must expose GET /api/portal/events for events to work.
+  // Real-time notifications via SSE. The backend stream is at
+  // GET /api/portal/events (see server/_core/index.ts) and pushes events
+  // whenever createCustomerNotification fires for this customer.
   usePortalSSE({
     enabled: true,
     onPackageStatus: (d) => {
@@ -54,6 +56,12 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       toast.success(
         t('portal.paymentConfirmedNotif', { amount: d.amount.toFixed(2) })
       );
+    },
+    onNotification: (d) => {
+      // Generic catch-all for any customerNotifications row inserted
+      // server-side — package status, batch updates, refunds, etc. —
+      // so the customer doesn't need to refresh to see fresh activity.
+      toast.info(d.title || d.body, d.title && d.body ? { description: d.body } : undefined);
     },
   });
 

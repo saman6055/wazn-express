@@ -114,6 +114,64 @@ async function startServer() {
     }
   });
 
+  // Portal real-time event stream (SSE).
+  // The portal layout opens an EventSource to this endpoint on every
+  // page; without it, real-time toast notifications for package status
+  // changes / new invoices / payments don't fire. Requires an
+  // authenticated customer session; returns 401 otherwise so the
+  // browser stops retrying. Cleanup is attached to `req.on('close')`
+  // so a dropped tab releases its event listener immediately.
+  app.get("/api/portal/events", async (req, res) => {
+    try {
+      const { sdk } = await import("./sdk.js");
+      const user = await sdk.authenticateRequest(req);
+      if (!user || !user.isCustomer) {
+        return res.status(401).json({ error: "Customer login required" });
+      }
+      const { subscribePortalEvents } = await import("../services/portalEvents.service.js");
+
+      // Standard SSE response headers. `X-Accel-Buffering: no` disables
+      // Nginx/proxy buffering so events actually reach the client live.
+      res.status(200);
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
+      res.setHeader("Connection", "keep-alive");
+      res.setHeader("X-Accel-Buffering", "no");
+      res.flushHeaders?.();
+
+      // Initial comment so the client knows the stream opened cleanly.
+      res.write(`: connected\n\n`);
+
+      const unsubscribe = subscribePortalEvents(user.id, (event) => {
+        // SSE wire format: `data: <json>\n\n`. JSON.stringify is safe
+        // because PortalEvent only carries primitive fields.
+        try {
+          res.write(`data: ${JSON.stringify(event)}\n\n`);
+        } catch {
+          // Write after close — ignore; cleanup is handled by 'close'.
+        }
+      });
+
+      // Heartbeat every 25s so proxies (and the client) don't time out
+      // an otherwise-idle connection. Comment lines are valid SSE and
+      // are ignored by EventSource.
+      const heartbeat = setInterval(() => {
+        try { res.write(`: heartbeat\n\n`); } catch { /* socket gone */ }
+      }, 25_000);
+
+      req.on("close", () => {
+        clearInterval(heartbeat);
+        unsubscribe();
+        try { res.end(); } catch { /* already closed */ }
+      });
+    } catch (err) {
+      appLogger.error("[SSE] /api/portal/events failed to open", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      try { res.status(500).end(); } catch { /* response already sent */ }
+    }
+  });
+
   // tRPC API (auth limiter applies strict limit to login procedures only)
   app.use(
     "/api/trpc",
