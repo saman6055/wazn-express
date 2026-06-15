@@ -28,13 +28,43 @@ function getHttpStatus(error: Error): number | undefined {
 function isAuthError(error: Error): boolean {
   const msg = (error.message ?? "").toLowerCase();
   const status = getHttpStatus(error);
+
+  // Explicit session-expired marker (shared const used by the auth layer
+  // when it detects a missing/invalid session cookie).
   if (error.message === UNAUTHED_ERR_MSG) return true;
+
+  // HTTP 401 is the canonical "unauthenticated" signal. Always redirect.
   if (status === 401) return true;
-  if (msg.includes("invalid session") || msg.includes("session cookie") || msg.includes("please login")) return true;
-  // 403 with unclear message (e.g. "[object Object]" after bad parse) or "forbidden" → treat as session, redirect
-  if (status === 403 && (msg.includes("session") || msg.includes("cookie") || msg === "[object object]" || msg === "forbidden" || msg.length < 3)) return true;
+
+  // tRPC UNAUTHORIZED code → procedure-level auth failure (session
+  // missing or rejected by middleware). Redirect.
   const trpcData = isTRPCClientError(error) ? (error as TRPCClientError<any>).data as { code?: string } | null : null;
-  if (trpcData?.code === "UNAUTHORIZED" || (trpcData?.code === "FORBIDDEN" && (msg.includes("session") || msg.includes("cookie") || msg === "[object object]"))) return true;
+  if (trpcData?.code === "UNAUTHORIZED") return true;
+
+  // Explicit session-expired language in the error message (Kurdish/Arabic
+  // backends sometimes throw plain strings rather than wrap in tRPC).
+  if (
+    msg.includes("invalid session") ||
+    msg.includes("session cookie") ||
+    msg.includes("session expired") ||
+    msg.includes("please login") ||
+    msg.includes("please log in") ||
+    msg.includes("not authenticated")
+  ) {
+    return true;
+  }
+
+  // IMPORTANT: We intentionally do NOT treat HTTP 403 / tRPC FORBIDDEN as a
+  // logout trigger. FORBIDDEN means "you ARE authenticated but lack
+  // permission for this specific action" — a permissions issue, NOT a
+  // session issue. Forcing logout on every FORBIDDEN kicked portal
+  // customers out the moment they touched a procedure restricted to
+  // staff (or vice versa), which was the production bug
+  // "زۆر جار لەناو پۆرتاڵی کریار راستەوخۆ لەناو پەرەی کریار دەچیتە دەرەوە".
+  // The old `msg === "[object object]"` / `msg.length < 3` heuristics
+  // were especially harmful because they fired on ANY error whose
+  // message got stringified to `[object Object]` (very common when a
+  // tRPC error's data shape was unexpected).
   return false;
 }
 
