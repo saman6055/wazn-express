@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
+import { PortalTopBar } from "@/components/PortalTopBar";
 import { motion } from "framer-motion";
 
 interface Skin3PortalLayoutProps {
@@ -74,6 +75,9 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
           )}
         />
       )}
+
+      {/* Company logo header */}
+      <PortalTopBar />
 
       {/* Main Content */}
       <main className="relative max-w-lg mx-auto">{children}</main>

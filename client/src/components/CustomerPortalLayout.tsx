@@ -8,6 +8,7 @@ import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { Input } from "@/components/ui/input";
+import CompanyLogo from "@/components/CompanyLogo";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 import { usePortalSSE } from "@/hooks/usePortalSSE";
 import { toast } from "sonner";
@@ -165,24 +166,28 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         "sticky top-0 z-40 border-b transition-colors duration-300",
         isDark ? "bg-slate-900/95 border-slate-700/50 backdrop-blur-sm" : "bg-slate-50/95 border-slate-200/50 backdrop-blur-sm"
       )}>
-        <form onSubmit={handleSearchSubmit} className="max-w-lg mx-auto px-3 py-2">
-          <div className="relative">
-            <Search className={cn(
-              "absolute top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground",
-              isRTL ? "right-3" : "left-3"
-            )} />
-            <Input
-              type="search"
-              placeholder={t('portal.searchPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={cn(
-                "h-10 rounded-xl border-0 bg-muted/50 text-sm",
-                isRTL ? "pr-9 pl-4" : "pl-9 pr-4"
-              )}
-            />
-          </div>
-        </form>
+        <div className="max-w-lg mx-auto px-3 py-2 flex items-center gap-2">
+          {/* Company logo (uploaded in Settings) at the leading edge */}
+          <CompanyLogo size={36} className="shrink-0" />
+          <form onSubmit={handleSearchSubmit} className="flex-1">
+            <div className="relative">
+              <Search className={cn(
+                "absolute top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground",
+                isRTL ? "right-3" : "left-3"
+              )} />
+              <Input
+                type="search"
+                placeholder={t('portal.searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={cn(
+                  "h-10 rounded-xl border-0 bg-muted/50 text-sm",
+                  isRTL ? "pr-9 pl-4" : "pl-9 pr-4"
+                )}
+              />
+            </div>
+          </form>
+        </div>
       </div>
       {/* Main Content */}
       <main className="max-w-lg mx-auto">
