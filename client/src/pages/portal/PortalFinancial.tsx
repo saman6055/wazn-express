@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -37,7 +37,11 @@ const { t, language } = useLanguage();
     { enabled: !!selectedTransaction }
   );
   const { data: invoices, isLoading: invoicesLoading } = trpc.customerPortal.getMyInvoices.useQuery();
-  const { data: settings } = trpc.settings.list.useQuery();
+  // Company info for the invoice/receipt header — via the PUBLIC
+  // settings.getCompanyInfo endpoint. The old trpc.settings.list is a
+  // staffProcedure: a portal customer hitting it threw FORBIDDEN, which the
+  // global redirect-on-auth-error subscriber turned into a forced logout.
+  const company = useCompanyInfo();
   const [selectedInvoice, setSelectedInvoice] = useState<number | null>(null);
   const [invoiceSearch, setInvoiceSearch] = useState("");
   const [invoiceFilter, setInvoiceFilter] = useState<"all" | "paid" | "cancelled">("all");
@@ -690,7 +694,6 @@ const { t, language } = useLanguage();
             if (!invoice) return null;
             
             const downloadInvoicePDF = () => {
-              const company = getCompanyInfoFromSettings(settings || []);
               const lineItems = invoice.lineItems || [];
               const pdfHTML = `<!DOCTYPE html>
 <html>

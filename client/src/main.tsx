@@ -74,7 +74,15 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
     msg.includes("Invalid session") ||
     msg.includes("session cookie") ||
     msg.includes("Please login") ||
-    (error instanceof TRPCClientError && (error.data?.code === "UNAUTHORIZED" || error.data?.code === "FORBIDDEN"));
+    // ONLY UNAUTHORIZED means "no/expired session" → redirect to login.
+    // NOT FORBIDDEN: that means the user IS authenticated but lacks
+    // permission for this one procedure (e.g. a portal customer touching a
+    // staff-only endpoint like settings.list). Redirecting on FORBIDDEN
+    // force-logged-out portal customers the moment a page fired any
+    // staff-scoped query — the production bug "لەناو پۆرتاڵی کریار
+    // ... دەچیتە دەرەوە". QueryErrorBoundary already encodes this policy;
+    // this global subscriber must match it.
+    (error instanceof TRPCClientError && error.data?.code === "UNAUTHORIZED");
 
   if (!isExplicitUnauth && !isSessionInvalid) return;
 
