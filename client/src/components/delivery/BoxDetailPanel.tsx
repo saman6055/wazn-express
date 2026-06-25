@@ -48,6 +48,14 @@ import {
 // any one regardless of the active UI language. Chinese is intentionally
 // excluded — receipts are for local (KU/AR/EN) customers.
 const RECEIPT_LANGUAGES: Language[] = ["ku", "ar", "en"];
+
+// ── Continuous scanning tuning ──
+// Hardware barcode scanners "type" a whole code in a rapid burst (a few ms
+// per char). We auto-submit a scan WITHOUT requiring Enter when the chars
+// arrive that fast, then settle on a short trailing pause. Manual typing is
+// slower, so it never auto-fires — Enter still submits it explicitly.
+const SCANNER_BURST_GAP_MS = 50;   // inter-key gap below this ⇒ hardware scanner
+const SCAN_AUTOSUBMIT_MS = 110;    // trailing quiet time that marks "scan done"
 import { printBoxLabel, printBoxReceipt, downloadBoxReceiptPDF, normalizeCommissionDescription } from "@/lib/deliveryBoxPrintUtils";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
@@ -102,6 +110,14 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const [scanInput, setScanInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const scanInputRef = useRef<HTMLInputElement>(null);
+  // Latest input value kept in a ref so submit reads the COMPLETE code even
+  // when a scanner's trailing Enter fires before React re-renders (avoids the
+  // classic stale-closure that drops the last char of a scan).
+  const scanValueRef = useRef("");
+  // Pending auto-submit timer + timestamp of the previous keystroke, used to
+  // detect scanner-speed bursts (see SCANNER_BURST_GAP_MS).
+  const scanDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastKeyAtRef = useRef(0);
 
   // Fetch box data
   const { data: box, refetch: refetchBox } = trpc.deliveryBox.getById.useQuery(
@@ -197,9 +213,23 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     }
   }, [box?.status]);
 
-  const handleScan = () => {
-    const tracking = scanInput.trim();
+  const clearScanDebounce = () => {
+    if (scanDebounceRef.current) {
+      clearTimeout(scanDebounceRef.current);
+      scanDebounceRef.current = null;
+    }
+  };
+
+  // Submit whatever is currently in the input. Reads the ref (not state) so a
+  // scanner's instant Enter can't fire before the last char lands. Clears the
+  // field immediately so the next scan starts clean and the same code can't be
+  // submitted twice from one burst (Enter + debounce both call this).
+  const submitScan = () => {
+    clearScanDebounce();
+    const tracking = (scanValueRef.current || "").trim();
     if (!tracking) return;
+    scanValueRef.current = "";
+    setScanInput("");
     setIsScanning(true);
     addItem.mutate(
       { boxId, trackingNumber: tracking },
@@ -207,12 +237,32 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     );
   };
 
+  const handleScanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    scanValueRef.current = val;
+    setScanInput(val);
+
+    const now = performance.now();
+    const gap = now - lastKeyAtRef.current;
+    lastKeyAtRef.current = now;
+
+    clearScanDebounce();
+    // Arm auto-submit ONLY for scanner-speed input. Manual typing (slow gaps)
+    // never arms it, so it won't fire mid-typing — Enter handles that case.
+    if (val.trim().length > 0 && gap < SCANNER_BURST_GAP_MS) {
+      scanDebounceRef.current = setTimeout(submitScan, SCAN_AUTOSUBMIT_MS);
+    }
+  };
+
   const handleScanKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleScan();
+      submitScan();
     }
   };
+
+  // Cancel any pending auto-submit if the panel unmounts mid-scan.
+  useEffect(() => () => clearScanDebounce(), []);
 
   if (!box) {
     return (
@@ -370,14 +420,26 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                 ref={scanInputRef}
                 placeholder={t("delivery.scanPlaceholder")}
                 value={scanInput}
-                onChange={(e) => setScanInput(e.target.value)}
+                onChange={handleScanChange}
                 onKeyDown={handleScanKeyDown}
+                onBlur={() => {
+                  // Keep focus on the field during a scanning session so the
+                  // next scan always lands here — unless focus moved to another
+                  // control (button/menu), which we must not steal.
+                  if (box?.status === "open") {
+                    setTimeout(() => {
+                      if (!document.activeElement || document.activeElement === document.body) {
+                        scanInputRef.current?.focus();
+                      }
+                    }, 0);
+                  }
+                }}
                 className="ps-9 font-mono"
                 dir="ltr"
-                disabled={isScanning}
+                autoFocus
               />
             </div>
-            <Button onClick={handleScan} disabled={isScanning || !scanInput.trim()}>
+            <Button onClick={submitScan} disabled={isScanning || !scanInput.trim()}>
               {isScanning ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
