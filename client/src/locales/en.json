@@ -5513,6 +5513,11 @@
     "noExpenses": "No expenses in this period"
   },
   "delivery": {
+    "advancePaid": "Advance Paid",
+    "remainingDue": "Remaining Due",
+    "itemPriceLabel": "Item Price",
+    "shippingLabel": "Shipping",
+    "sharedOrdersSuffix": "({{count}} shared orders)",
     "pageTitle": "Customer Delivery",
     "pageSubtitle": "Create delivery boxes and scan packages",
     "todayBoxes": "Today's Boxes",

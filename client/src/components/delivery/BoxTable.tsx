@@ -1,4 +1,4 @@
-import { useTranslation } from "@/contexts/LanguageContext";
+import { useTranslation, createTranslator, getLanguageDirection, LANGUAGES, type Language } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import {
   Table,
@@ -15,6 +15,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import {
   MoreHorizontal,
@@ -33,6 +37,10 @@ import { trpc } from "@/lib/trpc";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
 type DeliveryMethod = "warehouse_pickup" | "home_delivery" | "city_transfer";
+
+// Languages offered for the printable box receipt (KU / AR / EN), chosen at
+// print time independent of the active UI language.
+const RECEIPT_LANGUAGES: Language[] = ["ku", "ar", "en"];
 
 const STATUS_CONFIG: Record<BoxStatus, { className: string; key: string }> = {
   open: { className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400", key: "delivery.statusOpen" },
@@ -147,7 +155,7 @@ export function BoxTable({
     );
   };
 
-  const handlePrintReceipt = (box: DeliveryBox) => {
+  const handlePrintReceipt = (box: DeliveryBox, lang: Language) => {
     const customer = getCustomer(box.customerId);
     printBoxReceipt(
       {
@@ -175,7 +183,8 @@ export function BoxTable({
             address: customer.address,
           }
         : null,
-      t
+      createTranslator(lang),
+      { direction: getLanguageDirection(lang) }
     );
   };
 
@@ -279,10 +288,25 @@ export function BoxTable({
                         <Printer className="h-4 w-4 me-2" />
                         {t("delivery.printLabel")}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handlePrintReceipt(box)}>
-                        <FileText className="h-4 w-4 me-2" />
-                        {t("delivery.printReceipt")}
-                      </DropdownMenuItem>
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                          <FileText className="h-4 w-4 me-2" />
+                          {t("delivery.printReceipt")}
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuSubContent>
+                            {RECEIPT_LANGUAGES.map((lang) => {
+                              const info = LANGUAGES.find((l) => l.code === lang);
+                              return (
+                                <DropdownMenuItem key={lang} onClick={() => handlePrintReceipt(box, lang)}>
+                                  <span className="me-2">{info?.flag}</span>
+                                  {info?.nativeName}
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuSub>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

@@ -5570,6 +5570,11 @@
     "noExpenses": "لا مصروفات في هذه الفترة"
   },
   "delivery": {
+    "advancePaid": "الدفعة المقدمة",
+    "remainingDue": "المتبقي للدفع",
+    "itemPriceLabel": "سعر السلعة",
+    "shippingLabel": "أجور الشحن",
+    "sharedOrdersSuffix": "({{count}} طلبات مشتركة)",
     "pageTitle": "التوصيل للعملاء",
     "pageSubtitle": "إنشاء صناديق التوصيل ومسح الطرود",
     "todayBoxes": "صناديق اليوم",

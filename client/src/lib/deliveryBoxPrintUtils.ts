@@ -45,7 +45,7 @@ export interface CustomerForPrint {
   address?: string | null;
 }
 
-type TFunc = (key: string) => string;
+type TFunc = (key: string, params?: Record<string, string | number>) => string;
 
 // ==================== SHARED STYLES ====================
 
@@ -125,16 +125,34 @@ function itemTypeLabel(type: string, t: TFunc): string {
  *   3. Legacy without shipping ("نرخی بەرهەم: $A + عمولە: $B")
  *      → "نرخی بەرهەم: $(A+B)"
  *   4. Non-breakdown descriptions (no "نرخی بەرهەم:" token) → unchanged.
+ *
+ * The stored description is always built in Kurdish (server-side). Pass a
+ * translator `t` to re-render the breakdown labels ("نرخی بەرهەم" /
+ * "نرخی گواستنەوە") and the "(N ئۆردەری هاوبەش)" suffix in another
+ * language — used by the multi-language receipt. The numeric values and
+ * the free-text product name are language-neutral and kept verbatim.
  */
-export function normalizeCommissionDescription(description?: string | null): string {
+export function normalizeCommissionDescription(description?: string | null, t?: TFunc): string {
   if (!description) return "-";
   // Strict signal: only touch strings that look like our breakdown.
   if (!description.includes("نرخی بەرهەم")) return description;
 
+  const itemLabel = t ? t("delivery.itemPriceLabel") : "نرخی بەرهەم";
+  const shipLabel = t ? t("delivery.shippingLabel") : "نرخی گواستنەوە";
+
   // Split on the first "|" so productName is preserved verbatim.
   const pipeIdx = description.indexOf("|");
-  const productName = pipeIdx >= 0 ? description.slice(0, pipeIdx).trim() : "";
+  let productName = pipeIdx >= 0 ? description.slice(0, pipeIdx).trim() : "";
   const breakdown = pipeIdx >= 0 ? description.slice(pipeIdx + 1).trim() : description.trim();
+
+  // Re-render the shared-orders suffix in the target language (the server
+  // embeds it in Kurdish as "(N ئۆردەری هاوبەش)" within the product name).
+  if (t) {
+    productName = productName.replace(
+      /\(\s*(\d+)\s+ئۆردەری هاوبەش\s*\)/,
+      (_, count) => t("delivery.sharedOrdersSuffix", { count }),
+    ).trim();
+  }
 
   const itemMatch = breakdown.match(/نرخی\s+بەرهەم\s*:\s*\$?([\d.]+)/);
   if (!itemMatch) return description;
@@ -149,9 +167,9 @@ export function normalizeCommissionDescription(description?: string | null): str
   const goods = (item + comm).toFixed(2);
   const prefix = productName ? `${productName} | ` : "";
   if (ship > 0) {
-    return `${prefix}نرخی بەرهەم: $${goods} + نرخی گواستنەوە: $${ship.toFixed(2)}`;
+    return `${prefix}${itemLabel}: $${goods} + ${shipLabel}: $${ship.toFixed(2)}`;
   }
-  return `${prefix}نرخی بەرهەم: $${goods}`;
+  return `${prefix}${itemLabel}: $${goods}`;
 }
 
 function deliveryMethodIcon(method: string): string {
@@ -408,8 +426,11 @@ export function printBoxReceipt(
   items: BoxItemForPrint[],
   customer: CustomerForPrint | null,
   t: TFunc,
-  options?: { documentTitle?: string },
+  options?: { documentTitle?: string; direction?: 'ltr' | 'rtl' },
 ): void {
+  // Direction follows the chosen receipt language (rtl for ku/ar, ltr for
+  // en/zh). Defaults to rtl for back-compat with callers that don't pass it.
+  const direction = options?.direction || 'rtl';
   const totalWeight = formatNum(box.totalWeightKg);
   const totalValue = formatNum(box.totalValueUsd);
   const deliveryCharge = formatNum(box.deliveryChargeUsd);
@@ -428,7 +449,7 @@ export function printBoxReceipt(
 
   const itemsRows = items.map((item, idx) => {
     const description = item.itemType === "commission"
-      ? normalizeCommissionDescription(item.description)
+      ? normalizeCommissionDescription(item.description, t)
       : (item.description || "-");
     return `
     <tr style="${idx % 2 === 0 ? "background:#f9fafb;" : ""}">
@@ -448,7 +469,7 @@ export function printBoxReceipt(
   // a human-readable label.
   const documentTitle = options?.documentTitle || `${t("delivery.receipt")} - ${box.boxCode}`;
   const html = `<!DOCTYPE html>
-<html dir="rtl">
+<html dir="${direction}">
 <head>
   <meta charset="UTF-8">
   <title>${documentTitle}</title>
@@ -712,11 +733,11 @@ export function printBoxReceipt(
           <span style="font-weight:700;">$${grandTotal}</span>
         </div>
         <div class="financial-row" style="color:#059669;">
-          <span>💰 پارەی پێشەکی دراو:</span>
+          <span>💰 ${t("delivery.advancePaid")}:</span>
           <span style="font-weight:600;">−$${advanceTotal}</span>
         </div>
         <div class="financial-row total">
-          <span>ماوە بۆ دان:</span>
+          <span>${t("delivery.remainingDue")}:</span>
           <span>$${remainingDue}</span>
         </div>
         ` : `
@@ -782,8 +803,10 @@ export function downloadBoxReceiptPDF(
   items: BoxItemForPrint[],
   customer: CustomerForPrint | null,
   t: TFunc,
+  options?: { direction?: 'ltr' | 'rtl' },
 ): void {
   printBoxReceipt(box, items, customer, t, {
     documentTitle: `${box.boxCode}.pdf`,
+    direction: options?.direction,
   });
 }

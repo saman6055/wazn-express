@@ -5574,6 +5574,11 @@
     "noExpenses": "本时段无支出"
   },
   "delivery": {
+    "advancePaid": "已付预付款",
+    "remainingDue": "应付余额",
+    "itemPriceLabel": "商品价格",
+    "shippingLabel": "运费",
+    "sharedOrdersSuffix": "（{{count}} 个共享订单）",
     "pageTitle": "客户配送",
     "pageSubtitle": "创建配送箱并扫描包裹",
     "todayBoxes": "今日配送箱",

@@ -75,6 +75,34 @@ function replaceParams(text: string, params?: Record<string, string | number>): 
   });
 }
 
+// Standalone translator bound to a SPECIFIC language, independent of the
+// active UI language. Used by export/print flows that must render in a
+// chosen language regardless of what the user is currently viewing — e.g.
+// the delivery-box receipt that staff can print in Kurdish, Arabic, or
+// English on demand. Mirrors the in-context `t` callback's ku→en fallback
+// chain so a missing key behaves identically.
+export type Translator = (key: string, params?: Record<string, string | number>) => string;
+
+export function createTranslator(language: Language): Translator {
+  return (key, params) => {
+    const value = getNestedValue(translations[language], key);
+    if (value) return replaceParams(value, params);
+    if (language !== 'ku') {
+      const ku = getNestedValue(translations.ku, key);
+      if (ku) return replaceParams(ku, params);
+    }
+    if (language !== 'en') {
+      const en = getNestedValue(translations.en, key);
+      if (en) return replaceParams(en, params);
+    }
+    return key;
+  };
+}
+
+export function getLanguageDirection(language: Language): 'ltr' | 'rtl' {
+  return (LANGUAGES.find(l => l.code === language) || LANGUAGES[0]).direction;
+}
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
   // Get initial language from localStorage or default to Kurdish
   const [language, setLanguageState] = useState<Language>(() => {

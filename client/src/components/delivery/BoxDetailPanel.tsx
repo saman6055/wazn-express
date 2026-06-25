@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { useTranslation, createTranslator, getLanguageDirection, LANGUAGES, type Language } from "@/contexts/LanguageContext";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { soundManager } from "@/lib/soundManager";
@@ -8,6 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -33,7 +41,13 @@ import {
   Weight,
   DollarSign,
   RefreshCw,
+  ChevronDown,
 } from "lucide-react";
+
+// Languages offered for the printable box receipt / PDF. Staff can print
+// any one regardless of the active UI language. Chinese is intentionally
+// excluded — receipts are for local (KU/AR/EN) customers.
+const RECEIPT_LANGUAGES: Language[] = ["ku", "ar", "en"];
 import { printBoxLabel, printBoxReceipt, downloadBoxReceiptPDF, normalizeCommissionDescription } from "@/lib/deliveryBoxPrintUtils";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
@@ -268,10 +282,10 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     );
   };
 
-  // Receipt and PDF share the same payload — the only difference is the
-  // suggested filename (downloadBoxReceiptPDF sets document.title to
-  // `${boxCode}.pdf` so the browser's "Save as PDF" picks that name).
-  const buildReceiptArgs = () =>
+  // Receipt and PDF share the same data payload. The language is chosen at
+  // print time (createTranslator + getLanguageDirection), independent of the
+  // active UI language, so staff can hand each customer a receipt in ku/ar/en.
+  const buildReceiptPayload = () =>
     [
       {
         boxCode: box.boxCode,
@@ -306,17 +320,16 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             address: customer.address,
           }
         : null,
-      t,
     ] as const;
 
-  const handlePrintReceipt = () => {
-    const [b, its, c, tt] = buildReceiptArgs();
-    printBoxReceipt(b, its, c, tt);
+  const handlePrintReceipt = (lang: Language) => {
+    const [b, its, c] = buildReceiptPayload();
+    printBoxReceipt(b, its, c, createTranslator(lang), { direction: getLanguageDirection(lang) });
   };
 
-  const handleDownloadReceiptPDF = () => {
-    const [b, its, c, tt] = buildReceiptArgs();
-    downloadBoxReceiptPDF(b, its, c, tt);
+  const handleDownloadReceiptPDF = (lang: Language) => {
+    const [b, its, c] = buildReceiptPayload();
+    downloadBoxReceiptPDF(b, its, c, createTranslator(lang), { direction: getLanguageDirection(lang) });
   };
 
   return (
@@ -588,19 +601,57 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             <Printer className="h-4 w-4 me-1" />
             {t("delivery.printLabel")}
           </Button>
-          <Button variant="outline" size="sm" onClick={handlePrintReceipt}>
-            <FileText className="h-4 w-4 me-1" />
-            {t("delivery.printReceipt")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadReceiptPDF}
-            className="text-red-700 hover:text-red-800 hover:bg-red-50 hover:border-red-200"
-          >
-            <FileDown className="h-4 w-4 me-1" />
-            PDF
-          </Button>
+          {/* Print receipt — pick language (KU / AR / EN) at print time */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <FileText className="h-4 w-4 me-1" />
+                {t("delivery.printReceipt")}
+                <ChevronDown className="h-3 w-3 ms-1 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{t("delivery.printReceipt")}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {RECEIPT_LANGUAGES.map((lang) => {
+                const info = LANGUAGES.find((l) => l.code === lang);
+                return (
+                  <DropdownMenuItem key={lang} onClick={() => handlePrintReceipt(lang)}>
+                    <span className="me-2">{info?.flag}</span>
+                    {info?.nativeName}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Download PDF — same language choice */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-700 hover:text-red-800 hover:bg-red-50 hover:border-red-200"
+              >
+                <FileDown className="h-4 w-4 me-1" />
+                PDF
+                <ChevronDown className="h-3 w-3 ms-1 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>PDF</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {RECEIPT_LANGUAGES.map((lang) => {
+                const info = LANGUAGES.find((l) => l.code === lang);
+                return (
+                  <DropdownMenuItem key={lang} onClick={() => handleDownloadReceiptPDF(lang)}>
+                    <span className="me-2">{info?.flag}</span>
+                    {info?.nativeName}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardContent>
     </Card>
