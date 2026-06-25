@@ -189,10 +189,15 @@ export async function removeItemFromBox(itemId: number): Promise<void> {
  *
  * Per order type, "what has the customer already paid for this order's
  * goods?":
- *  - commission       → `totalPrepaidUsd` (item × qty + commission,
- *                        paid at order creation; this is the source of
- *                        truth, populated even when payment came from
- *                        the wallet).
+ *  - commission       → `advancePaidUsd` only (the advance actually paid
+ *                        at order creation, recorded as a CREDIT_PAYMENT).
+ *                        NOT `totalPrepaidUsd` — that is the goods value
+ *                        (item × qty + commission) stored on every
+ *                        commission order whether or not money was paid,
+ *                        so using it credited the full order value and
+ *                        under-billed at delivery. Legacy prepaid-at-
+ *                        creation orders (`isPrepaid`) fall back to
+ *                        `paidFromBalanceUsd`. See `fpAdvance` for detail.
  *  - full_package /
  *    purchase_request → MAX(`paidFromBalanceUsd`, `advancePaidUsd`).
  *                        - `advancePaidUsd` is set when a CASH advance
@@ -232,13 +237,31 @@ export type BoxItemWithAdvance = DeliveryBoxItem & {
 
 function fpAdvance(fp: typeof fullPackageOrders.$inferSelect): number {
   if (fp.orderType === 'commission') {
-    // Commission quickcreate sets totalPrepaidUsd AND paidFromBalanceUsd
-    // to the same value (item + commission). totalPrepaidUsd is the
-    // canonical field; falling back to paidFromBalanceUsd protects against
-    // any future commission flow that forgets to mirror.
-    const t = Number(fp.totalPrepaidUsd || 0) || 0;
-    const p = Number((fp as any).paidFromBalanceUsd || 0) || 0;
-    return Math.max(t, p);
+    // The ONLY money a customer pays toward a modern commission order
+    // before delivery is the advance recorded at order creation
+    // (`advancePaidUsd` — a real CREDIT_PAYMENT on the ledger, set by the
+    // create/bulkCreate/edit flows). This is exactly what the authoritative
+    // batch-delivery invoice credits (batches.router.ts: it sums
+    // advancePaidUsd and nothing else), so the box must match it.
+    //
+    // Deliberately NOT `totalPrepaidUsd`: that is the GOODS VALUE
+    // (item × qty + commission), stored on every commission order whether
+    // or not any money changed hands. Crediting it treated the full order
+    // value as "already paid" and under-billed the customer at delivery —
+    // the production bug report this fixes.
+    //
+    // Deliberately NOT `paidFromBalanceUsd` for the modern path: for
+    // commission, that field is the goods DEBIT applied AT batch delivery
+    // (batches.router.ts:469 — what the customer now OWES), not a
+    // prepayment.
+    const adv = Number((fp as any).advancePaidUsd || 0) || 0;
+    // Legacy `createCommissionOrder` charged item+commission from the wallet
+    // at creation and flagged the order `isPrepaid: true` (the only writer of
+    // that flag). For those historical orders the goods ARE genuinely
+    // prepaid, so honor `paidFromBalanceUsd`. Modern orders never set
+    // isPrepaid, so this branch can't reintroduce the over-credit.
+    const legacyPrepaid = fp.isPrepaid ? (Number((fp as any).paidFromBalanceUsd || 0) || 0) : 0;
+    return Math.max(adv, legacyPrepaid);
   }
   if (fp.orderType === 'full_package' || fp.orderType === 'purchase_request') {
     const a = Number((fp as any).advancePaidUsd || 0) || 0;
