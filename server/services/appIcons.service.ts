@@ -8,8 +8,9 @@
  *
  * This module serves them live instead:
  *   • GET /app-icons/icon-:size.png  — the company logo, fetched from storage
- *     and resized with sharp into a square, aspect-preserved PNG of the
- *     requested size (small transparent margin so it isn't edge-to-edge).
+ *     and resized (with Jimp — pure JS, no native binary, so it builds on
+ *     Alpine) into a square, aspect-preserved PNG of the requested size
+ *     (small transparent margin so it isn't edge-to-edge).
  *   • GET /manifest.json             — a manifest whose icons point at the
  *     above when a logo is set (falls back to the bundled brand icons
  *     otherwise), plus the company name.
@@ -19,7 +20,7 @@
  * the browser tab, but existing home-screen installs only refresh after the
  * user removes and re-adds the app. That is an OS rule, not a server issue.
  */
-import sharp from "sharp";
+import Jimp from "jimp";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { appLogger } from "../utils/logger";
@@ -68,20 +69,19 @@ async function getLogoBytes(url: string): Promise<Buffer | null> {
 }
 
 async function renderIcon(bytes: Buffer, size: number): Promise<Buffer> {
-  // Centre the logo on a transparent square with an 8% margin. fit:contain
-  // preserves aspect ratio so non-square logos aren't distorted.
+  // Centre the logo on a transparent square with an 8% margin. Jimp's
+  // contain() preserves aspect ratio (no distortion of non-square logos) and
+  // returns an inner×inner image, which we composite onto the square canvas.
+  // Jimp is pure JS — no native binaries — so it builds cleanly on Alpine.
   const margin = Math.round(size * 0.08);
   const inner = Math.max(1, size - margin * 2);
-  const resized = await sharp(bytes)
-    .resize(inner, inner, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png()
-    .toBuffer();
-  return sharp({
-    create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
-  })
-    .composite([{ input: resized, gravity: "center" }])
-    .png()
-    .toBuffer();
+  const logo = await Jimp.read(bytes);
+  logo.contain(inner, inner);
+  const canvas = new Jimp(size, size, 0x00000000); // transparent square
+  const x = Math.round((size - logo.bitmap.width) / 2);
+  const y = Math.round((size - logo.bitmap.height) / 2);
+  canvas.composite(logo, x, y);
+  return canvas.getBufferAsync(Jimp.MIME_PNG);
 }
 
 // Small deterministic hash so the icon URLs change when the logo changes,
