@@ -17,6 +17,7 @@ import { serveStatic } from "./static";
 import { loadConfig, getConfig } from "../config";
 import { globalLimiter, authLimiterMiddleware } from "../middleware/rateLimiter";
 import { registerHealthRoutes } from "./health";
+import { registerAppIconRoutes } from "../services/appIcons.service";
 import { appLogger, requestLoggingMiddleware } from "../utils/logger";
 import { closeDb } from "../db/connection";
 
@@ -181,6 +182,11 @@ async function startServer() {
       createContext,
     })
   );
+  // Dynamic PWA manifest + app icons from the uploaded company logo.
+  // MUST be before the Vite/static handlers so /manifest.json wins over the
+  // bundled file in client/public.
+  registerAppIconRoutes(app);
+
   // Local uploads (when Forge is not configured)
   const uploadsDir = path.join(process.cwd(), "uploads");
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });

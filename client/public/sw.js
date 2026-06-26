@@ -1,7 +1,11 @@
 // Wazn Express Service Worker
-const CACHE_NAME = 'wazn-express-v1';
-const STATIC_CACHE = 'wazn-static-v1';
-const DYNAMIC_CACHE = 'wazn-dynamic-v1';
+// Bump the version when caching behavior changes so the activate handler
+// purges stale caches. v2: /manifest.json + app icons are now generated
+// dynamically from the company logo, so the old precached static manifest
+// must be cleared.
+const CACHE_NAME = 'wazn-express-v2';
+const STATIC_CACHE = 'wazn-static-v2';
+const DYNAMIC_CACHE = 'wazn-dynamic-v2';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [

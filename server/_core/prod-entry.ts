@@ -19,6 +19,7 @@ import { initializeScheduledBackups } from "../services/scheduledBackups.service
 import { loadConfig } from "../config";
 import { globalLimiter, authLimiterMiddleware } from "../middleware/rateLimiter";
 import { registerHealthRoutes } from "./health";
+import { registerAppIconRoutes } from "../services/appIcons.service";
 import { appLogger, requestLoggingMiddleware } from "../utils/logger";
 import { closeDb } from "../db/connection";
 import autoMigrate from "./autoMigrate";
@@ -120,6 +121,10 @@ async function startServer() {
       createContext,
     })
   );
+
+  // Dynamic PWA manifest + app icons from the uploaded company logo.
+  // MUST be before serveStatic so /manifest.json wins over the bundled file.
+  registerAppIconRoutes(app);
 
   // Production mode: serve static files
   serveStatic(app);
