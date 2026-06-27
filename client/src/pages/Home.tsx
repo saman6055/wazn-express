@@ -20,11 +20,12 @@ export default function Home() {
       setLocation(user.role === "customer" ? "/portal" : "/dashboard");
       return;
     }
-    // Staff entry is the dedicated subdomain (e.g. staff.waznexpress.com).
-    // Its root sends anonymous visitors straight to the staff login, so the
-    // public landing page no longer carries a staff-login button.
-    const onStaffSubdomain =
-      typeof window !== "undefined" && window.location.hostname.startsWith("staff.");
+    // Staff entry is the dedicated subdomain (admin.waznexpress.com). Its
+    // root sends anonymous visitors straight to the staff login, so the
+    // public landing page no longer carries a staff-login button. "staff."
+    // is kept as a harmless alias in case that host is ever pointed here too.
+    const host = typeof window !== "undefined" ? window.location.hostname : "";
+    const onStaffSubdomain = host.startsWith("admin.") || host.startsWith("staff.");
     if (onStaffSubdomain) {
       setLocation("/staff-login");
     }
