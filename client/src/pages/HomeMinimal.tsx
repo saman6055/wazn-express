@@ -142,11 +142,6 @@ export default function HomeMinimal() {
                 <span className="hidden sm:inline">{t("home.customerPortal")}</span>
               </Button>
             </Link>
-            <Link href="/staff-login">
-              <Button size="sm" className="bg-[linear-gradient(to_right,var(--landing-cta-from),var(--landing-cta-to))] text-white hover:opacity-90">
-                {t("auto.text_9b64a9")}
-              </Button>
-            </Link>
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden text-[var(--landing-text)]">
@@ -162,9 +157,6 @@ export default function HomeMinimal() {
                   <hr className="border-[var(--landing-border)]" />
                   <Link href="/customer-login" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full border-[var(--landing-border)]">{t("home.trackPackage")}</Button>
-                  </Link>
-                  <Link href="/staff-login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full bg-[var(--landing-accent)]">{t("auto.text_9b64a9")}</Button>
                   </Link>
                 </div>
               </SheetContent>

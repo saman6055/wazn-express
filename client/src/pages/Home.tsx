@@ -14,9 +14,19 @@ export default function Home() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!authLoading && user) {
-      if (user.role === "customer") setLocation("/portal");
-      else setLocation("/dashboard");
+    if (authLoading) return;
+    // Logged-in users always go to their app.
+    if (user) {
+      setLocation(user.role === "customer" ? "/portal" : "/dashboard");
+      return;
+    }
+    // Staff entry is the dedicated subdomain (e.g. staff.waznexpress.com).
+    // Its root sends anonymous visitors straight to the staff login, so the
+    // public landing page no longer carries a staff-login button.
+    const onStaffSubdomain =
+      typeof window !== "undefined" && window.location.hostname.startsWith("staff.");
+    if (onStaffSubdomain) {
+      setLocation("/staff-login");
     }
   }, [user, authLoading, setLocation]);
 

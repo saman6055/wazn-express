@@ -1,9 +1,8 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { getLoginUrl } from "@/const";
 import CompanyLogo from "@/components/CompanyLogo";
 import {
-  Package, Plane, Ship, Globe, Shield, BarChart3, ArrowRight, Users,
+  Package, Plane, Ship, Globe, Shield, BarChart3, Users,
   MapPin, Clock, CheckCircle, Star, Phone, Mail, Facebook, Instagram,
   Truck, Zap, HeadphonesIcon, Award, ChevronRight, Search, FileText, UserCircle
 } from "lucide-react";
@@ -94,11 +93,6 @@ export default function HomeClassic() {
                 <span className="hidden sm:inline">{t("home.customerPortal")}</span>
               </Button>
             </Link>
-            <Link href="/staff-login">
-              <Button className="bg-[length:200%_100%] bg-[linear-gradient(to_right,var(--landing-cta-from),var(--landing-cta-to))] hover:opacity-90 text-white shadow-lg w-full sm:w-auto">
-                {t("auto.text_9b64a9")}
-              </Button>
-            </Link>
           </div>
         </div>
       </header>
@@ -140,10 +134,6 @@ export default function HomeClassic() {
                     {t("auto.text_623179")}
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" onClick={() => window.location.href = getLoginUrl()} className="border-[var(--landing-border)] text-[var(--landing-text)] hover:bg-[var(--landing-card)] w-full sm:w-auto">
-                  {t("home.staffLogin")}
-                  <ArrowRight className="ms-2 h-4 w-4" />
-                </Button>
               </div>
             </div>
             <div className="relative hidden lg:block">
