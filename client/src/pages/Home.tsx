@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import HomeClassic from "./HomeClassic";
 import HomeMinimal from "./HomeMinimal";
+import HomeProfessional from "./HomeProfessional";
 
 export default function Home() {
   const { data: variant, isLoading: variantLoading } = trpc.public.getLandingPageVariant.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
@@ -44,6 +45,10 @@ export default function Home() {
 
   if (variant === "minimal") {
     return <HomeMinimal />;
+  }
+
+  if (variant === "professional") {
+    return <HomeProfessional />;
   }
 
   return <HomeClassic />;

@@ -1304,11 +1304,12 @@ export const publicRouter = router({
         const theme = await db.getSetting('landingTheme');
         return theme || 'dark';
       }),
-    // Get landing page variant (classic | minimal)
+    // Get landing page variant (classic | minimal | professional)
     getLandingPageVariant: publicProcedure
       .query(async () => {
         const v = await db.getSetting('landingPageVariant');
-        return (v === 'minimal' ? 'minimal' : 'classic') as 'classic' | 'minimal';
+        const variant = v === 'minimal' ? 'minimal' : v === 'professional' ? 'professional' : 'classic';
+        return variant as 'classic' | 'minimal' | 'professional';
       }),
     // Get landing team members (for "Our Team" section)
     getLandingTeam: publicProcedure
