@@ -154,9 +154,9 @@ export default function QuickRegister() {
             }
           }
           const sourceLabels: Record<string, string> = {
-            full_package: "فول پاکێج",
-            commission: "کڕین بە عموڵە",
-            package: "پاکەت (پێشتر تۆمار کراوە)"
+            full_package: t("quickRegister.sourceFullPackage"),
+            commission: t("quickRegister.sourceCommission"),
+            package: t("quickRegister.sourcePackageRegistered")
           };
 
           if (result.source === "package") {
@@ -165,9 +165,9 @@ export default function QuickRegister() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-yellow-500" />
                 <div>
-                  <div className="font-medium">ئەم تراکینگە پێشتر تۆمار کراوە!</div>
+                  <div className="font-medium">{t("quickRegister.trackingAlreadyRegistered")}</div>
                   <div className="text-sm text-muted-foreground">
-                    کڕیار: {result.customer?.customerCode || "نەناسراو"}
+                    {t("quickRegister.customerLabel")}: {result.customer?.customerCode || t("quickRegister.unknown")}
                   </div>
                 </div>
               </div>
@@ -178,9 +178,9 @@ export default function QuickRegister() {
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
                 <div>
-                  <div className="font-medium">تراکینگ دۆزرایەوە!</div>
+                  <div className="font-medium">{t("quickRegister.trackingFound")}</div>
                   <div className="text-sm text-muted-foreground">
-                    {sourceLabels[result.source || ""] || "نەناسراو"}
+                    {sourceLabels[result.source || ""] || t("quickRegister.unknown")}
                   </div>
                 </div>
               </div>
@@ -192,7 +192,7 @@ export default function QuickRegister() {
           }, 100);
         } else {
           soundManager.playNotFound();
-          toast.info("تراکینگ نەدۆزرایەوە - دەتوانیت بەردەوام بیت");
+          toast.info(t("quickRegister.trackingNotFound"));
           setTimeout(() => {
             weightRef.current?.focus();
             weightRef.current?.select();
@@ -205,9 +205,9 @@ export default function QuickRegister() {
       console.error("Search error:", error);
       soundManager.playError();
       if (error?.message?.includes("UNAUTHORIZED")) {
-        toast.error("تکایە چوونەژوورەوە بکەرەوە");
+        toast.error(t("quickRegister.pleaseLogIn"));
       } else {
-        toast.error("هەڵە لە گەڕاندا");
+        toast.error(t("quickRegister.searchError"));
       }
     } finally {
       if (searchVersionRef.current === thisSearchVersion) {
@@ -342,22 +342,22 @@ export default function QuickRegister() {
     for (const file of Array.from(files)) {
       try {
         if (file.size > 10 * 1024 * 1024) {
-          toast.error(`فایلی ${file.name} زۆر گەورەیە (max 10MB)`);
+          toast.error(t("quickRegister.fileTooLarge", { name: file.name }));
           continue;
         }
-        
-        toast.info(`کۆمپرێسی ${file.name}...`);
+
+        toast.info(t("quickRegister.compressing", { name: file.name }));
         const { base64, type } = await compressImage(file);
-        
+
         await uploadMutation.mutateAsync({
           fileName: file.name.replace(/\.[^.]+$/, '.jpg'),
           contentType: type,
           base64Data: base64,
         });
-        
-        toast.success(`${file.name} بۆ سەرکەوتی ئەپڵۆدکرا`);
+
+        toast.success(t("quickRegister.uploadSuccess", { name: file.name }));
       } catch (error) {
-        toast.error(`هەڵە لە ئەپڵۆدکردنی ${file.name}`);
+        toast.error(t("quickRegister.uploadError", { name: file.name }));
       }
     }
     
@@ -470,17 +470,17 @@ export default function QuickRegister() {
       setLastRegistered({
         packageCode: data.packageCode,
         trackingNumber: trackingNumber,
-        customerName: customerSearch || 'بێ خاوەن',
+        customerName: customerSearch || t("quickRegister.unclaimed"),
         time: new Date()
       });
-      
+
       toast.success(
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
             <CheckCircle2 className="h-6 w-6 text-green-600" />
           </div>
           <div>
-            <div className="font-bold text-lg">پاکەت تۆمارکرا!</div>
+            <div className="font-bold text-lg">{t("quickRegister.packageRegistered")}</div>
             <div className="text-base font-mono text-muted-foreground">{data.packageCode}</div>
           </div>
         </div>
@@ -502,13 +502,13 @@ export default function QuickRegister() {
       if (msg.includes("کۆگا") || msg.includes("کڕیار") || msg.includes("گرووپ") || msg.includes("جۆری") || msg.includes("تکایە") || msg.includes("تراکینگە پێشتر") || msg.includes("هەڵەی داتابەیس")) {
         toast.error(msg);
       } else if (msg.includes("Warehouse not found")) {
-        toast.error("کۆگا نەدۆزرایەوە. تکایە لە ڕێکخستنەکان کۆگا زیاد بکە.");
+        toast.error(t("quickRegister.warehouseNotFound"));
       } else if (msg.includes("Customer not found")) {
-        toast.error("کڕیار نەدۆزرایەوە. کڕیارێکی تر هەڵبژێرە یان بێ خاوەن دیاری بکە.");
+        toast.error(t("quickRegister.customerNotFound"));
       } else if (msg.includes("duplicate") || /تۆمار کراوە|already registered|CONFLICT/i.test(msg)) {
-        toast.error("ئەم تراکینگە پێشتر تۆمار کراوە.");
+        toast.error(t("quickRegister.trackingAlreadyRegisteredShort"));
       } else {
-        toast.error(msg || "هەڵەیەک ڕوویدا. دووبارە هەوڵ بدەرەوە.");
+        toast.error(msg || t("quickRegister.genericError"));
       }
     },
   });
@@ -561,7 +561,7 @@ export default function QuickRegister() {
     setPhotos([]);
     setHighlightedCustomerIndex(-1);
     trackingRef.current?.focus();
-    toast.info("فۆرم پاككرایەوە");
+    toast.info(t("quickRegister.formCleared"));
   };
   
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -570,11 +570,11 @@ export default function QuickRegister() {
     // Require tracking number - cannot register without it
     if (!trackingNumber.trim()) {
       soundManager.playError();
-      toast.error("تکایە تراکینگ نەمبەر داخل بکە");
+      toast.error(t("quickRegister.pleaseEnterTracking"));
       trackingRef.current?.focus();
       return;
     }
-    
+
     // Prevent duplicate registration - if tracking already exists as package
     if (foundOrder?.source === "package") {
       soundManager.playDuplicate();
@@ -582,23 +582,23 @@ export default function QuickRegister() {
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-red-500" />
           <div>
-            <div className="font-medium">ئەم تراکینگە پێشتر تۆمار کراوە!</div>
-            <div className="text-sm">ناتوانرێت دووبارە تۆماری بکەیت</div>
+            <div className="font-medium">{t("quickRegister.trackingAlreadyRegistered")}</div>
+            <div className="text-sm">{t("quickRegister.cannotReRegister")}</div>
           </div>
         </div>
       );
       return;
     }
-    
+
     if (!customerId && !isUnclaimed) {
       soundManager.playError();
-      toast.error("تکایە کڕیارێک هەڵبژێرە یان بێ خاوەن دیاری بکە");
+      toast.error(t("quickRegister.pleaseSelectCustomerOrUnclaimed"));
       return;
     }
-    
+
     if (!selectedWarehouse) {
       soundManager.playError();
-      toast.error("تکایە کۆگایەک هەڵبژێرە");
+      toast.error(t("quickRegister.pleaseSelectWarehouse"));
       return;
     }
 
@@ -622,7 +622,7 @@ export default function QuickRegister() {
     // Block submit on customer-mismatch — single-customer rule.
     if (expandedLookup?.flags?.customerMismatch) {
       soundManager.playError();
-      toast.error("ئەم تراکینگە بۆ ئۆردەری کڕیاری جیاوازە. تکایە لە سەرچاوە چاکی بکەرەوە.");
+      toast.error(t("quickRegister.trackingDifferentCustomer"));
       return;
     }
 
@@ -659,14 +659,14 @@ export default function QuickRegister() {
   const getOrderTypeInfo = (source: string | null) => {
     switch (source) {
       case "full_package":
-        return { label: "فول پاکێج", color: "bg-gradient-to-r from-purple-500 to-purple-600 text-white", icon: "📦" };
+        return { label: t("quickRegister.sourceFullPackage"), color: "bg-gradient-to-r from-purple-500 to-purple-600 text-white", icon: "📦" };
 
       case "commission":
-        return { label: "کڕین بە عمولە", color: "bg-gradient-to-r from-green-500 to-green-600 text-white", icon: "💰" };
+        return { label: t("quickRegister.sourceCommission"), color: "bg-gradient-to-r from-green-500 to-green-600 text-white", icon: "💰" };
       case "package":
-        return { label: "پاکەت", color: "bg-gradient-to-r from-gray-500 to-gray-600 text-white", icon: "📦" };
+        return { label: t("quickRegister.sourcePackage"), color: "bg-gradient-to-r from-gray-500 to-gray-600 text-white", icon: "📦" };
       default:
-        return { label: "نەناسراو", color: "bg-gray-100 text-gray-800", icon: "❓" };
+        return { label: t("quickRegister.unknown"), color: "bg-gray-100 text-gray-800", icon: "❓" };
     }
   };
 
@@ -679,11 +679,11 @@ export default function QuickRegister() {
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
               <p className="text-sm text-amber-800 dark:text-amber-200">
-                پەیوەندی بە هەندێک داتا نەگەیشت. دەتوانیت دووبارە هەوڵ بدەیتەوە یان بە بەتاڵی بەردەوام بەیت.
+                {t("quickRegister.dataLoadError")}
               </p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={refetchAll} className="border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-900/40">
-              دووبارە هەوڵ بدە
+              {t("quickRegister.retry")}
             </Button>
           </div>
         )}
@@ -699,8 +699,8 @@ export default function QuickRegister() {
                   <Zap className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">تۆماری خێرا</h1>
-                  <p className="text-white/80 text-sm">Enter بۆ تۆمار | Tab بۆ گواستنەوە | Esc بۆ پاککردنەوە | ↑↓ بۆ لیست</p>
+                  <h1 className="text-2xl font-bold text-white">{t("quickRegister.title")}</h1>
+                  <p className="text-white/80 text-sm">{t("quickRegister.shortcutsHint")}</p>
                 </div>
               </div>
               
@@ -711,7 +711,7 @@ export default function QuickRegister() {
                     <Calendar className="h-5 w-5 text-white" />
                   </div>
                   <div className="text-white">
-                    <div className="text-xs opacity-80">ئەمڕۆ تۆمارکراو</div>
+                    <div className="text-xs opacity-80">{t("quickRegister.todayRegistered")}</div>
                     <div className="text-3xl font-bold">{packageStats?.todayCount || 0}</div>
                   </div>
                 </div>
@@ -724,7 +724,7 @@ export default function QuickRegister() {
                   className="bg-white/20 border-white/30 text-white hover:bg-white/30 h-14 px-4"
                 >
                   <RotateCcw className="h-5 w-5 ms-2" />
-                  پاككردنەوە
+                  {t("quickRegister.clear")}
                 </Button>
               </div>
             </div>
@@ -734,7 +734,7 @@ export default function QuickRegister() {
               <div className="mt-4 bg-white/20 backdrop-blur rounded-xl px-4 py-3 flex items-center gap-3">
                 <CheckCircle2 className="h-6 w-6 text-white" />
                 <div className="text-white">
-                  <span className="font-bold">دوایین تۆمار: </span>
+                  <span className="font-bold">{t("quickRegister.lastRegistered")}: </span>
                   <span className="font-mono">{lastRegistered.packageCode}</span>
                   <span className="mx-2">•</span>
                   <span className="opacity-80">{lastRegistered.trackingNumber}</span>
@@ -760,13 +760,13 @@ export default function QuickRegister() {
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                         <PackageSearch className="h-4 w-4 text-white" />
                       </div>
-                      <span className="text-sm font-bold text-amber-800">١. تراکینگ</span>
+                      <span className="text-sm font-bold text-amber-800">{t("quickRegister.stepTracking")}</span>
                       {isSearching && <Loader2 className="h-4 w-4 animate-spin text-amber-500" />}
                     </div>
                     <div className="flex gap-2">
                       <Input
                         ref={trackingRef}
-                        placeholder="تراکینگ نەمبەر..."
+                        placeholder={t("quickRegister.trackingPlaceholder")}
                         value={trackingNumber}
                         onChange={(e) => handleTrackingChange(e.target.value)}
                         onKeyDown={(e) => {
@@ -826,7 +826,7 @@ export default function QuickRegister() {
                         </div>
                         {foundOrder.customer && (
                           <div className="mt-1 text-muted-foreground">
-                            کڕیار: <span className="font-bold text-primary">{foundOrder.customer.customerCode}</span>
+                            {t("quickRegister.customerLabel")}: <span className="font-bold text-primary">{foundOrder.customer.customerCode}</span>
                           </div>
                         )}
                       </div>
@@ -841,8 +841,8 @@ export default function QuickRegister() {
                         <div className="flex items-start gap-2 text-rose-900 dark:text-rose-200">
                           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                           <div>
-                            <div className="font-bold">تراکینگی هاوبەش بۆ کڕیاری جیاواز</div>
-                            <div className="text-xs opacity-90">submit بەردەست نییە. تکایە لە لاپەرەی Tracking Alerts چاکی بکەرەوە.</div>
+                            <div className="font-bold">{t("quickRegister.sharedTrackingDifferentCustomer")}</div>
+                            <div className="text-xs opacity-90">{t("quickRegister.submitDisabledFixInAlerts")}</div>
                           </div>
                         </div>
                       </div>
@@ -851,7 +851,7 @@ export default function QuickRegister() {
                       <div className="mt-3 p-3 rounded-lg border-2 border-orange-300 bg-orange-50 dark:bg-orange-950/30">
                         <div className="flex items-center gap-2 text-orange-900 dark:text-orange-200 mb-2">
                           <span>🔗</span>
-                          <span className="font-bold">تراکی هاوبەش • {expandedLookup.orders.length} ئۆردەر</span>
+                          <span className="font-bold">{t("quickRegister.sharedTrackingOrders", { count: expandedLookup.orders.length })}</span>
                         </div>
                         <div className="space-y-1 mb-2">
                           {expandedLookup.orders.map((od) => (
@@ -870,7 +870,7 @@ export default function QuickRegister() {
                         </div>
                         {expandedLookup.flags?.batchConflict && (
                           <div className="text-xs text-amber-800 dark:text-amber-300 mb-2">
-                            ⚠ ئۆردەرە گرێدراوەکان لە کۆمەڵەی جیاوازدان.
+                            ⚠ {t("quickRegister.linkedOrdersDifferentBatches")}
                           </div>
                         )}
                         <label className="flex items-center gap-2 cursor-pointer text-xs">
@@ -882,8 +882,8 @@ export default function QuickRegister() {
                           />
                           <span>
                             {linkAllSharingOrders
-                              ? `هەموو ${expandedLookup.orders.length} ئۆردەر گرێ بدە (پێشنیار)`
-                              : `تەنها ئۆردەری سەرەکی`}
+                              ? t("quickRegister.linkAllOrders", { count: expandedLookup.orders.length })
+                              : t("quickRegister.linkPrimaryOnly")}
                           </span>
                         </label>
                       </div>
@@ -893,7 +893,7 @@ export default function QuickRegister() {
                         <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 mb-2">
                           <span>📦</span>
                           <span className="font-bold">
-                            ئۆردەری {expandedLookup.orders[0].order.orderCode} بە {expandedLookup.orders[0].trackings.length} کارتۆن
+                            {t("quickRegister.orderWithCartons", { orderCode: expandedLookup.orders[0].order.orderCode, count: expandedLookup.orders[0].trackings.length })}
                           </span>
                         </div>
                         <div className="space-y-1">
@@ -902,15 +902,15 @@ export default function QuickRegister() {
                             const isThis = tr.trackingNumber === trackingNumber.trim();
                             return (
                               <div key={tr.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-white/70 dark:bg-black/30 border border-blue-200/60 dark:border-blue-800/40">
-                                <span className="font-mono w-12">کارتۆن {tr.cartonIndex}</span>
+                                <span className="font-mono w-12">{t("quickRegister.carton", { index: tr.cartonIndex })}</span>
                                 <span className="font-mono truncate">{tr.trackingNumber}</span>
                                 <span className="ms-auto">
                                   {isThis ? (
-                                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px]">ئێستا</span>
+                                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px]">{t("quickRegister.cartonNow")}</span>
                                   ) : reg ? (
                                     <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px]">✅ {reg.packageCode}</span>
                                   ) : (
-                                    <span className="px-1.5 py-0.5 rounded border border-muted text-muted-foreground text-[10px]">⏳ چاوەڕێ</span>
+                                    <span className="px-1.5 py-0.5 rounded border border-muted text-muted-foreground text-[10px]">⏳ {t("quickRegister.cartonWaiting")}</span>
                                   )}
                                 </span>
                               </div>
@@ -929,13 +929,13 @@ export default function QuickRegister() {
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
                         <User className="h-4 w-4 text-white" />
                       </div>
-                      <span className="text-sm font-bold text-blue-800">٢. کڕیار</span>
+                      <span className="text-sm font-bold text-blue-800">{t("quickRegister.stepCustomer")}</span>
                     </div>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <Input
                           ref={customerInputRef}
-                          placeholder="گەڕان بە کۆد یان ناو..."
+                          placeholder={t("quickRegister.customerSearchPlaceholder")}
                           value={customerSearch}
                           onChange={(e) => {
                             setCustomerSearch(e.target.value);
@@ -988,10 +988,10 @@ export default function QuickRegister() {
                           isUnclaimed ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-green-50 text-green-700 border border-green-200"
                         )}>
                           {isUnclaimed ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                          <span className="font-bold">{isUnclaimed ? "بێ خاوەن" : customers?.find(c => c.id === customerId)?.customerCode}</span>
+                          <span className="font-bold">{isUnclaimed ? t("quickRegister.unclaimed") : customers?.find(c => c.id === customerId)?.customerCode}</span>
                           {lockedByOrder && (
                             <span className="ms-auto text-[11px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-semibold">
-                              🔒 لۆککراو
+                              🔒 {t("quickRegister.locked")}
                             </span>
                           )}
                         </div>
@@ -1007,7 +1007,7 @@ export default function QuickRegister() {
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center">
                         <Warehouse className="h-4 w-4 text-white" />
                       </div>
-                      <span className="text-sm font-bold text-slate-800">٣. کۆگا</span>
+                      <span className="text-sm font-bold text-slate-800">{t("quickRegister.stepWarehouse")}</span>
                     </div>
                     <Select
                       value={originWarehouseId != null ? String(originWarehouseId) : ""}
@@ -1015,12 +1015,12 @@ export default function QuickRegister() {
                       disabled={!warehouses?.length}
                     >
                       <SelectTrigger className="h-12 text-base border-2 border-slate-200 focus:border-slate-400">
-                        <SelectValue placeholder="کۆگا هەڵبژێرە..." />
+                        <SelectValue placeholder={t("quickRegister.warehousePlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
                         {warehouses?.map((w) => (
                           <SelectItem key={w.id} value={String(w.id)}>
-                            <span className="font-medium">{w.nameEn ?? w.nameKu ?? `کۆگا ${w.id}`}</span>
+                            <span className="font-medium">{w.nameEn ?? w.nameKu ?? t("quickRegister.warehouseN", { id: w.id })}</span>
                             {w.codePrefix && (
                               <span className="text-muted-foreground me-2">({w.codePrefix})</span>
                             )}
@@ -1031,7 +1031,7 @@ export default function QuickRegister() {
                     {selectedWarehouse && (
                       <div className="mt-3 p-2 rounded-lg text-sm bg-slate-50 text-slate-700 border border-slate-200 flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-slate-600" />
-                        <span className="font-medium">{selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? `کۆگا ${selectedWarehouse.id}`}</span>
+                        <span className="font-medium">{selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? t("quickRegister.warehouseN", { id: selectedWarehouse.id })}</span>
                       </div>
                     )}
                   </CardContent>
@@ -1044,7 +1044,7 @@ export default function QuickRegister() {
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
                         <Package className="h-4 w-4 text-white" />
                       </div>
-                      <span className="text-sm font-bold text-indigo-800">٤. گواستنەوە</span>
+                      <span className="text-sm font-bold text-indigo-800">{t("quickRegister.stepShipping")}</span>
                     </div>
                     <Select value={shippingType} onValueChange={(v) => { setShippingType(v as any); setBatchId(""); }}>
                       <SelectTrigger className="h-12 text-base border-2 border-indigo-200 focus:border-indigo-400">
@@ -1054,19 +1054,19 @@ export default function QuickRegister() {
                         <SelectItem value="air_regular">
                           <div className="flex items-center gap-2">
                             <Plane className="h-4 w-4 text-blue-500" />
-                            <span>ئاسمانی یاسایی</span>
+                            <span>{t("quickRegister.airRegular")}</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="air_irregular">
                           <div className="flex items-center gap-2">
                             <Plane className="h-4 w-4 text-purple-500" />
-                            <span>ئاسمانی نایاسایی</span>
+                            <span>{t("quickRegister.airIrregular")}</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="sea">
                           <div className="flex items-center gap-2">
                             <Ship className="h-4 w-4 text-cyan-500" />
-                            <span>دەریایی</span>
+                            <span>{t("quickRegister.sea")}</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -1075,10 +1075,10 @@ export default function QuickRegister() {
                     <div className="mt-3">
                       <Select value={batchId} onValueChange={setBatchId}>
                         <SelectTrigger className="h-10 text-sm border-2 border-indigo-200 focus:border-indigo-400">
-                          <SelectValue placeholder="باچ هەڵبژێرە" />
+                          <SelectValue placeholder={t("quickRegister.batchPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">بێ باچ</SelectItem>
+                          <SelectItem value="none">{t("quickRegister.noBatch")}</SelectItem>
                           {filteredBatches.map((batch: any) => (
                             <SelectItem key={batch.id} value={batch.id.toString()}>
                               {batch.batchCode} {batch.pricePerKg ? `- $${batch.pricePerKg}/kg` : batch.pricePerCbm ? `- $${batch.pricePerCbm}/cbm` : ""}
@@ -1098,7 +1098,7 @@ export default function QuickRegister() {
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-md">
                       <Scale className="h-5 w-5 text-white" />
                     </div>
-                    <span className="text-base font-bold text-emerald-800">٤. کێش (KG)</span>
+                    <span className="text-base font-bold text-emerald-800">{t("quickRegister.stepWeight")}</span>
                   </div>
                   <Input
                     ref={weightRef}
@@ -1120,12 +1120,12 @@ export default function QuickRegister() {
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md">
                         <Ruler className="h-5 w-5 text-white" />
                       </div>
-                      <span className="text-base font-bold text-violet-800">٥. قەبارە (CM)</span>
-                      <span className="text-xs text-violet-500 me-2">بۆ کێشی قەبارەیی</span>
+                      <span className="text-base font-bold text-violet-800">{t("quickRegister.stepDimensions")}</span>
+                      <span className="text-xs text-violet-500 me-2">{t("quickRegister.forVolumetricWeight")}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-violet-700">درێژی (cm)</Label>
+                        <Label className="text-sm font-semibold text-violet-700">{t("quickRegister.length")}</Label>
                         <Input
                           type="number"
                           step="0.1"
@@ -1136,7 +1136,7 @@ export default function QuickRegister() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-violet-700">پانی (cm)</Label>
+                        <Label className="text-sm font-semibold text-violet-700">{t("quickRegister.width")}</Label>
                         <Input
                           type="number"
                           step="0.1"
@@ -1147,7 +1147,7 @@ export default function QuickRegister() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-violet-700">بەرزی (cm)</Label>
+                        <Label className="text-sm font-semibold text-violet-700">{t("quickRegister.height")}</Label>
                         <Input
                           type="number"
                           step="0.1"
@@ -1165,14 +1165,14 @@ export default function QuickRegister() {
                           <div className="flex items-center gap-3">
                             <Calculator className="h-5 w-5 text-violet-600" />
                             <div>
-                              <span className="text-sm text-violet-700">کێشی قەبارەیی: </span>
+                              <span className="text-sm text-violet-700">{t("quickRegister.volumetricWeight")}: </span>
                               <span className="font-bold text-violet-900">{volumetricWeight.toFixed(2)} kg</span>
                               <span className="text-xs text-violet-500 me-2">(÷ {volumetricDivisor})</span>
                             </div>
                           </div>
                           <div className="p-3 bg-white rounded-lg shadow">
                             <span className="font-bold text-xl text-violet-800">{chargeableWeight.toFixed(2)} kg</span>
-                            <span className="text-xs text-violet-500 block">کێشی کڕێیی</span>
+                            <span className="text-xs text-violet-500 block">{t("quickRegister.chargeableWeight")}</span>
                           </div>
                         </div>
                       </div>
@@ -1189,11 +1189,11 @@ export default function QuickRegister() {
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md">
                         <Ship className="h-5 w-5 text-white" />
                       </div>
-                      <span className="text-base font-bold text-cyan-800">٥. قەبارە (دەریایی)</span>
+                      <span className="text-base font-bold text-cyan-800">{t("quickRegister.stepDimensionsSea")}</span>
                     </div>
                     <div className="grid grid-cols-4 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700">درێژی (cm)</Label>
+                        <Label className="text-sm font-semibold text-cyan-700">{t("quickRegister.length")}</Label>
                         <Input
                           type="number"
                           step="0.1"
@@ -1204,7 +1204,7 @@ export default function QuickRegister() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700">پانی (cm)</Label>
+                        <Label className="text-sm font-semibold text-cyan-700">{t("quickRegister.width")}</Label>
                         <Input
                           type="number"
                           step="0.1"
@@ -1215,7 +1215,7 @@ export default function QuickRegister() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700">بەرزی (cm)</Label>
+                        <Label className="text-sm font-semibold text-cyan-700">{t("quickRegister.height")}</Label>
                         <Input
                           type="number"
                           step="0.1"
@@ -1226,7 +1226,7 @@ export default function QuickRegister() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700">یان CBM</Label>
+                        <Label className="text-sm font-semibold text-cyan-700">{t("quickRegister.orCbm")}</Label>
                         <Input
                           type="number"
                           step="0.0001"
@@ -1242,7 +1242,7 @@ export default function QuickRegister() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Ship className="h-5 w-5 text-cyan-600" />
-                          <span className="text-sm text-cyan-700">لە قەبارە: <strong>{calculatedCbm.toFixed(4)} m³</strong></span>
+                          <span className="text-sm text-cyan-700">{t("quickRegister.fromDimensions")}: <strong>{calculatedCbm.toFixed(4)} m³</strong></span>
                         </div>
                         <div className="p-3 bg-white rounded-lg shadow">
                           <span className="font-bold text-xl text-cyan-800">{cbm.toFixed(4)} m³</span>
@@ -1265,8 +1265,8 @@ export default function QuickRegister() {
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center">
                         <Tags className="h-4 w-4 text-white" />
                       </div>
-                      <span className="text-sm font-bold">زانیاری زیادە</span>
-                      <span className="text-xs text-muted-foreground">(ئیختیاری)</span>
+                      <span className="text-sm font-bold">{t("quickRegister.additionalInfo")}</span>
+                      <span className="text-xs text-muted-foreground">{t("quickRegister.optional")}</span>
                     </div>
                     <ChevronDown className={cn("h-5 w-5 transition-transform", showOptional && "rotate-180")} />
                   </button>
@@ -1274,10 +1274,10 @@ export default function QuickRegister() {
                   {showOptional && (
                     <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-semibold">جۆری بەرهەم</Label>
+                        <Label className="text-sm font-semibold">{t("quickRegister.productCategory")}</Label>
                         <Select value={categoryId} onValueChange={setCategoryId}>
                           <SelectTrigger className="h-11">
-                            <SelectValue placeholder="جۆر هەڵبژێرە" />
+                            <SelectValue placeholder={t("quickRegister.selectCategory")} />
                           </SelectTrigger>
                           <SelectContent>
                             {categories?.map((cat) => (
@@ -1289,9 +1289,9 @@ export default function QuickRegister() {
                         </Select>
                       </div>
                       <div className="md:col-span-2 space-y-2">
-                        <Label className="text-sm font-semibold">تێبینی</Label>
+                        <Label className="text-sm font-semibold">{t("quickRegister.note")}</Label>
                         <Input
-                          placeholder="تێبینی..."
+                          placeholder={t("quickRegister.notePlaceholder")}
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
                           className="h-11"
@@ -1300,7 +1300,7 @@ export default function QuickRegister() {
                       <div className="md:col-span-3 space-y-2">
                         <Label className="text-sm font-semibold flex items-center gap-2">
                           <Camera className="h-4 w-4" />
-                          وێنە
+                          {t("quickRegister.photos")}
                         </Label>
                         <div className="flex flex-wrap gap-3">
                           {photos.map((photo, index) => (
@@ -1346,37 +1346,37 @@ export default function QuickRegister() {
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow">
                       <Clipboard className="h-5 w-5 text-white" />
                     </div>
-                    <span className="font-bold text-lg">کورتە</span>
+                    <span className="font-bold text-lg">{t("quickRegister.summary")}</span>
                   </div>
                   
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
-                      <span className="text-muted-foreground">کڕیار</span>
+                      <span className="text-muted-foreground">{t("quickRegister.summaryCustomer")}</span>
                       <span className="font-bold text-primary">
-                        {isUnclaimed ? "بێ خاوەن" : (customerId ? customers?.find(c => c.id === customerId)?.customerCode : "-")}
+                        {isUnclaimed ? t("quickRegister.unclaimed") : (customerId ? customers?.find(c => c.id === customerId)?.customerCode : "-")}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
-                      <span className="text-muted-foreground">کۆگا</span>
+                      <span className="text-muted-foreground">{t("quickRegister.summaryWarehouse")}</span>
                       <span className="font-medium">
-                        {selectedWarehouse ? (selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? `کۆگا ${selectedWarehouse.id}`) : "-"}
+                        {selectedWarehouse ? (selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? t("quickRegister.warehouseN", { id: selectedWarehouse.id })) : "-"}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
-                      <span className="text-muted-foreground">گواستنەوە</span>
+                      <span className="text-muted-foreground">{t("quickRegister.summaryShipping")}</span>
                       <span className="font-medium">
-                        {shippingType === "air_regular" ? "ئاسمانی" : shippingType === "air_irregular" ? "نایاسایی" : "دەریایی"}
+                        {shippingType === "air_regular" ? t("quickRegister.summaryAir") : shippingType === "air_irregular" ? t("quickRegister.summaryIrregular") : t("quickRegister.summarySea")}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 px-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                      <span className="text-emerald-700">کێش</span>
+                      <span className="text-emerald-700">{t("quickRegister.summaryWeight")}</span>
                       <span className="font-mono font-bold text-emerald-800">{parseFloat(weightKg || "0").toFixed(2)} kg</span>
                     </div>
                     
                     {(shippingType === "air_regular" || shippingType === "air_irregular") && chargeableWeight > 0 && (
                       <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-amber-700">کێشی کڕێیی</span>
+                          <span className="text-xs text-amber-700">{t("quickRegister.chargeableWeight")}</span>
                           <span className="font-mono font-bold text-amber-900">{chargeableWeight.toFixed(2)} kg</span>
                         </div>
                       </div>
@@ -1393,14 +1393,14 @@ export default function QuickRegister() {
                     
                     {batchId && batchId !== "none" && (
                       <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
-                        <span className="text-muted-foreground">باچ</span>
+                        <span className="text-muted-foreground">{t("quickRegister.summaryBatch")}</span>
                         <span className="font-medium">{batches?.find((b: any) => b.id === parseInt(batchId))?.batchCode}</span>
                       </div>
                     )}
                     
                     {estimatedPrice > 0 && (
                       <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl mt-3 border border-primary/20">
-                        <div className="text-xs text-muted-foreground mb-1">نرخی تەخمینی</div>
+                        <div className="text-xs text-muted-foreground mb-1">{t("quickRegister.estimatedPrice")}</div>
                         <div className="text-3xl font-bold text-primary">${estimatedPrice.toFixed(2)}</div>
                       </div>
                     )}
@@ -1428,16 +1428,16 @@ export default function QuickRegister() {
                       <Plus className="h-6 w-6 ms-2" />
                     )}
                     {foundOrder?.source === "package"
-                      ? "دووبارە!"
+                      ? t("quickRegister.btnDuplicate")
                       : expandedLookup?.flags?.customerMismatch
-                        ? "کێشەی کڕیار"
+                        ? t("quickRegister.btnCustomerIssue")
                         : !trackingNumber.trim()
-                          ? "تراکینگ داخل بکە"
-                          : "تۆمار (Enter)"}
+                          ? t("quickRegister.btnEnterTracking")
+                          : t("quickRegister.btnRegister")}
                   </Button>
-                  
+
                   <p className="text-xs text-center text-muted-foreground mt-3">
-                    Enter بۆ تۆمارکردن • Esc بۆ پاککردنەوە
+                    {t("quickRegister.footerHint")}
                   </p>
                 </CardContent>
               </Card>
