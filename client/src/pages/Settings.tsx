@@ -1164,7 +1164,7 @@ function LandingPageVariantSettings() {
   const variants = [
     { id: "classic", name: t("settings.landingVariantClassic") || "پەرەی پڕ (کلاسیک)", nameEn: "Classic", description: t("settings.landingVariantClassicDesc") || "هەموو بەشەکان - ئامار، خزمەتگوزاری، تایبەتمەندی، پەیوەندی", icon: LayoutGrid },
     { id: "minimal", name: t("settings.landingVariantMinimal") || "پەرەی مینیماڵ", nameEn: "Minimal", description: t("settings.landingVariantMinimalDesc") || "پەرەی سادە و پرۆفیشناڵ - تراکینگ و دووگمەکانی سەرەکی", icon: Sparkles },
-    { id: "professional", name: t("settings.landingVariantProfessional") || "پەرەی پڕۆفیشناڵ", nameEn: "Professional", description: t("settings.landingVariantProfessionalDesc") || "ڕووکارێکی تاریکی پڕیمیەم بە ڕەنگی تیل/emerald - شێوازی سایتی himaciq", icon: Building2 }
+    { id: "professional", name: t("settings.landingVariantProfessional") || "پەرەی پڕۆفیشناڵ", nameEn: "Professional", description: t("settings.landingVariantProfessionalDesc") || "ڕووکارێکی ڕووناکی editorial بە ڕەنگی ئەمبەر - تایپی گەورە، bento، و بۆشایی زۆر", icon: Building2 }
   ];
 
   return (
