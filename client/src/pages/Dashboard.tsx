@@ -444,13 +444,19 @@ export default function Dashboard() {
         {/* Alert Summary Section */}
         <AlertSummarySection />
 
-        {/* Alerts Section */}
+        {/* Problems / action-needed alerts */}
         {alerts && alerts.length > 0 && (
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {alerts.map((alert) => (
-              <AlertCard key={alert.id} alert={alert} />
-            ))}
-          </div>
+          <DashboardSection
+            className="pro-section"
+            title={t("dashboard.problemsTitle") || "مەشاکل و کارە پێویستەکان"}
+            description={t("dashboard.problemsDesc") || "ئەو شتانەی پێویستیان بە چاودێری یان کردارە"}
+          >
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {alerts.map((alert) => (
+                <AlertCard key={alert.id} alert={alert} />
+              ))}
+            </div>
+          </DashboardSection>
         )}
 
         {/* Analytics */}

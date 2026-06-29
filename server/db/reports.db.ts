@@ -911,13 +911,63 @@ export async function getDashboardAlerts(): Promise<{
       link?: string;
     }[] = [];
 
-    // High debt customers (> $500)
+    // High debt customers — those whose debt has passed THEIR OWN credit
+    // limit (currentBalanceUsd > 0 means they owe; compare against creditLimit).
     try {
       const highDebtors = await db.select({ count: count() })
         .from(customerAccounts)
-        .where(gt(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`, 500));
+        .where(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > 0 AND CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > CAST(COALESCE(${customerAccounts.creditLimitUsd}, '0') AS DECIMAL(12,2))`);
       if (highDebtors[0]?.count > 0) {
-        alerts.push({ id: 'high-debt', type: 'warning', title: 'کڕیارە قەرزدارەکان', description: `${highDebtors[0].count} کڕیار قەرزیان لە $500 زیاترە`, count: highDebtors[0].count, link: '/finance/debtors' });
+        alerts.push({ id: 'high-debt', type: 'warning', title: 'کڕیارە قەرزدارەکان', description: `${highDebtors[0].count} کڕیار قەرزیان لە سنووری قەرز تێپەڕیوە`, count: highDebtors[0].count, link: '/finance/debtors' });
+      }
+    } catch { /* ignore */ }
+
+    // Orders still missing a tracking number (active, pre-tracking states).
+    // Highlight ones older than 7 days as critical.
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const noTrackWhere = and(
+        isNull(fullPackageOrders.deletedAt),
+        inArray(fullPackageOrders.status, ['pending', 'approved', 'ordered'] as any),
+        or(isNull(fullPackageOrders.trackingNumber), eq(fullPackageOrders.trackingNumber, '')),
+      );
+      const noTrack = await db.select({ count: count() }).from(fullPackageOrders).where(noTrackWhere);
+      const total = noTrack[0]?.count || 0;
+      if (total > 0) {
+        const agingRes = await db.select({ count: count() }).from(fullPackageOrders)
+          .where(and(noTrackWhere, lt(fullPackageOrders.createdAt, sevenDaysAgo)));
+        const aging = agingRes[0]?.count || 0;
+        alerts.push({
+          id: 'orders-no-tracking',
+          type: aging > 0 ? 'error' : 'warning',
+          title: 'ئۆردەری بێ تراکینگ',
+          description: aging > 0
+            ? `${total} ئۆردەر بێ تراکینگن — ${aging}ـیان زیاتر لە ٧ ڕۆژە`
+            : `${total} ئۆردەر هێشتا بێ تراکینگن`,
+          count: total,
+          link: '/unified-orders',
+        });
+      }
+    } catch { /* ignore */ }
+
+    // Large active orders (≥ $1000) — keep an eye on high-value orders.
+    try {
+      const bigOrders = await db.select({ count: count() }).from(fullPackageOrders)
+        .where(and(
+          isNull(fullPackageOrders.deletedAt),
+          notInArray(fullPackageOrders.status, ['delivered', 'cancelled', 'refunded', 'returned', 'rejected'] as any),
+          sql`(CAST(COALESCE(${fullPackageOrders.sellingPriceUsd}, ${fullPackageOrders.itemPriceUsd}, '0') AS DECIMAL(12,2)) * COALESCE(${fullPackageOrders.quantity}, 1)) >= 1000`,
+        ));
+      if (bigOrders[0]?.count > 0) {
+        alerts.push({
+          id: 'large-orders',
+          type: 'info',
+          title: 'ئۆردەری گەورە',
+          description: `${bigOrders[0].count} ئۆردەری چالاک بەهای $1000 یان زیاتر`,
+          count: bigOrders[0].count,
+          link: '/unified-orders',
+        });
       }
     } catch { /* ignore */ }
 

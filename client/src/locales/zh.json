@@ -606,6 +606,8 @@
     "allServices": "所有服务"
   },
   "dashboard": {
+    "problemsTitle": "问题与待办事项",
+    "problemsDesc": "需要关注或处理的事项",
     "title": "仪表板",
     "welcome": "欢迎！",
     "subtitle": "这是您的物流运营和业务状况摘要。",

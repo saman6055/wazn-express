@@ -606,6 +606,8 @@
     "scheduledBackups": "Scheduled Backups"
   },
   "dashboard": {
+    "problemsTitle": "Problems & action needed",
+    "problemsDesc": "Things that need attention or action",
     "title": "Dashboard",
     "welcome": "Welcome!",
     "subtitle": "This is a summary of your shipping operations and business status.",
