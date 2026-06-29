@@ -7,11 +7,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
-import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -53,6 +55,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [useTieredPricing, setUseTieredPricing] = useState(false);
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [customerPricing, setCustomerPricing] = useState<CustomerPricing[]>([]);
+  const [custPriceOpen, setCustPriceOpen] = useState(false);
   const [exportingBatchId, setExportingBatchId] = useState<number | null>(null);
 
   // Pre-delivery audit dialog state. Holds the batchId+target status the
@@ -803,21 +806,35 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-3">
-                            {/* Customer selector */}
-                            <div className="flex gap-2">
-                              <Select onValueChange={(val) => addCustomerPricing(parseInt(val))}>
-                                <SelectTrigger className="flex-1">
-                                  <SelectValue placeholder={t("auto.text_229840")} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {customers?.filter(c => !customerPricing.find(cp => cp.customerId === c.id)).map(c => (
-                                    <SelectItem key={c.id} value={c.id.toString()}>
-                                      {c.customerCode} - {c.fullName}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            {/* Customer selector — searchable (find by name/code, not a long dropdown) */}
+                            <Popover open={custPriceOpen} onOpenChange={setCustPriceOpen}>
+                              <PopoverTrigger asChild>
+                                <Button type="button" variant="outline" role="combobox" aria-expanded={custPriceOpen} className="w-full justify-between font-normal">
+                                  <span className="text-muted-foreground">{t("auto.text_229840")}</span>
+                                  <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent variant="panel" className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                <Command>
+                                  <CommandInput placeholder={t("auto.text_229840")} />
+                                  <CommandList>
+                                    <CommandEmpty>هیچ کڕیارێک نەدۆزرایەوە</CommandEmpty>
+                                    <CommandGroup>
+                                      {customers?.filter(c => !customerPricing.find(cp => cp.customerId === c.id)).map(c => (
+                                        <CommandItem
+                                          key={c.id}
+                                          value={`${c.customerCode} ${c.fullName} ${(c as any).mobileNumber || ""}`}
+                                          onSelect={() => { addCustomerPricing(c.id); setCustPriceOpen(false); }}
+                                        >
+                                          <span className="font-medium">{c.customerCode}</span>
+                                          <span className="ms-2 text-muted-foreground truncate">{c.fullName}</span>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
                             
                             {/* Customer pricing list */}
                             {customerPricing.map((cp) => {
