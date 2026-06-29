@@ -206,12 +206,21 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     },
   });
 
-  // Auto-focus scan input
+  // Keep the cursor in the scan field for the whole open-box session so the
+  // staff can scan one package after another without clicking back in — and so
+  // no package is missed. Keyed on the item count too: every successful scan
+  // triggers a box refetch that re-renders the items table, and that re-render
+  // can drop the cursor. We restore it afterwards, but only when focus isn't on
+  // another control (a button, a menu) — we must never steal focus the user
+  // deliberately moved elsewhere.
   useEffect(() => {
-    if (box?.status === "open" && scanInputRef.current) {
-      scanInputRef.current.focus();
-    }
-  }, [box?.status]);
+    if (box?.status !== "open") return;
+    const active = document.activeElement;
+    const focusMovedElsewhere =
+      active && active !== document.body && active !== scanInputRef.current;
+    if (focusMovedElsewhere) return;
+    scanInputRef.current?.focus();
+  }, [box?.status, box?.items?.length]);
 
   const clearScanDebounce = () => {
     if (scanDebounceRef.current) {
