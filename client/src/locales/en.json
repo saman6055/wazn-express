@@ -2749,6 +2749,11 @@
     }
   },
   "auth": {
+    "staffSubtitle": "Staff Management System",
+    "username": "Username",
+    "usernamePlaceholder": "Username, email or mobile number",
+    "loginFailed": "Login failed",
+    "loading": "Please wait...",
     "login": "Login",
     "logout": "Logout",
     "register": "Register",

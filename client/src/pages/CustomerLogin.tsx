@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function CustomerLogin() {
     const { t } = useTranslation();
@@ -17,12 +18,12 @@ const [, setLocation] = useLocation();
 
   const loginMutation = trpc.auth.customerLogin.useMutation({
     onSuccess: (data) => {
-      toast.success(`بەخێربێیت ${data.customer.name || data.customer.customerCode}`);
+      toast.success(`${t("auth.welcomeBack")} ${data.customer.name || data.customer.customerCode}`);
       // Redirect to customer portal - use window.location for full page reload to pick up new cookie
       window.location.href = "/portal";
     },
     onError: (error) => {
-      toast.error(error.message || "چوونەژوورەوە سەرکەوتوو نەبوو");
+      toast.error(error.message || t("auth.loginFailed"));
     },
   });
 
@@ -36,7 +37,11 @@ const [, setLocation] = useLocation();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      {/* Language switcher — pick your language before signing in */}
+      <div className="absolute top-4 end-4 z-10">
+        <LanguageSwitcher className="bg-white/10 text-white border-white/20 hover:bg-white/20 hover:text-white" />
+      </div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">

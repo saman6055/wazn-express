@@ -9,8 +9,11 @@ import CompanyLogo from "@/components/CompanyLogo";
 import { Eye, EyeOff, Loader2, AlertCircle, User } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function StaffLogin() {
+  const { t } = useTranslation();
   const company = useCompanyInfo();
   const [, setLocation] = useLocation();
   const [identifier, setIdentifier] = useState(""); // Can be username, email or mobile number
@@ -26,7 +29,7 @@ export default function StaffLogin() {
     onError: (err) => {
       const msg = (err as { message?: string; data?: { message?: string } }).message
         || (err as { data?: { message?: string } }).data?.message
-        || "چوونەژوورەوە سەرکەوتوو نەبوو";
+        || t("auth.loginFailed");
       setError(msg);
     },
   });
@@ -36,7 +39,7 @@ export default function StaffLogin() {
     setError("");
     
     if (!identifier.trim() || !password.trim()) {
-      setError("تکایە هەموو خانەکان پڕ بکەوە");
+      setError(t("messages.fillAllFields"));
       return;
     }
     
@@ -44,7 +47,11 @@ export default function StaffLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 flex items-center justify-center p-4">
+    <div className="relative min-h-screen bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 flex items-center justify-center p-4">
+      {/* Language switcher — pick your language before signing in */}
+      <div className="absolute top-4 end-4 z-10">
+        <LanguageSwitcher className="bg-white/10 text-white border-white/20 hover:bg-white/20 hover:text-white" />
+      </div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -57,15 +64,15 @@ export default function StaffLogin() {
             />
           </div>
           <h1 className="text-3xl font-bold text-white">{company.name}</h1>
-          <p className="text-emerald-200 mt-2">سیستەمی بەڕێوەبردنی ستاف</p>
+          <p className="text-emerald-200 mt-2">{t("auth.staffSubtitle")}</p>
         </div>
 
         {/* Login Card */}
         <Card className="border-0 shadow-2xl">
           <CardHeader className="text-center pb-4">
-            <CardTitle className="text-2xl">چوونەژوورەوەی ستاف</CardTitle>
+            <CardTitle className="text-2xl">{t("auth.staffLogin")}</CardTitle>
             <CardDescription>
-              یوزەرنەیم و پاسۆردەکەت بنووسە بۆ چوونەژوورەوە
+              {t("auth.enterCredentials")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -78,13 +85,13 @@ export default function StaffLogin() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="identifier">یوزەرنەیم</Label>
+                <Label htmlFor="identifier">{t("auth.username")}</Label>
                 <div className="relative">
                   <User className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="identifier"
                     type="text"
-                    placeholder="یوزەرنەیم، ئیمەیڵ یان ژمارەی مۆبایل"
+                    placeholder={t("auth.usernamePlaceholder")}
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="h-12 pr-10"
@@ -94,7 +101,7 @@ export default function StaffLogin() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">پاسۆرد</Label>
+                <Label htmlFor="password">{t("auth.password")}</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -123,10 +130,10 @@ export default function StaffLogin() {
                 {loginMutation.isPending ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin me-2" />
-                    چاوەڕوان بە...
+                    {t("auth.loading")}
                   </>
                 ) : (
-                  "چوونەژوورەوە"
+                  t("auth.login")
                 )}
               </Button>
             </form>
@@ -136,7 +143,7 @@ export default function StaffLogin() {
                 href="/"
                 className="text-sm text-gray-500 hover:text-emerald-600 transition-colors"
               >
-                گەڕانەوە بۆ سەرەتا
+                {t("common.goHome")}
               </a>
             </div>
           </CardContent>
@@ -144,7 +151,7 @@ export default function StaffLogin() {
 
         {/* Footer */}
         <p className="text-center text-emerald-200 text-sm mt-6">
-          © {new Date().getFullYear()} {company.name}. هەموو مافەکان پارێزراون.
+          © {new Date().getFullYear()} {company.name}. {t("home.allRightsReserved")}
         </p>
       </div>
     </div>

@@ -2594,6 +2594,11 @@
     }
   },
   "auth": {
+    "staffSubtitle": "员工管理系统",
+    "username": "用户名",
+    "usernamePlaceholder": "用户名、邮箱或手机号",
+    "loginFailed": "登录失败",
+    "loading": "请稍候...",
     "login": "登录",
     "logout": "退出",
     "register": "注册",
