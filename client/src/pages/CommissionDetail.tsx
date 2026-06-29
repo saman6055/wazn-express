@@ -3,6 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import ImageGallery from "@/components/ImageGallery";
+import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -117,6 +118,7 @@ export default function CommissionDetail() {
     productName: "",
     productLink: "",
     productImage: "",
+    productImages: [] as string[],
     productDescription: "",
     quantity: "1",
     color: "",
@@ -143,6 +145,11 @@ export default function CommissionDetail() {
         productName: order.productName || "",
         productLink: order.productLink || "",
         productImage: order.productImage || "",
+        productImages: (order as any).productImages?.length
+          ? (order as any).productImages
+          : order.productImage
+            ? [order.productImage]
+            : [],
         productDescription: order.productDescription || "",
         quantity: order.quantity?.toString() || "1",
         color: order.color || "",
@@ -267,7 +274,8 @@ export default function CommissionDetail() {
       supplierId: formData.supplierId ? Number(formData.supplierId) : null,
       productName: formData.productName,
       productLink: formData.productLink || undefined,
-      productImage: formData.productImage || undefined,
+      productImage: formData.productImages[0] || formData.productImage || undefined,
+      productImages: formData.productImages.length > 0 ? formData.productImages : undefined,
       orderNumber: formData.orderNumber || undefined,
       productDescription: formData.productDescription || undefined,
       quantity: Number(formData.quantity) || 1,
@@ -600,6 +608,20 @@ export default function CommissionDetail() {
                     onChange={(e) => setFormData({ ...formData, productDescription: e.target.value })}
                     placeholder="وەسفی کاڵا..."
                     rows={3}
+                  />
+                </div>
+                {/* Product images — add or replace here when one was missed or
+                    wrong at creation time. */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <ImageIcon className="h-4 w-4" />
+                    وێنەکانی کاڵا
+                  </Label>
+                  <CompressedImageUpload
+                    images={formData.productImages}
+                    onChange={(imgs) => setFormData({ ...formData, productImages: imgs })}
+                    maxImages={5}
+                    accentColor="amber"
                   />
                 </div>
               </CardContent>
