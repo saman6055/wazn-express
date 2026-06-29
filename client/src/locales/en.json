@@ -978,6 +978,12 @@
     "addCustomerDescription": "Quickly add a new customer"
   },
   "fullPackage": {
+    "shippingMethodLabel": "Shipping method",
+    "allShipping": "All methods",
+    "trackingLabel": "Tracking",
+    "allTracking": "All",
+    "withTracking": "With tracking",
+    "withoutTracking": "Without tracking",
     "title": "Full Package",
     "subtitle": "Manage full package orders",
     "dashboard": "Full Package Dashboard",

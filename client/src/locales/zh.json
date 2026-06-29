@@ -979,6 +979,12 @@
     "addCustomerDescription": "快速添加新客户"
   },
   "fullPackage": {
+    "shippingMethodLabel": "运输方式",
+    "allShipping": "所有方式",
+    "trackingLabel": "追踪",
+    "allTracking": "全部",
+    "withTracking": "有追踪号",
+    "withoutTracking": "无追踪号",
     "title": "全包服务",
     "newOrder": "新订单",
     "editOrder": "编辑订单",

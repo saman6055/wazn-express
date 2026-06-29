@@ -31,6 +31,8 @@ import {
   ShoppingCart,
   Users,
   PackagePlus,
+  Plane,
+  Barcode,
 } from "lucide-react";
 import {
   Select,
@@ -84,6 +86,8 @@ export default function FullPackageDashboard() {
   const [maxPrice, setMaxPrice] = useState<string>("");
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [shippingFilter, setShippingFilter] = useState<string>("all");
+  const [trackingFilter, setTrackingFilter] = useState<"all" | "with" | "without">("all");
   const [showFilters, setShowFilters] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
 
@@ -168,7 +172,21 @@ export default function FullPackageDashboard() {
       const max = parseFloat(maxPrice);
       result = result.filter(o => (parseFloat(o.purchasePriceUsd || "0") * (o.quantity || 1)) <= max);
     }
-    
+
+    // Shipping-method filter
+    if (shippingFilter !== "all") {
+      result = result.filter(o => (o as any).shippingType === shippingFilter);
+    }
+
+    // Tracking filter (has / no tracking number)
+    if (trackingFilter !== "all") {
+      result = result.filter(o => {
+        const tn = (o as any).trackingNumber;
+        const has = typeof tn === "string" && tn.trim() !== "";
+        return trackingFilter === "with" ? has : !has;
+      });
+    }
+
     // Sort
     result.sort((a, b) => {
       let comparison = 0;
@@ -196,7 +214,7 @@ export default function FullPackageDashboard() {
     });
     
     return result;
-  }, [orders, customerFilter, batchFilter, dateFrom, dateTo, minPrice, maxPrice, sortField, sortDirection]);
+  }, [orders, customerFilter, batchFilter, dateFrom, dateTo, minPrice, maxPrice, shippingFilter, trackingFilter, sortField, sortDirection]);
 
   // Calculate stats
   const totalOrders = filteredOrders.length;
@@ -220,8 +238,8 @@ export default function FullPackageDashboard() {
   }, 0);
 
   // Check if any filter is active
-  const hasActiveFilters = customerFilter !== "all" || batchFilter !== "all" || 
-    dateFrom || dateTo || minPrice || maxPrice;
+  const hasActiveFilters = customerFilter !== "all" || batchFilter !== "all" ||
+    dateFrom || dateTo || minPrice || maxPrice || shippingFilter !== "all" || trackingFilter !== "all";
 
   // Clear all filters
   const clearAllFilters = () => {
@@ -231,6 +249,8 @@ export default function FullPackageDashboard() {
     setDateTo("");
     setMinPrice("");
     setMaxPrice("");
+    setShippingFilter("all");
+    setTrackingFilter("all");
     setStatusFilter("all");
     setSearch("");
   };
@@ -730,6 +750,43 @@ export default function FullPackageDashboard() {
                           className="flex-1"
                         />
                       </div>
+                    </div>
+
+                    {/* Shipping-method Filter */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Plane className="h-4 w-4" />
+                        {t("fullPackage.shippingMethodLabel")}
+                      </label>
+                      <Select value={shippingFilter} onValueChange={setShippingFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("fullPackage.allShipping")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("fullPackage.allShipping")}</SelectItem>
+                          <SelectItem value="air_regular">{t("fullPackage.airRegular")}</SelectItem>
+                          <SelectItem value="air_irregular">{t("fullPackage.airIrregular")}</SelectItem>
+                          <SelectItem value="sea">{t("fullPackage.sea")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Tracking Filter */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Barcode className="h-4 w-4" />
+                        {t("fullPackage.trackingLabel")}
+                      </label>
+                      <Select value={trackingFilter} onValueChange={(v) => setTrackingFilter(v as "all" | "with" | "without")}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("fullPackage.allTracking")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("fullPackage.allTracking")}</SelectItem>
+                          <SelectItem value="with">{t("fullPackage.withTracking")}</SelectItem>
+                          <SelectItem value="without">{t("fullPackage.withoutTracking")}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>

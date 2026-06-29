@@ -981,6 +981,12 @@
     "addCustomerDescription": "کڕیارێکی نوێ زیاد بکە بە خێرایی"
   },
   "fullPackage": {
+    "shippingMethodLabel": "ڕێگای گەیاندن",
+    "allShipping": "هەموو ڕێگاکان",
+    "trackingLabel": "تراکینگ",
+    "allTracking": "هەموو",
+    "withTracking": "بە تراکینگ",
+    "withoutTracking": "بێ تراکینگ",
     "title": "فول پاکیج",
     "subtitle": "بەڕێوەبردنی ئۆردەرەکانی فول پاکیج",
     "dashboard": "داشبۆردی فول پاکیج",

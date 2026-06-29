@@ -978,6 +978,12 @@
     "addCustomerDescription": "إضافة عميل جديد بسرعة"
   },
   "fullPackage": {
+    "shippingMethodLabel": "طريقة الشحن",
+    "allShipping": "كل الطرق",
+    "trackingLabel": "التتبع",
+    "allTracking": "الكل",
+    "withTracking": "مع تتبع",
+    "withoutTracking": "بدون تتبع",
     "title": "الطرد الكامل",
     "subtitle": "إدارة طلبات الطرد الكامل",
     "dashboard": "لوحة الطرد الكامل",
