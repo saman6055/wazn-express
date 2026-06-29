@@ -56,6 +56,9 @@ export default function CommissionForm() {
     volumeCbm: "",
   });
 
+  // "Filled" indicator — subtle green border + ring + tint when a field has a value
+  const filledCls = (v: unknown) => (v !== undefined && v !== null && String(v).trim() !== "" ? "border-emerald-400 ring-1 ring-emerald-300 bg-emerald-50/40" : "");
+
   // ¥ exchange rate
   const { data: rmbRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "RMB" });
   const rmbRate = parseFloat(rmbRateData?.rate?.toString() || "0");
@@ -278,7 +281,7 @@ export default function CommissionForm() {
                       variant="outline"
                       role="combobox"
                       aria-expanded={customerOpen}
-                      className="w-full justify-between h-10"
+                      className={cn("w-full justify-between h-10", filledCls(formData.customerId))}
                     >
                       {selectedCustomer
                         ? `${selectedCustomer.fullName || selectedCustomer.fullNameKurdish} (${selectedCustomer.customerCode})`
@@ -332,7 +335,7 @@ export default function CommissionForm() {
                   value={formData.supplierId}
                   onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
                 >
-                  <SelectTrigger className="h-10">
+                  <SelectTrigger className={cn("h-10", filledCls(formData.supplierId && formData.supplierId !== "none" ? formData.supplierId : ""))}>
                     <SelectValue placeholder="فرۆشیارێک هەڵبژێرە (ئارەزوومەندانە)" />
                   </SelectTrigger>
                   <SelectContent>
@@ -425,126 +428,6 @@ export default function CommissionForm() {
                 </div>
               </button>
             </div>
-
-            {/* Air fields */}
-            <div className="mt-3 space-y-3">
-              {(formData.shippingType === "air_regular" || formData.shippingType === "air_irregular") && (
-                <div className={`rounded-xl border overflow-hidden ${formData.shippingType === "air_irregular" ? "border-amber-200" : "border-sky-200"}`}>
-                  <div className={`px-4 py-2 flex items-center gap-2 border-b ${formData.shippingType === "air_irregular" ? "bg-amber-50 border-amber-100" : "bg-sky-50 border-sky-100"}`}>
-                    <Scale className={`h-4 w-4 ${formData.shippingType === "air_irregular" ? "text-amber-600" : "text-sky-600"}`} />
-                    <span className="text-sm font-semibold">کێش و قەبارە</span>
-                    <span className="text-xs text-muted-foreground ms-auto">max(ڕاستەقینە، ئەندازەیی)</span>
-                  </div>
-                  <div className="p-3 space-y-3 bg-white">
-                    {/* Weight */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">کێشی ڕاستەقینە (کیلۆگرام)</Label>
-                        <div className="relative">
-                          <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">kg</span>
-                          <Input type="number" step="0.01" min="0" value={formData.weightKg}
-                            onChange={e => setFormData(p => ({ ...p, weightKg: e.target.value }))}
-                            placeholder="0.00" className="pe-10 h-10 font-mono" dir="ltr" />
-                        </div>
-                      </div>
-                      {volumetricKg > 0 && (
-                        <div className={`rounded-xl p-3 flex flex-col justify-center ${chargeableKg === volumetricKg ? "bg-amber-50 border border-amber-200" : "bg-sky-50 border border-sky-200"}`}>
-                          <p className="text-[11px] text-muted-foreground">کێشی پارەدان</p>
-                          <p className={`text-xl font-bold font-mono ${chargeableKg === volumetricKg ? "text-amber-700" : "text-sky-700"}`}>{chargeableKg.toFixed(3)} kg</p>
-                          <p className="text-[10px] text-muted-foreground">{chargeableKg === volumetricKg ? "ئەندازەیی" : "ڕاستەقینە"} بە کار هاتووە</p>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      {/* Dimensions */}
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Ruler className="h-4 w-4 text-muted-foreground" />
-                          <Label className="text-sm font-medium">قەبارە (سانتیمەتر) — ئارەزووی</Label>
-                        </div>
-                        <div className="grid grid-cols-3 gap-3">
-                          {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
-                            <div key={field} className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">{label}</Label>
-                              <div className="relative">
-                                <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
-                                <Input type="number" step="0.1" min="0"
-                                  value={formData[field as keyof typeof formData] as string}
-                                  onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
-                                  placeholder="0" className="pe-8 h-10 font-mono text-sm" dir="ltr" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        {volumetricKg > 0 && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            کێشی ئەندازەیی: ({dimL}×{dimW}×{dimH}) ÷ 6000 = <strong>{volumetricKg.toFixed(3)} kg</strong>
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Sea fields */}
-              {formData.shippingType === "sea" && (
-                <div className="rounded-xl border border-teal-200 overflow-hidden">
-                  <div className="px-4 py-2 flex items-center gap-2 bg-teal-50 border-b border-teal-100">
-                    <Calculator className="h-4 w-4 text-teal-600" />
-                    <span className="text-sm font-semibold text-teal-800">قەبارەی CBM</span>
-                    <span className="text-xs text-muted-foreground ms-auto">١ CBM = ١٠٠cm × ١٠٠cm × ١٠٠cm</span>
-                  </div>
-                  <div className="p-3 space-y-3 bg-white">
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Direct CBM */}
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">CBM ڕاستەوخۆ</Label>
-                        <div className="relative">
-                          <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">m³</span>
-                          <Input type="number" step="0.0001" min="0" value={formData.volumeCbm}
-                            onChange={e => setFormData(p => ({ ...p, volumeCbm: e.target.value }))}
-                            placeholder="0.0000" className="pe-10 h-10 font-mono" dir="ltr" />
-                        </div>
-                        <p className="text-xs text-muted-foreground">ئەگەر CBM دەزانیت</p>
-                      </div>
-                      {/* Auto CBM from dims */}
-                      {autoCbm > 0 && (
-                        <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex flex-col justify-center">
-                          <p className="text-[11px] text-teal-600">CBM خۆکار</p>
-                          <p className="text-xl font-bold font-mono text-teal-700">{autoCbm.toFixed(4)} m³</p>
-                          <button type="button" onClick={() => setFormData(p => ({ ...p, volumeCbm: autoCbm.toFixed(4) }))}
-                            className="text-[11px] text-teal-600 underline text-start mt-1 hover:text-teal-800">
-                            بەکاربێنە ←
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    {/* Dimensions for CBM calc */}
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Ruler className="h-4 w-4 text-muted-foreground" />
-                        <Label className="text-sm font-medium">قەبارە بۆ حساب کردنی CBM — ئارەزووی</Label>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
-                          <div key={field} className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">{label}</Label>
-                            <div className="relative">
-                              <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
-                              <Input type="number" step="0.1" min="0"
-                                value={formData[field as keyof typeof formData] as string}
-                                onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
-                                placeholder="0" className="pe-8 h-10 font-mono text-sm" dir="ltr" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
           </Section>
 
           {/* Product Info — compact multi-column grid */}
@@ -558,7 +441,7 @@ export default function CommissionForm() {
                     value={formData.productType}
                     onValueChange={(v) => setFormData({ ...formData, productType: v === "__none__" ? "" : v })}
                   >
-                    <SelectTrigger className="h-10">
+                    <SelectTrigger className={cn("h-10", filledCls(formData.productType))}>
                       <SelectValue placeholder="جۆر هەڵبژێرە" />
                     </SelectTrigger>
                     <SelectContent>
@@ -575,7 +458,7 @@ export default function CommissionForm() {
                     value={formData.orderNumber}
                     onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
                     placeholder="ژمارەی ئۆردەر"
-                    className="h-10"
+                    className={cn("h-10", filledCls(formData.orderNumber))}
                     dir="ltr"
                   />
                 </div>
@@ -588,7 +471,7 @@ export default function CommissionForm() {
                     value={formData.productLink}
                     onChange={(e) => setFormData({ ...formData, productLink: e.target.value })}
                     placeholder="https://..."
-                    className="h-10"
+                    className={cn("h-10", filledCls(formData.productLink))}
                     dir="ltr"
                   />
                 </div>
@@ -602,7 +485,7 @@ export default function CommissionForm() {
                     value={formData.color}
                     onValueChange={(v) => setFormData({ ...formData, color: v === "__none__" ? "" : v })}
                   >
-                    <SelectTrigger className="h-10">
+                    <SelectTrigger className={cn("h-10", filledCls(formData.color))}>
                       <SelectValue placeholder="ڕەنگ هەڵبژێرە" />
                     </SelectTrigger>
                     <SelectContent>
@@ -619,7 +502,7 @@ export default function CommissionForm() {
                     value={formData.size}
                     onValueChange={(v) => setFormData({ ...formData, size: v === "__none__" ? "" : v })}
                   >
-                    <SelectTrigger className="h-10">
+                    <SelectTrigger className={cn("h-10", filledCls(formData.size))}>
                       <SelectValue placeholder="قەبارە هەڵبژێرە" />
                     </SelectTrigger>
                     <SelectContent>
@@ -653,6 +536,7 @@ export default function CommissionForm() {
                   onChange={(e) => setFormData({ ...formData, productDescription: e.target.value })}
                   placeholder="وەسفی کاڵا..."
                   rows={2}
+                  className={cn(filledCls(formData.productDescription))}
                 />
               </div>
             </div>
@@ -710,7 +594,7 @@ export default function CommissionForm() {
                           min="1"
                           value={formData.quantity}
                           onChange={(e) => handleQuantityChange(e.target.value)}
-                          className="text-center text-base font-bold h-10 px-1"
+                          className={cn("text-center text-base font-bold h-10 px-1", filledCls(formData.quantity))}
                           dir="ltr"
                         />
                         <Button
@@ -737,7 +621,7 @@ export default function CommissionForm() {
                           value={rmbPerUnit}
                           onChange={(e) => syncFromPerUnit(e.target.value)}
                           placeholder="٠"
-                          className="pe-9 h-10 text-base font-bold border-amber-200 focus:border-orange-400 bg-amber-50/40"
+                          className={cn("pe-9 h-10 text-base font-bold border-amber-200 focus:border-orange-400 bg-amber-50/40", filledCls(rmbPerUnit))}
                           dir="ltr"
                         />
                       </div>
@@ -755,7 +639,7 @@ export default function CommissionForm() {
                           value={rmbTotal}
                           onChange={(e) => syncFromTotal(e.target.value)}
                           placeholder="٠"
-                          className="pe-9 h-10 text-base font-bold border-orange-200 focus:border-orange-400 bg-orange-50/40"
+                          className={cn("pe-9 h-10 text-base font-bold border-orange-200 focus:border-orange-400 bg-orange-50/40", filledCls(rmbTotal))}
                           dir="ltr"
                         />
                       </div>
@@ -795,7 +679,7 @@ export default function CommissionForm() {
                       value={formData.commissionFeeUsd}
                       onChange={(e) => setFormData({ ...formData, commissionFeeUsd: e.target.value })}
                       placeholder="0.00"
-                      className="ps-8 text-start text-base font-bold h-10 border-purple-300 bg-white"
+                      className={cn("ps-8 text-start text-base font-bold h-10 border-purple-300 bg-white", filledCls(formData.commissionFeeUsd))}
                       dir="ltr"
                     />
                   </div>
@@ -813,7 +697,7 @@ export default function CommissionForm() {
                       value={formData.itemPriceUsd}
                       onChange={(e) => syncFromUsd(e.target.value)}
                       placeholder="0.00"
-                      className="ps-8 text-start text-base font-bold h-10 border-amber-300 bg-white"
+                      className={cn("ps-8 text-start text-base font-bold h-10 border-amber-300 bg-white", filledCls(formData.itemPriceUsd))}
                       dir="ltr"
                     />
                   </div>
@@ -895,7 +779,7 @@ export default function CommissionForm() {
                       value={formData.advancePaidUsd}
                       onChange={(e) => setFormData({ ...formData, advancePaidUsd: e.target.value })}
                       placeholder="0.00"
-                      className="ps-8 h-10 text-base font-bold border-teal-200 focus:border-teal-400 bg-teal-50/40"
+                      className={cn("ps-8 h-10 text-base font-bold border-teal-200 focus:border-teal-400 bg-teal-50/40", filledCls(formData.advancePaidUsd))}
                       dir="ltr"
                     />
                   </div>
@@ -907,7 +791,7 @@ export default function CommissionForm() {
                     value={formData.advancePaymentMethod}
                     onValueChange={(v) => setFormData({ ...formData, advancePaymentMethod: v as any })}
                   >
-                    <SelectTrigger className="h-10 border-teal-200 bg-teal-50/40">
+                    <SelectTrigger className={cn("h-10 border-teal-200 bg-teal-50/40", filledCls(formData.advancePaymentMethod))}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -949,6 +833,131 @@ export default function CommissionForm() {
             </div>
           </Section>
 
+          {/* ── Weight & Size (moved to second-to-last; only when a shipping type is chosen) ── */}
+          {formData.shippingType && (
+            <Section icon={Scale} title="کێش و قەبارە" hint="کێش و قەبارەی کاڵا بۆ ژماردنی کرێی گواستنەوە" accent="sky">
+              {/* Air fields */}
+              <div className="mt-3 space-y-3">
+                {(formData.shippingType === "air_regular" || formData.shippingType === "air_irregular") && (
+                  <div className={`rounded-xl border overflow-hidden ${formData.shippingType === "air_irregular" ? "border-amber-200" : "border-sky-200"}`}>
+                    <div className={`px-4 py-2 flex items-center gap-2 border-b ${formData.shippingType === "air_irregular" ? "bg-amber-50 border-amber-100" : "bg-sky-50 border-sky-100"}`}>
+                      <Scale className={`h-4 w-4 ${formData.shippingType === "air_irregular" ? "text-amber-600" : "text-sky-600"}`} />
+                      <span className="text-sm font-semibold">کێش و قەبارە</span>
+                      <span className="text-xs text-muted-foreground ms-auto">max(ڕاستەقینە، ئەندازەیی)</span>
+                    </div>
+                    <div className="p-3 space-y-3 bg-white">
+                      {/* Weight */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">کێشی ڕاستەقینە (کیلۆگرام)</Label>
+                          <div className="relative">
+                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">kg</span>
+                            <Input type="number" step="0.01" min="0" value={formData.weightKg}
+                              onChange={e => setFormData(p => ({ ...p, weightKg: e.target.value }))}
+                              placeholder="0.00" className={cn("pe-10 h-10 font-mono", filledCls(formData.weightKg))} dir="ltr" />
+                          </div>
+                        </div>
+                        {volumetricKg > 0 && (
+                          <div className={`rounded-xl p-3 flex flex-col justify-center ${chargeableKg === volumetricKg ? "bg-amber-50 border border-amber-200" : "bg-sky-50 border border-sky-200"}`}>
+                            <p className="text-[11px] text-muted-foreground">کێشی پارەدان</p>
+                            <p className={`text-xl font-bold font-mono ${chargeableKg === volumetricKg ? "text-amber-700" : "text-sky-700"}`}>{chargeableKg.toFixed(3)} kg</p>
+                            <p className="text-[10px] text-muted-foreground">{chargeableKg === volumetricKg ? "ئەندازەیی" : "ڕاستەقینە"} بە کار هاتووە</p>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        {/* Dimensions */}
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Ruler className="h-4 w-4 text-muted-foreground" />
+                            <Label className="text-sm font-medium">قەبارە (سانتیمەتر) — ئارەزووی</Label>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
+                              <div key={field} className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">{label}</Label>
+                                <div className="relative">
+                                  <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
+                                  <Input type="number" step="0.1" min="0"
+                                    value={formData[field as keyof typeof formData] as string}
+                                    onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
+                                    placeholder="0" className={cn("pe-8 h-10 font-mono text-sm", filledCls(formData[field as keyof typeof formData]))} dir="ltr" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {volumetricKg > 0 && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              کێشی ئەندازەیی: ({dimL}×{dimW}×{dimH}) ÷ 6000 = <strong>{volumetricKg.toFixed(3)} kg</strong>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sea fields */}
+                {formData.shippingType === "sea" && (
+                  <div className="rounded-xl border border-teal-200 overflow-hidden">
+                    <div className="px-4 py-2 flex items-center gap-2 bg-teal-50 border-b border-teal-100">
+                      <Calculator className="h-4 w-4 text-teal-600" />
+                      <span className="text-sm font-semibold text-teal-800">قەبارەی CBM</span>
+                      <span className="text-xs text-muted-foreground ms-auto">١ CBM = ١٠٠cm × ١٠٠cm × ١٠٠cm</span>
+                    </div>
+                    <div className="p-3 space-y-3 bg-white">
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Direct CBM */}
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium">CBM ڕاستەوخۆ</Label>
+                          <div className="relative">
+                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">m³</span>
+                            <Input type="number" step="0.0001" min="0" value={formData.volumeCbm}
+                              onChange={e => setFormData(p => ({ ...p, volumeCbm: e.target.value }))}
+                              placeholder="0.0000" className={cn("pe-10 h-10 font-mono", filledCls(formData.volumeCbm))} dir="ltr" />
+                          </div>
+                          <p className="text-xs text-muted-foreground">ئەگەر CBM دەزانیت</p>
+                        </div>
+                        {/* Auto CBM from dims */}
+                        {autoCbm > 0 && (
+                          <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex flex-col justify-center">
+                            <p className="text-[11px] text-teal-600">CBM خۆکار</p>
+                            <p className="text-xl font-bold font-mono text-teal-700">{autoCbm.toFixed(4)} m³</p>
+                            <button type="button" onClick={() => setFormData(p => ({ ...p, volumeCbm: autoCbm.toFixed(4) }))}
+                              className="text-[11px] text-teal-600 underline text-start mt-1 hover:text-teal-800">
+                              بەکاربێنە ←
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {/* Dimensions for CBM calc */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Ruler className="h-4 w-4 text-muted-foreground" />
+                          <Label className="text-sm font-medium">قەبارە بۆ حساب کردنی CBM — ئارەزووی</Label>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
+                            <div key={field} className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">{label}</Label>
+                              <div className="relative">
+                                <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
+                                <Input type="number" step="0.1" min="0"
+                                  value={formData[field as keyof typeof formData] as string}
+                                  onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
+                                  placeholder="0" className={cn("pe-8 h-10 font-mono text-sm", filledCls(formData[field as keyof typeof formData]))} dir="ltr" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Section>
+          )}
+
           {/* Notes */}
           <Section icon={Save} title="تێبینی" accent="slate">
             <Textarea
@@ -956,6 +965,7 @@ export default function CommissionForm() {
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="تێبینی..."
               rows={2}
+              className={cn(filledCls(formData.notes))}
             />
           </Section>
 
