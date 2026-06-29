@@ -17,6 +17,7 @@ import {
   Search,
   ShoppingBag,
   Filter,
+  Plane,
   Layers,
   Eye,
   Pencil,
@@ -81,6 +82,7 @@ export default function CommissionOrders() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [shippingFilter, setShippingFilter] = useState<string>("all");
 
 
   const { data: orders, isLoading, refetch } = trpc.fullPackage.list.useQuery({
@@ -104,7 +106,8 @@ export default function CommissionOrders() {
 
 
   // Calculate stats for commission orders only
-  const fullPackageOrders = orders?.filter(o => o.orderType === "commission") || [];
+  const fullPackageOrders = (orders?.filter(o => o.orderType === "commission") || [])
+    .filter(o => shippingFilter === "all" || (o as any).shippingType === shippingFilter);
   const totalOrders = fullPackageOrders.length;
   const pendingOrders = fullPackageOrders.filter(o => ["pending", "ordered", "tracking_added"].includes(o.status)).length;
   const inTransitOrders = fullPackageOrders.filter(o => ["in_batch", "in_transit"].includes(o.status)).length;
@@ -241,6 +244,19 @@ export default function CommissionOrders() {
                     {statusOptions.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+                {/* Shipping-method filter */}
+                <Select value={shippingFilter} onValueChange={setShippingFilter}>
+                  <SelectTrigger className="w-full sm:w-44">
+                    <Plane className="h-4 w-4 ms-2" />
+                    <SelectValue placeholder="هەموو ڕێگاکان" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">هەموو ڕێگاکان</SelectItem>
+                    <SelectItem value="air_regular">ئاسمانی ئاسایی</SelectItem>
+                    <SelectItem value="air_irregular">ئاسمانی مەرسیدار</SelectItem>
+                    <SelectItem value="sea">دەریایی</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
