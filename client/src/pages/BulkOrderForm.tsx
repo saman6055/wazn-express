@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Wallet,
+  Plane,
+  Ship,
 } from "lucide-react";
 import {
   Select,
@@ -116,6 +118,9 @@ export default function BulkOrderForm() {
   const [customerSearch, setCustomerSearch] = useState("");
   const [customerId, setCustomerId] = useState("");
 
+  // Shipping type (required for the whole batch)
+  const [shippingType, setShippingType] = useState<"" | "air_regular" | "air_irregular" | "sea">("");
+
   // Items state
   const [items, setItems] = useState<OrderItem[]>([emptyItem(), emptyItem()]);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -141,8 +146,26 @@ export default function BulkOrderForm() {
 
   const selectedCustomer = customers?.find((c) => c.id.toString() === customerId);
 
+  // One-time restore of the last-used customer once the list has loaded.
+  // Never overwrite a customer the user already picked.
+  const restoredCustomerRef = useRef(false);
+  useEffect(() => {
+    if (restoredCustomerRef.current) return;
+    if (!customers || customers.length === 0) return;
+    restoredCustomerRef.current = true;
+    if (customerId) return;
+    const savedId = localStorage.getItem("wazn-last-commission-customer");
+    if (!savedId) return;
+    const customer = customers.find((c) => c.id.toString() === savedId);
+    if (!customer) return;
+    setCustomerId(savedId);
+    setCustomerSearch(customer.customerCode || customer.fullName || "");
+  }, [customers, customerId]);
+
   const bulkCreateMutation = trpc.fullPackage.bulkCreate.useMutation({
     onSuccess: (data) => {
+      // Remember the last customer (shared key with the single commission form).
+      if (customerId) localStorage.setItem("wazn-last-commission-customer", customerId);
       setResultData({ created: data.created.length, errors: data.errors.length });
       setShowResult(true);
       utils.fullPackage.list.invalidate();
@@ -274,6 +297,11 @@ export default function BulkOrderForm() {
       return;
     }
 
+    if (!shippingType) {
+      toast.error("تکایە شێوازی گواستنەوە دیاری بکە");
+      return;
+    }
+
     const validItems = items.filter(item => item.productType);
     if (validItems.length === 0) {
       toast.error(t("toast.fillAtLeastOnePackage"));
@@ -314,6 +342,8 @@ export default function BulkOrderForm() {
         // Advance payment
         advancePaidUsd: item.advancePaidUsd || undefined,
         advancePaymentMethod: item.advancePaidUsd && parseFloat(item.advancePaidUsd) > 0 ? item.advancePaymentMethod : undefined,
+        // Shipping type (applies to the whole batch)
+        shippingType: shippingType || undefined,
       })),
     });
   };
@@ -484,6 +514,37 @@ export default function BulkOrderForm() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Shipping Type Selector */}
+        <div>
+          <Label className="text-sm font-medium text-muted-foreground mb-2 block">شێوازی گواستنەوە *</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { value: "air_regular", label: "ئاسمانی ئاسایی", icon: Plane },
+              { value: "air_irregular", label: "ئاسمانی مەرسیدار", icon: Plane },
+              { value: "sea", label: "دەریایی", icon: Ship },
+            ] as const).map((opt) => {
+              const Icon = opt.icon;
+              const active = shippingType === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setShippingType(opt.value)}
+                  className={cn(
+                    "flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-medium transition-all",
+                    active
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
+                      : "border-border bg-background text-muted-foreground hover:border-emerald-300 hover:text-foreground"
+                  )}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Toolbar */}
         <div className="flex items-center justify-between">
