@@ -232,35 +232,35 @@ export default function CommissionForm() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-4">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => setLocation("/commission")}>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => setLocation("/commission")}>
             <ArrowRight className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-100 rounded-lg">
-              <Percent className="h-6 w-6 text-amber-600" />
+              <Percent className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">پەتی عمولەی نوێ</h1>
-              <p className="text-muted-foreground">کڕیار نرخ دەزانێت، کۆمپانیا تەنها عمولە وەردەگرێت</p>
+              <h1 className="text-xl font-bold leading-tight">پەتی عمولەی نوێ</h1>
+              <p className="text-sm text-muted-foreground">کڕیار نرخ دەزانێت، کۆمپانیا تەنها عمولە وەردەگرێت</p>
             </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Customer Selection */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <User className="h-5 w-5 text-amber-600" />
                 کڕیار
               </CardTitle>
-              <CardDescription>کڕیارێک هەڵبژێرە بۆ ئەم پەتە</CardDescription>
+              <CardDescription className="text-xs">کڕیارێک هەڵبژێرە بۆ ئەم پەتە</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="p-4 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>کڕیار *</Label>
                   <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
@@ -343,15 +343,15 @@ export default function CommissionForm() {
 
           {/* Product Info */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <Package className="h-5 w-5 text-amber-600" />
                 زانیاری کاڵا
               </CardTitle>
-              <CardDescription>زانیاری کاڵاکە داخڵ بکە</CardDescription>
+              <CardDescription className="text-xs">زانیاری کاڵاکە داخڵ بکە</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="p-4 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>جۆری کاڵا *</Label>
                   <Select
@@ -404,10 +404,11 @@ export default function CommissionForm() {
                   onChange={setProductImages}
                   maxImages={5}
                   accentColor="amber"
+                  compact
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Color */}
                 <div className="space-y-2">
                   <Label>ڕەنگ</Label>
@@ -452,7 +453,7 @@ export default function CommissionForm() {
                   value={formData.productDescription}
                   onChange={(e) => setFormData({ ...formData, productDescription: e.target.value })}
                   placeholder="وەسفی کاڵا..."
-                  rows={3}
+                  rows={2}
                 />
               </div>
             </CardContent>
@@ -460,17 +461,17 @@ export default function CommissionForm() {
 
           {/* Pricing */}
           <Card className="overflow-hidden">
-            <CardHeader className="bg-gradient-to-l from-amber-50 to-yellow-50 border-b">
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <DollarSign className="h-5 w-5 text-amber-600" />
                 نرخەکان و عەدەد
               </CardTitle>
-              <CardDescription>نرخی کاڵا، عمولەی کۆمپانیا و ژمارە داخڵ بکە</CardDescription>
+              <CardDescription className="text-xs">نرخی کاڵا، عمولەی کۆمپانیا و ژمارە داخڵ بکە</CardDescription>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
+            <CardContent className="p-4 space-y-3">
 
               {/* 1. Quantity */}
-              <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                 <Label className="text-sm font-medium text-slate-600 mb-2 block">عەدەد *</Label>
                 <div className="flex items-center gap-2">
                   <Button
@@ -487,7 +488,7 @@ export default function CommissionForm() {
                     min="1"
                     value={formData.quantity}
                     onChange={(e) => handleQuantityChange(e.target.value)}
-                    className="text-center text-2xl font-bold h-14 border-2"
+                    className="text-center text-xl font-bold h-12 border-2"
                     dir="ltr"
                   />
                   <Button
@@ -503,9 +504,9 @@ export default function CommissionForm() {
               </div>
 
               {/* 2 + 3. ¥ Converter Section (per-unit ¥ then total ¥) */}
-              <div className={`rounded-2xl border-2 overflow-hidden ${rmbRate > 0 ? "border-orange-200" : "border-dashed border-gray-300"}`}>
+              <div className={`rounded-xl border overflow-hidden ${rmbRate > 0 ? "border-orange-200" : "border-dashed border-gray-300"}`}>
                 {/* Header — live rate hint */}
-                <div className="bg-gradient-to-l from-orange-100 to-amber-50 px-5 py-3 flex items-center justify-between">
+                <div className="bg-orange-50 px-4 py-2 flex items-center justify-between border-b border-orange-100">
                   <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-orange-500 rounded-lg">
                       <Banknote className="h-4 w-4 text-white" />
@@ -530,8 +531,8 @@ export default function CommissionForm() {
                 </div>
 
                 {/* Two ¥ inputs + result */}
-                <div className="bg-white px-5 py-4 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white px-4 py-3 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
                     {/* 2. Per-unit ¥ */}
                     <div className="space-y-1.5">
                       <Label className="text-sm font-semibold text-amber-700">نرخی ١ دانە بە یوانی چینی</Label>
@@ -544,7 +545,7 @@ export default function CommissionForm() {
                           value={rmbPerUnit}
                           onChange={(e) => syncFromPerUnit(e.target.value)}
                           placeholder="٠"
-                          className="pe-9 h-12 text-lg font-bold border-2 border-amber-200 focus:border-orange-400 bg-amber-50/40"
+                          className="pe-9 h-11 text-lg font-bold border-2 border-amber-200 focus:border-orange-400 bg-amber-50/40"
                           dir="ltr"
 
                         />
@@ -564,7 +565,7 @@ export default function CommissionForm() {
                           value={rmbTotal}
                           onChange={(e) => syncFromTotal(e.target.value)}
                           placeholder="٠"
-                          className="pe-9 h-12 text-lg font-bold border-2 border-orange-200 focus:border-orange-400 bg-orange-50/40"
+                          className="pe-9 h-11 text-lg font-bold border-2 border-orange-200 focus:border-orange-400 bg-orange-50/40"
                           dir="ltr"
 
                         />
@@ -575,110 +576,112 @@ export default function CommissionForm() {
 
                   {/* Result */}
                   {(parseFloat(rmbPerUnit) > 0 || parseFloat(rmbTotal) > 0) && (
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
-                        <p className="text-[10px] text-amber-500 uppercase tracking-wide mb-1">١ دانە یوانی چینی</p>
-                        <p className="font-bold text-amber-700 font-mono">{Number(rmbPerUnit || 0).toLocaleString("en-US")} ¥</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-amber-50 rounded-lg p-2 text-center border border-amber-100">
+                        <p className="text-[10px] text-amber-500 uppercase tracking-wide mb-0.5">١ دانە یوانی چینی</p>
+                        <p className="font-bold text-amber-700 font-mono text-sm">{Number(rmbPerUnit || 0).toLocaleString("en-US")} ¥</p>
                       </div>
-                      <div className="bg-orange-50 rounded-xl p-3 text-center border border-orange-100">
-                        <p className="text-[10px] text-orange-500 uppercase tracking-wide mb-1">کۆی {quantity} دانە</p>
-                        <p className="font-bold text-orange-700 font-mono">{Number(rmbTotal || 0).toLocaleString("en-US")} ¥</p>
+                      <div className="bg-orange-50 rounded-lg p-2 text-center border border-orange-100">
+                        <p className="text-[10px] text-orange-500 uppercase tracking-wide mb-0.5">کۆی {quantity} دانە</p>
+                        <p className="font-bold text-orange-700 font-mono text-sm">{Number(rmbTotal || 0).toLocaleString("en-US")} ¥</p>
                       </div>
-                      <div className="bg-gradient-to-b from-amber-500 to-orange-500 rounded-xl p-3 text-center shadow-sm">
-                        <p className="text-[10px] text-amber-100 uppercase tracking-wide mb-1">نرخی $ یەک دانە</p>
-                        <p className="font-bold text-white font-mono text-base">${formData.itemPriceUsd || "0.0000"}</p>
+                      <div className="bg-gradient-to-b from-amber-500 to-orange-500 rounded-lg p-2 text-center shadow-sm">
+                        <p className="text-[10px] text-amber-100 uppercase tracking-wide mb-0.5">نرخی $ یەک دانە</p>
+                        <p className="font-bold text-white font-mono text-sm">${formData.itemPriceUsd || "0.0000"}</p>
                       </div>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* 4. Commission Fee */}
-              <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200 space-y-2">
-                <Label className="text-sm font-medium text-purple-700 block">عموڵەی کڕین *</Label>
-                <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-600 font-bold">$</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.commissionFeeUsd}
-                    onChange={(e) => setFormData({ ...formData, commissionFeeUsd: e.target.value })}
-                    placeholder="0.00"
-                    className="pr-8 text-left text-xl font-bold h-14 border-2 border-purple-300 bg-white"
-                    dir="ltr"
-                  />
-                </div>
-                <p className="text-xs text-purple-600">قازانجی کۆمپانیا بۆ هەر دانەیەک</p>
-              </div>
-
-              {/* 5. Item Price ($) */}
-              <div className="bg-amber-50 rounded-xl p-4 border-2 border-amber-200 space-y-2">
-                <Label className="text-sm font-medium text-amber-700 block">نرخی کاڵا (یەک دانە) *</Label>
-                <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-600 font-bold">$</span>
-                  <Input
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={formData.itemPriceUsd}
-                    onChange={(e) => syncFromUsd(e.target.value)}
-                    placeholder="0.00"
-                    className="pr-8 text-left text-xl font-bold h-14 border-2 border-amber-300 bg-white"
-                    dir="ltr"
-                  />
-                </div>
-                {rmbPerUnit && rmbRate > 0 && (
-                  <div className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1.5 border border-orange-200">
-                    <span className="text-[11px] text-orange-600">١ دانە بە یوانی چینی</span>
-                    <span className="text-sm font-bold text-orange-700 font-mono">{Number(rmbPerUnit).toLocaleString("en-US")} ¥</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* 4. Commission Fee */}
+                <div className="bg-purple-50 rounded-xl p-3 border border-purple-200 space-y-2">
+                  <Label className="text-sm font-medium text-purple-700 block">عموڵەی کڕین *</Label>
+                  <div className="relative">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-600 font-bold">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.commissionFeeUsd}
+                      onChange={(e) => setFormData({ ...formData, commissionFeeUsd: e.target.value })}
+                      placeholder="0.00"
+                      className="pr-8 text-left text-xl font-bold h-12 border-2 border-purple-300 bg-white"
+                      dir="ltr"
+                    />
                   </div>
-                )}
-                <p className="text-xs text-amber-600">نرخی کاڵا بۆ کڕیار</p>
+                  <p className="text-xs text-purple-600">قازانجی کۆمپانیا بۆ هەر دانەیەک</p>
+                </div>
+
+                {/* 5. Item Price ($) */}
+                <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 space-y-2">
+                  <Label className="text-sm font-medium text-amber-700 block">نرخی کاڵا (یەک دانە) *</Label>
+                  <div className="relative">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-600 font-bold">$</span>
+                    <Input
+                      type="number"
+                      step="0.0001"
+                      min="0"
+                      value={formData.itemPriceUsd}
+                      onChange={(e) => syncFromUsd(e.target.value)}
+                      placeholder="0.00"
+                      className="pr-8 text-left text-xl font-bold h-12 border-2 border-amber-300 bg-white"
+                      dir="ltr"
+                    />
+                  </div>
+                  {rmbPerUnit && rmbRate > 0 && (
+                    <div className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1.5 border border-orange-200">
+                      <span className="text-[11px] text-orange-600">١ دانە بە یوانی چینی</span>
+                      <span className="text-sm font-bold text-orange-700 font-mono">{Number(rmbPerUnit).toLocaleString("en-US")} ¥</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-amber-600">نرخی کاڵا بۆ کڕیار</p>
+                </div>
               </div>
 
               {/* Commission Income Preview */}
               {(itemPrice > 0 || commissionFee > 0) && (
-                <div className="bg-gradient-to-l from-amber-100 via-yellow-50 to-amber-50 rounded-2xl p-6 border-2 border-amber-300 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="p-2 bg-amber-500 rounded-lg">
-                        <TrendingUp className="h-5 w-5 text-white" />
+                      <div className="p-1.5 bg-amber-500 rounded-lg">
+                        <TrendingUp className="h-4 w-4 text-white" />
                       </div>
-                      <span className="font-bold text-lg text-amber-800">پێشبینی پارەدان</span>
+                      <span className="font-bold text-base text-amber-800">پێشبینی پارەدان</span>
                     </div>
-                    <div className="bg-white px-4 py-2 rounded-full border-2 border-amber-300">
-                      <span className="text-amber-700 font-bold">{formData.quantity || 1} عەدەد</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-xl p-4 text-center shadow-sm">
-                      <p className="text-xs text-slate-500 mb-1">نرخی کاڵا (١ دانە)</p>
-                      <p className="text-xl font-bold text-amber-600">${itemPrice.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-amber-100 rounded-xl p-4 text-center shadow-sm">
-                      <p className="text-xs text-amber-700 mb-1">کۆی نرخ ({formData.quantity || 1} دانە)</p>
-                      <p className="text-xl font-bold text-amber-700">${(itemPrice * quantity).toFixed(2)}</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 text-center shadow-sm">
-                      <p className="text-xs text-slate-500 mb-1">عمولە (١ دانە)</p>
-                      <p className="text-xl font-bold text-purple-600">${commissionFee.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-purple-100 rounded-xl p-4 text-center shadow-sm">
-                      <p className="text-xs text-purple-700 mb-1">کۆی عمولە ({formData.quantity || 1} دانە)</p>
-                      <p className="text-xl font-bold text-purple-700">${(commissionFee * quantity).toFixed(2)}</p>
+                    <div className="bg-white px-3 py-1 rounded-full border border-amber-300">
+                      <span className="text-amber-700 font-bold text-sm">{formData.quantity || 1} عەدەد</span>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-4 border-t-2 border-amber-300">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <div className="bg-white rounded-lg p-2.5 text-center shadow-sm">
+                      <p className="text-[11px] text-slate-500 mb-0.5">نرخی کاڵا (١ دانە)</p>
+                      <p className="text-lg font-bold text-amber-600">${itemPrice.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-amber-100 rounded-lg p-2.5 text-center shadow-sm">
+                      <p className="text-[11px] text-amber-700 mb-0.5">کۆی نرخ ({formData.quantity || 1} دانە)</p>
+                      <p className="text-lg font-bold text-amber-700">${(itemPrice * quantity).toFixed(2)}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-2.5 text-center shadow-sm">
+                      <p className="text-[11px] text-slate-500 mb-0.5">عمولە (١ دانە)</p>
+                      <p className="text-lg font-bold text-purple-600">${commissionFee.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-purple-100 rounded-lg p-2.5 text-center shadow-sm">
+                      <p className="text-[11px] text-purple-700 mb-0.5">کۆی عمولە ({formData.quantity || 1} دانە)</p>
+                      <p className="text-lg font-bold text-purple-700">${(commissionFee * quantity).toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-amber-300">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-amber-700">کۆی پارەدانی پێشوەخت</p>
                         <p className="text-xs text-slate-500">(نرخ + عمولە) × {formData.quantity || 1}</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-3xl font-bold text-amber-700">${totalPrepaid.toFixed(2)}</div>
+                        <div className="text-2xl font-bold text-amber-700">${totalPrepaid.toFixed(2)}</div>
                         {rmbTotal && rmbRate > 0 && (
                           <p className="text-xs text-orange-500 font-mono mt-0.5">
                             ≈ {(totalPrepaid * rmbRate).toLocaleString("en-US", { maximumFractionDigits: 0 })} ¥
@@ -688,7 +691,7 @@ export default function CommissionForm() {
                     </div>
                   </div>
 
-                  <p className="text-xs text-center text-amber-600 mt-3 bg-white/50 rounded-lg py-2">
+                  <p className="text-xs text-center text-amber-600 mt-2 bg-white/50 rounded-lg py-1.5">
                     💡 قازانجی کۆمپانیا = ${(commissionFee * quantity).toFixed(2)} (عمولەی {formData.quantity || 1} دانە)
                   </p>
                 </div>
@@ -698,15 +701,15 @@ export default function CommissionForm() {
 
           {/* ── Advance Payment Section ── */}
           <Card className="overflow-hidden">
-            <CardHeader className="bg-gradient-to-l from-teal-50 to-emerald-50 border-b">
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <Wallet className="h-5 w-5 text-teal-600" />
                 پارەدانی پێشەکی (ئاختیاری)
               </CardTitle>
-              <CardDescription>ئەگەر کڕیار بەشێک یان هەموو پارەکەی پێشوەخت داوە، بڕی پارەکە دابنێ — ڕاستەوخۆ لە حسابی کڕیار کەم دەبێتەوە</CardDescription>
+              <CardDescription className="text-xs">ئەگەر کڕیار بەشێک یان هەموو پارەکەی پێشوەخت داوە، بڕی پارەکە دابنێ — ڕاستەوخۆ لە حسابی کڕیار کەم دەبێتەوە</CardDescription>
             </CardHeader>
-            <CardContent className="p-5 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="p-4 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-sm font-semibold text-teal-700">بڕی پارەی پێشەکی (USD)</Label>
                   <div className="relative">
@@ -719,7 +722,7 @@ export default function CommissionForm() {
                       value={formData.advancePaidUsd}
                       onChange={(e) => setFormData({ ...formData, advancePaidUsd: e.target.value })}
                       placeholder="0.00"
-                      className="ps-8 h-12 text-lg font-bold border-2 border-teal-200 focus:border-teal-400 bg-teal-50/40"
+                      className="ps-8 h-11 text-lg font-bold border-2 border-teal-200 focus:border-teal-400 bg-teal-50/40"
                       dir="ltr"
                     />
                   </div>
@@ -731,7 +734,7 @@ export default function CommissionForm() {
                     value={formData.advancePaymentMethod}
                     onValueChange={(v) => setFormData({ ...formData, advancePaymentMethod: v as any })}
                   >
-                    <SelectTrigger className="h-12 border-2 border-teal-200 bg-teal-50/40">
+                    <SelectTrigger className="h-11 border-2 border-teal-200 bg-teal-50/40">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -749,7 +752,7 @@ export default function CommissionForm() {
               </div>
 
               {parseFloat(formData.advancePaidUsd || "0") > 0 && totalPrepaid > 0 && (
-                <div className="rounded-xl bg-gradient-to-l from-teal-50 to-emerald-50 p-4 border-2 border-teal-200 space-y-2">
+                <div className="rounded-xl bg-teal-50 p-3 border border-teal-200 space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-600">کۆی نرخ</span>
                     <span className="font-mono font-bold">${totalPrepaid.toFixed(2)}</span>
@@ -775,14 +778,14 @@ export default function CommissionForm() {
 
           {/* ── Shipping Method ── */}
           <Card className="overflow-hidden">
-            <CardHeader className="bg-gradient-to-l from-sky-50 to-blue-50 border-b">
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <Plane className="h-5 w-5 text-sky-600" />
                 ریگاکانی گواستنەوە
               </CardTitle>
-              <CardDescription>ریگای گواستنەوەی کاڵاکە هەڵبژێرە</CardDescription>
+              <CardDescription className="text-xs">ریگای گواستنەوەی کاڵاکە هەڵبژێرە</CardDescription>
             </CardHeader>
-            <CardContent className="p-5 space-y-5">
+            <CardContent className="p-4 space-y-3">
 
               {/* Method Selector */}
               <div className="grid grid-cols-3 gap-3">
@@ -790,7 +793,7 @@ export default function CommissionForm() {
                 <button
                   type="button"
                   onClick={() => setFormData(p => ({ ...p, shippingType: p.shippingType === "air_regular" ? "" : "air_regular", volumeCbm: "" }))}
-                  className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                  className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 ${
                     formData.shippingType === "air_regular"
                       ? "border-sky-400 bg-sky-50 shadow-md shadow-sky-100"
                       : "border-gray-200 bg-white hover:border-sky-200 hover:bg-sky-50/40"
@@ -801,8 +804,8 @@ export default function CommissionForm() {
                       <Check className="h-3 w-3 text-white" />
                     </span>
                   )}
-                  <div className={`p-3 rounded-xl ${formData.shippingType === "air_regular" ? "bg-sky-500" : "bg-gray-100"}`}>
-                    <Plane className={`h-6 w-6 ${formData.shippingType === "air_regular" ? "text-white" : "text-gray-500"}`} />
+                  <div className={`p-2.5 rounded-xl ${formData.shippingType === "air_regular" ? "bg-sky-500" : "bg-gray-100"}`}>
+                    <Plane className={`h-5 w-5 ${formData.shippingType === "air_regular" ? "text-white" : "text-gray-500"}`} />
                   </div>
                   <div className="text-center">
                     <p className={`font-bold text-sm ${formData.shippingType === "air_regular" ? "text-sky-700" : "text-gray-700"}`}>ئاسمانی ئاسایی</p>
@@ -814,7 +817,7 @@ export default function CommissionForm() {
                 <button
                   type="button"
                   onClick={() => setFormData(p => ({ ...p, shippingType: p.shippingType === "air_irregular" ? "" : "air_irregular", volumeCbm: "" }))}
-                  className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                  className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 ${
                     formData.shippingType === "air_irregular"
                       ? "border-amber-400 bg-amber-50 shadow-md shadow-amber-100"
                       : "border-gray-200 bg-white hover:border-amber-200 hover:bg-amber-50/40"
@@ -825,8 +828,8 @@ export default function CommissionForm() {
                       <Check className="h-3 w-3 text-white" />
                     </span>
                   )}
-                  <div className={`p-3 rounded-xl relative ${formData.shippingType === "air_irregular" ? "bg-amber-500" : "bg-gray-100"}`}>
-                    <Plane className={`h-6 w-6 ${formData.shippingType === "air_irregular" ? "text-white" : "text-gray-500"}`} />
+                  <div className={`p-2.5 rounded-xl relative ${formData.shippingType === "air_irregular" ? "bg-amber-500" : "bg-gray-100"}`}>
+                    <Plane className={`h-5 w-5 ${formData.shippingType === "air_irregular" ? "text-white" : "text-gray-500"}`} />
                     <Zap className={`h-3 w-3 absolute -bottom-0.5 -end-0.5 ${formData.shippingType === "air_irregular" ? "text-yellow-200" : "text-amber-400"}`} />
                   </div>
                   <div className="text-center">
@@ -839,7 +842,7 @@ export default function CommissionForm() {
                 <button
                   type="button"
                   onClick={() => setFormData(p => ({ ...p, shippingType: p.shippingType === "sea" ? "" : "sea", weightKg: "", dimensionLength: "", dimensionWidth: "", dimensionHeight: "" }))}
-                  className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                  className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 ${
                     formData.shippingType === "sea"
                       ? "border-teal-400 bg-teal-50 shadow-md shadow-teal-100"
                       : "border-gray-200 bg-white hover:border-teal-200 hover:bg-teal-50/40"
@@ -850,8 +853,8 @@ export default function CommissionForm() {
                       <Check className="h-3 w-3 text-white" />
                     </span>
                   )}
-                  <div className={`p-3 rounded-xl ${formData.shippingType === "sea" ? "bg-teal-500" : "bg-gray-100"}`}>
-                    <Ship className={`h-6 w-6 ${formData.shippingType === "sea" ? "text-white" : "text-gray-500"}`} />
+                  <div className={`p-2.5 rounded-xl ${formData.shippingType === "sea" ? "bg-teal-500" : "bg-gray-100"}`}>
+                    <Ship className={`h-5 w-5 ${formData.shippingType === "sea" ? "text-white" : "text-gray-500"}`} />
                   </div>
                   <div className="text-center">
                     <p className={`font-bold text-sm ${formData.shippingType === "sea" ? "text-teal-700" : "text-gray-700"}`}>دەریایی</p>
@@ -862,22 +865,22 @@ export default function CommissionForm() {
 
               {/* Air fields */}
               {(formData.shippingType === "air_regular" || formData.shippingType === "air_irregular") && (
-                <div className={`rounded-2xl border-2 overflow-hidden ${formData.shippingType === "air_irregular" ? "border-amber-200" : "border-sky-200"}`}>
-                  <div className={`px-4 py-2.5 flex items-center gap-2 ${formData.shippingType === "air_irregular" ? "bg-amber-50" : "bg-sky-50"}`}>
+                <div className={`rounded-xl border overflow-hidden ${formData.shippingType === "air_irregular" ? "border-amber-200" : "border-sky-200"}`}>
+                  <div className={`px-4 py-2 flex items-center gap-2 border-b ${formData.shippingType === "air_irregular" ? "bg-amber-50 border-amber-100" : "bg-sky-50 border-sky-100"}`}>
                     <Scale className={`h-4 w-4 ${formData.shippingType === "air_irregular" ? "text-amber-600" : "text-sky-600"}`} />
                     <span className="text-sm font-semibold">کێش و قەبارە</span>
                     <span className="text-xs text-muted-foreground ms-auto">max(ڕاستەقینە، ئەندازەیی)</span>
                   </div>
-                  <div className="p-4 space-y-4 bg-white">
+                  <div className="p-3 space-y-3 bg-white">
                     {/* Weight */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">کێشی ڕاستەقینە (کیلۆگرام)</Label>
                         <div className="relative">
                           <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">kg</span>
                           <Input type="number" step="0.01" min="0" value={formData.weightKg}
                             onChange={e => setFormData(p => ({ ...p, weightKg: e.target.value }))}
-                            placeholder="0.00" className="pe-10 h-11 font-mono" dir="ltr" />
+                            placeholder="0.00" className="pe-10 h-10 font-mono" dir="ltr" />
                         </div>
                       </div>
                       {volumetricKg > 0 && (
@@ -922,14 +925,14 @@ export default function CommissionForm() {
 
               {/* Sea fields */}
               {formData.shippingType === "sea" && (
-                <div className="rounded-2xl border-2 border-teal-200 overflow-hidden">
-                  <div className="px-4 py-2.5 flex items-center gap-2 bg-teal-50">
+                <div className="rounded-xl border border-teal-200 overflow-hidden">
+                  <div className="px-4 py-2 flex items-center gap-2 bg-teal-50 border-b border-teal-100">
                     <Calculator className="h-4 w-4 text-teal-600" />
                     <span className="text-sm font-semibold text-teal-800">قەبارەی CBM</span>
                     <span className="text-xs text-muted-foreground ms-auto">١ CBM = ١٠٠cm × ١٠٠cm × ١٠٠cm</span>
                   </div>
-                  <div className="p-4 space-y-4 bg-white">
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 space-y-3 bg-white">
+                    <div className="grid grid-cols-2 gap-3">
                       {/* Direct CBM */}
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">CBM ڕاستەوخۆ</Label>
@@ -937,7 +940,7 @@ export default function CommissionForm() {
                           <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">m³</span>
                           <Input type="number" step="0.0001" min="0" value={formData.volumeCbm}
                             onChange={e => setFormData(p => ({ ...p, volumeCbm: e.target.value }))}
-                            placeholder="0.0000" className="pe-10 h-11 font-mono" dir="ltr" />
+                            placeholder="0.0000" className="pe-10 h-10 font-mono" dir="ltr" />
                         </div>
                         <p className="text-xs text-muted-foreground">ئەگەر CBM دەزانیت</p>
                       </div>
@@ -982,21 +985,21 @@ export default function CommissionForm() {
 
           {/* Notes */}
           <Card>
-            <CardHeader>
-              <CardTitle>تێبینی</CardTitle>
+            <CardHeader className="py-3 px-4 border-b">
+              <CardTitle className="text-base">تێبینی</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4">
               <Textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="تێبینی..."
-                rows={3}
+                rows={2}
               />
             </CardContent>
           </Card>
 
           {/* Submit */}
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => setLocation("/commission")}>
               پاشگەزبوونەوە
             </Button>
