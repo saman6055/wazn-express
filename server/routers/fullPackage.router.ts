@@ -226,8 +226,21 @@ export const fullPackageRouter = router({
         batchId: z.number().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        // Order numbers must be unique — each real order has exactly one. Reject
+        // a create that reuses an existing (non-deleted) order's number so a
+        // duplicate can't be entered by mistake. Blank order numbers are allowed.
+        if (input.orderNumber && input.orderNumber.trim()) {
+          const dup = await db.getFullPackageOrderByOrderNumber(input.orderNumber);
+          if (dup) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `ئەم ئۆردەر نەمبەرە پێشتر بەکارهاتووە لە ئۆردەری ${dup.orderCode}. هەر ئۆردەرێک دەبێت ئۆردەر نەمبەرێکی ناوازەی هەبێت. | This order number is already used by ${dup.orderCode}. Each order must have a unique order number.`,
+            });
+          }
+        }
+
         // Generate unique order code based on order type
-        const prefix = input.orderType === 'commission' ? 'CM' : 
+        const prefix = input.orderType === 'commission' ? 'CM' :
                        input.orderType === 'purchase_request' ? 'PR' : 'FP';
         const orderCode = `${prefix}-${Date.now().toString(36).toUpperCase()}`;
         
@@ -580,6 +593,24 @@ export const fullPackageRouter = router({
             code: "CONFLICT",
             message: "This order was modified by someone else. Please reload and try again.",
           });
+        }
+
+        // 2b. Order-number uniqueness — only when the edit actually changes the
+        //     number to a non-blank value already held by a DIFFERENT order.
+        //     (We don't validate unchanged numbers, so pre-existing duplicates
+        //     in legacy data don't block unrelated edits.)
+        if (
+          rest.orderNumber !== undefined &&
+          rest.orderNumber.trim() &&
+          rest.orderNumber.trim() !== (existing.orderNumber ?? "").trim()
+        ) {
+          const dup = await db.getFullPackageOrderByOrderNumber(rest.orderNumber, id);
+          if (dup) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `ئەم ئۆردەر نەمبەرە پێشتر بەکارهاتووە لە ئۆردەری ${dup.orderCode}. هەر ئۆردەرێک دەبێت ئۆردەر نەمبەرێکی ناوازەی هەبێت. | This order number is already used by ${dup.orderCode}. Each order must have a unique order number.`,
+            });
+          }
         }
 
         // 3. Compute whether the customer-facing charge amount would change.

@@ -394,6 +394,30 @@ export async function getFullPackageOrderByTrackingNumber(trackingNumber: string
 }
 
 /**
+ * Find a non-deleted order that already uses the given (supplier) order number.
+ * Used to enforce order-number uniqueness on create/edit. Pass `excludeId` to
+ * ignore the order being edited. Returns undefined when the number is free or
+ * blank (blank order numbers are never treated as duplicates).
+ */
+export async function getFullPackageOrderByOrderNumber(
+  orderNumber: string,
+  excludeId?: number,
+): Promise<FullPackageOrder | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const n = orderNumber?.trim();
+  if (!n) return undefined;
+
+  const conditions: any[] = [eq(fullPackageOrders.orderNumber, n), notDeleted];
+  if (excludeId !== undefined) conditions.push(ne(fullPackageOrders.id, excludeId));
+
+  const result = await db.select().from(fullPackageOrders)
+    .where(and(...conditions))
+    .limit(1);
+  return result[0];
+}
+
+/**
  * Get ALL orders linked to a tracking number (for shared tracking / same carton).
  * Unlike getFullPackageOrderByTrackingNumber which returns only the first match,
  * this returns every order sharing the tracking number.
