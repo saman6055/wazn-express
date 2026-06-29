@@ -130,12 +130,43 @@ export default function FullPackageForm() {
 
   const createMutation = trpc.fullPackage.create.useMutation({
     onSuccess: () => {
-      toast.success("پەتی فول پاکیج دروست کرا");
+      toast.success("ئۆردەری فوول پاکێج بە سەرکەوتوویی داخڵ کرا — خانەکان بۆ ئۆردەری دواتر ئامادەن");
       utils.fullPackage.list.invalidate();
-      if (formData.customerId) {
-        localStorage.setItem("wazn-last-commission-customer", formData.customerId);
+      const keepCustomerId = formData.customerId;
+      if (keepCustomerId) {
+        localStorage.setItem("wazn-last-commission-customer", keepCustomerId);
       }
-      navigate("/full-package");
+      // Keep the form open for rapid multi-order entry: reset every field for
+      // the next order but KEEP the selected customer, so staff can enter all
+      // of one customer's orders back-to-back without re-picking them. Exit is
+      // a manual choice (the back button) — we intentionally don't navigate.
+      setFormData({
+        customerId: keepCustomerId,
+        supplierId: "",
+        orderNumber: "",
+        trackingNumber: "",
+        productLink: "",
+        productDescription: "",
+        quantity: "1",
+        color: "",
+        size: "",
+        productType: "",
+        purchasePriceUsd: "",
+        sellingPriceUsd: "",
+        advancePaidUsd: "",
+        advancePaymentMethod: "CASH",
+        notes: "",
+        shippingType: "",
+        weightKg: "",
+        dimensionLength: "",
+        dimensionWidth: "",
+        dimensionHeight: "",
+        volumeCbm: "",
+      });
+      setProductImages([]);
+      setIqdPerUnit("");
+      setIqdTotal("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     },
     onError: (error) => {
       toast.error(error.message);
