@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -81,11 +81,33 @@ export default function CommissionForm() {
   // Get selected customer name
   const selectedCustomer = customers?.find((c) => c.id.toString() === formData.customerId);
 
+  // Default to the last-used customer once, after customers load (never overwrite a manual choice)
+  const didApplyLastCustomer = useRef(false);
+  useEffect(() => {
+    if (didApplyLastCustomer.current) return;
+    if (!customers || customers.length === 0) return;
+    if (formData.customerId) {
+      didApplyLastCustomer.current = true;
+      return;
+    }
+    const lastId = localStorage.getItem("wazn-last-commission-customer");
+    if (!lastId) return;
+    const match = customers.find((c) => c.id.toString() === lastId);
+    if (match) {
+      didApplyLastCustomer.current = true;
+      setFormData((prev) => ({ ...prev, customerId: lastId }));
+      setCustomerSearch(match.customerCode || match.fullName || "");
+    }
+  }, [customers, formData.customerId]);
+
   // Create mutation
   const createMutation = trpc.fullPackage.create.useMutation({
     onSuccess: () => {
       toast.success("پەتی عمولە بە سەرکەوتوویی دروست کرا");
       utils.fullPackage.list.invalidate();
+      if (formData.customerId) {
+        localStorage.setItem("wazn-last-commission-customer", formData.customerId);
+      }
       setLocation("/commission");
     },
     onError: (error) => {
@@ -170,6 +192,11 @@ export default function CommissionForm() {
 
     if (!formData.commissionFeeUsd || commissionFee <= 0) {
       toast.error("تکایە عمولەی کڕین داخڵ بکە");
+      return;
+    }
+
+    if (!formData.shippingType) {
+      toast.error("تکایە شێوازی گواستنەوە دیاری بکە");
       return;
     }
 
@@ -442,89 +469,42 @@ export default function CommissionForm() {
             </CardHeader>
             <CardContent className="p-6 space-y-6">
 
-              {/* Quantity + Item Price + Commission in styled blocks */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Quantity */}
-                <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
-                  <Label className="text-sm font-medium text-slate-600 mb-2 block">عەدەد *</Label>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 rounded-full"
-                      onClick={() => handleQuantityChange(Math.max(1, parseInt(formData.quantity) - 1).toString())}
-                    >
-                      -
-                    </Button>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={formData.quantity}
-                      onChange={(e) => handleQuantityChange(e.target.value)}
-                      className="text-center text-2xl font-bold h-14 border-2"
-                      dir="ltr"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 rounded-full"
-                      onClick={() => handleQuantityChange((parseInt(formData.quantity) + 1).toString())}
-                    >
-                      +
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Item Price */}
-                <div className="bg-amber-50 rounded-xl p-4 border-2 border-amber-200 space-y-2">
-                  <Label className="text-sm font-medium text-amber-700 block">نرخی کاڵا (یەک دانە) *</Label>
-                  <div className="relative">
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-600 font-bold">$</span>
-                    <Input
-                      type="number"
-                      step="0.0001"
-                      min="0"
-                      value={formData.itemPriceUsd}
-                      onChange={(e) => syncFromUsd(e.target.value)}
-                      placeholder="0.00"
-                      className="pr-8 text-left text-xl font-bold h-14 border-2 border-amber-300 bg-white"
-                      dir="ltr"
-                    />
-                  </div>
-                  {rmbPerUnit && rmbRate > 0 && (
-                    <div className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1.5 border border-orange-200">
-                      <span className="text-[11px] text-orange-600">١ دانە بە یوانی چینی</span>
-                      <span className="text-sm font-bold text-orange-700 font-mono">{Number(rmbPerUnit).toLocaleString("en-US")} ¥</span>
-                    </div>
-                  )}
-                  <p className="text-xs text-amber-600">نرخی کاڵا بۆ کڕیار</p>
-                </div>
-
-                {/* Commission Fee */}
-                <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200 space-y-2">
-                  <Label className="text-sm font-medium text-purple-700 block">عموڵەی کڕین *</Label>
-                  <div className="relative">
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-600 font-bold">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.commissionFeeUsd}
-                      onChange={(e) => setFormData({ ...formData, commissionFeeUsd: e.target.value })}
-                      placeholder="0.00"
-                      className="pr-8 text-left text-xl font-bold h-14 border-2 border-purple-300 bg-white"
-                      dir="ltr"
-                    />
-                  </div>
-                  <p className="text-xs text-purple-600">قازانجی کۆمپانیا بۆ هەر دانەیەک</p>
+              {/* 1. Quantity */}
+              <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
+                <Label className="text-sm font-medium text-slate-600 mb-2 block">عەدەد *</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 rounded-full"
+                    onClick={() => handleQuantityChange(Math.max(1, parseInt(formData.quantity) - 1).toString())}
+                  >
+                    -
+                  </Button>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formData.quantity}
+                    onChange={(e) => handleQuantityChange(e.target.value)}
+                    className="text-center text-2xl font-bold h-14 border-2"
+                    dir="ltr"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 rounded-full"
+                    onClick={() => handleQuantityChange((parseInt(formData.quantity) + 1).toString())}
+                  >
+                    +
+                  </Button>
                 </div>
               </div>
 
-              {/* ── ¥ Converter Section ── */}
+              {/* 2 + 3. ¥ Converter Section (per-unit ¥ then total ¥) */}
               <div className={`rounded-2xl border-2 overflow-hidden ${rmbRate > 0 ? "border-orange-200" : "border-dashed border-gray-300"}`}>
-                {/* Header */}
+                {/* Header — live rate hint */}
                 <div className="bg-gradient-to-l from-orange-100 to-amber-50 px-5 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-orange-500 rounded-lg">
@@ -552,7 +532,7 @@ export default function CommissionForm() {
                 {/* Two ¥ inputs + result */}
                 <div className="bg-white px-5 py-4 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Per-unit ¥ */}
+                    {/* 2. Per-unit ¥ */}
                     <div className="space-y-1.5">
                       <Label className="text-sm font-semibold text-amber-700">نرخی ١ دانە بە یوانی چینی</Label>
                       <div className="relative">
@@ -572,7 +552,7 @@ export default function CommissionForm() {
                       <p className="text-xs text-amber-500">نرخی یەک دانەی کاڵا</p>
                     </div>
 
-                    {/* Total ¥ */}
+                    {/* 3. Total ¥ */}
                     <div className="space-y-1.5">
                       <Label className="text-sm font-semibold text-orange-700">کۆی نرخ بە یوانی چینی ({quantity} دانە)</Label>
                       <div className="relative">
@@ -611,6 +591,50 @@ export default function CommissionForm() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* 4. Commission Fee */}
+              <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200 space-y-2">
+                <Label className="text-sm font-medium text-purple-700 block">عموڵەی کڕین *</Label>
+                <div className="relative">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-600 font-bold">$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.commissionFeeUsd}
+                    onChange={(e) => setFormData({ ...formData, commissionFeeUsd: e.target.value })}
+                    placeholder="0.00"
+                    className="pr-8 text-left text-xl font-bold h-14 border-2 border-purple-300 bg-white"
+                    dir="ltr"
+                  />
+                </div>
+                <p className="text-xs text-purple-600">قازانجی کۆمپانیا بۆ هەر دانەیەک</p>
+              </div>
+
+              {/* 5. Item Price ($) */}
+              <div className="bg-amber-50 rounded-xl p-4 border-2 border-amber-200 space-y-2">
+                <Label className="text-sm font-medium text-amber-700 block">نرخی کاڵا (یەک دانە) *</Label>
+                <div className="relative">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-600 font-bold">$</span>
+                  <Input
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    value={formData.itemPriceUsd}
+                    onChange={(e) => syncFromUsd(e.target.value)}
+                    placeholder="0.00"
+                    className="pr-8 text-left text-xl font-bold h-14 border-2 border-amber-300 bg-white"
+                    dir="ltr"
+                  />
+                </div>
+                {rmbPerUnit && rmbRate > 0 && (
+                  <div className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1.5 border border-orange-200">
+                    <span className="text-[11px] text-orange-600">١ دانە بە یوانی چینی</span>
+                    <span className="text-sm font-bold text-orange-700 font-mono">{Number(rmbPerUnit).toLocaleString("en-US")} ¥</span>
+                  </div>
+                )}
+                <p className="text-xs text-amber-600">نرخی کاڵا بۆ کڕیار</p>
               </div>
 
               {/* Commission Income Preview */}
