@@ -493,6 +493,9 @@
     "imagesCount": "{{count}} / {{max}} images"
   },
   "nav": {
+    "back": "Back",
+    "forward": "Forward",
+    "home": "Home",
     "dashboard": "Dashboard",
     "pushCenter": "Send Notifications",
     "customers": "Customers",

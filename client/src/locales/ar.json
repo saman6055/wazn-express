@@ -493,6 +493,9 @@
     "imagesCount": "{{count}} / {{max}} صور"
   },
   "nav": {
+    "back": "رجوع",
+    "forward": "تقدّم",
+    "home": "الصفحة الرئيسية",
     "dashboard": "لوحة التحكم",
     "pushCenter": "إرسال الإشعارات",
     "customers": "العملاء",

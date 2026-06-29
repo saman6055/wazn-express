@@ -34,6 +34,8 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
+  Home,
   ScanLine,
   Settings,
   Building2,
@@ -667,6 +669,45 @@ function DashboardLayoutContent({
         "min-h-screen transition-all duration-300 bg-gradient-to-b from-background to-muted/20 dark:to-muted/10",
         isMobile ? "pt-14" : "ms-64"
       )}>
+        {/* Global navigation bar — go one step back / forward, or jump to the
+            dashboard home. Available on every page. Sticks just below the
+            mobile header (top-14) or to the viewport on desktop (top-0). */}
+        <div className={cn(
+          "sticky z-30 flex items-center gap-1 h-11 px-2 md:px-6 border-b border-gray-200 dark:border-gray-700 bg-white/85 dark:bg-gray-900/85 backdrop-blur",
+          isMobile ? "top-14" : "top-0"
+        )}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            title={t("nav.back") || "گەڕانەوە"}
+            aria-label={t("nav.back") || "گەڕانەوە"}
+            onClick={() => window.history.back()}
+          >
+            {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            title={t("nav.forward") || "بۆ دواتر"}
+            aria-label={t("nav.forward") || "بۆ دواتر"}
+            onClick={() => window.history.forward()}
+          >
+            {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </Button>
+          <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            title={t("nav.home") || "پەڕەی سەرەکی"}
+            aria-label={t("nav.home") || "پەڕەی سەرەکی"}
+            onClick={() => setLocation("/dashboard")}
+          >
+            <Home className="h-4 w-4" />
+          </Button>
+        </div>
         <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
           {children}
         </div>

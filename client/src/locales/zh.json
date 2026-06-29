@@ -493,6 +493,9 @@
     "imagesCount": "{{count}} / {{max}} 图片"
   },
   "nav": {
+    "back": "返回",
+    "forward": "前进",
+    "home": "主页",
     "dashboard": "仪表板",
     "pushCenter": "发送通知",
     "customers": "客户",
