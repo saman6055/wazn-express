@@ -1084,6 +1084,25 @@ export const deliveryBoxRouter = router({
       return db.sealBox(input.id, ctx.user.id);
     }),
 
+  // Reopen a sealed box back to "open" so staff can fix the shipping price,
+  // add/remove packages, or correct any mistake, then re-seal. Only allowed
+  // while the box is still "ready" (sealed but NOT yet shipped/charged) —
+  // reopening a charged in-transit/delivered box would desync the amount
+  // already billed to the customer wallet.
+  reopen: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const box = await db.getDeliveryBoxById(input.id);
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
+      if (box.status !== 'ready') {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "تەنها بۆکسی داخراوی نەنێردراو دەکرێتەوە بۆ دەستکاری" });
+      }
+      if (box.isCharged) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم بۆکسە پارەی گەیاندنی لێبڕاوە — ناتوانرێت بکرێتەوە" });
+      }
+      return db.updateDeliveryBox(input.id, { status: 'open', sealedAt: null, sealedById: null });
+    }),
+
   // Mark box as in-transit (charges customer wallet + creates invoice)
   markInTransit: staffProcedure
     .input(z.object({ id: z.number() }))

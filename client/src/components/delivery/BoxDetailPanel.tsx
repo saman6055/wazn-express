@@ -42,7 +42,10 @@ import {
   DollarSign,
   RefreshCw,
   ChevronDown,
+  Pencil,
+  Unlock,
 } from "lucide-react";
+import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
 
 // Languages offered for the printable box receipt / PDF. Staff can print
 // any one regardless of the active UI language. Chinese is intentionally
@@ -109,6 +112,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
 
   const [scanInput, setScanInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const scanInputRef = useRef<HTMLInputElement>(null);
   // Latest input value kept in a ref so submit reads the COMPLETE code even
   // when a scanner's trailing Enter fires before React re-renders (avoids the
@@ -154,6 +158,15 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     onSuccess: () => {
       toast.success(t("delivery.toastBoxSealed"));
       soundManager.playComplete();
+      refetchBox();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const reopenBox = trpc.deliveryBox.reopen.useMutation({
+    onSuccess: () => {
+      toast.success(t("delivery.toastBoxReopened"));
+      soundManager.playSuccess();
       refetchBox();
     },
     onError: (err) => toast.error(err.message),
@@ -622,6 +635,33 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             </Button>
           )}
 
+          {/* Reopen a sealed (but not-yet-shipped) box so staff can add/remove
+              packages or fix the shipping price, then re-seal. */}
+          {isReady && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (window.confirm(t("delivery.confirmReopen"))) {
+                  reopenBox.mutate({ id: boxId });
+                }
+              }}
+              disabled={reopenBox.isPending}
+              className="text-amber-700 hover:text-amber-800 hover:bg-amber-50 hover:border-amber-200"
+            >
+              {reopenBox.isPending ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Unlock className="h-4 w-4 me-1" />}
+              {t("delivery.reopenBox")}
+            </Button>
+          )}
+
+          {/* Edit shipping price + delivery details. Available while the box is
+              still open or sealed — i.e. before it ships and the wallet is charged. */}
+          {(isOpen || isReady) && (
+            <Button variant="outline" onClick={() => setEditOpen(true)}>
+              <Pencil className="h-4 w-4 me-1" />
+              {t("delivery.editBox")}
+            </Button>
+          )}
+
           {isInTransit && (
             <Button
               onClick={() => markDelivered.mutate({ id: boxId })}
@@ -725,6 +765,13 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           </DropdownMenu>
         </div>
       </CardContent>
+
+      <EditBoxDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        box={box}
+        onSaved={() => refetchBox()}
+      />
     </Card>
   );
 }

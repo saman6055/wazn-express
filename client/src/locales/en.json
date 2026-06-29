@@ -5646,6 +5646,14 @@
     "noExpenses": "No expenses in this period"
   },
   "delivery": {
+    "editBox": "Edit box",
+    "editBoxSubtitle": "Edit the shipping price and delivery details",
+    "reopenBox": "Reopen box to edit",
+    "confirmReopen": "This box will be reopened for editing. You can add/remove packages and change the shipping price, then seal it again. Continue?",
+    "saveChanges": "Save changes",
+    "toastBoxUpdated": "Box updated",
+    "toastBoxReopened": "Box reopened — you can edit it now",
+    "recipientName": "Recipient name",
     "advancePaid": "Advance Paid",
     "remainingDue": "Remaining Due",
     "itemPriceLabel": "Item Price",

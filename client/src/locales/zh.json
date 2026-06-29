@@ -5707,6 +5707,14 @@
     "noExpenses": "本时段无支出"
   },
   "delivery": {
+    "editBox": "编辑箱子",
+    "editBoxSubtitle": "编辑运费和配送信息",
+    "reopenBox": "重新打开箱子以编辑",
+    "confirmReopen": "此箱子将重新打开以供编辑。您可以添加/移除包裹并更改运费，然后再次封箱。是否继续？",
+    "saveChanges": "保存更改",
+    "toastBoxUpdated": "箱子已更新",
+    "toastBoxReopened": "箱子已重新打开 — 现在可以编辑了",
+    "recipientName": "收件人姓名",
     "advancePaid": "已付预付款",
     "remainingDue": "应付余额",
     "itemPriceLabel": "商品价格",
