@@ -22,6 +22,12 @@ import {
   Eye,
   Pencil,
   ChevronDown,
+  Truck,
+  Calendar,
+  ChevronsUpDown,
+  ArrowDownUp,
+  Check,
+  X,
 } from "lucide-react";
 import {
   Select,
@@ -36,6 +42,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 
@@ -83,6 +99,15 @@ export default function CommissionOrders() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [shippingFilter, setShippingFilter] = useState<string>("all");
+  // New client-side filters + sort
+  const [customerFilter, setCustomerFilter] = useState<string>(""); // customerId, "" = all
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [trackingFilter, setTrackingFilter] = useState<"all" | "with" | "without">("all");
+  const [batchFilter, setBatchFilter] = useState<string>("all"); // "all" | batchId | "none"
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "value">("newest");
 
 
   const { data: orders, isLoading, refetch } = trpc.fullPackage.list.useQuery({
@@ -92,6 +117,58 @@ export default function CommissionOrders() {
   });
 
   const { data: batches } = trpc.batches.list.useQuery();
+  const { data: customers } = trpc.customers.list.useQuery();
+
+  // batches.list may return a plain array or a paginated { data } shape
+  const batchList: any[] = Array.isArray(batches)
+    ? batches
+    : ((batches as any)?.data ?? []);
+
+  const filteredCustomers = (customers ?? []).filter((customer: any) => {
+    if (!customerSearch) return true;
+    const q = customerSearch.toLowerCase();
+    const name = (customer.fullName || customer.fullNameKurdish || "").toLowerCase();
+    const code = (customer.customerCode || "").toLowerCase();
+    const phone = (customer.mobileNumber || "").toLowerCase();
+    return name.includes(q) || code.includes(q) || phone.includes(q);
+  });
+  const selectedCustomer = (customers ?? []).find(
+    (c: any) => String(c.id) === customerFilter,
+  );
+
+  const hasActiveFilters =
+    search !== "" ||
+    statusFilter !== "all" ||
+    shippingFilter !== "all" ||
+    customerFilter !== "" ||
+    trackingFilter !== "all" ||
+    batchFilter !== "all" ||
+    dateFrom !== "" ||
+    dateTo !== "" ||
+    sortBy !== "newest";
+
+  const clearFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+    setShippingFilter("all");
+    setCustomerFilter("");
+    setCustomerSearch("");
+    setTrackingFilter("all");
+    setBatchFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    setSortBy("newest");
+  };
+
+  const getOrderDate = (o: any): number => {
+    const raw = (o as any).createdAt ?? (o as any).orderDate;
+    if (!raw) return 0;
+    const t = new Date(raw).getTime();
+    return isNaN(t) ? 0 : t;
+  };
+
+  const getOrderValue = (o: any): number =>
+    parseFloat((o as any).totalCostUsd ?? (o as any).totalPrepaidUsd ?? "0") || 0;
 
   const updateStatusMutation = trpc.fullPackage.updateStatus.useMutation({
     onSuccess: () => {
@@ -105,9 +182,46 @@ export default function CommissionOrders() {
 
 
 
+  // Date range bounds (parsed once)
+  const dateFromMs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null;
+  const dateToMs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
+
   // Calculate stats for commission orders only
   const fullPackageOrders = (orders?.filter(o => o.orderType === "commission") || [])
-    .filter(o => shippingFilter === "all" || (o as any).shippingType === shippingFilter);
+    .filter(o => shippingFilter === "all" || (o as any).shippingType === shippingFilter)
+    // Customer filter
+    .filter(o => customerFilter === "" || String((o as any).customerId) === customerFilter)
+    // Tracking filter
+    .filter(o => {
+      if (trackingFilter === "all") return true;
+      const tn = (o as any).trackingNumber;
+      const hasTracking = typeof tn === "string" && tn.trim() !== "";
+      return trackingFilter === "with" ? hasTracking : !hasTracking;
+    })
+    // Batch filter
+    .filter(o => {
+      if (batchFilter === "all") return true;
+      const bid = (o as any).batchId;
+      if (batchFilter === "none") return bid == null;
+      return String(bid) === batchFilter;
+    })
+    // Date range filter
+    .filter(o => {
+      if (dateFromMs === null && dateToMs === null) return true;
+      const t = getOrderDate(o);
+      if (t === 0) return false;
+      if (dateFromMs !== null && t < dateFromMs) return false;
+      if (dateToMs !== null && t > dateToMs) return false;
+      return true;
+    })
+    // Sort
+    .slice()
+    .sort((a, b) => {
+      if (sortBy === "value") return getOrderValue(b) - getOrderValue(a);
+      const da = getOrderDate(a);
+      const db = getOrderDate(b);
+      return sortBy === "oldest" ? da - db : db - da;
+    });
   const totalOrders = fullPackageOrders.length;
   const pendingOrders = fullPackageOrders.filter(o => ["pending", "ordered", "tracking_added"].includes(o.status)).length;
   const inTransitOrders = fullPackageOrders.filter(o => ["in_batch", "in_transit"].includes(o.status)).length;
@@ -261,9 +375,182 @@ export default function CommissionOrders() {
                 </Select>
               </div>
 
-              {/* Results count */}
-              <div className="text-sm text-muted-foreground">
-                {fullPackageOrders.length} پەت دۆزرایەوە
+              {/* Second filter row */}
+              <div className="flex flex-wrap gap-3">
+                {/* Customer filter (searchable) */}
+                <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={customerOpen}
+                      className="w-full sm:w-56 justify-between font-normal"
+                    >
+                      {selectedCustomer ? (
+                        <span className="flex items-center gap-2 truncate">
+                          <Badge variant="secondary" className="text-xs">
+                            {(selectedCustomer as any).customerCode}
+                          </Badge>
+                          <span className="truncate">
+                            {(selectedCustomer as any).fullName ||
+                              (selectedCustomer as any).fullNameKurdish}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">هەموو کریارەکان</span>
+                      )}
+                      <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent variant="panel" className="w-[320px] p-0" align="start">
+                    <Command>
+                      <CommandInput
+                        placeholder="گەڕان بە کۆد، ناو، یان ژمارە..."
+                        value={customerSearch}
+                        onValueChange={setCustomerSearch}
+                      />
+                      <CommandList>
+                        <CommandEmpty>هیچ کڕیارێک نەدۆزرایەوە</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="__all__"
+                            onSelect={() => {
+                              setCustomerFilter("");
+                              setCustomerOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "ms-2 h-4 w-4",
+                                customerFilter === "" ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            <span className="text-muted-foreground">هەموو کریارەکان</span>
+                          </CommandItem>
+                          {filteredCustomers.slice(0, 50).map((customer: any) => (
+                            <CommandItem
+                              key={customer.id}
+                              value={`${customer.fullName} ${customer.customerCode} ${customer.mobileNumber}`}
+                              onSelect={() => {
+                                setCustomerFilter(String(customer.id));
+                                setCustomerOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "ms-2 h-4 w-4",
+                                  customerFilter === String(customer.id)
+                                    ? "opacity-100"
+                                    : "opacity-0",
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {customer.fullName || customer.fullNameKurdish}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {customer.customerCode} • {customer.mobileNumber}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Tracking filter */}
+                <Select
+                  value={trackingFilter}
+                  onValueChange={(v) => setTrackingFilter(v as "all" | "with" | "without")}
+                >
+                  <SelectTrigger className="w-full sm:w-44">
+                    <Truck className="h-4 w-4 ms-2" />
+                    <SelectValue placeholder="هەموو" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">هەموو</SelectItem>
+                    <SelectItem value="with">بە تراکینگ</SelectItem>
+                    <SelectItem value="without">بێ تراکینگ</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Batch filter */}
+                <Select value={batchFilter} onValueChange={setBatchFilter}>
+                  <SelectTrigger className="w-full sm:w-44">
+                    <Layers className="h-4 w-4 ms-2" />
+                    <SelectValue placeholder="هەموو" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">هەموو</SelectItem>
+                    <SelectItem value="none">بێ باچ</SelectItem>
+                    {batchList.map((batch: any) => (
+                      <SelectItem key={batch.id} value={String(batch.id)}>
+                        {batch.batchCode}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Date range */}
+                <div className="flex items-end gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      لە بەرواری
+                    </label>
+                    <Input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="w-40"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      تا بەرواری
+                    </label>
+                    <Input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="w-40"
+                    />
+                  </div>
+                </div>
+
+                {/* Sort */}
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as "newest" | "oldest" | "value")}>
+                  <SelectTrigger className="w-full sm:w-44">
+                    <ArrowDownUp className="h-4 w-4 ms-2" />
+                    <SelectValue placeholder="نوێترین" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">نوێترین</SelectItem>
+                    <SelectItem value="oldest">کۆنترین</SelectItem>
+                    <SelectItem value="value">بەهادارترین</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Results count + clear filters */}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="text-sm text-muted-foreground">
+                  {fullPackageOrders.length} پەت دۆزرایەوە
+                </div>
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="text-muted-foreground h-8"
+                  >
+                    <X className="h-3.5 w-3.5 ms-1" />
+                    پاککردنەوەی فلتەرەکان
+                  </Button>
+                )}
               </div>
             </div>
           </CardHeader>
