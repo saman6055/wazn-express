@@ -2,11 +2,35 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+function Table({
+  className,
+  containerClassName,
+  stickyHeader = true,
+  ...props
+}: React.ComponentProps<"table"> & {
+  /** Extra classes for the scroll container (e.g. a different max-height). */
+  containerClassName?: string;
+  /**
+   * Freeze the column-title row while the body scrolls (default on). The
+   * container is given a capped height so the table scrolls internally and the
+   * header stays put. Pass `false` to opt a table out (e.g. tiny summary tables
+   * that should always render in full).
+   */
+  stickyHeader?: boolean;
+}) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      data-sticky-header={stickyHeader ? "" : undefined}
+      className={cn(
+        "relative w-full overflow-auto",
+        // A capped height makes the container the vertical scroller so the
+        // sticky header has something to stick to (the page itself scrolling
+        // wouldn't freeze it). Short tables never reach the cap, so they're
+        // unaffected.
+        stickyHeader && "max-h-[70vh]",
+        containerClassName,
+      )}
     >
       <table
         data-slot="table"
@@ -21,7 +45,14 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
+      className={cn(
+        "[&_tr]:border-b",
+        // Freeze the column titles at the top of the scroll container so they
+        // stay visible no matter how far down the body is scrolled. An opaque
+        // background keeps body rows from showing through as they pass under.
+        "sticky top-0 z-20 bg-background",
+        className,
+      )}
       {...props}
     />
   );
