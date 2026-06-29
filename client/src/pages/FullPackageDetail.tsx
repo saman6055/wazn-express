@@ -591,6 +591,16 @@ export default function FullPackageDetail() {
                       className="h-11"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">{t("fullPackage.orderNumber") || "ئۆردەر نەمبەر"}</Label>
+                    <Input
+                      value={formData.orderNumber}
+                      onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
+                      placeholder={t("fullPackage.orderNumberPlaceholder") || "ژمارەی ئۆردەر"}
+                      className="h-11"
+                      dir="ltr"
+                    />
+                  </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label className="text-sm font-medium">{t("fullPackage.trackingNumber")}</Label>
                     <div className="space-y-2">
