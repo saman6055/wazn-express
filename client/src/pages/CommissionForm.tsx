@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet } from "lucide-react";
+import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet, ScanBarcode } from "lucide-react";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -34,6 +34,7 @@ export default function CommissionForm() {
     customerId: "",
     supplierId: "",
     orderNumber: "",
+    trackingNumber: "",
     productLink: "",
     productDescription: "",
     quantity: "1",
@@ -212,6 +213,7 @@ export default function CommissionForm() {
       productImage: productImages[0] || undefined,
       productImages: productImages.length > 0 ? productImages : undefined,
       orderNumber: formData.orderNumber || undefined,
+      trackingNumber: formData.trackingNumber.trim() || undefined,
       productDescription: formData.productDescription || undefined,
       quantity: quantity,
       color: formData.color || undefined,
@@ -433,8 +435,8 @@ export default function CommissionForm() {
           {/* Product Info — compact multi-column grid */}
           <Section icon={Package} title="زانیاری کاڵا" hint="زانیاری کاڵاکە داخڵ بکە" accent="amber">
             <div className="space-y-3">
-              {/* Row 1: type / order# / link */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Row 1: type / order# / tracking / link */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">جۆری کاڵا *</Label>
                   <Select
@@ -459,6 +461,19 @@ export default function CommissionForm() {
                     onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
                     placeholder="ژمارەی ئۆردەر"
                     className={cn("h-10", filledCls(formData.orderNumber))}
+                    dir="ltr"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs flex items-center gap-1.5">
+                    <ScanBarcode className="h-3.5 w-3.5" />
+                    تراکینگ نەمبەر <span className="text-muted-foreground font-normal">(ئیختیاری)</span>
+                  </Label>
+                  <Input
+                    value={formData.trackingNumber}
+                    onChange={(e) => setFormData({ ...formData, trackingNumber: e.target.value })}
+                    placeholder="ئەگەر ئێستا بەردەستە، داخڵی بکە"
+                    className={cn("h-10", filledCls(formData.trackingNumber))}
                     dir="ltr"
                   />
                 </div>

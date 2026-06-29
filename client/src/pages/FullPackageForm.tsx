@@ -16,6 +16,7 @@ import {
   Save,
   Loader2,
   Link as LinkIcon,
+  ScanBarcode,
   ImageIcon,
   User,
   TrendingUp,
@@ -60,6 +61,7 @@ export default function FullPackageForm() {
     customerId: "",
     supplierId: "",
     orderNumber: "",
+    trackingNumber: "",
     productLink: "",
     productDescription: "",
     quantity: "1",
@@ -167,6 +169,7 @@ export default function FullPackageForm() {
       productImage: productImages[0] || undefined,
       productImages: productImages.length > 0 ? productImages : undefined,
       orderNumber: formData.orderNumber || undefined,
+      trackingNumber: formData.trackingNumber.trim() || undefined,
       productDescription: formData.productDescription || undefined,
       quantity: parseInt(formData.quantity) || 1,
       color: formData.color || undefined,
@@ -446,8 +449,8 @@ export default function FullPackageForm() {
           {/* Product Info — compact multi-column grid */}
           <Section icon={Package} title="زانیاری کاڵا" hint="زانیاری کاڵاکە داخڵ بکە" accent="emerald">
             <div className="space-y-3">
-              {/* Row 1: type / order# / link */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Row 1: type / order# / tracking / link */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">جۆری کاڵا *</Label>
                   <Select
@@ -472,6 +475,19 @@ export default function FullPackageForm() {
                     onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
                     placeholder="ژمارەی ئۆردەر"
                     className={cn("h-10", filledCls(formData.orderNumber))}
+                    dir="ltr"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs flex items-center gap-1.5">
+                    <ScanBarcode className="h-3.5 w-3.5" />
+                    تراکینگ نەمبەر <span className="text-muted-foreground font-normal">(ئیختیاری)</span>
+                  </Label>
+                  <Input
+                    value={formData.trackingNumber}
+                    onChange={(e) => setFormData({ ...formData, trackingNumber: e.target.value })}
+                    placeholder="ئەگەر ئێستا بەردەستە، داخڵی بکە"
+                    className={cn("h-10", filledCls(formData.trackingNumber))}
                     dir="ltr"
                   />
                 </div>
