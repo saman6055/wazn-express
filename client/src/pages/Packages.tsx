@@ -1376,7 +1376,7 @@ const [, setLocation] = useLocation();
 
       {/* Edit Package Dialog - Quick Register Style */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl w-[95vw] max-h-[92vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5 text-primary" />
@@ -1387,248 +1387,294 @@ const [, setLocation] = useLocation();
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
-            {/* Main Form */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Customer Selection */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <Label className="text-base flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    {t("packages.customer")}
-                  </Label>
-                </CardHeader>
-                <CardContent>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder={t("customers.searchPlaceholder")}
-                      value={editCustomerSearch}
-                      onChange={(e) => {
-                        setEditCustomerSearch(e.target.value);
-                        setShowEditCustomerDropdown(true);
-                        if (e.target.value === "") setEditCustomerId(null);
-                      }}
-                      onFocus={() => setShowEditCustomerDropdown(true)}
-                      className="pl-9"
-                    />
-                    {showEditCustomerDropdown && filteredEditCustomers.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
-                        {filteredEditCustomers.map((customer) => (
-                          <button
-                            key={customer.id}
-                            type="button"
-                            className="w-full px-3 py-2 text-left hover:bg-accent flex items-center justify-between"
-                            onClick={() => selectEditCustomer(customer)}
-                          >
-                            <div>
-                              <div className="font-medium">{customer.customerCode}</div>
-                              <div className="text-sm text-muted-foreground">{customer.fullName}</div>
-                            </div>
-                            <div className="text-xs text-muted-foreground">{customer.mobileNumber}</div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+          <div className="space-y-5 py-2">
+            {/* Summary strip — full width, always visible, never cramped */}
+            <div className="rounded-xl border bg-muted/30 px-4 py-3">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                <div className="flex items-center gap-1.5 text-sm">
+                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground">{t("customers.title")}:</span>
+                  <span className="font-medium">{editCustomerId ? customers?.find(c => c.id === editCustomerId)?.customerCode : "-"}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm">
+                  {editShippingType === "sea" ? <Ship className="h-3.5 w-3.5 text-cyan-500" /> : <Plane className="h-3.5 w-3.5 text-blue-500" />}
+                  <span className="text-muted-foreground">{t("packages.shippingType")}:</span>
+                  <span className="font-medium capitalize">{editShippingType.replace("_", " ")}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm">
+                  <Weight className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground">{t("common.weight")}:</span>
+                  <span className="font-medium">{editWeightKg || "0"} kg</span>
+                </div>
+                {editCbm > 0 && (
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">{t("common.volume")}:</span>
+                    <span className="font-medium font-mono">{editCbm.toFixed(4)} m³</span>
                   </div>
-                  {editCustomerId && (
-                    <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950 rounded-md mt-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-700 dark:text-green-400">
-                        {t("packages.customerSelected")}: {customers?.find(c => c.id === editCustomerId)?.customerCode}
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                )}
+                <div className="flex items-center gap-1.5 text-sm">
+                  <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground">{t("batches.title")}:</span>
+                  <span className="font-medium">{editBatchId && editBatchId !== "none" ? batches?.find((b: any) => b.id === parseInt(editBatchId))?.batchCode : "-"}</span>
+                </div>
+                {editEstimatedPrice > 0 && (
+                  <div className="ms-auto flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    <span className="text-xs text-muted-foreground">{t("packages.estimatedPrice")}</span>
+                    <span className="text-lg font-bold text-primary">${editEstimatedPrice.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
 
-              {/* Shipping Type */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <Label className="text-base flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    {t("packages.shippingType")}
-                  </Label>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { value: "air_regular", label: t("packages.airRegular"), labelEn: "Air", icon: Plane, color: "text-blue-500" },
-                      { value: "air_irregular", label: t("packages.airIrregular"), labelEn: "Air Irregular", icon: Plane, color: "text-purple-500" },
-                      { value: "sea", label: t("packages.sea"), labelEn: "Sea", icon: Ship, color: "text-cyan-500" },
-                    ].map((type) => (
-                      <button
-                        key={type.value}
-                        type="button"
-                        onClick={() => {
-                          setEditShippingType(type.value as any);
-                          setEditBatchId(""); // Reset batch when type changes
-                        }}
-                        className={cn(
-                          "p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2",
-                          editShippingType === type.value
-                            ? "border-primary bg-primary/5"
-                            : "border-transparent bg-muted/50 hover:bg-muted"
-                        )}
-                      >
-                        <type.icon className={cn("h-6 w-6", type.color)} />
-                        <span className="text-sm font-medium">{type.label}</span>
-                        <span className="text-xs text-muted-foreground">{type.labelEn}</span>
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Package Details */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <Label className="text-base">{t("packages.packageDetails")}</Label>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>{t("packages.trackingNumber")}</Label>
-                    <Input
-                      placeholder={t("packages.enterTrackingNumber")}
-                      value={editTrackingNumber}
-                      onChange={(e) => setEditTrackingNumber(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>{t("packages.weight")} ({t("common.kg")})</Label>
-                      <Input
-                        type="number"
-                        step="0.001"
-                        placeholder="0.000"
-                        value={editWeightKg}
-                        onChange={(e) => setEditWeightKg(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label>{t("packages.batch")}</Label>
-                      <Select value={editBatchId || "none"} onValueChange={setEditBatchId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("batches.selectBatch")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">{t("packages.noBatch")}</SelectItem>
-                          {filteredEditBatches.map((batch: any) => (
-                            <SelectItem key={batch.id} value={batch.id.toString()}>
-                              {batch.batchCode} - {batch.pricePerKg ? `$${batch.pricePerKg}/kg` : batch.pricePerCbm ? `$${batch.pricePerCbm}/cbm` : "No price"}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  {/* Dimensions Section */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label>{t('packages.length')} ({t("common.cm")})</Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        placeholder="0"
-                        value={editLengthCm}
-                        onChange={(e) => setEditLengthCm(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label>{t('packages.width')} ({t("common.cm")})</Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        placeholder="0"
-                        value={editWidthCm}
-                        onChange={(e) => setEditWidthCm(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label>{t('packages.height')} ({t("common.cm")})</Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        placeholder="0"
-                        value={editHeightCm}
-                        onChange={(e) => setEditHeightCm(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* CBM for Sea Shipping */}
-                  {editShippingType === "sea" && (
-                    <div className="p-4 bg-cyan-50 dark:bg-cyan-950 rounded-lg border border-cyan-200 dark:border-cyan-800">
-                      <Label className="text-cyan-700 dark:text-cyan-300 flex items-center gap-2 mb-2">
-                        <Ship className="h-4 w-4" />
-                        {t('packages.cbmVolume')}
-                      </Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-xs text-muted-foreground">{t('packages.enterDirectly')}</Label>
-                          <Input
-                            type="number"
-                            step="0.0001"
-                            placeholder="0.0000"
-                            value={editDirectCbm}
-                            onChange={(e) => setEditDirectCbm(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs text-muted-foreground">{t('packages.calculatedFromDimensions')}</Label>
-                          <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center font-mono">
-                            {editCalculatedCbm.toFixed(4)} m³
+            {/* Customer */}
+            <section className="rounded-xl border bg-card shadow-sm">
+              <div className="flex items-center gap-2 border-b px-4 py-3">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                <h3 className="text-sm font-semibold">{t("packages.customer")}</h3>
+              </div>
+              <div className="p-4">
+                <div className="relative">
+                  <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t("customers.searchPlaceholder")}
+                    value={editCustomerSearch}
+                    onChange={(e) => {
+                      setEditCustomerSearch(e.target.value);
+                      setShowEditCustomerDropdown(true);
+                      if (e.target.value === "") setEditCustomerId(null);
+                    }}
+                    onFocus={() => setShowEditCustomerDropdown(true)}
+                    className="ps-9 h-11"
+                  />
+                  {showEditCustomerDropdown && filteredEditCustomers.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
+                      {filteredEditCustomers.map((customer) => (
+                        <button
+                          key={customer.id}
+                          type="button"
+                          className="w-full px-3 py-2 text-start hover:bg-accent flex items-center justify-between"
+                          onClick={() => selectEditCustomer(customer)}
+                        >
+                          <div>
+                            <div className="font-medium">{customer.customerCode}</div>
+                            <div className="text-sm text-muted-foreground">{customer.fullName}</div>
                           </div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-cyan-600 dark:text-cyan-400 mt-2">
-                        {t('packages.finalCbm')} <span className="font-bold">{editCbm.toFixed(4)} m³</span>
-                      </p>
+                          <div className="text-xs text-muted-foreground">{customer.mobileNumber}</div>
+                        </button>
+                      ))}
                     </div>
                   )}
-                  
-                  {/* Volumetric Weight for Air Shipping */}
-                  {(editShippingType === "air_regular" || editShippingType === "air_irregular") && editVolumetricWeight > 0 && (
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <Label className="text-blue-700 dark:text-blue-300 flex items-center gap-2 mb-2">
-                        <Plane className="h-4 w-4" />
-                        {t('packages.volumetricWeight')}
-                      </Label>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">{t('packages.actualWeight')}:</span>
-                          <p className="font-bold">{editWeightKg || "0"} kg</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">{t('packages.volumetricWeight')}:</span>
-                          <p className="font-bold">{editVolumetricWeight.toFixed(2)} kg</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">{t('packages.chargeableWeight')}:</span>
-                          <p className="font-bold text-primary">{editChargeableWeight.toFixed(2)} kg</p>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex items-center gap-2">
-                        <Label className="text-xs">{t('packages.divisor')}</Label>
+                </div>
+                {editCustomerId && (
+                  <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950 rounded-md mt-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                    <span className="text-sm text-green-700 dark:text-green-400">
+                      {t("packages.customerSelected")}: {customers?.find(c => c.id === editCustomerId)?.customerCode}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Shipping Type */}
+            <section className="rounded-xl border bg-card shadow-sm">
+              <div className="flex items-center gap-2 border-b px-4 py-3">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                  <Truck className="h-4 w-4 text-primary" />
+                </div>
+                <h3 className="text-sm font-semibold">{t("packages.shippingType")}</h3>
+              </div>
+              <div className="p-4">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {[
+                    { value: "air_regular", label: t("packages.airRegular"), labelEn: "Air", icon: Plane, color: "text-blue-500" },
+                    { value: "air_irregular", label: t("packages.airIrregular"), labelEn: "Air Irregular", icon: Plane, color: "text-purple-500" },
+                    { value: "sea", label: t("packages.sea"), labelEn: "Sea", icon: Ship, color: "text-cyan-500" },
+                  ].map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => {
+                        setEditShippingType(type.value as any);
+                        setEditBatchId(""); // Reset batch when type changes
+                      }}
+                      className={cn(
+                        "p-3 sm:p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-1.5 text-center",
+                        editShippingType === type.value
+                          ? "border-primary bg-primary/5"
+                          : "border-transparent bg-muted/50 hover:bg-muted"
+                      )}
+                    >
+                      <type.icon className={cn("h-5 w-5 sm:h-6 sm:w-6", type.color)} />
+                      <span className="text-xs sm:text-sm font-medium leading-tight">{type.label}</span>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground leading-tight">{type.labelEn}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* Package Details */}
+            <section className="rounded-xl border bg-card shadow-sm">
+              <div className="flex items-center gap-2 border-b px-4 py-3">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                  <Package className="h-4 w-4 text-primary" />
+                </div>
+                <h3 className="text-sm font-semibold">{t("packages.packageDetails")}</h3>
+              </div>
+              <div className="p-4 space-y-4">
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground">{t("packages.trackingNumber")}</Label>
+                  <Input
+                    placeholder={t("packages.enterTrackingNumber")}
+                    value={editTrackingNumber}
+                    onChange={(e) => setEditTrackingNumber(e.target.value)}
+                    className="mt-1 h-11 font-mono"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground">{t("packages.weight")} ({t("common.kg")})</Label>
+                    <Input
+                      type="number"
+                      step="0.001"
+                      placeholder="0.000"
+                      value={editWeightKg}
+                      onChange={(e) => setEditWeightKg(e.target.value)}
+                      className="mt-1 h-11"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground">{t("packages.batch")}</Label>
+                    <Select value={editBatchId || "none"} onValueChange={setEditBatchId}>
+                      <SelectTrigger className="mt-1 h-11">
+                        <SelectValue placeholder={t("batches.selectBatch")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{t("packages.noBatch")}</SelectItem>
+                        {filteredEditBatches.map((batch: any) => (
+                          <SelectItem key={batch.id} value={batch.id.toString()}>
+                            {batch.batchCode} - {batch.pricePerKg ? `$${batch.pricePerKg}/kg` : batch.pricePerCbm ? `$${batch.pricePerCbm}/cbm` : "No price"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Dimensions */}
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-1">
+                    <Ruler className="h-3.5 w-3.5" />
+                    {t("packages.length")} / {t("packages.width")} / {t("packages.height")} ({t("common.cm")})
+                  </Label>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder={t("packages.length")}
+                      value={editLengthCm}
+                      onChange={(e) => setEditLengthCm(e.target.value)}
+                      className="h-11"
+                    />
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder={t("packages.width")}
+                      value={editWidthCm}
+                      onChange={(e) => setEditWidthCm(e.target.value)}
+                      className="h-11"
+                    />
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder={t("packages.height")}
+                      value={editHeightCm}
+                      onChange={(e) => setEditHeightCm(e.target.value)}
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+
+                {/* CBM for Sea Shipping */}
+                {editShippingType === "sea" && (
+                  <div className="p-4 bg-cyan-50 dark:bg-cyan-950 rounded-lg border border-cyan-200 dark:border-cyan-800">
+                    <Label className="text-cyan-700 dark:text-cyan-300 flex items-center gap-2 mb-2 text-sm font-medium">
+                      <Ship className="h-4 w-4" />
+                      {t('packages.cbmVolume')}
+                    </Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">{t('packages.enterDirectly')}</Label>
                         <Input
                           type="number"
-                          className="w-20 h-7 text-xs"
-                          value={editVolumetricDivisor}
-                          onChange={(e) => setEditVolumetricDivisor(e.target.value)}
+                          step="0.0001"
+                          placeholder="0.0000"
+                          value={editDirectCbm}
+                          onChange={(e) => setEditDirectCbm(e.target.value)}
+                          className="mt-1 h-11"
                         />
                       </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">{t('packages.calculatedFromDimensions')}</Label>
+                        <div className="mt-1 h-11 px-3 py-2 bg-muted rounded-md flex items-center font-mono">
+                          {editCalculatedCbm.toFixed(4)} m³
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  
+                    <p className="text-xs text-cyan-600 dark:text-cyan-400 mt-2">
+                      {t('packages.finalCbm')} <span className="font-bold">{editCbm.toFixed(4)} m³</span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Volumetric Weight for Air Shipping */}
+                {(editShippingType === "air_regular" || editShippingType === "air_irregular") && editVolumetricWeight > 0 && (
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <Label className="text-blue-700 dark:text-blue-300 flex items-center gap-2 mb-2 text-sm font-medium">
+                      <Plane className="h-4 w-4" />
+                      {t('packages.volumetricWeight')}
+                    </Label>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground text-xs">{t('packages.actualWeight')}</span>
+                        <p className="font-bold">{editWeightKg || "0"} kg</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-xs">{t('packages.volumetricWeight')}</span>
+                        <p className="font-bold">{editVolumetricWeight.toFixed(2)} kg</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-xs">{t('packages.chargeableWeight')}</span>
+                        <p className="font-bold text-primary">{editChargeableWeight.toFixed(2)} kg</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Label className="text-xs">{t('packages.divisor')}</Label>
+                      <Input
+                        type="number"
+                        className="w-20 h-7 text-xs"
+                        value={editVolumetricDivisor}
+                        onChange={(e) => setEditVolumetricDivisor(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label className="flex items-center gap-2">
-                      <Tags className="h-3 w-3" />
+                    <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Tags className="h-3.5 w-3.5" />
                       {t("packages.productCategory")}
                     </Label>
                     <Select value={editCategoryId || "none"} onValueChange={setEditCategoryId}>
-                      <SelectTrigger>
+                      <SelectTrigger className="mt-1 h-11">
                         <SelectValue placeholder={t("packages.selectCategory")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -1641,137 +1687,85 @@ const [, setLocation] = useLocation();
                       </SelectContent>
                     </Select>
                   </div>
-                  
                   <div>
-                    <Label className="flex items-center gap-2">
-                      <FileText className="h-3 w-3" />
+                    <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5" />
                       {t("common.description")}
                     </Label>
                     <Input
                       placeholder={t("packages.descriptionPlaceholder")}
                       value={editDescription}
                       onChange={(e) => setEditDescription(e.target.value)}
+                      className="mt-1 h-11"
                     />
                   </div>
-                  
-                  {/* Photo Upload Section */}
-                  <div>
-                    <Label className="flex items-center gap-2 mb-2">
-                      <ImagePlus className="h-3 w-3" />
-                      {t('packages.packagePhotos')}
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {editPhotos.map((photo, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={photo}
-                            alt={`Photo ${index + 1}`}
-                            className="w-20 h-20 object-cover rounded-lg border"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setEditPhotos(editPhotos.filter((_, i) => i !== index))}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                      <label className="w-20 h-20 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          className="hidden"
-                          onChange={async (e) => {
-                            const files = e.target.files;
-                            if (!files) return;
-                            setEditIsUploading(true);
-                            try {
-                              for (const file of Array.from(files)) {
-                                const formData = new FormData();
-                                formData.append("file", file);
-                                const response = await fetch("/api/upload", {
-                                  method: "POST",
-                                  body: formData,
-                                });
-                                if (response.ok) {
-                                  const { url } = await response.json();
-                                  setEditPhotos(prev => [...prev, url]);
-                                }
-                              }
-                            } catch (error) {
-                              toast.error(t("toast.imageUploadError"));
-                            } finally {
-                              setEditIsUploading(false);
-                            }
-                          }}
-                        />
-                        {editIsUploading ? (
-                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                        ) : (
-                          <Camera className="h-5 w-5 text-muted-foreground" />
-                        )}
-                      </label>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
 
-            {/* Summary Sidebar */}
-            <div className="space-y-4">
-              <Card className="sticky top-4">
-                <CardHeader className="pb-3">
-                  <Label className="text-base flex items-center gap-2">
-                    <Calculator className="h-4 w-4" />
-                    {t("common.summary")}
+                {/* Photo Upload Section */}
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-2">
+                    <ImagePlus className="h-3.5 w-3.5" />
+                    {t('packages.packagePhotos')}
                   </Label>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("customers.title")}</span>
-                      <span className="font-medium">
-                        {editCustomerId ? customers?.find(c => c.id === editCustomerId)?.customerCode : "-"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("packages.shippingType")}</span>
-                      <span className="font-medium capitalize">{editShippingType.replace("_", " ")}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("common.weight")}</span>
-                      <span className="font-medium">{editWeightKg || "0"} kg</span>
-                    </div>
-                    {editCbm > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">{t("common.volume")}</span>
-                        <span className="font-medium">{editCbm.toFixed(4)} m³</span>
+                  <div className="flex flex-wrap gap-2">
+                    {editPhotos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photo}
+                          alt={`Photo ${index + 1}`}
+                          className="w-20 h-20 object-cover rounded-lg border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setEditPhotos(editPhotos.filter((_, i) => i !== index))}
+                          className="absolute -top-2 -end-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
                       </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("batches.title")}</span>
-                      <span className="font-medium">
-                        {editBatchId && editBatchId !== "none" ? batches?.find((b: any) => b.id === parseInt(editBatchId))?.batchCode : "-"}
-                      </span>
-                    </div>
+                    ))}
+                    <label className="w-20 h-20 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={async (e) => {
+                          const files = e.target.files;
+                          if (!files) return;
+                          setEditIsUploading(true);
+                          try {
+                            for (const file of Array.from(files)) {
+                              const formData = new FormData();
+                              formData.append("file", file);
+                              const response = await fetch("/api/upload", {
+                                method: "POST",
+                                body: formData,
+                              });
+                              if (response.ok) {
+                                const { url } = await response.json();
+                                setEditPhotos(prev => [...prev, url]);
+                              }
+                            }
+                          } catch (error) {
+                            toast.error(t("toast.imageUploadError"));
+                          } finally {
+                            setEditIsUploading(false);
+                          }
+                        }}
+                      />
+                      {editIsUploading ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      ) : (
+                        <Camera className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </label>
                   </div>
-                  
-                  {editEstimatedPrice > 0 && (
-                    <>
-                      <Separator />
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">{t("packages.estimatedPrice")}</span>
-                        <span className="text-lg font-bold text-primary">${editEstimatedPrice.toFixed(2)}</span>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </div>
+            </section>
           </div>
-          
+
           <DialogFooter className="flex justify-between border-t pt-4">
             <Button 
               variant="destructive" 
