@@ -64,6 +64,7 @@ interface OrderItem {
   sellingPriceUsd: string;
   // Commission fields
   itemPriceUsd: string;
+  itemPriceCny: string; // ¥ price per unit (converts to itemPriceUsd via the RMB rate)
   commissionFeeUsd: string;
   // Advance payment
   advancePaidUsd: string;
@@ -86,6 +87,7 @@ const emptyItem = (): OrderItem => ({
   purchasePriceUsd: "",
   sellingPriceUsd: "",
   itemPriceUsd: "",
+  itemPriceCny: "",
   commissionFeeUsd: "",
   advancePaidUsd: "",
   advancePaymentMethod: "CASH",
@@ -103,6 +105,11 @@ export default function BulkOrderForm() {
   
   const isCommission = orderType === "commission";
   const utils = trpc.useUtils();
+
+  // ¥ exchange rate (RMB per 1 USD) — lets each commission item's price be
+  // entered in Chinese Yuan and converted to USD, like the single-order form.
+  const { data: rmbRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "RMB" });
+  const rmbRate = parseFloat(rmbRateData?.rate?.toString() || "0");
 
   // Customer search
   const [customerOpen, setCustomerOpen] = useState(false);
@@ -181,6 +188,22 @@ export default function BulkOrderForm() {
       item.id === id ? { ...item, [field]: value } : item
     ));
   }, []);
+
+  // Bidirectional ¥ ↔ $ for an item's price: editing one keeps the other in
+  // sync via the RMB rate (itemPriceUsd is the source of truth sent on submit).
+  const setItemUsd = useCallback((id: string, usd: string) => {
+    const v = parseFloat(usd) || 0;
+    setItems(prev => prev.map(it => it.id === id
+      ? { ...it, itemPriceUsd: usd, itemPriceCny: v > 0 && rmbRate > 0 ? (v * rmbRate).toFixed(2) : "" }
+      : it));
+  }, [rmbRate]);
+
+  const setItemCny = useCallback((id: string, cny: string) => {
+    const v = parseFloat(cny) || 0;
+    setItems(prev => prev.map(it => it.id === id
+      ? { ...it, itemPriceCny: cny, itemPriceUsd: v > 0 && rmbRate > 0 ? (v / rmbRate).toFixed(4) : "" }
+      : it));
+  }, [rmbRate]);
 
   const updateItemImages = useCallback((id: string, images: string[]) => {
     setItems(prev => prev.map(item => 
@@ -566,7 +589,7 @@ export default function BulkOrderForm() {
                           <Input
                             placeholder="نرخی کاڵا ($)"
                             value={item.itemPriceUsd}
-                            onChange={e => updateItem(item.id, "itemPriceUsd", e.target.value)}
+                            onChange={e => setItemUsd(item.id, e.target.value)}
                             className="h-9 text-sm"
                           />
                         </div>
@@ -631,6 +654,38 @@ export default function BulkOrderForm() {
                 {/* Expanded Details */}
                 {isExpanded && (
                   <div className="px-4 pb-4 pt-1 border-t bg-muted/10">
+                    {/* ¥ → $ converter for the item price (commission only) */}
+                    {isCommission && (
+                      <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50/50 dark:bg-orange-900/10 p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="text-xs font-semibold text-orange-700 dark:text-orange-400">نرخی کاڵا بە یوانی چینی (¥)</Label>
+                          {rmbRate > 0 ? (
+                            <span className="text-[11px] font-mono text-orange-600">١ $ = {rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} ¥</span>
+                          ) : (
+                            <span className="text-[11px] text-red-600">نرخی گۆڕین لە سیتینگ دانەنراوە</span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 items-center">
+                          <div className="relative">
+                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              dir="ltr"
+                              placeholder="نرخی ١ دانە بە یوان"
+                              value={item.itemPriceCny}
+                              onChange={e => setItemCny(item.id, e.target.value)}
+                              className="h-9 text-sm pe-8"
+                            />
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-xs text-muted-foreground">= نرخی کاڵا: </span>
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400 font-mono" dir="ltr">${item.itemPriceUsd || "0.00"}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">ڕەنگ</Label>
