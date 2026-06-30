@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { memo } from "react";
 import { cn } from "@/lib/utils";
+import { Sparkline } from "./Sparkline";
 
 const colorStyles = {
   green: {
@@ -22,6 +23,13 @@ const colorStyles = {
   },
 } as const;
 
+const sparkColor = {
+  green: "text-green-500",
+  blue: "text-blue-500",
+  purple: "text-purple-500",
+  red: "text-red-500",
+} as const;
+
 export interface FinancialCardProps {
   title: string;
   value: number;
@@ -30,6 +38,8 @@ export interface FinancialCardProps {
   color: "green" | "blue" | "purple" | "red";
   prefix?: string;
   isDebt?: boolean;
+  /** Optional tiny trend series for a sparkline at the bottom of the card. */
+  trend?: number[];
 }
 
 export const FinancialCard = memo(function FinancialCard({
@@ -40,6 +50,7 @@ export const FinancialCard = memo(function FinancialCard({
   color,
   prefix = "",
   isDebt = false,
+  trend,
 }: FinancialCardProps) {
   const styles = colorStyles[color];
 
@@ -77,6 +88,9 @@ export const FinancialCard = memo(function FinancialCard({
           {prefix}
           {value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
         </p>
+        {trend && trend.length >= 2 && (
+          <Sparkline data={trend} className={cn("mt-3 opacity-80", sparkColor[color])} />
+        )}
       </CardContent>
     </Card>
   );

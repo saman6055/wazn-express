@@ -293,6 +293,7 @@ export default function Dashboard() {
             icon={<TrendingUp className="h-5 w-5" />}
             color="blue"
             prefix="$"
+            trend={chartData.map(d => d.revenue)}
           />
           <FinancialCard
             title={t('dashboard.monthlyIncome')}
@@ -301,6 +302,7 @@ export default function Dashboard() {
             icon={<Wallet className="h-5 w-5" />}
             color="purple"
             prefix="$"
+            trend={chartData.map(d => d.revenue)}
           />
           <FinancialCard
             title={t('dashboard.totalDebt')}
@@ -329,6 +331,7 @@ export default function Dashboard() {
             description={t("dashboard.registeredToday")}
             icon={<Package className="h-5 w-5" />}
             color="blue"
+            trend={chartData.map(d => d.packages)}
           />
           <StatsCard
             title={t("dashboard.activeBatches")}
@@ -359,6 +362,7 @@ export default function Dashboard() {
               icon={<DollarSign className="h-5 w-5" />}
               color="green"
               prefix="$"
+              trend={profitLossChartData.map(d => d.revenue)}
             />
             <FinancialCard
               title={t("dashboard.totalExpensesInPeriod")}

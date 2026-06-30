@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CopyButton } from "@/components/CopyButton";
 import { ZoomImage } from "@/components/ZoomImage";
 import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/ui/skeletons";
+import { EmptyState } from "@/components/EmptyState";
 import {
   Plus,
   Search,
@@ -797,24 +798,30 @@ export default function CommissionDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
+              <TableSkeleton rows={6} cols={6} />
             ) : filteredOrders.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">{t("commission.noOrdersMessage")}</p>
-                <Button
-                  className="mt-4"
-                  variant="outline"
-                  onClick={() => navigate("/commission/new")}
-                >
-                  <Plus className="h-4 w-4 ms-2" />
-                  {t("commission.addFirstOrderButton")}
-                </Button>
-              </div>
+              <EmptyState
+                icon={<Package />}
+                title={t("commission.noOrdersMessage") || "هیچ ئۆردەرێک نییە"}
+                description={
+                  hasActiveFilters
+                    ? t("common.tryClearingFilters") || "هەوڵبدە فلتەرەکان پاک بکەیتەوە"
+                    : undefined
+                }
+                action={
+                  hasActiveFilters ? (
+                    <Button variant="outline" onClick={clearAllFilters}>
+                      <X className="h-4 w-4 ms-2" />
+                      {t("commission.clearAllFilters") || "پاککردنەوەی فلتەرەکان"}
+                    </Button>
+                  ) : (
+                    <Button variant="outline" onClick={() => navigate("/commission/new")}>
+                      <Plus className="h-4 w-4 ms-2" />
+                      {t("commission.addFirstOrderButton")}
+                    </Button>
+                  )
+                }
+              />
             ) : (
               <div className="overflow-x-auto">
                 <Table>

@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
 import { ZoomImage } from "@/components/ZoomImage";
+import { TableSkeleton } from "@/components/ui/skeletons";
+import { EmptyState } from "@/components/EmptyState";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -1236,24 +1238,53 @@ const [, setLocation] = useLocation();
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tabFilteredPackages?.map((pkg) => (
-                  <PackageTableRow
-                    key={pkg.id}
-                    pkg={pkg as Package}
-                    getCustomerName={getCustomerName}
-                    getCustomerCode={getCustomerCode}
-                    getBatchCode={getBatchCode}
-                    onStatusChange={onStatusChange}
-                    onView={handleViewClick}
-                    onEdit={handleEditClick}
-                    onPrintLabel={handlePrintLabel}
-                    t={t}
-                  />
-                ))}
-                {(!filteredPackages || filteredPackages.length === 0) && (
+                {isLoadingPackages ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                      {t("packages.noPackages")}
+                    <TableCell colSpan={12} className="p-4">
+                      <TableSkeleton rows={6} cols={6} />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  tabFilteredPackages?.map((pkg) => (
+                    <PackageTableRow
+                      key={pkg.id}
+                      pkg={pkg as Package}
+                      getCustomerName={getCustomerName}
+                      getCustomerCode={getCustomerCode}
+                      getBatchCode={getBatchCode}
+                      onStatusChange={onStatusChange}
+                      onView={handleViewClick}
+                      onEdit={handleEditClick}
+                      onPrintLabel={handlePrintLabel}
+                      t={t}
+                    />
+                  ))
+                )}
+                {!isLoadingPackages && (!tabFilteredPackages || tabFilteredPackages.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={12} className="p-4">
+                      <EmptyState
+                        icon={<Package />}
+                        title={t("packages.noPackages") || "هیچ پاکەتێک نییە"}
+                        description={
+                          activeFiltersCount > 0
+                            ? t("common.tryClearingFilters") || "هەوڵبدە فلتەرەکان پاک بکەیتەوە"
+                            : undefined
+                        }
+                        action={
+                          activeFiltersCount > 0 ? (
+                            <Button variant="outline" onClick={clearAllFilters}>
+                              <X className="h-4 w-4 me-1" />
+                              {t("common.clear") || "پاککردنەوە"}
+                            </Button>
+                          ) : (
+                            <Button variant="outline" onClick={() => setLocation("/packages/quick-register")}>
+                              <Plus className="h-4 w-4 me-2" />
+                              {t("packages.registerPackage") || "تۆمارکردنی پاکەت"}
+                            </Button>
+                          )
+                        }
+                      />
                     </TableCell>
                   </TableRow>
                 )}

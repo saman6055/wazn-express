@@ -66,6 +66,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useTranslation } from "@/contexts/LanguageContext";
+import TrackingTimeline, { type TrackingStep } from "@/components/TrackingTimeline";
+
+// Maps an order's status enum to a 0-based stage index on the
+// registered → in-batch/shipped → arrived → delivered journey.
+const STATUS_STAGE: Record<string, number> = {
+  pending: 0,
+  approved: 0,
+  ordered: 0,
+  tracking_added: 0,
+  in_china_warehouse: 0,
+  in_batch: 1,
+  in_transit: 1,
+  arrived: 2,
+  delivered: 3,
+};
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800 border-amber-200",
@@ -426,6 +441,27 @@ export default function FullPackageDetail() {
   const rmbRate = parseFloat(rmbRateData?.rate?.toString() || "0");
   const toRmb = (usd: number) => rmbRate > 0 ? Math.round(usd * rmbRate).toLocaleString("en-US") : null;
 
+  // Visual tracking timeline — derived ONLY from existing order fields.
+  // cancelled orders skip the timeline (no linear journey to show).
+  const trackingSteps: TrackingStep[] = (() => {
+    if (order.status === "cancelled") return [];
+    const inBatch = !!order.batchId || !!(order as any).batch;
+    let stage = STATUS_STAGE[order.status] ?? 0;
+    // If a batch is already assigned but status hasn't advanced, treat as shipped.
+    if (stage < 1 && inBatch) stage = 1;
+    const stepDefs: { key: string; label: string }[] = [
+      { key: "registered", label: t("tracking.registered") || "تۆمارکرا" },
+      { key: "in_batch", label: t("tracking.inBatch") || "بارکرا / لە باچ" },
+      { key: "arrived", label: t("tracking.arrived") || "گەیشتە بنکە" },
+      { key: "delivered", label: t("tracking.delivered") || "گەیەنرا" },
+    ];
+    return stepDefs.map((s, idx) => ({
+      key: s.key,
+      label: s.label,
+      state: idx < stage ? "done" : idx === stage ? "active" : "pending",
+    }));
+  })();
+
   // Calculate totals
   const totalPurchase = (Number(order.purchasePriceUsd) || 0) * (order.quantity || 1);
   const totalSelling = (Number(order.sellingPriceUsd) || 0) * (order.quantity || 1);
@@ -506,6 +542,18 @@ export default function FullPackageDetail() {
               <p>{t("fullPackage.pendingChargeDesc")}</p>
             </div>
           </div>
+        )}
+
+        {/* Visual tracking timeline — China→Iraq journey, from existing fields */}
+        {trackingSteps.length > 0 && (
+          <Card className="shadow-sm border-0 bg-white">
+            <CardContent className="p-5">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-1">
+                <Truck className="h-3 w-3" /> {t("tracking.title") || "شوێنکەوتنی ئۆردەر"}
+              </p>
+              <TrackingTimeline steps={trackingSteps} />
+            </CardContent>
+          </Card>
         )}
 
         {isEditMode ? (

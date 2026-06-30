@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { memo } from "react";
 import { cn } from "@/lib/utils";
+import { Sparkline } from "./Sparkline";
 
 const colorStyles = {
   blue: "from-blue-500 to-blue-600",
@@ -8,6 +9,14 @@ const colorStyles = {
   amber: "from-amber-500 to-amber-600",
   green: "from-green-500 to-green-600",
   purple: "from-purple-500 to-purple-600",
+} as const;
+
+const sparkColor = {
+  blue: "text-blue-500",
+  emerald: "text-emerald-500",
+  amber: "text-amber-500",
+  green: "text-green-500",
+  purple: "text-purple-500",
 } as const;
 
 export type StatsCardColor = keyof typeof colorStyles;
@@ -20,6 +29,8 @@ export interface StatsCardProps {
   color?: StatsCardColor;
   /** Show skeleton placeholder when loading */
   isLoading?: boolean;
+  /** Optional tiny trend series for a sparkline at the bottom of the card. */
+  trend?: number[];
 }
 
 export const StatsCard = memo(function StatsCard({
@@ -29,6 +40,7 @@ export const StatsCard = memo(function StatsCard({
   icon,
   color = "blue",
   isLoading = false,
+  trend,
 }: StatsCardProps) {
   const gradient = colorStyles[color];
 
@@ -56,6 +68,9 @@ export const StatsCard = memo(function StatsCard({
             {icon}
           </div>
         </div>
+        {!isLoading && trend && trend.length >= 2 && (
+          <Sparkline data={trend} className={cn("mt-3 opacity-80", sparkColor[color])} />
+        )}
       </CardContent>
     </Card>
   );

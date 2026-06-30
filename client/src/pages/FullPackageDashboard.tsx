@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/ui/skeletons";
+import { EmptyState } from "@/components/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
 import { ZoomImage } from "@/components/ZoomImage";
@@ -834,22 +835,32 @@ export default function FullPackageDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
+              <TableSkeleton rows={6} cols={6} />
             ) : filteredOrders.length === 0 ? (
-              <div className="text-center py-12">
-                <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">{t("fullPackage.noOrdersMessage")}</p>
-                <Link href="/full-package/new">
-                  <Button className="mt-4" variant="outline">
-                    <Plus className="h-4 w-4 ms-2" />
-                    {t("fullPackage.addFirstOrderButton")}
-                  </Button>
-                </Link>
-              </div>
+              <EmptyState
+                icon={<ShoppingBag />}
+                title={t("fullPackage.noOrdersMessage") || "هیچ ئۆردەرێک نییە"}
+                description={
+                  hasActiveFilters
+                    ? t("common.tryClearingFilters") || "هەوڵبدە فلتەرەکان پاک بکەیتەوە"
+                    : undefined
+                }
+                action={
+                  hasActiveFilters ? (
+                    <Button variant="outline" onClick={clearAllFilters}>
+                      <X className="h-4 w-4 ms-2" />
+                      {t("fullPackage.clearAllFilters") || "پاککردنەوەی فلتەرەکان"}
+                    </Button>
+                  ) : (
+                    <Link href="/full-package/new">
+                      <Button variant="outline">
+                        <Plus className="h-4 w-4 ms-2" />
+                        {t("fullPackage.addFirstOrderButton")}
+                      </Button>
+                    </Link>
+                  )
+                }
+              />
             ) : (
               <div className="overflow-x-auto">
                 <Table>

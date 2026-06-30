@@ -5,3 +5,5 @@ export { StatsCard } from "./StatsCard";
 export type { StatsCardProps, StatsCardColor } from "./StatsCard";
 export { DashboardSection } from "./DashboardSection";
 export { ChartContainer, ChartEmpty } from "./ChartContainer";
+export { Sparkline } from "./Sparkline";
+export type { SparklineProps } from "./Sparkline";

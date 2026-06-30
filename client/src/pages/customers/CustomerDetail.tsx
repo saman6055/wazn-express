@@ -35,6 +35,7 @@ import { useLocation, useParams } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useCustomerDetail } from "@/hooks/useCustomerDetail";
 import { CustomerInfoCard } from "@/components/customers/CustomerInfoCard";
+import { CustomerSummaryHeader } from "@/components/customers/CustomerSummaryHeader";
 import { CustomerPackagesTab } from "@/components/customers/CustomerPackagesTab";
 import { CustomerFinanceTab } from "@/components/customers/CustomerFinanceTab";
 import { CustomerPendingOrdersSection } from "@/components/customers/CustomerPendingOrdersSection";
@@ -83,6 +84,15 @@ export default function CustomerDetail() {
   } = cd;
 
   const deliveryRatePct = totalPackages > 0 ? Math.round((deliveredPackages / totalPackages) * 100) : 0;
+
+  const lastActivity = useMemo(() => {
+    const dates = (packages ?? [])
+      .map((p) => (p as unknown as { createdAt?: string | Date }).createdAt)
+      .filter((d): d is string | Date => !!d)
+      .map((d) => new Date(d).toISOString())
+      .sort();
+    return dates.length ? dates[dates.length - 1] : undefined;
+  }, [packages]);
 
   // Nationalities & business types for edit form
   const DEFAULT_NATIONALITIES = [
@@ -208,6 +218,17 @@ export default function CustomerDetail() {
             </Button>
           </div>
         </div>
+
+        <CustomerSummaryHeader
+          totalOrders={totalPackages}
+          balance={balance ?? undefined}
+          currency="USD"
+          lastActivity={lastActivity}
+          createdAt={(() => {
+            const c = (customer as unknown as { createdAt?: string | Date }).createdAt;
+            return c ? new Date(c).toISOString() : undefined;
+          })()}
+        />
 
         <div className="grid gap-6 lg:grid-cols-3">
           <CustomerInfoCard customer={customer as any} t={t} />
