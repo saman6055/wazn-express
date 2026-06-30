@@ -33,6 +33,7 @@ const Warehouses = lazy(() => import("./pages/Warehouses"));
 // ---------------------------------------------------------------------------
 const PackagesDashboard = lazy(() => import("./pages/PackagesDashboard"));
 const Packages = lazy(() => import("./pages/Packages"));
+const SelfOrders = lazy(() => import("./pages/SelfOrders"));
 const QuickRegister = lazy(() => import("./pages/QuickRegister"));
 const BulkRegister = lazy(() => import("./pages/BulkRegister"));
 const UnclaimedPackages = lazy(() => import("./pages/UnclaimedPackages"));
@@ -200,6 +201,7 @@ function Router() {
         <Route path="/warehouses" component={Warehouses} />
         <Route path="/packages" component={PackagesDashboard} />
         <Route path="/packages/all" component={Packages} />
+        <Route path="/self-orders" component={SelfOrders} />
         <Route path="/packages/quick-register" component={QuickRegister} />
         <Route path="/quick-register" component={QuickRegister} />
         <Route path="/packages/bulk-register" component={BulkRegister} />

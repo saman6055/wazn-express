@@ -235,6 +235,7 @@ function DashboardLayoutContent({
         color: "blue",
         items: [
           { icon: Package, label: t("nav.allPackages") || "هەموو پاکەتەکان", path: "/packages/all" },
+          { icon: ShoppingBag, label: t("nav.selfOrders") || "سێلف ئۆردەر", path: "/self-orders" },
           { icon: Truck, label: t("nav.quickRegister") || "تۆمارکردنی خێرا", path: "/packages/quick-register" },
           { icon: ClipboardList, label: t("nav.bulkRegister") || "تۆماری کۆمەڵە", path: "/packages/bulk-register" },
           { icon: Layers, label: t("nav.batches") || "باچەکان", path: "/batches" },

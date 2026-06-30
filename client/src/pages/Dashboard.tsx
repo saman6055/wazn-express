@@ -150,6 +150,7 @@ export default function Dashboard() {
   const { data: recentActivity } = trpc.dashboard.recentActivity.useQuery({ limit: 8 });
   const { data: alerts } = trpc.dashboard.alerts.useQuery();
   const { data: highlights } = trpc.dashboard.weeklyHighlights.useQuery();
+  const { data: selfOrders } = trpc.reports.selfOrderReport.useQuery({ days: 30 });
   const { data: newCustomersCount } = trpc.dashboard.newCustomers.useQuery({ days: 7 });
 
   const { totalPackages, deliveredPackages, inTransitPackages, activeCustomers, deliveryRate } = useMemo(() => {
@@ -540,6 +541,37 @@ export default function Dashboard() {
                   </div>
                 </div>
               )}
+            </div>
+          </DashboardSection>
+        )}
+
+        {/* Self orders (shipping-only, customer-bought) — last 30 days */}
+        {selfOrders && selfOrders.summary.count > 0 && (
+          <DashboardSection
+            className="pro-section"
+            title={t("nav.selfOrders") || "سێلف ئۆردەر"}
+            description="پاکێجی خۆکڕاو (تەنها گواستنەوە) — ٣٠ ڕۆژی ڕابردوو"
+          >
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"><Package className="h-5 w-5" /></span>
+                <div><p className="text-xs text-muted-foreground">ژمارە</p><p className="text-xl font-bold">{selfOrders.summary.count}</p></div>
+              </div>
+              <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"><DollarSign className="h-5 w-5" /></span>
+                <div><p className="text-xs text-muted-foreground">داهات</p><p className="text-xl font-bold">${selfOrders.summary.revenueUsd.toFixed(0)}</p></div>
+              </div>
+              <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400"><TrendingUp className="h-5 w-5" /></span>
+                <div><p className="text-xs text-muted-foreground">قازانج</p><p className="text-xl font-bold text-teal-700 dark:text-teal-400">${selfOrders.summary.profitUsd.toFixed(0)}</p></div>
+              </div>
+              <Link href="/self-orders" className="rounded-xl border bg-card p-4 flex items-center justify-between gap-3 hover:bg-accent transition-colors">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">باشترین کڕیار</p>
+                  <p className="text-base font-bold truncate">{selfOrders.summary.topCustomers[0]?.name || selfOrders.summary.topCustomers[0]?.code || "—"}</p>
+                </div>
+                <Badge variant="secondary">بینینی هەموو</Badge>
+              </Link>
             </div>
           </DashboardSection>
         )}

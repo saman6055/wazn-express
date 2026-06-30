@@ -1143,6 +1143,146 @@ export async function getWeeklyHighlights(): Promise<{
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Self orders = packages registered under a customer that are NOT tied to a
+// commission / full-package order (the customer bought the goods themselves,
+// we only ship). In the data model these are simply packages with no linked
+// order: `fullPackageOrderId IS NULL`. (The primary order link is always
+// mirrored into that column, so a null value reliably means "unlinked".)
+// This is a READ-ONLY rollup over existing data — nothing about how packages
+// are created or stored changes.
+//
+// Revenue = the shipping charge billed (calculatedCostUsd).
+// Cost    = chargeable measure × the batch's OWN cost rate (costPerKg /
+//           costPerCbm). Packages not yet in a batch contribute 0 cost.
+// Profit  = revenue − cost.
+type SelfOrderRow = {
+  id: number;
+  packageCode: string;
+  trackingNumber: string | null;
+  customerId: number | null;
+  customerName: string;
+  customerCode: string;
+  shippingType: string;
+  weightKg: number;
+  revenueUsd: number;
+  costUsd: number;
+  profitUsd: number;
+  status: string;
+  createdAt: Date;
+};
+
+function computePkgCost(shippingType: string, weightKg: unknown, volumeCbm: unknown, costPerKg: unknown, costPerCbm: unknown): number {
+  if (shippingType === 'sea') {
+    return (parseFloat(String(volumeCbm ?? 0)) || 0) * (parseFloat(String(costPerCbm ?? 0)) || 0);
+  }
+  return (parseFloat(String(weightKg ?? 0)) || 0) * (parseFloat(String(costPerKg ?? 0)) || 0);
+}
+
+export async function getSelfOrderReport(days?: number): Promise<{
+  summary: {
+    count: number;
+    revenueUsd: number;
+    costUsd: number;
+    profitUsd: number;
+    byType: Record<'air_regular' | 'air_irregular' | 'sea', { count: number; revenueUsd: number }>;
+    topCustomers: { customerId: number; name: string; code: string; count: number; revenueUsd: number }[];
+  };
+  recent: SelfOrderRow[];
+}> {
+  const empty = {
+    summary: {
+      count: 0, revenueUsd: 0, costUsd: 0, profitUsd: 0,
+      byType: { air_regular: { count: 0, revenueUsd: 0 }, air_irregular: { count: 0, revenueUsd: 0 }, sea: { count: 0, revenueUsd: 0 } },
+      topCustomers: [] as { customerId: number; name: string; code: string; count: number; revenueUsd: number }[],
+    },
+    recent: [] as SelfOrderRow[],
+  };
+  const db = await getDb();
+  if (!db) return empty;
+  try {
+    const conds: any[] = [isNull(packages.fullPackageOrderId), isNotNull(packages.customerId), eq(packages.isUnclaimed, false)];
+    if (days && days > 0) {
+      const since = new Date();
+      since.setDate(since.getDate() - days);
+      conds.push(gte(packages.createdAt, since));
+    }
+    const where = and(...conds);
+
+    // Pull self-order packages with their customer + batch cost rates, then do
+    // the air/sea cost math in JS (clearer than a SQL CASE and reused per row).
+    const rows = await db.select({
+      id: packages.id,
+      packageCode: packages.packageCode,
+      trackingNumber: packages.trackingNumber,
+      customerId: packages.customerId,
+      customerName: customers.fullName,
+      customerCode: customers.customerCode,
+      shippingType: packages.shippingType,
+      weightKg: packages.weightKg,
+      volumeCbm: packages.volumeCbm,
+      calculatedCostUsd: packages.calculatedCostUsd,
+      costPerKg: batches.costPerKg,
+      costPerCbm: batches.costPerCbm,
+      status: packages.status,
+      createdAt: packages.createdAt,
+    })
+      .from(packages)
+      .leftJoin(customers, eq(packages.customerId, customers.id))
+      .leftJoin(batches, eq(packages.batchId, batches.id))
+      .where(where)
+      .orderBy(desc(packages.createdAt));
+
+    const byType: Record<string, { count: number; revenueUsd: number }> = {
+      air_regular: { count: 0, revenueUsd: 0 },
+      air_irregular: { count: 0, revenueUsd: 0 },
+      sea: { count: 0, revenueUsd: 0 },
+    };
+    const custMap = new Map<number, { customerId: number; name: string; code: string; count: number; revenueUsd: number }>();
+    let revenueUsd = 0, costUsd = 0;
+    const recent: SelfOrderRow[] = [];
+
+    for (const r of rows) {
+      const rev = parseFloat(String(r.calculatedCostUsd ?? 0)) || 0;
+      const cost = computePkgCost(r.shippingType, r.weightKg, r.volumeCbm, r.costPerKg, r.costPerCbm);
+      revenueUsd += rev;
+      costUsd += cost;
+      if (byType[r.shippingType]) { byType[r.shippingType].count += 1; byType[r.shippingType].revenueUsd += rev; }
+      if (r.customerId) {
+        const c = custMap.get(r.customerId) || { customerId: r.customerId, name: r.customerName || '', code: r.customerCode || '', count: 0, revenueUsd: 0 };
+        c.count += 1; c.revenueUsd += rev;
+        custMap.set(r.customerId, c);
+      }
+      if (recent.length < 100) {
+        recent.push({
+          id: r.id, packageCode: r.packageCode, trackingNumber: r.trackingNumber,
+          customerId: r.customerId, customerName: r.customerName || '', customerCode: r.customerCode || '',
+          shippingType: r.shippingType, weightKg: parseFloat(String(r.weightKg ?? 0)) || 0,
+          revenueUsd: rev, costUsd: cost, profitUsd: rev - cost,
+          status: r.status, createdAt: r.createdAt as Date,
+        });
+      }
+    }
+
+    const topCustomers = Array.from(custMap.values()).sort((a, b) => b.count - a.count || b.revenueUsd - a.revenueUsd).slice(0, 5);
+
+    return {
+      summary: {
+        count: rows.length,
+        revenueUsd,
+        costUsd,
+        profitUsd: revenueUsd - costUsd,
+        byType: byType as any,
+        topCustomers,
+      },
+      recent,
+    };
+  } catch (err) {
+    appLogger.error("getSelfOrderReport failed", { error: err instanceof Error ? err.message : String(err) });
+    return empty;
+  }
+}
+
 
 
 // ============ ALERT SYSTEM HELPERS ============

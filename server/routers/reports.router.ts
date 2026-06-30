@@ -33,6 +33,13 @@ export const reportsRouter = router({
       .query(async ({ input }) => {
         return db.getTopCustomersByRevenue(input?.limit || 10);
       }),
+    // Self orders: packages the customer bought themselves (no commission /
+    // full-package order) — we only ship. Read-only rollup for reporting.
+    selfOrderReport: staffProcedure
+      .input(z.object({ days: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getSelfOrderReport(input?.days);
+      }),
     customersWithDebt: accountantProcedure.query(async () => {
       return db.getCustomersWithDebt();
     }),
