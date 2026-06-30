@@ -68,12 +68,14 @@ import {
   Boxes,
   CreditCard,
   Send,
+  Search,
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { CommandPalette } from "./CommandPalette";
 import { useLanguage, Language } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -159,6 +161,15 @@ function DashboardLayoutContent({
   useDynamicFavicon();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["main"]);
+  const [cmdOpen, setCmdOpen] = useState(false);
+
+  // Most-repeated daily functions, pinned to the top bar for one-click access.
+  const PINNED: { icon: LucideIcon; label: string; path: string }[] = [
+    { icon: Truck, label: t("nav.quickRegister") || "تۆماری خێرا", path: "/packages/quick-register" },
+    { icon: CreditCard, label: t("nav.customerDelivery") || "گەیاندن بە کڕیار", path: "/customer-delivery-scanner" },
+    { icon: DollarSign, label: "کڕینی نوێ بە خستنەسەر", path: "/commission/new" },
+    { icon: Package, label: "پاکێجی تەواوی نوێ", path: "/full-package/new" },
+  ];
   const { canViewPath } = usePermissions();
 
   const userRole = user?.role || "user";
@@ -708,11 +719,41 @@ function DashboardLayoutContent({
           >
             <Home className="h-4 w-4" />
           </Button>
+
+          {/* Pinned daily shortcuts */}
+          <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" />
+          {PINNED.map((p) => (
+            <Button
+              key={p.path}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              title={p.label}
+              aria-label={p.label}
+              onClick={() => setLocation(p.path)}
+            >
+              <p.icon className="h-4 w-4" />
+            </Button>
+          ))}
+
+          {/* Function search / command palette */}
+          <button
+            type="button"
+            onClick={() => setCmdOpen(true)}
+            className="ms-auto flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-muted/40 px-3 h-8 text-sm text-muted-foreground hover:bg-muted transition-colors"
+            title="گەڕان بۆ فەنکشن (Ctrl+K)"
+          >
+            <Search className="h-4 w-4" />
+            <span className="hidden sm:inline">گەڕان بۆ فەنکشن…</span>
+            <kbd className="hidden md:inline rounded border border-gray-300 dark:border-gray-600 px-1 text-[10px] font-mono">Ctrl K</kbd>
+          </button>
         </div>
         <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
           {children}
         </div>
       </main>
+
+      <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
     </div>
   );
 }
