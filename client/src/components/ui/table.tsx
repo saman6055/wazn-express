@@ -2,6 +2,90 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * A horizontal scrollbar pinned to the bottom of the viewport that mirrors a
+ * wide table's own scroll. It only appears when the table actually overflows
+ * sideways AND the table's real (bottom-edge) scrollbar is scrolled off-screen,
+ * so staff can always reach left/right without hunting for the bar far below.
+ */
+function FloatingHScroll({ targetRef }: { targetRef: React.RefObject<HTMLDivElement | null> }) {
+  const barRef = React.useRef<HTMLDivElement>(null);
+  const syncingRef = React.useRef(false);
+  const rafRef = React.useRef<number | null>(null);
+  const [geo, setGeo] = React.useState({ show: false, left: 0, width: 0, scrollWidth: 0 });
+
+  React.useEffect(() => {
+    const el = targetRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      rafRef.current = null;
+      const rect = el.getBoundingClientRect();
+      const overflows = el.scrollWidth - el.clientWidth > 2;
+      const realBarHidden = rect.bottom > window.innerHeight + 1; // own scrollbar off-screen
+      const onScreen = rect.top < window.innerHeight && rect.bottom > 0 && rect.width > 0;
+      const show = overflows && realBarHidden && onScreen;
+      setGeo((prev) =>
+        prev.show === show &&
+        Math.abs(prev.left - rect.left) < 0.5 &&
+        Math.abs(prev.width - rect.width) < 0.5 &&
+        prev.scrollWidth === el.scrollWidth
+          ? prev
+          : { show, left: rect.left, width: rect.width, scrollWidth: el.scrollWidth },
+      );
+      if (barRef.current && !syncingRef.current) barRef.current.scrollLeft = el.scrollLeft;
+    };
+
+    const schedule = () => {
+      if (rafRef.current == null) rafRef.current = window.requestAnimationFrame(measure);
+    };
+    const onContainerScroll = () => {
+      if (barRef.current && !syncingRef.current) {
+        syncingRef.current = true;
+        barRef.current.scrollLeft = el.scrollLeft;
+        syncingRef.current = false;
+      }
+    };
+
+    measure();
+    window.addEventListener("scroll", schedule, { passive: true, capture: true });
+    window.addEventListener("resize", schedule);
+    el.addEventListener("scroll", onContainerScroll, { passive: true });
+    const ro = new ResizeObserver(schedule);
+    ro.observe(el);
+    return () => {
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("scroll", schedule, true);
+      window.removeEventListener("resize", schedule);
+      el.removeEventListener("scroll", onContainerScroll);
+      ro.disconnect();
+    };
+  }, [targetRef]);
+
+  const onBarScroll = () => {
+    const el = targetRef.current;
+    if (!el || !barRef.current) return;
+    syncingRef.current = true;
+    el.scrollLeft = barRef.current.scrollLeft;
+    requestAnimationFrame(() => {
+      syncingRef.current = false;
+    });
+  };
+
+  if (!geo.show) return null;
+  return (
+    <div
+      ref={barRef}
+      onScroll={onBarScroll}
+      aria-hidden
+      className="fixed bottom-0 z-30 h-4 overflow-x-auto overflow-y-hidden border-t border-border bg-background/85 backdrop-blur-sm shadow-[0_-2px_6px_rgba(0,0,0,0.06)]"
+      style={{ left: geo.left, width: geo.width }}
+    >
+      <div style={{ width: geo.scrollWidth, height: 1 }} />
+    </div>
+  );
+}
+
 function Table({
   className,
   containerClassName,
@@ -26,28 +110,33 @@ function Table({
    */
   pageSticky?: boolean;
 }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
   return (
-    <div
-      data-slot="table-container"
-      data-sticky-header={stickyHeader ? "" : undefined}
-      className={cn(
-        "relative w-full",
-        // pageSticky exposes the top-bar height (44px desktop / 100px mobile)
-        // so the header parks just below it, and stays overflow-visible so the
-        // sticky can reach the page scroll. Otherwise the table is its own
-        // capped scroll box and the header sticks to the top of that box.
-        pageSticky
-          ? "[--tbl-sticky-top:100px] md:[--tbl-sticky-top:44px]"
-          : cn("overflow-auto", stickyHeader && "max-h-[70vh]"),
-        containerClassName,
-      )}
-    >
-      <table
-        data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
-        {...props}
-      />
-    </div>
+    <>
+      <div
+        ref={containerRef}
+        data-slot="table-container"
+        data-sticky-header={stickyHeader ? "" : undefined}
+        className={cn(
+          "relative w-full",
+          // pageSticky exposes the top-bar height (44px desktop / 100px mobile)
+          // so the header parks just below it, and stays overflow-visible so the
+          // sticky can reach the page scroll. Otherwise the table is its own
+          // capped scroll box and the header sticks to the top of that box.
+          pageSticky
+            ? "[--tbl-sticky-top:100px] md:[--tbl-sticky-top:44px]"
+            : cn("overflow-auto", stickyHeader && "max-h-[70vh]"),
+          containerClassName,
+        )}
+      >
+        <table
+          data-slot="table"
+          className={cn("w-full caption-bottom text-sm", className)}
+          {...props}
+        />
+      </div>
+      <FloatingHScroll targetRef={containerRef} />
+    </>
   );
 }
 
