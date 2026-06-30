@@ -234,9 +234,9 @@ function DashboardLayoutContent({
         icon: Package,
         color: "blue",
         items: [
-          { icon: Package, label: t("nav.allPackages") || "هەموو پاکەتەکان", path: "/packages/all" },
-          { icon: ShoppingBag, label: t("nav.selfOrders") || "سێلف ئۆردەر", path: "/self-orders" },
           { icon: Truck, label: t("nav.quickRegister") || "تۆمارکردنی خێرا", path: "/packages/quick-register" },
+          { icon: ShoppingBag, label: t("nav.selfOrders") || "سێلف ئۆردەر", path: "/self-orders" },
+          { icon: Package, label: t("nav.allPackages") || "هەموو پاکەتەکان", path: "/packages/all" },
           { icon: ClipboardList, label: t("nav.bulkRegister") || "تۆماری کۆمەڵە", path: "/packages/bulk-register" },
           { icon: Layers, label: t("nav.batches") || "باچەکان", path: "/batches" },
           { icon: AlertTriangle, label: t("nav.unclaimedPackages") || "پاکەتی بێ خاوەن", path: "/packages/unclaimed" },
