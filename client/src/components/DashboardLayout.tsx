@@ -249,15 +249,15 @@ function DashboardLayoutContent({
     if (isEmployee) {
       groups.push({
         id: "fullPackage",
-        title: t("nav.fullPackageSection") || "فول پاکێج",
+        title: t("nav.fullPackageSection") || "پاکێجەکان",
         icon: Boxes,
         color: "violet",
         items: [
-          { icon: LayoutDashboard, label: t("nav.unifiedOrders") || "داشبۆردی یەکگرتوو", path: "/unified-orders" },
-          { icon: Package, label: t("nav.fullPackage") || "فول پاکێج", path: "/full-package" },
-          { icon: DollarSign, label: t("nav.commission") || "کڕین بە عمولە", path: "/commission" },
-          { icon: Building2, label: t("nav.suppliers") || "فرۆشیارەکان", path: "/suppliers" },
           { icon: AlertTriangle, label: t("nav.trackingAlerts") || "ئاگاداری تراکینگ", path: "/tracking-alerts" },
+          { icon: Package, label: t("nav.completePackage") || "پاکێجی تەواو", path: "/full-package" },
+          { icon: DollarSign, label: t("nav.markupPurchase") || "کڕین بە خستنەسەر", path: "/commission" },
+          { icon: Building2, label: t("nav.suppliers") || "فرۆشیارەکان", path: "/suppliers" },
+          { icon: LayoutDashboard, label: t("nav.unifiedOrders") || "داشبۆردی یەکگرتوو", path: "/unified-orders" },
         ]
       });
     }
