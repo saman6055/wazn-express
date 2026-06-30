@@ -14,6 +14,26 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+// Lightweight section wrapper — small bold title + thin divider. Defined at
+// MODULE level (not inside the component): a component declared inside another
+// remounts on every render, which would blur inputs after each keystroke.
+const accentText: Record<string, string> = {
+  amber: "text-amber-600",
+  sky: "text-sky-600",
+  teal: "text-teal-600",
+  slate: "text-slate-600",
+};
+const Section = ({ icon: Icon, title, hint, accent = "amber", children }: { icon: any; title: string; hint?: string; accent?: string; children: React.ReactNode }) => (
+  <section className="rounded-xl border bg-card p-3 sm:p-4">
+    <div className="flex items-center gap-2 pb-2 mb-3 border-b">
+      <Icon className={cn("h-4 w-4", accentText[accent] || accentText.amber)} />
+      <h2 className="text-sm font-bold leading-none">{title}</h2>
+      {hint && <span className="text-xs text-muted-foreground ms-auto truncate">{hint}</span>}
+    </div>
+    {children}
+  </section>
+);
+
 export default function CommissionForm() {
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
@@ -264,24 +284,6 @@ export default function CommissionForm() {
       volumeCbm: formData.volumeCbm || undefined,
     });
   };
-
-  // Lightweight section wrapper — small bold title + thin divider, no heavy card chrome
-  const accentText: Record<string, string> = {
-    amber: "text-amber-600",
-    sky: "text-sky-600",
-    teal: "text-teal-600",
-    slate: "text-slate-600",
-  };
-  const Section = ({ icon: Icon, title, hint, accent = "amber", children }: { icon: any; title: string; hint?: string; accent?: string; children: React.ReactNode }) => (
-    <section className="rounded-xl border bg-card p-3 sm:p-4">
-      <div className="flex items-center gap-2 pb-2 mb-3 border-b">
-        <Icon className={cn("h-4 w-4", accentText[accent] || accentText.amber)} />
-        <h2 className="text-sm font-bold leading-none">{title}</h2>
-        {hint && <span className="text-xs text-muted-foreground ms-auto truncate">{hint}</span>}
-      </div>
-      {children}
-    </section>
-  );
 
   return (
     <DashboardLayout>

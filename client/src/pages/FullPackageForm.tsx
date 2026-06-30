@@ -43,6 +43,28 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
+// Lightweight section wrapper — small bold title + thin divider, no heavy card
+// chrome. Defined at MODULE level (not inside the component): a component
+// declared inside another remounts on every render, which would blur inputs
+// after each keystroke.
+const accentText: Record<string, string> = {
+  emerald: "text-emerald-600",
+  amber: "text-amber-600",
+  sky: "text-sky-600",
+  teal: "text-teal-600",
+  slate: "text-slate-600",
+};
+const Section = ({ icon: Icon, title, hint, accent = "emerald", children }: { icon: any; title: string; hint?: string; accent?: string; children: React.ReactNode }) => (
+  <section className="rounded-xl border bg-card p-3 sm:p-4">
+    <div className="flex items-center gap-2 pb-2 mb-3 border-b">
+      <Icon className={cn("h-4 w-4", accentText[accent] || accentText.emerald)} />
+      <h2 className="text-sm font-bold leading-none">{title}</h2>
+      {hint && <span className="text-xs text-muted-foreground ms-auto truncate">{hint}</span>}
+    </div>
+    {children}
+  </section>
+);
+
 export default function FullPackageForm() {
   const [, navigate] = useLocation();
 
@@ -277,25 +299,6 @@ export default function FullPackageForm() {
   const sellingPrice = parseFloat(formData.sellingPriceUsd) || 0;
   const grossProfit = sellingPrice - purchasePrice;
   const quantity = parseInt(formData.quantity) || 1;
-
-  // Lightweight section wrapper — small bold title + thin divider, no heavy card chrome
-  const accentText: Record<string, string> = {
-    emerald: "text-emerald-600",
-    amber: "text-amber-600",
-    sky: "text-sky-600",
-    teal: "text-teal-600",
-    slate: "text-slate-600",
-  };
-  const Section = ({ icon: Icon, title, hint, accent = "emerald", children }: { icon: any; title: string; hint?: string; accent?: string; children: React.ReactNode }) => (
-    <section className="rounded-xl border bg-card p-3 sm:p-4">
-      <div className="flex items-center gap-2 pb-2 mb-3 border-b">
-        <Icon className={cn("h-4 w-4", accentText[accent] || accentText.emerald)} />
-        <h2 className="text-sm font-bold leading-none">{title}</h2>
-        {hint && <span className="text-xs text-muted-foreground ms-auto truncate">{hint}</span>}
-      </div>
-      {children}
-    </section>
-  );
 
   return (
     <DashboardLayout>
