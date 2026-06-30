@@ -6,29 +6,39 @@ function Table({
   className,
   containerClassName,
   stickyHeader = true,
+  pageSticky = false,
   ...props
 }: React.ComponentProps<"table"> & {
   /** Extra classes for the scroll container (e.g. a different max-height). */
   containerClassName?: string;
   /**
-   * Freeze the column-title row while the body scrolls (default on). The
-   * container is given a capped height so the table scrolls internally and the
-   * header stays put. Pass `false` to opt a table out (e.g. tiny summary tables
-   * that should always render in full).
+   * Freeze the column-title row while the body scrolls inside the table's own
+   * capped-height box (default on). Pass `false` to opt a table out (e.g. tiny
+   * summary tables that should always render in full).
    */
   stickyHeader?: boolean;
+  /**
+   * Freeze the header to the PAGE instead — it parks just under the app's top
+   * bar and stays put while the whole page scrolls, even for short tables.
+   * The wrapper is kept overflow-visible (an overflow ancestor would trap the
+   * sticky), so use this only for tables narrow enough not to need a horizontal
+   * scrollbar. Takes precedence over stickyHeader.
+   */
+  pageSticky?: boolean;
 }) {
   return (
     <div
       data-slot="table-container"
       data-sticky-header={stickyHeader ? "" : undefined}
       className={cn(
-        "relative w-full overflow-auto",
-        // A capped height makes the container the vertical scroller so the
-        // sticky header has something to stick to (the page itself scrolling
-        // wouldn't freeze it). Short tables never reach the cap, so they're
-        // unaffected.
-        stickyHeader && "max-h-[70vh]",
+        "relative w-full",
+        // pageSticky exposes the top-bar height (44px desktop / 100px mobile)
+        // so the header parks just below it, and stays overflow-visible so the
+        // sticky can reach the page scroll. Otherwise the table is its own
+        // capped scroll box and the header sticks to the top of that box.
+        pageSticky
+          ? "[--tbl-sticky-top:100px] md:[--tbl-sticky-top:44px]"
+          : cn("overflow-auto", stickyHeader && "max-h-[70vh]"),
         containerClassName,
       )}
     >
@@ -47,10 +57,11 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
       data-slot="table-header"
       className={cn(
         "[&_tr]:border-b",
-        // Freeze the column titles at the top of the scroll container so they
-        // stay visible no matter how far down the body is scrolled. An opaque
-        // background keeps body rows from showing through as they pass under.
-        "sticky top-0 z-20 bg-background",
+        // Freeze the column titles. `--tbl-sticky-top` is 0 by default (header
+        // pins to the top of the table's own scroll box); pageSticky tables set
+        // it to the top-bar height so the header pins to the page instead. The
+        // opaque background hides rows passing underneath.
+        "sticky top-[var(--tbl-sticky-top,0px)] z-20 bg-background",
         className,
       )}
       {...props}

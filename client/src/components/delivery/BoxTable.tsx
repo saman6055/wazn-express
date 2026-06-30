@@ -217,7 +217,7 @@ export function BoxTable({
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"}>
-      <Table>
+      <Table pageSticky>
         <TableHeader>
           <TableRow>
             <TableHead>{t("delivery.boxCode")}</TableHead>

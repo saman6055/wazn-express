@@ -628,7 +628,7 @@ export default function TrackingAlerts() {
                       </p>
                     </div>
                   ) : (
-                    <Table>
+                    <Table pageSticky>
                       {/* Multi-select toolbar */}
                       {selectedOrders.length > 0 && (
                         <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between gap-3">

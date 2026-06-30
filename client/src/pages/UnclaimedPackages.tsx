@@ -174,8 +174,8 @@ const [search, setSearch] = useState("");
                 <p className="text-muted-foreground">{t("packages.allAssigned")}</p>
               </div>
             ) : (
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
+              <div className="border rounded-lg">
+                <Table pageSticky>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Package Code</TableHead>

@@ -953,7 +953,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
         <Card>
           <CardContent className="pt-6">
-            <Table>
+            <Table pageSticky>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("batches.batchCode")}</TableHead>
