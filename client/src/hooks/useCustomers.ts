@@ -70,7 +70,7 @@ export function useCustomerById(customerId: number | null) {
 }
 
 export function useFilteredCustomers(
-  customers: Array<{ id: number; fullName?: string; customerCode?: string; mobileNumber?: string; isActive?: boolean; city?: string }>,
+  customers: Array<{ id: number; fullName?: string; customerCode?: string; mobileNumber?: string; isActive?: boolean; city?: string; serviceTypes?: string[] | null }>,
   vipCustomerIds: number[] | undefined,
   options: {
     search: string;
@@ -79,6 +79,7 @@ export function useFilteredCustomers(
     governorateFilter?: string;
     balanceFilter?: string;
     vipFilter?: string;
+    serviceTypeFilter?: string;
   }
 ) {
   return useMemo(() => {
@@ -99,7 +100,11 @@ export function useFilteredCustomers(
         options.vipFilter === "all" ||
         (options.vipFilter === "vip" && isVip) ||
         (options.vipFilter === "regular" && !isVip);
-      return matchesSearch && matchesStatus && matchesCity && matchesVip;
+      const matchesServiceType =
+        !options.serviceTypeFilter ||
+        options.serviceTypeFilter === "all" ||
+        (Array.isArray(c.serviceTypes) && c.serviceTypes.includes(options.serviceTypeFilter));
+      return matchesSearch && matchesStatus && matchesCity && matchesVip && matchesServiceType;
     });
-  }, [customers, vipCustomerIds, options.search, options.statusFilter, options.cityFilter, options.vipFilter]);
+  }, [customers, vipCustomerIds, options.search, options.statusFilter, options.cityFilter, options.vipFilter, options.serviceTypeFilter]);
 }

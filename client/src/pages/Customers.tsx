@@ -66,6 +66,7 @@ interface CustomerFormData {
   codePrefix: string;
   useCustomCode: boolean;
   customCode: string;
+  serviceTypes: string[];
 }
 
 const initialFormData: CustomerFormData = {
@@ -86,7 +87,18 @@ const initialFormData: CustomerFormData = {
   codePrefix: "AZ",
   useCustomCode: false,
   customCode: "",
+  serviceTypes: [],
 };
+
+// Service types options (optional, multi-select) with Kurdish labels
+const SERVICE_TYPE_OPTIONS: { value: "full_package" | "commission" | "self_order"; labelKu: string }[] = [
+  { value: "full_package", labelKu: "پاکێجی تەواو" },
+  { value: "commission", labelKu: "کرین بە تێچوو" },
+  { value: "self_order", labelKu: "سێلف ئۆردەر" },
+];
+
+const getServiceTypeLabel = (value: string) =>
+  SERVICE_TYPE_OPTIONS.find((o) => o.value === value)?.labelKu ?? value;
 
 export default function Customers() {
     const { t } = useTranslation();
@@ -127,6 +139,7 @@ const [, setLocation] = useLocation();
   const [governorateFilter, setGovernorateFilter] = useState<string>("");
   const [balanceFilter, setBalanceFilter] = useState<"all" | "positive" | "negative" | "zero">("all");
   const [vipFilter, setVipFilter] = useState<"all" | "vip" | "regular">("all");
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<"all" | "full_package" | "commission" | "self_order">("all");
   
   // Form state - persisted across tab switches
   const [formData, setFormData] = useState<CustomerFormData>(initialFormData);
@@ -193,6 +206,15 @@ const [, setLocation] = useLocation();
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const toggleServiceType = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      serviceTypes: prev.serviceTypes.includes(value)
+        ? prev.serviceTypes.filter(v => v !== value)
+        : [...prev.serviceTypes, value],
+    }));
+  };
+
   // Get cities for selected governorate in form
   const formCities = useMemo(() => {
     if (!formData.governorate) return [];
@@ -208,20 +230,21 @@ const [, setLocation] = useLocation();
   const filteredCustomers = useFilteredCustomers(
     customers as any,
     vipCustomers?.map((v: any) => v.customerId),
-    { search, statusFilter, cityFilter, governorateFilter, balanceFilter, vipFilter }
+    { search, statusFilter, cityFilter, governorateFilter, balanceFilter, vipFilter, serviceTypeFilter }
   );
 
   const activeCount = customers.filter((c) => c.isActive).length;
   const inactiveCount = customers.filter((c) => !c.isActive).length;
   const vipCount = vipCustomers?.length || 0;
 
-  const hasActiveFilters = cityFilter || governorateFilter || balanceFilter !== "all" || vipFilter !== "all";
+  const hasActiveFilters = cityFilter || governorateFilter || balanceFilter !== "all" || vipFilter !== "all" || serviceTypeFilter !== "all";
 
   const clearAllFilters = () => {
     setCityFilter("");
     setGovernorateFilter("");
     setBalanceFilter("all");
     setVipFilter("all");
+    setServiceTypeFilter("all");
     setStatusFilter("all");
     setSearch("");
   };
@@ -335,6 +358,9 @@ const [, setLocation] = useLocation();
       address: address || undefined,
       codePrefix: formData.codePrefix,
       customCode: formData.useCustomCode ? customCode : undefined,
+      serviceTypes: formData.serviceTypes.length
+        ? (formData.serviceTypes as ("full_package" | "commission" | "self_order")[])
+        : undefined,
       passportUrl,
       nationalIdUrl,
       contractUrl,
@@ -555,7 +581,29 @@ const [, setLocation] = useLocation();
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
+                      {/* Service Types (optional, multi-select) */}
+                      <div className="grid gap-2">
+                        <Label>جۆری خزمەت (ئیختیاری)</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {SERVICE_TYPE_OPTIONS.map((option) => {
+                            const selected = formData.serviceTypes.includes(option.value);
+                            return (
+                              <Button
+                                key={option.value}
+                                type="button"
+                                size="sm"
+                                variant={selected ? "default" : "outline"}
+                                onClick={() => toggleServiceType(option.value)}
+                                className={selected ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}
+                              >
+                                {option.labelKu}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
                           <Label htmlFor="mobileNumber">{t("customers.form.mobileNumber")} *</Label>
@@ -936,7 +984,7 @@ const [, setLocation] = useLocation();
                     <ChevronDown className={`h-4 w-4 ms-2 transition-transform ${isFiltersOpen ? "rotate-180" : ""}`} />
                     {hasActiveFilters && (
                       <Badge variant="secondary" className="ms-2 h-5 px-1.5">
-                        {[cityFilter, governorateFilter, balanceFilter !== "all", vipFilter !== "all"].filter(Boolean).length}
+                        {[cityFilter, governorateFilter, balanceFilter !== "all", vipFilter !== "all", serviceTypeFilter !== "all"].filter(Boolean).length}
                       </Badge>
                     )}
                   </Button>
@@ -1021,6 +1069,22 @@ const [, setLocation] = useLocation();
                           </SelectContent>
                         </Select>
                       </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">جۆری خزمەت</Label>
+                        <Select value={serviceTypeFilter} onValueChange={(v: any) => setServiceTypeFilter(v)}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="هەموو جۆرەکان" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">هەموو جۆرەکان</SelectItem>
+                            {SERVICE_TYPE_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.labelKu}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     
                     {hasActiveFilters && (
@@ -1072,6 +1136,15 @@ const [, setLocation] = useLocation();
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground font-mono">{customer.customerCode}</p>
+                          {Array.isArray((customer as any).serviceTypes) && (customer as any).serviceTypes.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {(customer as any).serviceTypes.map((st: string) => (
+                                <Badge key={st} variant="secondary" className="text-[10px] px-1.5 py-0">
+                                  {getServiceTypeLabel(st)}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </TableCell>

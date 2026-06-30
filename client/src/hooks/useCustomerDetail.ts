@@ -20,6 +20,7 @@ const defaultEditForm = {
   district: "",
   address: "",
   notes: "",
+  serviceTypes: [] as string[],
   isActive: true,
 };
 
@@ -220,6 +221,7 @@ export function useCustomerDetail(customerId: number) {
         district: (customer as { district?: string }).district ?? "",
         address: customer.address ?? "",
         notes: customer.notes ?? "",
+        serviceTypes: ((customer as { serviceTypes?: string[] }).serviceTypes ?? []) as string[],
         isActive: customer.isActive ?? true,
       });
       const gov = IRAQI_GOVERNORATES.find((g) => g.nameEn === customer.country || g.nameAr === customer.country);
@@ -247,6 +249,7 @@ export function useCustomerDetail(customerId: number) {
       district: editForm.district || undefined,
       address: editForm.address || undefined,
       notes: editForm.notes || undefined,
+      serviceTypes: editForm.serviceTypes.length ? (editForm.serviceTypes as ("full_package" | "commission" | "self_order")[]) : undefined,
       isActive: editForm.isActive,
     });
   };

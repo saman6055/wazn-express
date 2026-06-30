@@ -42,6 +42,7 @@ export const customersRouter = router({
         customCode: z.string().max(50).optional(), // Manual customer code (overrides auto-generation)
         goodsTypePreferences: z.array(z.string().max(100)).optional(),
         shippingTypePreferences: z.array(z.string().max(50)).optional(),
+        serviceTypes: z.array(z.enum(["full_package", "commission", "self_order"])).optional(),
         notes: z.string().max(2000).optional(),
         // Document URLs (uploaded to S3)
         passportUrl: z.string().max(2048).optional(),
@@ -105,6 +106,7 @@ export const customersRouter = router({
               address: input.address,
               goodsTypePreferences: input.goodsTypePreferences,
               shippingTypePreferences: input.shippingTypePreferences,
+              serviceTypes: input.serviceTypes,
               notes: input.notes,
               passportUrl: input.passportUrl,
               nationalIdUrl: input.nationalIdUrl,
@@ -184,6 +186,7 @@ export const customersRouter = router({
         contractUrl: z.string().max(2048).optional(),
         goodsTypePreferences: z.array(z.string().max(100)).optional(),
         shippingTypePreferences: z.array(z.string().max(50)).optional(),
+        serviceTypes: z.array(z.enum(["full_package", "commission", "self_order"])).optional(),
         notes: z.string().max(2000).optional(),
         isActive: z.boolean().optional(),
       }))

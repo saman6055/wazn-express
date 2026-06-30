@@ -754,6 +754,37 @@ export default function CustomerDetail() {
                   </Select>
                 </div>
 
+                {/* Service types (optional, multi-select) */}
+                <div className="grid gap-2">
+                  <Label>جۆری خزمەت <span className="text-muted-foreground font-normal">(ئیختیاری)</span></Label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: "full_package", label: "پاکێجی تەواو" },
+                      { value: "commission", label: "کرین بە تێچوو" },
+                      { value: "self_order", label: "سێلف ئۆردەر" },
+                    ].map((st) => {
+                      const active = cd.editForm.serviceTypes.includes(st.value);
+                      return (
+                        <Button
+                          key={st.value}
+                          type="button"
+                          size="sm"
+                          variant={active ? "default" : "outline"}
+                          className={active ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                          onClick={() => cd.setEditForm({
+                            ...cd.editForm,
+                            serviceTypes: active
+                              ? cd.editForm.serviceTypes.filter((v: string) => v !== st.value)
+                              : [...cd.editForm.serviceTypes, st.value],
+                          })}
+                        >
+                          {st.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Mobile & Secondary Mobile */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">

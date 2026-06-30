@@ -50,6 +50,9 @@ export const customers = mysqlTable("customers", {
   contractUrl: text("contractUrl"),
   goodsTypePreferences: json("goodsTypePreferences").$type<string[]>(),
   shippingTypePreferences: json("shippingTypePreferences").$type<string[]>(),
+  // Optional, multi-select: which services this customer uses
+  // (full_package / commission / self_order). Purely a tag for badges & filters.
+  serviceTypes: json("serviceTypes").$type<string[]>(),
   isActive: boolean("isActive").default(true).notNull(),
   notes: text("notes"),
   linkedUserId: int("linkedUserId"), // Optional link to OAuth user for portal access

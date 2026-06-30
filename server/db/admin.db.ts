@@ -194,6 +194,7 @@ export async function createCustomer(data: {
   address?: string;
   goodsTypePreferences?: string[];
   shippingTypePreferences?: string[];
+  serviceTypes?: string[];
   notes?: string;
   passportUrl?: string;
   nationalIdUrl?: string;
@@ -226,6 +227,7 @@ export async function createCustomer(data: {
     contractUrl: data.contractUrl,
     goodsTypePreferences: data.goodsTypePreferences,
     shippingTypePreferences: data.shippingTypePreferences,
+    serviceTypes: data.serviceTypes,
     notes: data.notes,
     createdById: data.createdById,
     isActive: data.isActive,
