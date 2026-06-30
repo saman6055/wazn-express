@@ -592,7 +592,7 @@ function DashboardLayoutContent({
                       hasActiveItem ? colorClasses.icon : "text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
                     )} />
                   </div>
-                  <span className="flex-1 text-start">{group.title}</span>
+                  <span className="flex-1 text-start text-base font-bold">{group.title}</span>
                   <ChevronDown className={cn(
                     "h-4 w-4 transition-transform duration-200",
                     isExpanded ? "rotate-0" : "-rotate-90",
@@ -623,7 +623,7 @@ function DashboardLayoutContent({
                             "h-4 w-4 flex-shrink-0 transition-colors",
                             isActive ? colorClasses.icon : "text-gray-400 dark:text-gray-500 group-hover:text-orange-600 dark:group-hover:text-orange-400"
                           )} />
-                          <span className="truncate">{item.label}</span>
+                          <span className="truncate text-[15px] font-bold">{item.label}</span>
                           {item.badge && item.badge > 0 ? (
                             <span className="ms-auto min-w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center px-1">
                               {item.badge > 99 ? "99+" : item.badge}
