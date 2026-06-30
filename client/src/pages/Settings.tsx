@@ -13,9 +13,10 @@ import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 export default function Settings() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [companyData, setCompanyData] = useState({
     name: "Wazn Express",
     nameKu: "وازن ئێکسپرێس",
@@ -109,11 +110,11 @@ const [companyData, setCompanyData] = useState({
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error(t("settings.logoImageOnly") || "تکایە فایلی وێنە هەڵبژێرە (PNG, JPG, ...)");
+      toast.error(t("settings.logoImageOnly") || pickLang(language, { ku: "تکایە فایلی وێنە هەڵبژێرە (PNG, JPG, ...)", en: "Please select an image file (PNG, JPG, ...)", ar: "الرجاء اختيار ملف صورة (PNG, JPG, ...)", zh: "请选择图片文件 (PNG, JPG, ...)" }));
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast.error(t("settings.logoSizeLimit") || "قەبارەی فایل نابێت لە ٢ مێگابایت زیاتر بێت");
+      toast.error(t("settings.logoSizeLimit") || pickLang(language, { ku: "قەبارەی فایل نابێت لە ٢ مێگابایت زیاتر بێت", en: "File size must not exceed 2 MB", ar: "يجب ألا يتجاوز حجم الملف 2 ميغابايت", zh: "文件大小不得超过 2 MB" }));
       return;
     }
     setLogoUploading(true);
@@ -136,13 +137,13 @@ const [companyData, setCompanyData] = useState({
       });
       if (data.success && data.url) {
         setCompanyData((prev) => ({ ...prev, logoUrl: data.url! }));
-        toast.success(t("settings.logoUploaded") || "لۆگۆ ئەپلۆد کرا");
+        toast.success(t("settings.logoUploaded") || pickLang(language, { ku: "لۆگۆ ئەپلۆد کرا", en: "Logo uploaded", ar: "تم رفع الشعار", zh: "标志已上传" }));
       } else {
-        const msg = "error" in data ? data.error : (t("settings.logoUploadFailed") || "ئەپلۆدی لۆگۆ سەرنەگەیشت");
+        const msg = "error" in data ? data.error : (t("settings.logoUploadFailed") || pickLang(language, { ku: "ئەپلۆدی لۆگۆ سەرنەگەیشت", en: "Logo upload failed", ar: "فشل رفع الشعار", zh: "标志上传失败" }));
         toast.error(msg);
       }
     } catch {
-      toast.error(t("settings.logoUploadFailed") || "ئەپلۆدی لۆگۆ سەرنەگەیشت");
+      toast.error(t("settings.logoUploadFailed") || pickLang(language, { ku: "ئەپلۆدی لۆگۆ سەرنەگەیشت", en: "Logo upload failed", ar: "فشل رفع الشعار", zh: "标志上传失败" }));
     } finally {
       setLogoUploading(false);
       e.target.value = "";
@@ -190,15 +191,15 @@ const [companyData, setCompanyData] = useState({
             </TabsTrigger>
             <TabsTrigger value="portal" className="gap-2">
               <Palette className="h-4 w-4" />
-              {t("settings.portalThemeTab") || "ڕووکاری پۆرتاڵ"}
+              {t("settings.portalThemeTab") || pickLang(language, { ku: "ڕووکاری پۆرتاڵ", en: "Portal Theme", ar: "مظهر البوابة", zh: "门户主题" })}
             </TabsTrigger>
             <TabsTrigger value="landing" className="gap-2">
               <Palette className="h-4 w-4" />
-              {t("settings.landingThemeTab") || "ڕووکاری پەرەی یەکەم"}
+              {t("settings.landingThemeTab") || pickLang(language, { ku: "ڕووکاری پەرەی یەکەم", en: "Landing Theme", ar: "مظهر الصفحة الرئيسية", zh: "首页主题" })}
             </TabsTrigger>
             <TabsTrigger value="productAttributes" className="gap-2">
               <Tag className="h-4 w-4" />
-              زانیاری کاڵا
+              {pickLang(language, { ku: "زانیاری کاڵا", en: "Product Info", ar: "معلومات المنتج", zh: "商品信息" })}
             </TabsTrigger>
           </TabsList>
 
@@ -207,18 +208,18 @@ const [companyData, setCompanyData] = useState({
               <CardHeader>
                 <CardTitle>{t("settings.companyInfo")}</CardTitle>
                 <CardDescription>
-                  ئەم زانیاریانە لە هەموو ڕاپۆرت و پسوڵەکاندا بەکاردێت
+                  {pickLang(language, { ku: "ئەم زانیاریانە لە هەموو ڕاپۆرت و پسوڵەکاندا بەکاردێت", en: "This information is used in all reports and invoices", ar: "تُستخدم هذه المعلومات في جميع التقارير والفواتير", zh: "此信息用于所有报告和发票" })}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
                   <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                     <Building2 className="h-4 w-4" />
-                    ناوی کۆمپانیا
+                    {pickLang(language, { ku: "ناوی کۆمپانیا", en: "Company Name", ar: "اسم الشركة", zh: "公司名称" })}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="grid gap-2">
-                      <Label>ئینگلیزی</Label>
+                      <Label>{pickLang(language, { ku: "ئینگلیزی", en: "English", ar: "الإنجليزية", zh: "英语" })}</Label>
                       <Input
                         value={companyData.name}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
@@ -226,7 +227,7 @@ const [companyData, setCompanyData] = useState({
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>کوردی</Label>
+                      <Label>{pickLang(language, { ku: "کوردی", en: "Kurdish", ar: "الكردية", zh: "库尔德语" })}</Label>
                       <Input
                         value={companyData.nameKu}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, nameKu: e.target.value }))}
@@ -235,7 +236,7 @@ const [companyData, setCompanyData] = useState({
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>عەرەبی</Label>
+                      <Label>{pickLang(language, { ku: "عەرەبی", en: "Arabic", ar: "العربية", zh: "阿拉伯语" })}</Label>
                       <Input
                         value={companyData.nameAr}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, nameAr: e.target.value }))}
@@ -249,11 +250,11 @@ const [companyData, setCompanyData] = useState({
                 <div>
                   <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                     <Globe className="h-4 w-4" />
-                    ناونیشان
+                    {pickLang(language, { ku: "ناونیشان", en: "Address", ar: "العنوان", zh: "地址" })}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="grid gap-2">
-                      <Label>ئینگلیزی</Label>
+                      <Label>{pickLang(language, { ku: "ئینگلیزی", en: "English", ar: "الإنجليزية", zh: "英语" })}</Label>
                       <Input
                         value={companyData.address}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, address: e.target.value }))}
@@ -261,16 +262,16 @@ const [companyData, setCompanyData] = useState({
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>کوردی</Label>
+                      <Label>{pickLang(language, { ku: "کوردی", en: "Kurdish", ar: "الكردية", zh: "库尔德语" })}</Label>
                       <Input
                         value={companyData.addressKu}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, addressKu: e.target.value }))}
-                        placeholder="ناونیشانی کۆمپانیا..."
+                        placeholder={pickLang(language, { ku: "ناونیشانی کۆمپانیا...", en: "Company address...", ar: "عنوان الشركة...", zh: "公司地址..." })}
                         dir="rtl"
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>عەرەبی</Label>
+                      <Label>{pickLang(language, { ku: "عەرەبی", en: "Arabic", ar: "العربية", zh: "阿拉伯语" })}</Label>
                       <Input
                         value={companyData.addressAr}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, addressAr: e.target.value }))}
@@ -284,11 +285,11 @@ const [companyData, setCompanyData] = useState({
                 <div>
                   <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                     <Mail className="h-4 w-4" />
-                    زانیاری پەیوەندی
+                    {pickLang(language, { ku: "زانیاری پەیوەندی", en: "Contact Information", ar: "معلومات الاتصال", zh: "联系信息" })}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label>ژمارەی مۆبایل ١</Label>
+                      <Label>{pickLang(language, { ku: "ژمارەی مۆبایل ١", en: "Mobile number 1", ar: "رقم الجوال ١", zh: "手机号码 1" })}</Label>
                       <Input
                         value={companyData.phone}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, phone: e.target.value }))}
@@ -297,7 +298,7 @@ const [companyData, setCompanyData] = useState({
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>ژمارەی مۆبایل ٢</Label>
+                      <Label>{pickLang(language, { ku: "ژمارەی مۆبایل ٢", en: "Mobile number 2", ar: "رقم الجوال ٢", zh: "手机号码 2" })}</Label>
                       <Input
                         value={companyData.phone2}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, phone2: e.target.value }))}
@@ -306,7 +307,7 @@ const [companyData, setCompanyData] = useState({
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>ئیمەیڵ</Label>
+                      <Label>{pickLang(language, { ku: "ئیمەیڵ", en: "Email", ar: "البريد الإلكتروني", zh: "电子邮件" })}</Label>
                       <Input
                         type="email"
                         value={companyData.email}
@@ -316,7 +317,7 @@ const [companyData, setCompanyData] = useState({
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>وێبسایت</Label>
+                      <Label>{pickLang(language, { ku: "وێبسایت", en: "Website", ar: "الموقع الإلكتروني", zh: "网站" })}</Label>
                       <Input
                         value={companyData.website}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, website: e.target.value }))}
@@ -330,10 +331,10 @@ const [companyData, setCompanyData] = useState({
                 <div>
                   <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    لۆگۆی کۆمپانیا
+                    {pickLang(language, { ku: "لۆگۆی کۆمپانیا", en: "Company Logo", ar: "شعار الشركة", zh: "公司标志" })}
                   </h3>
                   <div className="grid gap-2">
-                    <Label>ئەپلۆدی لۆگۆ</Label>
+                    <Label>{pickLang(language, { ku: "ئەپلۆدی لۆگۆ", en: "Upload logo", ar: "رفع الشعار", zh: "上传标志" })}</Label>
                     <input
                       type="file"
                       accept="image/*"
@@ -352,9 +353,9 @@ const [companyData, setCompanyData] = useState({
                         ) : (
                           <Upload className="h-4 w-4" />
                         )}
-                        {logoUploading ? "چاوەڕوان بە..." : "هەڵبژێرە و ئەپلۆد بکە"}
+                        {logoUploading ? pickLang(language, { ku: "چاوەڕوان بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." }) : pickLang(language, { ku: "هەڵبژێرە و ئەپلۆد بکە", en: "Select and upload", ar: "اختر وارفع", zh: "选择并上传" })}
                       </Label>
-                      <span className="text-xs text-muted-foreground">PNG, JPG تا ٢MB</span>
+                      <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "PNG, JPG تا ٢MB", en: "PNG, JPG up to 2MB", ar: "PNG, JPG حتى 2MB", zh: "PNG、JPG 最大 2MB" })}</span>
                     </div>
                     {companyData.logoUrl && (
                       <div className="mt-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center gap-4">
@@ -370,7 +371,7 @@ const [companyData, setCompanyData] = useState({
                           size="sm"
                           onClick={() => setCompanyData((prev) => ({ ...prev, logoUrl: "" }))}
                         >
-                          {t("common.remove") || "لابردن"}
+                          {t("common.remove") || pickLang(language, { ku: "لابردن", en: "Remove", ar: "إزالة", zh: "移除" })}
                         </Button>
                       </div>
                     )}
@@ -378,7 +379,7 @@ const [companyData, setCompanyData] = useState({
                 </div>
 
                 <Button onClick={handleSaveCompany} disabled={updateSettingsMutation.isPending} className="w-full">
-                  {updateSettingsMutation.isPending ? "چاوەڕوان بە..." : t("common.save")}
+                  {updateSettingsMutation.isPending ? pickLang(language, { ku: "چاوەڕوان بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." }) : t("common.save")}
                 </Button>
               </CardContent>
             </Card>
@@ -411,19 +412,19 @@ const [companyData, setCompanyData] = useState({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Code className="h-5 w-5" />
-                  {t("settings.customerCodePrefixes") || "پێشگرەکانی کۆدی کڕیار"}
+                  {t("settings.customerCodePrefixes") || pickLang(language, { ku: "پێشگرەکانی کۆدی کڕیار", en: "Customer Code Prefixes", ar: "بادئات رمز العميل", zh: "客户编码前缀" })}
                 </CardTitle>
-                <CardDescription>{t("settings.customerCodePrefixesDesc") || "بەڕێوەبردنی پێشگرەکانی کۆدی کڕیار (AZ, WZ, TR)"}</CardDescription>
+                <CardDescription>{t("settings.customerCodePrefixesDesc") || pickLang(language, { ku: "بەڕێوەبردنی پێشگرەکانی کۆدی کڕیار (AZ, WZ, TR)", en: "Manage customer code prefixes (AZ, WZ, TR)", ar: "إدارة بادئات رمز العميل (AZ, WZ, TR)", zh: "管理客户编码前缀 (AZ, WZ, TR)" })}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  {t("settings.customerCodePrefixesLongDesc") || "دروستکردن و بەڕێوەبردنی پێشگرەکانی کۆدی کڕیار کە بەکاردێن لە کاتی دروستکردنی کڕیاری نوێ."}
+                  {t("settings.customerCodePrefixesLongDesc") || pickLang(language, { ku: "دروستکردن و بەڕێوەبردنی پێشگرەکانی کۆدی کڕیار کە بەکاردێن لە کاتی دروستکردنی کڕیاری نوێ.", en: "Create and manage customer code prefixes used when creating new customers.", ar: "إنشاء وإدارة بادئات رمز العميل المستخدمة عند إنشاء عملاء جدد.", zh: "创建和管理新建客户时使用的客户编码前缀。" })}
                 </p>
                 <div className="flex gap-2">
                   <Link href="/settings/code-prefixes">
                     <Button className="gap-2">
                       <Code className="h-4 w-4" />
-                      {t("settings.manageCodePrefixes") || "بەڕێوەبردنی پێشگرەکان"}
+                      {t("settings.manageCodePrefixes") || pickLang(language, { ku: "بەڕێوەبردنی پێشگرەکان", en: "Manage Prefixes", ar: "إدارة البادئات", zh: "管理前缀" })}
                     </Button>
                   </Link>
                 </div>
@@ -434,25 +435,25 @@ const [companyData, setCompanyData] = useState({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5" />
-                  {t("settings.currencyManagement") || "ڕێکخستنی دراو"}
+                  {t("settings.currencyManagement") || pickLang(language, { ku: "ڕێکخستنی دراو", en: "Currency Management", ar: "إدارة العملات", zh: "货币管理" })}
                 </CardTitle>
-                <CardDescription>{t("settings.currencyManagementDesc") || "بەڕێوەبردنی دراوەکان و نرخی ئاڵووگۆڕ"}</CardDescription>
+                <CardDescription>{t("settings.currencyManagementDesc") || pickLang(language, { ku: "بەڕێوەبردنی دراوەکان و نرخی ئاڵووگۆڕ", en: "Manage currencies and exchange rates", ar: "إدارة العملات وأسعار الصرف", zh: "管理货币和汇率" })}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  بەڕێوەبردنی هەموو دراوەکان، نرخی ئاڵووگۆڕ، و دیاریکردنی دراوی بنەڕەت بۆ سیستەم.
+                  {pickLang(language, { ku: "بەڕێوەبردنی هەموو دراوەکان، نرخی ئاڵووگۆڕ، و دیاریکردنی دراوی بنەڕەت بۆ سیستەم.", en: "Manage all currencies, exchange rates, and set the system's base currency.", ar: "إدارة جميع العملات وأسعار الصرف وتحديد العملة الأساسية للنظام.", zh: "管理所有货币、汇率，并设置系统的基础货币。" })}
                 </p>
                 <div className="flex gap-2">
                   <Link href="/settings/currencies">
                     <Button className="gap-2">
                       <DollarSign className="h-4 w-4" />
-                      {t("settings.manageCurrencies") || "بەڕێوەبردنی دراوەکان"}
+                      {t("settings.manageCurrencies") || pickLang(language, { ku: "بەڕێوەبردنی دراوەکان", en: "Manage Currencies", ar: "إدارة العملات", zh: "管理货币" })}
                     </Button>
                   </Link>
                   <Link href="/settings/tax-rates">
                     <Button variant="outline" className="gap-2">
                       <TrendingUp className="h-4 w-4" />
-                      {t("settings.manageTaxRates") || "بەڕێوەبردنی نرخی باج"}
+                      {t("settings.manageTaxRates") || pickLang(language, { ku: "بەڕێوەبردنی نرخی باج", en: "Manage Tax Rates", ar: "إدارة معدلات الضريبة", zh: "管理税率" })}
                     </Button>
                   </Link>
                 </div>
@@ -463,19 +464,19 @@ const [companyData, setCompanyData] = useState({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Mail className="h-5 w-5" />
-                  {t("settings.emailTemplates") || "قاڵبەکانی ئیمەیڵ"}
+                  {t("settings.emailTemplates") || pickLang(language, { ku: "قاڵبەکانی ئیمەیڵ", en: "Email Templates", ar: "قوالب البريد الإلكتروني", zh: "电子邮件模板" })}
                 </CardTitle>
-                <CardDescription>{t("settings.emailTemplatesDesc") || "بەڕێوەبردنی قاڵبەکانی ئیمەیڵ بۆ ئۆتۆماتیکی"}</CardDescription>
+                <CardDescription>{t("settings.emailTemplatesDesc") || pickLang(language, { ku: "بەڕێوەبردنی قاڵبەکانی ئیمەیڵ بۆ ئۆتۆماتیکی", en: "Manage email templates for automation", ar: "إدارة قوالب البريد الإلكتروني للأتمتة", zh: "管理用于自动化的电子邮件模板" })}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  دروستکردن و دەستکاریکردنی قاڵبەکانی ئیمەیڵ بۆ ئاگادارکردنەوە، وەسڵ، و ڕاپۆرتەکان.
+                  {pickLang(language, { ku: "دروستکردن و دەستکاریکردنی قاڵبەکانی ئیمەیڵ بۆ ئاگادارکردنەوە، وەسڵ، و ڕاپۆرتەکان.", en: "Create and edit email templates for notifications, receipts, and reports.", ar: "إنشاء وتعديل قوالب البريد الإلكتروني للإشعارات والإيصالات والتقارير.", zh: "创建和编辑用于通知、收据和报告的电子邮件模板。" })}
                 </p>
                 <div className="flex gap-2">
                   <Link href="/settings/email-templates">
                     <Button className="gap-2">
                       <Mail className="h-4 w-4" />
-                      {t("settings.manageEmailTemplates") || "بەڕێوەبردنی قاڵبەکان"}
+                      {t("settings.manageEmailTemplates") || pickLang(language, { ku: "بەڕێوەبردنی قاڵبەکان", en: "Manage Templates", ar: "إدارة القوالب", zh: "管理模板" })}
                     </Button>
                   </Link>
                 </div>
@@ -486,25 +487,25 @@ const [companyData, setCompanyData] = useState({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5" />
-                  {t("settings.advancedSettings") || "ڕێکخستنە پێشکەوتووەکان"}
+                  {t("settings.advancedSettings") || pickLang(language, { ku: "ڕێکخستنە پێشکەوتووەکان", en: "Advanced Settings", ar: "الإعدادات المتقدمة", zh: "高级设置" })}
                 </CardTitle>
-                <CardDescription>{t("settings.advancedSettingsDesc") || "ڕێکخستنەکانی کاروبار، ئاسایش و ئەزموونی بەکارهێنەر"}</CardDescription>
+                <CardDescription>{t("settings.advancedSettingsDesc") || pickLang(language, { ku: "ڕێکخستنەکانی کاروبار، ئاسایش و ئەزموونی بەکارهێنەر", en: "Business, security, and user experience settings", ar: "إعدادات الأعمال والأمان وتجربة المستخدم", zh: "业务、安全和用户体验设置" })}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  دەستگەیشتن بە ڕێکخستنە پێشکەوتووەکان بۆ کاروبار، ئاسایش، IP whitelist، و زیاتر.
+                  {pickLang(language, { ku: "دەستگەیشتن بە ڕێکخستنە پێشکەوتووەکان بۆ کاروبار، ئاسایش، IP whitelist، و زیاتر.", en: "Access advanced settings for business, security, IP whitelist, and more.", ar: "الوصول إلى الإعدادات المتقدمة للأعمال والأمان وقائمة IP المسموح بها والمزيد.", zh: "访问业务、安全、IP 白名单等高级设置。" })}
                 </p>
                 <div className="flex gap-2">
                   <Link href="/settings/advanced">
                     <Button className="gap-2">
                       <SettingsIcon className="h-4 w-4" />
-                      {t("settings.openAdvancedSettings") || "کردنەوەی ڕێکخستنە پێشکەوتووەکان"}
+                      {t("settings.openAdvancedSettings") || pickLang(language, { ku: "کردنەوەی ڕێکخستنە پێشکەوتووەکان", en: "Open Advanced Settings", ar: "فتح الإعدادات المتقدمة", zh: "打开高级设置" })}
                     </Button>
                   </Link>
                   <Link href="/settings/ip-whitelist">
                     <Button variant="outline" className="gap-2">
                       <Shield className="h-4 w-4" />
-                      {t("settings.ipWhitelist") || "لیستی سپی IP"}
+                      {t("settings.ipWhitelist") || pickLang(language, { ku: "لیستی سپی IP", en: "IP Whitelist", ar: "قائمة IP المسموح بها", zh: "IP 白名单" })}
                     </Button>
                   </Link>
                 </div>
@@ -970,12 +971,13 @@ const [companyData, setCompanyData] = useState({
 
 // ============ Product Attributes Settings ============
 function ProductAttributesSettings() {
+  const { language } = useTranslation();
   const utils = trpc.useUtils();
   const { data: allAttrs, isLoading } = trpc.productAttributes.list.useQuery();
 
   const createMutation = trpc.productAttributes.create.useMutation({
     onSuccess: () => {
-      toast.success("زیادکرا");
+      toast.success(pickLang(language, { ku: "زیادکرا", en: "Added", ar: "تمت الإضافة", zh: "已添加" }));
       utils.productAttributes.list.invalidate();
       setNewValue("");
     },
@@ -984,7 +986,7 @@ function ProductAttributesSettings() {
 
   const updateMutation = trpc.productAttributes.update.useMutation({
     onSuccess: () => {
-      toast.success("نوێکرایەوە");
+      toast.success(pickLang(language, { ku: "نوێکرایەوە", en: "Updated", ar: "تم التحديث", zh: "已更新" }));
       utils.productAttributes.list.invalidate();
       setEditingId(null);
     },
@@ -993,7 +995,7 @@ function ProductAttributesSettings() {
 
   const deleteMutation = trpc.productAttributes.delete.useMutation({
     onSuccess: () => {
-      toast.success("سڕایەوە");
+      toast.success(pickLang(language, { ku: "سڕایەوە", en: "Deleted", ar: "تم الحذف", zh: "已删除" }));
       utils.productAttributes.list.invalidate();
     },
     onError: (e) => toast.error(e.message),
@@ -1004,10 +1006,10 @@ function ProductAttributesSettings() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState("");
 
-  const typeLabels: Record<string, string> = {
-    color: "ڕەنگ",
-    size: "قەبارە",
-    productType: "جۆری کاڵا",
+  const typeLabels: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
+    color: { ku: "ڕەنگ", en: "Color", ar: "اللون", zh: "颜色" },
+    size: { ku: "قەبارە", en: "Size", ar: "الحجم", zh: "尺寸" },
+    productType: { ku: "جۆری کاڵا", en: "Product Type", ar: "نوع المنتج", zh: "商品类型" },
   };
 
   const typeIcons: Record<string, string> = {
@@ -1038,9 +1040,9 @@ function ProductAttributesSettings() {
       <CardHeader className="bg-gradient-to-l from-violet-50 to-purple-50 border-b">
         <CardTitle className="flex items-center gap-2">
           <Tag className="h-5 w-5 text-violet-600" />
-          زانیاری کاڵا
+          {pickLang(language, { ku: "زانیاری کاڵا", en: "Product Info", ar: "معلومات المنتج", zh: "商品信息" })}
         </CardTitle>
-        <CardDescription>ڕەنگ، قەبارە و جۆری کاڵا بەڕێوە ببە — لە کاتی دروستکردنی ئۆردەر نیشان دەدرێن</CardDescription>
+        <CardDescription>{pickLang(language, { ku: "ڕەنگ، قەبارە و جۆری کاڵا بەڕێوە ببە — لە کاتی دروستکردنی ئۆردەر نیشان دەدرێن", en: "Manage colors, sizes, and product types — shown when creating an order", ar: "إدارة الألوان والأحجام وأنواع المنتجات — تظهر عند إنشاء طلب", zh: "管理颜色、尺寸和商品类型——创建订单时显示" })}</CardDescription>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
 
@@ -1058,7 +1060,7 @@ function ProductAttributesSettings() {
               }`}
             >
               <span>{typeIcons[type]}</span>
-              {typeLabels[type]}
+              {pickLang(language, typeLabels[type])}
               <span className={`text-xs px-1.5 py-0.5 rounded-full font-mono ${activeType === type ? "bg-violet-100 text-violet-600" : "bg-gray-100 text-gray-500"}`}>
                 {allAttrs?.filter(a => a.type === type).length ?? 0}
               </span>
@@ -1072,7 +1074,7 @@ function ProductAttributesSettings() {
             value={newValue}
             onChange={e => setNewValue(e.target.value)}
             onKeyDown={e => e.key === "Enter" && handleAdd()}
-            placeholder={`${typeLabels[activeType]}ێکی نوێ...`}
+            placeholder={pickLang(language, { ku: `${typeLabels[activeType].ku}ێکی نوێ...`, en: `New ${typeLabels[activeType].en.toLowerCase()}...`, ar: `${typeLabels[activeType].ar} جديد...`, zh: `新${typeLabels[activeType].zh}...` })}
             className="flex-1 h-11"
           />
           <Button
@@ -1082,7 +1084,7 @@ function ProductAttributesSettings() {
             className="bg-violet-600 hover:bg-violet-700 h-11 px-5"
           >
             {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            زیادکردن
+            {pickLang(language, { ku: "زیادکردن", en: "Add", ar: "إضافة", zh: "添加" })}
           </Button>
         </div>
 
@@ -1092,8 +1094,8 @@ function ProductAttributesSettings() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground">
             <span className="text-4xl">{typeIcons[activeType]}</span>
-            <p className="mt-3 font-medium">هیچ {typeLabels[activeType]}ێک نییە</p>
-            <p className="text-sm mt-1">بە فۆرمی سەرەوە زیادی بکە</p>
+            <p className="mt-3 font-medium">{pickLang(language, { ku: `هیچ ${typeLabels[activeType].ku}ێک نییە`, en: `No ${typeLabels[activeType].en.toLowerCase()} yet`, ar: `لا يوجد ${typeLabels[activeType].ar} بعد`, zh: `暂无${typeLabels[activeType].zh}` })}</p>
+            <p className="text-sm mt-1">{pickLang(language, { ku: "بە فۆرمی سەرەوە زیادی بکە", en: "Add one using the form above", ar: "أضف واحدًا باستخدام النموذج أعلاه", zh: "使用上方表单添加" })}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -1149,7 +1151,7 @@ function ProductAttributesSettings() {
 
 // Landing page variant (Classic vs Minimal)
 function LandingPageVariantSettings() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const utils = trpc.useUtils();
   const { data: currentVariant } = trpc.public.getLandingPageVariant.useQuery();
   const updateMutation = trpc.settings.set.useMutation({
@@ -1162,9 +1164,9 @@ function LandingPageVariantSettings() {
   });
 
   const variants = [
-    { id: "classic", name: t("settings.landingVariantClassic") || "پەرەی پڕ (کلاسیک)", nameEn: "Classic", description: t("settings.landingVariantClassicDesc") || "هەموو بەشەکان - ئامار، خزمەتگوزاری، تایبەتمەندی، پەیوەندی", icon: LayoutGrid },
-    { id: "minimal", name: t("settings.landingVariantMinimal") || "پەرەی مینیماڵ", nameEn: "Minimal", description: t("settings.landingVariantMinimalDesc") || "پەرەی سادە و پرۆفیشناڵ - تراکینگ و دووگمەکانی سەرەکی", icon: Sparkles },
-    { id: "professional", name: t("settings.landingVariantProfessional") || "پەرەی پڕۆفیشناڵ", nameEn: "Professional", description: t("settings.landingVariantProfessionalDesc") || "ڕووکارێکی ڕووناکی editorial بە ڕەنگی ئەمبەر - تایپی گەورە، bento، و بۆشایی زۆر", icon: Building2 }
+    { id: "classic", name: t("settings.landingVariantClassic") || pickLang(language, { ku: "پەرەی پڕ (کلاسیک)", en: "Full Page (Classic)", ar: "صفحة كاملة (كلاسيكية)", zh: "完整页面（经典）" }), nameEn: "Classic", description: t("settings.landingVariantClassicDesc") || pickLang(language, { ku: "هەموو بەشەکان - ئامار، خزمەتگوزاری، تایبەتمەندی، پەیوەندی", en: "All sections - stats, services, features, contact", ar: "جميع الأقسام - الإحصائيات والخدمات والميزات والتواصل", zh: "所有版块——统计、服务、功能、联系" }), icon: LayoutGrid },
+    { id: "minimal", name: t("settings.landingVariantMinimal") || pickLang(language, { ku: "پەرەی مینیماڵ", en: "Minimal Page", ar: "صفحة مبسطة", zh: "极简页面" }), nameEn: "Minimal", description: t("settings.landingVariantMinimalDesc") || pickLang(language, { ku: "پەرەی سادە و پرۆفیشناڵ - تراکینگ و دووگمەکانی سەرەکی", en: "Simple, professional page - tracking and primary buttons", ar: "صفحة بسيطة واحترافية - التتبع والأزرار الرئيسية", zh: "简洁专业页面——追踪和主要按钮" }), icon: Sparkles },
+    { id: "professional", name: t("settings.landingVariantProfessional") || pickLang(language, { ku: "پەرەی پڕۆفیشناڵ", en: "Professional Page", ar: "صفحة احترافية", zh: "专业页面" }), nameEn: "Professional", description: t("settings.landingVariantProfessionalDesc") || pickLang(language, { ku: "ڕووکارێکی ڕووناکی editorial بە ڕەنگی ئەمبەر - تایپی گەورە، bento، و بۆشایی زۆر", en: "A light editorial look with amber accents - large type, bento, lots of whitespace", ar: "مظهر تحريري فاتح بلمسات كهرمانية - خط كبير، تصميم بنتو، ومساحات بيضاء واسعة", zh: "明亮的编辑风格，琥珀色点缀——大字体、便当式布局、大量留白" }), icon: Building2 }
   ];
 
   return (
@@ -1172,10 +1174,10 @@ function LandingPageVariantSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <LayoutGrid className="h-5 w-5" />
-          {t("settings.landingPageVariantTitle") || "جۆری پەرەی سەرەکی"}
+          {t("settings.landingPageVariantTitle") || pickLang(language, { ku: "جۆری پەرەی سەرەکی", en: "Landing Page Type", ar: "نوع الصفحة الرئيسية", zh: "首页类型" })}
         </CardTitle>
         <CardDescription>
-          {t("settings.landingPageVariantDesc") || "هەڵبژاردنی پەرەی لاندینگ - کلاسیک (پڕ) یان مینیماڵ (سادە)"}
+          {t("settings.landingPageVariantDesc") || pickLang(language, { ku: "هەڵبژاردنی پەرەی لاندینگ - کلاسیک (پڕ) یان مینیماڵ (سادە)", en: "Choose the landing page - Classic (full) or Minimal (simple)", ar: "اختر الصفحة الرئيسية - كلاسيكية (كاملة) أو مبسطة (بسيطة)", zh: "选择首页——经典（完整）或极简（简单）" })}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -1202,7 +1204,7 @@ function LandingPageVariantSettings() {
                 </div>
                 {currentVariant === v.id && (
                   <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium">
-                    {t("settings.active") || "فعاڵ"}
+                    {t("settings.active") || pickLang(language, { ku: "فعاڵ", en: "Active", ar: "نشط", zh: "已启用" })}
                   </div>
                 )}
               </div>
@@ -1212,7 +1214,7 @@ function LandingPageVariantSettings() {
         {updateMutation.isPending && (
           <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
             <RefreshCw className="h-4 w-4 animate-spin" />
-            <span>{t("settings.applying") || "چاوەڕوان بە..."}</span>
+            <span>{t("settings.applying") || pickLang(language, { ku: "چاوەڕوان بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." })}</span>
           </div>
         )}
       </CardContent>
@@ -1222,7 +1224,7 @@ function LandingPageVariantSettings() {
 
 // Website content (hero, about, social) — shown on landing page
 function LandingWebsiteContentSettings() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { data: siteInfo = {}, refetch } = trpc.settings.getPublicWebsiteInfo.useQuery();
   const setMutation = trpc.settings.set.useMutation({
     onSuccess: () => { toast.success(t("toast.settingsUpdated")); refetch(); },
@@ -1274,36 +1276,36 @@ function LandingWebsiteContentSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          {t("settings.websiteContentTitle") || "ناوەڕۆکی پەرەی سەرەکی"}
+          {t("settings.websiteContentTitle") || pickLang(language, { ku: "ناوەڕۆکی پەرەی سەرەکی", en: "Landing Page Content", ar: "محتوى الصفحة الرئيسية", zh: "首页内容" })}
         </CardTitle>
         <CardDescription>
-          {t("settings.websiteContentDesc") || "سەردێری هێڵۆ، دەربارەی کۆمپانیا، و لینکە سۆشیالەکان لە پەرەی لاندینگ دەردەکەون"}
+          {t("settings.websiteContentDesc") || pickLang(language, { ku: "سەردێری هێڵۆ، دەربارەی کۆمپانیا، و لینکە سۆشیالەکان لە پەرەی لاندینگ دەردەکەون", en: "Hero title, about company, and social links shown on the landing page", ar: "عنوان البطل، نبذة عن الشركة، وروابط التواصل الاجتماعي تظهر في الصفحة الرئيسية", zh: "首页显示的主标题、公司简介和社交链接" })}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-4">
-          <Label>{t("settings.heroTitle") || "سەردێری هێڵۆ"}</Label>
+          <Label>{t("settings.heroTitle") || pickLang(language, { ku: "سەردێری هێڵۆ", en: "Hero Title", ar: "العنوان الرئيسي", zh: "主标题" })}</Label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input value={form.website_hero_title} onChange={(e) => setForm(f => ({ ...f, website_hero_title: e.target.value }))} placeholder="Wazn Express (EN)" />
-            <Input value={form.website_hero_title_ku} onChange={(e) => setForm(f => ({ ...f, website_hero_title_ku: e.target.value }))} placeholder="وازن ئێکسپرێس (کوردی)" dir="rtl" />
+            <Input value={form.website_hero_title_ku} onChange={(e) => setForm(f => ({ ...f, website_hero_title_ku: e.target.value }))} placeholder={pickLang(language, { ku: "وازن ئێکسپرێس (کوردی)", en: "Wazn Express (Kurdish)", ar: "وزن اكسبرس (الكردية)", zh: "Wazn Express（库尔德语）" })} dir="rtl" />
           </div>
         </div>
         <div className="grid gap-4">
-          <Label>{t("settings.heroSubtitle") || "ژێرسەردێر"}</Label>
+          <Label>{t("settings.heroSubtitle") || pickLang(language, { ku: "ژێرسەردێر", en: "Subtitle", ar: "العنوان الفرعي", zh: "副标题" })}</Label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input value={form.website_hero_subtitle} onChange={(e) => setForm(f => ({ ...f, website_hero_subtitle: e.target.value }))} placeholder="Fast and reliable shipping (EN)" />
-            <Input value={form.website_hero_subtitle_ku} onChange={(e) => setForm(f => ({ ...f, website_hero_subtitle_ku: e.target.value }))} placeholder="گواستنەوەی خێرا و متمانەپێکراو (کوردی)" dir="rtl" />
+            <Input value={form.website_hero_subtitle_ku} onChange={(e) => setForm(f => ({ ...f, website_hero_subtitle_ku: e.target.value }))} placeholder={pickLang(language, { ku: "گواستنەوەی خێرا و متمانەپێکراو (کوردی)", en: "Fast and reliable shipping (Kurdish)", ar: "شحن سريع وموثوق (الكردية)", zh: "快速可靠的运输（库尔德语）" })} dir="rtl" />
           </div>
         </div>
         <div className="grid gap-4">
-          <Label>{t("settings.aboutText") || "دەربارەی کۆمپانیا"}</Label>
+          <Label>{t("settings.aboutText") || pickLang(language, { ku: "دەربارەی کۆمپانیا", en: "About Company", ar: "نبذة عن الشركة", zh: "公司简介" })}</Label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <textarea className="flex min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.website_about} onChange={(e) => setForm(f => ({ ...f, website_about: e.target.value }))} placeholder="About company (EN)" />
-            <textarea className="flex min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.website_about_ku} onChange={(e) => setForm(f => ({ ...f, website_about_ku: e.target.value }))} placeholder="دەربارەی کۆمپانیا (کوردی)" dir="rtl" />
+            <textarea className="flex min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.website_about_ku} onChange={(e) => setForm(f => ({ ...f, website_about_ku: e.target.value }))} placeholder={pickLang(language, { ku: "دەربارەی کۆمپانیا (کوردی)", en: "About company (Kurdish)", ar: "نبذة عن الشركة (الكردية)", zh: "公司简介（库尔德语）" })} dir="rtl" />
           </div>
         </div>
         <div className="grid gap-4">
-          <Label>{t("settings.socialLinks") || "لینکە سۆشیالەکان"}</Label>
+          <Label>{t("settings.socialLinks") || pickLang(language, { ku: "لینکە سۆشیالەکان", en: "Social Links", ar: "روابط التواصل الاجتماعي", zh: "社交链接" })}</Label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input value={form.social_facebook} onChange={(e) => setForm(f => ({ ...f, social_facebook: e.target.value }))} placeholder="https://facebook.com/..." dir="ltr" />
             <Input value={form.social_instagram} onChange={(e) => setForm(f => ({ ...f, social_instagram: e.target.value }))} placeholder="https://instagram.com/..." dir="ltr" />
@@ -1313,7 +1315,7 @@ function LandingWebsiteContentSettings() {
           </div>
         </div>
         <Button onClick={handleSave} disabled={setMutation.isPending}>
-          {setMutation.isPending ? (t("settings.saving") || "چاوەڕوان بە...") : t("settings.saveChanges")}
+          {setMutation.isPending ? (t("settings.saving") || pickLang(language, { ku: "چاوەڕوان بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." })) : t("settings.saveChanges")}
         </Button>
       </CardContent>
     </Card>
@@ -1322,7 +1324,7 @@ function LandingWebsiteContentSettings() {
 
 // Landing team (for "Our Team" section on landing page)
 function LandingTeamSettings() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { data: team = [], refetch } = trpc.public.getLandingTeam.useQuery();
   const updateMutation = trpc.settings.set.useMutation({
     onSuccess: () => { toast.success(t("toast.settingsUpdated")); refetch(); },
@@ -1367,20 +1369,20 @@ function LandingTeamSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5" />
-          {t("settings.landingTeamTitle") || "ستاف/تیمی پەرەی سەرەکی"}
+          {t("settings.landingTeamTitle") || pickLang(language, { ku: "ستاف/تیمی پەرەی سەرەکی", en: "Landing Page Staff/Team", ar: "طاقم/فريق الصفحة الرئيسية", zh: "首页员工/团队" })}
         </CardTitle>
         <CardDescription>
-          {t("settings.landingTeamDesc") || "ئەم کەسانە لە بەشی «تیمی ئێمە» لە پەرەی لاندینگ نیشان دەدرێن"}
+          {t("settings.landingTeamDesc") || pickLang(language, { ku: "ئەم کەسانە لە بەشی «تیمی ئێمە» لە پەرەی لاندینگ نیشان دەدرێن", en: "These people are shown in the \"Our Team\" section on the landing page", ar: "يظهر هؤلاء الأشخاص في قسم «فريقنا» على الصفحة الرئيسية", zh: "这些人显示在首页的\"我们的团队\"版块中" })}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {editing.map((m, i) => (
           <div key={i} className="flex items-start gap-4 p-4 border rounded-lg">
             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
-              <Input value={m.name} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} placeholder={t("settings.teamMemberName") || "ناو"} />
-              <Input value={m.role} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, role: e.target.value } : x))} placeholder={t("settings.teamMemberRole") || "ڕۆڵ/ناونیشان"} />
-              <Input value={m.imageUrl} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, imageUrl: e.target.value } : x))} placeholder={t("settings.teamMemberImageUrl") || "URL وێنە (ئەگەر هەبێت)"} />
-              <Input className="md:col-span-3" value={m.description} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} placeholder={t("settings.teamMemberDescription") || "دیسکڕیپشن"} />
+              <Input value={m.name} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} placeholder={t("settings.teamMemberName") || pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "姓名" })} />
+              <Input value={m.role} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, role: e.target.value } : x))} placeholder={t("settings.teamMemberRole") || pickLang(language, { ku: "ڕۆڵ/ناونیشان", en: "Role/Title", ar: "الدور/المسمى", zh: "职位/头衔" })} />
+              <Input value={m.imageUrl} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, imageUrl: e.target.value } : x))} placeholder={t("settings.teamMemberImageUrl") || pickLang(language, { ku: "URL وێنە (ئەگەر هەبێت)", en: "Image URL (if any)", ar: "رابط الصورة (إن وجد)", zh: "图片 URL（如有）" })} />
+              <Input className="md:col-span-3" value={m.description} onChange={(e) => setEditing(editing.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} placeholder={t("settings.teamMemberDescription") || pickLang(language, { ku: "دیسکڕیپشن", en: "Description", ar: "الوصف", zh: "描述" })} />
             </div>
             <Button type="button" variant="ghost" size="icon" onClick={() => handleRemove(i)} className="text-destructive hover:text-destructive">
               <Trash2 className="h-4 w-4" />
@@ -1388,13 +1390,13 @@ function LandingTeamSettings() {
           </div>
         ))}
         <div className="flex flex-wrap gap-2 pt-2">
-          <Input className="max-w-[180px]" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t("settings.teamMemberName") || "ناو"} />
-          <Input className="max-w-[180px]" value={newRole} onChange={(e) => setNewRole(e.target.value)} placeholder={t("settings.teamMemberRole") || "ڕۆڵ"} />
-          <Input className="max-w-[200px]" value={newImage} onChange={(e) => setNewImage(e.target.value)} placeholder="URL وێنە" />
-          <Input className="min-w-[200px] flex-1" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t("settings.teamMemberDescription") || "دیسکڕیپشن"} />
+          <Input className="max-w-[180px]" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t("settings.teamMemberName") || pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "姓名" })} />
+          <Input className="max-w-[180px]" value={newRole} onChange={(e) => setNewRole(e.target.value)} placeholder={t("settings.teamMemberRole") || pickLang(language, { ku: "ڕۆڵ", en: "Role", ar: "الدور", zh: "职位" })} />
+          <Input className="max-w-[200px]" value={newImage} onChange={(e) => setNewImage(e.target.value)} placeholder={pickLang(language, { ku: "URL وێنە", en: "Image URL", ar: "رابط الصورة", zh: "图片 URL" })} />
+          <Input className="min-w-[200px] flex-1" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t("settings.teamMemberDescription") || pickLang(language, { ku: "دیسکڕیپشن", en: "Description", ar: "الوصف", zh: "描述" })} />
           <Button type="button" size="sm" onClick={handleAdd} disabled={!newName.trim() || updateMutation.isPending}>
             <Plus className="h-4 w-4 me-1" />
-            {t("settings.add") || "زیادکردن"}
+            {t("settings.add") || pickLang(language, { ku: "زیادکردن", en: "Add", ar: "إضافة", zh: "添加" })}
           </Button>
         </div>
         {editing.length > 0 && (
@@ -1409,7 +1411,7 @@ function LandingTeamSettings() {
 
 // Landing (first) page theme settings
 function LandingThemeSettings() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const utils = trpc.useUtils();
   const { data: currentTheme, isLoading } = trpc.public.getLandingTheme.useQuery();
   const updateThemeMutation = trpc.settings.set.useMutation({
@@ -1426,9 +1428,9 @@ function LandingThemeSettings() {
   };
 
   const themes = [
-    { id: "dark", name: t("settings.landingThemeDark") || "تاریک", nameEn: "Dark", description: t("settings.landingThemeDarkDesc") || "ڕووکاری ئێستا - پسپۆڕی تاریک", preview: "bg-[#0f172a]", accent: "from-amber-500 to-orange-500" },
-    { id: "light", name: t("settings.landingThemeLight") || "ڕووناک", nameEn: "Light", description: t("settings.landingThemeLightDesc") || "پسپۆڕی ڕووناک - گونجاو بۆ ڕۆژ", preview: "bg-slate-50", accent: "from-amber-600 to-orange-600" },
-    { id: "ocean", name: t("settings.landingThemeOcean") || "ئۆشن", nameEn: "Ocean", description: t("settings.landingThemeOceanDesc") || "شین/تەڵاو - گونجاو بۆ لۆژستیک", preview: "bg-[#0c4a6e]", accent: "from-sky-400 to-cyan-500" }
+    { id: "dark", name: t("settings.landingThemeDark") || pickLang(language, { ku: "تاریک", en: "Dark", ar: "داكن", zh: "深色" }), nameEn: "Dark", description: t("settings.landingThemeDarkDesc") || pickLang(language, { ku: "ڕووکاری ئێستا - پسپۆڕی تاریک", en: "Current look - dark professional", ar: "المظهر الحالي - احترافي داكن", zh: "当前外观——深色专业" }), preview: "bg-[#0f172a]", accent: "from-amber-500 to-orange-500" },
+    { id: "light", name: t("settings.landingThemeLight") || pickLang(language, { ku: "ڕووناک", en: "Light", ar: "فاتح", zh: "浅色" }), nameEn: "Light", description: t("settings.landingThemeLightDesc") || pickLang(language, { ku: "پسپۆڕی ڕووناک - گونجاو بۆ ڕۆژ", en: "Light professional - suited for daytime", ar: "احترافي فاتح - مناسب للنهار", zh: "浅色专业——适合白天" }), preview: "bg-slate-50", accent: "from-amber-600 to-orange-600" },
+    { id: "ocean", name: t("settings.landingThemeOcean") || pickLang(language, { ku: "ئۆشن", en: "Ocean", ar: "محيط", zh: "海洋" }), nameEn: "Ocean", description: t("settings.landingThemeOceanDesc") || pickLang(language, { ku: "شین/تەڵاو - گونجاو بۆ لۆژستیک", en: "Blue/teal - suited for logistics", ar: "أزرق/فيروزي - مناسب للوجستيات", zh: "蓝色/青色——适合物流" }), preview: "bg-[#0c4a6e]", accent: "from-sky-400 to-cyan-500" }
   ];
 
   return (
@@ -1436,10 +1438,10 @@ function LandingThemeSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Palette className="h-5 w-5" />
-          {t("settings.landingThemeTitle") || "ڕووکاری پەرەی یەکەم (لاندینگ)"}
+          {t("settings.landingThemeTitle") || pickLang(language, { ku: "ڕووکاری پەرەی یەکەم (لاندینگ)", en: "Landing Page Theme", ar: "مظهر الصفحة الرئيسية", zh: "首页主题" })}
         </CardTitle>
         <CardDescription>
-          {t("settings.landingThemeDesc") || "هەڵبژاردنی ڕووکار بۆ پەرەی سەرەکی ویبسایت - ئەم ڕووکارە بۆ هەموو سەردانکەران دەردەکەوێت"}
+          {t("settings.landingThemeDesc") || pickLang(language, { ku: "هەڵبژاردنی ڕووکار بۆ پەرەی سەرەکی ویبسایت - ئەم ڕووکارە بۆ هەموو سەردانکەران دەردەکەوێت", en: "Choose the theme for the website landing page - this theme is shown to all visitors", ar: "اختر مظهر الصفحة الرئيسية للموقع - يظهر هذا المظهر لجميع الزوار", zh: "选择网站首页的主题——此主题对所有访客显示" })}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -1458,7 +1460,7 @@ function LandingThemeSettings() {
                 </div>
                 {currentTheme === theme.id && (
                   <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium">
-                    {t("settings.active") || "فعاڵ"}
+                    {t("settings.active") || pickLang(language, { ku: "فعاڵ", en: "Active", ar: "نشط", zh: "已启用" })}
                   </div>
                 )}
               </div>
@@ -1475,7 +1477,7 @@ function LandingThemeSettings() {
         {updateThemeMutation.isPending && (
           <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
             <RefreshCw className="h-4 w-4 animate-spin" />
-            <span>{t("settings.applying") || "چاوەڕوان بە..."}</span>
+            <span>{t("settings.applying") || pickLang(language, { ku: "چاوەڕوان بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." })}</span>
           </div>
         )}
       </CardContent>
@@ -1485,7 +1487,7 @@ function LandingThemeSettings() {
 
 // Portal Theme Settings Component
 function PortalThemeSettings() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { data: currentTheme, isLoading } = trpc.public.getPortalTheme.useQuery();
   const updateThemeMutation = trpc.settings.set.useMutation({
     onSuccess: () => {
@@ -1505,25 +1507,25 @@ function PortalThemeSettings() {
   const themes = [
     {
       id: "classic",
-      name: "کلاسیک",
+      name: pickLang(language, { ku: "کلاسیک", en: "Classic", ar: "كلاسيكي", zh: "经典" }),
       nameEn: "Classic",
-      description: "ڕووکاری ئێستا - دیزاینێکی سادە و ئاسان",
+      description: pickLang(language, { ku: "ڕووکاری ئێستا - دیزاینێکی سادە و ئاسان", en: "Current look - a simple, easy design", ar: "المظهر الحالي - تصميم بسيط وسهل", zh: "当前外观——简单易用的设计" }),
       preview: "bg-gradient-to-br from-slate-900 to-slate-800",
       accent: "from-emerald-500 to-teal-600"
     },
     {
       id: "modern",
-      name: "مۆدێرن",
+      name: pickLang(language, { ku: "مۆدێرن", en: "Modern", ar: "عصري", zh: "现代" }),
       nameEn: "Modern",
-      description: "ڕووکارێکی نوێ و پڕۆفیشناڵ - بە ئەنیمەیشن و دیزاینی سەرنجڕاکێش",
+      description: pickLang(language, { ku: "ڕووکارێکی نوێ و پڕۆفیشناڵ - بە ئەنیمەیشن و دیزاینی سەرنجڕاکێش", en: "A new, professional look - with animation and eye-catching design", ar: "مظهر جديد واحترافي - مع الحركة والتصميم الجذاب", zh: "全新专业外观——带动画和吸引眼球的设计" }),
       preview: "bg-gradient-to-br from-violet-950 to-slate-950",
       accent: "from-violet-500 to-purple-600"
     },
     {
       id: "skin3",
-      name: "نیۆبروتاڵیست",
+      name: pickLang(language, { ku: "نیۆبروتاڵیست", en: "Neobrutalist", ar: "نيوبروتاليست", zh: "新粗野主义" }),
       nameEn: "Neobrutalist",
-      description: "دیزاینێکی تایبەت و جوان - بە بۆردەری ئەستوور و شادۆی بۆڵد و ڕەنگی ئینیدگۆ",
+      description: pickLang(language, { ku: "دیزاینێکی تایبەت و جوان - بە بۆردەری ئەستوور و شادۆی بۆڵد و ڕەنگی ئینیدگۆ", en: "A distinctive, attractive design - with thick borders, bold shadows, and indigo color", ar: "تصميم مميز وجذاب - بحدود سميكة وظلال بارزة ولون نيلي", zh: "独特出彩的设计——粗边框、醒目阴影和靛蓝色" }),
       preview: "bg-gradient-to-br from-amber-50 to-indigo-100",
       accent: "from-indigo-500 to-violet-600"
     }
@@ -1534,10 +1536,10 @@ function PortalThemeSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Palette className="h-5 w-5" />
-          ڕووکاری پۆرتاڵی کڕیار
+          {pickLang(language, { ku: "ڕووکاری پۆرتاڵی کڕیار", en: "Customer Portal Theme", ar: "مظهر بوابة العميل", zh: "客户门户主题" })}
         </CardTitle>
         <CardDescription>
-          هەڵبژاردنی ڕووکار بۆ پۆرتاڵی کڕیارەکان - هەموو تایبەتمەندییەکان هەر وەک کاردەکەن
+          {pickLang(language, { ku: "هەڵبژاردنی ڕووکار بۆ پۆرتاڵی کڕیارەکان - هەموو تایبەتمەندییەکان هەر وەک کاردەکەن", en: "Choose the theme for the customer portal - all features work the same", ar: "اختر مظهر بوابة العملاء - تعمل جميع الميزات بنفس الطريقة", zh: "选择客户门户的主题——所有功能照常运作" })}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -1565,7 +1567,7 @@ function PortalThemeSettings() {
                 {/* Selected badge */}
                 {currentTheme === theme.id && (
                   <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium">
-                    فعاڵ
+                    {pickLang(language, { ku: "فعاڵ", en: "Active", ar: "نشط", zh: "已启用" })}
                   </div>
                 )}
               </div>
@@ -1584,7 +1586,7 @@ function PortalThemeSettings() {
         {updateThemeMutation.isPending && (
           <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
             <RefreshCw className="h-4 w-4 animate-spin" />
-            <span>چاوەڕوان بە...</span>
+            <span>{pickLang(language, { ku: "چاوەڕوان بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." })}</span>
           </div>
         )}
       </CardContent>

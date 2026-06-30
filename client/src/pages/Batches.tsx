@@ -21,6 +21,7 @@ import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 const statusColors: Record<string, string> = {
   preparing: "bg-blue-100 text-blue-800",
@@ -45,7 +46,7 @@ interface CustomerPricing {
 }
 
 export default function Batches() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isFinancialOpen, setIsFinancialOpen] = useState(false);
@@ -173,7 +174,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     // operator doesn't think it succeeded.
     if (diag?.error) {
       toast.error(
-        `❌ هەڵە لە چاکسازی باچ\nVersion: ${diag.version || 'unknown'}\n${diag.note || ''}\nError: ${diag.error}`,
+        `❌ ${pickLang(language, { ku: "هەڵە لە چاکسازی باچ", en: "Error fixing batch", ar: "خطأ في معالجة الدفعة", zh: "批次处理出错" })}\nVersion: ${diag.version || 'unknown'}\n${diag.note || ''}\nError: ${diag.error}`,
         { duration: 30000 }
       );
       refetch();
@@ -200,18 +201,18 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         (diag.phase3?.stragglersFound || 0);
       const summary = [
         `🏷️ Version: ${diag.version || 'unknown'}`,
-        `📦 پاکەت: ${diag.packageCount} (${diag.packagesWithOrderId} لینک کراون، ${diag.packagesUnlinked} بێ لینک)`,
-        `📥 کۆکراوە: ${diag.phase1?.fpOrdersCollected || 0} FP, ${diag.phase1?.cmOrdersCollected || 0} CM, ${diag.phase1?.normalPkgsCollected || 0} پاکەت`,
-        `🧾 پسوڵەی نوێ: ~${totalNew}`,
-        `💰 ئۆردەری چارجکراو: ~${totalCharged}`,
+        `📦 ${pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" })}: ${diag.packageCount} (${diag.packagesWithOrderId} ${pickLang(language, { ku: "لینک کراون", en: "linked", ar: "مرتبطة", zh: "已关联" })}، ${diag.packagesUnlinked} ${pickLang(language, { ku: "بێ لینک", en: "unlinked", ar: "غير مرتبطة", zh: "未关联" })})`,
+        `📥 ${pickLang(language, { ku: "کۆکراوە", en: "Collected", ar: "تم جمعها", zh: "已收集" })}: ${diag.phase1?.fpOrdersCollected || 0} FP, ${diag.phase1?.cmOrdersCollected || 0} CM, ${diag.phase1?.normalPkgsCollected || 0} ${pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرد", zh: "包裹" })}`,
+        `🧾 ${pickLang(language, { ku: "پسوڵەی نوێ", en: "New invoices", ar: "فواتير جديدة", zh: "新发票" })}: ~${totalNew}`,
+        `💰 ${pickLang(language, { ku: "ئۆردەری چارجکراو", en: "Orders charged", ar: "طلبات محاسَبة", zh: "已计费订单" })}: ~${totalCharged}`,
       ];
       if (diag.phase3?.stragglersFound > 0) {
-        summary.push(`⚠️ ${diag.phase3.stragglersFound} ئۆردەر لە Phase 3 (recovery) چاکراون`);
+        summary.push(`⚠️ ${diag.phase3.stragglersFound} ${pickLang(language, { ku: "ئۆردەر لە Phase 3 (recovery) چاکراون", en: "orders fixed in Phase 3 (recovery)", ar: "طلبات تمت معالجتها في المرحلة 3 (الاسترداد)", zh: "订单已在第 3 阶段（恢复）处理" })}`);
       }
       // Surface Phase-2 errors as a separate toast so they don't get lost
       const phase2Errors: string[] = diag.phase2?.errors || [];
       if (phase2Errors.length > 0) {
-        summary.push(`❌ ${phase2Errors.length} هەڵە لە Phase 2`);
+        summary.push(`❌ ${phase2Errors.length} ${pickLang(language, { ku: "هەڵە لە Phase 2", en: "errors in Phase 2", ar: "أخطاء في المرحلة 2", zh: "第 2 阶段错误" })}`);
         toast.error(`Phase 2 Errors:\n${phase2Errors.join('\n')}`, { duration: 30000 });
       }
       toast.info(summary.join('\n'), { duration: 15000 });
@@ -223,8 +224,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     onSuccess: (data) => {
       const d = data?.diagnostics;
       const msg = d
-        ? `✅ پشکنی تەواو بوو\n📦 پاکەت: ${d.packageCount}\n🔍 ئۆردەری پشکنیکراو: ${d.ordersChecked}\n✓ پێشتر چارجکراو: ${d.alreadyCharged}\n⚠️ ماوە بۆ چارج: ${d.stragglersFound}\n🧾 پسوڵەی نوێ: ${(d.recoveryFpInvoices || 0) + (d.recoveryCmInvoices || 0)}`
-        : `پشکنی تەواو بوو`;
+        ? `✅ ${pickLang(language, { ku: "پشکنی تەواو بوو", en: "Check complete", ar: "اكتمل الفحص", zh: "检查完成" })}
+📦 ${pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" })}: ${d.packageCount}
+🔍 ${pickLang(language, { ku: "ئۆردەری پشکنیکراو", en: "Orders checked", ar: "الطلبات المفحوصة", zh: "已检查订单" })}: ${d.ordersChecked}
+✓ ${pickLang(language, { ku: "پێشتر چارجکراو", en: "Already charged", ar: "محاسَبة مسبقاً", zh: "已计费" })}: ${d.alreadyCharged}
+⚠️ ${pickLang(language, { ku: "ماوە بۆ چارج", en: "Remaining to charge", ar: "متبقٍ للمحاسبة", zh: "待计费" })}: ${d.stragglersFound}
+🧾 ${pickLang(language, { ku: "پسوڵەی نوێ", en: "New invoices", ar: "فواتير جديدة", zh: "新发票" })}: ${(d.recoveryFpInvoices || 0) + (d.recoveryCmInvoices || 0)}`
+        : pickLang(language, { ku: "پشکنی تەواو بوو", en: "Check complete", ar: "اكتمل الفحص", zh: "检查完成" });
       toast.success(msg, { duration: 12000 });
       refetch();
     },
@@ -821,7 +827,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                 <Command>
                                   <CommandInput placeholder={t("auto.text_229840")} />
                                   <CommandList>
-                                    <CommandEmpty>هیچ کڕیارێک نەدۆزرایەوە</CommandEmpty>
+                                    <CommandEmpty>{pickLang(language, { ku: "هیچ کڕیارێک نەدۆزرایەوە", en: "No customer found", ar: "لم يتم العثور على عميل", zh: "未找到客户" })}</CommandEmpty>
                                     <CommandGroup>
                                       {customers?.filter(c => !customerPricing.find(cp => cp.customerId === c.id)).map(c => (
                                         <CommandItem
@@ -982,7 +988,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           <Plane className="h-4 w-4 text-amber-600" />
                         )}
                         <span className="font-mono font-medium">{batch.batchCode}</span>
-                        <CopyButton value={batch.batchCode} label="کۆپی کۆدی باچ" />
+                        <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
                       </div>
                     </TableCell>
                     <TableCell>
@@ -1082,7 +1088,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                   const data = await trpcUtilsForAudit.batches.getPreDeliveryAudit.fetch({ batchId: batch.id });
                                   setAuditData(data);
                                 } catch (e: any) {
-                                  toast.error(e?.message || "هەڵە لە audit");
+                                  toast.error(e?.message || pickLang(language, { ku: "هەڵە لە audit", en: "Audit error", ar: "خطأ في التدقيق", zh: "审计错误" }));
                                   setPendingDeliveryConfirm(null);
                                 } finally {
                                   setAuditLoading(false);
@@ -1115,11 +1121,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             className="h-8 text-xs"
                             disabled={reprocessMutation.isPending}
                             onClick={() => {
-                              if (window.confirm("دووبارە چارجکردنی ئۆردەرە چارج نەکراوەکانی ئەم باچە؟ (Idempotent)")) {
+                              if (window.confirm(pickLang(language, { ku: "دووبارە چارجکردنی ئۆردەرە چارج نەکراوەکانی ئەم باچە؟ (Idempotent)", en: "Re-charge the uncharged orders of this batch? (Idempotent)", ar: "إعادة محاسبة الطلبات غير المحاسَبة في هذه الدفعة؟ (عملية متكررة آمنة)", zh: "重新对该批次未计费的订单计费？（幂等）" }))) {
                                 reprocessMutation.mutate({ batchId: batch.id });
                               }
                             }}
-                            title="دووبارە پرۆسێسکردنی پسوڵەی ئۆردەرە چارجنەکراوەکان"
+                            title={pickLang(language, { ku: "دووبارە پرۆسێسکردنی پسوڵەی ئۆردەرە چارجنەکراوەکان", en: "Reprocess invoices for uncharged orders", ar: "إعادة معالجة فواتير الطلبات غير المحاسَبة", zh: "重新处理未计费订单的发票" })}
                           >
                             {reprocessMutation.isPending ? "..." : "🧾 Reprocess"}
                           </Button>
@@ -1645,31 +1651,31 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 ) : (
                   <ShieldCheck className="h-5 w-5 text-emerald-600" />
                 )}
-                پێش-پشکنینی گەیاندن
+                {pickLang(language, { ku: "پێش-پشکنینی گەیاندن", en: "Pre-delivery audit", ar: "تدقيق ما قبل التسليم", zh: "交付前审核" })}
                 {auditData && <Badge variant="outline" className="font-mono">{auditData.batchCode}</Badge>}
               </DialogTitle>
               <DialogDescription>
                 {pendingDeliveryConfirm?.targetStatus === "delivered"
-                  ? "پێش گۆڕینی دۆخی کۆمەڵە بۆ Delivered، تکایە ئەم پشکنینە سەیر بکە."
-                  : "پێش داخستنی کۆمەڵە، تکایە ئەم پشکنینە سەیر بکە."}
+                  ? pickLang(language, { ku: "پێش گۆڕینی دۆخی کۆمەڵە بۆ Delivered، تکایە ئەم پشکنینە سەیر بکە.", en: "Before changing the batch status to Delivered, please review this audit.", ar: "قبل تغيير حالة الدفعة إلى تم التسليم، يرجى مراجعة هذا التدقيق.", zh: "在将批次状态更改为“已交付”之前，请查看此审核。" })
+                  : pickLang(language, { ku: "پێش داخستنی کۆمەڵە، تکایە ئەم پشکنینە سەیر بکە.", en: "Before closing the batch, please review this audit.", ar: "قبل إغلاق الدفعة، يرجى مراجعة هذا التدقيق.", zh: "在关闭批次之前，请查看此审核。" })}
               </DialogDescription>
             </DialogHeader>
 
             {auditLoading || !auditData ? (
               <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="text-sm">پشکنین جێبەجێ دەکرێ...</span>
+                <span className="text-sm">{pickLang(language, { ku: "پشکنین جێبەجێ دەکرێ...", en: "Running audit...", ar: "جارٍ تنفيذ التدقيق...", zh: "正在执行审核..." })}</span>
               </div>
             ) : (
               <div className="space-y-4 text-sm">
                 {/* Summary tile */}
                 <div className="grid grid-cols-2 gap-2">
                   <div className="p-2 rounded border bg-muted/30">
-                    <div className="text-[11px] text-muted-foreground">پاکەت لە کۆمەڵە</div>
+                    <div className="text-[11px] text-muted-foreground">{pickLang(language, { ku: "پاکەت لە کۆمەڵە", en: "Packages in batch", ar: "الطرود في الدفعة", zh: "批次中的包裹" })}</div>
                     <div className="font-bold text-lg">{auditData.packageCount}</div>
                   </div>
                   <div className="p-2 rounded border bg-muted/30">
-                    <div className="text-[11px] text-muted-foreground">ئۆردەری گرێدراو</div>
+                    <div className="text-[11px] text-muted-foreground">{pickLang(language, { ku: "ئۆردەری گرێدراو", en: "Linked orders", ar: "الطلبات المرتبطة", zh: "已关联订单" })}</div>
                     <div className="font-bold text-lg">{auditData.orderCount}</div>
                   </div>
                 </div>
@@ -1678,7 +1684,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 {!auditData.summary.blocking && !auditData.summary.warning && (
                   <div className="p-3 rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
                     <ShieldCheck className="h-4 w-4" />
-                    <span className="font-semibold">هیچ هەشداریەک نییە — کۆمەڵە ئامادەیە</span>
+                    <span className="font-semibold">{pickLang(language, { ku: "هیچ هەشداریەک نییە — کۆمەڵە ئامادەیە", en: "No warnings — batch is ready", ar: "لا توجد تحذيرات — الدفعة جاهزة", zh: "无警告 — 批次已就绪" })}</span>
                   </div>
                 )}
 
@@ -1687,7 +1693,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <div className="p-3 rounded-lg border-2 border-rose-300 bg-rose-50 dark:bg-rose-950/30">
                     <div className="font-bold text-rose-900 dark:text-rose-200 mb-2 flex items-center gap-1">
                       <AlertTriangle className="h-4 w-4" />
-                      هەڵەی کڕیار ({auditData.findings.customerMismatch.length}) — submit بەردەست نییە
+                      {pickLang(language, { ku: "هەڵەی کڕیار", en: "Customer mismatch", ar: "عدم تطابق العميل", zh: "客户不匹配" })} ({auditData.findings.customerMismatch.length}) — {pickLang(language, { ku: "submit بەردەست نییە", en: "submit unavailable", ar: "الإرسال غير متاح", zh: "无法提交" })}
                     </div>
                     <div className="space-y-1.5">
                       {auditData.findings.customerMismatch.map((f: any) => (
@@ -1712,28 +1718,28 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 {auditData.findings.sharedSiblingNotInBatch?.length > 0 && (
                   <div className="p-3 rounded-lg border-2 border-orange-300 bg-orange-50 dark:bg-orange-950/30">
                     <div className="font-bold text-orange-900 dark:text-orange-200 mb-2 flex items-center gap-1">
-                      🔗 ئۆردەری هاوبەش لە دەرەوەی کۆمەڵە ({auditData.findings.sharedSiblingNotInBatch.length})
+                      🔗 {pickLang(language, { ku: "ئۆردەری هاوبەش لە دەرەوەی کۆمەڵە", en: "Shared orders outside the batch", ar: "طلبات مشتركة خارج الدفعة", zh: "批次外的共享订单" })} ({auditData.findings.sharedSiblingNotInBatch.length})
                     </div>
                     <div className="text-[11px] text-orange-800/80 dark:text-orange-300/80 mb-2">
-                      ئەم ئۆردەرانە تراکینگیان لەگەڵ ئۆردەرەکانی ئەم کۆمەڵە هاوبەشە بەڵام لە کۆمەڵە نین. ئەگەر گەیاندن ئەنجام بدرێ بەبێ یەکخستنیان، پسوڵەیان دەرناچێ.
+                      {pickLang(language, { ku: "ئەم ئۆردەرانە تراکینگیان لەگەڵ ئۆردەرەکانی ئەم کۆمەڵە هاوبەشە بەڵام لە کۆمەڵە نین. ئەگەر گەیاندن ئەنجام بدرێ بەبێ یەکخستنیان، پسوڵەیان دەرناچێ.", en: "These orders share tracking with orders in this batch but are not in the batch. If delivery is done without consolidating them, no invoice will be issued for them.", ar: "تشترك هذه الطلبات في التتبع مع طلبات هذه الدفعة لكنها ليست ضمنها. إذا تم التسليم دون دمجها، فلن تصدر لها فاتورة.", zh: "这些订单与本批次的订单共享物流单号，但不在批次内。若未合并即交付，将不会为其开具发票。" })}
                     </div>
                     <div className="space-y-1.5">
                       {auditData.findings.sharedSiblingNotInBatch.map((f: any, i: number) => (
                         <div key={i} className="text-xs p-2 rounded bg-white/60 dark:bg-black/30">
                           <div className="flex items-center gap-2 mb-1">
                             <Badge variant="outline" className="font-mono text-[10px]">{f.packageCode}</Badge>
-                            <span className="text-[10px] text-muted-foreground">لە کۆمەڵە:</span>
+                            <span className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "لە کۆمەڵە:", en: "In batch:", ar: "في الدفعة:", zh: "批次内：" })}</span>
                             <span className="font-mono">{f.orderInBatch.orderCode}</span>
                             <span className="text-primary">{f.orderInBatch.customerCode}</span>
                           </div>
                           <div className="ms-4 flex items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground">↳ خوشک:</span>
+                            <span className="text-[10px] text-muted-foreground">↳ {pickLang(language, { ku: "خوشک:", en: "Sibling:", ar: "شقيق:", zh: "同组：" })}</span>
                             <span className="font-mono">{f.siblingOutsideBatch.orderCode}</span>
                             <span>{f.siblingOutsideBatch.productName}</span>
                             {f.siblingOutsideBatch.batchCode ? (
-                              <Badge variant="secondary" className="text-[9px]">لە کۆمەڵەی {f.siblingOutsideBatch.batchCode}</Badge>
+                              <Badge variant="secondary" className="text-[9px]">{pickLang(language, { ku: "لە کۆمەڵەی", en: "In batch", ar: "في الدفعة", zh: "在批次" })} {f.siblingOutsideBatch.batchCode}</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-[9px]">بێ کۆمەڵە</Badge>
+                              <Badge variant="outline" className="text-[9px]">{pickLang(language, { ku: "بێ کۆمەڵە", en: "No batch", ar: "بدون دفعة", zh: "无批次" })}</Badge>
                             )}
                           </div>
                         </div>
@@ -1746,10 +1752,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 {auditData.findings.multiCartonIncomplete?.length > 0 && (
                   <div className="p-3 rounded-lg border-2 border-blue-300 bg-blue-50 dark:bg-blue-950/30">
                     <div className="font-bold text-blue-900 dark:text-blue-200 mb-2 flex items-center gap-1">
-                      📦 ئۆردەری چەند-کارتۆن کە کارتۆنی چاوەڕیی ماوە ({auditData.findings.multiCartonIncomplete.length})
+                      📦 {pickLang(language, { ku: "ئۆردەری چەند-کارتۆن کە کارتۆنی چاوەڕیی ماوە", en: "Multi-carton orders with cartons still pending", ar: "طلبات متعددة الكراتين لا تزال بعض كراتينها معلّقة", zh: "仍有纸箱待处理的多箱订单" })} ({auditData.findings.multiCartonIncomplete.length})
                     </div>
                     <div className="text-[11px] text-blue-800/80 dark:text-blue-300/80 mb-2">
-                      ئەم ئۆردەرانە ٢ کارتۆن یان زیاتر هەن، بەڵام هەموویان هێشتا تۆمار نەکراون. ڕەنگە کارتۆن لە ڕێگە بێت.
+                      {pickLang(language, { ku: "ئەم ئۆردەرانە ٢ کارتۆن یان زیاتر هەن، بەڵام هەموویان هێشتا تۆمار نەکراون. ڕەنگە کارتۆن لە ڕێگە بێت.", en: "These orders have 2 or more cartons, but not all of them have been registered yet. A carton may still be in transit.", ar: "تحتوي هذه الطلبات على كرتونين أو أكثر، لكن لم يتم تسجيلها جميعاً بعد. قد يكون أحد الكراتين لا يزال في الطريق.", zh: "这些订单有 2 个或更多纸箱，但尚未全部登记。可能仍有纸箱在途中。" })}
                     </div>
                     <div className="space-y-1.5">
                       {auditData.findings.multiCartonIncomplete.map((f: any) => (
@@ -1783,7 +1789,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   setAuditData(null);
                 }}
               >
-                وازهێنان
+                {pickLang(language, { ku: "وازهێنان", en: "Cancel", ar: "إلغاء", zh: "取消" })}
               </Button>
               <Button
                 disabled={auditLoading || !auditData || auditData.summary?.blocking || updateStatusMutation.isPending}
@@ -1812,10 +1818,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 }
               >
                 {auditData?.summary?.blocking
-                  ? "پاش چاکی هەڵەی کڕیار، دووبارە هەوڵ بدە"
+                  ? pickLang(language, { ku: "پاش چاکی هەڵەی کڕیار، دووبارە هەوڵ بدە", en: "Fix the customer mismatch, then try again", ar: "صحّح عدم تطابق العميل ثم حاول مرة أخرى", zh: "请先修正客户不匹配，然后重试" })
                   : auditData?.summary?.warning
-                    ? "بەردەوام بە، دەزانم"
-                    : "بەردەوام بە بۆ گەیاندن"}
+                    ? pickLang(language, { ku: "بەردەوام بە، دەزانم", en: "Continue, I understand", ar: "متابعة، أنا أدرك ذلك", zh: "继续，我知道了" })
+                    : pickLang(language, { ku: "بەردەوام بە بۆ گەیاندن", en: "Continue to delivery", ar: "متابعة إلى التسليم", zh: "继续交付" })}
               </Button>
             </DialogFooter>
           </DialogContent>

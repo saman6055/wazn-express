@@ -66,6 +66,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import TrackingTimeline, { type TrackingStep } from "@/components/TrackingTimeline";
 
 // Maps an order's status enum to a 0-based stage index on the
@@ -109,7 +110,7 @@ const statusIcons: Record<string, React.ReactNode> = {
 };
 
 export default function FullPackageDetail() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { id, mode } = useParams<{ id: string; mode?: string }>();
   const [, navigate] = useLocation();
   const isEditMode = mode === "edit";
@@ -237,7 +238,12 @@ export default function FullPackageDetail() {
       // Plan v3: surface OCC conflicts distinctly — user must reload stale data.
       if (error.data?.code === "CONFLICT") {
         toast.error(
-          "ئەم ئۆردەرە لەلایەن بەکارهێنەرێکی دیکە گۆڕدراوە. تکایە بیخوێنەرەوە و هەوڵ بدەرەوە. | This order was modified by someone else. Please reload and try again.",
+          pickLang(language, {
+            ku: "ئەم ئۆردەرە لەلایەن بەکارهێنەرێکی دیکە گۆڕدراوە. تکایە بیخوێنەرەوە و هەوڵ بدەرەوە.",
+            en: "This order was modified by someone else. Please reload and try again.",
+            ar: "تم تعديل هذا الطلب من قبل مستخدم آخر. يرجى إعادة التحميل والمحاولة مرة أخرى.",
+            zh: "此订单已被他人修改。请重新加载后再试。",
+          }),
           { duration: 8000 }
         );
         refetch();
@@ -363,7 +369,12 @@ export default function FullPackageDetail() {
     // Plan v3: require a reason when the edit would shift the customer ledger.
     if (moneyChangeDetected && editReason.trim().length < 3) {
       toast.error(
-        "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت) | Reason is required when prices change (min 3 chars)"
+        pickLang(language, {
+          ku: "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت)",
+          en: "Reason is required when prices change (min 3 chars)",
+          ar: "السبب مطلوب عند تغيير الأسعار (٣ أحرف على الأقل)",
+          zh: "更改价格时需填写原因（至少3个字符）",
+        })
       );
       return;
     }
@@ -450,10 +461,10 @@ export default function FullPackageDetail() {
     // If a batch is already assigned but status hasn't advanced, treat as shipped.
     if (stage < 1 && inBatch) stage = 1;
     const stepDefs: { key: string; label: string }[] = [
-      { key: "registered", label: t("tracking.registered") || "تۆمارکرا" },
-      { key: "in_batch", label: t("tracking.inBatch") || "بارکرا / لە باچ" },
-      { key: "arrived", label: t("tracking.arrived") || "گەیشتە بنکە" },
-      { key: "delivered", label: t("tracking.delivered") || "گەیەنرا" },
+      { key: "registered", label: t("tracking.registered") || pickLang(language, { ku: "تۆمارکرا", en: "Registered", ar: "تم التسجيل", zh: "已登记" }) },
+      { key: "in_batch", label: t("tracking.inBatch") || pickLang(language, { ku: "بارکرا / لە باچ", en: "Shipped / In batch", ar: "تم الشحن / في الدفعة", zh: "已发货 / 在批次中" }) },
+      { key: "arrived", label: t("tracking.arrived") || pickLang(language, { ku: "گەیشتە بنکە", en: "Arrived at hub", ar: "وصل إلى المركز", zh: "已到达站点" }) },
+      { key: "delivered", label: t("tracking.delivered") || pickLang(language, { ku: "گەیەنرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }) },
     ];
     return stepDefs.map((s, idx) => ({
       key: s.key,
@@ -549,7 +560,7 @@ export default function FullPackageDetail() {
           <Card className="shadow-sm border-0 bg-white">
             <CardContent className="p-5">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-1">
-                <Truck className="h-3 w-3" /> {t("tracking.title") || "شوێنکەوتنی ئۆردەر"}
+                <Truck className="h-3 w-3" /> {t("tracking.title") || pickLang(language, { ku: "شوێنکەوتنی ئۆردەر", en: "Order tracking", ar: "تتبع الطلب", zh: "订单追踪" })}
               </p>
               <TrackingTimeline steps={trackingSteps} />
             </CardContent>
@@ -641,11 +652,11 @@ export default function FullPackageDetail() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">{t("fullPackage.orderNumber") || "ئۆردەر نەمبەر"}</Label>
+                    <Label className="text-sm font-medium">{t("fullPackage.orderNumber") || pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order number", ar: "رقم الطلب", zh: "订单编号" })}</Label>
                     <Input
                       value={formData.orderNumber}
                       onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
-                      placeholder={t("fullPackage.orderNumberPlaceholder") || "ژمارەی ئۆردەر"}
+                      placeholder={t("fullPackage.orderNumberPlaceholder") || pickLang(language, { ku: "ژمارەی ئۆردەر", en: "Order number", ar: "رقم الطلب", zh: "订单编号" })}
                       className="h-11"
                       dir="ltr"
                     />
@@ -688,7 +699,7 @@ export default function FullPackageDetail() {
                         onClick={() => setFormData({ ...formData, trackingNumbers: [...formData.trackingNumbers, ""] })}
                       >
                         <Plus className="h-4 w-4" />
-                        {t("fullPackage.addTrackingNumber") || "زیادکردنی ژمارەی شوێنکەوتنەوە"}
+                        {t("fullPackage.addTrackingNumber") || pickLang(language, { ku: "زیادکردنی ژمارەی شوێنکەوتنەوە", en: "Add tracking number", ar: "إضافة رقم تتبع", zh: "添加追踪号" })}
                       </Button>
                     </div>
                   </div>
@@ -744,7 +755,7 @@ export default function FullPackageDetail() {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center gap-1.5">
                     <Image className="h-4 w-4" />
-                    {t("fullPackage.productImages") || "وێنەکانی کاڵا"}
+                    {t("fullPackage.productImages") || pickLang(language, { ku: "وێنەکانی کاڵا", en: "Product images", ar: "صور المنتج", zh: "产品图片" })}
                   </Label>
                   <CompressedImageUpload
                     images={formData.productImages}
@@ -827,12 +838,20 @@ export default function FullPackageDetail() {
                     </div>
                     <div>
                       <CardTitle className="text-amber-900">
-                        هۆکاری گۆڕینی نرخ | Reason for Price Change
+                        {pickLang(language, {
+                          ku: "هۆکاری گۆڕینی نرخ",
+                          en: "Reason for Price Change",
+                          ar: "سبب تغيير السعر",
+                          zh: "价格变更原因",
+                        })}
                       </CardTitle>
                       <CardDescription className="text-amber-800">
-                        گۆڕانکاریت لە نرخ یان ژمارە کردووە، بۆیە پێویستە هۆکارێک بنووسیت بۆ ئەوەی
-                        دەفتەری هەژماری کڕیار ڕێکبخرێتەوە. | You changed a price or quantity, so
-                        we need a reason to log the customer-ledger adjustment.
+                        {pickLang(language, {
+                          ku: "گۆڕانکاریت لە نرخ یان ژمارە کردووە، بۆیە پێویستە هۆکارێک بنووسیت بۆ ئەوەی دەفتەری هەژماری کڕیار ڕێکبخرێتەوە.",
+                          en: "You changed a price or quantity, so we need a reason to log the customer-ledger adjustment.",
+                          ar: "لقد غيّرت السعر أو الكمية، لذا نحتاج إلى سبب لتسجيل تعديل دفتر حساب العميل.",
+                          zh: "您更改了价格或数量，因此需要填写原因以记录客户账目调整。",
+                        })}
                       </CardDescription>
                     </div>
                   </div>
@@ -841,14 +860,29 @@ export default function FullPackageDetail() {
                   <Textarea
                     value={editReason}
                     onChange={(e) => setEditReason(e.target.value)}
-                    placeholder="بۆ نموونە: کڕیار داوای دابەزاندنی ٥٪ی کرد | e.g. Customer requested a 5% discount"
+                    placeholder={pickLang(language, {
+                      ku: "بۆ نموونە: کڕیار داوای دابەزاندنی ٥٪ی کرد",
+                      en: "e.g. Customer requested a 5% discount",
+                      ar: "مثال: طلب العميل خصمًا بنسبة ٥٪",
+                      zh: "例如：客户要求打95折",
+                    })}
                     rows={2}
                     dir="auto"
                   />
                   <div className="text-xs text-amber-800 mt-2 text-right">
                     {editReason.trim().length < 3
-                      ? `بەلایەنی کەم ٣ پیت | Min 3 chars (${editReason.trim().length}/3)`
-                      : `${editReason.trim().length} پیت | chars`}
+                      ? pickLang(language, {
+                          ku: `بەلایەنی کەم ٣ پیت (${editReason.trim().length}/3)`,
+                          en: `Min 3 chars (${editReason.trim().length}/3)`,
+                          ar: `٣ أحرف على الأقل (${editReason.trim().length}/3)`,
+                          zh: `至少3个字符 (${editReason.trim().length}/3)`,
+                        })
+                      : pickLang(language, {
+                          ku: `${editReason.trim().length} پیت`,
+                          en: `${editReason.trim().length} chars`,
+                          ar: `${editReason.trim().length} حرف`,
+                          zh: `${editReason.trim().length} 个字符`,
+                        })}
                   </div>
                 </CardContent>
               </Card>
@@ -892,7 +926,7 @@ export default function FullPackageDetail() {
                     <div className="p-2 bg-blue-100 rounded-lg">
                       <Package className="h-5 w-5 text-blue-600" />
                     </div>
-                    <CardTitle>زانیاری کاڵا</CardTitle>
+                    <CardTitle>{pickLang(language, { ku: "زانیاری کاڵا", en: "Product information", ar: "معلومات المنتج", zh: "产品信息" })}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -903,7 +937,7 @@ export default function FullPackageDetail() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                        <Hash className="h-3 w-3" /> {t("fullPackage.orderNumber") || "ئۆردەر نەمبەر"}
+                        <Hash className="h-3 w-3" /> {t("fullPackage.orderNumber") || pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order number", ar: "رقم الطلب", zh: "订单编号" })}
                       </p>
                       {(order as any).orderNumber ? (
                         <Badge variant="secondary" className="font-mono text-sm px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200">
@@ -942,25 +976,25 @@ export default function FullPackageDetail() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                        <Box className="h-3 w-3" /> بڕ
+                        <Box className="h-3 w-3" /> {pickLang(language, { ku: "بڕ", en: "Quantity", ar: "الكمية", zh: "数量" })}
                       </p>
                       <p className="font-semibold">{order.quantity} {t("fullPackage.quantityUnit")}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                        <Palette className="h-3 w-3" /> ڕەنگ
+                        <Palette className="h-3 w-3" /> {pickLang(language, { ku: "ڕەنگ", en: "Color", ar: "اللون", zh: "颜色" })}
                       </p>
                       <p className="font-medium">{order.color || "-"}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                        <Ruler className="h-3 w-3" /> قەبارە
+                        <Ruler className="h-3 w-3" /> {pickLang(language, { ku: "قەبارە", en: "Size", ar: "المقاس", zh: "尺寸" })}
                       </p>
                       <p className="font-medium">{order.size || "-"}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                        <Layers className="h-3 w-3" /> باچ
+                        <Layers className="h-3 w-3" /> {pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}
                       </p>
                       <Badge variant="outline" className="font-mono">
                         {(order as any).batch?.batchCode || t("fullPackage.noBatch")}
@@ -973,7 +1007,7 @@ export default function FullPackageDetail() {
                       <FileText className="h-3 w-3" /> {t("fullPackage.productDescription")}
                     </p>
                     <p className={`leading-relaxed ${order.productDescription ? "text-gray-700" : "text-gray-400 italic"}`}>
-                      {order.productDescription || "وەسفی کاڵا نییە"}
+                      {order.productDescription || pickLang(language, { ku: "وەسفی کاڵا نییە", en: "No product description", ar: "لا يوجد وصف للمنتج", zh: "无产品描述" })}
                     </p>
                   </div>
                   
@@ -1002,9 +1036,9 @@ export default function FullPackageDetail() {
                       <Image className="h-5 w-5 text-indigo-600" />
                     </div>
                     <div>
-                      <CardTitle>وێنەکانی کاڵا</CardTitle>
+                      <CardTitle>{pickLang(language, { ku: "وێنەکانی کاڵا", en: "Product images", ar: "صور المنتج", zh: "产品图片" })}</CardTitle>
                       <CardDescription>
-                        {((order as any).productImages?.length || (order.productImage ? 1 : 0))} وێنە
+                        {((order as any).productImages?.length || (order.productImage ? 1 : 0))} {pickLang(language, { ku: "وێنە", en: "images", ar: "صورة", zh: "张图片" })}
                       </CardDescription>
                     </div>
                   </div>
@@ -1018,7 +1052,7 @@ export default function FullPackageDetail() {
                   ) : (
                     <div className="flex flex-col items-center justify-center py-8 text-gray-400">
                       <Image className="h-10 w-10 mb-2 opacity-30" />
-                      <p className="text-sm">هیچ وێنەیەک نییە</p>
+                      <p className="text-sm">{pickLang(language, { ku: "هیچ وێنەیەک نییە", en: "No images", ar: "لا توجد صور", zh: "暂无图片" })}</p>
                     </div>
                   )}
                 </CardContent>
@@ -1048,7 +1082,7 @@ export default function FullPackageDetail() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> ژمارەی مۆبایل
+                        <Phone className="h-3 w-3" /> {pickLang(language, { ku: "ژمارەی مۆبایل", en: "Mobile number", ar: "رقم الهاتف المحمول", zh: "手机号码" })}
                       </p>
                       <p className="font-mono font-medium">{(order as any).customer?.mobileNumber || "-"}</p>
                     </div>
@@ -1178,27 +1212,27 @@ export default function FullPackageDetail() {
                       <div className="rounded-xl border-2 border-teal-200 bg-gradient-to-l from-teal-50 to-emerald-50 p-4 space-y-2">
                         <div className="flex items-center gap-2 mb-1">
                           <DollarSign className="h-4 w-4 text-teal-600" />
-                          <span className="text-sm font-bold text-teal-800">پوختەی پارەدان</span>
+                          <span className="text-sm font-bold text-teal-800">{pickLang(language, { ku: "پوختەی پارەدان", en: "Payment summary", ar: "ملخص الدفع", zh: "付款摘要" })}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">کۆی فرۆشتن</span>
+                          <span className="text-slate-600">{pickLang(language, { ku: "کۆی فرۆشتن", en: "Total selling", ar: "إجمالي البيع", zh: "销售总额" })}</span>
                           <span className="font-mono font-semibold">${totalSelling.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-teal-700">پارەی پێشەکی دراو</span>
+                          <span className="text-teal-700">{pickLang(language, { ku: "پارەی پێشەکی دراو", en: "Advance paid", ar: "الدفعة المقدمة المدفوعة", zh: "已付预付款" })}</span>
                           <span className="font-mono font-semibold text-teal-700">-${advancePaid.toFixed(2)}</span>
                         </div>
                         <div className="h-px bg-teal-200" />
                         <div className="flex justify-between text-base">
-                          <span className="font-semibold">{isFullyPaid ? "ڕەوشی پارەدان" : "ماوە بۆ پارەدان"}</span>
+                          <span className="font-semibold">{isFullyPaid ? pickLang(language, { ku: "ڕەوشی پارەدان", en: "Payment status", ar: "حالة الدفع", zh: "付款状态" }) : pickLang(language, { ku: "ماوە بۆ پارەدان", en: "Remaining to pay", ar: "المتبقي للدفع", zh: "待付余额" })}</span>
                           {isFullyPaid ? (
-                            <span className="font-bold text-emerald-700">✓ تەواو پارەدراوە</span>
+                            <span className="font-bold text-emerald-700">✓ {pickLang(language, { ku: "تەواو پارەدراوە", en: "Fully paid", ar: "مدفوع بالكامل", zh: "已全额付款" })}</span>
                           ) : (
                             <span className="font-mono font-bold text-xl text-amber-700">${remaining.toFixed(2)}</span>
                           )}
                         </div>
                         {(order as any).advancePaymentMethod && (
-                          <p className="text-xs text-teal-600">شێواز: {(order as any).advancePaymentMethod}</p>
+                          <p className="text-xs text-teal-600">{pickLang(language, { ku: "شێواز", en: "Method", ar: "الطريقة", zh: "方式" })}: {(order as any).advancePaymentMethod}</p>
                         )}
                       </div>
                     );
@@ -1265,7 +1299,7 @@ export default function FullPackageDetail() {
                 </CardHeader>
                 <CardContent className="p-4">
                   <p className={`leading-relaxed ${order.notes ? "text-gray-700" : "text-gray-400 italic"}`}>
-                    {order.notes || "تێبینی نییە"}
+                    {order.notes || pickLang(language, { ku: "تێبینی نییە", en: "No notes", ar: "لا توجد ملاحظات", zh: "无备注" })}
                   </p>
                 </CardContent>
               </Card>

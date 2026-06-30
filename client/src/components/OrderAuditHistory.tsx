@@ -14,6 +14,8 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { History, ChevronDown, ChevronUp, User, Clock } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 interface OrderAuditHistoryProps {
   entityType?: string; // defaults to "full_package_order"
@@ -43,6 +45,7 @@ export default function OrderAuditHistory({
   entityType = "full_package_order",
   entityId,
 }: OrderAuditHistoryProps) {
+  const { language } = useLanguage();
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
   const { data: logs, isLoading, error } = trpc.auditLogs.getByEntity.useQuery(
@@ -63,10 +66,14 @@ export default function OrderAuditHistory({
             <History className="h-5 w-5 text-indigo-600" />
           </div>
           <div>
-            <CardTitle>مێژووی گۆڕانکاری | Audit History</CardTitle>
+            <CardTitle>{pickLang(language, { ku: "مێژووی گۆڕانکاری", en: "Audit History", ar: "سجل التعديلات", zh: "审计记录" })}</CardTitle>
             <CardDescription>
-              هەموو گۆڕانکاریەکانی ئەم ئۆردەرە — کێ، کەی، هۆکار. | Every change on this
-              order — who, when, and why.
+              {pickLang(language, {
+                ku: "هەموو گۆڕانکاریەکانی ئەم ئۆردەرە — کێ، کەی، هۆکار.",
+                en: "Every change on this order — who, when, and why.",
+                ar: "كل تعديل على هذا الطلب — من ومتى ولماذا.",
+                zh: "此订单的每一次更改——谁、何时、为何。",
+              })}
             </CardDescription>
           </div>
         </div>
@@ -74,12 +81,17 @@ export default function OrderAuditHistory({
       <CardContent className="p-4">
         {isLoading && (
           <div className="text-sm text-muted-foreground text-center py-4">
-            بارکردن... | Loading…
+            {pickLang(language, { ku: "بارکردن...", en: "Loading…", ar: "جارٍ التحميل…", zh: "加载中…" })}
           </div>
         )}
         {!isLoading && (!logs || logs.length === 0) && (
           <div className="text-sm text-muted-foreground text-center py-4">
-            هیچ مێژوویەک نەدۆزرایەوە. | No audit entries found.
+            {pickLang(language, {
+              ku: "هیچ مێژوویەک نەدۆزرایەوە.",
+              en: "No audit entries found.",
+              ar: "لم يتم العثور على أي سجلات.",
+              zh: "未找到审计记录。",
+            })}
           </div>
         )}
         {!isLoading && logs && logs.length > 0 && (
@@ -123,13 +135,13 @@ export default function OrderAuditHistory({
                       </div>
                       {reason && (
                         <div className="mt-1 text-sm text-gray-700" dir="auto">
-                          <span className="font-bold text-amber-800">هۆکار | Reason:</span>{" "}
+                          <span className="font-bold text-amber-800">{pickLang(language, { ku: "هۆکار", en: "Reason", ar: "السبب", zh: "原因" })}:</span>{" "}
                           {reason}
                         </div>
                       )}
                       {typeof chargeDelta === "number" && Math.abs(chargeDelta) > 0.005 && (
                         <div className="mt-1 text-sm">
-                          <span className="font-bold">گۆڕانکاری نرخ | Charge delta:</span>{" "}
+                          <span className="font-bold">{pickLang(language, { ku: "گۆڕانکاری نرخ", en: "Charge delta", ar: "فرق الرسوم", zh: "费用变动" })}:</span>{" "}
                           <span
                             className={`font-mono font-bold ${
                               chargeDelta > 0 ? "text-red-700" : "text-green-700"
@@ -141,7 +153,7 @@ export default function OrderAuditHistory({
                       )}
                       {typeof reversedCharge === "number" && reversedCharge > 0 && (
                         <div className="mt-1 text-sm">
-                          <span className="font-bold">گەڕاندنەوەی نرخ | Charge reversed:</span>{" "}
+                          <span className="font-bold">{pickLang(language, { ku: "گەڕاندنەوەی نرخ", en: "Charge reversed", ar: "إلغاء الرسوم", zh: "费用已撤销" })}:</span>{" "}
                           <span className="font-mono font-bold text-green-700">
                             −${reversedCharge.toFixed(2)}
                           </span>
@@ -149,7 +161,7 @@ export default function OrderAuditHistory({
                       )}
                       {typeof reversedAdvance === "number" && reversedAdvance > 0 && (
                         <div className="mt-1 text-sm">
-                          <span className="font-bold">گەڕاندنەوەی پێشەکی | Advance reversed:</span>{" "}
+                          <span className="font-bold">{pickLang(language, { ku: "گەڕاندنەوەی پێشەکی", en: "Advance reversed", ar: "إلغاء الدفعة المقدمة", zh: "预付款已撤销" })}:</span>{" "}
                           <span className="font-mono font-bold text-red-700">
                             +${reversedAdvance.toFixed(2)}
                           </span>
@@ -166,7 +178,7 @@ export default function OrderAuditHistory({
                     <div className="border-t p-3 bg-gray-50 text-xs space-y-2">
                       {log.oldValues && (
                         <div>
-                          <div className="font-bold text-gray-700 mb-1">پێشوو | Before:</div>
+                          <div className="font-bold text-gray-700 mb-1">{pickLang(language, { ku: "پێشوو", en: "Before", ar: "قبل", zh: "之前" })}:</div>
                           <pre className="bg-white border rounded p-2 overflow-auto max-h-40 text-[10px]">
                             {JSON.stringify(log.oldValues, null, 2)}
                           </pre>
@@ -174,7 +186,7 @@ export default function OrderAuditHistory({
                       )}
                       {log.newValues && (
                         <div>
-                          <div className="font-bold text-gray-700 mb-1">دوایی | After:</div>
+                          <div className="font-bold text-gray-700 mb-1">{pickLang(language, { ku: "دوایی", en: "After", ar: "بعد", zh: "之后" })}:</div>
                           <pre className="bg-white border rounded p-2 overflow-auto max-h-40 text-[10px]">
                             {JSON.stringify(log.newValues, null, 2)}
                           </pre>

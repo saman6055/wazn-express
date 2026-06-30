@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 // Legacy shape consumed by the existing badge / inline hint UI. We keep it
 // stable so the rest of the page renders unchanged for the "normal" case;
@@ -132,16 +133,18 @@ function deriveLegacyLookup(exp: ExpandedLookup | null | undefined): TrackingLoo
 function PackageTypeBadge({
   lookup,
   expanded,
+  language,
 }: {
   lookup: TrackingLookupResult | null | undefined;
   expanded?: ExpandedLookup | null;
+  language: string;
 }) {
   // Shared tracking takes priority over the per-type badge — staff needs to
   // see "this carton has 3 orders" before seeing "it's a full-package order".
   if (expanded?.case === 'shared') {
     return (
       <Badge className="text-[10px] px-1.5 py-0 font-normal bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 border-orange-300">
-        🔗 هاوبەش • {expanded.orders.length} ئۆردەر
+        🔗 {pickLang(language, { ku: "هاوبەش", en: "Shared", ar: "مشترك", zh: "共享" })} • {expanded.orders.length} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })}
       </Badge>
     );
   }
@@ -149,7 +152,7 @@ function PackageTypeBadge({
     const got = expanded.flags.cartonsRegistered ?? 0;
     return (
       <Badge className="text-[10px] px-1.5 py-0 font-normal bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300">
-        📦 کارتۆن {got + 1}/{expanded.flags.cartonsTotal}
+        📦 {pickLang(language, { ku: "کارتۆن", en: "Carton", ar: "كرتون", zh: "纸箱" })} {got + 1}/{expanded.flags.cartonsTotal}
       </Badge>
     );
   }
@@ -157,7 +160,7 @@ function PackageTypeBadge({
   if (!lookup || !lookup.found) {
     return (
       <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-700">
-        📋 ئاسایی
+        📋 {pickLang(language, { ku: "ئاسایی", en: "Regular", ar: "عادي", zh: "普通" })}
       </Badge>
     );
   }
@@ -165,7 +168,7 @@ function PackageTypeBadge({
   if (lookup.type === 'duplicate') {
     return (
       <Badge variant="destructive" className="text-[10px] px-1.5 py-0 font-normal">
-        ⚠️ دووبارە ({lookup.existingPackageCode})
+        ⚠️ {pickLang(language, { ku: "دووبارە", en: "Duplicate", ar: "مكرر", zh: "重复" })} ({lookup.existingPackageCode})
       </Badge>
     );
   }
@@ -173,7 +176,7 @@ function PackageTypeBadge({
   if (lookup.type === 'commission') {
     return (
       <Badge className="text-[10px] px-1.5 py-0 font-normal bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 border-amber-300">
-        💰 کڕین بە تێچوو
+        💰 {pickLang(language, { ku: "کڕین بە تێچوو", en: "Purchase by cost", ar: "شراء بالتكلفة", zh: "代购" })}
       </Badge>
     );
   }
@@ -181,7 +184,7 @@ function PackageTypeBadge({
   if (lookup.type === 'full_package') {
     return (
       <Badge className="text-[10px] px-1.5 py-0 font-normal bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 border-purple-300">
-        📦 پاکێجی تەواو
+        📦 {pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "حزمة كاملة", zh: "全包" })}
       </Badge>
     );
   }
@@ -190,8 +193,8 @@ function PackageTypeBadge({
 }
 
 export default function BulkRegister() {
-  const { t } = useTranslation();
-  
+  const { t, language } = useTranslation();
+
   // Form state
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
@@ -210,10 +213,10 @@ export default function BulkRegister() {
   const [showOptional, setShowOptional] = useState(false);
   const [showCbmSettings, setShowCbmSettings] = useState(false);
   const [newDivisor, setNewDivisor] = useState("");
-  
+
   // Refs for tracking lookup debounce
   const lookupTimers = useRef<Record<string, NodeJS.Timeout>>({});
-  
+
   // Queries
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: batchesResponse } = trpc.batches.list.useQuery();
@@ -221,7 +224,7 @@ export default function BulkRegister() {
   const { data: warehouses } = trpc.warehouses.list.useQuery();
   const { data: categories } = trpc.productCategories.list.useQuery();
   const { data: cbmDivisorData } = trpc.packages.getCbmDivisor.useQuery();
-  
+
   const cbmDivisor = cbmDivisorData?.divisor || 6000;
   // Auto-select first warehouse once list loads; preserve manual selection
   // if user already picked one. This stops the silent failure where
@@ -235,12 +238,12 @@ export default function BulkRegister() {
     () => (warehouses?.find((w) => w.id === originWarehouseId) ?? warehouses?.[0]) ?? null,
     [warehouses, originWarehouseId]
   );
-  
+
   // Mutations
   const registerMutation = trpc.packages.register.useMutation();
   const setCbmDivisorMutation = trpc.packages.setCbmDivisor.useMutation();
   const utils = trpc.useUtils();
-  
+
   // Filter batches by shipping type
   const filteredBatches = useMemo(() => {
     if (!batches) return [];
@@ -252,21 +255,21 @@ export default function BulkRegister() {
       return batchType === "sea";
     }).filter(b => b.status === "preparing" || b.status === "in_transit");
   }, [batches, shippingType]);
-  
+
   // Filter customers by search
   const filteredCustomers = useMemo(() => {
     if (!customers || !customerSearch) return [];
     const search = customerSearch.toLowerCase();
-    return customers.filter(c => 
+    return customers.filter(c =>
       c.customerCode?.toLowerCase().includes(search) ||
       c.fullName?.toLowerCase().includes(search) ||
       c.mobileNumber?.includes(search)
     ).slice(0, 10);
   }, [customers, customerSearch]);
-  
+
   // Get selected batch for pricing
   const selectedBatch = batches?.find(b => b.id === parseInt(batchId));
-  
+
   // Calculate chargeable weight for a package (max of actual vs volumetric)
   const getChargeableWeight = useCallback((pkg: PackageRow) => {
     const actualKg = parseFloat(pkg.weightKg) || 0;
@@ -276,7 +279,7 @@ export default function BulkRegister() {
     const volumetricKg = (l * w * h) / cbmDivisor;
     return Math.max(actualKg, volumetricKg);
   }, [cbmDivisor]);
-  
+
   // Calculate totals with chargeable weight
   const totals = useMemo(() => {
     let totalActualWeight = 0;
@@ -285,11 +288,11 @@ export default function BulkRegister() {
     let totalCbm = 0;
     let totalCost = 0;
     let validPackages = 0;
-    
+
     packages.forEach(pkg => {
       const hasData = pkg.weightKg || pkg.trackingNumber;
       if (!hasData) return;
-      
+
       const actualKg = parseFloat(pkg.weightKg) || 0;
       const l = parseFloat(pkg.lengthCm) || 0;
       const w = parseFloat(pkg.widthCm) || 0;
@@ -297,15 +300,15 @@ export default function BulkRegister() {
       const volumetricKg = (l > 0 && w > 0 && h > 0) ? (l * w * h) / cbmDivisor : 0;
       const chargeableKg = Math.max(actualKg, volumetricKg);
       const cbm = (l > 0 && w > 0 && h > 0) ? (l * w * h) / 1000000 : 0;
-      
+
       totalActualWeight += actualKg;
       totalVolumetricWeight += volumetricKg;
       totalChargeableWeight += chargeableKg;
       totalCbm += cbm;
-      
+
       if (actualKg > 0 || pkg.trackingNumber) validPackages++;
     });
-    
+
     if (selectedBatch) {
       if ((shippingType === "air_regular" || shippingType === "air_irregular") && selectedBatch.pricePerKg) {
         totalCost = totalChargeableWeight * parseFloat(selectedBatch.pricePerKg);
@@ -313,10 +316,10 @@ export default function BulkRegister() {
         totalCost = totalCbm * parseFloat(selectedBatch.pricePerCbm);
       }
     }
-    
+
     return { totalActualWeight, totalVolumetricWeight, totalChargeableWeight, totalCbm, totalCost, validPackages };
   }, [packages, selectedBatch, shippingType, cbmDivisor]);
-  
+
   // Tracking number lookup with debounce. Uses the expanded procedure so we
   // get shared/multi context in one round-trip; the legacy lookup shape is
   // derived for the existing badge / inline-hint code paths.
@@ -366,18 +369,18 @@ export default function BulkRegister() {
       ));
     }
   }, [utils, customerId, isUnclaimed, customers]);
-  
+
   const selectCustomer = (customer: NonNullable<typeof customers>[0]) => {
     setCustomerId(customer.id);
     setCustomerSearch(customer.customerCode || customer.fullName || "");
     setShowCustomerDropdown(false);
   };
-  
+
   const updatePackage = (id: string, field: keyof PackageRow, value: string) => {
-    setPackages(prev => prev.map(pkg => 
+    setPackages(prev => prev.map(pkg =>
       pkg.id === id ? { ...pkg, [field]: value } : pkg
     ));
-    
+
     // Debounced tracking lookup
     if (field === 'trackingNumber') {
       if (lookupTimers.current[id]) {
@@ -388,11 +391,11 @@ export default function BulkRegister() {
       }, 800); // 800ms delay for tracking lookup
     }
   };
-  
+
   const addRow = () => {
     setPackages(prev => [...prev, createEmptyRow()]);
   };
-  
+
   const removeRow = (id: string) => {
     if (packages.length > 1) {
       setPackages(prev => prev.filter(pkg => pkg.id !== id));
@@ -402,38 +405,38 @@ export default function BulkRegister() {
       }
     }
   };
-  
+
   const handleSaveCbmDivisor = async () => {
     const val = parseInt(newDivisor);
     if (!val || val < 1) {
-      toast.error("ژمارەیەکی دروست بنووسە");
+      toast.error(pickLang(language, { ku: "ژمارەیەکی دروست بنووسە", en: "Enter a valid number", ar: "أدخل رقماً صحيحاً", zh: "请输入有效数字" }));
       return;
     }
     try {
       await setCbmDivisorMutation.mutateAsync({ divisor: val });
       utils.packages.getCbmDivisor.invalidate();
-      toast.success(`CBM divisor گۆڕدرا بۆ ${val}`);
+      toast.success(pickLang(language, { ku: `CBM divisor گۆڕدرا بۆ ${val}`, en: `CBM divisor changed to ${val}`, ar: `تم تغيير قاسم CBM إلى ${val}`, zh: `CBM 除数已改为 ${val}` }));
       setShowCbmSettings(false);
     } catch {
-      toast.error("هەڵە لە گۆڕینی CBM divisor");
+      toast.error(pickLang(language, { ku: "هەڵە لە گۆڕینی CBM divisor", en: "Error changing CBM divisor", ar: "خطأ في تغيير قاسم CBM", zh: "更改 CBM 除数出错" }));
     }
   };
-  
+
   const handleSubmit = async () => {
     if (!selectedWarehouse) {
-      toast.error("هیچ کۆگایەک ڕێکنەخراوە");
+      toast.error(pickLang(language, { ku: "هیچ کۆگایەک ڕێکنەخراوە", en: "No warehouse is configured", ar: "لم يتم إعداد أي مستودع", zh: "未配置任何仓库" }));
       return;
     }
 
     if (!isUnclaimed && !customerId) {
-      toast.error("تکایە کڕیارێک هەڵبژێرە یان وەک بێ خاوەن دیاری بکە");
+      toast.error(pickLang(language, { ku: "تکایە کڕیارێک هەڵبژێرە یان وەک بێ خاوەن دیاری بکە", en: "Please select a customer or mark as unclaimed", ar: "الرجاء اختيار عميل أو تحديده كغير مطالب به", zh: "请选择客户或标记为无主" }));
       return;
     }
-    
+
     // Check for duplicates
     const hasDuplicates = packages.some(p => p.trackingLookup?.type === 'duplicate');
     if (hasDuplicates) {
-      toast.error("تراکینگ نەمبەری دووبارە هەیە، تکایە چاکی بکەرەوە");
+      toast.error(pickLang(language, { ku: "تراکینگ نەمبەری دووبارە هەیە، تکایە چاکی بکەرەوە", en: "There is a duplicate tracking number, please fix it", ar: "يوجد رقم تتبع مكرر، الرجاء تصحيحه", zh: "存在重复的运单号，请修正" }));
       return;
     }
 
@@ -442,13 +445,13 @@ export default function BulkRegister() {
     // friendlier UX than letting the request go and rolling back.
     const mismatchRow = packages.find(p => p.expandedLookup?.flags?.customerMismatch);
     if (mismatchRow) {
-      toast.error("تراکینگێک هەیە کە بۆ کڕیاری جیاوازە. تکایە لە سەرچاوە چاکی بکەرەوە.");
+      toast.error(pickLang(language, { ku: "تراکینگێک هەیە کە بۆ کڕیاری جیاوازە. تکایە لە سەرچاوە چاکی بکەرەوە.", en: "There is a tracking number belonging to a different customer. Please fix it at the source.", ar: "يوجد رقم تتبع يخص عميلاً مختلفاً. الرجاء تصحيحه من المصدر.", zh: "存在属于不同客户的运单号。请从源头修正。" }));
       return;
     }
 
     const validPackages = packages.filter(pkg => pkg.weightKg || pkg.trackingNumber);
     if (validPackages.length === 0) {
-      toast.error("تکایە لانیکەم یەک پاکەت زیاد بکە");
+      toast.error(pickLang(language, { ku: "تکایە لانیکەم یەک پاکەت زیاد بکە", en: "Please add at least one package", ar: "الرجاء إضافة طرد واحد على الأقل", zh: "请至少添加一个包裹" }));
       return;
     }
 
@@ -499,14 +502,14 @@ export default function BulkRegister() {
         setRegisteredCount(successCount);
       } catch (error: any) {
         errorCount++;
-        toast.error(`هەڵە لە تۆمارکردنی پاکەت: ${error.message}`);
+        toast.error(pickLang(language, { ku: `هەڵە لە تۆمارکردنی پاکەت: ${error.message}`, en: `Error registering package: ${error.message}`, ar: `خطأ في تسجيل الطرد: ${error.message}`, zh: `登记包裹出错：${error.message}` }));
       }
     }
-    
+
     setIsSubmitting(false);
-    
+
     if (successCount > 0) {
-      toast.success(`${successCount} پاکەت بە سەرکەوتوویی تۆمار کرا!`);
+      toast.success(pickLang(language, { ku: `${successCount} پاکەت بە سەرکەوتوویی تۆمار کرا!`, en: `${successCount} packages registered successfully!`, ar: `تم تسجيل ${successCount} طرد بنجاح!`, zh: `${successCount} 个包裹登记成功！` }));
       // Reset packages but keep customer and settings
       setPackages([createEmptyRow(), createEmptyRow(), createEmptyRow()]);
       setRegisteredCount(0);
@@ -551,7 +554,7 @@ export default function BulkRegister() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>ڕێکخستنی CBM Divisor (ئێستا: {cbmDivisor})</p>
+                <p>{pickLang(language, { ku: "ڕێکخستنی CBM Divisor", en: "Configure CBM Divisor", ar: "إعداد قاسم CBM", zh: "设置 CBM 除数" })} ({pickLang(language, { ku: "ئێستا", en: "current", ar: "الحالي", zh: "当前" })}: {cbmDivisor})</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -599,7 +602,7 @@ export default function BulkRegister() {
                     </div>
                   )}
                 </div>
-                
+
                 <Button
                   type="button"
                   variant={isUnclaimed ? "default" : "outline"}
@@ -616,7 +619,7 @@ export default function BulkRegister() {
                   <AlertTriangle className="h-3 w-3 me-1" />
                   {isUnclaimed ? t('packages.unclaimed') : t('packages.unclaimed')}
                 </Button>
-                
+
                 {customerId && !isUnclaimed && (
                   <div className="mt-2 flex items-center gap-1.5 p-1.5 bg-green-50 dark:bg-green-950 rounded-md">
                     <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
@@ -637,7 +640,7 @@ export default function BulkRegister() {
               <CardHeader className="pb-2 pt-3 px-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Warehouse className="h-3.5 w-3.5 text-primary" />
-                  کۆگا
+                  {pickLang(language, { ku: "کۆگا", en: "Warehouse", ar: "المستودع", zh: "仓库" })}
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-3 pb-3">
@@ -647,12 +650,12 @@ export default function BulkRegister() {
                   disabled={!warehouses?.length}
                 >
                   <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder={warehouses?.length ? "کۆگا هەڵبژێرە..." : "هیچ کۆگایەک نییە"} />
+                    <SelectValue placeholder={warehouses?.length ? pickLang(language, { ku: "کۆگا هەڵبژێرە...", en: "Select warehouse...", ar: "اختر المستودع...", zh: "选择仓库..." }) : pickLang(language, { ku: "هیچ کۆگایەک نییە", en: "No warehouse available", ar: "لا يوجد مستودع", zh: "没有可用仓库" })} />
                   </SelectTrigger>
                   <SelectContent>
                     {warehouses?.map((w) => (
                       <SelectItem key={w.id} value={String(w.id)}>
-                        <span className="font-medium">{w.nameEn ?? w.nameKu ?? `کۆگا ${w.id}`}</span>
+                        <span className="font-medium">{w.nameEn ?? w.nameKu ?? `${pickLang(language, { ku: "کۆگا", en: "Warehouse", ar: "مستودع", zh: "仓库" })} ${w.id}`}</span>
                         {w.codePrefix && <span className="text-muted-foreground me-2">({w.codePrefix})</span>}
                       </SelectItem>
                     ))}
@@ -662,13 +665,13 @@ export default function BulkRegister() {
                   <div className="mt-2 flex items-center gap-1.5 p-1.5 bg-slate-50 dark:bg-slate-900 rounded-md">
                     <CheckCircle2 className="h-3.5 w-3.5 text-slate-600 shrink-0" />
                     <span className="text-[11px] text-slate-700 dark:text-slate-300 font-medium truncate">
-                      {selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? `کۆگا ${selectedWarehouse.id}`}
+                      {selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? `${pickLang(language, { ku: "کۆگا", en: "Warehouse", ar: "مستودع", zh: "仓库" })} ${selectedWarehouse.id}`}
                     </span>
                   </div>
                 )}
                 {!warehouses?.length && (
                   <p className="mt-2 text-[10px] text-amber-600">
-                    تکایە لە ڕێکخستنەکان کۆگا زیاد بکە.
+                    {pickLang(language, { ku: "تکایە لە ڕێکخستنەکان کۆگا زیاد بکە.", en: "Please add a warehouse in settings.", ar: "الرجاء إضافة مستودع في الإعدادات.", zh: "请在设置中添加仓库。" })}
                   </p>
                 )}
               </CardContent>
@@ -708,7 +711,7 @@ export default function BulkRegister() {
                     </button>
                   ))}
                 </div>
-                
+
                 <div>
                   <Label className="text-[10px] text-muted-foreground">{t('packages.batch')}</Label>
                   <Select value={batchId} onValueChange={setBatchId}>
@@ -725,7 +728,7 @@ export default function BulkRegister() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 {/* Optional Fields */}
                 <button
                   type="button"
@@ -735,7 +738,7 @@ export default function BulkRegister() {
                   {showOptional ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                   {showOptional ? t('packages.hideOptions') : t('packages.showOptions')}
                 </button>
-                
+
                 {showOptional && (
                   <div>
                     <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
@@ -811,15 +814,15 @@ export default function BulkRegister() {
                     </div>
                   </>
                 )}
-                
+
                 {/* CBM Formula Info */}
                 <div className="mt-2 p-1.5 bg-muted/50 rounded-md">
                   <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                     <Info className="h-3 w-3 shrink-0" />
-                    <span>کێشی ئەقدی = (L×W×H) ÷ {cbmDivisor}</span>
+                    <span>{pickLang(language, { ku: "کێشی ئەقدی", en: "Volumetric weight", ar: "الوزن الحجمي", zh: "体积重" })} = (L×W×H) ÷ {cbmDivisor}</span>
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-0.5">
-                    کێشی حسابکراو = max(ڕاستەقینە, ئەقدی)
+                    {pickLang(language, { ku: "کێشی حسابکراو = max(ڕاستەقینە, ئەقدی)", en: "Chargeable weight = max(actual, volumetric)", ar: "الوزن المحتسب = max(الفعلي، الحجمي)", zh: "计费重 = max(实重, 体积重)" })}
                   </div>
                 </div>
               </CardContent>
@@ -884,7 +887,7 @@ export default function BulkRegister() {
                           const chargeableKg = Math.max(actualKg, volumetricKg);
                           const isVolumetricHigher = volumetricKg > actualKg && volumetricKg > 0;
                           const isDuplicate = pkg.trackingLookup?.type === 'duplicate';
-                          
+
                           const exp = pkg.expandedLookup;
                           const isShared = exp?.case === 'shared';
                           const isMulti = exp?.case === 'multi';
@@ -935,14 +938,14 @@ export default function BulkRegister() {
                                     <span className="text-primary font-medium">({pkg.trackingLookup.customerCode})</span>
                                     {(pkg.trackingLookup.type === 'full_package' || pkg.trackingLookup.type === 'commission') && (
                                       <span className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-1.5 py-0.5 rounded-full font-semibold">
-                                        🔒 لۆککراو لەسەر کریاری ئۆردەر
+                                        🔒 {pickLang(language, { ku: "لۆککراو لەسەر کریاری ئۆردەر", en: "Locked to the order's customer", ar: "مقفل على عميل الطلب", zh: "锁定为订单客户" })}
                                       </span>
                                     )}
                                   </div>
                                 )}
                                 {isDuplicate && (
                                   <div className="mt-0.5 text-[10px] text-red-600 font-medium">
-                                    ⚠️ ئەم تراکینگە پێشتر تۆمار کراوە ({pkg.trackingLookup?.existingPackageCode})
+                                    ⚠️ {pickLang(language, { ku: "ئەم تراکینگە پێشتر تۆمار کراوە", en: "This tracking number is already registered", ar: "رقم التتبع هذا مسجل مسبقاً", zh: "此运单号已登记" })} ({pkg.trackingLookup?.existingPackageCode})
                                   </div>
                                 )}
                               </td>
@@ -952,13 +955,13 @@ export default function BulkRegister() {
                                     type="button"
                                     onClick={() => setPackages(prev => prev.map(p => p.id === pkg.id ? { ...p, expanded: !p.expanded } : p))}
                                     className="inline-flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
-                                    title={pkg.expanded ? "بشاردنەوە" : "وردەکارییەکان نیشان بدە"}
+                                    title={pkg.expanded ? pickLang(language, { ku: "بشاردنەوە", en: "Hide", ar: "إخفاء", zh: "隐藏" }) : pickLang(language, { ku: "وردەکارییەکان نیشان بدە", en: "Show details", ar: "عرض التفاصيل", zh: "显示详情" })}
                                   >
-                                    <PackageTypeBadge lookup={pkg.trackingLookup} expanded={pkg.expandedLookup} />
+                                    <PackageTypeBadge lookup={pkg.trackingLookup} expanded={pkg.expandedLookup} language={language} />
                                     {pkg.expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                                   </button>
                                 ) : (
-                                  <PackageTypeBadge lookup={pkg.trackingLookup} expanded={pkg.expandedLookup} />
+                                  <PackageTypeBadge lookup={pkg.trackingLookup} expanded={pkg.expandedLookup} language={language} />
                                 )}
                               </td>
                               <td className="px-2 py-1.5">
@@ -1013,11 +1016,11 @@ export default function BulkRegister() {
                                       </TooltipTrigger>
                                       <TooltipContent side="top" className="text-xs">
                                         <div className="space-y-1">
-                                          <div>کێشی ڕاستەقینە: {actualKg.toFixed(3)} kg</div>
-                                          <div>کێشی ئەقدی: {volumetricKg.toFixed(3)} kg</div>
+                                          <div>{pickLang(language, { ku: "کێشی ڕاستەقینە", en: "Actual weight", ar: "الوزن الفعلي", zh: "实重" })}: {actualKg.toFixed(3)} kg</div>
+                                          <div>{pickLang(language, { ku: "کێشی ئەقدی", en: "Volumetric weight", ar: "الوزن الحجمي", zh: "体积重" })}: {volumetricKg.toFixed(3)} kg</div>
                                           <div className="font-bold border-t pt-1">
-                                            حسابکراو: {chargeableKg.toFixed(3)} kg
-                                            {isVolumetricHigher ? " (ئەقدی)" : " (ڕاستەقینە)"}
+                                            {pickLang(language, { ku: "حسابکراو", en: "Chargeable", ar: "المحتسب", zh: "计费" })}: {chargeableKg.toFixed(3)} kg
+                                            {isVolumetricHigher ? ` (${pickLang(language, { ku: "ئەقدی", en: "volumetric", ar: "الحجمي", zh: "体积" })})` : ` (${pickLang(language, { ku: "ڕاستەقینە", en: "actual", ar: "الفعلي", zh: "实重" })})`}
                                           </div>
                                         </div>
                                       </TooltipContent>
@@ -1053,8 +1056,8 @@ export default function BulkRegister() {
                                     <div className="mb-2 p-2 rounded border border-rose-300 bg-rose-100/80 text-rose-900 dark:bg-rose-900/40 dark:text-rose-100 flex items-start gap-2">
                                       <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                                       <div>
-                                        <div className="font-bold">تراکینگی هاوبەش بۆ کڕیاری جیاواز</div>
-                                        <div className="text-[11px] opacity-90">ئەم تراکینگە بۆ ئۆردەری چەند کڕیاری جیایە. یاسای کاری ڕێگری دەکات لە تۆمارکردنی پاکەتێکی هاوبەش بۆ کڕیاری جیاواز. تکایە لە سەرچاوە چاکی بکەرەوە.</div>
+                                        <div className="font-bold">{pickLang(language, { ku: "تراکینگی هاوبەش بۆ کڕیاری جیاواز", en: "Shared tracking for different customers", ar: "تتبع مشترك لعملاء مختلفين", zh: "不同客户共享的运单号" })}</div>
+                                        <div className="text-[11px] opacity-90">{pickLang(language, { ku: "ئەم تراکینگە بۆ ئۆردەری چەند کڕیاری جیایە. یاسای کاری ڕێگری دەکات لە تۆمارکردنی پاکەتێکی هاوبەش بۆ کڕیاری جیاواز. تکایە لە سەرچاوە چاکی بکەرەوە.", en: "This tracking number belongs to orders of several different customers. Business rules prevent registering a shared package for different customers. Please fix it at the source.", ar: "رقم التتبع هذا يخص طلبات عملاء مختلفين. تمنع قواعد العمل تسجيل طرد مشترك لعملاء مختلفين. الرجاء تصحيحه من المصدر.", zh: "此运单号属于多个不同客户的订单。业务规则禁止为不同客户登记共享包裹。请从源头修正。" })}</div>
                                       </div>
                                     </div>
                                   )}
@@ -1062,15 +1065,15 @@ export default function BulkRegister() {
                                     <div className="mb-2 p-2 rounded border border-amber-300 bg-amber-100/80 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100 flex items-start gap-2">
                                       <Info className="h-4 w-4 shrink-0 mt-0.5" />
                                       <div>
-                                        <div className="font-bold">کۆمەڵەی جیاواز</div>
-                                        <div className="text-[11px] opacity-90">ئۆردەرە گرێدراوەکان لە کۆمەڵەی جیاوازدان. ئەگەر ئەم پاکەتە دەخەیتە کۆمەڵە، ئۆردەرەکان لە کۆمەڵەی نوێ یەکدەگرتنەوە.</div>
+                                        <div className="font-bold">{pickLang(language, { ku: "کۆمەڵەی جیاواز", en: "Different batch", ar: "دفعة مختلفة", zh: "不同批次" })}</div>
+                                        <div className="text-[11px] opacity-90">{pickLang(language, { ku: "ئۆردەرە گرێدراوەکان لە کۆمەڵەی جیاوازدان. ئەگەر ئەم پاکەتە دەخەیتە کۆمەڵە، ئۆردەرەکان لە کۆمەڵەی نوێ یەکدەگرتنەوە.", en: "The linked orders are in different batches. If you add this package to a batch, the orders will be merged into the new batch.", ar: "الطلبات المرتبطة في دفعات مختلفة. إذا أضفت هذا الطرد إلى دفعة، سيتم دمج الطلبات في الدفعة الجديدة.", zh: "关联订单分属不同批次。如果将此包裹加入某批次，订单将合并到新批次。" })}</div>
                                       </div>
                                     </div>
                                   )}
                                   {isShared && (
                                     <>
                                       <div className="font-semibold text-orange-900 dark:text-orange-200 mb-1">
-                                        🔗 ئەم تراکینگە بۆ {exp.orders.length} ئۆردەرە:
+                                        🔗 {pickLang(language, { ku: `ئەم تراکینگە بۆ ${exp.orders.length} ئۆردەرە:`, en: `This tracking number belongs to ${exp.orders.length} orders:`, ar: `رقم التتبع هذا يخص ${exp.orders.length} طلبات:`, zh: `此运单号属于 ${exp.orders.length} 个订单：` })}
                                       </div>
                                       <div className="space-y-1 mb-2">
                                         {exp.orders.map((od) => {
@@ -1083,10 +1086,10 @@ export default function BulkRegister() {
                                               <span className="text-[10px] text-muted-foreground">•</span>
                                               <span className="text-[11px] text-primary font-medium">{od.customer?.customerCode ?? '?'}</span>
                                               <span className="text-[10px] text-muted-foreground ms-auto">
-                                                {od.batch ? <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">کۆمەڵە: {od.batch.batchCode}</span> : <span>بێ کۆمەڵە</span>}
+                                                {od.batch ? <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">{pickLang(language, { ku: "کۆمەڵە", en: "Batch", ar: "الدفعة", zh: "批次" })}: {od.batch.batchCode}</span> : <span>{pickLang(language, { ku: "بێ کۆمەڵە", en: "No batch", ar: "بدون دفعة", zh: "无批次" })}</span>}
                                               </span>
                                               {alreadyRegistered && (
-                                                <Badge variant="secondary" className="text-[9px] px-1 py-0">پاکەتی هاوبەش هەیە</Badge>
+                                                <Badge variant="secondary" className="text-[9px] px-1 py-0">{pickLang(language, { ku: "پاکەتی هاوبەش هەیە", en: "Shared package exists", ar: "يوجد طرد مشترك", zh: "已有共享包裹" })}</Badge>
                                               )}
                                             </div>
                                           );
@@ -1101,8 +1104,8 @@ export default function BulkRegister() {
                                         />
                                         <span className="text-[11px]">
                                           {pkg.linkAllSharingOrders !== false
-                                            ? `هەموو ${exp.orders.length} ئۆردەرەکە بە ئەم پاکەتە گرێ بدە (پێشنیار)`
-                                            : `تەنها ئۆردەری سەرەکی (${exp.orders[0]?.order.orderCode})`}
+                                            ? pickLang(language, { ku: `هەموو ${exp.orders.length} ئۆردەرەکە بە ئەم پاکەتە گرێ بدە (پێشنیار)`, en: `Link all ${exp.orders.length} orders to this package (recommended)`, ar: `اربط جميع الطلبات الـ ${exp.orders.length} بهذا الطرد (موصى به)`, zh: `将全部 ${exp.orders.length} 个订单关联到此包裹（推荐）` })
+                                            : pickLang(language, { ku: `تەنها ئۆردەری سەرەکی (${exp.orders[0]?.order.orderCode})`, en: `Only the primary order (${exp.orders[0]?.order.orderCode})`, ar: `الطلب الرئيسي فقط (${exp.orders[0]?.order.orderCode})`, zh: `仅主订单 (${exp.orders[0]?.order.orderCode})` })}
                                         </span>
                                       </label>
                                     </>
@@ -1110,7 +1113,7 @@ export default function BulkRegister() {
                                   {isMulti && exp.orders[0] && (
                                     <>
                                       <div className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
-                                        📦 ئۆردەری {exp.orders[0].order.orderCode} بە {exp.orders[0].trackings.length} کارتۆن:
+                                        📦 {pickLang(language, { ku: `ئۆردەری ${exp.orders[0].order.orderCode} بە ${exp.orders[0].trackings.length} کارتۆن:`, en: `Order ${exp.orders[0].order.orderCode} with ${exp.orders[0].trackings.length} cartons:`, ar: `الطلب ${exp.orders[0].order.orderCode} مع ${exp.orders[0].trackings.length} كرتون:`, zh: `订单 ${exp.orders[0].order.orderCode} 含 ${exp.orders[0].trackings.length} 个纸箱：` })}
                                       </div>
                                       <div className="space-y-1">
                                         {exp.orders[0].trackings.map((tr) => {
@@ -1118,15 +1121,15 @@ export default function BulkRegister() {
                                           const isThis = tr.trackingNumber === pkg.trackingNumber;
                                           return (
                                             <div key={tr.id} className="flex items-center gap-2 p-1.5 rounded bg-white/60 dark:bg-black/20 border border-blue-200/60 dark:border-blue-800/40">
-                                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">کارتۆن {tr.cartonIndex}</Badge>
+                                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">{pickLang(language, { ku: "کارتۆن", en: "Carton", ar: "كرتون", zh: "纸箱" })} {tr.cartonIndex}</Badge>
                                               <span className="text-[11px] font-mono">{tr.trackingNumber}</span>
                                               <span className="ms-auto">
                                                 {isThis ? (
-                                                  <Badge className="text-[9px] bg-emerald-100 text-emerald-800 border-emerald-300">ئێستا تۆمار دەکرێ</Badge>
+                                                  <Badge className="text-[9px] bg-emerald-100 text-emerald-800 border-emerald-300">{pickLang(language, { ku: "ئێستا تۆمار دەکرێ", en: "Registering now", ar: "يتم التسجيل الآن", zh: "正在登记" })}</Badge>
                                                 ) : reg ? (
-                                                  <Badge variant="secondary" className="text-[9px]">✅ تۆمار کراوە ({reg.packageCode})</Badge>
+                                                  <Badge variant="secondary" className="text-[9px]">✅ {pickLang(language, { ku: "تۆمار کراوە", en: "Registered", ar: "تم التسجيل", zh: "已登记" })} ({reg.packageCode})</Badge>
                                                 ) : (
-                                                  <Badge variant="outline" className="text-[9px] text-muted-foreground">⏳ چاوەڕێ</Badge>
+                                                  <Badge variant="outline" className="text-[9px] text-muted-foreground">⏳ {pickLang(language, { ku: "چاوەڕێ", en: "Pending", ar: "قيد الانتظار", zh: "待处理" })}</Badge>
                                                 )}
                                               </span>
                                             </div>
@@ -1145,7 +1148,7 @@ export default function BulkRegister() {
                     </table>
                   </div>
                 </div>
-                
+
                 {/* Pre-submit advisory banner: surface counts of shared / multi
                     rows and any blocking issues so staff scans them before the
                     button click instead of clicking and reading toasts. */}
@@ -1159,19 +1162,19 @@ export default function BulkRegister() {
                       {mismatchCount > 0 && (
                         <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-semibold">
                           <AlertTriangle className="h-3.5 w-3.5" />
-                          {mismatchCount} ڕیز کێشەی کڕیاری جیاوازی هەیە — submit بەردەست نییە
+                          {pickLang(language, { ku: `${mismatchCount} ڕیز کێشەی کڕیاری جیاوازی هەیە — submit بەردەست نییە`, en: `${mismatchCount} rows have a different-customer issue — submit unavailable`, ar: `${mismatchCount} صفوف بها مشكلة عميل مختلف — الإرسال غير متاح`, zh: `${mismatchCount} 行存在客户不一致问题 — 无法提交` })}
                         </div>
                       )}
                       {sharedCount > 0 && (
                         <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
                           <span>🔗</span>
-                          <span>{sharedCount} ڕیز تراکی هاوبەشە — لە پانێڵی هەر ڕیزدا checkbox-ەکە پشکنە پێش submit</span>
+                          <span>{pickLang(language, { ku: `${sharedCount} ڕیز تراکی هاوبەشە — لە پانێڵی هەر ڕیزدا checkbox-ەکە پشکنە پێش submit`, en: `${sharedCount} rows have a shared tracking — check the checkbox in each row's panel before submit`, ar: `${sharedCount} صفوف بها تتبع مشترك — راجع مربع الاختيار في لوحة كل صف قبل الإرسال`, zh: `${sharedCount} 行为共享运单 — 提交前请检查每行面板中的复选框` })}</span>
                         </div>
                       )}
                       {multiCount > 0 && (
                         <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                           <span>📦</span>
-                          <span>{multiCount} ڕیز کارتۆنێکە لە ئۆردەرێکی چەند-کارتۆنە</span>
+                          <span>{pickLang(language, { ku: `${multiCount} ڕیز کارتۆنێکە لە ئۆردەرێکی چەند-کارتۆنە`, en: `${multiCount} rows are a carton of a multi-carton order`, ar: `${multiCount} صفوف هي كرتون من طلب متعدد الكراتين`, zh: `${multiCount} 行是多纸箱订单中的一个纸箱` })}</span>
                         </div>
                       )}
                     </div>
@@ -1226,10 +1229,10 @@ export default function BulkRegister() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings2 className="h-5 w-5 text-primary" />
-              ڕێکخستنی CBM Divisor
+              {pickLang(language, { ku: "ڕێکخستنی CBM Divisor", en: "Configure CBM Divisor", ar: "إعداد قاسم CBM", zh: "设置 CBM 除数" })}
             </DialogTitle>
             <DialogDescription>
-              ئەم ژمارەیە بۆ حسابکردنی کێشی ئەقدی بەکاردێت. فۆرمولا: (L×W×H) ÷ Divisor
+              {pickLang(language, { ku: "ئەم ژمارەیە بۆ حسابکردنی کێشی ئەقدی بەکاردێت. فۆرمولا: (L×W×H) ÷ Divisor", en: "This number is used to calculate volumetric weight. Formula: (L×W×H) ÷ Divisor", ar: "يُستخدم هذا الرقم لحساب الوزن الحجمي. الصيغة: (L×W×H) ÷ Divisor", zh: "此数字用于计算体积重。公式：(L×W×H) ÷ Divisor" })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -1243,13 +1246,13 @@ export default function BulkRegister() {
                 className="mt-1"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                ژمارەی ئێستا: <span className="font-bold">{cbmDivisor}</span> | بنەڕەت: 6000
+                {pickLang(language, { ku: "ژمارەی ئێستا", en: "Current value", ar: "القيمة الحالية", zh: "当前值" })}: <span className="font-bold">{cbmDivisor}</span> | {pickLang(language, { ku: "بنەڕەت", en: "default", ar: "الافتراضي", zh: "默认" })}: 6000
               </p>
             </div>
             <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-1">
-              <p className="font-medium">نموونە:</p>
-              <p>پاکەتێک بە قەبارەی 50×40×30 سم</p>
-              <p>کێشی ئەقدی = (50×40×30) ÷ {newDivisor || cbmDivisor} = <span className="font-bold">{((50*40*30) / (parseInt(newDivisor) || cbmDivisor)).toFixed(2)} kg</span></p>
+              <p className="font-medium">{pickLang(language, { ku: "نموونە", en: "Example", ar: "مثال", zh: "示例" })}:</p>
+              <p>{pickLang(language, { ku: "پاکەتێک بە قەبارەی 50×40×30 سم", en: "A package sized 50×40×30 cm", ar: "طرد بأبعاد 50×40×30 سم", zh: "一个 50×40×30 厘米的包裹" })}</p>
+              <p>{pickLang(language, { ku: "کێشی ئەقدی", en: "Volumetric weight", ar: "الوزن الحجمي", zh: "体积重" })} = (50×40×30) ÷ {newDivisor || cbmDivisor} = <span className="font-bold">{((50*40*30) / (parseInt(newDivisor) || cbmDivisor)).toFixed(2)} kg</span></p>
             </div>
           </div>
           <DialogFooter>

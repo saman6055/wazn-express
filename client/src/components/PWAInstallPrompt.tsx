@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { X, Download, Smartphone } from 'lucide-react';
 import { useOffline } from '@/contexts/OfflineContext';
 import { useTranslation } from '@/contexts/LanguageContext';
+import { pickLang } from '@/lib/lang';
 import { useCompanyInfo } from '@/hooks/useCompanyInfo';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -12,6 +13,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function PWAInstallPrompt() {
   const company = useCompanyInfo();
+  const { language } = useTranslation();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -91,23 +93,28 @@ export function PWAInstallPrompt() {
 
           <div className="flex-1 min-w-0">
             <h3 className="text-white font-semibold text-lg mb-1">
-              دابەزاندنی ئەپ
+              {pickLang(language, { ku: "دابەزاندنی ئەپ", en: "Install App", ar: "تثبيت التطبيق", zh: "安装应用" })}
             </h3>
             <p className="text-slate-400 text-sm mb-3">
-              {company.name} وەک ئەپ دابەزێنە بۆ ئەزموونی باشتر
+              {pickLang(language, {
+                ku: `${company.name} وەک ئەپ دابەزێنە بۆ ئەزموونی باشتر`,
+                en: `Install ${company.name} as an app for a better experience`,
+                ar: `ثبّت ${company.name} كتطبيق للحصول على تجربة أفضل`,
+                zh: `将 ${company.name} 安装为应用以获得更佳体验`,
+              })}
             </p>
 
             {isIOS ? (
               <div className="text-slate-300 text-sm">
-                <p className="mb-2">بۆ دابەزاندن:</p>
+                <p className="mb-2">{pickLang(language, { ku: "بۆ دابەزاندن:", en: "To install:", ar: "للتثبيت:", zh: "安装步骤：" })}</p>
                 <ol className="list-decimal list-inside space-y-1 text-slate-400">
-                  <li>کلیک لەسەر <span className="inline-flex items-center px-1 py-0.5 bg-slate-700 rounded">
+                  <li>{pickLang(language, { ku: "کلیک لەسەر", en: "Tap", ar: "اضغط على", zh: "点击" })} <span className="inline-flex items-center px-1 py-0.5 bg-slate-700 rounded">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2L12 14M12 2L8 6M12 2L16 6M4 14L4 20L20 20L20 14" stroke="currentColor" strokeWidth="2" fill="none"/>
                     </svg>
-                  </span> بکە</li>
-                  <li>"Add to Home Screen" هەڵبژێرە</li>
-                  <li>"Add" کلیک بکە</li>
+                  </span> {pickLang(language, { ku: "بکە", en: "", ar: "", zh: "" })}</li>
+                  <li>{pickLang(language, { ku: '"Add to Home Screen" هەڵبژێرە', en: 'Select "Add to Home Screen"', ar: 'اختر "Add to Home Screen"', zh: '选择 "Add to Home Screen"' })}</li>
+                  <li>{pickLang(language, { ku: '"Add" کلیک بکە', en: 'Tap "Add"', ar: 'اضغط "Add"', zh: '点击 "Add"' })}</li>
                 </ol>
               </div>
             ) : (
@@ -116,7 +123,7 @@ export function PWAInstallPrompt() {
                 className="bg-orange-500 hover:bg-orange-600 text-white w-full"
               >
                 <Download className="h-4 w-4 ms-2" />
-                دابەزاندن
+                {pickLang(language, { ku: "دابەزاندن", en: "Install", ar: "تثبيت", zh: "安装" })}
               </Button>
             )}
           </div>

@@ -17,6 +17,8 @@ import { PERMISSION_GROUPS, SYSTEM_MODULES } from "../../../shared/permissions";
 import type { PermissionGroup, ModulePermissions } from "../../../shared/permissions";
 import DashboardLayout from "@/components/DashboardLayout";
 import { toast } from "sonner";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 // Map group icon strings to actual Lucide icons
 const GROUP_ICONS: Record<string, React.ElementType> = {
@@ -45,11 +47,11 @@ const ACTION_ICONS: Record<string, React.ElementType> = {
   delete: Trash2,
 };
 
-const ACTION_LABELS_KU: Record<string, string> = {
-  view: "بینین",
-  create: "دروستکردن",
-  edit: "دەستکاری",
-  delete: "سڕینەوە",
+const ACTION_LABELS: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
+  view: { ku: "بینین", en: "View", ar: "عرض", zh: "查看" },
+  create: { ku: "دروستکردن", en: "Create", ar: "إنشاء", zh: "创建" },
+  edit: { ku: "دەستکاری", en: "Edit", ar: "تعديل", zh: "编辑" },
+  delete: { ku: "سڕینەوە", en: "Delete", ar: "حذف", zh: "删除" },
 };
 
 interface PermState {
@@ -58,6 +60,7 @@ interface PermState {
 }
 
 export default function PermissionsManagement() {
+  const { language } = useTranslation();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -100,12 +103,12 @@ export default function PermissionsManagement() {
   // Mutation for bulk update
   const bulkUpdateMutation = trpc.permissions.bulkUpdate.useMutation({
     onSuccess: () => {
-      toast.success("مۆڵەتەکان بە سەرکەوتوویی نوێ کرانەوە");
+      toast.success(pickLang(language, { ku: "مۆڵەتەکان بە سەرکەوتوویی نوێ کرانەوە", en: "Permissions updated successfully", ar: "تم تحديث الصلاحيات بنجاح", zh: "权限更新成功" }));
       refetchPermissions();
       setHasChanges(false);
     },
     onError: (error) => {
-      toast.error(`هەڵە: ${error.message}`);
+      toast.error(`${pickLang(language, { ku: "هەڵە", en: "Error", ar: "خطأ", zh: "错误" })}: ${error.message}`);
     },
   });
 
@@ -313,10 +316,10 @@ export default function PermissionsManagement() {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case "super_admin": return "سوپەر ئەدمین";
-      case "admin": return "ئەدمین";
-      case "employee": return "کارمەند";
-      case "accountant": return "ژمێریار";
+      case "super_admin": return pickLang(language, { ku: "سوپەر ئەدمین", en: "Super Admin", ar: "مدير عام", zh: "超级管理员" });
+      case "admin": return pickLang(language, { ku: "ئەدمین", en: "Admin", ar: "مدير", zh: "管理员" });
+      case "employee": return pickLang(language, { ku: "کارمەند", en: "Employee", ar: "موظف", zh: "员工" });
+      case "accountant": return pickLang(language, { ku: "ژمێریار", en: "Accountant", ar: "محاسب", zh: "会计" });
       default: return role;
     }
   };
@@ -382,21 +385,21 @@ export default function PermissionsManagement() {
               <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-900/30">
                 <Shield className="h-7 w-7 text-blue-600" />
               </div>
-              بەڕێوەبردنی مۆڵەتەکان
+              {pickLang(language, { ku: "بەڕێوەبردنی مۆڵەتەکان", en: "Permissions Management", ar: "إدارة الصلاحيات", zh: "权限管理" })}
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              دیاریکردنی دەستەڵاتی هەر کارمەندێک بۆ هەر بەشێکی سیستەم
+              {pickLang(language, { ku: "دیاریکردنی دەستەڵاتی هەر کارمەندێک بۆ هەر بەشێکی سیستەم", en: "Define each staff member's authority for every section of the system", ar: "تحديد صلاحيات كل موظف لكل قسم من أقسام النظام", zh: "为每位员工设置系统各部分的权限" })}
             </p>
           </div>
           {selectedUserId && hasChanges && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => { refetchPermissions(); setHasChanges(false); }}>
                 <X className="h-4 w-4 me-1" />
-                پاشگەزبوونەوە
+                {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Discard", ar: "تراجع", zh: "撤销" })}
               </Button>
               <Button size="sm" onClick={savePermissions} disabled={bulkUpdateMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
                 {bulkUpdateMutation.isPending ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Save className="h-4 w-4 me-1" />}
-                پاشەکەوتکردن
+                {pickLang(language, { ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" })}
               </Button>
             </div>
           )}
@@ -407,8 +410,8 @@ export default function PermissionsManagement() {
           <div className="lg:col-span-3">
             <Card className="sticky top-4">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">کارمەندان</CardTitle>
-                <CardDescription className="text-xs">کارمەندێک هەڵبژێرە بۆ ڕێکخستنی مۆڵەتەکانی</CardDescription>
+                <CardTitle className="text-base">{pickLang(language, { ku: "کارمەندان", en: "Staff", ar: "الموظفون", zh: "员工" })}</CardTitle>
+                <CardDescription className="text-xs">{pickLang(language, { ku: "کارمەندێک هەڵبژێرە بۆ ڕێکخستنی مۆڵەتەکانی", en: "Select a staff member to configure their permissions", ar: "اختر موظفًا لضبط صلاحياته", zh: "选择一名员工以配置其权限" })}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <ScrollArea className="h-[calc(100vh-280px)]">
@@ -432,7 +435,7 @@ export default function PermissionsManagement() {
                               {(user.name || "?").charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="font-semibold text-sm truncate">{user.name || "بێ ناو"}</div>
+                              <div className="font-semibold text-sm truncate">{user.name || pickLang(language, { ku: "بێ ناو", en: "No name", ar: "بدون اسم", zh: "无姓名" })}</div>
                               <div className="text-xs text-muted-foreground truncate">{user.email}</div>
                               <Badge className={`mt-1 text-[10px] px-1.5 py-0 ${getRoleBadgeColor(user.role)}`}>
                                 {getRoleLabel(user.role)}
@@ -458,8 +461,8 @@ export default function PermissionsManagement() {
                     <Shield className="h-10 w-10 text-gray-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-300">تکایە کارمەندێک هەڵبژێرە</h3>
-                    <p className="text-sm text-muted-foreground mt-1">لە لیستی کارمەندان کارمەندێک هەڵبژێرە بۆ بەڕێوەبردنی مۆڵەتەکانی</p>
+                    <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-300">{pickLang(language, { ku: "تکایە کارمەندێک هەڵبژێرە", en: "Please select a staff member", ar: "الرجاء اختيار موظف", zh: "请选择一名员工" })}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{pickLang(language, { ku: "لە لیستی کارمەندان کارمەندێک هەڵبژێرە بۆ بەڕێوەبردنی مۆڵەتەکانی", en: "Select a staff member from the list to manage their permissions", ar: "اختر موظفًا من القائمة لإدارة صلاحياته", zh: "从列表中选择一名员工以管理其权限" })}</p>
                   </div>
                 </div>
               </Card>
@@ -490,17 +493,17 @@ export default function PermissionsManagement() {
                       <div className="flex items-center gap-3">
                         {/* Progress indicator */}
                         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800">
-                          <div className="text-xs text-muted-foreground">مۆڵەتی چالاک:</div>
+                          <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "مۆڵەتی چالاک:", en: "Active permissions:", ar: "الصلاحيات النشطة:", zh: "已启用权限：" })}</div>
                           <div className="text-sm font-bold text-blue-600">{enabled}</div>
                           <div className="text-xs text-muted-foreground">/ {total}</div>
                         </div>
                         <Button variant="outline" size="sm" onClick={enableAll} className="text-xs">
                           <CheckCircle2 className="h-3.5 w-3.5 me-1" />
-                          هەمووی چالاک
+                          {pickLang(language, { ku: "هەمووی چالاک", en: "Enable all", ar: "تفعيل الكل", zh: "全部启用" })}
                         </Button>
                         <Button variant="outline" size="sm" onClick={disableAll} className="text-xs">
                           <XCircle className="h-3.5 w-3.5 me-1" />
-                          هەمووی ناچالاک
+                          {pickLang(language, { ku: "هەمووی ناچالاک", en: "Disable all", ar: "تعطيل الكل", zh: "全部禁用" })}
                         </Button>
                       </div>
                     </div>
@@ -513,7 +516,7 @@ export default function PermissionsManagement() {
                     <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                       type="text"
-                      placeholder="گەڕان بۆ مۆڵەت..."
+                      placeholder={pickLang(language, { ku: "گەڕان بۆ مۆڵەت...", en: "Search for a permission...", ar: "البحث عن صلاحية...", zh: "搜索权限..." })}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full ps-10 pe-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -526,7 +529,7 @@ export default function PermissionsManagement() {
                     className={`shrink-0 text-xs gap-1.5 ${showAllGroups ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}`}
                   >
                     <ToggleLeft className="h-3.5 w-3.5" />
-                    {showAllGroups ? "تەنیا چالاکەکان" : "هەموو بەشەکان"}
+                    {showAllGroups ? pickLang(language, { ku: "تەنیا چالاکەکان", en: "Active only", ar: "النشطة فقط", zh: "仅显示已启用" }) : pickLang(language, { ku: "هەموو بەشەکان", en: "All sections", ar: "كل الأقسام", zh: "全部部分" })}
                   </Button>
                 </div>
 
@@ -539,12 +542,12 @@ export default function PermissionsManagement() {
                           <Shield className="h-7 w-7 text-gray-400" />
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-600 dark:text-gray-300">هیچ مۆڵەتێک دیاری نەکراوە</p>
-                          <p className="text-xs text-muted-foreground mt-1">بەستەرەکەی خوارەوە بکە بۆ زیادکردنی مۆڵەت</p>
+                          <p className="font-semibold text-gray-600 dark:text-gray-300">{pickLang(language, { ku: "هیچ مۆڵەتێک دیاری نەکراوە", en: "No permissions assigned", ar: "لم يتم تعيين أي صلاحية", zh: "未分配任何权限" })}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{pickLang(language, { ku: "بەستەرەکەی خوارەوە بکە بۆ زیادکردنی مۆڵەت", en: "Click the button below to add a permission", ar: "اضغط الزر أدناه لإضافة صلاحية", zh: "点击下方按钮添加权限" })}</p>
                         </div>
                         <Button size="sm" variant="outline" onClick={() => setShowAllGroups(true)} className="text-xs gap-1.5">
                           <ToggleLeft className="h-3.5 w-3.5" />
-                          نیشاندانی هەموو بەشەکان
+                          {pickLang(language, { ku: "نیشاندانی هەموو بەشەکان", en: "Show all sections", ar: "عرض كل الأقسام", zh: "显示全部部分" })}
                         </Button>
                       </div>
                     </Card>
@@ -573,14 +576,14 @@ export default function PermissionsManagement() {
                               <IconComp className={`h-4 w-4 ${colors.text}`} />
                             </div>
                             <div>
-                              <span className="font-semibold text-sm">{group.labelKu}</span>
-                              <span className="text-xs text-muted-foreground ms-2">({group.modules.length} بەش)</span>
+                              <span className="font-semibold text-sm">{pickLang(language, { ku: group.labelKu, en: group.label, ar: group.label, zh: group.label })}</span>
+                              <span className="text-xs text-muted-foreground ms-2">({group.modules.length} {pickLang(language, { ku: "بەش", en: "sections", ar: "أقسام", zh: "部分" })})</span>
                             </div>
                             {groupFull && (
-                              <Badge className={`text-[10px] ${colors.badge}`}>هەمووی چالاک</Badge>
+                              <Badge className={`text-[10px] ${colors.badge}`}>{pickLang(language, { ku: "هەمووی چالاک", en: "All enabled", ar: "الكل مفعّل", zh: "全部启用" })}</Badge>
                             )}
                             {groupPartial && (
-                              <Badge variant="outline" className="text-[10px]">هەندێک چالاک</Badge>
+                              <Badge variant="outline" className="text-[10px]">{pickLang(language, { ku: "هەندێک چالاک", en: "Partially enabled", ar: "مفعّل جزئيًا", zh: "部分启用" })}</Badge>
                             )}
                           </div>
                           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -607,7 +610,7 @@ export default function PermissionsManagement() {
                                     <div className="flex items-center justify-between mb-2">
                                       <div className="flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full ${modFull ? colors.dot : modPartial ? "bg-yellow-500" : "bg-gray-300 dark:bg-gray-600"}`} />
-                                        <span className="font-medium text-sm">{mod.labelKu}</span>
+                                        <span className="font-medium text-sm">{pickLang(language, { ku: mod.labelKu, en: mod.label, ar: mod.label, zh: mod.label })}</span>
                                       </div>
                                       <Switch
                                         checked={modFull}
@@ -635,7 +638,7 @@ export default function PermissionsManagement() {
                                             }`}
                                           >
                                             <ActionIcon className="h-3 w-3" />
-                                            {ACTION_LABELS_KU[action]}
+                                            {pickLang(language, ACTION_LABELS[action])}
                                             {isOn ? (
                                               <Check className="h-3 w-3 text-blue-600" />
                                             ) : (
@@ -649,7 +652,7 @@ export default function PermissionsManagement() {
                                     {/* Sub-Permissions */}
                                     {mod.subPermissions.length > 0 && (
                                       <div className="mt-3 ms-4 space-y-1.5">
-                                        <div className="text-[11px] text-muted-foreground font-medium mb-1">مۆڵەتە تایبەتەکان:</div>
+                                        <div className="text-[11px] text-muted-foreground font-medium mb-1">{pickLang(language, { ku: "مۆڵەتە تایبەتەکان:", en: "Special permissions:", ar: "صلاحيات خاصة:", zh: "特殊权限：" })}</div>
                                         {mod.subPermissions.map((sp) => {
                                           const isOn = getSubPerm(mod.module, sp.key);
                                           return (
@@ -658,8 +661,8 @@ export default function PermissionsManagement() {
                                               className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/30"
                                             >
                                               <div>
-                                                <span className="text-xs font-medium">{sp.labelKu}</span>
-                                                <span className="text-[10px] text-muted-foreground ms-2">{sp.descriptionKu}</span>
+                                                <span className="text-xs font-medium">{pickLang(language, { ku: sp.labelKu, en: sp.label, ar: sp.label, zh: sp.label })}</span>
+                                                <span className="text-[10px] text-muted-foreground ms-2">{pickLang(language, { ku: sp.descriptionKu, en: sp.description, ar: sp.description, zh: sp.description })}</span>
                                               </div>
                                               <Switch
                                                 checked={isOn}
@@ -687,14 +690,14 @@ export default function PermissionsManagement() {
                   <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
                     <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 shadow-2xl">
                       <AlertTriangle className="h-4 w-4 text-yellow-400 dark:text-yellow-600" />
-                      <span className="text-sm font-medium">گۆڕانکارییەکان پاشەکەوت نەکراوە</span>
+                      <span className="text-sm font-medium">{pickLang(language, { ku: "گۆڕانکارییەکان پاشەکەوت نەکراوە", en: "Unsaved changes", ar: "تغييرات غير محفوظة", zh: "未保存的更改" })}</span>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => { refetchPermissions(); setHasChanges(false); }}
                         className="bg-transparent border-gray-600 dark:border-gray-400 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 text-xs"
                       >
-                        پاشگەزبوونەوە
+                        {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Discard", ar: "تراجع", zh: "撤销" })}
                       </Button>
                       <Button
                         size="sm"
@@ -703,7 +706,7 @@ export default function PermissionsManagement() {
                         className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
                       >
                         {bulkUpdateMutation.isPending ? <Loader2 className="h-3.5 w-3.5 me-1 animate-spin" /> : <Save className="h-3.5 w-3.5 me-1" />}
-                        پاشەکەوتکردن
+                        {pickLang(language, { ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" })}
                       </Button>
                     </div>
                   </div>

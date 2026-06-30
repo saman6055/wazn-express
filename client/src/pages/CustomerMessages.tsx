@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -29,7 +30,7 @@ import {
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 
 export default function CustomerMessages() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,7 +69,7 @@ export default function CustomerMessages() {
       utils.supportChat.getAllChats.invalidate();
     },
     onError: () => {
-      toast.error("هەڵە لە ناردنی پەیام");
+      toast.error(pickLang(language, { ku: "هەڵە لە ناردنی پەیام", en: "Error sending message", ar: "خطأ في إرسال الرسالة", zh: "发送消息出错" }));
     },
   });
 
@@ -136,7 +137,7 @@ export default function CustomerMessages() {
         attachmentType = attachmentFile.type;
         messageType = attachmentFile.type.startsWith("image/") ? "image" : "file";
       } catch {
-        toast.error("هەڵە لە ئەپڵۆدکردنی فایل");
+        toast.error(pickLang(language, { ku: "هەڵە لە ئەپڵۆدکردنی فایل", en: "Error uploading file", ar: "خطأ في رفع الملف", zh: "上传文件出错" }));
         setIsUploading(false);
         return;
       }
@@ -158,7 +159,7 @@ export default function CustomerMessages() {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("فایل زۆر گەورەیە (max 10MB)");
+      toast.error(pickLang(language, { ku: "فایل زۆر گەورەیە (max 10MB)", en: "File is too large (max 10MB)", ar: "الملف كبير جدًا (الحد الأقصى 10 ميغابايت)", zh: "文件过大（最大 10MB）" }));
       return;
     }
 
@@ -210,7 +211,7 @@ export default function CustomerMessages() {
         attachmentType: file.type,
       });
     } catch {
-      toast.error("هەڵە لە ناردنی دەنگ");
+      toast.error(pickLang(language, { ku: "هەڵە لە ناردنی دەنگ", en: "Error sending voice message", ar: "خطأ في إرسال الرسالة الصوتية", zh: "发送语音出错" }));
     }
     setIsUploading(false);
   };
@@ -224,7 +225,7 @@ export default function CustomerMessages() {
     if (days === 0) {
       return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     } else if (days === 1) {
-      return "دوێنێ";
+      return pickLang(language, { ku: "دوێنێ", en: "Yesterday", ar: "أمس", zh: "昨天" });
     } else if (days < 7) {
       return d.toLocaleDateString("ku-IQ", { weekday: "short" });
     }
@@ -312,12 +313,12 @@ export default function CustomerMessages() {
               <MessageCircle className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">پەیامەکانی کڕیارەکان</h1>
-              <p className="text-blue-100">وەڵامدانەوە بە کڕیارەکان</p>
+              <h1 className="text-2xl font-bold">{pickLang(language, { ku: "پەیامەکانی کڕیارەکان", en: "Customer Messages", ar: "رسائل العملاء", zh: "客户消息" })}</h1>
+              <p className="text-blue-100">{pickLang(language, { ku: "وەڵامدانەوە بە کڕیارەکان", en: "Reply to customers", ar: "الرد على العملاء", zh: "回复客户" })}</p>
             </div>
             {chats && (
               <Badge className="ms-auto bg-white/20 text-white border-0 text-base px-3 py-1">
-                {chats.filter((c: any) => c.unreadByStaff > 0).length} نەخوێندراوە
+                {chats.filter((c: any) => c.unreadByStaff > 0).length} {pickLang(language, { ku: "نەخوێندراوە", en: "unread", ar: "غير مقروءة", zh: "未读" })}
               </Badge>
             )}
           </div>
@@ -337,7 +338,7 @@ export default function CustomerMessages() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder="گەڕان..."
+                  placeholder={pickLang(language, { ku: "گەڕان...", en: "Search...", ar: "بحث...", zh: "搜索..." })}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -362,7 +363,7 @@ export default function CustomerMessages() {
               ) : !filteredChats?.length ? (
                 <div className="p-8 text-center text-gray-500">
                   <Inbox className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>هیچ گفتوگۆیەک نییە</p>
+                  <p>{pickLang(language, { ku: "هیچ گفتوگۆیەک نییە", en: "No conversations", ar: "لا توجد محادثات", zh: "暂无会话" })}</p>
                 </div>
               ) : (
                 filteredChats.map((chat: any) => (
@@ -390,14 +391,14 @@ export default function CustomerMessages() {
                           {chat.lastMessageAt ? formatTime(chat.lastMessageAt) : ""}
                         </span>
                         <span className="font-semibold text-gray-900 dark:text-white truncate">
-                          {chat.customerName || "نەناسراو"}
+                          {chat.customerName || pickLang(language, { ku: "نەناسراو", en: "Unknown", ar: "غير معروف", zh: "未知" })}
                         </span>
                       </div>
                       <Badge variant="outline" className="text-xs px-1.5 py-0 mt-0.5">
                         {chat.customerCode || "-"}
                       </Badge>
                       <p className="text-sm text-gray-500 truncate mt-1">
-                        {chat.totalMessages || 0} پەیام
+                        {chat.totalMessages || 0} {pickLang(language, { ku: "پەیام", en: "messages", ar: "رسالة", zh: "条消息" })}
                       </p>
                     </div>
                   </button>
@@ -434,7 +435,7 @@ export default function CustomerMessages() {
                       selectedChat.status === "closed" && "border-gray-300 text-gray-700 bg-gray-50"
                     )}
                   >
-                    {selectedChat.status === "open" ? "کراوە" : selectedChat.status === "resolved" ? "چارەسەرکرا" : selectedChat.status}
+                    {selectedChat.status === "open" ? pickLang(language, { ku: "کراوە", en: "Open", ar: "مفتوحة", zh: "进行中" }) : selectedChat.status === "resolved" ? pickLang(language, { ku: "چارەسەرکرا", en: "Resolved", ar: "تم الحل", zh: "已解决" }) : selectedChat.status}
                   </Badge>
                 </div>
 
@@ -448,7 +449,7 @@ export default function CustomerMessages() {
                     <div className="flex items-center justify-center h-full text-gray-500">
                       <div className="text-center">
                         <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                        <p>هیچ پەیامێک نییە</p>
+                        <p>{pickLang(language, { ku: "هیچ پەیامێک نییە", en: "No messages", ar: "لا توجد رسائل", zh: "暂无消息" })}</p>
                       </div>
                     </div>
                   ) : (
@@ -513,14 +514,14 @@ export default function CustomerMessages() {
                       <button
                         onClick={() => imageInputRef.current?.click()}
                         className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 hover:text-blue-600"
-                        title="وێنە"
+                        title={pickLang(language, { ku: "وێنە", en: "Image", ar: "صورة", zh: "图片" })}
                       >
                         <ImageIcon className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 hover:text-blue-600"
-                        title="فایل"
+                        title={pickLang(language, { ku: "فایل", en: "File", ar: "ملف", zh: "文件" })}
                       >
                         <Paperclip className="w-5 h-5" />
                       </button>
@@ -538,7 +539,7 @@ export default function CustomerMessages() {
                         <div className="flex-1 flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
                           <span className="text-sm font-mono font-medium">{formattedDuration}</span>
-                          <span className="text-xs text-gray-500">تۆمارکردن...</span>
+                          <span className="text-xs text-gray-500">{pickLang(language, { ku: "تۆمارکردن...", en: "Recording...", ar: "جارٍ التسجيل...", zh: "录音中..." })}</span>
                         </div>
                         <Button
                           onClick={handleVoiceSend}
@@ -552,7 +553,7 @@ export default function CustomerMessages() {
                       /* Normal input */
                       <>
                         <Input
-                          placeholder="پەیامەکەت بنووسە..."
+                          placeholder={pickLang(language, { ku: "پەیامەکەت بنووسە...", en: "Type your message...", ar: "اكتب رسالتك...", zh: "输入消息..." })}
                           value={newMessage}
                           onChange={(e) => setNewMessage(e.target.value)}
                           onKeyDown={(e) => {
@@ -580,7 +581,7 @@ export default function CustomerMessages() {
                           <button
                             onClick={async () => {
                               const ok = await startRecording();
-                              if (!ok) toast.error("ڕێگەپێدانی مایکرۆفۆن نییە");
+                              if (!ok) toast.error(pickLang(language, { ku: "ڕێگەپێدانی مایکرۆفۆن نییە", en: "No microphone permission", ar: "لا يوجد إذن للميكروفون", zh: "无麦克风权限" }));
                             }}
                             className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 hover:text-blue-600"
                           >
@@ -612,8 +613,8 @@ export default function CustomerMessages() {
               <div className="flex-1 flex items-center justify-center text-gray-500">
                 <div className="text-center">
                   <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                  <h3 className="text-lg font-semibold mb-2">گفتوگۆیەک هەڵبژێرە</h3>
-                  <p>کڕیارێک لە لیستەکە هەڵبژێرە بۆ بینینی پەیامەکان</p>
+                  <h3 className="text-lg font-semibold mb-2">{pickLang(language, { ku: "گفتوگۆیەک هەڵبژێرە", en: "Select a conversation", ar: "اختر محادثة", zh: "选择一个会话" })}</h3>
+                  <p>{pickLang(language, { ku: "کڕیارێک لە لیستەکە هەڵبژێرە بۆ بینینی پەیامەکان", en: "Select a customer from the list to view messages", ar: "اختر عميلاً من القائمة لعرض الرسائل", zh: "从列表中选择客户以查看消息" })}</p>
                 </div>
               </div>
             )}
