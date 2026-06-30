@@ -602,78 +602,8 @@ function DashboardLayoutContent({
           })}
         </div>
 
-        {/* Sidebar Footer */}
-        <div className="flex-shrink-0 p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-          {/* Language Selector */}
-          <div className="mb-3">
-            <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
-              <SelectTrigger className="h-9 text-xs bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                <Languages className="h-3.5 w-3.5 me-2 text-gray-500" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {languages.map((lang) => (
-                  <SelectItem key={lang.value} value={lang.value}>
-                    <span className="flex items-center gap-2">
-                      <span>{lang.flag}</span>
-                      <span>{lang.label}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* User Profile */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-white dark:hover:bg-gray-700 transition-colors">
-                <Avatar className="h-9 w-9 border-2 border-emerald-200 dark:border-emerald-800">
-                  <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white text-sm font-semibold">
-                    {user?.name?.charAt(0).toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className={cn("flex-1 text-left", isRTL && "text-right")}>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                    {user?.name || "User"}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {userRole === "admin" ? t("roles.admin") : userRole === "employee" ? t("roles.employee") : userRole === "accountant" ? t("roles.accountant") : userRole === "super_admin" ? t("roles.superAdmin") || "Super Admin" : userRole}
-                  </p>
-                </div>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-56">
-              <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">{user?.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
-              </div>
-              <div className="p-1">
-                <DropdownMenuItem
-                  onClick={toggleTheme}
-                  className="cursor-pointer rounded-lg"
-                >
-                  {theme === "dark" ? (
-                    <Sun className="me-2 h-4 w-4 text-amber-500" />
-                  ) : (
-                    <Moon className="me-2 h-4 w-4 text-indigo-500" />
-                  )}
-                  <span>{theme === "dark" ? t("lightMode") || "دۆخی ڕووناک" : t("darkMode") || "دۆخی تاریک"}</span>
-                </DropdownMenuItem>
-              </div>
-              <DropdownMenuSeparator />
-              <div className="p-1">
-                <DropdownMenuItem
-                  onClick={logout}
-                  className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 rounded-lg"
-                >
-                  <LogOut className="me-2 h-4 w-4" />
-                  <span>{t("signOut") || "چوونەدەرەوە"}</span>
-                </DropdownMenuItem>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        {/* Language switcher + user profile moved to the top bar (top-left in
+            RTL) to free up the sidebar — see the global navigation bar. */}
       </aside>
 
       {/* Main Content */}
@@ -720,33 +650,95 @@ function DashboardLayoutContent({
             <Home className="h-4 w-4" />
           </Button>
 
-          {/* Pinned daily shortcuts */}
-          <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" />
-          {PINNED.map((p) => (
-            <Button
-              key={p.path}
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title={p.label}
-              aria-label={p.label}
-              onClick={() => setLocation(p.path)}
-            >
-              <p.icon className="h-4 w-4" />
-            </Button>
-          ))}
+          {/* Pinned daily shortcuts (hidden on small screens) */}
+          <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block" />
+          <div className="hidden sm:flex items-center gap-1">
+            {PINNED.map((p) => (
+              <Button
+                key={p.path}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                title={p.label}
+                aria-label={p.label}
+                onClick={() => setLocation(p.path)}
+              >
+                <p.icon className="h-4 w-4" />
+              </Button>
+            ))}
+          </div>
 
-          {/* Function search / command palette */}
-          <button
-            type="button"
-            onClick={() => setCmdOpen(true)}
-            className="ms-auto flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-muted/40 px-3 h-8 text-sm text-muted-foreground hover:bg-muted transition-colors"
-            title="گەڕان بۆ فەنکشن (Ctrl+K)"
-          >
-            <Search className="h-4 w-4" />
-            <span className="hidden sm:inline">گەڕان بۆ فەنکشن…</span>
-            <kbd className="hidden md:inline rounded border border-gray-300 dark:border-gray-600 px-1 text-[10px] font-mono">Ctrl K</kbd>
-          </button>
+          {/* Top-left group (RTL): function search + language + user profile */}
+          <div className="ms-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCmdOpen(true)}
+              className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-muted/40 px-2.5 h-8 text-sm text-muted-foreground hover:bg-muted transition-colors"
+              title="گەڕان بۆ فەنکشن (Ctrl+K)"
+            >
+              <Search className="h-4 w-4" />
+              <span className="hidden lg:inline">گەڕان بۆ فەنکشن…</span>
+              <kbd className="hidden lg:inline rounded border border-gray-300 dark:border-gray-600 px-1 text-[10px] font-mono">Ctrl K</kbd>
+            </button>
+
+            {/* Language */}
+            <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
+              <SelectTrigger className="h-8 w-auto gap-1 px-2 text-xs">
+                <Languages className="h-4 w-4 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {languages.map((lang) => (
+                  <SelectItem key={lang.value} value={lang.value}>
+                    <span className="flex items-center gap-2"><span>{lang.flag}</span><span>{lang.label}</span></span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* User profile */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 rounded-lg p-1 hover:bg-muted transition-colors">
+                  <Avatar className="h-7 w-7 border-2 border-emerald-200 dark:border-emerald-800">
+                    <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white text-xs font-semibold">
+                      {user?.name?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="hidden lg:block text-start leading-tight">
+                    <p className="text-xs font-semibold truncate max-w-[120px]">{user?.name || "User"}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {userRole === "admin" ? t("roles.admin") : userRole === "employee" ? t("roles.employee") : userRole === "accountant" ? t("roles.accountant") : userRole === "super_admin" ? t("roles.superAdmin") || "Super Admin" : userRole}
+                    </p>
+                  </div>
+                  <ChevronDown className="hidden lg:block h-3 w-3 opacity-50" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-56">
+                <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{user?.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+                </div>
+                <div className="p-1">
+                  <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer rounded-lg">
+                    {theme === "dark" ? (
+                      <Sun className="me-2 h-4 w-4 text-amber-500" />
+                    ) : (
+                      <Moon className="me-2 h-4 w-4 text-indigo-500" />
+                    )}
+                    <span>{theme === "dark" ? t("lightMode") || "دۆخی ڕووناک" : t("darkMode") || "دۆخی تاریک"}</span>
+                  </DropdownMenuItem>
+                </div>
+                <DropdownMenuSeparator />
+                <div className="p-1">
+                  <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 rounded-lg">
+                    <LogOut className="me-2 h-4 w-4" />
+                    <span>{t("signOut") || "چوونەدەرەوە"}</span>
+                  </DropdownMenuItem>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
         <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
           {children}
