@@ -33,6 +33,7 @@ import { trpc } from "@/lib/trpc";
 import { IRAQI_CITIES } from "../../../../shared/iraqi-cities";
 import { useLocation, useParams } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { useCustomerDetail } from "@/hooks/useCustomerDetail";
 import { CustomerInfoCard } from "@/components/customers/CustomerInfoCard";
 import { CustomerSummaryHeader } from "@/components/customers/CustomerSummaryHeader";
@@ -49,7 +50,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
 export default function CustomerDetail() {
-  const { t: tToast } = useTranslation();
+  const { t: tToast, language } = useTranslation();
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const customerId = parseInt(params.id ?? "0", 10);
@@ -134,7 +135,7 @@ export default function CustomerDetail() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading customer...</p>
+            <p className="text-muted-foreground">{pickLang(language, { ku: "خشتەکردنی کڕیار...", en: "Loading customer...", ar: "جارٍ تحميل العميل...", zh: "正在加载客户..." })}</p>
           </div>
         </div>
       </DashboardLayout>
@@ -166,7 +167,7 @@ export default function CustomerDetail() {
                 </Badge>
               )}
               <Badge variant={customer.isActive ? "default" : "secondary"} className="text-xs">
-                {customer.isActive ? "Active" : "Inactive"}
+                {customer.isActive ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}
               </Badge>
             </div>
             <p className="text-muted-foreground font-mono text-sm">{customer.customerCode}</p>
@@ -176,30 +177,30 @@ export default function CustomerDetail() {
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <RotateCcw className="h-4 w-4 me-2" />
-                  Reset Password
+                  {pickLang(language, { ku: "ڕێستکردنەوەی وشەی نهێنی", en: "Reset Password", ar: "إعادة تعيين كلمة المرور", zh: "重置密码" })}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Shield className="h-5 w-5 text-amber-500" />
-                    Reset Customer Password
+                    {pickLang(language, { ku: "ڕێستکردنەوەی وشەی نهێنی کڕیار", en: "Reset Customer Password", ar: "إعادة تعيين كلمة مرور العميل", zh: "重置客户密码" })}
                   </DialogTitle>
-                  <DialogDescription>Set a new password for {customer.fullName}</DialogDescription>
+                  <DialogDescription>{pickLang(language, { ku: "وشەیەکی نهێنی نوێ دابنێ بۆ", en: "Set a new password for", ar: "تعيين كلمة مرور جديدة لـ", zh: "为以下客户设置新密码" })} {customer.fullName}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={cd.handleResetPassword}>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="newPassword">New Password</Label>
+                      <Label htmlFor="newPassword">{pickLang(language, { ku: "وشەی نهێنی نوێ", en: "New Password", ar: "كلمة مرور جديدة", zh: "新密码" })}</Label>
                       <Input id="newPassword" name="newPassword" type="password" required minLength={6} className="h-11" />
                     </div>
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => cd.setIsResetPasswordOpen(false)}>
-                      Cancel
+                      {pickLang(language, { ku: "هەڵوەشاندنەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
                     </Button>
                     <Button type="submit" disabled={cd.resetPasswordMutation.isPending} className="bg-amber-500 hover:bg-amber-600">
-                      {cd.resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+                      {cd.resetPasswordMutation.isPending ? pickLang(language, { ku: "ڕێستکردنەوە...", en: "Resetting...", ar: "جارٍ إعادة التعيين...", zh: "正在重置..." }) : pickLang(language, { ku: "ڕێستکردنەوەی وشەی نهێنی", en: "Reset Password", ar: "إعادة تعيين كلمة المرور", zh: "重置密码" })}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -207,14 +208,14 @@ export default function CustomerDetail() {
             </Dialog>
             <Button variant="outline" size="sm" onClick={cd.handleExportCustomerPDF} disabled={cd.isExportingPDF}>
               {cd.isExportingPDF ? (
-                <><Loader2 className="h-4 w-4 me-2 animate-spin" /> Exporting...</>
+                <><Loader2 className="h-4 w-4 me-2 animate-spin" /> {pickLang(language, { ku: "هەناردەکردن...", en: "Exporting...", ar: "جارٍ التصدير...", zh: "正在导出..." })}</>
               ) : (
-                <><FileDown className="h-4 w-4 me-2" /> Export PDF</>
+                <><FileDown className="h-4 w-4 me-2" /> {pickLang(language, { ku: "هەناردەی PDF", en: "Export PDF", ar: "تصدير PDF", zh: "导出 PDF" })}</>
               )}
             </Button>
             <Button variant="outline" size="sm" onClick={cd.handleOpenEdit}>
               <Edit className="h-4 w-4 me-2" />
-              Edit
+              {pickLang(language, { ku: "دەستکاری", en: "Edit", ar: "تعديل", zh: "编辑" })}
             </Button>
           </div>
         </div>
@@ -353,23 +354,23 @@ export default function CustomerDetail() {
               <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="packages" className="gap-2">
                   <Package className="h-4 w-4" />
-                  <span className="hidden sm:inline">Packages</span>
+                  <span className="hidden sm:inline">{pickLang(language, { ku: "پاکێجەکان", en: "Packages", ar: "الطرود", zh: "包裹" })}</span>
                 </TabsTrigger>
                 <TabsTrigger value="services" className="gap-2">
                   <Briefcase className="h-4 w-4" />
-                  <span className="hidden sm:inline">Services</span>
+                  <span className="hidden sm:inline">{pickLang(language, { ku: "خزمەتگوزاری", en: "Services", ar: "الخدمات", zh: "服务" })}</span>
                 </TabsTrigger>
                 <TabsTrigger value="finance" className="gap-2">
                   <DollarSign className="h-4 w-4" />
-                  <span className="hidden sm:inline">Finance</span>
+                  <span className="hidden sm:inline">{pickLang(language, { ku: "دارایی", en: "Finance", ar: "المالية", zh: "财务" })}</span>
                 </TabsTrigger>
                 <TabsTrigger value="documents" className="gap-2">
                   <FileCheck className="h-4 w-4" />
-                  <span className="hidden sm:inline">Documents</span>
+                  <span className="hidden sm:inline">{pickLang(language, { ku: "بەڵگەنامەکان", en: "Documents", ar: "المستندات", zh: "文件" })}</span>
                 </TabsTrigger>
                 <TabsTrigger value="activity" className="gap-2">
                   <ClockIcon className="h-4 w-4" />
-                  <span className="hidden sm:inline">Activity</span>
+                  <span className="hidden sm:inline">{pickLang(language, { ku: "چالاکی", en: "Activity", ar: "النشاط", zh: "活动" })}</span>
                 </TabsTrigger>
                 <TabsTrigger value="fullPackage" className="gap-2">
                   <Package className="h-4 w-4" />
@@ -386,19 +387,19 @@ export default function CustomerDetail() {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-lg">Extra Services</CardTitle>
+                        <CardTitle className="text-lg">{pickLang(language, { ku: "خزمەتگوزاری زیادە", en: "Extra Services", ar: "خدمات إضافية", zh: "额外服务" })}</CardTitle>
                         <CardDescription>{t("customers.additionalServices")}</CardDescription>
                       </div>
                       <Dialog open={isAddServiceOpen} onOpenChange={setIsAddServiceOpen}>
                         <DialogTrigger asChild>
                           <Button size="sm" className="gap-2">
                             <Plus className="h-4 w-4" />
-                            Add Service
+                            {pickLang(language, { ku: "زیادکردنی خزمەت", en: "Add Service", ar: "إضافة خدمة", zh: "添加服务" })}
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-lg">
                           <DialogHeader>
-                            <DialogTitle>Add Extra Service</DialogTitle>
+                            <DialogTitle>{pickLang(language, { ku: "زیادکردنی خزمەتی زیادە", en: "Add Extra Service", ar: "إضافة خدمة إضافية", zh: "添加额外服务" })}</DialogTitle>
                             <DialogDescription>{t("customers.addServiceDescription")}</DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4 py-4">
@@ -418,7 +419,7 @@ export default function CustomerDetail() {
                                 }}
                               >
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select service type..." />
+                                  <SelectValue placeholder={pickLang(language, { ku: "جۆری خزمەت هەڵبژێرە...", en: "Select service type...", ar: "اختر نوع الخدمة...", zh: "选择服务类型..." })} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {serviceTypes?.map((type) => (
@@ -432,7 +433,7 @@ export default function CustomerDetail() {
                             <div className="space-y-2">
                               <Label>{t("common.description")}</Label>
                               <Textarea
-                                placeholder="Enter service description..."
+                                placeholder={pickLang(language, { ku: "وەسفی خزمەت بنووسە...", en: "Enter service description...", ar: "أدخل وصف الخدمة...", zh: "输入服务描述..." })}
                                 value={newService.description}
                                 onChange={(e) => setNewService({ ...newService, description: e.target.value })}
                               />
@@ -474,7 +475,7 @@ export default function CustomerDetail() {
                           </div>
                           <DialogFooter>
                             <Button variant="outline" onClick={() => setIsAddServiceOpen(false)}>
-                              Cancel
+                              {pickLang(language, { ku: "هەڵوەشاندنەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
                             </Button>
                             <Button
                               onClick={() => {
@@ -490,7 +491,7 @@ export default function CustomerDetail() {
                               }}
                               disabled={createServiceMutation.isPending}
                             >
-                              {createServiceMutation.isPending ? "Adding..." : "Add Service"}
+                              {createServiceMutation.isPending ? pickLang(language, { ku: "زیادکردن...", en: "Adding...", ar: "جارٍ الإضافة...", zh: "正在添加..." }) : pickLang(language, { ku: "زیادکردنی خزمەت", en: "Add Service", ar: "إضافة خدمة", zh: "添加服务" })}
                             </Button>
                           </DialogFooter>
                         </DialogContent>
@@ -501,13 +502,13 @@ export default function CustomerDetail() {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/30">
-                          <TableHead>Date</TableHead>
-                          <TableHead>Service</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead className="text-right">Cost</TableHead>
-                          <TableHead className="text-right">Price</TableHead>
-                          <TableHead className="text-right">Profit</TableHead>
-                          <TableHead>Status</TableHead>
+                          <TableHead>{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</TableHead>
+                          <TableHead>{pickLang(language, { ku: "خزمەت", en: "Service", ar: "الخدمة", zh: "服务" })}</TableHead>
+                          <TableHead>{pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" })}</TableHead>
+                          <TableHead className="text-right">{pickLang(language, { ku: "تێچوو", en: "Cost", ar: "التكلفة", zh: "成本" })}</TableHead>
+                          <TableHead className="text-right">{pickLang(language, { ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })}</TableHead>
+                          <TableHead className="text-right">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</TableHead>
+                          <TableHead>{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -520,7 +521,7 @@ export default function CustomerDetail() {
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="text-xs">
-                                  {service.serviceType?.nameKu || service.serviceType?.nameEn || "Service"}
+                                  {service.serviceType?.nameKu || service.serviceType?.nameEn || pickLang(language, { ku: "خزمەت", en: "Service", ar: "الخدمة", zh: "服务" })}
                                 </Badge>
                               </TableCell>
                               <TableCell className="max-w-[200px] truncate">{service.description}</TableCell>
@@ -535,7 +536,7 @@ export default function CustomerDetail() {
                               </TableCell>
                               <TableCell>
                                 {service.isPaid ? (
-                                  <Badge className="bg-green-100 text-green-700 border-0 text-xs">Paid</Badge>
+                                  <Badge className="bg-green-100 text-green-700 border-0 text-xs">{pickLang(language, { ku: "پارەدراو", en: "Paid", ar: "مدفوع", zh: "已付款" })}</Badge>
                                 ) : (
                                   <Button
                                     variant="outline"
@@ -549,7 +550,7 @@ export default function CustomerDetail() {
                                       })
                                     }
                                   >
-                                    Mark Paid
+                                    {pickLang(language, { ku: "نیشانکردن وەک پارەدراو", en: "Mark Paid", ar: "تحديد كمدفوع", zh: "标记为已付款" })}
                                   </Button>
                                 )}
                               </TableCell>
@@ -560,7 +561,7 @@ export default function CustomerDetail() {
                           <TableRow>
                             <TableCell colSpan={7} className="text-center py-12">
                               <Briefcase className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-                              <p className="text-muted-foreground">No extra services yet</p>
+                              <p className="text-muted-foreground">{pickLang(language, { ku: "هێشتا هیچ خزمەتێکی زیادە نییە", en: "No extra services yet", ar: "لا توجد خدمات إضافية بعد", zh: "暂无额外服务" })}</p>
                             </TableCell>
                           </TableRow>
                         )}
@@ -777,12 +778,12 @@ export default function CustomerDetail() {
 
                 {/* Service types (optional, multi-select) */}
                 <div className="grid gap-2">
-                  <Label>جۆری خزمەت <span className="text-muted-foreground font-normal">(ئیختیاری)</span></Label>
+                  <Label>{pickLang(language, { ku: "جۆری خزمەت", en: "Service Type", ar: "نوع الخدمة", zh: "服务类型" })} <span className="text-muted-foreground font-normal">({pickLang(language, { ku: "ئیختیاری", en: "Optional", ar: "اختياري", zh: "可选" })})</span></Label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { value: "full_package", label: "پاکێجی تەواو" },
-                      { value: "commission", label: "کرین بە تێچوو" },
-                      { value: "self_order", label: "سێلف ئۆردەر" },
+                      { value: "full_package", label: pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الباقة الكاملة", zh: "全包套餐" }) },
+                      { value: "commission", label: pickLang(language, { ku: "کرین بە تێچوو", en: "Purchase at Cost", ar: "الشراء بالتكلفة", zh: "代购" }) },
+                      { value: "self_order", label: pickLang(language, { ku: "سێلف ئۆردەر", en: "Self Order", ar: "طلب ذاتي", zh: "自助下单" }) },
                     ].map((st) => {
                       const active = cd.editForm.serviceTypes.includes(st.value);
                       return (
@@ -919,7 +920,7 @@ export default function CustomerDetail() {
                     value={cd.editForm.district}
                     onChange={(e) => cd.setEditForm({ ...cd.editForm, district: e.target.value })}
                     className="h-11"
-                    placeholder="e.g., Ankawa, Ainkawa"
+                    placeholder={pickLang(language, { ku: "بۆ نموونە: عەنکاوە", en: "e.g., Ankawa, Ainkawa", ar: "مثال: عنكاوا", zh: "例如：安卡瓦" })}
                   />
                 </div>
 

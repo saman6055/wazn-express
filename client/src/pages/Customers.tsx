@@ -24,6 +24,7 @@ import { useLocation } from "wouter";
 import { IRAQI_GOVERNORATES, IRAQI_CITIES } from "../../../shared/iraqi-cities";
 import { CUSTOMER_CODE_PREFIXES } from "../../../shared/types";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -95,17 +96,19 @@ const initialFormData: CustomerFormData = {
 };
 
 // Service types options (optional, multi-select) with Kurdish labels
-const SERVICE_TYPE_OPTIONS: { value: "full_package" | "commission" | "self_order"; labelKu: string }[] = [
-  { value: "full_package", labelKu: "پاکێجی تەواو" },
-  { value: "commission", labelKu: "کرین بە تێچوو" },
-  { value: "self_order", labelKu: "سێلف ئۆردەر" },
+const SERVICE_TYPE_OPTIONS: { value: "full_package" | "commission" | "self_order"; label: { ku: string; en: string; ar: string; zh: string } }[] = [
+  { value: "full_package", label: { ku: "پاکێجی تەواو", en: "Full Package", ar: "الحزمة الكاملة", zh: "全套服务" } },
+  { value: "commission", label: { ku: "کرین بە تێچوو", en: "Purchase at Cost", ar: "الشراء بالتكلفة", zh: "按成本采购" } },
+  { value: "self_order", label: { ku: "سێلف ئۆردەر", en: "Self Order", ar: "طلب ذاتي", zh: "自助下单" } },
 ];
 
-const getServiceTypeLabel = (value: string) =>
-  SERVICE_TYPE_OPTIONS.find((o) => o.value === value)?.labelKu ?? value;
+const getServiceTypeLabel = (language: string, value: string) => {
+  const option = SERVICE_TYPE_OPTIONS.find((o) => o.value === value);
+  return option ? pickLang(language, option.label) : value;
+};
 
 export default function Customers() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [, setLocation] = useLocation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
@@ -130,7 +133,12 @@ const [, setLocation] = useLocation();
 
   const deleteCustomerMutation = trpc.customers.delete.useMutation({
     onSuccess: (data) => {
-      toast.success(`کڕیار بە سەرکەوتوویی سڕایەوە (${data.deletedData.packagesCount} پاکەت، ${data.deletedData.invoicesCount} وەسڵ)`);
+      toast.success(pickLang(language, {
+        ku: `کڕیار بە سەرکەوتوویی سڕایەوە (${data.deletedData.packagesCount} پاکەت، ${data.deletedData.invoicesCount} وەسڵ)`,
+        en: `Customer deleted successfully (${data.deletedData.packagesCount} packages, ${data.deletedData.invoicesCount} invoices)`,
+        ar: `تم حذف العميل بنجاح (${data.deletedData.packagesCount} طرود، ${data.deletedData.invoicesCount} فواتير)`,
+        zh: `客户删除成功（${data.deletedData.packagesCount} 个包裹，${data.deletedData.invoicesCount} 张发票）`,
+      }));
       setIsDeleteOpen(false);
       setDeleteCustomerId(null);
       refetch();
@@ -588,7 +596,7 @@ const [, setLocation] = useLocation();
 
                       {/* Service Types (optional, multi-select) */}
                       <div className="grid gap-2">
-                        <Label>جۆری خزمەت (ئیختیاری)</Label>
+                        <Label>{pickLang(language, { ku: "جۆری خزمەت (ئیختیاری)", en: "Service Type (optional)", ar: "نوع الخدمة (اختياري)", zh: "服务类型（可选）" })}</Label>
                         <div className="flex flex-wrap gap-2">
                           {SERVICE_TYPE_OPTIONS.map((option) => {
                             const selected = formData.serviceTypes.includes(option.value);
@@ -601,7 +609,7 @@ const [, setLocation] = useLocation();
                                 onClick={() => toggleServiceType(option.value)}
                                 className={selected ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}
                               >
-                                {option.labelKu}
+                                {pickLang(language, option.label)}
                               </Button>
                             );
                           })}
@@ -1074,16 +1082,16 @@ const [, setLocation] = useLocation();
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs">جۆری خزمەت</Label>
+                        <Label className="text-xs">{pickLang(language, { ku: "جۆری خزمەت", en: "Service Type", ar: "نوع الخدمة", zh: "服务类型" })}</Label>
                         <Select value={serviceTypeFilter} onValueChange={(v: any) => setServiceTypeFilter(v)}>
                           <SelectTrigger className="h-9">
-                            <SelectValue placeholder="هەموو جۆرەکان" />
+                            <SelectValue placeholder={pickLang(language, { ku: "هەموو جۆرەکان", en: "All Types", ar: "جميع الأنواع", zh: "所有类型" })} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">هەموو جۆرەکان</SelectItem>
+                            <SelectItem value="all">{pickLang(language, { ku: "هەموو جۆرەکان", en: "All Types", ar: "جميع الأنواع", zh: "所有类型" })}</SelectItem>
                             {SERVICE_TYPE_OPTIONS.map((option) => (
                               <SelectItem key={option.value} value={option.value}>
-                                {option.labelKu}
+                                {pickLang(language, option.label)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1109,7 +1117,7 @@ const [, setLocation] = useLocation();
                   ...(search
                     ? [{
                         id: "search",
-                        label: `${t("common.search") || "گەڕان"}: ${search}`,
+                        label: `${t("common.search") || pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}: ${search}`,
                         onRemove: () => setSearch(""),
                       }]
                     : []),
@@ -1161,7 +1169,7 @@ const [, setLocation] = useLocation();
                   ...(serviceTypeFilter !== "all"
                     ? [{
                         id: "serviceType",
-                        label: `${t("customers.serviceType") || "جۆری خزمەت"}: ${getServiceTypeLabel(serviceTypeFilter)}`,
+                        label: `${t("customers.serviceType") || pickLang(language, { ku: "جۆری خزمەت", en: "Service Type", ar: "نوع الخدمة", zh: "服务类型" })}: ${getServiceTypeLabel(language, serviceTypeFilter)}`,
                         onRemove: () => setServiceTypeFilter("all"),
                       }]
                     : []),
@@ -1204,7 +1212,7 @@ const [, setLocation] = useLocation();
                           <p className="text-xs text-muted-foreground font-mono">{customer.customerCode}</p>
                           {(customer as any).createdAt && (
                             <p className="text-[10px] text-muted-foreground">
-                              {t("customers.joined") || "بەشداربوو"}{" "}
+                              {t("customers.joined") || pickLang(language, { ku: "بەشداربوو", en: "Joined", ar: "انضم", zh: "加入于" })}{" "}
                               <RelativeTime date={(customer as any).createdAt} />
                             </p>
                           )}
@@ -1212,7 +1220,7 @@ const [, setLocation] = useLocation();
                             <div className="flex flex-wrap gap-1 mt-1">
                               {(customer as any).serviceTypes.map((st: string) => (
                                 <Badge key={st} variant="secondary" className="text-[10px] px-1.5 py-0">
-                                  {getServiceTypeLabel(st)}
+                                  {getServiceTypeLabel(language, st)}
                                 </Badge>
                               ))}
                             </div>
@@ -1340,23 +1348,23 @@ const [, setLocation] = useLocation();
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2 text-red-600">
                   <Trash2 className="h-5 w-5" />
-                  سڕینەوەی کڕیار
+                  {pickLang(language, { ku: "سڕینەوەی کڕیار", en: "Delete Customer", ar: "حذف العميل", zh: "删除客户" })}
                 </AlertDialogTitle>
                 <AlertDialogDescription className="text-right space-y-2">
                   <p className="font-semibold text-red-500">
-                    ئایا دڵنیایت لە سڕینەوەی ئەم کڕیارە؟
+                    {pickLang(language, { ku: "ئایا دڵنیایت لە سڕینەوەی ئەم کڕیارە؟", en: "Are you sure you want to delete this customer?", ar: "هل أنت متأكد من حذف هذا العميل؟", zh: "确定要删除此客户吗？" })}
                   </p>
                   <p>
-                    ئەم کارە ناگەڕێتەوە. هەموو داتای پەیوەندیدار (وەسڵ، پارەدانەکان، خزمەتگوزاریەکان، مامەڵەکان) دەسڕێنەوە.
+                    {pickLang(language, { ku: "ئەم کارە ناگەڕێتەوە. هەموو داتای پەیوەندیدار (وەسڵ، پارەدانەکان، خزمەتگوزاریەکان، مامەڵەکان) دەسڕێنەوە.", en: "This action cannot be undone. All related data (invoices, payments, services, transactions) will be deleted.", ar: "لا يمكن التراجع عن هذا الإجراء. سيتم حذف جميع البيانات المرتبطة (الفواتير، المدفوعات، الخدمات، المعاملات).", zh: "此操作无法撤销。所有相关数据（发票、付款、服务、交易）都将被删除。" })}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    تێبینی: پاکەتەکان ناسڕێنەوە بەڵام ناوی کڕیار لەسەریان لادەبردرێت.
+                    {pickLang(language, { ku: "تێبینی: پاکەتەکان ناسڕێنەوە بەڵام ناوی کڕیار لەسەریان لادەبردرێت.", en: "Note: Packages will not be deleted but the customer name will be removed from them.", ar: "ملاحظة: لن يتم حذف الطرود ولكن سيتم إزالة اسم العميل منها.", zh: "注意：包裹不会被删除，但会从中移除客户姓名。" })}
                   </p>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="gap-2">
                 <AlertDialogCancel>
-                  پاشگەزبوونەوە
+                  {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
                 </AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-red-600 hover:bg-red-700 text-white"
@@ -1367,7 +1375,9 @@ const [, setLocation] = useLocation();
                     }
                   }}
                 >
-                  {deleteCustomerMutation.isPending ? "چاوەڕوان بە..." : "بەڵێ، بسڕەوە"}
+                  {deleteCustomerMutation.isPending
+                    ? pickLang(language, { ku: "چاوەڕوان بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." })
+                    : pickLang(language, { ku: "بەڵێ، بسڕەوە", en: "Yes, delete", ar: "نعم، احذف", zh: "是的，删除" })}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

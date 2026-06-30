@@ -10,6 +10,7 @@ import { Search, Shield, User, UserCog } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 const roleColors: Record<string, string> = {
   super_admin: "bg-yellow-100 text-yellow-800",
@@ -28,7 +29,7 @@ const roleIcons: Record<string, React.ReactNode> = {
 };
 
 export default function Users() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [search, setSearch] = useState("");
   
   const { data: users, refetch } = trpc.users.list.useQuery();
@@ -97,7 +98,7 @@ const [search, setSearch] = useState("");
                 <User className="h-5 w-5 text-gray-600" />
                 <div>
                   <div className="text-2xl font-bold">{users?.filter(u => u.role === "accountant").length || 0}</div>
-                  <div className="text-sm text-muted-foreground">ژمێریار</div>
+                  <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "ژمێریار", en: "Accountants", ar: "المحاسبون", zh: "会计" })}</div>
                 </div>
               </div>
             </CardContent>

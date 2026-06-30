@@ -89,7 +89,7 @@ function SimpleBarChart({ data }: { data: { label: string; value: number; color:
 }
 
 // Donut chart component
-function DonutChart({ data, total }: { data: { label: string; value: number; color: string }[]; total: number }) {
+function DonutChart({ data, total, totalLabel }: { data: { label: string; value: number; color: string }[]; total: number; totalLabel: string }) {
   const segments = useMemo(() => {
     let currentAngle = 0;
     return data.map(item => {
@@ -123,7 +123,7 @@ function DonutChart({ data, total }: { data: { label: string; value: number; col
         <div className="absolute inset-4 bg-background rounded-full flex items-center justify-center">
           <div className="text-center">
             <p className="text-lg font-bold">${total.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">کۆی گشتی</p>
+            <p className="text-xs text-muted-foreground">{totalLabel}</p>
           </div>
         </div>
       </div>
@@ -395,7 +395,7 @@ export default function UnifiedProfitDashboard() {
                   <Skeleton className="w-32 h-32 rounded-full" />
                 </div>
               ) : (
-                <DonutChart data={chartData} total={totalProfit} />
+                <DonutChart data={chartData} total={totalProfit} totalLabel={pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "总计" })} />
               )}
             </CardContent>
           </Card>

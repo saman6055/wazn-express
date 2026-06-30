@@ -11,9 +11,10 @@ import { Crown, Plus, Edit, Trash2, Users, Percent, DollarSign, CreditCard, Spar
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 export default function VipCustomers() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedVip, setSelectedVip] = useState<any>(null);
@@ -120,37 +121,37 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Crown className="h-6 w-6" />
-                <span className="text-sm font-medium opacity-90">Premium Members</span>
+                <span className="text-sm font-medium opacity-90">{pickLang(language, { ku: "ئەندامانی تایبەت", en: "Premium Members", ar: "أعضاء مميزون", zh: "尊享会员" })}</span>
               </div>
-              <h1 className="text-3xl font-bold tracking-tight mb-2">VIP Customers</h1>
+              <h1 className="text-3xl font-bold tracking-tight mb-2">{pickLang(language, { ku: "کڕیارانی VIP", en: "VIP Customers", ar: "عملاء VIP", zh: "VIP 客户" })}</h1>
               <p className="text-white/80 max-w-lg">
-                Manage premium customers with special pricing and benefits
+                {pickLang(language, { ku: "بەڕێوەبردنی کڕیارانی تایبەت بە نرخ و سوودی تایبەت", en: "Manage premium customers with special pricing and benefits", ar: "إدارة العملاء المميزين بأسعار ومزايا خاصة", zh: "管理享有专属价格和权益的尊享客户" })}
               </p>
             </div>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-white text-amber-600 hover:bg-white/90 shadow-lg">
                   <Plus className="h-4 w-4 me-2" />
-                  Add VIP
+                  {pickLang(language, { ku: "زیادکردنی VIP", en: "Add VIP", ar: "إضافة VIP", zh: "添加 VIP" })}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Crown className="h-5 w-5 text-amber-500" />
-                    Add VIP Customer
+                    {pickLang(language, { ku: "زیادکردنی کڕیاری VIP", en: "Add VIP Customer", ar: "إضافة عميل VIP", zh: "添加 VIP 客户" })}
                   </DialogTitle>
                   <DialogDescription>
-                    Grant VIP status to a customer with special pricing
+                    {pickLang(language, { ku: "پێدانی دۆخی VIP بە کڕیارێک بە نرخی تایبەت", en: "Grant VIP status to a customer with special pricing", ar: "منح حالة VIP لعميل بأسعار خاصة", zh: "授予客户 VIP 身份并提供专属价格" })}
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreate}>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label>Select Customer *</Label>
+                      <Label>{pickLang(language, { ku: "کڕیار هەڵبژێرە *", en: "Select Customer *", ar: "اختر العميل *", zh: "选择客户 *" })}</Label>
                       <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                         <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Choose a customer" />
+                          <SelectValue placeholder={pickLang(language, { ku: "کڕیارێک هەڵبژێرە", en: "Choose a customer", ar: "اختر عميلاً", zh: "选择一个客户" })} />
                         </SelectTrigger>
                         <SelectContent>
                           {availableCustomers?.map((customer) => (
@@ -162,49 +163,49 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </Select>
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="tier">VIP Tier *</Label>
+                      <Label htmlFor="tier">{pickLang(language, { ku: "ئاستی VIP *", en: "VIP Tier *", ar: "فئة VIP *", zh: "VIP 等级 *" })}</Label>
                       <Select name="tier" defaultValue="silver">
                         <SelectTrigger className="h-11">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="silver">🥈 Silver</SelectItem>
-                          <SelectItem value="gold">🥇 Gold</SelectItem>
-                          <SelectItem value="platinum">💎 Platinum</SelectItem>
+                          <SelectItem value="silver">🥈 {pickLang(language, { ku: "زیو", en: "Silver", ar: "فضي", zh: "白银" })}</SelectItem>
+                          <SelectItem value="gold">🥇 {pickLang(language, { ku: "زێڕ", en: "Gold", ar: "ذهبي", zh: "黄金" })}</SelectItem>
+                          <SelectItem value="platinum">💎 {pickLang(language, { ku: "پلاتین", en: "Platinum", ar: "بلاتيني", zh: "铂金" })}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="discountPercent">Discount %</Label>
-                        <Input id="discountPercent" name="discountPercent" type="number" step="0.01" min="0" max="100" className="h-11" placeholder="e.g. 10" />
+                        <Label htmlFor="discountPercent">{pickLang(language, { ku: "داشکاندن ٪", en: "Discount %", ar: "نسبة الخصم ٪", zh: "折扣 %" })}</Label>
+                        <Input id="discountPercent" name="discountPercent" type="number" step="0.01" min="0" max="100" className="h-11" placeholder={pickLang(language, { ku: "نموونە: ١٠", en: "e.g. 10", ar: "مثال: ١٠", zh: "例如 10" })} />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="creditLimitUsd">Credit Limit ($)</Label>
-                        <Input id="creditLimitUsd" name="creditLimitUsd" type="number" step="0.01" min="0" className="h-11" placeholder="e.g. 1000" />
+                        <Label htmlFor="creditLimitUsd">{pickLang(language, { ku: "سنووری قەرز ($)", en: "Credit Limit ($)", ar: "حد الائتمان ($)", zh: "信用额度 ($)" })}</Label>
+                        <Input id="creditLimitUsd" name="creditLimitUsd" type="number" step="0.01" min="0" className="h-11" placeholder={pickLang(language, { ku: "نموونە: ١٠٠٠", en: "e.g. 1000", ar: "مثال: ١٠٠٠", zh: "例如 1000" })} />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="fixedPricePerKgAir">Fixed Price/KG (Air)</Label>
-                        <Input id="fixedPricePerKgAir" name="fixedPricePerKgAir" type="number" step="0.01" min="0" className="h-11" placeholder="e.g. 5.00" />
+                        <Label htmlFor="fixedPricePerKgAir">{pickLang(language, { ku: "نرخی جێگیر/کگ (ئاسمانی)", en: "Fixed Price/KG (Air)", ar: "سعر ثابت/كغ (جوي)", zh: "固定单价/公斤（空运）" })}</Label>
+                        <Input id="fixedPricePerKgAir" name="fixedPricePerKgAir" type="number" step="0.01" min="0" className="h-11" placeholder={pickLang(language, { ku: "نموونە: ٥٫٠٠", en: "e.g. 5.00", ar: "مثال: ٥٫٠٠", zh: "例如 5.00" })} />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="fixedPricePerKgSea">Fixed Price/KG (Sea)</Label>
-                        <Input id="fixedPricePerKgSea" name="fixedPricePerKgSea" type="number" step="0.01" min="0" className="h-11" placeholder="e.g. 2.00" />
+                        <Label htmlFor="fixedPricePerKgSea">{pickLang(language, { ku: "نرخی جێگیر/کگ (دەریایی)", en: "Fixed Price/KG (Sea)", ar: "سعر ثابت/كغ (بحري)", zh: "固定单价/公斤（海运）" })}</Label>
+                        <Input id="fixedPricePerKgSea" name="fixedPricePerKgSea" type="number" step="0.01" min="0" className="h-11" placeholder={pickLang(language, { ku: "نموونە: ٢٫٠٠", en: "e.g. 2.00", ar: "مثال: ٢٫٠٠", zh: "例如 2.00" })} />
                       </div>
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="notes">Notes</Label>
-                      <Input id="notes" name="notes" className="h-11" placeholder="Any special notes..." />
+                      <Label htmlFor="notes">{pickLang(language, { ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" })}</Label>
+                      <Input id="notes" name="notes" className="h-11" placeholder={pickLang(language, { ku: "هەر تێبینییەکی تایبەت...", en: "Any special notes...", ar: "أي ملاحظات خاصة...", zh: "任何特殊备注..." })} />
                     </div>
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-                      Cancel
+                      {pickLang(language, { ku: "هەڵوەشاندنەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
                     </Button>
                     <Button type="submit" disabled={createMutation.isPending || !selectedCustomerId} className="bg-amber-500 hover:bg-amber-600">
-                      {createMutation.isPending ? "Creating..." : "Add VIP"}
+                      {createMutation.isPending ? pickLang(language, { ku: "دروستکردن...", en: "Creating...", ar: "جارٍ الإنشاء...", zh: "创建中..." }) : pickLang(language, { ku: "زیادکردنی VIP", en: "Add VIP", ar: "إضافة VIP", zh: "添加 VIP" })}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -220,7 +221,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total VIP</p>
+                  <p className="text-sm font-medium text-muted-foreground">{pickLang(language, { ku: "کۆی VIP", en: "Total VIP", ar: "إجمالي VIP", zh: "VIP 总数" })}</p>
                   <p className="text-3xl font-bold">{vipCustomers?.length || 0}</p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg">
@@ -233,7 +234,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Silver</p>
+                  <p className="text-sm font-medium text-muted-foreground">{pickLang(language, { ku: "زیو", en: "Silver", ar: "فضي", zh: "白银" })}</p>
                   <p className="text-3xl font-bold text-slate-500">{silverCount}</p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-slate-700 shadow-lg">
@@ -246,7 +247,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Gold</p>
+                  <p className="text-sm font-medium text-muted-foreground">{pickLang(language, { ku: "زێڕ", en: "Gold", ar: "ذهبي", zh: "黄金" })}</p>
                   <p className="text-3xl font-bold text-amber-500">{goldCount}</p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg">
@@ -259,7 +260,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Platinum</p>
+                  <p className="text-sm font-medium text-muted-foreground">{pickLang(language, { ku: "پلاتین", en: "Platinum", ar: "بلاتيني", zh: "铂金" })}</p>
                   <p className="text-3xl font-bold text-slate-600">{platinumCount}</p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white shadow-lg">
@@ -307,7 +308,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         size="icon"
                         className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
                         onClick={() => {
-                          if (confirm("Remove VIP status from this customer?")) {
+                          if (confirm(pickLang(language, { ku: "دۆخی VIP لەم کڕیارە بسڕیتەوە؟", en: "Remove VIP status from this customer?", ar: "إزالة حالة VIP من هذا العميل؟", zh: "移除此客户的 VIP 身份？" }))) {
                             deleteMutation.mutate({ id: vip.id });
                           }
                         }}
@@ -321,14 +322,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950/30">
                       <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-1">
                         <Percent className="h-4 w-4" />
-                        <span className="text-xs font-medium">Discount</span>
+                        <span className="text-xs font-medium">{pickLang(language, { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" })}</span>
                       </div>
                       <p className="font-bold text-lg">{vip.discountPercent || 0}%</p>
                     </div>
                     <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30">
                       <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-1">
                         <CreditCard className="h-4 w-4" />
-                        <span className="text-xs font-medium">Credit Limit</span>
+                        <span className="text-xs font-medium">{pickLang(language, { ku: "سنووری قەرز", en: "Credit Limit", ar: "حد الائتمان", zh: "信用额度" })}</span>
                       </div>
                       <p className="font-bold text-lg">${vip.creditLimitUsd || 0}</p>
                     </div>
@@ -336,7 +337,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30">
                         <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-1">
                           <DollarSign className="h-4 w-4" />
-                          <span className="text-xs font-medium">Air/KG</span>
+                          <span className="text-xs font-medium">{pickLang(language, { ku: "ئاسمانی/کگ", en: "Air/KG", ar: "جوي/كغ", zh: "空运/公斤" })}</span>
                         </div>
                         <p className="font-bold text-lg">${vip.fixedPricePerKgAir}</p>
                       </div>
@@ -345,7 +346,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30">
                         <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-1">
                           <DollarSign className="h-4 w-4" />
-                          <span className="text-xs font-medium">Sea/KG</span>
+                          <span className="text-xs font-medium">{pickLang(language, { ku: "دەریایی/کگ", en: "Sea/KG", ar: "بحري/كغ", zh: "海运/公斤" })}</span>
                         </div>
                         <p className="font-bold text-lg">${vip.fixedPricePerKgSea}</p>
                       </div>
@@ -366,13 +367,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <Card className="col-span-full border-0 shadow-lg">
               <CardContent className="p-12 text-center">
                 <Crown className="h-16 w-16 mx-auto mb-4 text-amber-300" />
-                <h3 className="text-lg font-semibold mb-2">No VIP Customers Yet</h3>
+                <h3 className="text-lg font-semibold mb-2">{pickLang(language, { ku: "هێشتا هیچ کڕیارێکی VIP نییە", en: "No VIP Customers Yet", ar: "لا يوجد عملاء VIP بعد", zh: "暂无 VIP 客户" })}</h3>
                 <p className="text-muted-foreground mb-4">
-                  Add your first VIP customer to grant them special pricing and benefits
+                  {pickLang(language, { ku: "یەکەم کڕیاری VIPت زیاد بکە بۆ پێدانی نرخ و سوودی تایبەت", en: "Add your first VIP customer to grant them special pricing and benefits", ar: "أضف أول عميل VIP لمنحه أسعارًا ومزايا خاصة", zh: "添加您的第一个 VIP 客户，为其提供专属价格和权益" })}
                 </p>
                 <Button onClick={() => setIsCreateOpen(true)} className="bg-amber-500 hover:bg-amber-600">
                   <Plus className="h-4 w-4 me-2" />
-                  Add First VIP
+                  {pickLang(language, { ku: "زیادکردنی یەکەم VIP", en: "Add First VIP", ar: "إضافة أول VIP", zh: "添加首位 VIP" })}
                 </Button>
               </CardContent>
             </Card>
@@ -385,59 +386,59 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Edit className="h-5 w-5 text-primary" />
-                Edit VIP Customer
+                {pickLang(language, { ku: "دەستکاری کڕیاری VIP", en: "Edit VIP Customer", ar: "تعديل عميل VIP", zh: "编辑 VIP 客户" })}
               </DialogTitle>
               <DialogDescription>
-                Update VIP pricing and benefits
+                {pickLang(language, { ku: "نوێکردنەوەی نرخ و سوودی VIP", en: "Update VIP pricing and benefits", ar: "تحديث أسعار ومزايا VIP", zh: "更新 VIP 价格和权益" })}
               </DialogDescription>
             </DialogHeader>
             {selectedVip && (
               <form onSubmit={handleUpdate}>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="edit-tier">VIP Tier *</Label>
+                    <Label htmlFor="edit-tier">{pickLang(language, { ku: "ئاستی VIP *", en: "VIP Tier *", ar: "فئة VIP *", zh: "VIP 等级 *" })}</Label>
                     <Select name="tier" defaultValue={selectedVip.tier}>
                       <SelectTrigger className="h-11">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="silver">🥈 Silver</SelectItem>
-                        <SelectItem value="gold">🥇 Gold</SelectItem>
-                        <SelectItem value="platinum">💎 Platinum</SelectItem>
+                        <SelectItem value="silver">🥈 {pickLang(language, { ku: "زیو", en: "Silver", ar: "فضي", zh: "白银" })}</SelectItem>
+                        <SelectItem value="gold">🥇 {pickLang(language, { ku: "زێڕ", en: "Gold", ar: "ذهبي", zh: "黄金" })}</SelectItem>
+                        <SelectItem value="platinum">💎 {pickLang(language, { ku: "پلاتین", en: "Platinum", ar: "بلاتيني", zh: "铂金" })}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="edit-discountPercent">Discount %</Label>
+                      <Label htmlFor="edit-discountPercent">{pickLang(language, { ku: "داشکاندن ٪", en: "Discount %", ar: "نسبة الخصم ٪", zh: "折扣 %" })}</Label>
                       <Input id="edit-discountPercent" name="discountPercent" type="number" step="0.01" min="0" max="100" defaultValue={selectedVip.discountPercent || ""} className="h-11" />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="edit-creditLimitUsd">Credit Limit ($)</Label>
+                      <Label htmlFor="edit-creditLimitUsd">{pickLang(language, { ku: "سنووری قەرز ($)", en: "Credit Limit ($)", ar: "حد الائتمان ($)", zh: "信用额度 ($)" })}</Label>
                       <Input id="edit-creditLimitUsd" name="creditLimitUsd" type="number" step="0.01" min="0" defaultValue={selectedVip.creditLimitUsd || ""} className="h-11" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="edit-fixedPricePerKgAir">Fixed Price/KG (Air)</Label>
+                      <Label htmlFor="edit-fixedPricePerKgAir">{pickLang(language, { ku: "نرخی جێگیر/کگ (ئاسمانی)", en: "Fixed Price/KG (Air)", ar: "سعر ثابت/كغ (جوي)", zh: "固定单价/公斤（空运）" })}</Label>
                       <Input id="edit-fixedPricePerKgAir" name="fixedPricePerKgAir" type="number" step="0.01" min="0" defaultValue={selectedVip.fixedPricePerKgAir || ""} className="h-11" />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="edit-fixedPricePerKgSea">Fixed Price/KG (Sea)</Label>
+                      <Label htmlFor="edit-fixedPricePerKgSea">{pickLang(language, { ku: "نرخی جێگیر/کگ (دەریایی)", en: "Fixed Price/KG (Sea)", ar: "سعر ثابت/كغ (بحري)", zh: "固定单价/公斤（海运）" })}</Label>
                       <Input id="edit-fixedPricePerKgSea" name="fixedPricePerKgSea" type="number" step="0.01" min="0" defaultValue={selectedVip.fixedPricePerKgSea || ""} className="h-11" />
                     </div>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="edit-notes">Notes</Label>
+                    <Label htmlFor="edit-notes">{pickLang(language, { ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" })}</Label>
                     <Input id="edit-notes" name="notes" defaultValue={selectedVip.notes || ""} className="h-11" />
                   </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
-                    Cancel
+                    {pickLang(language, { ku: "هەڵوەشاندنەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
                   </Button>
                   <Button type="submit" disabled={updateMutation.isPending}>
-                    {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                    {updateMutation.isPending ? pickLang(language, { ku: "پاشەکەوتکردن...", en: "Saving...", ar: "جارٍ الحفظ...", zh: "保存中..." }) : pickLang(language, { ku: "پاشەکەوتکردنی گۆڕانکارییەکان", en: "Save Changes", ar: "حفظ التغييرات", zh: "保存更改" })}
                   </Button>
                 </DialogFooter>
               </form>

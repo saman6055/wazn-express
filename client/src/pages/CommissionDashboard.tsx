@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/popover";
 import * as XLSX from "xlsx";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
@@ -78,7 +79,7 @@ type SortField = "date" | "itemPrice" | "commission" | "total" | "customer";
 type SortDirection = "asc" | "desc";
 
 export default function CommissionDashboard() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -254,7 +255,7 @@ export default function CommissionDashboard() {
   if (searchQuery) {
     filterChips.push({
       id: "search",
-      label: `${t("commission.searchChip") || "گەڕان"}: ${searchQuery}`,
+      label: `${t("commission.searchChip") || pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}: ${searchQuery}`,
       onRemove: () => setSearchQuery(""),
     });
   }
@@ -282,28 +283,28 @@ export default function CommissionDashboard() {
   if (dateFrom) {
     filterChips.push({
       id: "dateFrom",
-      label: `${t("commission.fromPlaceholder") || "لە"}: ${dateFrom}`,
+      label: `${t("commission.fromPlaceholder") || pickLang(language, { ku: "لە", en: "From", ar: "من", zh: "从" })}: ${dateFrom}`,
       onRemove: () => setDateFrom(""),
     });
   }
   if (dateTo) {
     filterChips.push({
       id: "dateTo",
-      label: `${t("commission.toPlaceholder") || "بۆ"}: ${dateTo}`,
+      label: `${t("commission.toPlaceholder") || pickLang(language, { ku: "بۆ", en: "To", ar: "إلى", zh: "至" })}: ${dateTo}`,
       onRemove: () => setDateTo(""),
     });
   }
   if (minPrice) {
     filterChips.push({
       id: "minPrice",
-      label: `${t("commission.minPricePlaceholder") || "کەمترین"}: ${minPrice}`,
+      label: `${t("commission.minPricePlaceholder") || pickLang(language, { ku: "کەمترین", en: "Min", ar: "الأدنى", zh: "最低" })}: ${minPrice}`,
       onRemove: () => setMinPrice(""),
     });
   }
   if (maxPrice) {
     filterChips.push({
       id: "maxPrice",
-      label: `${t("commission.maxPricePlaceholder") || "زۆرترین"}: ${maxPrice}`,
+      label: `${t("commission.maxPricePlaceholder") || pickLang(language, { ku: "زۆرترین", en: "Max", ar: "الأقصى", zh: "最高" })}: ${maxPrice}`,
       onRemove: () => setMaxPrice(""),
     });
   }
@@ -322,7 +323,7 @@ export default function CommissionDashboard() {
   const exportToExcel = () => {
     const data = filteredOrders.map(order => ({
       [t("commission.orderCode")]: order.orderCode,
-      "ئۆردەر نەمبەر": (order as any).orderNumber || "",
+      [pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order Number", ar: "رقم الطلب", zh: "订单号" })]: (order as any).orderNumber || "",
       [t("commission.customer")]: (order as any).customer?.fullName || "",
       [t("commission.customerCode")]: (order as any).customer?.customerCode || "",
       [t("commission.productName")]: order.productName,
@@ -341,7 +342,7 @@ export default function CommissionDashboard() {
     // Add summary row
     data.push({
       [t("commission.orderCode")]: t("commission.grandTotal"),
-      "ئۆردەر نەمبەر": "",
+      [pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order Number", ar: "رقم الطلب", zh: "订单号" })]: "",
       [t("commission.customer")]: "",
       [t("commission.customerCode")]: "",
       [t("commission.productName")]: `${totalOrders} ${t("commission.orders")}`,
@@ -428,7 +429,7 @@ export default function CommissionDashboard() {
           <thead>
             <tr>
               <th>${t("commission.orderCode")}</th>
-              <th>ئۆردەر #</th>
+              <th>${pickLang(language, { ku: "ئۆردەر #", en: "Order #", ar: "الطلب #", zh: "订单 #" })}</th>
               <th>${t("commission.customer")}</th>
               <th>${t("commission.productName")}</th>
               <th>${t("commission.quantity")}</th>
@@ -867,17 +868,17 @@ export default function CommissionDashboard() {
             ) : filteredOrders.length === 0 ? (
               <EmptyState
                 icon={<Package />}
-                title={t("commission.noOrdersMessage") || "هیچ ئۆردەرێک نییە"}
+                title={t("commission.noOrdersMessage") || pickLang(language, { ku: "هیچ ئۆردەرێک نییە", en: "No orders", ar: "لا توجد طلبات", zh: "暂无订单" })}
                 description={
                   hasActiveFilters
-                    ? t("common.tryClearingFilters") || "هەوڵبدە فلتەرەکان پاک بکەیتەوە"
+                    ? t("common.tryClearingFilters") || pickLang(language, { ku: "هەوڵبدە فلتەرەکان پاک بکەیتەوە", en: "Try clearing the filters", ar: "حاول مسح عوامل التصفية", zh: "尝试清除筛选条件" })
                     : undefined
                 }
                 action={
                   hasActiveFilters ? (
                     <Button variant="outline" onClick={clearAllFilters}>
                       <X className="h-4 w-4 ms-2" />
-                      {t("commission.clearAllFilters") || "پاککردنەوەی فلتەرەکان"}
+                      {t("commission.clearAllFilters") || pickLang(language, { ku: "پاککردنەوەی فلتەرەکان", en: "Clear filters", ar: "مسح عوامل التصفية", zh: "清除筛选" })}
                     </Button>
                   ) : (
                     <Button variant="outline" onClick={() => navigate("/commission/new")}>
@@ -892,7 +893,7 @@ export default function CommissionDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>کۆدی ئۆردەر</TableHead>
+                      <TableHead>{pickLang(language, { ku: "کۆدی ئۆردەر", en: "Order Code", ar: "رمز الطلب", zh: "订单代码" })}</TableHead>
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("customer")}>
                         {t("commission.customer")} {sortField === "customer" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
@@ -924,7 +925,7 @@ export default function CommissionDashboard() {
                               <Badge variant="outline" className="font-mono text-amber-600 border-amber-300">
                                 {order.orderCode}
                               </Badge>
-                              <CopyButton value={order.orderCode} label="کۆپی کۆد" />
+                              <CopyButton value={order.orderCode} label={pickLang(language, { ku: "کۆپی کۆد", en: "Copy code", ar: "نسخ الرمز", zh: "复制代码" })} />
                             </div>
                             {(order as any).orderNumber && (
                               <p className="text-xs text-muted-foreground font-mono">
@@ -941,7 +942,7 @@ export default function CommissionDashboard() {
                                 {(order as any).customer?.customerCode || ""}
                               </p>
                             </div>
-                            <CopyButton value={(order as any).customer?.fullName} label="کۆپی ناوی کڕیار" />
+                            <CopyButton value={(order as any).customer?.fullName} label={pickLang(language, { ku: "کۆپی ناوی کڕیار", en: "Copy customer name", ar: "نسخ اسم العميل", zh: "复制客户名称" })} />
                           </div>
                         </TableCell>
                         <TableCell>
@@ -977,7 +978,7 @@ export default function CommissionDashboard() {
                                 <Layers className="h-3 w-3 me-1" />
                                 {(order as any).batch.batchCode}
                               </Badge>
-                              <CopyButton value={(order as any).batch.batchCode} label="کۆپی کۆدی باچ" />
+                              <CopyButton value={(order as any).batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
                             </div>
                           ) : (
                             <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
@@ -997,7 +998,7 @@ export default function CommissionDashboard() {
                               <Badge variant="secondary" className="font-mono text-xs">
                                 {order.trackingNumber}
                               </Badge>
-                              <CopyButton value={order.trackingNumber} label="کۆپی تراکینگ" />
+                              <CopyButton value={order.trackingNumber} label={pickLang(language, { ku: "کۆپی تراکینگ", en: "Copy tracking", ar: "نسخ التتبع", zh: "复制追踪号" })} />
                             </div>
                           ) : (
                             <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">

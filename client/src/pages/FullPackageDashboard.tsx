@@ -62,6 +62,7 @@ import {
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -80,7 +81,7 @@ type SortField = "date" | "purchase" | "selling" | "profit" | "customer";
 type SortDirection = "asc" | "desc";
 
 export default function FullPackageDashboard() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -267,7 +268,7 @@ export default function FullPackageDashboard() {
     if (search) {
       chips.push({
         id: "search",
-        label: `${t("fullPackage.searchChip") || "گەڕان"}: ${search}`,
+        label: `${t("fullPackage.searchChip") || pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}: ${search}`,
         onRemove: () => setSearch(""),
       });
     }
@@ -297,28 +298,28 @@ export default function FullPackageDashboard() {
     if (dateFrom) {
       chips.push({
         id: "dateFrom",
-        label: `${t("fullPackage.fromPlaceholder") || "لە"}: ${dateFrom}`,
+        label: `${t("fullPackage.fromPlaceholder") || pickLang(language, { ku: "لە", en: "From", ar: "من", zh: "从" })}: ${dateFrom}`,
         onRemove: () => setDateFrom(""),
       });
     }
     if (dateTo) {
       chips.push({
         id: "dateTo",
-        label: `${t("fullPackage.toPlaceholder") || "بۆ"}: ${dateTo}`,
+        label: `${t("fullPackage.toPlaceholder") || pickLang(language, { ku: "بۆ", en: "To", ar: "إلى", zh: "至" })}: ${dateTo}`,
         onRemove: () => setDateTo(""),
       });
     }
     if (minPrice) {
       chips.push({
         id: "minPrice",
-        label: `${t("fullPackage.minPricePlaceholder") || "کەمترین نرخ"}: ${minPrice}`,
+        label: `${t("fullPackage.minPricePlaceholder") || pickLang(language, { ku: "کەمترین نرخ", en: "Min price", ar: "أدنى سعر", zh: "最低价" })}: ${minPrice}`,
         onRemove: () => setMinPrice(""),
       });
     }
     if (maxPrice) {
       chips.push({
         id: "maxPrice",
-        label: `${t("fullPackage.maxPricePlaceholder") || "زۆرترین نرخ"}: ${maxPrice}`,
+        label: `${t("fullPackage.maxPricePlaceholder") || pickLang(language, { ku: "زۆرترین نرخ", en: "Max price", ar: "أعلى سعر", zh: "最高价" })}: ${maxPrice}`,
         onRemove: () => setMaxPrice(""),
       });
     }
@@ -356,9 +357,10 @@ export default function FullPackageDashboard() {
 
   // Export to Excel
   const exportToExcel = () => {
+    const orderNumberCol = pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order Number", ar: "رقم الطلب", zh: "订单号" });
     const data = filteredOrders.map(order => ({
       [t("fullPackage.orderCode")]: order.orderCode,
-      "ئۆردەر نەمبەر": (order as any).orderNumber || "",
+      [orderNumberCol]: (order as any).orderNumber || "",
       [t("fullPackage.customer")]: (order as any).customer?.fullName || "",
       [t("fullPackage.customerCode")]: (order as any).customer?.customerCode || "",
       [t("fullPackage.productName")]: order.productName,
@@ -375,7 +377,7 @@ export default function FullPackageDashboard() {
     // Add summary row
     data.push({
       [t("fullPackage.orderCode")]: t("fullPackage.grandTotal"),
-      "ئۆردەر نەمبەر": "",
+      [orderNumberCol]: "",
       [t("fullPackage.customer")]: "",
       [t("fullPackage.customerCode")]: "",
       [t("fullPackage.productName")]: `${totalOrders} ${t("fullPackage.orders")}`,
@@ -462,7 +464,7 @@ export default function FullPackageDashboard() {
           <thead>
             <tr>
               <th>${t("fullPackage.orderCode")}</th>
-              <th>ئۆردەر #</th>
+              <th>${pickLang(language, { ku: "ئۆردەر #", en: "Order #", ar: "الطلب #", zh: "订单 #" })}</th>
               <th>${t("fullPackage.customer")}</th>
               <th>${t("fullPackage.productName")}</th>
               <th>${t("fullPackage.quantity")}</th>
@@ -928,17 +930,17 @@ export default function FullPackageDashboard() {
             ) : filteredOrders.length === 0 ? (
               <EmptyState
                 icon={<ShoppingBag />}
-                title={t("fullPackage.noOrdersMessage") || "هیچ ئۆردەرێک نییە"}
+                title={t("fullPackage.noOrdersMessage") || pickLang(language, { ku: "هیچ ئۆردەرێک نییە", en: "No orders yet", ar: "لا توجد طلبات", zh: "暂无订单" })}
                 description={
                   hasActiveFilters
-                    ? t("common.tryClearingFilters") || "هەوڵبدە فلتەرەکان پاک بکەیتەوە"
+                    ? t("common.tryClearingFilters") || pickLang(language, { ku: "هەوڵبدە فلتەرەکان پاک بکەیتەوە", en: "Try clearing the filters", ar: "حاول مسح عوامل التصفية", zh: "请尝试清除筛选条件" })
                     : undefined
                 }
                 action={
                   hasActiveFilters ? (
                     <Button variant="outline" onClick={clearAllFilters}>
                       <X className="h-4 w-4 ms-2" />
-                      {t("fullPackage.clearAllFilters") || "پاککردنەوەی فلتەرەکان"}
+                      {t("fullPackage.clearAllFilters") || pickLang(language, { ku: "پاککردنەوەی فلتەرەکان", en: "Clear filters", ar: "مسح عوامل التصفية", zh: "清除筛选" })}
                     </Button>
                   ) : (
                     <Link href="/full-package/new">
@@ -955,7 +957,7 @@ export default function FullPackageDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>کۆدی ئۆردەر</TableHead>
+                      <TableHead>{pickLang(language, { ku: "کۆدی ئۆردەر", en: "Order Code", ar: "رمز الطلب", zh: "订单编码" })}</TableHead>
                       <TableHead>{t("fullPackage.customer")}</TableHead>
                       <TableHead>{t("fullPackage.productName")}</TableHead>
                       <TableHead>{t("fullPackage.batchLabel")}</TableHead>
@@ -988,14 +990,14 @@ export default function FullPackageDashboard() {
                               <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300">
                                 {order.orderCode}
                               </Badge>
-                              <CopyButton value={order.orderCode} label="کۆپی کۆدی ئۆردەر" />
+                              <CopyButton value={order.orderCode} label={pickLang(language, { ku: "کۆپی کۆدی ئۆردەر", en: "Copy order code", ar: "نسخ رمز الطلب", zh: "复制订单编码" })} />
                             </div>
                             {(order as any).orderNumber && (
                               <div className="flex items-center gap-1">
                                 <p className="text-xs text-muted-foreground font-mono">
                                   #{(order as any).orderNumber}
                                 </p>
-                                <CopyButton value={(order as any).orderNumber} label="کۆپی ئۆردەر نەمبەر" />
+                                <CopyButton value={(order as any).orderNumber} label={pickLang(language, { ku: "کۆپی ئۆردەر نەمبەر", en: "Copy order number", ar: "نسخ رقم الطلب", zh: "复制订单号" })} />
                               </div>
                             )}
                           </div>
@@ -1008,7 +1010,7 @@ export default function FullPackageDashboard() {
                                 {(order as any).customer?.customerCode || ""}
                               </p>
                             </div>
-                            <CopyButton value={(order as any).customer?.fullName} label="کۆپی ناوی کڕیار" />
+                            <CopyButton value={(order as any).customer?.fullName} label={pickLang(language, { ku: "کۆپی ناوی کڕیار", en: "Copy customer name", ar: "نسخ اسم العميل", zh: "复制客户姓名" })} />
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1044,7 +1046,7 @@ export default function FullPackageDashboard() {
                                 <Layers className="h-3 w-3 me-1" />
                                 {(order as any).batch.batchCode}
                               </Badge>
-                              <CopyButton value={(order as any).batch.batchCode} label="کۆپی کۆدی باچ" />
+                              <CopyButton value={(order as any).batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次编码" })} />
                             </div>
                           ) : (
                             <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
@@ -1064,7 +1066,7 @@ export default function FullPackageDashboard() {
                                 <Badge variant="secondary" className="font-mono text-xs">
                                   {order.trackingNumber}
                                 </Badge>
-                                <CopyButton value={order.trackingNumber} label="کۆپی تراکینگ" />
+                                <CopyButton value={order.trackingNumber} label={pickLang(language, { ku: "کۆپی تراکینگ", en: "Copy tracking", ar: "نسخ التتبع", zh: "复制跟踪号" })} />
                               </div>
                               {order.trackingAddedDate && (
                                 <p className="text-xs text-muted-foreground">

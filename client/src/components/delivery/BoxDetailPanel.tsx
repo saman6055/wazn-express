@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { soundManager } from "@/lib/soundManager";
 import { cn } from "@/lib/utils";
+import { pickLang } from "@/lib/lang";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -601,11 +602,11 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         {hasAdvance && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-center">
-              <p className="text-xs text-emerald-700 font-medium">💰 پارەی پێشەکی دراو</p>
+              <p className="text-xs text-emerald-700 font-medium">💰 {pickLang(language, { ku: "پارەی پێشەکی دراو", en: "Advance paid", ar: "الدفعة المقدمة المدفوعة", zh: "已付预付款" })}</p>
               <p className="text-lg font-bold text-emerald-700">−${advanceTotal.toFixed(2)}</p>
             </div>
             <div className="rounded-lg bg-amber-50 border-2 border-amber-300 p-3 text-center">
-              <p className="text-xs text-amber-800 font-medium">ماوە بۆ دان</p>
+              <p className="text-xs text-amber-800 font-medium">{pickLang(language, { ku: "ماوە بۆ دان", en: "Remaining due", ar: "المبلغ المتبقي", zh: "应付余额" })}</p>
               <p className="text-xl font-extrabold text-amber-700">${remainingDue.toFixed(2)}</p>
             </div>
           </div>

@@ -91,6 +91,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { pickLang } from "@/lib/lang";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const languages: { value: Language; label: string; flag: string }[] = [
@@ -177,8 +178,8 @@ function DashboardLayoutContent({
   const PINNED: { icon: LucideIcon; label: string; path: string }[] = [
     { icon: Truck, label: t("nav.quickRegister") || "تۆماری خێرا", path: "/packages/quick-register" },
     { icon: CreditCard, label: t("nav.customerDelivery") || "گەیاندن بە کڕیار", path: "/customer-delivery-scanner" },
-    { icon: DollarSign, label: "کڕینی نوێ بە خستنەسەر", path: "/commission/new" },
-    { icon: Package, label: "پاکێجی تەواوی نوێ", path: "/full-package/new" },
+    { icon: DollarSign, label: pickLang(language, { ku: "کڕینی نوێ بە خستنەسەر", en: "New markup purchase", ar: "شراء جديد بهامش ربح", zh: "新增加价采购" }), path: "/commission/new" },
+    { icon: Package, label: pickLang(language, { ku: "پاکێجی تەواوی نوێ", en: "New complete package", ar: "حزمة كاملة جديدة", zh: "新增完整套餐" }), path: "/full-package/new" },
   ];
   const { canViewPath } = usePermissions();
 
@@ -738,10 +739,10 @@ function DashboardLayoutContent({
               type="button"
               onClick={() => setCmdOpen(true)}
               className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-muted/40 px-2.5 h-8 text-sm text-muted-foreground hover:bg-muted transition-colors"
-              title="گەڕان بۆ فەنکشن (Ctrl+K)"
+              title={pickLang(language, { ku: "گەڕان بۆ فەنکشن (Ctrl+K)", en: "Search for a function (Ctrl+K)", ar: "البحث عن وظيفة (Ctrl+K)", zh: "搜索功能 (Ctrl+K)" })}
             >
               <Search className="h-4 w-4" />
-              <span className="hidden lg:inline">گەڕان بۆ فەنکشن…</span>
+              <span className="hidden lg:inline">{pickLang(language, { ku: "گەڕان بۆ فەنکشن…", en: "Search for a function…", ar: "البحث عن وظيفة…", zh: "搜索功能…" })}</span>
               <kbd className="hidden lg:inline rounded border border-gray-300 dark:border-gray-600 px-1 text-[10px] font-mono">Ctrl K</kbd>
             </button>
 

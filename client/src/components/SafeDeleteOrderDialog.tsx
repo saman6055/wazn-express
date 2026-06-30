@@ -19,6 +19,8 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -81,18 +83,40 @@ export default function SafeDeleteOrderDialog({
   order,
   onDeleted,
 }: SafeDeleteOrderDialogProps) {
+  const { language } = useTranslation();
   const [reason, setReason] = useState("");
   const [refundAdvance, setRefundAdvance] = useState(true);
   const utils = trpc.useUtils();
 
   const deleteMutation = trpc.fullPackage.delete.useMutation({
     onSuccess: (res) => {
-      const parts: string[] = ["ئۆردەر سڕایەوە | Order deleted"];
+      const parts: string[] = [
+        pickLang(language, {
+          ku: "ئۆردەر سڕایەوە",
+          en: "Order deleted",
+          ar: "تم حذف الطلب",
+          zh: "订单已删除",
+        }),
+      ];
       if ((res as any).reversedChargeUsd > 0) {
-        parts.push(`گەڕاندنەوەی نرخ: $${(res as any).reversedChargeUsd.toFixed(2)}`);
+        parts.push(
+          `${pickLang(language, {
+            ku: "گەڕاندنەوەی نرخ",
+            en: "Charge reversal",
+            ar: "عكس الرسوم",
+            zh: "费用退回",
+          })}: $${(res as any).reversedChargeUsd.toFixed(2)}`
+        );
       }
       if ((res as any).reversedAdvanceUsd > 0) {
-        parts.push(`گەڕاندنەوەی پێشەکی: $${(res as any).reversedAdvanceUsd.toFixed(2)}`);
+        parts.push(
+          `${pickLang(language, {
+            ku: "گەڕاندنەوەی پێشەکی",
+            en: "Advance refund",
+            ar: "استرداد الدفعة المقدمة",
+            zh: "预付款退回",
+          })}: $${(res as any).reversedAdvanceUsd.toFixed(2)}`
+        );
       }
       toast.success(parts.join(" · "));
       utils.fullPackage.list.invalidate();
@@ -119,10 +143,19 @@ export default function SafeDeleteOrderDialog({
       // — "just retry" would silently clobber a concurrent edit.
       if (error.data?.code === "CONFLICT") {
         toast.error(
-          "ئۆردەرەکە لەلایەن کەسێکی دیکەوە گۆڕدراوە | Order changed elsewhere",
+          pickLang(language, {
+            ku: "ئۆردەرەکە لەلایەن کەسێکی دیکەوە گۆڕدراوە",
+            en: "Order changed elsewhere",
+            ar: "تم تغيير الطلب من مكان آخر",
+            zh: "订单已在其他地方被更改",
+          }),
           {
-            description:
-              "تکایە پەڕەکە نوێ بکەرەوە و هەوڵ بدەرەوە. | Please reload the page and try again.",
+            description: pickLang(language, {
+              ku: "تکایە پەڕەکە نوێ بکەرەوە و هەوڵ بدەرەوە.",
+              en: "Please reload the page and try again.",
+              ar: "يرجى إعادة تحميل الصفحة والمحاولة مرة أخرى.",
+              zh: "请刷新页面后重试。",
+            }),
             duration: 10000,
           }
         );
@@ -133,9 +166,21 @@ export default function SafeDeleteOrderDialog({
       const rawMsg =
         typeof error.message === "string" ? error.message.trim() : "";
       const code = error.data?.code ?? "UNKNOWN";
-      const title = rawMsg || `هەڵە لە سڕینەوەی ئۆردەر | Delete failed`;
+      const title =
+        rawMsg ||
+        pickLang(language, {
+          ku: "هەڵە لە سڕینەوەی ئۆردەر",
+          en: "Delete failed",
+          ar: "فشل الحذف",
+          zh: "删除失败",
+        });
       toast.error(title, {
-        description: `کۆدی هەڵە | Error code: ${code}`,
+        description: `${pickLang(language, {
+          ku: "کۆدی هەڵە",
+          en: "Error code",
+          ar: "رمز الخطأ",
+          zh: "错误代码",
+        })}: ${code}`,
         duration: 10000,
       });
     },
@@ -171,21 +216,27 @@ export default function SafeDeleteOrderDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-right">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            سڕینەوەی ئۆردەر | Delete Order
+            {pickLang(language, {
+              ku: "سڕینەوەی ئۆردەر",
+              en: "Delete Order",
+              ar: "حذف الطلب",
+              zh: "删除订单",
+            })}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-right space-y-2">
             <div>
-              ئۆردەر:{" "}
+              {pickLang(language, { ku: "ئۆردەر", en: "Order", ar: "الطلب", zh: "订单" })}:{" "}
               <span className="font-mono font-bold text-red-600">{order.orderCode}</span>
               {" — "}
               <span className="font-semibold">{order.productName}</span>
             </div>
             <div className="text-sm text-muted-foreground">
-              ئەم کارە هەوڵدانەوەیی نییە. هەموو پارەکانی پەیوەست بە دەفتەری هەژماری کڕیار
-              دەگەڕێنرێتەوە بۆ پاراستنی دروستی ژمارەکان.
-              <br />
-              This action is not recoverable. All linked customer-ledger money will
-              be reversed to keep the balance accurate.
+              {pickLang(language, {
+                ku: "ئەم کارە هەوڵدانەوەیی نییە. هەموو پارەکانی پەیوەست بە دەفتەری هەژماری کڕیار دەگەڕێنرێتەوە بۆ پاراستنی دروستی ژمارەکان.",
+                en: "This action is not recoverable. All linked customer-ledger money will be reversed to keep the balance accurate.",
+                ar: "هذا الإجراء لا يمكن التراجع عنه. سيتم عكس جميع المبالغ المرتبطة بدفتر حساب العميل للحفاظ على دقة الرصيد.",
+                zh: "此操作不可恢复。所有关联到客户账本的款项将被冲销，以确保余额准确。",
+              })}
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -194,11 +245,23 @@ export default function SafeDeleteOrderDialog({
         {hasFinancialImpact && (
           <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4 space-y-2">
             <div className="font-bold text-amber-900 text-sm">
-              کاریگەری دارایی | Financial Impact Preview
+              {pickLang(language, {
+                ku: "کاریگەری دارایی",
+                en: "Financial Impact Preview",
+                ar: "معاينة الأثر المالي",
+                zh: "财务影响预览",
+              })}
             </div>
             {previewCharge > 0 && (
               <div className="flex justify-between text-sm">
-                <span>گەڕاندنەوەی نرخی ئۆردەر | Order charge reversal:</span>
+                <span>
+                  {pickLang(language, {
+                    ku: "گەڕاندنەوەی نرخی ئۆردەر",
+                    en: "Order charge reversal",
+                    ar: "عكس رسوم الطلب",
+                    zh: "订单费用冲销",
+                  })}:
+                </span>
                 <span className="font-mono font-bold text-green-700">
                   −${previewCharge.toFixed(2)}
                 </span>
@@ -206,7 +269,14 @@ export default function SafeDeleteOrderDialog({
             )}
             {advance > 0 && (
               <div className="flex justify-between text-sm">
-                <span>گەڕاندنەوەی پارەی پێشەکی | Advance refund:</span>
+                <span>
+                  {pickLang(language, {
+                    ku: "گەڕاندنەوەی پارەی پێشەکی",
+                    en: "Advance refund",
+                    ar: "استرداد الدفعة المقدمة",
+                    zh: "预付款退回",
+                  })}:
+                </span>
                 <span className="font-mono font-bold text-red-700">
                   {refundAdvance ? `+$${advance.toFixed(2)}` : "—"}
                 </span>
@@ -214,7 +284,12 @@ export default function SafeDeleteOrderDialog({
             )}
             <div className="border-t border-amber-200 pt-2 flex justify-between">
               <span className="font-bold text-amber-900">
-                کۆی گۆڕانکاری لە باڵانس | Net ledger change:
+                {pickLang(language, {
+                  ku: "کۆی گۆڕانکاری لە باڵانس",
+                  en: "Net ledger change",
+                  ar: "صافي تغيّر دفتر الحساب",
+                  zh: "账本净变动",
+                })}:
               </span>
               <span className="font-mono font-bold text-amber-900">
                 {totalReversal >= 0 ? "+" : ""}
@@ -228,7 +303,12 @@ export default function SafeDeleteOrderDialog({
                   onCheckedChange={(v) => setRefundAdvance(v === true)}
                 />
                 <span>
-                  گەڕاندنەوەی پارەی پێشەکی بۆ کڕیار | Refund advance payment to customer
+                  {pickLang(language, {
+                    ku: "گەڕاندنەوەی پارەی پێشەکی بۆ کڕیار",
+                    en: "Refund advance payment to customer",
+                    ar: "استرداد الدفعة المقدمة إلى العميل",
+                    zh: "向客户退还预付款",
+                  })}
                 </span>
               </label>
             )}
@@ -237,11 +317,13 @@ export default function SafeDeleteOrderDialog({
 
         {!order.chargeTransactionId && (
           <div className="text-xs text-muted-foreground border-l-2 border-muted pl-2 py-1">
-            ℹ ئەم ئۆردەرە هێشتا نرخی بەسەر کڕیاردا داننراوە، بۆیە تەنها ئۆردەرەکە
-            دەسڕێتەوە (دەفتەری هەژمار ناگۆڕێ).
-            <br />
-            This order has not been charged yet, so only the record will be removed
-            (the customer ledger stays untouched).
+            ℹ{" "}
+            {pickLang(language, {
+              ku: "ئەم ئۆردەرە هێشتا نرخی بەسەر کڕیاردا داننراوە، بۆیە تەنها ئۆردەرەکە دەسڕێتەوە (دەفتەری هەژمار ناگۆڕێ).",
+              en: "This order has not been charged yet, so only the record will be removed (the customer ledger stays untouched).",
+              ar: "لم يتم احتساب رسوم هذا الطلب بعد، لذا سيتم حذف السجل فقط (يبقى دفتر حساب العميل دون تغيير).",
+              zh: "此订单尚未计费，因此仅删除记录（客户账本保持不变）。",
+            })}
           </div>
         )}
 
@@ -249,27 +331,55 @@ export default function SafeDeleteOrderDialog({
         {!isPendingOrder && (
           <div className="space-y-2">
             <Label htmlFor="delete-reason" className="text-right block">
-              هۆکاری سڕینەوە | Reason for deletion <span className="text-red-600">*</span>
+              {pickLang(language, {
+                ku: "هۆکاری سڕینەوە",
+                en: "Reason for deletion",
+                ar: "سبب الحذف",
+                zh: "删除原因",
+              })}{" "}
+              <span className="text-red-600">*</span>
             </Label>
             <Textarea
               id="delete-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="بۆ نموونە: کڕیار ئۆردەرەکەی هەڵوەشاندەوە | e.g. Customer cancelled the order"
+              placeholder={pickLang(language, {
+                ku: "بۆ نموونە: کڕیار ئۆردەرەکەی هەڵوەشاندەوە",
+                en: "e.g. Customer cancelled the order",
+                ar: "مثال: ألغى العميل الطلب",
+                zh: "例如：客户取消了订单",
+              })}
               rows={3}
               disabled={isBusy}
               dir="auto"
             />
             <div className="text-xs text-muted-foreground text-right">
               {reason.trim().length < 3
-                ? `بەلایەنی کەم ٣ پیت | At least 3 characters (${reason.trim().length}/3)`
-                : `${reason.trim().length} پیت | chars`}
+                ? `${pickLang(language, {
+                    ku: "بەلایەنی کەم ٣ پیت",
+                    en: "At least 3 characters",
+                    ar: "٣ أحرف على الأقل",
+                    zh: "至少 3 个字符",
+                  })} (${reason.trim().length}/3)`
+                : `${reason.trim().length} ${pickLang(language, {
+                    ku: "پیت",
+                    en: "chars",
+                    ar: "حرف",
+                    zh: "个字符",
+                  })}`}
             </div>
           </div>
         )}
 
         <AlertDialogFooter className="flex gap-2">
-          <AlertDialogCancel disabled={isBusy}>پاشگەزبوونەوە | Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isBusy}>
+            {pickLang(language, {
+              ku: "پاشگەزبوونەوە",
+              en: "Cancel",
+              ar: "إلغاء",
+              zh: "取消",
+            })}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={!reasonValid || isBusy}
@@ -281,8 +391,18 @@ export default function SafeDeleteOrderDialog({
               <Trash2 className="h-4 w-4 ms-2" />
             )}
             {isPendingOrder
-              ? "سڕینەوە | Delete"
-              : "سڕینەوە بە کاریگەری دارایی | Delete with Financial Reversal"}
+              ? pickLang(language, {
+                  ku: "سڕینەوە",
+                  en: "Delete",
+                  ar: "حذف",
+                  zh: "删除",
+                })
+              : pickLang(language, {
+                  ku: "سڕینەوە بە کاریگەری دارایی",
+                  en: "Delete with Financial Reversal",
+                  ar: "حذف مع عكس مالي",
+                  zh: "删除并冲销财务",
+                })}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
