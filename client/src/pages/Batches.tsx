@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CopyButton } from "@/components/CopyButton";
+import { ZoomImage } from "@/components/ZoomImage";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -967,7 +969,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               </TableHeader>
               <TableBody>
                 {batches?.map((batch) => (
-                  <TableRow key={batch.id}>
+                  <TableRow
+                    key={batch.id}
+                    className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"
+                  >
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {batch.shippingType === "sea" ? (
@@ -976,6 +981,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           <Plane className="h-4 w-4 text-amber-600" />
                         )}
                         <span className="font-mono font-medium">{batch.batchCode}</span>
+                        <CopyButton value={batch.batchCode} label="کۆپی کۆدی باچ" />
                       </div>
                     </TableCell>
                     <TableCell>

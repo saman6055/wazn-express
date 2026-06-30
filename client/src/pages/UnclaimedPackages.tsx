@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CopyButton } from "@/components/CopyButton";
+import { ZoomImage } from "@/components/ZoomImage";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
@@ -187,10 +189,25 @@ const [search, setSearch] = useState("");
                   </TableHeader>
                   <TableBody>
                     {filteredPackages.map((pkg) => (
-                      <TableRow key={pkg.id}>
-                        <TableCell className="font-mono font-medium">{pkg.packageCode}</TableCell>
+                      <TableRow
+                        key={pkg.id}
+                        className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"
+                      >
+                        <TableCell className="font-mono font-medium">
+                          <div className="flex items-center gap-1">
+                            {pkg.packageCode}
+                            <CopyButton value={pkg.packageCode} label="کۆپی کۆد" />
+                          </div>
+                        </TableCell>
                         <TableCell className="font-mono text-sm">
-                          {pkg.trackingNumber || "-"}
+                          {pkg.trackingNumber ? (
+                            <div className="flex items-center gap-1">
+                              {pkg.trackingNumber}
+                              <CopyButton value={pkg.trackingNumber} label="کۆپی تراکینگ" />
+                            </div>
+                          ) : (
+                            "-"
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="capitalize">
@@ -198,7 +215,16 @@ const [search, setSearch] = useState("");
                           </Badge>
                         </TableCell>
                         <TableCell>{pkg.weightKg ? `${pkg.weightKg} kg` : "-"}</TableCell>
-                        <TableCell>{getBatchCode(pkg.batchId)}</TableCell>
+                        <TableCell>
+                          {pkg.batchId ? (
+                            <div className="flex items-center gap-1">
+                              {getBatchCode(pkg.batchId)}
+                              <CopyButton value={getBatchCode(pkg.batchId)} label="کۆپی کۆدی باچ" />
+                            </div>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
                           {formatDistanceToNow(new Date(pkg.createdAt), { addSuffix: true })}
                         </TableCell>

@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CopyButton } from "@/components/CopyButton";
+import { ZoomImage } from "@/components/ZoomImage";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -162,11 +164,12 @@ const PackageTableRow = memo(function PackageTableRow({
   t,
 }: PackageRowProps) {
   return (
-    <TableRow>
+    <TableRow className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50">
       <TableCell>
         <div className="flex items-center gap-2">
           <QrCode className="h-4 w-4 text-muted-foreground" />
           <span className="font-mono text-sm">{pkg.packageCode}</span>
+          <CopyButton value={pkg.packageCode} label="کۆپی کۆد" />
         </div>
       </TableCell>
       <TableCell>
@@ -182,14 +185,20 @@ const PackageTableRow = memo(function PackageTableRow({
         })()}
       </TableCell>
       <TableCell>
-        <div>
-          <p className="font-medium">{getCustomerName(pkg.customerId)}</p>
-          <p className="text-xs text-muted-foreground font-mono">{getCustomerCode(pkg.customerId)}</p>
+        <div className="flex items-center gap-1">
+          <div>
+            <p className="font-medium">{getCustomerName(pkg.customerId)}</p>
+            <p className="text-xs text-muted-foreground font-mono">{getCustomerCode(pkg.customerId)}</p>
+          </div>
+          <CopyButton value={getCustomerName(pkg.customerId)} label="کۆپی ناوی کڕیار" />
         </div>
       </TableCell>
       <TableCell className="font-mono text-sm">
         {pkg.trackingNumber ? (
-          <span>{pkg.trackingNumber}</span>
+          <div className="flex items-center gap-1">
+            <span>{pkg.trackingNumber}</span>
+            <CopyButton value={pkg.trackingNumber} label="کۆپی تراکینگ" />
+          </div>
         ) : (
           <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
             <Link2Off className="h-3 w-3 me-1" />
@@ -204,9 +213,12 @@ const PackageTableRow = memo(function PackageTableRow({
       </TableCell>
       <TableCell>
         {pkg.batchId ? (
-          <Badge variant="secondary" className="text-xs font-mono">
-            {getBatchCode(pkg.batchId)}
-          </Badge>
+          <div className="flex items-center gap-1">
+            <Badge variant="secondary" className="text-xs font-mono">
+              {getBatchCode(pkg.batchId)}
+            </Badge>
+            <CopyButton value={getBatchCode(pkg.batchId)} label="کۆپی کۆدی باچ" />
+          </div>
         ) : (
           <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
             <PackageX className="h-3 w-3 me-1" />

@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/CopyButton";
+import { ZoomImage } from "@/components/ZoomImage";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -239,16 +241,22 @@ export function BoxTable({
             return (
               <TableRow
                 key={box.id}
-                className="cursor-pointer"
+                className="cursor-pointer transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"
                 onClick={() => onBoxSelect(box.id)}
               >
                 <TableCell>
-                  <span className="font-mono font-semibold text-primary">{box.boxCode}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="font-mono font-semibold text-primary">{box.boxCode}</span>
+                    <CopyButton value={box.boxCode} label="کۆپی کۆد" />
+                  </div>
                 </TableCell>
                 <TableCell>
-                  <div>
-                    <p className="font-medium text-sm">{customer?.fullName || "-"}</p>
-                    <p className="text-xs text-muted-foreground">{customer?.customerCode || ""}</p>
+                  <div className="flex items-center gap-1">
+                    <div>
+                      <p className="font-medium text-sm">{customer?.fullName || "-"}</p>
+                      <p className="text-xs text-muted-foreground">{customer?.customerCode || ""}</p>
+                    </div>
+                    <CopyButton value={customer?.fullName} label="کۆپی ناوی کڕیار" />
                   </div>
                 </TableCell>
                 <TableCell>
