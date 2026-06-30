@@ -24,8 +24,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, Plus, Pencil, Trash2, Star } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 export default function CurrencyManagement() {
+  const { language } = useTranslation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<any>(null);
@@ -46,7 +49,7 @@ export default function CurrencyManagement() {
   // Mutations
   const createMutation = trpc.advancedSettings.createCurrency.useMutation({
     onSuccess: () => {
-      toast.success("دراوە زیادکرا");
+      toast.success(pickLang(language, { ku: "دراوە زیادکرا", en: "Currency added", ar: "تمت إضافة العملة", zh: "已添加货币" }));
       refetch();
       setIsCreateDialogOpen(false);
       resetForm();
@@ -58,7 +61,7 @@ export default function CurrencyManagement() {
 
   const updateMutation = trpc.advancedSettings.updateCurrency.useMutation({
     onSuccess: () => {
-      toast.success("دراوە نوێکرایەوە");
+      toast.success(pickLang(language, { ku: "دراوە نوێکرایەوە", en: "Currency updated", ar: "تم تحديث العملة", zh: "已更新货币" }));
       refetch();
       setIsEditDialogOpen(false);
       setSelectedCurrency(null);
@@ -71,7 +74,7 @@ export default function CurrencyManagement() {
 
   const deleteMutation = trpc.advancedSettings.deleteCurrency.useMutation({
     onSuccess: () => {
-      toast.success("دراوە سڕایەوە");
+      toast.success(pickLang(language, { ku: "دراوە سڕایەوە", en: "Currency deleted", ar: "تم حذف العملة", zh: "已删除货币" }));
       refetch();
     },
     onError: (error) => {
@@ -120,7 +123,7 @@ export default function CurrencyManagement() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("ئایا دڵنیایت لە سڕینەوەی ئەم دراوە؟")) {
+    if (confirm(pickLang(language, { ku: "ئایا دڵنیایت لە سڕینەوەی ئەم دراوە؟", en: "Are you sure you want to delete this currency?", ar: "هل أنت متأكد من حذف هذه العملة؟", zh: "确定要删除此货币吗？" }))) {
       deleteMutation.mutate({ id });
     }
   };
@@ -135,15 +138,15 @@ export default function CurrencyManagement() {
                 <DollarSign className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-2xl">بەڕێوەبردنی دراو</CardTitle>
+                <CardTitle className="text-2xl">{pickLang(language, { ku: "بەڕێوەبردنی دراو", en: "Currency Management", ar: "إدارة العملات", zh: "货币管理" })}</CardTitle>
                 <CardDescription>
-                  بەڕێوەبردنی دراوەکان و نرخی ئاڵووگۆڕ
+                  {pickLang(language, { ku: "بەڕێوەبردنی دراوەکان و نرخی ئاڵووگۆڕ", en: "Manage currencies and exchange rates", ar: "إدارة العملات وأسعار الصرف", zh: "管理货币和汇率" })}
                 </CardDescription>
               </div>
             </div>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 ms-2" />
-              دراوی نوێ
+              {pickLang(language, { ku: "دراوی نوێ", en: "New Currency", ar: "عملة جديدة", zh: "新货币" })}
             </Button>
           </div>
         </CardHeader>
@@ -151,12 +154,12 @@ export default function CurrencyManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>کۆد</TableHead>
-                <TableHead>ناو</TableHead>
-                <TableHead>هێما</TableHead>
-                <TableHead>نرخی ئاڵووگۆڕ</TableHead>
-                <TableHead>دۆخ</TableHead>
-                <TableHead>کردارەکان</TableHead>
+                <TableHead>{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "代码" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "名称" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "هێما", en: "Symbol", ar: "الرمز", zh: "符号" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "نرخی ئاڵووگۆڕ", en: "Exchange Rate", ar: "سعر الصرف", zh: "汇率" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "کردارەکان", en: "Actions", ar: "الإجراءات", zh: "操作" })}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -173,9 +176,9 @@ export default function CurrencyManagement() {
                   <TableCell className="font-mono">{currency.exchangeRate}</TableCell>
                   <TableCell>
                     {currency.isActive ? (
-                      <Badge variant="default">چالاک</Badge>
+                      <Badge variant="default">{pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "启用" })}</Badge>
                     ) : (
-                      <Badge variant="secondary">ناچالاک</Badge>
+                      <Badge variant="secondary">{pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}</Badge>
                     )}
                   </TableCell>
                   <TableCell>
@@ -204,7 +207,7 @@ export default function CurrencyManagement() {
 
           {!currencies || currencies.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
-              هیچ دراوێک نییە
+              {pickLang(language, { ku: "هیچ دراوێک نییە", en: "No currencies", ar: "لا توجد عملات", zh: "暂无货币" })}
             </div>
           )}
         </CardContent>
@@ -214,14 +217,14 @@ export default function CurrencyManagement() {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>دراوی نوێ زیاد بکە</DialogTitle>
+            <DialogTitle>{pickLang(language, { ku: "دراوی نوێ زیاد بکە", en: "Add New Currency", ar: "إضافة عملة جديدة", zh: "添加新货币" })}</DialogTitle>
             <DialogDescription>
-              زانیاریەکانی دراوە نوێیەکە پڕ بکەرەوە
+              {pickLang(language, { ku: "زانیاریەکانی دراوە نوێیەکە پڕ بکەرەوە", en: "Fill in the details of the new currency", ar: "املأ بيانات العملة الجديدة", zh: "填写新货币的信息" })}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="code">کۆدی دراو (USD, EUR, IQD)</Label>
+              <Label htmlFor="code">{pickLang(language, { ku: "کۆدی دراو (USD, EUR, IQD)", en: "Currency Code (USD, EUR, IQD)", ar: "رمز العملة (USD, EUR, IQD)", zh: "货币代码 (USD, EUR, IQD)" })}</Label>
               <Input
                 id="code"
                 value={formData.code}
@@ -231,7 +234,7 @@ export default function CurrencyManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="name">ناوی دراو</Label>
+              <Label htmlFor="name">{pickLang(language, { ku: "ناوی دراو", en: "Currency Name", ar: "اسم العملة", zh: "货币名称" })}</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -240,7 +243,7 @@ export default function CurrencyManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="symbol">هێما</Label>
+              <Label htmlFor="symbol">{pickLang(language, { ku: "هێما", en: "Symbol", ar: "الرمز", zh: "符号" })}</Label>
               <Input
                 id="symbol"
                 value={formData.symbol}
@@ -249,7 +252,7 @@ export default function CurrencyManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="exchangeRate">نرخی ئاڵووگۆڕ</Label>
+              <Label htmlFor="exchangeRate">{pickLang(language, { ku: "نرخی ئاڵووگۆڕ", en: "Exchange Rate", ar: "سعر الصرف", zh: "汇率" })}</Label>
               <Input
                 id="exchangeRate"
                 type="number"
@@ -260,7 +263,7 @@ export default function CurrencyManagement() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="isBaseCurrency">دراوی بنەڕەت</Label>
+              <Label htmlFor="isBaseCurrency">{pickLang(language, { ku: "دراوی بنەڕەت", en: "Base Currency", ar: "العملة الأساسية", zh: "基础货币" })}</Label>
               <Switch
                 id="isBaseCurrency"
                 checked={formData.isBaseCurrency}
@@ -270,7 +273,7 @@ export default function CurrencyManagement() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">چالاک</Label>
+              <Label htmlFor="isActive">{pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "启用" })}</Label>
               <Switch
                 id="isActive"
                 checked={formData.isActive}
@@ -282,10 +285,10 @@ export default function CurrencyManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              پاشگەزبوونەوە
+              {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button onClick={handleCreate} disabled={createMutation.isPending}>
-              {createMutation.isPending ? "چاوەڕێ بە..." : "زیادکردن"}
+              {createMutation.isPending ? pickLang(language, { ku: "چاوەڕێ بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." }) : pickLang(language, { ku: "زیادکردن", en: "Add", ar: "إضافة", zh: "添加" })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -295,18 +298,18 @@ export default function CurrencyManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>دەستکاری دراو</DialogTitle>
+            <DialogTitle>{pickLang(language, { ku: "دەستکاری دراو", en: "Edit Currency", ar: "تعديل العملة", zh: "编辑货币" })}</DialogTitle>
             <DialogDescription>
-              زانیاریەکانی دراوەکە نوێ بکەرەوە
+              {pickLang(language, { ku: "زانیاریەکانی دراوەکە نوێ بکەرەوە", en: "Update the currency details", ar: "حدّث بيانات العملة", zh: "更新货币信息" })}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>کۆدی دراو</Label>
+              <Label>{pickLang(language, { ku: "کۆدی دراو", en: "Currency Code", ar: "رمز العملة", zh: "货币代码" })}</Label>
               <Input value={formData.code} disabled className="bg-muted" />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-name">ناوی دراو</Label>
+              <Label htmlFor="edit-name">{pickLang(language, { ku: "ناوی دراو", en: "Currency Name", ar: "اسم العملة", zh: "货币名称" })}</Label>
               <Input
                 id="edit-name"
                 value={formData.name}
@@ -314,7 +317,7 @@ export default function CurrencyManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-symbol">هێما</Label>
+              <Label htmlFor="edit-symbol">{pickLang(language, { ku: "هێما", en: "Symbol", ar: "الرمز", zh: "符号" })}</Label>
               <Input
                 id="edit-symbol"
                 value={formData.symbol}
@@ -322,7 +325,7 @@ export default function CurrencyManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-exchangeRate">نرخی ئاڵووگۆڕ</Label>
+              <Label htmlFor="edit-exchangeRate">{pickLang(language, { ku: "نرخی ئاڵووگۆڕ", en: "Exchange Rate", ar: "سعر الصرف", zh: "汇率" })}</Label>
               <Input
                 id="edit-exchangeRate"
                 type="number"
@@ -332,7 +335,7 @@ export default function CurrencyManagement() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="edit-isBaseCurrency">دراوی بنەڕەت</Label>
+              <Label htmlFor="edit-isBaseCurrency">{pickLang(language, { ku: "دراوی بنەڕەت", en: "Base Currency", ar: "العملة الأساسية", zh: "基础货币" })}</Label>
               <Switch
                 id="edit-isBaseCurrency"
                 checked={formData.isBaseCurrency}
@@ -342,7 +345,7 @@ export default function CurrencyManagement() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="edit-isActive">چالاک</Label>
+              <Label htmlFor="edit-isActive">{pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "启用" })}</Label>
               <Switch
                 id="edit-isActive"
                 checked={formData.isActive}
@@ -354,10 +357,10 @@ export default function CurrencyManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              پاشگەزبوونەوە
+              {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? "چاوەڕێ بە..." : "نوێکردنەوە"}
+              {updateMutation.isPending ? pickLang(language, { ku: "چاوەڕێ بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." }) : pickLang(language, { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" })}
             </Button>
           </DialogFooter>
         </DialogContent>

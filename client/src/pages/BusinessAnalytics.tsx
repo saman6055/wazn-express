@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { useState, useMemo } from "react";
 import { 
   TrendingUp, 
@@ -38,16 +40,28 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-// Helper function to get month name in Kurdish
-const getKurdishMonth = (month: number) => {
-  const months = [
-    'کانوونی دووەم', 'شوبات', 'ئازار', 'نیسان', 'ئایار', 'حوزەیران',
-    'تەممووز', 'ئاب', 'ئەیلوول', 'تشرینی یەکەم', 'تشرینی دووەم', 'کانوونی یەکەم'
-  ];
-  return months[month] || '';
+// Helper function to get localized month name
+const MONTH_NAMES: { ku: string; en: string; ar: string; zh: string }[] = [
+  { ku: 'کانوونی دووەم', en: 'January', ar: 'يناير', zh: '一月' },
+  { ku: 'شوبات', en: 'February', ar: 'فبراير', zh: '二月' },
+  { ku: 'ئازار', en: 'March', ar: 'مارس', zh: '三月' },
+  { ku: 'نیسان', en: 'April', ar: 'أبريل', zh: '四月' },
+  { ku: 'ئایار', en: 'May', ar: 'مايو', zh: '五月' },
+  { ku: 'حوزەیران', en: 'June', ar: 'يونيو', zh: '六月' },
+  { ku: 'تەممووز', en: 'July', ar: 'يوليو', zh: '七月' },
+  { ku: 'ئاب', en: 'August', ar: 'أغسطس', zh: '八月' },
+  { ku: 'ئەیلوول', en: 'September', ar: 'سبتمبر', zh: '九月' },
+  { ku: 'تشرینی یەکەم', en: 'October', ar: 'أكتوبر', zh: '十月' },
+  { ku: 'تشرینی دووەم', en: 'November', ar: 'نوفمبر', zh: '十一月' },
+  { ku: 'کانوونی یەکەم', en: 'December', ar: 'ديسمبر', zh: '十二月' },
+];
+const getMonthName = (language: string, month: number) => {
+  const m = MONTH_NAMES[month];
+  return m ? pickLang(language, m) : '';
 };
 
 export default function BusinessAnalytics() {
+  const { language } = useLanguage();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString());
   
@@ -80,7 +94,7 @@ export default function BusinessAnalytics() {
   // Get customer name helper
   const getCustomerName = (customerId: number) => {
     const customer = customers?.find(c => c.id === customerId);
-    return customer?.fullNameKurdish || customer?.fullName || 'نەناسراو';
+    return customer?.fullNameKurdish || customer?.fullName || pickLang(language, { ku: 'نەناسراو', en: 'Unknown', ar: 'غير معروف', zh: '未知' });
   };
 
   const getCustomerCode = (customerId: number) => {
@@ -99,26 +113,26 @@ export default function BusinessAnalytics() {
   // Export to CSV
   const exportToCSV = () => {
     let csv = '\uFEFF'; // UTF-8 BOM
-    csv += 'ڕاپۆرتی شیکاری بازرگانی\n\n';
-    
+    csv += pickLang(language, { ku: 'ڕاپۆرتی شیکاری بازرگانی', en: 'Business Analytics Report', ar: 'تقرير التحليلات التجارية', zh: '商业分析报告' }) + '\n\n';
+
     // Profit by type
-    csv += 'قازانج بە جۆر\n';
-    csv += 'جۆر,ژمارە,کۆی قازانج,تێکڕای قازانج\n';
-    csv += `پاکێجی تەواو,${profitByType?.fullPackage?.count || 0},${profitByType?.fullPackage?.totalProfit || 0},${profitByType?.fullPackage?.avgProfit?.toFixed(2) || 0}\n`;
-    csv += `کڕین بە تێچوو,${profitByType?.commission?.count || 0},${profitByType?.commission?.totalProfit || 0},${profitByType?.commission?.avgProfit?.toFixed(2) || 0}\n`;
-    csv += `پاکەتی ئاسایی,${profitByType?.packages?.count || 0},${profitByType?.packages?.totalRevenue || 0},-\n\n`;
-    
+    csv += pickLang(language, { ku: 'قازانج بە جۆر', en: 'Profit by Type', ar: 'الربح حسب النوع', zh: '按类型分类的利润' }) + '\n';
+    csv += pickLang(language, { ku: 'جۆر,ژمارە,کۆی قازانج,تێکڕای قازانج', en: 'Type,Count,Total Profit,Average Profit', ar: 'النوع,العدد,إجمالي الربح,متوسط الربح', zh: '类型,数量,总利润,平均利润' }) + '\n';
+    csv += `${pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全套服务' })},${profitByType?.fullPackage?.count || 0},${profitByType?.fullPackage?.totalProfit || 0},${profitByType?.fullPackage?.avgProfit?.toFixed(2) || 0}\n`;
+    csv += `${pickLang(language, { ku: 'کڕین بە تێچوو', en: 'Cost-based Purchase', ar: 'الشراء بالتكلفة', zh: '按成本采购' })},${profitByType?.commission?.count || 0},${profitByType?.commission?.totalProfit || 0},${profitByType?.commission?.avgProfit?.toFixed(2) || 0}\n`;
+    csv += `${pickLang(language, { ku: 'پاکەتی ئاسایی', en: 'Regular Package', ar: 'الطرد العادي', zh: '普通包裹' })},${profitByType?.packages?.count || 0},${profitByType?.packages?.totalRevenue || 0},-\n\n`;
+
     // Top customers
-    csv += 'باشترین کڕیارەکان\n';
-    csv += 'کۆد,ناو,کۆی چارج,کۆی پارەدان\n';
+    csv += pickLang(language, { ku: 'باشترین کڕیارەکان', en: 'Top Customers', ar: 'أفضل العملاء', zh: '顶级客户' }) + '\n';
+    csv += pickLang(language, { ku: 'کۆد,ناو,کۆی چارج,کۆی پارەدان', en: 'Code,Name,Total Charges,Total Payments', ar: 'الرمز,الاسم,إجمالي الرسوم,إجمالي المدفوعات', zh: '编码,姓名,总费用,总付款' }) + '\n';
     topCustomers?.forEach((c: any) => {
       csv += `${getCustomerCode(c.customerId)},${getCustomerName(c.customerId)},${c.totalCharges},${c.totalPayments}\n`;
     });
     csv += '\n';
-    
+
     // Top debtors
-    csv += 'قەرزدارەکان\n';
-    csv += 'کۆد,ناو,قەرز\n';
+    csv += pickLang(language, { ku: 'قەرزدارەکان', en: 'Debtors', ar: 'المدينون', zh: '欠款客户' }) + '\n';
+    csv += pickLang(language, { ku: 'کۆد,ناو,قەرز', en: 'Code,Name,Debt', ar: 'الرمز,الاسم,الدين', zh: '编码,姓名,欠款' }) + '\n';
     topDebtors.forEach(d => {
       csv += `${d.customer?.customerCode || ''},${d.customer?.fullNameKurdish || d.customer?.fullName || ''},${d.balanceUsd}\n`;
     });
@@ -145,8 +159,8 @@ export default function BusinessAnalytics() {
                   <BarChart3 className="h-8 w-8" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold">شیکاری بازرگانی</h1>
-                  <p className="text-white/80 mt-1">ڕاپۆرتی تەواوی قازانج، کڕیار، و قەرزداران</p>
+                  <h1 className="text-3xl font-bold">{pickLang(language, { ku: 'شیکاری بازرگانی', en: 'Business Analytics', ar: 'التحليلات التجارية', zh: '商业分析' })}</h1>
+                  <p className="text-white/80 mt-1">{pickLang(language, { ku: 'ڕاپۆرتی تەواوی قازانج، کڕیار، و قەرزداران', en: 'Complete report of profit, customers, and debtors', ar: 'تقرير كامل للأرباح والعملاء والمدينين', zh: '利润、客户和欠款客户的完整报告' })}</p>
                 </div>
               </div>
               <Button 
@@ -155,7 +169,7 @@ export default function BusinessAnalytics() {
                 onClick={exportToCSV}
               >
                 <Download className="h-4 w-4 ms-2" />
-                هەناردەکردن
+                {pickLang(language, { ku: 'هەناردەکردن', en: 'Export', ar: 'تصدير', zh: '导出' })}
               </Button>
             </div>
           </div>
@@ -167,7 +181,7 @@ export default function BusinessAnalytics() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">کۆی قازانج</p>
+                  <p className="text-sm text-muted-foreground">{pickLang(language, { ku: 'کۆی قازانج', en: 'Total Profit', ar: 'إجمالي الربح', zh: '总利润' })}</p>
                   <p className="text-3xl font-bold text-emerald-700">{formatCurrency(totalProfit)}</p>
                 </div>
                 <div className="rounded-xl bg-emerald-100 p-3">
@@ -181,7 +195,7 @@ export default function BusinessAnalytics() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">کۆی ئۆردەرەکان</p>
+                  <p className="text-sm text-muted-foreground">{pickLang(language, { ku: 'کۆی ئۆردەرەکان', en: 'Total Orders', ar: 'إجمالي الطلبات', zh: '订单总数' })}</p>
                   <p className="text-3xl font-bold text-blue-700">{totalOrders}</p>
                 </div>
                 <div className="rounded-xl bg-blue-100 p-3">
@@ -195,7 +209,7 @@ export default function BusinessAnalytics() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">کۆی قەرز</p>
+                  <p className="text-sm text-muted-foreground">{pickLang(language, { ku: 'کۆی قەرز', en: 'Total Debt', ar: 'إجمالي الدين', zh: '欠款总额' })}</p>
                   <p className="text-3xl font-bold text-amber-700">{formatCurrency(financialSummary?.totalDebtUsd || 0)}</p>
                 </div>
                 <div className="rounded-xl bg-amber-100 p-3">
@@ -209,7 +223,7 @@ export default function BusinessAnalytics() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">قەرزدارەکان</p>
+                  <p className="text-sm text-muted-foreground">{pickLang(language, { ku: 'قەرزدارەکان', en: 'Debtors', ar: 'المدينون', zh: '欠款客户' })}</p>
                   <p className="text-3xl font-bold text-rose-700">{financialSummary?.debtorsCount || 0}</p>
                 </div>
                 <div className="rounded-xl bg-rose-100 p-3">
@@ -226,9 +240,9 @@ export default function BusinessAnalytics() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <PieChart className="h-5 w-5 text-purple-600" />
-                قازانج بە جۆری پاکەت
+                {pickLang(language, { ku: 'قازانج بە جۆری پاکەت', en: 'Profit by Package Type', ar: 'الربح حسب نوع الطرد', zh: '按包裹类型分类的利润' })}
               </CardTitle>
-              <CardDescription>شیکاری قازانج بۆ هەر جۆرێکی پاکەت</CardDescription>
+              <CardDescription>{pickLang(language, { ku: 'شیکاری قازانج بۆ هەر جۆرێکی پاکەت', en: 'Profit analysis for each package type', ar: 'تحليل الربح لكل نوع من أنواع الطرود', zh: '每种包裹类型的利润分析' })}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -239,13 +253,13 @@ export default function BusinessAnalytics() {
                       <Boxes className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-purple-900">پاکێجی تەواو</p>
-                      <p className="text-sm text-purple-600">{profitByType?.fullPackage?.count || 0} ئۆردەر</p>
+                      <p className="font-semibold text-purple-900">{pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全套服务' })}</p>
+                      <p className="text-sm text-purple-600">{profitByType?.fullPackage?.count || 0} {pickLang(language, { ku: 'ئۆردەر', en: 'orders', ar: 'طلب', zh: '订单' })}</p>
                     </div>
                   </div>
                   <div className="text-left">
                     <p className="text-xl font-bold text-purple-700">{formatCurrency(profitByType?.fullPackage?.totalProfit || 0)}</p>
-                    <p className="text-xs text-purple-500">تێکڕا: {formatCurrency(profitByType?.fullPackage?.avgProfit || 0)}</p>
+                    <p className="text-xs text-purple-500">{pickLang(language, { ku: 'تێکڕا', en: 'Avg', ar: 'المتوسط', zh: '平均' })}: {formatCurrency(profitByType?.fullPackage?.avgProfit || 0)}</p>
                   </div>
                 </div>
 
@@ -256,13 +270,13 @@ export default function BusinessAnalytics() {
                       <Percent className="h-5 w-5 text-orange-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-orange-900">کڕین بە تێچوو</p>
-                      <p className="text-sm text-orange-600">{profitByType?.commission?.count || 0} ئۆردەر</p>
+                      <p className="font-semibold text-orange-900">{pickLang(language, { ku: 'کڕین بە تێچوو', en: 'Cost-based Purchase', ar: 'الشراء بالتكلفة', zh: '按成本采购' })}</p>
+                      <p className="text-sm text-orange-600">{profitByType?.commission?.count || 0} {pickLang(language, { ku: 'ئۆردەر', en: 'orders', ar: 'طلب', zh: '订单' })}</p>
                     </div>
                   </div>
                   <div className="text-left">
                     <p className="text-xl font-bold text-orange-700">{formatCurrency(profitByType?.commission?.totalProfit || 0)}</p>
-                    <p className="text-xs text-orange-500">تێکڕا: {formatCurrency(profitByType?.commission?.avgProfit || 0)}</p>
+                    <p className="text-xs text-orange-500">{pickLang(language, { ku: 'تێکڕا', en: 'Avg', ar: 'المتوسط', zh: '平均' })}: {formatCurrency(profitByType?.commission?.avgProfit || 0)}</p>
                   </div>
                 </div>
 
@@ -273,13 +287,13 @@ export default function BusinessAnalytics() {
                       <Package className="h-5 w-5 text-slate-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">پاکەتی ئاسایی</p>
-                      <p className="text-sm text-slate-600">{profitByType?.packages?.count || 0} پاکەت</p>
+                      <p className="font-semibold text-slate-900">{pickLang(language, { ku: 'پاکەتی ئاسایی', en: 'Regular Package', ar: 'الطرد العادي', zh: '普通包裹' })}</p>
+                      <p className="text-sm text-slate-600">{profitByType?.packages?.count || 0} {pickLang(language, { ku: 'پاکەت', en: 'packages', ar: 'طرد', zh: '包裹' })}</p>
                     </div>
                   </div>
                   <div className="text-left">
                     <p className="text-xl font-bold text-slate-700">{formatCurrency(profitByType?.packages?.totalRevenue || 0)}</p>
-                    <p className="text-xs text-slate-500">داهات</p>
+                    <p className="text-xs text-slate-500">{pickLang(language, { ku: 'داهات', en: 'Revenue', ar: 'الإيراد', zh: '收入' })}</p>
                   </div>
                 </div>
               </div>
@@ -291,19 +305,19 @@ export default function BusinessAnalytics() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-blue-600" />
-                ئاماری پاکەتەکان
+                {pickLang(language, { ku: 'ئاماری پاکەتەکان', en: 'Package Statistics', ar: 'إحصائيات الطرود', zh: '包裹统计' })}
               </CardTitle>
-              <CardDescription>بارودۆخی پاکەتەکان بە ژمارە</CardDescription>
+              <CardDescription>{pickLang(language, { ku: 'بارودۆخی پاکەتەکان بە ژمارە', en: 'Package status by count', ar: 'حالة الطرود حسب العدد', zh: '按数量统计的包裹状态' })}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {packageStats?.map((stat: any, index: number) => {
                   const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-                    registered: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'تۆمارکراو' },
-                    in_transit: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'لە ڕێگادا' },
-                    arrived: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'گەیشتووە' },
-                    delivered: { bg: 'bg-green-100', text: 'text-green-700', label: 'گەیەندرا' },
-                    customs: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'گومرک' },
+                    registered: { bg: 'bg-blue-100', text: 'text-blue-700', label: pickLang(language, { ku: 'تۆمارکراو', en: 'Registered', ar: 'مسجل', zh: '已登记' }) },
+                    in_transit: { bg: 'bg-amber-100', text: 'text-amber-700', label: pickLang(language, { ku: 'لە ڕێگادا', en: 'In Transit', ar: 'في الطريق', zh: '运输中' }) },
+                    arrived: { bg: 'bg-purple-100', text: 'text-purple-700', label: pickLang(language, { ku: 'گەیشتووە', en: 'Arrived', ar: 'وصل', zh: '已到达' }) },
+                    delivered: { bg: 'bg-green-100', text: 'text-green-700', label: pickLang(language, { ku: 'گەیەندرا', en: 'Delivered', ar: 'تم التسليم', zh: '已送达' }) },
+                    customs: { bg: 'bg-orange-100', text: 'text-orange-700', label: pickLang(language, { ku: 'گومرک', en: 'Customs', ar: 'الجمارك', zh: '海关' }) },
                   };
                   const config = statusColors[stat.status] || { bg: 'bg-gray-100', text: 'text-gray-700', label: stat.status };
                   
@@ -311,14 +325,14 @@ export default function BusinessAnalytics() {
                     <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${config.bg}`}>
                       <span className={`font-medium ${config.text}`}>{config.label}</span>
                       <div className="flex items-center gap-4">
-                        <span className={`font-bold ${config.text}`}>{stat.count} پاکەت</span>
-                        <span className="text-sm text-muted-foreground">{stat.totalWeight?.toFixed(1)} کگ</span>
+                        <span className={`font-bold ${config.text}`}>{stat.count} {pickLang(language, { ku: 'پاکەت', en: 'packages', ar: 'طرد', zh: '包裹' })}</span>
+                        <span className="text-sm text-muted-foreground">{stat.totalWeight?.toFixed(1)} {pickLang(language, { ku: 'کگ', en: 'kg', ar: 'كغ', zh: '公斤' })}</span>
                       </div>
                     </div>
                   );
                 })}
                 {(!packageStats || packageStats.length === 0) && (
-                  <p className="text-center text-muted-foreground py-8">هیچ داتایەک نییە</p>
+                  <p className="text-center text-muted-foreground py-8">{pickLang(language, { ku: 'هیچ داتایەک نییە', en: 'No data', ar: 'لا توجد بيانات', zh: '暂无数据' })}</p>
                 )}
               </div>
             </CardContent>
@@ -332,17 +346,17 @@ export default function BusinessAnalytics() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Crown className="h-5 w-5 text-amber-500" />
-                باشترین ١٠ کڕیار
+                {pickLang(language, { ku: 'باشترین ١٠ کڕیار', en: 'Top 10 Customers', ar: 'أفضل 10 عملاء', zh: '前10名客户' })}
               </CardTitle>
-              <CardDescription>بە پێی داهات</CardDescription>
+              <CardDescription>{pickLang(language, { ku: 'بە پێی داهات', en: 'By revenue', ar: 'حسب الإيراد', zh: '按收入' })}</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-right">#</TableHead>
-                    <TableHead className="text-right">کڕیار</TableHead>
-                    <TableHead className="text-left">کۆی چارج</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: 'کڕیار', en: 'Customer', ar: 'العميل', zh: '客户' })}</TableHead>
+                    <TableHead className="text-left">{pickLang(language, { ku: 'کۆی چارج', en: 'Total Charges', ar: 'إجمالي الرسوم', zh: '总费用' })}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -373,7 +387,7 @@ export default function BusinessAnalytics() {
                   {(!topCustomers || topCustomers.length === 0) && (
                     <TableRow>
                       <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
-                        هیچ داتایەک نییە
+                        {pickLang(language, { ku: 'هیچ داتایەک نییە', en: 'No data', ar: 'لا توجد بيانات', zh: '暂无数据' })}
                       </TableCell>
                     </TableRow>
                   )}
@@ -387,17 +401,17 @@ export default function BusinessAnalytics() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
-                قەرزدارترین ١٠ کڕیار
+                {pickLang(language, { ku: 'قەرزدارترین ١٠ کڕیار', en: 'Top 10 Debtors', ar: 'أكبر 10 مدينين', zh: '前10名欠款客户' })}
               </CardTitle>
-              <CardDescription>کڕیارانی زۆرترین قەرز</CardDescription>
+              <CardDescription>{pickLang(language, { ku: 'کڕیارانی زۆرترین قەرز', en: 'Customers with the most debt', ar: 'العملاء الأكثر مديونية', zh: '欠款最多的客户' })}</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-right">#</TableHead>
-                    <TableHead className="text-right">کڕیار</TableHead>
-                    <TableHead className="text-left">قەرز</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: 'کڕیار', en: 'Customer', ar: 'العميل', zh: '客户' })}</TableHead>
+                    <TableHead className="text-left">{pickLang(language, { ku: 'قەرز', en: 'Debt', ar: 'الدين', zh: '欠款' })}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -410,7 +424,7 @@ export default function BusinessAnalytics() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{debtor.customer?.fullNameKurdish || debtor.customer?.fullName || 'نەناسراو'}</p>
+                          <p className="font-medium">{debtor.customer?.fullNameKurdish || debtor.customer?.fullName || pickLang(language, { ku: 'نەناسراو', en: 'Unknown', ar: 'غير معروف', zh: '未知' })}</p>
                           <p className="text-xs text-muted-foreground font-mono">{debtor.customer?.customerCode || ''}</p>
                         </div>
                       </TableCell>
@@ -422,7 +436,7 @@ export default function BusinessAnalytics() {
                   {topDebtors.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
-                        هیچ قەرزدارێک نییە
+                        {pickLang(language, { ku: 'هیچ قەرزدارێک نییە', en: 'No debtors', ar: 'لا يوجد مدينون', zh: '无欠款客户' })}
                       </TableCell>
                     </TableRow>
                   )}
@@ -439,9 +453,9 @@ export default function BusinessAnalytics() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-emerald-600" />
-                  ڕەوتی قازانجی مانگانە
+                  {pickLang(language, { ku: 'ڕەوتی قازانجی مانگانە', en: 'Monthly Profit Trend', ar: 'اتجاه الربح الشهري', zh: '月度利润趋势' })}
                 </CardTitle>
-                <CardDescription>قازانج و خەرجی لە ماوەی ساڵ</CardDescription>
+                <CardDescription>{pickLang(language, { ku: 'قازانج و خەرجی لە ماوەی ساڵ', en: 'Profit and expenses over the year', ar: 'الربح والمصروفات على مدار السنة', zh: '全年利润与支出' })}</CardDescription>
               </div>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger className="w-32">
@@ -466,7 +480,7 @@ export default function BusinessAnalytics() {
                 return (
                   <div key={index} className="flex items-center gap-4">
                     <div className="w-24 text-sm font-medium text-right">
-                      {getKurdishMonth(month.month - 1)}
+                      {getMonthName(language, month.month - 1)}
                     </div>
                     <div className="flex-1 h-8 bg-slate-100 rounded-lg overflow-hidden relative">
                       <div 
@@ -488,7 +502,7 @@ export default function BusinessAnalytics() {
                 );
               })}
               {(!monthlyPnl || monthlyPnl.length === 0) && (
-                <p className="text-center text-muted-foreground py-8">هیچ داتایەک نییە بۆ ئەم ساڵە</p>
+                <p className="text-center text-muted-foreground py-8">{pickLang(language, { ku: 'هیچ داتایەک نییە بۆ ئەم ساڵە', en: 'No data for this year', ar: 'لا توجد بيانات لهذه السنة', zh: '本年度暂无数据' })}</p>
               )}
             </div>
           </CardContent>

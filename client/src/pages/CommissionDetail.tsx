@@ -45,6 +45,7 @@ import {
 import SafeDeleteOrderDialog from "@/components/SafeDeleteOrderDialog";
 import OrderAuditHistory from "@/components/OrderAuditHistory";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import TrackingTimeline, { type TrackingStep } from "@/components/TrackingTimeline";
 import {
   Select,
@@ -95,7 +96,7 @@ const statusIcons: Record<string, React.ReactNode> = {
 };
 
 export default function CommissionDetail() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { id, mode } = useParams<{ id: string; mode?: string }>();
   const [, navigate] = useLocation();
   const isEditMode = mode === "edit";
@@ -183,10 +184,10 @@ export default function CommissionDetail() {
       const delta = (res as any)?.chargeDeltaUsd ?? 0;
       if (Math.abs(delta) > 0.005) {
         toast.success(
-          `ئۆردەر نوێکرایەوە · ${delta > 0 ? "+" : ""}$${delta.toFixed(2)}`
+          `${pickLang(language, { ku: "ئۆردەر نوێکرایەوە", en: "Order updated", ar: "تم تحديث الطلب", zh: "订单已更新" })} · ${delta > 0 ? "+" : ""}$${delta.toFixed(2)}`
         );
       } else {
-        toast.success("ئۆردەر نوێکرایەوە");
+        toast.success(pickLang(language, { ku: "ئۆردەر نوێکرایەوە", en: "Order updated", ar: "تم تحديث الطلب", zh: "订单已更新" }));
       }
       setEditReason("");
       utils.fullPackage.list.invalidate();
@@ -211,10 +212,19 @@ export default function CommissionDetail() {
       // Plan v3: surface OCC conflicts distinctly so the operator reloads.
       if (error.data?.code === "CONFLICT") {
         toast.error(
-          "ئۆردەرەکە لەلایەن کەسێکی دیکەوە گۆڕدراوە | Order changed elsewhere",
+          pickLang(language, {
+            ku: "ئۆردەرەکە لەلایەن کەسێکی دیکەوە گۆڕدراوە",
+            en: "Order changed elsewhere",
+            ar: "تم تغيير الطلب من مكان آخر",
+            zh: "订单已在别处被更改",
+          }),
           {
-            description:
-              "تکایە پەڕەکە نوێ بکەرەوە و هەوڵ بدەرەوە. | Please reload the page and try again.",
+            description: pickLang(language, {
+              ku: "تکایە پەڕەکە نوێ بکەرەوە و هەوڵ بدەرەوە.",
+              en: "Please reload the page and try again.",
+              ar: "يرجى إعادة تحميل الصفحة والمحاولة مرة أخرى.",
+              zh: "请重新加载页面后再试。",
+            }),
             duration: 10000,
           }
         );
@@ -227,9 +237,14 @@ export default function CommissionDetail() {
       const rawMsg =
         typeof error.message === "string" ? error.message.trim() : "";
       const code = error.data?.code ?? "UNKNOWN";
-      const title = rawMsg || `هەڵە لە نوێکردنەوەی ئۆردەر | Failed to update order`;
+      const title = rawMsg || pickLang(language, {
+        ku: "هەڵە لە نوێکردنەوەی ئۆردەر",
+        en: "Failed to update order",
+        ar: "فشل تحديث الطلب",
+        zh: "更新订单失败",
+      });
       toast.error(title, {
-        description: `کۆدی هەڵە | Error code: ${code}`,
+        description: `${pickLang(language, { ku: "کۆدی هەڵە", en: "Error code", ar: "رمز الخطأ", zh: "错误代码" })}: ${code}`,
         duration: 10000,
       });
     },
@@ -276,7 +291,12 @@ export default function CommissionDetail() {
     // back blank because some validation errors ship with no .message body.
     if (moneyChangeDetected && editReason.trim().length < 3) {
       toast.error(
-        "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت) | Reason is required when prices change (min 3 chars)"
+        pickLang(language, {
+          ku: "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت)",
+          en: "Reason is required when prices change (min 3 chars)",
+          ar: "السبب مطلوب عند تغيير الأسعار (٣ أحرف على الأقل)",
+          zh: "更改价格时需填写原因（至少3个字符）",
+        })
       );
       return;
     }
@@ -356,7 +376,7 @@ export default function CommissionDetail() {
           <p className="text-muted-foreground mb-6">{t("fullPackage.orderNotFoundDesc")}</p>
           <Button onClick={() => navigate("/commission")} size="lg" className="bg-purple-600 hover:bg-purple-700">
             <ArrowRight className="h-4 w-4 ms-2" />
-            گەڕانەوە بۆ لیست
+            {pickLang(language, { ku: "گەڕانەوە بۆ لیست", en: "Back to list", ar: "العودة إلى القائمة", zh: "返回列表" })}
           </Button>
         </div>
       </DashboardLayout>
@@ -477,19 +497,19 @@ export default function CommissionDetail() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <User className="h-5 w-5 text-purple-600" />
-                  <CardTitle>کڕیار</CardTitle>
+                  <CardTitle>{pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>کڕیار</Label>
+                    <Label>{pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</Label>
                     <Select
                       value={formData.customerId}
                       onValueChange={(value) => setFormData({ ...formData, customerId: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="کڕیارێک هەڵبژێرە" />
+                        <SelectValue placeholder={pickLang(language, { ku: "کڕیارێک هەڵبژێرە", en: "Select a customer", ar: "اختر عميلاً", zh: "选择客户" })} />
                       </SelectTrigger>
                       <SelectContent>
                         {customers?.map((customer) => (
@@ -502,7 +522,7 @@ export default function CommissionDetail() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>فرۆشیار</Label>
+                    <Label>{pickLang(language, { ku: "فرۆشیار", en: "Supplier", ar: "المورّد", zh: "供应商" })}</Label>
                     {/* Radix Select forbids value="" on SelectItem — that value
                         is reserved for "cleared selection". Use the sentinel
                         "__none__" for the "no supplier" option and translate
@@ -517,10 +537,10 @@ export default function CommissionDetail() {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="فرۆشیارێک هەڵبژێرە" />
+                        <SelectValue placeholder={pickLang(language, { ku: "فرۆشیارێک هەڵبژێرە", en: "Select a supplier", ar: "اختر مورّداً", zh: "选择供应商" })} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none__">بێ فرۆشیار</SelectItem>
+                        <SelectItem value="__none__">{pickLang(language, { ku: "بێ فرۆشیار", en: "No supplier", ar: "بدون مورّد", zh: "无供应商" })}</SelectItem>
                         {suppliers?.map((supplier) => (
                           <SelectItem key={supplier.id} value={supplier.id.toString()}>
                             {supplier.name}
@@ -538,12 +558,12 @@ export default function CommissionDetail() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Layers className="h-5 w-5 text-purple-600" />
-                  <CardTitle>باچ</CardTitle>
+                  <CardTitle>{pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Label>باچ</Label>
+                  <Label>{pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}</Label>
                   {/* Same sentinel pattern as the supplier select above —
                       Radix Select treats value="" as "clear the selection"
                       and forbids it on SelectItem. */}
@@ -557,10 +577,10 @@ export default function CommissionDetail() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="باچێک هەڵبژێرە" />
+                      <SelectValue placeholder={pickLang(language, { ku: "باچێک هەڵبژێرە", en: "Select a batch", ar: "اختر دفعة", zh: "选择批次" })} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">بێ باچ</SelectItem>
+                      <SelectItem value="__none__">{pickLang(language, { ku: "بێ باچ", en: "No batch", ar: "بدون دفعة", zh: "无批次" })}</SelectItem>
                       {availableBatches.map((batch) => (
                         <SelectItem key={batch.id} value={batch.id.toString()}>
                           {batch.batchCode}
@@ -577,41 +597,41 @@ export default function CommissionDetail() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Package className="h-5 w-5 text-purple-600" />
-                  <CardTitle>زانیاری کاڵا</CardTitle>
+                  <CardTitle>{pickLang(language, { ku: "زانیاری کاڵا", en: "Product Info", ar: "معلومات المنتج", zh: "商品信息" })}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>ناوی کاڵا *</Label>
+                    <Label>{pickLang(language, { ku: "ناوی کاڵا *", en: "Product name *", ar: "اسم المنتج *", zh: "商品名称 *" })}</Label>
                     <Input
                       value={formData.productName}
                       onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                      placeholder="ناوی کاڵا"
+                      placeholder={pickLang(language, { ku: "ناوی کاڵا", en: "Product name", ar: "اسم المنتج", zh: "商品名称" })}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>ئۆردەر نەمبەر</Label>
+                    <Label>{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order number", ar: "رقم الطلب", zh: "订单号" })}</Label>
                     <Input
                       value={formData.orderNumber}
                       onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
-                      placeholder="ژمارەی ئۆردەر"
+                      placeholder={pickLang(language, { ku: "ژمارەی ئۆردەر", en: "Order number", ar: "رقم الطلب", zh: "订单号" })}
                       dir="ltr"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>تراکینگ نەمبەر</Label>
+                    <Label>{pickLang(language, { ku: "تراکینگ نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "运单号" })}</Label>
                     <Input
                       value={formData.trackingNumber}
                       onChange={(e) => setFormData({ ...formData, trackingNumber: e.target.value })}
-                      placeholder="تراکینگ نەمبەر"
+                      placeholder={pickLang(language, { ku: "تراکینگ نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "运单号" })}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>لینکی کاڵا</Label>
+                    <Label>{pickLang(language, { ku: "لینکی کاڵا", en: "Product link", ar: "رابط المنتج", zh: "商品链接" })}</Label>
                     <Input
                       value={formData.productLink}
                       onChange={(e) => setFormData({ ...formData, productLink: e.target.value })}
@@ -620,7 +640,7 @@ export default function CommissionDetail() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>بڕ</Label>
+                    <Label>{pickLang(language, { ku: "بڕ", en: "Quantity", ar: "الكمية", zh: "数量" })}</Label>
                     <Input
                       type="number"
                       value={formData.quantity}
@@ -630,30 +650,30 @@ export default function CommissionDetail() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>ڕەنگ</Label>
+                    <Label>{pickLang(language, { ku: "ڕەنگ", en: "Color", ar: "اللون", zh: "颜色" })}</Label>
                     <Input
                       value={formData.color}
                       onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      placeholder="ڕەنگ"
+                      placeholder={pickLang(language, { ku: "ڕەنگ", en: "Color", ar: "اللون", zh: "颜色" })}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>قەبارە</Label>
+                    <Label>{pickLang(language, { ku: "قەبارە", en: "Size", ar: "الحجم", zh: "尺寸" })}</Label>
                     <Input
                       value={formData.size}
                       onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                      placeholder="قەبارە"
+                      placeholder={pickLang(language, { ku: "قەبارە", en: "Size", ar: "الحجم", zh: "尺寸" })}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>وەسف</Label>
+                  <Label>{pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" })}</Label>
                   <Textarea
                     value={formData.productDescription}
                     onChange={(e) => setFormData({ ...formData, productDescription: e.target.value })}
-                    placeholder="وەسفی کاڵا..."
+                    placeholder={pickLang(language, { ku: "وەسفی کاڵا...", en: "Product description...", ar: "وصف المنتج...", zh: "商品描述..." })}
                     rows={3}
                   />
                 </div>
@@ -662,7 +682,7 @@ export default function CommissionDetail() {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
                     <ImageIcon className="h-4 w-4" />
-                    وێنەکانی کاڵا
+                    {pickLang(language, { ku: "وێنەکانی کاڵا", en: "Product images", ar: "صور المنتج", zh: "商品图片" })}
                   </Label>
                   <CompressedImageUpload
                     images={formData.productImages}
@@ -679,13 +699,13 @@ export default function CommissionDetail() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-green-600" />
-                  <CardTitle>نرخەکان</CardTitle>
+                  <CardTitle>{pickLang(language, { ku: "نرخەکان", en: "Prices", ar: "الأسعار", zh: "价格" })}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>نرخی کاڵا ($)</Label>
+                    <Label>{pickLang(language, { ku: "نرخی کاڵا ($)", en: "Item price ($)", ar: "سعر المنتج ($)", zh: "商品价格 ($)" })}</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -696,7 +716,7 @@ export default function CommissionDetail() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>عمولە ($)</Label>
+                    <Label>{pickLang(language, { ku: "عمولە ($)", en: "Commission ($)", ar: "العمولة ($)", zh: "佣金 ($)" })}</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -709,27 +729,27 @@ export default function CommissionDetail() {
 
                 {quantity > 1 && (
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-muted-foreground">نرخی کاڵا × بڕ</span>
+                    <span className="text-muted-foreground">{pickLang(language, { ku: "نرخی کاڵا × بڕ", en: "Item price × quantity", ar: "سعر المنتج × الكمية", zh: "商品价格 × 数量" })}</span>
                     <span className="font-mono font-medium">${itemSubtotal.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span className="text-muted-foreground">عمولە (ڕێگری)</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "عمولە (ڕێگری)", en: "Commission (flat)", ar: "العمولة (ثابتة)", zh: "佣金（固定）" })}</span>
                   <span className="font-mono font-medium text-purple-600">${totalCommission.toFixed(2)}</span>
                 </div>
                 <div className="p-3 bg-purple-50 rounded-lg">
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">کۆی گشتی</span>
+                    <span className="text-muted-foreground">{pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "总计" })}</span>
                     <span className="font-mono font-bold text-lg text-purple-700">${totalCost.toFixed(2)}</span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>تێبینی</Label>
+                  <Label>{pickLang(language, { ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" })}</Label>
                   <Textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="تێبینی..."
+                    placeholder={pickLang(language, { ku: "تێبینی...", en: "Notes...", ar: "ملاحظات...", zh: "备注..." })}
                     rows={2}
                   />
                 </div>
@@ -746,12 +766,20 @@ export default function CommissionDetail() {
                     </div>
                     <div>
                       <CardTitle className="text-amber-900">
-                        هۆکاری گۆڕینی نرخ | Reason for Price Change
+                        {pickLang(language, {
+                          ku: "هۆکاری گۆڕینی نرخ",
+                          en: "Reason for Price Change",
+                          ar: "سبب تغيير السعر",
+                          zh: "价格变更原因",
+                        })}
                       </CardTitle>
                       <CardDescription className="text-amber-800">
-                        گۆڕانکاریت لە نرخ یان ژمارە کردووە، بۆیە پێویستە هۆکارێک بنووسیت بۆ ئەوەی
-                        دەفتەری هەژماری کڕیار ڕێکبخرێتەوە. | You changed a price or quantity, so
-                        we need a reason to log the customer-ledger adjustment.
+                        {pickLang(language, {
+                          ku: "گۆڕانکاریت لە نرخ یان ژمارە کردووە، بۆیە پێویستە هۆکارێک بنووسیت بۆ ئەوەی دەفتەری هەژماری کڕیار ڕێکبخرێتەوە.",
+                          en: "You changed a price or quantity, so we need a reason to log the customer-ledger adjustment.",
+                          ar: "لقد غيّرت سعراً أو كمية، لذا نحتاج إلى سبب لتسجيل تعديل دفتر حساب العميل.",
+                          zh: "您更改了价格或数量，因此需要填写原因以记录客户账目调整。",
+                        })}
                       </CardDescription>
                     </div>
                   </div>
@@ -760,14 +788,19 @@ export default function CommissionDetail() {
                   <Textarea
                     value={editReason}
                     onChange={(e) => setEditReason(e.target.value)}
-                    placeholder="بۆ نموونە: کڕیار داوای دابەزاندنی عمولەی کرد | e.g. Customer requested a commission discount"
+                    placeholder={pickLang(language, {
+                      ku: "بۆ نموونە: کڕیار داوای دابەزاندنی عمولەی کرد",
+                      en: "e.g. Customer requested a commission discount",
+                      ar: "مثال: طلب العميل خصماً على العمولة",
+                      zh: "例如：客户要求佣金折扣",
+                    })}
                     rows={2}
                     dir="auto"
                   />
                   <div className="text-xs text-amber-800 mt-2 text-right">
                     {editReason.trim().length < 3
-                      ? `بەلایەنی کەم ٣ پیت | Min 3 chars (${editReason.trim().length}/3)`
-                      : `${editReason.trim().length} پیت | chars`}
+                      ? `${pickLang(language, { ku: "بەلایەنی کەم ٣ پیت", en: "Min 3 chars", ar: "٣ أحرف على الأقل", zh: "至少3个字符" })} (${editReason.trim().length}/3)`
+                      : `${editReason.trim().length} ${pickLang(language, { ku: "پیت", en: "chars", ar: "أحرف", zh: "字符" })}`}
                   </div>
                 </CardContent>
               </Card>
@@ -781,7 +814,7 @@ export default function CommissionDetail() {
                 onClick={() => navigate(`/commission/${id}`)}
               >
                 <ArrowRight className="h-4 w-4 ms-2" />
-                پاشگەزبوونەوە
+                {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
               </Button>
               <Button type="submit" disabled={updateMutation.isPending} className="bg-purple-600 hover:bg-purple-700">
                 {updateMutation.isPending ? (
@@ -789,7 +822,7 @@ export default function CommissionDetail() {
                 ) : (
                   <Save className="h-4 w-4 ms-2" />
                 )}
-                پاشەکەوتکردن
+                {pickLang(language, { ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" })}
               </Button>
             </div>
           </form>
@@ -1024,7 +1057,7 @@ export default function CommissionDetail() {
                     <div>
                       <span className="font-semibold block">{t("commission.commissionIncome") || "داهاتی عمولە"}</span>
                       <span className="text-xs text-muted-foreground">
-                        فلاتە بۆ هەر ئۆردەرێک | flat per order
+                        {pickLang(language, { ku: "فلاتە بۆ هەر ئۆردەرێک", en: "flat per order", ar: "ثابتة لكل طلب", zh: "每单固定" })}
                       </span>
                     </div>
                     <span className="font-mono font-bold text-2xl text-purple-700">
@@ -1053,27 +1086,27 @@ export default function CommissionDetail() {
                       <div className="rounded-xl border-2 border-teal-200 bg-gradient-to-l from-teal-50 to-emerald-50 p-4 space-y-2">
                         <div className="flex items-center gap-2 mb-1">
                           <DollarSign className="h-4 w-4 text-teal-600" />
-                          <span className="text-sm font-bold text-teal-800">پوختەی پارەدان</span>
+                          <span className="text-sm font-bold text-teal-800">{pickLang(language, { ku: "پوختەی پارەدان", en: "Payment summary", ar: "ملخص الدفع", zh: "付款摘要" })}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">کۆی نرخ</span>
+                          <span className="text-slate-600">{pickLang(language, { ku: "کۆی نرخ", en: "Total cost", ar: "إجمالي التكلفة", zh: "总价" })}</span>
                           <span className="font-mono font-semibold">${totalCost.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-teal-700">پارەی پێشەکی دراو</span>
+                          <span className="text-teal-700">{pickLang(language, { ku: "پارەی پێشەکی دراو", en: "Advance paid", ar: "الدفعة المقدمة المدفوعة", zh: "已付预付款" })}</span>
                           <span className="font-mono font-semibold text-teal-700">-${advancePaid.toFixed(2)}</span>
                         </div>
                         <div className="h-px bg-teal-200" />
                         <div className="flex justify-between text-base">
-                          <span className="font-semibold">{isFullyPaid ? "ڕەوشی پارەدان" : "ماوە بۆ پارەدان"}</span>
+                          <span className="font-semibold">{isFullyPaid ? pickLang(language, { ku: "ڕەوشی پارەدان", en: "Payment status", ar: "حالة الدفع", zh: "付款状态" }) : pickLang(language, { ku: "ماوە بۆ پارەدان", en: "Remaining to pay", ar: "المتبقي للدفع", zh: "待付余额" })}</span>
                           {isFullyPaid ? (
-                            <span className="font-bold text-emerald-700">✓ تەواو پارەدراوە</span>
+                            <span className="font-bold text-emerald-700">{pickLang(language, { ku: "✓ تەواو پارەدراوە", en: "✓ Fully paid", ar: "✓ مدفوع بالكامل", zh: "✓ 已全额付款" })}</span>
                           ) : (
                             <span className="font-mono font-bold text-xl text-amber-700">${remaining.toFixed(2)}</span>
                           )}
                         </div>
                         {order.advancePaymentMethod && (
-                          <p className="text-xs text-teal-600">شێواز: {order.advancePaymentMethod}</p>
+                          <p className="text-xs text-teal-600">{pickLang(language, { ku: "شێواز", en: "Method", ar: "الطريقة", zh: "方式" })}: {order.advancePaymentMethod}</p>
                         )}
                       </div>
                     );

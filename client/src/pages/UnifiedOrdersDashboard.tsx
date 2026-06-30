@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 const COLORS = ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function UnifiedOrdersDashboard() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -66,38 +67,38 @@ export default function UnifiedOrdersDashboard() {
 
   // Chart data
   const weeklyData = [
-    { name: 'شەممە', orders: 12, revenue: 450 },
-    { name: 'یەکشەممە', orders: 19, revenue: 680 },
-    { name: 'دووشەممە', orders: 15, revenue: 520 },
-    { name: 'سێشەممە', orders: 22, revenue: 890 },
-    { name: 'چوارشەممە', orders: 18, revenue: 720 },
-    { name: 'پێنجشەممە', orders: 25, revenue: 950 },
-    { name: 'هەینی', orders: 20, revenue: 800 },
+    { name: pickLang(language, { ku: 'شەممە', en: 'Sat', ar: 'السبت', zh: '周六' }), orders: 12, revenue: 450 },
+    { name: pickLang(language, { ku: 'یەکشەممە', en: 'Sun', ar: 'الأحد', zh: '周日' }), orders: 19, revenue: 680 },
+    { name: pickLang(language, { ku: 'دووشەممە', en: 'Mon', ar: 'الإثنين', zh: '周一' }), orders: 15, revenue: 520 },
+    { name: pickLang(language, { ku: 'سێشەممە', en: 'Tue', ar: 'الثلاثاء', zh: '周二' }), orders: 22, revenue: 890 },
+    { name: pickLang(language, { ku: 'چوارشەممە', en: 'Wed', ar: 'الأربعاء', zh: '周三' }), orders: 18, revenue: 720 },
+    { name: pickLang(language, { ku: 'پێنجشەممە', en: 'Thu', ar: 'الخميس', zh: '周四' }), orders: 25, revenue: 950 },
+    { name: pickLang(language, { ku: 'هەینی', en: 'Fri', ar: 'الجمعة', zh: '周五' }), orders: 20, revenue: 800 },
   ];
 
   const typeDistribution = [
-    { name: 'پاکێجی تەواو', value: stats.fullPackage, color: '#10b981' },
+    { name: pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全包' }), value: stats.fullPackage, color: '#10b981' },
 
-    { name: 'کڕین بە تێچوو', value: stats.commission, color: '#f59e0b' },
+    { name: pickLang(language, { ku: 'کڕین بە تێچوو', en: 'Commission', ar: 'بالعمولة', zh: '代购' }), value: stats.commission, color: '#f59e0b' },
   ];
 
   const statusData = [
-    { name: 'چاوەڕوان', value: stats.pending, icon: Clock, color: 'bg-yellow-500' },
-    { name: 'لە ڕێگا', value: stats.inTransit, icon: Truck, color: 'bg-blue-500' },
-    { name: 'گەیەندرا', value: stats.delivered, icon: CheckCircle, color: 'bg-green-500' },
+    { name: pickLang(language, { ku: 'چاوەڕوان', en: 'Pending', ar: 'قيد الانتظار', zh: '待处理' }), value: stats.pending, icon: Clock, color: 'bg-yellow-500' },
+    { name: pickLang(language, { ku: 'لە ڕێگا', en: 'In Transit', ar: 'في الطريق', zh: '运输中' }), value: stats.inTransit, icon: Truck, color: 'bg-blue-500' },
+    { name: pickLang(language, { ku: 'گەیەندرا', en: 'Delivered', ar: 'تم التسليم', zh: '已送达' }), value: stats.delivered, icon: CheckCircle, color: 'bg-green-500' },
   ];
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
-      pending: { label: 'چاوەڕوان', className: 'bg-yellow-100 text-yellow-800' },
-      quoted: { label: 'نرخدانراو', className: 'bg-blue-100 text-blue-800' },
-      approved: { label: 'پەسەندکراو', className: 'bg-purple-100 text-purple-800' },
-      purchasing: { label: 'لە کڕیندا', className: 'bg-indigo-100 text-indigo-800' },
-      purchased: { label: 'کڕدرا', className: 'bg-cyan-100 text-cyan-800' },
-      arrived_china: { label: 'گەیشتە چین', className: 'bg-teal-100 text-teal-800' },
-      in_transit: { label: 'لە ڕێگا', className: 'bg-blue-100 text-blue-800' },
-      delivered: { label: 'گەیەندرا', className: 'bg-green-100 text-green-800' },
-      cancelled: { label: 'هەڵوەشێندراوە', className: 'bg-red-100 text-red-800' },
+      pending: { label: pickLang(language, { ku: 'چاوەڕوان', en: 'Pending', ar: 'قيد الانتظار', zh: '待处理' }), className: 'bg-yellow-100 text-yellow-800' },
+      quoted: { label: pickLang(language, { ku: 'نرخدانراو', en: 'Quoted', ar: 'تم التسعير', zh: '已报价' }), className: 'bg-blue-100 text-blue-800' },
+      approved: { label: pickLang(language, { ku: 'پەسەندکراو', en: 'Approved', ar: 'تمت الموافقة', zh: '已批准' }), className: 'bg-purple-100 text-purple-800' },
+      purchasing: { label: pickLang(language, { ku: 'لە کڕیندا', en: 'Purchasing', ar: 'جاري الشراء', zh: '采购中' }), className: 'bg-indigo-100 text-indigo-800' },
+      purchased: { label: pickLang(language, { ku: 'کڕدرا', en: 'Purchased', ar: 'تم الشراء', zh: '已采购' }), className: 'bg-cyan-100 text-cyan-800' },
+      arrived_china: { label: pickLang(language, { ku: 'گەیشتە چین', en: 'Arrived in China', ar: 'وصل إلى الصين', zh: '到达中国' }), className: 'bg-teal-100 text-teal-800' },
+      in_transit: { label: pickLang(language, { ku: 'لە ڕێگا', en: 'In Transit', ar: 'في الطريق', zh: '运输中' }), className: 'bg-blue-100 text-blue-800' },
+      delivered: { label: pickLang(language, { ku: 'گەیەندرا', en: 'Delivered', ar: 'تم التسليم', zh: '已送达' }), className: 'bg-green-100 text-green-800' },
+      cancelled: { label: pickLang(language, { ku: 'هەڵوەشێندراوە', en: 'Cancelled', ar: 'ملغى', zh: '已取消' }), className: 'bg-red-100 text-red-800' },
     };
     const config = statusConfig[status] || { label: status, className: 'bg-gray-100 text-gray-800' };
     return <Badge className={config.className}>{config.label}</Badge>;
@@ -105,9 +106,9 @@ export default function UnifiedOrdersDashboard() {
 
   const getTypeBadge = (type: string) => {
     const typeConfig: Record<string, { label: string; icon: any; className: string }> = {
-      full_package: { label: 'پاکێجی تەواو', icon: Package, className: 'bg-gradient-to-r from-emerald-500 to-green-600 text-white' },
+      full_package: { label: pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全包' }), icon: Package, className: 'bg-gradient-to-r from-emerald-500 to-green-600 text-white' },
 
-      commission: { label: 'عمولە', icon: Gem, className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white' },
+      commission: { label: pickLang(language, { ku: 'عمولە', en: 'Commission', ar: 'عمولة', zh: '佣金' }), icon: Gem, className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white' },
     };
     const config = typeConfig[type] || { label: type, icon: Package, className: 'bg-gray-500 text-white' };
     const Icon = config.icon;
@@ -132,19 +133,19 @@ export default function UnifiedOrdersDashboard() {
                 <Package className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">داشبۆردی یەکگرتوو</h1>
-                <p className="mt-1 text-white/80">بەڕێوەبردنی هەموو ئۆردەرەکان لە یەک شوێن</p>
+                <h1 className="text-3xl font-bold">{pickLang(language, { ku: 'داشبۆردی یەکگرتوو', en: 'Unified Dashboard', ar: 'لوحة التحكم الموحدة', zh: '统一仪表板' })}</h1>
+                <p className="mt-1 text-white/80">{pickLang(language, { ku: 'بەڕێوەبردنی هەموو ئۆردەرەکان لە یەک شوێن', en: 'Manage all orders in one place', ar: 'إدارة جميع الطلبات في مكان واحد', zh: '在一个地方管理所有订单' })}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 backdrop-blur-sm">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-green-400"></div>
-                <span className="text-sm">زیندوو</span>
+                <span className="text-sm">{pickLang(language, { ku: 'زیندوو', en: 'Live', ar: 'مباشر', zh: '实时' })}</span>
                 <span className="font-mono text-lg">{currentTime.toLocaleTimeString('ku')}</span>
               </div>
               <Button className="bg-white text-purple-700 hover:bg-white/90">
                 <Plus className="me-2 h-4 w-4" />
-                ئۆردەری نوێ
+                {pickLang(language, { ku: 'ئۆردەری نوێ', en: 'New Order', ar: 'طلب جديد', zh: '新订单' })}
               </Button>
             </div>
           </div>
@@ -152,10 +153,10 @@ export default function UnifiedOrdersDashboard() {
           {/* Quick Stats in Header */}
           <div className="relative mt-8 grid grid-cols-5 gap-4">
             {[
-              { label: 'کۆی گشتی', value: stats.total, icon: Package, color: 'from-white/20 to-white/10' },
-              { label: 'پاکێجی تەواو', value: stats.fullPackage, icon: Package, color: 'from-emerald-400/30 to-emerald-500/20' },
-              { label: 'کڕین بە تێچوو', value: stats.commission, icon: Gem, color: 'from-amber-400/30 to-amber-500/20' },
-              { label: 'کۆی داهات', value: `$${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'from-green-400/30 to-green-500/20' },
+              { label: pickLang(language, { ku: 'کۆی گشتی', en: 'Total', ar: 'الإجمالي', zh: '总计' }), value: stats.total, icon: Package, color: 'from-white/20 to-white/10' },
+              { label: pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全包' }), value: stats.fullPackage, icon: Package, color: 'from-emerald-400/30 to-emerald-500/20' },
+              { label: pickLang(language, { ku: 'کڕین بە تێچوو', en: 'Commission', ar: 'بالعمولة', zh: '代购' }), value: stats.commission, icon: Gem, color: 'from-amber-400/30 to-amber-500/20' },
+              { label: pickLang(language, { ku: 'کۆی داهات', en: 'Total Revenue', ar: 'إجمالي الإيرادات', zh: '总收入' }), value: `$${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'from-green-400/30 to-green-500/20' },
             ].map((stat, i) => (
               <div key={i} className={`rounded-xl bg-gradient-to-br ${stat.color} p-4 backdrop-blur-sm`}>
                 <div className="flex items-center justify-between">
@@ -176,7 +177,7 @@ export default function UnifiedOrdersDashboard() {
             <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-emerald-500" />
-                ڕەوتی هەفتانە
+                {pickLang(language, { ku: 'ڕەوتی هەفتانە', en: 'Weekly Trend', ar: 'الاتجاه الأسبوعي', zh: '每周趋势' })}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -199,7 +200,7 @@ export default function UnifiedOrdersDashboard() {
                     stroke="#8b5cf6" 
                     strokeWidth={3}
                     dot={{ fill: '#8b5cf6', strokeWidth: 2 }}
-                    name="ئۆردەرەکان"
+                    name={pickLang(language, { ku: 'ئۆردەرەکان', en: 'Orders', ar: 'الطلبات', zh: '订单' })}
                   />
                   <Line 
                     type="monotone" 
@@ -207,7 +208,7 @@ export default function UnifiedOrdersDashboard() {
                     stroke="#10b981" 
                     strokeWidth={3}
                     dot={{ fill: '#10b981', strokeWidth: 2 }}
-                    name="داهات ($)"
+                    name={pickLang(language, { ku: 'داهات ($)', en: 'Revenue ($)', ar: 'الإيرادات ($)', zh: '收入 ($)' })}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -219,7 +220,7 @@ export default function UnifiedOrdersDashboard() {
             <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
               <CardTitle className="flex items-center gap-2">
                 <Gem className="h-5 w-5 text-purple-500" />
-                دابەشبوونی جۆرەکان
+                {pickLang(language, { ku: 'دابەشبوونی جۆرەکان', en: 'Type Distribution', ar: 'توزيع الأنواع', zh: '类型分布' })}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -263,7 +264,7 @@ export default function UnifiedOrdersDashboard() {
             <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
               <CardTitle className="flex items-center gap-2">
                 <RefreshCw className="h-5 w-5 text-blue-500" />
-                بارودۆخی ئۆردەرەکان
+                {pickLang(language, { ku: 'بارودۆخی ئۆردەرەکان', en: 'Order Status', ar: 'حالة الطلبات', zh: '订单状态' })}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -292,8 +293,8 @@ export default function UnifiedOrdersDashboard() {
             <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-orange-500" />
-                چالاکییە دواییەکان
-                <Badge className="bg-green-100 text-green-700 text-xs">زیندوو</Badge>
+                {pickLang(language, { ku: 'چالاکییە دواییەکان', en: 'Recent Activity', ar: 'النشاط الأخير', zh: '最近活动' })}
+                <Badge className="bg-green-100 text-green-700 text-xs">{pickLang(language, { ku: 'زیندوو', en: 'Live', ar: 'مباشر', zh: '实时' })}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -305,8 +306,8 @@ export default function UnifiedOrdersDashboard() {
                         <Package className="h-5 w-5 text-purple-600" />
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium">{order.productName || 'بێ ناو'}</div>
-                        <div className="text-sm text-gray-500">{order.trackingNumber || 'بێ تراکینگ'}</div>
+                        <div className="font-medium">{order.productName || pickLang(language, { ku: 'بێ ناو', en: 'No name', ar: 'بدون اسم', zh: '无名称' })}</div>
+                        <div className="text-sm text-gray-500">{order.trackingNumber || pickLang(language, { ku: 'بێ تراکینگ', en: 'No tracking', ar: 'بدون تتبع', zh: '无追踪号' })}</div>
                       </div>
                       {getTypeBadge(order.type)}
                       {getStatusBadge(order.status)}
@@ -316,7 +317,7 @@ export default function UnifiedOrdersDashboard() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                   <Package className="h-12 w-12 mb-4 text-gray-300" />
-                  <p>هیچ چالاکییەک نییە</p>
+                  <p>{pickLang(language, { ku: 'هیچ چالاکییەک نییە', en: 'No activity', ar: 'لا يوجد نشاط', zh: '暂无活动' })}</p>
                 </div>
               )}
             </CardContent>
@@ -327,7 +328,7 @@ export default function UnifiedOrdersDashboard() {
         <Card className="border-0 shadow-lg">
           <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
             <div className="flex items-center justify-between">
-              <CardTitle>لیستی ئۆردەرەکان</CardTitle>
+              <CardTitle>{pickLang(language, { ku: 'لیستی ئۆردەرەکان', en: 'Orders List', ar: 'قائمة الطلبات', zh: '订单列表' })}</CardTitle>
               <div className="flex items-center gap-2">
                 <Button
                   variant={viewMode === "table" ? "default" : "outline"}
@@ -352,14 +353,14 @@ export default function UnifiedOrdersDashboard() {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="bg-gray-100">
                   <TabsTrigger value="all" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white">
-                    🌐 هەموو
+                    🌐 {pickLang(language, { ku: 'هەموو', en: 'All', ar: 'الكل', zh: '全部' })}
                   </TabsTrigger>
                   <TabsTrigger value="full_package" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-green-600 data-[state=active]:text-white">
-                    📦 پاکێجی تەواو
+                    📦 {pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全包' })}
                   </TabsTrigger>
 
                   <TabsTrigger value="commission" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white">
-                    💎 عمولە
+                    💎 {pickLang(language, { ku: 'عمولە', en: 'Commission', ar: 'عمولة', zh: '佣金' })}
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -369,7 +370,7 @@ export default function UnifiedOrdersDashboard() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder="گەڕان بە ناو، کۆد، تراکینگ..."
+                  placeholder={pickLang(language, { ku: 'گەڕان بە ناو، کۆد، تراکینگ...', en: 'Search by name, code, tracking...', ar: 'البحث بالاسم، الرمز، التتبع...', zh: '按名称、编码、追踪号搜索...' })}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-64 pl-10"
@@ -378,19 +379,19 @@ export default function UnifiedOrdersDashboard() {
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="بارودۆخ" />
+                  <SelectValue placeholder={pickLang(language, { ku: 'بارودۆخ', en: 'Status', ar: 'الحالة', zh: '状态' })} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">🔄 هەموو بارودۆخەکان</SelectItem>
-                  <SelectItem value="pending">⏳ چاوەڕوان</SelectItem>
-                  <SelectItem value="in_transit">✈️ لە ڕێگا</SelectItem>
-                  <SelectItem value="delivered">✅ گەیەندرا</SelectItem>
+                  <SelectItem value="all">🔄 {pickLang(language, { ku: 'هەموو بارودۆخەکان', en: 'All statuses', ar: 'جميع الحالات', zh: '所有状态' })}</SelectItem>
+                  <SelectItem value="pending">⏳ {pickLang(language, { ku: 'چاوەڕوان', en: 'Pending', ar: 'قيد الانتظار', zh: '待处理' })}</SelectItem>
+                  <SelectItem value="in_transit">✈️ {pickLang(language, { ku: 'لە ڕێگا', en: 'In Transit', ar: 'في الطريق', zh: '运输中' })}</SelectItem>
+                  <SelectItem value="delivered">✅ {pickLang(language, { ku: 'گەیەندرا', en: 'Delivered', ar: 'تم التسليم', zh: '已送达' })}</SelectItem>
                 </SelectContent>
               </Select>
 
               <Button variant="outline" size="sm" onClick={() => { setSearchQuery(""); setStatusFilter("all"); setActiveTab("all"); }}>
                 <XCircle className="me-2 h-4 w-4" />
-                پاککردنەوەی فلتەرەکان
+                {pickLang(language, { ku: 'پاککردنەوەی فلتەرەکان', en: 'Clear filters', ar: 'مسح الفلاتر', zh: '清除筛选' })}
               </Button>
             </div>
 
@@ -400,13 +401,13 @@ export default function UnifiedOrdersDashboard() {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">کاڵا</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">جۆر</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">کڕیار</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">تراکینگ</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">بارودۆخ</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">نرخ</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">کردارەکان</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">{pickLang(language, { ku: 'کاڵا', en: 'Product', ar: 'المنتج', zh: '商品' })}</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">{pickLang(language, { ku: 'جۆر', en: 'Type', ar: 'النوع', zh: '类型' })}</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">{pickLang(language, { ku: 'کڕیار', en: 'Customer', ar: 'العميل', zh: '客户' })}</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">{pickLang(language, { ku: 'تراکینگ', en: 'Tracking', ar: 'التتبع', zh: '追踪号' })}</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">{pickLang(language, { ku: 'بارودۆخ', en: 'Status', ar: 'الحالة', zh: '状态' })}</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">{pickLang(language, { ku: 'نرخ', en: 'Price', ar: 'السعر', zh: '价格' })}</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">{pickLang(language, { ku: 'کردارەکان', en: 'Actions', ar: 'الإجراءات', zh: '操作' })}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -421,7 +422,7 @@ export default function UnifiedOrdersDashboard() {
                                 <Package className="h-5 w-5 text-gray-400" />
                               </div>
                             )}
-                            <span className="font-medium">{order.productName || 'بێ ناو'}</span>
+                            <span className="font-medium">{order.productName || pickLang(language, { ku: 'بێ ناو', en: 'No name', ar: 'بدون اسم', zh: '无名称' })}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3">{getTypeBadge(order.type)}</td>
@@ -444,7 +445,7 @@ export default function UnifiedOrdersDashboard() {
                       <tr>
                         <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                           <Package className="mx-auto h-12 w-12 mb-4 text-gray-300" />
-                          <p>هیچ ئۆردەرێک نەدۆزرایەوە</p>
+                          <p>{pickLang(language, { ku: 'هیچ ئۆردەرێک نەدۆزرایەوە', en: 'No orders found', ar: 'لم يتم العثور على طلبات', zh: '未找到订单' })}</p>
                         </td>
                       </tr>
                     )}
@@ -464,8 +465,8 @@ export default function UnifiedOrdersDashboard() {
                         {getTypeBadge(order.type)}
                         {getStatusBadge(order.status)}
                       </div>
-                      <h3 className="font-semibold mb-2">{order.productName || 'بێ ناو'}</h3>
-                      <p className="text-sm text-gray-500 mb-3">{order.trackingNumber || 'بێ تراکینگ'}</p>
+                      <h3 className="font-semibold mb-2">{order.productName || pickLang(language, { ku: 'بێ ناو', en: 'No name', ar: 'بدون اسم', zh: '无名称' })}</h3>
+                      <p className="text-sm text-gray-500 mb-3">{order.trackingNumber || pickLang(language, { ku: 'بێ تراکینگ', en: 'No tracking', ar: 'بدون تتبع', zh: '无追踪号' })}</p>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-500">{order.customerName || '-'}</span>
                         <span className="font-bold text-emerald-600">${order.sellingPrice || order.totalPrice || 0}</span>
@@ -475,7 +476,7 @@ export default function UnifiedOrdersDashboard() {
                 )) : (
                   <div className="col-span-3 flex flex-col items-center justify-center py-12 text-gray-500">
                     <Package className="h-12 w-12 mb-4 text-gray-300" />
-                    <p>هیچ ئۆردەرێک نەدۆزرایەوە</p>
+                    <p>{pickLang(language, { ku: 'هیچ ئۆردەرێک نەدۆزرایەوە', en: 'No orders found', ar: 'لم يتم العثور على طلبات', zh: '未找到订单' })}</p>
                   </div>
                 )}
               </div>
@@ -490,7 +491,7 @@ export default function UnifiedOrdersDashboard() {
               <div className="h-2 -mx-6 -mt-6 mb-4 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-t-lg"></div>
               <DialogTitle className="flex items-center gap-3">
                 <Package className="h-6 w-6 text-purple-600" />
-                وردەکاری ئۆردەر
+                {pickLang(language, { ku: 'وردەکاری ئۆردەر', en: 'Order Details', ar: 'تفاصيل الطلب', zh: '订单详情' })}
               </DialogTitle>
             </DialogHeader>
             {selectedOrder && (
@@ -501,27 +502,27 @@ export default function UnifiedOrdersDashboard() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-sm text-gray-500">ناوی کاڵا</label>
+                    <label className="text-sm text-gray-500">{pickLang(language, { ku: 'ناوی کاڵا', en: 'Product Name', ar: 'اسم المنتج', zh: '商品名称' })}</label>
                     <p className="font-medium">{selectedOrder.productName || '-'}</p>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm text-gray-500">کڕیار</label>
+                    <label className="text-sm text-gray-500">{pickLang(language, { ku: 'کڕیار', en: 'Customer', ar: 'العميل', zh: '客户' })}</label>
                     <p className="font-medium">{selectedOrder.customerName || '-'}</p>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm text-gray-500">تراکینگ نەمبەر</label>
+                    <label className="text-sm text-gray-500">{pickLang(language, { ku: 'تراکینگ نەمبەر', en: 'Tracking Number', ar: 'رقم التتبع', zh: '追踪号码' })}</label>
                     <p className="font-mono">{selectedOrder.trackingNumber || '-'}</p>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm text-gray-500">نرخ</label>
+                    <label className="text-sm text-gray-500">{pickLang(language, { ku: 'نرخ', en: 'Price', ar: 'السعر', zh: '价格' })}</label>
                     <p className="font-bold text-emerald-600">${selectedOrder.sellingPrice || selectedOrder.totalPrice || 0}</p>
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setSelectedOrder(null)}>داخستن</Button>
+                  <Button variant="outline" onClick={() => setSelectedOrder(null)}>{pickLang(language, { ku: 'داخستن', en: 'Close', ar: 'إغلاق', zh: '关闭' })}</Button>
                   <Button className="bg-gradient-to-r from-purple-500 to-indigo-600">
                     <Edit className="me-2 h-4 w-4" />
-                    دەستکاری
+                    {pickLang(language, { ku: 'دەستکاری', en: 'Edit', ar: 'تعديل', zh: '编辑' })}
                   </Button>
                 </div>
               </div>

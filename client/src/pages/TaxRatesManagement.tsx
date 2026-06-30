@@ -26,9 +26,10 @@ import { Badge } from "@/components/ui/badge";
 import { Percent, Plus, Pencil, Trash2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 export default function TaxRatesManagement() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTaxRate, setSelectedTaxRate] = useState<any>(null);
@@ -120,7 +121,7 @@ export default function TaxRatesManagement() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("ئایا دڵنیایت لە سڕینەوەی ئەم نرخی باجە؟")) {
+    if (confirm(pickLang(language, { ku: "ئایا دڵنیایت لە سڕینەوەی ئەم نرخی باجە؟", en: "Are you sure you want to delete this tax rate?", ar: "هل أنت متأكد من حذف نسبة الضريبة هذه؟", zh: "确定要删除此税率吗？" }))) {
       deleteMutation.mutate({ id });
     }
   };
@@ -135,15 +136,15 @@ export default function TaxRatesManagement() {
                 <Percent className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-2xl">بەڕێوەبردنی نرخی باج</CardTitle>
+                <CardTitle className="text-2xl">{pickLang(language, { ku: "بەڕێوەبردنی نرخی باج", en: "Tax Rates Management", ar: "إدارة نسب الضرائب", zh: "税率管理" })}</CardTitle>
                 <CardDescription>
-                  بەڕێوەبردنی نرخەکانی باج و VAT
+                  {pickLang(language, { ku: "بەڕێوەبردنی نرخەکانی باج و VAT", en: "Manage tax and VAT rates", ar: "إدارة نسب الضرائب وضريبة القيمة المضافة", zh: "管理税率和增值税率" })}
                 </CardDescription>
               </div>
             </div>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 ms-2" />
-              نرخی نوێ
+              {pickLang(language, { ku: "نرخی نوێ", en: "New Rate", ar: "نسبة جديدة", zh: "新税率" })}
             </Button>
           </div>
         </CardHeader>
@@ -151,11 +152,11 @@ export default function TaxRatesManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ناو</TableHead>
-                <TableHead>نرخ (%)</TableHead>
-                <TableHead>وەسف</TableHead>
-                <TableHead>دۆخ</TableHead>
-                <TableHead>کردارەکان</TableHead>
+                <TableHead>{pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "名称" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "نرخ (%)", en: "Rate (%)", ar: "النسبة (%)", zh: "税率 (%)" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "کردارەکان", en: "Actions", ar: "الإجراءات", zh: "操作" })}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -173,9 +174,9 @@ export default function TaxRatesManagement() {
                   </TableCell>
                   <TableCell>
                     {taxRate.isActive ? (
-                      <Badge variant="default">چالاک</Badge>
+                      <Badge variant="default">{pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "启用" })}</Badge>
                     ) : (
-                      <Badge variant="secondary">ناچالاک</Badge>
+                      <Badge variant="secondary">{pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}</Badge>
                     )}
                   </TableCell>
                   <TableCell>
@@ -204,7 +205,7 @@ export default function TaxRatesManagement() {
 
           {!taxRates || taxRates.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
-              هیچ نرخی باجێک نییە
+              {pickLang(language, { ku: "هیچ نرخی باجێک نییە", en: "No tax rates", ar: "لا توجد نسب ضرائب", zh: "暂无税率" })}
             </div>
           )}
         </CardContent>
@@ -214,14 +215,14 @@ export default function TaxRatesManagement() {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>نرخی باجی نوێ زیاد بکە</DialogTitle>
+            <DialogTitle>{pickLang(language, { ku: "نرخی باجی نوێ زیاد بکە", en: "Add New Tax Rate", ar: "إضافة نسبة ضريبة جديدة", zh: "添加新税率" })}</DialogTitle>
             <DialogDescription>
-              زانیاریەکانی نرخی باجە نوێیەکە پڕ بکەرەوە
+              {pickLang(language, { ku: "زانیاریەکانی نرخی باجە نوێیەکە پڕ بکەرەوە", en: "Fill in the new tax rate details", ar: "املأ بيانات نسبة الضريبة الجديدة", zh: "填写新税率信息" })}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">ناوی نرخی باج</Label>
+              <Label htmlFor="name">{pickLang(language, { ku: "ناوی نرخی باج", en: "Tax Rate Name", ar: "اسم نسبة الضريبة", zh: "税率名称" })}</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -230,7 +231,7 @@ export default function TaxRatesManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="rate">نرخ (%)</Label>
+              <Label htmlFor="rate">{pickLang(language, { ku: "نرخ (%)", en: "Rate (%)", ar: "النسبة (%)", zh: "税率 (%)" })}</Label>
               <Input
                 id="rate"
                 type="number"
@@ -241,17 +242,17 @@ export default function TaxRatesManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">وەسف (ئیختیاری)</Label>
+              <Label htmlFor="description">{pickLang(language, { ku: "وەسف (ئیختیاری)", en: "Description (optional)", ar: "الوصف (اختياري)", zh: "描述（可选）" })}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="وەسفی نرخی باجەکە..."
+                placeholder={pickLang(language, { ku: "وەسفی نرخی باجەکە...", en: "Tax rate description...", ar: "وصف نسبة الضريبة...", zh: "税率描述..." })}
                 rows={3}
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="isDefault">نرخی بنەڕەت</Label>
+              <Label htmlFor="isDefault">{pickLang(language, { ku: "نرخی بنەڕەت", en: "Default Rate", ar: "النسبة الافتراضية", zh: "默认税率" })}</Label>
               <Switch
                 id="isDefault"
                 checked={formData.isDefault}
@@ -261,7 +262,7 @@ export default function TaxRatesManagement() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">چالاک</Label>
+              <Label htmlFor="isActive">{pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "启用" })}</Label>
               <Switch
                 id="isActive"
                 checked={formData.isActive}
@@ -273,10 +274,10 @@ export default function TaxRatesManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              پاشگەزبوونەوە
+              {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button onClick={handleCreate} disabled={createMutation.isPending}>
-              {createMutation.isPending ? "چاوەڕێ بە..." : "زیادکردن"}
+              {createMutation.isPending ? pickLang(language, { ku: "چاوەڕێ بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." }) : pickLang(language, { ku: "زیادکردن", en: "Add", ar: "إضافة", zh: "添加" })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -286,14 +287,14 @@ export default function TaxRatesManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>دەستکاری نرخی باج</DialogTitle>
+            <DialogTitle>{pickLang(language, { ku: "دەستکاری نرخی باج", en: "Edit Tax Rate", ar: "تعديل نسبة الضريبة", zh: "编辑税率" })}</DialogTitle>
             <DialogDescription>
-              زانیاریەکانی نرخی باجەکە نوێ بکەرەوە
+              {pickLang(language, { ku: "زانیاریەکانی نرخی باجەکە نوێ بکەرەوە", en: "Update the tax rate details", ar: "حدّث بيانات نسبة الضريبة", zh: "更新税率信息" })}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="edit-name">ناوی نرخی باج</Label>
+              <Label htmlFor="edit-name">{pickLang(language, { ku: "ناوی نرخی باج", en: "Tax Rate Name", ar: "اسم نسبة الضريبة", zh: "税率名称" })}</Label>
               <Input
                 id="edit-name"
                 value={formData.name}
@@ -301,7 +302,7 @@ export default function TaxRatesManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-rate">نرخ (%)</Label>
+              <Label htmlFor="edit-rate">{pickLang(language, { ku: "نرخ (%)", en: "Rate (%)", ar: "النسبة (%)", zh: "税率 (%)" })}</Label>
               <Input
                 id="edit-rate"
                 type="number"
@@ -311,7 +312,7 @@ export default function TaxRatesManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-description">وەسف (ئیختیاری)</Label>
+              <Label htmlFor="edit-description">{pickLang(language, { ku: "وەسف (ئیختیاری)", en: "Description (optional)", ar: "الوصف (اختياري)", zh: "描述（可选）" })}</Label>
               <Textarea
                 id="edit-description"
                 value={formData.description}
@@ -320,7 +321,7 @@ export default function TaxRatesManagement() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="edit-isDefault">نرخی بنەڕەت</Label>
+              <Label htmlFor="edit-isDefault">{pickLang(language, { ku: "نرخی بنەڕەت", en: "Default Rate", ar: "النسبة الافتراضية", zh: "默认税率" })}</Label>
               <Switch
                 id="edit-isDefault"
                 checked={formData.isDefault}
@@ -330,7 +331,7 @@ export default function TaxRatesManagement() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="edit-isActive">چالاک</Label>
+              <Label htmlFor="edit-isActive">{pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "启用" })}</Label>
               <Switch
                 id="edit-isActive"
                 checked={formData.isActive}
@@ -342,10 +343,10 @@ export default function TaxRatesManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              پاشگەزبوونەوە
+              {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? "چاوەڕێ بە..." : "نوێکردنەوە"}
+              {updateMutation.isPending ? pickLang(language, { ku: "چاوەڕێ بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." }) : pickLang(language, { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" })}
             </Button>
           </DialogFooter>
         </DialogContent>

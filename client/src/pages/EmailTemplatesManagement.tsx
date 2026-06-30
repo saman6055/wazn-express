@@ -32,8 +32,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Mail, Plus, Pencil, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 export default function EmailTemplatesManagement() {
+  const { language } = useTranslation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
@@ -55,7 +58,7 @@ export default function EmailTemplatesManagement() {
   // Mutations
   const createMutation = trpc.advancedSettings.createEmailTemplate.useMutation({
     onSuccess: () => {
-      toast.success("قاڵبی ئیمەیڵ زیادکرا");
+      toast.success(pickLang(language, { ku: "قاڵبی ئیمەیڵ زیادکرا", en: "Email template added", ar: "تمت إضافة قالب البريد الإلكتروني", zh: "已添加邮件模板" }));
       refetch();
       setIsCreateDialogOpen(false);
       resetForm();
@@ -67,7 +70,7 @@ export default function EmailTemplatesManagement() {
 
   const updateMutation = trpc.advancedSettings.updateEmailTemplate.useMutation({
     onSuccess: () => {
-      toast.success("قاڵبی ئیمەیڵ نوێکرایەوە");
+      toast.success(pickLang(language, { ku: "قاڵبی ئیمەیڵ نوێکرایەوە", en: "Email template updated", ar: "تم تحديث قالب البريد الإلكتروني", zh: "已更新邮件模板" }));
       refetch();
       setIsEditDialogOpen(false);
       setSelectedTemplate(null);
@@ -80,7 +83,7 @@ export default function EmailTemplatesManagement() {
 
   const deleteMutation = trpc.advancedSettings.deleteEmailTemplate.useMutation({
     onSuccess: () => {
-      toast.success("قاڵبی ئیمەیڵ سڕایەوە");
+      toast.success(pickLang(language, { ku: "قاڵبی ئیمەیڵ سڕایەوە", en: "Email template deleted", ar: "تم حذف قالب البريد الإلكتروني", zh: "已删除邮件模板" }));
       refetch();
     },
     onError: (error) => {
@@ -128,7 +131,7 @@ export default function EmailTemplatesManagement() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("ئایا دڵنیایت لە سڕینەوەی ئەم قاڵبە؟")) {
+    if (confirm(pickLang(language, { ku: "ئایا دڵنیایت لە سڕینەوەی ئەم قاڵبە؟", en: "Are you sure you want to delete this template?", ar: "هل أنت متأكد من حذف هذا القالب؟", zh: "确定要删除此模板吗？" }))) {
       deleteMutation.mutate({ id });
     }
   };
@@ -140,10 +143,10 @@ export default function EmailTemplatesManagement() {
 
   const getCategoryBadge = (category: string) => {
     const badges: Record<string, { label: string; variant: any }> = {
-      notification: { label: "ئاگادارکردنەوە", variant: "default" },
-      invoice: { label: "وەسڵ", variant: "secondary" },
-      report: { label: "ڕاپۆرت", variant: "outline" },
-      alert: { label: "ئاگاداری", variant: "destructive" },
+      notification: { label: pickLang(language, { ku: "ئاگادارکردنەوە", en: "Notification", ar: "إشعار", zh: "通知" }), variant: "default" },
+      invoice: { label: pickLang(language, { ku: "وەسڵ", en: "Invoice", ar: "فاتورة", zh: "发票" }), variant: "secondary" },
+      report: { label: pickLang(language, { ku: "ڕاپۆرت", en: "Report", ar: "تقرير", zh: "报告" }), variant: "outline" },
+      alert: { label: pickLang(language, { ku: "ئاگاداری", en: "Alert", ar: "تنبيه", zh: "警报" }), variant: "destructive" },
     };
     const badge = badges[category] || { label: category, variant: "default" };
     return <Badge variant={badge.variant}>{badge.label}</Badge>;
@@ -159,15 +162,15 @@ export default function EmailTemplatesManagement() {
                 <Mail className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-2xl">بەڕێوەبردنی قاڵبی ئیمەیڵ</CardTitle>
+                <CardTitle className="text-2xl">{pickLang(language, { ku: "بەڕێوەبردنی قاڵبی ئیمەیڵ", en: "Email Template Management", ar: "إدارة قوالب البريد الإلكتروني", zh: "邮件模板管理" })}</CardTitle>
                 <CardDescription>
-                  بەڕێوەبردنی قاڵبەکانی ئیمەیڵ و ئۆتۆماتیکی
+                  {pickLang(language, { ku: "بەڕێوەبردنی قاڵبەکانی ئیمەیڵ و ئۆتۆماتیکی", en: "Manage email and automation templates", ar: "إدارة قوالب البريد الإلكتروني والأتمتة", zh: "管理邮件和自动化模板" })}
                 </CardDescription>
               </div>
             </div>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 ms-2" />
-              قاڵبی نوێ
+              {pickLang(language, { ku: "قاڵبی نوێ", en: "New template", ar: "قالب جديد", zh: "新建模板" })}
             </Button>
           </div>
         </CardHeader>
@@ -175,11 +178,11 @@ export default function EmailTemplatesManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ناو</TableHead>
-                <TableHead>بابەت</TableHead>
-                <TableHead>جۆر</TableHead>
-                <TableHead>دۆخ</TableHead>
-                <TableHead>کردارەکان</TableHead>
+                <TableHead>{pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "名称" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "بابەت", en: "Subject", ar: "الموضوع", zh: "主题" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
+                <TableHead>{pickLang(language, { ku: "کردارەکان", en: "Actions", ar: "الإجراءات", zh: "操作" })}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -196,9 +199,9 @@ export default function EmailTemplatesManagement() {
                   </TableCell>
                   <TableCell>
                     {template.isActive ? (
-                      <Badge variant="default">چالاک</Badge>
+                      <Badge variant="default">{pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "启用" })}</Badge>
                     ) : (
-                      <Badge variant="secondary">ناچالاک</Badge>
+                      <Badge variant="secondary">{pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}</Badge>
                     )}
                   </TableCell>
                   <TableCell>
@@ -233,7 +236,7 @@ export default function EmailTemplatesManagement() {
 
           {!templates || templates.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
-              هیچ قاڵبێکی ئیمەیڵ نییە
+              {pickLang(language, { ku: "هیچ قاڵبێکی ئیمەیڵ نییە", en: "No email templates", ar: "لا توجد قوالب بريد إلكتروني", zh: "暂无邮件模板" })}
             </div>
           )}
         </CardContent>
@@ -243,14 +246,14 @@ export default function EmailTemplatesManagement() {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>قاڵبی ئیمەیڵی نوێ زیاد بکە</DialogTitle>
+            <DialogTitle>{pickLang(language, { ku: "قاڵبی ئیمەیڵی نوێ زیاد بکە", en: "Add new email template", ar: "إضافة قالب بريد إلكتروني جديد", zh: "添加新邮件模板" })}</DialogTitle>
             <DialogDescription>
-              زانیاریەکانی قاڵبە نوێیەکە پڕ بکەرەوە
+              {pickLang(language, { ku: "زانیاریەکانی قاڵبە نوێیەکە پڕ بکەرەوە", en: "Fill in the new template details", ar: "أدخل بيانات القالب الجديد", zh: "填写新模板信息" })}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">ناوی قاڵب (کۆد)</Label>
+              <Label htmlFor="name">{pickLang(language, { ku: "ناوی قاڵب (کۆد)", en: "Template name (code)", ar: "اسم القالب (الرمز)", zh: "模板名称（代码）" })}</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -259,7 +262,7 @@ export default function EmailTemplatesManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="category">جۆر</Label>
+              <Label htmlFor="category">{pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value: any) => setFormData({ ...formData, category: value })}
@@ -268,35 +271,35 @@ export default function EmailTemplatesManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="notification">ئاگادارکردنەوە</SelectItem>
-                  <SelectItem value="invoice">وەسڵ</SelectItem>
-                  <SelectItem value="report">ڕاپۆرت</SelectItem>
-                  <SelectItem value="alert">ئاگاداری</SelectItem>
+                  <SelectItem value="notification">{pickLang(language, { ku: "ئاگادارکردنەوە", en: "Notification", ar: "إشعار", zh: "通知" })}</SelectItem>
+                  <SelectItem value="invoice">{pickLang(language, { ku: "وەسڵ", en: "Invoice", ar: "فاتورة", zh: "发票" })}</SelectItem>
+                  <SelectItem value="report">{pickLang(language, { ku: "ڕاپۆرت", en: "Report", ar: "تقرير", zh: "报告" })}</SelectItem>
+                  <SelectItem value="alert">{pickLang(language, { ku: "ئاگاداری", en: "Alert", ar: "تنبيه", zh: "警报" })}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="subject">بابەت</Label>
+              <Label htmlFor="subject">{pickLang(language, { ku: "بابەت", en: "Subject", ar: "الموضوع", zh: "主题" })}</Label>
               <Input
                 id="subject"
                 value={formData.subject}
                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                placeholder="{{customerName}} - ئاگاداری کەمی کاڵا"
+                placeholder={pickLang(language, { ku: "{{customerName}} - ئاگاداری کەمی کاڵا", en: "{{customerName}} - Low stock alert", ar: "{{customerName}} - تنبيه انخفاض المخزون", zh: "{{customerName}} - 库存不足提醒" })}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="body">ناوەڕۆک (HTML)</Label>
+              <Label htmlFor="body">{pickLang(language, { ku: "ناوەڕۆک (HTML)", en: "Content (HTML)", ar: "المحتوى (HTML)", zh: "内容 (HTML)" })}</Label>
               <Textarea
                 id="body"
                 value={formData.body}
                 onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                placeholder="<p>بەڕێز {{customerName}},</p><p>کاڵای {{productName}} کەم بووەتەوە.</p>"
+                placeholder={pickLang(language, { ku: "<p>بەڕێز {{customerName}},</p><p>کاڵای {{productName}} کەم بووەتەوە.</p>", en: "<p>Dear {{customerName}},</p><p>The product {{productName}} is low in stock.</p>", ar: "<p>عزيزي {{customerName}}،</p><p>المنتج {{productName}} منخفض في المخزون.</p>", zh: "<p>尊敬的 {{customerName}}，</p><p>产品 {{productName}} 库存不足。</p>" })}
                 rows={10}
                 className="font-mono text-sm"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="variables">گۆڕاوەکان (JSON)</Label>
+              <Label htmlFor="variables">{pickLang(language, { ku: "گۆڕاوەکان (JSON)", en: "Variables (JSON)", ar: "المتغيرات (JSON)", zh: "变量 (JSON)" })}</Label>
               <Textarea
                 id="variables"
                 value={formData.variables}
@@ -306,11 +309,11 @@ export default function EmailTemplatesManagement() {
                 className="font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                لیستی گۆڕاوەکان بە فۆرماتی JSON بنووسە
+                {pickLang(language, { ku: "لیستی گۆڕاوەکان بە فۆرماتی JSON بنووسە", en: "Write the list of variables in JSON format", ar: "اكتب قائمة المتغيرات بتنسيق JSON", zh: "以 JSON 格式编写变量列表" })}
               </p>
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">چالاک</Label>
+              <Label htmlFor="isActive">{pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "启用" })}</Label>
               <Switch
                 id="isActive"
                 checked={formData.isActive}
@@ -322,10 +325,10 @@ export default function EmailTemplatesManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              پاشگەزبوونەوە
+              {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button onClick={handleCreate} disabled={createMutation.isPending}>
-              {createMutation.isPending ? "چاوەڕێ بە..." : "زیادکردن"}
+              {createMutation.isPending ? pickLang(language, { ku: "چاوەڕێ بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." }) : pickLang(language, { ku: "زیادکردن", en: "Add", ar: "إضافة", zh: "添加" })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -335,18 +338,18 @@ export default function EmailTemplatesManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>دەستکاری قاڵبی ئیمەیڵ</DialogTitle>
+            <DialogTitle>{pickLang(language, { ku: "دەستکاری قاڵبی ئیمەیڵ", en: "Edit email template", ar: "تعديل قالب البريد الإلكتروني", zh: "编辑邮件模板" })}</DialogTitle>
             <DialogDescription>
-              زانیاریەکانی قاڵبەکە نوێ بکەرەوە
+              {pickLang(language, { ku: "زانیاریەکانی قاڵبەکە نوێ بکەرەوە", en: "Update the template details", ar: "حدّث بيانات القالب", zh: "更新模板信息" })}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>ناوی قاڵب</Label>
+              <Label>{pickLang(language, { ku: "ناوی قاڵب", en: "Template name", ar: "اسم القالب", zh: "模板名称" })}</Label>
               <Input value={formData.name} disabled className="bg-muted" />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-subject">بابەت</Label>
+              <Label htmlFor="edit-subject">{pickLang(language, { ku: "بابەت", en: "Subject", ar: "الموضوع", zh: "主题" })}</Label>
               <Input
                 id="edit-subject"
                 value={formData.subject}
@@ -354,7 +357,7 @@ export default function EmailTemplatesManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-body">ناوەڕۆک (HTML)</Label>
+              <Label htmlFor="edit-body">{pickLang(language, { ku: "ناوەڕۆک (HTML)", en: "Content (HTML)", ar: "المحتوى (HTML)", zh: "内容 (HTML)" })}</Label>
               <Textarea
                 id="edit-body"
                 value={formData.body}
@@ -364,7 +367,7 @@ export default function EmailTemplatesManagement() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-variables">گۆڕاوەکان (JSON)</Label>
+              <Label htmlFor="edit-variables">{pickLang(language, { ku: "گۆڕاوەکان (JSON)", en: "Variables (JSON)", ar: "المتغيرات (JSON)", zh: "变量 (JSON)" })}</Label>
               <Textarea
                 id="edit-variables"
                 value={formData.variables}
@@ -374,7 +377,7 @@ export default function EmailTemplatesManagement() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="edit-isActive">چالاک</Label>
+              <Label htmlFor="edit-isActive">{pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "启用" })}</Label>
               <Switch
                 id="edit-isActive"
                 checked={formData.isActive}
@@ -386,10 +389,10 @@ export default function EmailTemplatesManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              پاشگەزبوونەوە
+              {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? "چاوەڕێ بە..." : "نوێکردنەوە"}
+              {updateMutation.isPending ? pickLang(language, { ku: "چاوەڕێ بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." }) : pickLang(language, { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -399,18 +402,18 @@ export default function EmailTemplatesManagement() {
       <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>پێشبینینی قاڵب: {selectedTemplate?.name}</DialogTitle>
+            <DialogTitle>{pickLang(language, { ku: "پێشبینینی قاڵب", en: "Template preview", ar: "معاينة القالب", zh: "模板预览" })}: {selectedTemplate?.name}</DialogTitle>
             <DialogDescription>
               {getCategoryBadge(selectedTemplate?.category)}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label className="text-sm font-semibold">بابەت:</Label>
+              <Label className="text-sm font-semibold">{pickLang(language, { ku: "بابەت:", en: "Subject:", ar: "الموضوع:", zh: "主题：" })}</Label>
               <p className="mt-1 p-3 bg-muted rounded-md">{selectedTemplate?.subject}</p>
             </div>
             <div>
-              <Label className="text-sm font-semibold">ناوەڕۆک:</Label>
+              <Label className="text-sm font-semibold">{pickLang(language, { ku: "ناوەڕۆک:", en: "Content:", ar: "المحتوى:", zh: "内容：" })}</Label>
               <div
                 className="mt-1 p-4 bg-muted rounded-md prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: selectedTemplate?.body || "" }}
@@ -418,7 +421,7 @@ export default function EmailTemplatesManagement() {
             </div>
             {selectedTemplate?.variables && (
               <div>
-                <Label className="text-sm font-semibold">گۆڕاوەکان:</Label>
+                <Label className="text-sm font-semibold">{pickLang(language, { ku: "گۆڕاوەکان:", en: "Variables:", ar: "المتغيرات:", zh: "变量：" })}</Label>
                 <pre className="mt-1 p-3 bg-muted rounded-md text-xs font-mono overflow-x-auto">
                   {selectedTemplate.variables}
                 </pre>
@@ -427,7 +430,7 @@ export default function EmailTemplatesManagement() {
           </div>
           <DialogFooter>
             <Button onClick={() => setIsPreviewDialogOpen(false)}>
-              داخستن
+              {pickLang(language, { ku: "داخستن", en: "Close", ar: "إغلاق", zh: "关闭" })}
             </Button>
           </DialogFooter>
         </DialogContent>

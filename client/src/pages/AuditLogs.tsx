@@ -19,33 +19,36 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 
-// Category icons and colors
-const categoryConfig: Record<string, { icon: any; color: string; bgColor: string; label: string }> = {
-  customer: { icon: Users, color: "text-blue-600", bgColor: "bg-blue-100", label: "کڕیارەکان" },
-  package: { icon: Package, color: "text-purple-600", bgColor: "bg-purple-100", label: "پاکەتەکان" },
-  batch: { icon: Truck, color: "text-orange-600", bgColor: "bg-orange-100", label: "باچەکان" },
-  full_package: { icon: ShoppingCart, color: "text-green-600", bgColor: "bg-green-100", label: "پاکێجی تەواو" },
+type LangLabel = { ku: string; en: string; ar: string; zh: string };
 
-  commission: { icon: DollarSign, color: "text-yellow-600", bgColor: "bg-yellow-100", label: "کڕین بە تێچوو" },
-  finance: { icon: DollarSign, color: "text-emerald-600", bgColor: "bg-emerald-100", label: "دارایی" },
-  settings: { icon: Settings, color: "text-gray-600", bgColor: "bg-gray-100", label: "ڕێکخستنەکان" },
-  user: { icon: User, color: "text-indigo-600", bgColor: "bg-indigo-100", label: "بەکارهێنەرەکان" },
-  system: { icon: Activity, color: "text-red-600", bgColor: "bg-red-100", label: "سیستەم" },
+// Category icons and colors
+const categoryConfig: Record<string, { icon: any; color: string; bgColor: string; label: LangLabel }> = {
+  customer: { icon: Users, color: "text-blue-600", bgColor: "bg-blue-100", label: { ku: "کڕیارەکان", en: "Customers", ar: "العملاء", zh: "客户" } },
+  package: { icon: Package, color: "text-purple-600", bgColor: "bg-purple-100", label: { ku: "پاکەتەکان", en: "Packages", ar: "الطرود", zh: "包裹" } },
+  batch: { icon: Truck, color: "text-orange-600", bgColor: "bg-orange-100", label: { ku: "باچەکان", en: "Batches", ar: "الدفعات", zh: "批次" } },
+  full_package: { icon: ShoppingCart, color: "text-green-600", bgColor: "bg-green-100", label: { ku: "پاکێجی تەواو", en: "Full Package", ar: "الباقة الكاملة", zh: "完整套餐" } },
+
+  commission: { icon: DollarSign, color: "text-yellow-600", bgColor: "bg-yellow-100", label: { ku: "کڕین بە تێچوو", en: "Cost Purchase", ar: "الشراء بالتكلفة", zh: "成本采购" } },
+  finance: { icon: DollarSign, color: "text-emerald-600", bgColor: "bg-emerald-100", label: { ku: "دارایی", en: "Finance", ar: "المالية", zh: "财务" } },
+  settings: { icon: Settings, color: "text-gray-600", bgColor: "bg-gray-100", label: { ku: "ڕێکخستنەکان", en: "Settings", ar: "الإعدادات", zh: "设置" } },
+  user: { icon: User, color: "text-indigo-600", bgColor: "bg-indigo-100", label: { ku: "بەکارهێنەرەکان", en: "Users", ar: "المستخدمون", zh: "用户" } },
+  system: { icon: Activity, color: "text-red-600", bgColor: "bg-red-100", label: { ku: "سیستەم", en: "System", ar: "النظام", zh: "系统" } },
 };
 
 // Action icons and colors
-const actionConfig: Record<string, { icon: any; color: string; bgColor: string; label: string }> = {
-  create: { icon: Plus, color: "text-green-600", bgColor: "bg-green-100", label: "دروستکردن" },
-  update: { icon: Edit, color: "text-blue-600", bgColor: "bg-blue-100", label: "نوێکردنەوە" },
-  delete: { icon: Trash2, color: "text-red-600", bgColor: "bg-red-100", label: "سڕینەوە" },
-  status_change: { icon: RefreshCw, color: "text-orange-600", bgColor: "bg-orange-100", label: "گۆڕینی بارودۆخ" },
-  charge: { icon: DollarSign, color: "text-purple-600", bgColor: "bg-purple-100", label: "چارج کردن" },
-  payment: { icon: DollarSign, color: "text-emerald-600", bgColor: "bg-emerald-100", label: "پارەدان" },
-  refund: { icon: RotateCcw, color: "text-yellow-600", bgColor: "bg-yellow-100", label: "گەڕاندنەوە" },
+const actionConfig: Record<string, { icon: any; color: string; bgColor: string; label: LangLabel }> = {
+  create: { icon: Plus, color: "text-green-600", bgColor: "bg-green-100", label: { ku: "دروستکردن", en: "Create", ar: "إنشاء", zh: "创建" } },
+  update: { icon: Edit, color: "text-blue-600", bgColor: "bg-blue-100", label: { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" } },
+  delete: { icon: Trash2, color: "text-red-600", bgColor: "bg-red-100", label: { ku: "سڕینەوە", en: "Delete", ar: "حذف", zh: "删除" } },
+  status_change: { icon: RefreshCw, color: "text-orange-600", bgColor: "bg-orange-100", label: { ku: "گۆڕینی بارودۆخ", en: "Status Change", ar: "تغيير الحالة", zh: "状态变更" } },
+  charge: { icon: DollarSign, color: "text-purple-600", bgColor: "bg-purple-100", label: { ku: "چارج کردن", en: "Charge", ar: "احتساب رسوم", zh: "扣费" } },
+  payment: { icon: DollarSign, color: "text-emerald-600", bgColor: "bg-emerald-100", label: { ku: "پارەدان", en: "Payment", ar: "دفع", zh: "付款" } },
+  refund: { icon: RotateCcw, color: "text-yellow-600", bgColor: "bg-yellow-100", label: { ku: "گەڕاندنەوە", en: "Refund", ar: "استرداد", zh: "退款" } },
 };
 
 // Get action type from action string
@@ -59,33 +62,33 @@ const getActionType = (action: string): string => {
   return "update";
 };
 
-// Field labels in Kurdish
-const fieldLabels: Record<string, string> = {
-  name: "ناو",
-  phone: "ژمارەی تەلەفۆن",
-  email: "ئیمەیل",
-  status: "بارودۆخ",
-  price: "نرخ",
-  weight: "کێش",
-  trackingNumber: "تراکینگ نەمبەر",
-  customerCode: "کۆدی کڕیار",
-  description: "وەسف",
-  notes: "تێبینی",
-  quantity: "عەدەد",
-  purchasePriceUsd: "نرخی کڕین",
-  sellingPriceUsd: "نرخی فرۆشتن",
-  shippingCostUsd: "نرخی گواستنەوە",
-  profitUsd: "قازانج",
-  balanceUsd: "بالانس",
-  isActive: "چالاک",
-  role: "ڕۆڵ",
-  address: "ناونیشان",
-  city: "شار",
-  country: "وڵات",
+// Field labels
+const fieldLabels: Record<string, LangLabel> = {
+  name: { ku: "ناو", en: "Name", ar: "الاسم", zh: "姓名" },
+  phone: { ku: "ژمارەی تەلەفۆن", en: "Phone Number", ar: "رقم الهاتف", zh: "电话号码" },
+  email: { ku: "ئیمەیل", en: "Email", ar: "البريد الإلكتروني", zh: "电子邮件" },
+  status: { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" },
+  price: { ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" },
+  weight: { ku: "کێش", en: "Weight", ar: "الوزن", zh: "重量" },
+  trackingNumber: { ku: "تراکینگ نەمبەر", en: "Tracking Number", ar: "رقم التتبع", zh: "追踪号" },
+  customerCode: { ku: "کۆدی کڕیار", en: "Customer Code", ar: "رمز العميل", zh: "客户编码" },
+  description: { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" },
+  notes: { ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" },
+  quantity: { ku: "عەدەد", en: "Quantity", ar: "الكمية", zh: "数量" },
+  purchasePriceUsd: { ku: "نرخی کڕین", en: "Purchase Price", ar: "سعر الشراء", zh: "采购价格" },
+  sellingPriceUsd: { ku: "نرخی فرۆشتن", en: "Selling Price", ar: "سعر البيع", zh: "销售价格" },
+  shippingCostUsd: { ku: "نرخی گواستنەوە", en: "Shipping Cost", ar: "تكلفة الشحن", zh: "运费" },
+  profitUsd: { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" },
+  balanceUsd: { ku: "بالانس", en: "Balance", ar: "الرصيد", zh: "余额" },
+  isActive: { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" },
+  role: { ku: "ڕۆڵ", en: "Role", ar: "الدور", zh: "角色" },
+  address: { ku: "ناونیشان", en: "Address", ar: "العنوان", zh: "地址" },
+  city: { ku: "شار", en: "City", ar: "المدينة", zh: "城市" },
+  country: { ku: "وڵات", en: "Country", ar: "البلد", zh: "国家" },
 };
 
 export default function AuditLogs() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");
@@ -98,12 +101,12 @@ export default function AuditLogs() {
 
   // Date preset options
   const datePresets = [
-    { value: "all", label: "هەموو کات" },
-    { value: "today", label: "ئەمڕۆ" },
-    { value: "yesterday", label: "دوێنێ" },
-    { value: "week", label: "٧ ڕۆژی ڕابردوو" },
-    { value: "month", label: "٣٠ ڕۆژی ڕابردوو" },
-    { value: "thisMonth", label: "ئەم مانگە" },
+    { value: "all", label: pickLang(language, { ku: "هەموو کات", en: "All time", ar: "كل الأوقات", zh: "全部时间" }) },
+    { value: "today", label: pickLang(language, { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" }) },
+    { value: "yesterday", label: pickLang(language, { ku: "دوێنێ", en: "Yesterday", ar: "أمس", zh: "昨天" }) },
+    { value: "week", label: pickLang(language, { ku: "٧ ڕۆژی ڕابردوو", en: "Last 7 days", ar: "آخر ٧ أيام", zh: "近7天" }) },
+    { value: "month", label: pickLang(language, { ku: "٣٠ ڕۆژی ڕابردوو", en: "Last 30 days", ar: "آخر ٣٠ يوماً", zh: "近30天" }) },
+    { value: "thisMonth", label: pickLang(language, { ku: "ئەم مانگە", en: "This month", ar: "هذا الشهر", zh: "本月" }) },
   ];
 
   // Apply date preset
@@ -161,17 +164,25 @@ export default function AuditLogs() {
   // Export to Excel (CSV)
   const exportToExcel = () => {
     if (logs.length === 0) {
-      toast.error("هیچ داتایەک نییە بۆ هەناردەکردن");
+      toast.error(pickLang(language, { ku: "هیچ داتایەک نییە بۆ هەناردەکردن", en: "No data to export", ar: "لا توجد بيانات للتصدير", zh: "没有可导出的数据" }));
       return;
     }
-    
+
     // BOM for UTF-8
     const BOM = "\uFEFF";
-    const headers = ["بەروار", "کات", "پۆل", "چالاکی", "بەکارهێنەر", "وەسف", "کۆد"];
+    const headers = [
+      pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" }),
+      pickLang(language, { ku: "کات", en: "Time", ar: "الوقت", zh: "时间" }),
+      pickLang(language, { ku: "پۆل", en: "Category", ar: "الفئة", zh: "类别" }),
+      pickLang(language, { ku: "چالاکی", en: "Action", ar: "الإجراء", zh: "操作" }),
+      pickLang(language, { ku: "بەکارهێنەر", en: "User", ar: "المستخدم", zh: "用户" }),
+      pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" }),
+      pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编码" }),
+    ];
     const rows = logs.map((log: any) => [
       new Date(log.createdAt).toLocaleDateString('ku'),
       new Date(log.createdAt).toLocaleTimeString('ku'),
-      categoryConfig[log.category]?.label || log.category,
+      (categoryConfig[log.category] ? pickLang(language, categoryConfig[log.category].label) : null) || log.category,
       log.actionLabel || log.action,
       log.userName || getUserName(log.userId),
       log.description || "-",
@@ -186,13 +197,13 @@ export default function AuditLogs() {
     link.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("فایلی Excel دابەزێنرا");
+    toast.success(pickLang(language, { ku: "فایلی Excel دابەزێنرا", en: "Excel file downloaded", ar: "تم تنزيل ملف Excel", zh: "Excel 文件已下载" }));
   };
 
   // Export to PDF (Print)
   const exportToPDF = () => {
     if (logs.length === 0) {
-      toast.error("هیچ داتایەک نییە بۆ هەناردەکردن");
+      toast.error(pickLang(language, { ku: "هیچ داتایەک نییە بۆ هەناردەکردن", en: "No data to export", ar: "لا توجد بيانات للتصدير", zh: "没有可导出的数据" }));
       return;
     }
     const company = getCompanyInfoFromSettings(settings || []);
@@ -201,7 +212,7 @@ export default function AuditLogs() {
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>تۆماری چالاکییەکان - ${company.name}</title>
+        <title>${pickLang(language, { ku: "تۆماری چالاکییەکان", en: "Activity Log", ar: "سجل الأنشطة", zh: "活动日志" })} - ${company.name}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap');
           * { font-family: 'Noto Sans Arabic', sans-serif; box-sizing: border-box; }
@@ -224,27 +235,27 @@ export default function AuditLogs() {
       </head>
       <body>
         <div class="header">
-          <h1>🔍 تۆماری چالاکییەکان</h1>
+          <h1>🔍 ${pickLang(language, { ku: "تۆماری چالاکییەکان", en: "Activity Log", ar: "سجل الأنشطة", zh: "活动日志" })}</h1>
           <p>${company.name} - ${new Date().toLocaleDateString('ku')}</p>
         </div>
         <div class="filters">
-          <strong>فلتەرەکان:</strong>
-          ${categoryFilter !== "all" ? `پۆل: ${categoryConfig[categoryFilter]?.label || categoryFilter}` : ""}
-          ${actionFilter !== "all" ? ` | چالاکی: ${actionFilter}` : ""}
-          ${dateFrom ? ` | لە: ${dateFrom}` : ""}
-          ${dateTo ? ` | بۆ: ${dateTo}` : ""}
-          ${search ? ` | گەڕان: ${search}` : ""}
-          | کۆی ئەنجام: ${total}
+          <strong>${pickLang(language, { ku: "فلتەرەکان", en: "Filters", ar: "عوامل التصفية", zh: "筛选条件" })}:</strong>
+          ${categoryFilter !== "all" ? `${pickLang(language, { ku: "پۆل", en: "Category", ar: "الفئة", zh: "类别" })}: ${(categoryConfig[categoryFilter] ? pickLang(language, categoryConfig[categoryFilter].label) : null) || categoryFilter}` : ""}
+          ${actionFilter !== "all" ? ` | ${pickLang(language, { ku: "چالاکی", en: "Action", ar: "الإجراء", zh: "操作" })}: ${actionFilter}` : ""}
+          ${dateFrom ? ` | ${pickLang(language, { ku: "لە", en: "From", ar: "من", zh: "从" })}: ${dateFrom}` : ""}
+          ${dateTo ? ` | ${pickLang(language, { ku: "بۆ", en: "To", ar: "إلى", zh: "至" })}: ${dateTo}` : ""}
+          ${search ? ` | ${pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}: ${search}` : ""}
+          | ${pickLang(language, { ku: "کۆی ئەنجام", en: "Total results", ar: "إجمالي النتائج", zh: "结果总数" })}: ${total}
         </div>
         <table>
           <thead>
             <tr>
-              <th>بەروار و کات</th>
-              <th>پۆل</th>
-              <th>چالاکی</th>
-              <th>بەکارهێنەر</th>
-              <th>وەسف</th>
-              <th>کۆد</th>
+              <th>${pickLang(language, { ku: "بەروار و کات", en: "Date & Time", ar: "التاريخ والوقت", zh: "日期和时间" })}</th>
+              <th>${pickLang(language, { ku: "پۆل", en: "Category", ar: "الفئة", zh: "类别" })}</th>
+              <th>${pickLang(language, { ku: "چالاکی", en: "Action", ar: "الإجراء", zh: "操作" })}</th>
+              <th>${pickLang(language, { ku: "بەکارهێنەر", en: "User", ar: "المستخدم", zh: "用户" })}</th>
+              <th>${pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" })}</th>
+              <th>${pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编码" })}</th>
             </tr>
           </thead>
           <tbody>
@@ -253,7 +264,7 @@ export default function AuditLogs() {
               return `
                 <tr>
                   <td>${new Date(log.createdAt).toLocaleString('ku')}</td>
-                  <td>${categoryConfig[log.category]?.label || log.category}</td>
+                  <td>${(categoryConfig[log.category] ? pickLang(language, categoryConfig[log.category].label) : null) || log.category}</td>
                   <td><span class="badge badge-${actionType}">${log.actionLabel || log.action}</span></td>
                   <td>${log.userName || getUserName(log.userId)}</td>
                   <td>${log.description || "-"}</td>
@@ -264,7 +275,7 @@ export default function AuditLogs() {
           </tbody>
         </table>
         <div class="footer">
-          چاپکرا لە ${new Date().toLocaleString('ku')} | ${company.name} Audit Logs
+          ${pickLang(language, { ku: "چاپکرا لە", en: "Printed at", ar: "طُبع في", zh: "打印于" })} ${new Date().toLocaleString('ku')} | ${company.name} Audit Logs
         </div>
       </body>
       </html>
@@ -278,7 +289,7 @@ export default function AuditLogs() {
         printWindow.print();
       };
     }
-    toast.success("ئامادەی چاپکردن");
+    toast.success(pickLang(language, { ku: "ئامادەی چاپکردن", en: "Ready to print", ar: "جاهز للطباعة", zh: "准备打印" }));
   };
 
   const { data: stats } = trpc.auditLogs.getStats.useQuery();
@@ -292,8 +303,8 @@ export default function AuditLogs() {
 
   const getUserName = (userId: number | null, userName?: string | null) => {
     if (userName) return userName;
-    if (!userId) return "سیستەم";
-    return users?.find(u => u.id === userId)?.name || "نەزانراو";
+    if (!userId) return pickLang(language, { ku: "سیستەم", en: "System", ar: "النظام", zh: "系统" });
+    return users?.find(u => u.id === userId)?.name || pickLang(language, { ku: "نەزانراو", en: "Unknown", ar: "غير معروف", zh: "未知" });
   };
 
   const getEntityLink = (log: any): string | null => {
@@ -321,7 +332,7 @@ export default function AuditLogs() {
 
   const formatFieldValue = (value: any): string => {
     if (value === null || value === undefined) return "-";
-    if (typeof value === "boolean") return value ? "بەڵێ" : "نەخێر";
+    if (typeof value === "boolean") return value ? pickLang(language, { ku: "بەڵێ", en: "Yes", ar: "نعم", zh: "是" }) : pickLang(language, { ku: "نەخێر", en: "No", ar: "لا", zh: "否" });
     if (typeof value === "number") return value.toLocaleString();
     if (typeof value === "object") return JSON.stringify(value);
     return String(value);
@@ -336,7 +347,7 @@ export default function AuditLogs() {
             {Object.entries(newValues).map(([key, value]) => (
               <div key={key} className="flex items-start gap-2 text-sm">
                 <span className="font-medium text-muted-foreground min-w-[120px]">
-                  {fieldLabels[key] || key}:
+                  {(fieldLabels[key] ? pickLang(language, fieldLabels[key]) : null) || key}:
                 </span>
                 <span className="text-green-600">{formatFieldValue(value)}</span>
               </div>
@@ -354,7 +365,7 @@ export default function AuditLogs() {
           const newVal = newValues?.[field];
           return (
             <div key={field} className="border-b pb-2 last:border-0">
-              <div className="font-medium text-sm mb-1">{fieldLabels[field] || field}</div>
+              <div className="font-medium text-sm mb-1">{(fieldLabels[field] ? pickLang(language, fieldLabels[field]) : null) || field}</div>
               <div className="flex items-center gap-2 text-sm">
                 <div className="flex-1 p-2 bg-red-50 rounded border border-red-200">
                   <span className="text-red-600 line-through">{formatFieldValue(oldVal)}</span>
@@ -379,13 +390,13 @@ export default function AuditLogs() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
               <History className="h-6 w-6" />
-              تۆماری چالاکییەکان
+              {pickLang(language, { ku: "تۆماری چالاکییەکان", en: "Activity Log", ar: "سجل الأنشطة", zh: "活动日志" })}
             </h1>
-            <p className="text-muted-foreground">شوێنکەوتنی هەموو گۆڕانکاریەکان لە سیستەم</p>
+            <p className="text-muted-foreground">{pickLang(language, { ku: "شوێنکەوتنی هەموو گۆڕانکاریەکان لە سیستەم", en: "Track all changes in the system", ar: "تتبع جميع التغييرات في النظام", zh: "追踪系统中的所有变更" })}</p>
           </div>
           <Button variant="outline" onClick={() => refetch()} className="gap-2">
             <RefreshCw className="h-4 w-4" />
-            نوێکردنەوە
+            {pickLang(language, { ku: "نوێکردنەوە", en: "Refresh", ar: "تحديث", zh: "刷新" })}
           </Button>
         </div>
 
@@ -399,7 +410,7 @@ export default function AuditLogs() {
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{stats?.total?.toLocaleString() || 0}</div>
-                  <div className="text-sm text-muted-foreground">کۆی تۆمارەکان</div>
+                  <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی تۆمارەکان", en: "Total records", ar: "إجمالي السجلات", zh: "记录总数" })}</div>
                 </div>
               </div>
             </CardContent>
@@ -418,7 +429,7 @@ export default function AuditLogs() {
                       .reduce((sum, [, v]) => sum + (v as number), 0)
                       .toLocaleString()}
                   </div>
-                  <div className="text-sm text-green-600">دروستکردن</div>
+                  <div className="text-sm text-green-600">{pickLang(language, { ku: "دروستکردن", en: "Created", ar: "إنشاء", zh: "创建" })}</div>
                 </div>
               </div>
             </CardContent>
@@ -437,7 +448,7 @@ export default function AuditLogs() {
                       .reduce((sum, [, v]) => sum + (v as number), 0)
                       .toLocaleString()}
                   </div>
-                  <div className="text-sm text-blue-600">نوێکردنەوە</div>
+                  <div className="text-sm text-blue-600">{pickLang(language, { ku: "نوێکردنەوە", en: "Updated", ar: "تحديث", zh: "更新" })}</div>
                 </div>
               </div>
             </CardContent>
@@ -456,7 +467,7 @@ export default function AuditLogs() {
                       .reduce((sum, [, v]) => sum + (v as number), 0)
                       .toLocaleString()}
                   </div>
-                  <div className="text-sm text-red-600">سڕینەوە</div>
+                  <div className="text-sm text-red-600">{pickLang(language, { ku: "سڕینەوە", en: "Deleted", ar: "حذف", zh: "删除" })}</div>
                 </div>
               </div>
             </CardContent>
@@ -472,7 +483,7 @@ export default function AuditLogs() {
                   <div className="text-2xl font-bold text-purple-700">
                     {Object.keys(stats?.byCategory || {}).length}
                   </div>
-                  <div className="text-sm text-purple-600">پۆلەکان</div>
+                  <div className="text-sm text-purple-600">{pickLang(language, { ku: "پۆلەکان", en: "Categories", ar: "الفئات", zh: "类别" })}</div>
                 </div>
               </div>
             </CardContent>
@@ -510,7 +521,7 @@ export default function AuditLogs() {
                 className="w-[140px] h-9"
               />
             </div>
-            <span className="text-muted-foreground">بۆ</span>
+            <span className="text-muted-foreground">{pickLang(language, { ku: "بۆ", en: "to", ar: "إلى", zh: "至" })}</span>
             <Input
               type="date"
               value={dateTo}
@@ -545,7 +556,7 @@ export default function AuditLogs() {
             className="gap-1"
           >
             <Layers className="h-4 w-4" />
-            هەموو
+            {pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}
           </Button>
           {filters?.categories?.map(cat => {
             const config = categoryConfig[cat.value] || categoryConfig.system;
@@ -579,7 +590,7 @@ export default function AuditLogs() {
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="گەڕان بە ناو، کۆد، یان وەسف..."
+                    placeholder={pickLang(language, { ku: "گەڕان بە ناو، کۆد، یان وەسف...", en: "Search by name, code, or description...", ar: "البحث بالاسم أو الرمز أو الوصف...", zh: "按名称、编码或描述搜索..." })}
                     value={search}
                     onChange={(e) => {
                       setSearch(e.target.value);
@@ -591,10 +602,10 @@ export default function AuditLogs() {
                 
                 <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setPage(0); }}>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="جۆری چالاکی" />
+                    <SelectValue placeholder={pickLang(language, { ku: "جۆری چالاکی", en: "Action type", ar: "نوع الإجراء", zh: "操作类型" })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">هەموو چالاکییەکان</SelectItem>
+                    <SelectItem value="all">{pickLang(language, { ku: "هەموو چالاکییەکان", en: "All actions", ar: "كل الإجراءات", zh: "所有操作" })}</SelectItem>
                     {filters?.actions?.map(action => (
                       <SelectItem key={action.value} value={action.value}>
                         {action.label}
@@ -605,7 +616,7 @@ export default function AuditLogs() {
               </div>
               
               <div className="text-sm text-muted-foreground">
-                {total.toLocaleString()} تۆمار
+                {total.toLocaleString()} {pickLang(language, { ku: "تۆمار", en: "records", ar: "سجل", zh: "条记录" })}
               </div>
             </div>
           </CardHeader>
@@ -627,8 +638,8 @@ export default function AuditLogs() {
             ) : logs.length === 0 ? (
               <div className="p-12 text-center">
                 <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">هیچ تۆمارێک نەدۆزرایەوە</h3>
-                <p className="text-muted-foreground">هیچ چالاکییەک بەم فلتەرانە نییە</p>
+                <h3 className="text-lg font-medium mb-2">{pickLang(language, { ku: "هیچ تۆمارێک نەدۆزرایەوە", en: "No records found", ar: "لم يتم العثور على سجلات", zh: "未找到记录" })}</h3>
+                <p className="text-muted-foreground">{pickLang(language, { ku: "هیچ چالاکییەک بەم فلتەرانە نییە", en: "No activity matches these filters", ar: "لا توجد أنشطة تطابق عوامل التصفية هذه", zh: "没有符合这些筛选条件的活动" })}</p>
               </div>
             ) : (
               <div className="divide-y">
@@ -662,7 +673,7 @@ export default function AuditLogs() {
                                 </span>
                                 <Badge variant="outline" className={`${catConf.bgColor} ${catConf.color} border-0`}>
                                   <CatIcon className="h-3 w-3 me-1" />
-                                  {catConf.label}
+                                  {pickLang(language, catConf.label)}
                                 </Badge>
                                 {log.entityCode && (
                                   <Badge variant="secondary" className="font-mono">
@@ -682,12 +693,12 @@ export default function AuditLogs() {
                                 <div className="flex flex-wrap gap-1 mt-2">
                                   {log.changedFields.slice(0, 3).map((field: string) => (
                                     <Badge key={field} variant="outline" className="text-xs">
-                                      {fieldLabels[field] || field}
+                                      {(fieldLabels[field] ? pickLang(language, fieldLabels[field]) : null) || field}
                                     </Badge>
                                   ))}
                                   {log.changedFields.length > 3 && (
                                     <Badge variant="outline" className="text-xs">
-                                      +{log.changedFields.length - 3} تر
+                                      +{log.changedFields.length - 3} {pickLang(language, { ku: "تر", en: "more", ar: "أخرى", zh: "更多" })}
                                     </Badge>
                                   )}
                                 </div>
@@ -722,7 +733,7 @@ export default function AuditLogs() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between p-4 border-t">
                 <div className="text-sm text-muted-foreground">
-                  پەڕە {page + 1} لە {totalPages}
+                  {pickLang(language, { ku: "پەڕە", en: "Page", ar: "صفحة", zh: "页" })} {page + 1} {pickLang(language, { ku: "لە", en: "of", ar: "من", zh: "/" })} {totalPages}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -732,7 +743,7 @@ export default function AuditLogs() {
                     disabled={page === 0}
                   >
                     <ChevronRight className="h-4 w-4" />
-                    پێشوو
+                    {pickLang(language, { ku: "پێشوو", en: "Previous", ar: "السابق", zh: "上一页" })}
                   </Button>
                   <Button
                     variant="outline"
@@ -740,7 +751,7 @@ export default function AuditLogs() {
                     onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
                   >
-                    دواتر
+                    {pickLang(language, { ku: "دواتر", en: "Next", ar: "التالي", zh: "下一页" })}
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                 </div>
@@ -755,7 +766,7 @@ export default function AuditLogs() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <History className="h-5 w-5" />
-                وردەکاریی تۆمار
+                {pickLang(language, { ku: "وردەکاریی تۆمار", en: "Record Details", ar: "تفاصيل السجل", zh: "记录详情" })}
               </DialogTitle>
               <DialogDescription>
                 {selectedLog?.description || selectedLog?.action?.replace(/_/g, " ")}
@@ -767,13 +778,13 @@ export default function AuditLogs() {
                 {/* Meta Info */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-3 bg-muted rounded-lg">
-                    <div className="text-xs text-muted-foreground mb-1">کات</div>
+                    <div className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "کات", en: "Time", ar: "الوقت", zh: "时间" })}</div>
                     <div className="font-medium text-sm">
                       {new Date(selectedLog.createdAt).toLocaleString("ku-IQ")}
                     </div>
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
-                    <div className="text-xs text-muted-foreground mb-1">بەکارهێنەر</div>
+                    <div className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "بەکارهێنەر", en: "User", ar: "المستخدم", zh: "用户" })}</div>
                     <div className="font-medium text-sm">
                       {getUserName(selectedLog.userId, selectedLog.userName)}
                     </div>
@@ -782,13 +793,13 @@ export default function AuditLogs() {
                     )}
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
-                    <div className="text-xs text-muted-foreground mb-1">پۆل</div>
+                    <div className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "پۆل", en: "Category", ar: "الفئة", zh: "类别" })}</div>
                     <div className="font-medium text-sm">
-                      {categoryConfig[selectedLog.category]?.label || selectedLog.category}
+                      {(categoryConfig[selectedLog.category] ? pickLang(language, categoryConfig[selectedLog.category].label) : null) || selectedLog.category}
                     </div>
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
-                    <div className="text-xs text-muted-foreground mb-1">چالاکی</div>
+                    <div className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "چالاکی", en: "Action", ar: "الإجراء", zh: "操作" })}</div>
                     <div className="font-medium text-sm">
                       {selectedLog.actionLabel || selectedLog.action}
                     </div>
@@ -799,10 +810,10 @@ export default function AuditLogs() {
                 {getEntityLink(selectedLog) && (
                   <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <ArrowUpRight className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm text-blue-700">کۆد: {selectedLog.entityCode || selectedLog.entityId}</span>
+                    <span className="text-sm text-blue-700">{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编码" })}: {selectedLog.entityCode || selectedLog.entityId}</span>
                     <Link href={getEntityLink(selectedLog)!}>
                       <Button variant="link" size="sm" className="text-blue-600 p-0 h-auto">
-                        بینینی وردەکاری
+                        {pickLang(language, { ku: "بینینی وردەکاری", en: "View details", ar: "عرض التفاصيل", zh: "查看详情" })}
                       </Button>
                     </Link>
                   </div>
@@ -813,7 +824,7 @@ export default function AuditLogs() {
                   <div>
                     <h4 className="font-medium mb-3 flex items-center gap-2">
                       <Edit className="h-4 w-4" />
-                      گۆڕانکاریەکان
+                      {pickLang(language, { ku: "گۆڕانکاریەکان", en: "Changes", ar: "التغييرات", zh: "变更" })}
                     </h4>
                     <div className="border rounded-lg p-4 bg-muted/30">
                       {renderDiff(selectedLog.oldValues, selectedLog.newValues, selectedLog.changedFields)}
@@ -824,12 +835,12 @@ export default function AuditLogs() {
                 {/* Raw Data (Collapsible) */}
                 <details className="group">
                   <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
-                    پیشاندانی داتای خام
+                    {pickLang(language, { ku: "پیشاندانی داتای خام", en: "Show raw data", ar: "عرض البيانات الخام", zh: "显示原始数据" })}
                   </summary>
                   <div className="mt-3 space-y-3">
                     {selectedLog.oldValues && (
                       <div>
-                        <p className="text-sm text-muted-foreground mb-2">بەهای پێشوو</p>
+                        <p className="text-sm text-muted-foreground mb-2">{pickLang(language, { ku: "بەهای پێشوو", en: "Old value", ar: "القيمة السابقة", zh: "旧值" })}</p>
                         <pre className="p-3 bg-muted rounded-lg text-xs overflow-auto max-h-40 font-mono">
                           {JSON.stringify(selectedLog.oldValues, null, 2)}
                         </pre>
@@ -837,7 +848,7 @@ export default function AuditLogs() {
                     )}
                     {selectedLog.newValues && (
                       <div>
-                        <p className="text-sm text-muted-foreground mb-2">بەهای نوێ</p>
+                        <p className="text-sm text-muted-foreground mb-2">{pickLang(language, { ku: "بەهای نوێ", en: "New value", ar: "القيمة الجديدة", zh: "新值" })}</p>
                         <pre className="p-3 bg-muted rounded-lg text-xs overflow-auto max-h-40 font-mono">
                           {JSON.stringify(selectedLog.newValues, null, 2)}
                         </pre>
@@ -845,7 +856,7 @@ export default function AuditLogs() {
                     )}
                     {selectedLog.metadata && (
                       <div>
-                        <p className="text-sm text-muted-foreground mb-2">زانیاری زیادە</p>
+                        <p className="text-sm text-muted-foreground mb-2">{pickLang(language, { ku: "زانیاری زیادە", en: "Additional info", ar: "معلومات إضافية", zh: "附加信息" })}</p>
                         <pre className="p-3 bg-muted rounded-lg text-xs overflow-auto max-h-40 font-mono">
                           {JSON.stringify(selectedLog.metadata, null, 2)}
                         </pre>
