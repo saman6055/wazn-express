@@ -577,19 +577,19 @@ function DashboardLayoutContent({
                 <button
                   onClick={() => handleGroupClick(group.id, isExpanded)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
-                    hasActiveItem 
+                    "group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                    hasActiveItem
                       ? cn(colorClasses.bg, colorClasses.text)
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-950/30 dark:hover:text-orange-400"
                   )}
                 >
                   <div className={cn(
                     "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                    hasActiveItem ? colorClasses.activeBg : "bg-gray-100 dark:bg-gray-700"
+                    hasActiveItem ? colorClasses.activeBg : "bg-gray-100 dark:bg-gray-700 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/40"
                   )}>
                     <group.icon className={cn(
-                      "h-4 w-4",
-                      hasActiveItem ? colorClasses.icon : "text-gray-500 dark:text-gray-400"
+                      "h-4 w-4 transition-colors",
+                      hasActiveItem ? colorClasses.icon : "text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
                     )} />
                   </div>
                   <span className="flex-1 text-start">{group.title}</span>
@@ -613,15 +613,15 @@ function DashboardLayoutContent({
                           key={item.path}
                           onClick={() => setLocation(item.path)}
                           className={cn(
-                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
+                            "group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
                             isActive
                               ? cn(colorClasses.activeBg, colorClasses.text, "font-medium")
-                              : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200"
+                              : "text-gray-600 dark:text-gray-400 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-950/30 dark:hover:text-orange-400"
                           )}
                         >
                           <item.icon className={cn(
-                            "h-4 w-4 flex-shrink-0",
-                            isActive ? colorClasses.icon : "text-gray-400 dark:text-gray-500"
+                            "h-4 w-4 flex-shrink-0 transition-colors",
+                            isActive ? colorClasses.icon : "text-gray-400 dark:text-gray-500 group-hover:text-orange-600 dark:group-hover:text-orange-400"
                           )} />
                           <span className="truncate">{item.label}</span>
                           {item.badge && item.badge > 0 ? (
