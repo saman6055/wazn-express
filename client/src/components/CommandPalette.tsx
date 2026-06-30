@@ -66,7 +66,7 @@ const GROUPS: { heading: string; items: Dest[] }[] = [
     items: [
       { label: "ئاگاداری تراکینگ", path: "/tracking-alerts", icon: AlertTriangle, keywords: "tracking alerts" },
       { label: "پاکێجی تەواو", path: "/full-package", icon: Package, keywords: "full package orders" },
-      { label: "کڕین بە خستنەسەر", path: "/commission", icon: DollarSign, keywords: "commission markup orders عمولە" },
+      { label: "کڕین بە تێچوو", path: "/commission", icon: DollarSign, keywords: "commission markup orders عمولە" },
       { label: "سێلف ئۆردەر", path: "/self-orders", icon: ShoppingBag, keywords: "self orders shipping" },
       { label: "فرۆشیارەکان", path: "/suppliers", icon: Building2, keywords: "suppliers vendors" },
       { label: "داشبۆردی یەکگرتوو", path: "/unified-orders", icon: LayoutDashboard, keywords: "unified orders" },

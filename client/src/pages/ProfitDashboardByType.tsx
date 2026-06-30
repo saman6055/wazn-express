@@ -32,8 +32,8 @@ const COLORS = {
 };
 
 const orderTypeLabels: Record<string, string> = {
-  full_package: "فول پاکێج",
-  commission: "کڕین بە عمولە",
+  full_package: "پاکێجی تەواو",
+  commission: "کڕین بە تێچوو",
 };
 
 export default function ProfitDashboardByType() {
@@ -50,8 +50,8 @@ export default function ProfitDashboardByType() {
     
     // Prepare data for Excel
     const data = profitByType.map(item => ({
-      "جۆری پەت": orderTypeLabels[item.orderType],
-      "ژمارەی پەتەکان": item.totalOrders,
+      "جۆری ئۆردەر": orderTypeLabels[item.orderType],
+      "ژمارەی ئۆردەرەکان": item.totalOrders,
       "کۆی قازانج ($)": Number(item.totalProfit || 0).toFixed(2),
       "ناوەندی قازانج ($)": Number(item.avgProfit || 0).toFixed(2),
     }));
@@ -104,7 +104,7 @@ export default function ProfitDashboardByType() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold">داشبۆردی قازانج</h1>
-                <p className="text-emerald-100">قازانج بە جۆری پەت</p>
+                <p className="text-emerald-100">قازانج بە جۆری ئۆردەر</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -182,7 +182,7 @@ export default function ProfitDashboardByType() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-600 font-medium">کۆی پەتەکان</p>
+                  <p className="text-sm text-blue-600 font-medium">کۆی ئۆردەرەکان</p>
                   <p className="text-2xl font-bold text-blue-700">{totalOrders}</p>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-xl">
@@ -203,7 +203,7 @@ export default function ProfitDashboardByType() {
                     <div>
                       <p className={`text-sm text-${colorClass}-600 font-medium`}>{orderTypeLabels[item.orderType]}</p>
                       <p className="text-2xl font-bold text-${colorClass}-700">${Number(item.totalProfit || 0).toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">{item.totalOrders} پەت</p>
+                      <p className="text-xs text-muted-foreground">{item.totalOrders} ئۆردەر</p>
                     </div>
                     <div className={`p-3 bg-${colorClass}-100 rounded-xl`}>
                       <Icon className={`h-6 w-6 text-${colorClass}-600`} />
@@ -220,7 +220,7 @@ export default function ProfitDashboardByType() {
           {/* Bar Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>قازانج بە جۆری پەت</CardTitle>
+              <CardTitle>قازانج بە جۆری ئۆردەر</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -243,7 +243,7 @@ export default function ProfitDashboardByType() {
           {/* Pie Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>ڕێژەی قازانج بە جۆری پەت</CardTitle>
+              <CardTitle>ڕێژەی قازانج بە جۆری ئۆردەر</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -291,7 +291,7 @@ export default function ProfitDashboardByType() {
                       <div className={`w-4 h-4 rounded-full`} style={{ backgroundColor: COLORS[item.orderType as keyof typeof COLORS] }}></div>
                       <div>
                         <p className="font-medium">{orderTypeLabels[item.orderType]}</p>
-                        <p className="text-sm text-muted-foreground">{item.totalOrders} پەت</p>
+                        <p className="text-sm text-muted-foreground">{item.totalOrders} ئۆردەر</p>
                       </div>
                     </div>
                     <div className="text-right">

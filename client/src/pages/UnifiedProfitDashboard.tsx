@@ -43,7 +43,7 @@ import { cn } from "@/lib/utils";
 const orderTypeConfig = {
   full_package: { 
     label: "Full Package", 
-    labelKu: "فول پاکێج",
+    labelKu: "پاکێجی تەواو",
     color: "bg-emerald-500",
     textColor: "text-emerald-600",
     bgLight: "bg-emerald-50",
@@ -259,7 +259,7 @@ export default function UnifiedProfitDashboard() {
   
   // Chart data
   const chartData = [
-    { label: isKurdish ? "فول پاکێج" : "Full Package", value: profitByType.full_package, color: "#10b981" },
+    { label: isKurdish ? "پاکێجی تەواو" : "Full Package", value: profitByType.full_package, color: "#10b981" },
     { label: isKurdish ? "عمولە" : "Commission", value: profitByType.commission, color: "#f59e0b" },
   ];
 
@@ -273,7 +273,7 @@ export default function UnifiedProfitDashboard() {
               {isKurdish ? "داشبۆردی قازانجی یەکگرتوو" : "Unified Profit Dashboard"}
             </h1>
             <p className="text-muted-foreground">
-              {isKurdish ? "قازانجی هەر سێ جۆری پەت لە یەک شوێن" : "Profit from all three order types in one place"}
+              {isKurdish ? "قازانجی هەر سێ جۆری ئۆردەر لە یەک شوێن" : "Profit from all three order types in one place"}
             </p>
           </div>
           
@@ -327,7 +327,7 @@ export default function UnifiedProfitDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">
-                    {isKurdish ? "فول پاکێج" : "Full Package"}
+                    {isKurdish ? "پاکێجی تەواو" : "Full Package"}
                   </p>
                   {isLoading ? (
                     <Skeleton className="h-7 w-20" />
@@ -337,7 +337,7 @@ export default function UnifiedProfitDashboard() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">
-                    {orderCounts.full_package} {isKurdish ? "پەت" : "orders"}
+                    {orderCounts.full_package} {isKurdish ? "ئۆردەر" : "orders"}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -364,7 +364,7 @@ export default function UnifiedProfitDashboard() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">
-                    {orderCounts.commission} {isKurdish ? "پەت" : "orders"}
+                    {orderCounts.commission} {isKurdish ? "ئۆردەر" : "orders"}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
@@ -385,7 +385,7 @@ export default function UnifiedProfitDashboard() {
                 {isKurdish ? "دابەشبوونی قازانج" : "Profit Distribution"}
               </CardTitle>
               <CardDescription>
-                {isKurdish ? "ڕێژەی قازانج بەپێی جۆری پەت" : "Profit percentage by order type"}
+                {isKurdish ? "ڕێژەی قازانج بەپێی جۆری ئۆردەر" : "Profit percentage by order type"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -432,7 +432,7 @@ export default function UnifiedProfitDashboard() {
               {isKurdish ? "ڕاپۆرتی مانگانە" : "Monthly Report"}
             </CardTitle>
             <CardDescription>
-              {isKurdish ? "قازانج بەپێی مانگ و جۆری پەت" : "Profit by month and order type"}
+              {isKurdish ? "قازانج بەپێی مانگ و جۆری ئۆردەر" : "Profit by month and order type"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -453,7 +453,7 @@ export default function UnifiedProfitDashboard() {
                     <TableRow>
                       <TableHead>{isKurdish ? "مانگ" : "Month"}</TableHead>
                       <TableHead className="text-right text-emerald-600">
-                        {isKurdish ? "فول پاکێج" : "Full Package"}
+                        {isKurdish ? "پاکێجی تەواو" : "Full Package"}
                       </TableHead>
                       <TableHead className="text-right text-purple-600">
                         {isKurdish ? "داواکاری کڕین" : "Purchase Request"}

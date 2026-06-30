@@ -291,10 +291,10 @@ function ClassicPortalInvoiceReports() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
-                {language === "ku" ? "ڕاپۆرتی ئینڤۆیسەکانم" : "My Invoice Reports"}
+                {language === "ku" ? "ڕاپۆرتی پسوڵەکانم" : "My Invoice Reports"}
               </h1>
               <p className="text-white/70 text-sm mt-1">
-                {language === "ku" ? "پوختەی ئینڤۆیسەکان و ئاماری دارایی" : "Invoice summary and financial statistics"}
+                {language === "ku" ? "پوختەی پسوڵەکان و ئاماری دارایی" : "Invoice summary and financial statistics"}
               </p>
             </div>
             <div className={cn(
@@ -417,7 +417,7 @@ function ClassicPortalInvoiceReports() {
                 "text-xs",
                 isDark ? "text-slate-400" : "text-gray-500"
               )}>
-                {language === "ku" ? "کۆی ئینڤۆیس" : "Total Invoices"}
+                {language === "ku" ? "کۆی پسوڵە" : "Total Invoices"}
               </span>
             </div>
             {invoicesLoading ? (
@@ -580,7 +580,7 @@ function ClassicPortalInvoiceReports() {
                           "text-xs",
                           isDark ? "text-slate-400" : "text-gray-500"
                         )}>
-                          {m.count} {language === "ku" ? "ئینڤۆیس" : "invoices"}
+                          {m.count} {language === "ku" ? "پسوڵە" : "invoices"}
                         </p>
                       </div>
                     </div>

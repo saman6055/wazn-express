@@ -76,9 +76,9 @@ export default function UnifiedOrdersDashboard() {
   ];
 
   const typeDistribution = [
-    { name: 'فول پاکێج', value: stats.fullPackage, color: '#10b981' },
+    { name: 'پاکێجی تەواو', value: stats.fullPackage, color: '#10b981' },
 
-    { name: 'کڕین بە عمولە', value: stats.commission, color: '#f59e0b' },
+    { name: 'کڕین بە تێچوو', value: stats.commission, color: '#f59e0b' },
   ];
 
   const statusData = [
@@ -105,7 +105,7 @@ export default function UnifiedOrdersDashboard() {
 
   const getTypeBadge = (type: string) => {
     const typeConfig: Record<string, { label: string; icon: any; className: string }> = {
-      full_package: { label: 'فول پاکێج', icon: Package, className: 'bg-gradient-to-r from-emerald-500 to-green-600 text-white' },
+      full_package: { label: 'پاکێجی تەواو', icon: Package, className: 'bg-gradient-to-r from-emerald-500 to-green-600 text-white' },
 
       commission: { label: 'عمولە', icon: Gem, className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white' },
     };
@@ -133,7 +133,7 @@ export default function UnifiedOrdersDashboard() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold">داشبۆردی یەکگرتوو</h1>
-                <p className="mt-1 text-white/80">بەڕێوەبردنی هەموو پەتەکان لە یەک شوێن</p>
+                <p className="mt-1 text-white/80">بەڕێوەبردنی هەموو ئۆردەرەکان لە یەک شوێن</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -144,7 +144,7 @@ export default function UnifiedOrdersDashboard() {
               </div>
               <Button className="bg-white text-purple-700 hover:bg-white/90">
                 <Plus className="me-2 h-4 w-4" />
-                پەتی نوێ
+                ئۆردەری نوێ
               </Button>
             </div>
           </div>
@@ -153,8 +153,8 @@ export default function UnifiedOrdersDashboard() {
           <div className="relative mt-8 grid grid-cols-5 gap-4">
             {[
               { label: 'کۆی گشتی', value: stats.total, icon: Package, color: 'from-white/20 to-white/10' },
-              { label: 'فول پاکێج', value: stats.fullPackage, icon: Package, color: 'from-emerald-400/30 to-emerald-500/20' },
-              { label: 'کڕین بە عمولە', value: stats.commission, icon: Gem, color: 'from-amber-400/30 to-amber-500/20' },
+              { label: 'پاکێجی تەواو', value: stats.fullPackage, icon: Package, color: 'from-emerald-400/30 to-emerald-500/20' },
+              { label: 'کڕین بە تێچوو', value: stats.commission, icon: Gem, color: 'from-amber-400/30 to-amber-500/20' },
               { label: 'کۆی داهات', value: `$${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'from-green-400/30 to-green-500/20' },
             ].map((stat, i) => (
               <div key={i} className={`rounded-xl bg-gradient-to-br ${stat.color} p-4 backdrop-blur-sm`}>
@@ -199,7 +199,7 @@ export default function UnifiedOrdersDashboard() {
                     stroke="#8b5cf6" 
                     strokeWidth={3}
                     dot={{ fill: '#8b5cf6', strokeWidth: 2 }}
-                    name="پەتەکان"
+                    name="ئۆردەرەکان"
                   />
                   <Line 
                     type="monotone" 
@@ -263,7 +263,7 @@ export default function UnifiedOrdersDashboard() {
             <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
               <CardTitle className="flex items-center gap-2">
                 <RefreshCw className="h-5 w-5 text-blue-500" />
-                بارودۆخی پەتەکان
+                بارودۆخی ئۆردەرەکان
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -327,7 +327,7 @@ export default function UnifiedOrdersDashboard() {
         <Card className="border-0 shadow-lg">
           <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
             <div className="flex items-center justify-between">
-              <CardTitle>لیستی پەتەکان</CardTitle>
+              <CardTitle>لیستی ئۆردەرەکان</CardTitle>
               <div className="flex items-center gap-2">
                 <Button
                   variant={viewMode === "table" ? "default" : "outline"}
@@ -355,7 +355,7 @@ export default function UnifiedOrdersDashboard() {
                     🌐 هەموو
                   </TabsTrigger>
                   <TabsTrigger value="full_package" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-green-600 data-[state=active]:text-white">
-                    📦 فول پاکێج
+                    📦 پاکێجی تەواو
                   </TabsTrigger>
 
                   <TabsTrigger value="commission" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white">
@@ -444,7 +444,7 @@ export default function UnifiedOrdersDashboard() {
                       <tr>
                         <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                           <Package className="mx-auto h-12 w-12 mb-4 text-gray-300" />
-                          <p>هیچ پەتێک نەدۆزرایەوە</p>
+                          <p>هیچ ئۆردەرێک نەدۆزرایەوە</p>
                         </td>
                       </tr>
                     )}
@@ -475,7 +475,7 @@ export default function UnifiedOrdersDashboard() {
                 )) : (
                   <div className="col-span-3 flex flex-col items-center justify-center py-12 text-gray-500">
                     <Package className="h-12 w-12 mb-4 text-gray-300" />
-                    <p>هیچ پەتێک نەدۆزرایەوە</p>
+                    <p>هیچ ئۆردەرێک نەدۆزرایەوە</p>
                   </div>
                 )}
               </div>
@@ -490,7 +490,7 @@ export default function UnifiedOrdersDashboard() {
               <div className="h-2 -mx-6 -mt-6 mb-4 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-t-lg"></div>
               <DialogTitle className="flex items-center gap-3">
                 <Package className="h-6 w-6 text-purple-600" />
-                وردەکاری پەت
+                وردەکاری ئۆردەر
               </DialogTitle>
             </DialogHeader>
             {selectedOrder && (

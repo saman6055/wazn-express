@@ -88,7 +88,7 @@ export default function CompanyFinanceDashboard() {
       { name: t('companyFinance.batchProfitAir') || 'باچی ئاسمانی', value: Math.max(0, src.batchProfit?.air_regular?.profit || 0), color: '#3B82F6' },
       { name: t('companyFinance.batchProfitIrregular') || 'ئاسمانی مەترسیدار', value: Math.max(0, src.batchProfit?.air_irregular?.profit || 0), color: '#F59E0B' },
       { name: t('companyFinance.batchProfitSea') || 'دەریایی', value: Math.max(0, src.batchProfit?.sea?.profit || 0), color: '#06B6D4' },
-      { name: t('companyFinance.fullPackageProfit') || 'فول پاکێج', value: Math.max(0, src.fullPackage?.profit || 0), color: '#10B981' },
+      { name: t('companyFinance.fullPackageProfit') || 'پاکێجی تەواو', value: Math.max(0, src.fullPackage?.profit || 0), color: '#10B981' },
       { name: t('companyFinance.commissionIncome') || 'عمولە', value: Math.max(0, src.commission?.totalCommission || 0), color: '#8B5CF6' },
       { name: t('companyFinance.serviceProfit') || 'خزمەتگوزاری', value: Math.max(0, src.service?.profit || 0), color: '#EC4899' },
     ].filter(d => d.value > 0);
@@ -422,7 +422,7 @@ export default function CompanyFinanceDashboard() {
                           <ShoppingBag className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="font-semibold text-sm">{t("companyFinance.fullPackageProfit") || "قازانجی فول پاکێج"}</p>
+                          <p className="font-semibold text-sm">{t("companyFinance.fullPackageProfit") || "قازانجی پاکێجی تەواو"}</p>
                           <p className="text-xs text-muted-foreground">{revenueBySource?.fullPackage?.count || 0} {t("companyFinance.orders") || "داواکاری"}</p>
                         </div>
                       </div>
@@ -521,9 +521,9 @@ export default function CompanyFinanceDashboard() {
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 <StatCard icon={Package} color="blue" label={t("companyFinance.packagesDelivered") || "پاکەتی گەیاندراو"} value={activity?.packagesDelivered || 0} href="/packages" />
-                <StatCard icon={ShoppingBag} color="green" label={t("companyFinance.fullPackagesSold") || "فول پاکێجی فرۆشراو"} value={activity?.fullPackagesSold || 0} href="/full-package" />
+                <StatCard icon={ShoppingBag} color="green" label={t("companyFinance.fullPackagesSold") || "پاکێجی تەواوی فرۆشراو"} value={activity?.fullPackagesSold || 0} href="/full-package" />
                 <StatCard icon={Briefcase} color="violet" label={t("companyFinance.commissionOrders") || "کڕینی عمولە"} value={activity?.commissionOrders || 0} href="/full-package" />
-                <StatCard icon={Receipt} color="purple" label={t("companyFinance.invoicesIssued") || "ئینڤۆیسی دەرکراو"} value={activity?.invoicesIssued || 0} href="/invoices" />
+                <StatCard icon={Receipt} color="purple" label={t("companyFinance.invoicesIssued") || "پسوڵەی دەرکراو"} value={activity?.invoicesIssued || 0} href="/invoices" />
                 <StatCard icon={Wallet} color="amber" label={t("companyFinance.paymentsReceived") || "پارەدانی وەرگیراو"} value={activity?.paymentsReceived || 0} href="/finance" />
                 <StatCard icon={Wrench} color="pink" label={t("companyFinance.servicesCompleted") || "خزمەتگوزاری"} value={activity?.servicesCompleted || 0} href="/services" />
                 <StatCard icon={Users} color="cyan" label={t("companyFinance.totalCustomers") || "کۆی کڕیار"} value={activity?.totalCustomers || 0} href="/customers" />
@@ -670,7 +670,7 @@ export default function CompanyFinanceDashboard() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <ShoppingBag className="w-5 h-5 text-green-500" />
-                    {t("companyFinance.fullPackageProfit") || "قازانجی فول پاکێج"}
+                    {t("companyFinance.fullPackageProfit") || "قازانجی پاکێجی تەواو"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -854,7 +854,7 @@ export default function CompanyFinanceDashboard() {
                       <PLRow label={`🛫 ${t("companyFinance.batchProfitAir") || "قازانجی باچی ئاسمانی"}`} value={revenueBySource?.batchProfit?.air_regular?.profit || 0} />
                       <PLRow label={`⚠️ ${t("companyFinance.batchProfitIrregular") || "قازانجی باچی ئاسمانی مەترسیدار"}`} value={revenueBySource?.batchProfit?.air_irregular?.profit || 0} />
                       <PLRow label={`🚢 ${t("companyFinance.batchProfitSea") || "قازانجی باچی دەریایی"}`} value={revenueBySource?.batchProfit?.sea?.profit || 0} />
-                      <PLRow label={`📦 ${t("companyFinance.fullPackageProfit") || "قازانجی فول پاکێج"}`} value={revenueBySource?.fullPackage?.profit || 0} />
+                      <PLRow label={`📦 ${t("companyFinance.fullPackageProfit") || "قازانجی پاکێجی تەواو"}`} value={revenueBySource?.fullPackage?.profit || 0} />
                       <PLRow label={`💼 ${t("companyFinance.commissionIncome") || "عمولەی کڕین"}`} value={revenueBySource?.commission?.totalCommission || 0} />
                       <PLRow label={`🔧 ${t("companyFinance.serviceProfit") || "قازانجی خزمەتگوزاری"}`} value={revenueBySource?.service?.profit || 0} />
                       <Separator className="my-2" />
@@ -1005,7 +1005,7 @@ export default function CompanyFinanceDashboard() {
                       { name: t("companyFinance.airRegular") || "ئاسمانی", profit: revenueBySource.batchProfit?.air_regular?.profit || 0 },
                       { name: t("companyFinance.airIrregular") || "مەترسیدار", profit: revenueBySource.batchProfit?.air_irregular?.profit || 0 },
                       { name: t("companyFinance.seaShipping") || "دەریایی", profit: revenueBySource.batchProfit?.sea?.profit || 0 },
-                      { name: t("companyFinance.fullPackageShort") || "فول پاکێج", profit: revenueBySource.fullPackage?.profit || 0 },
+                      { name: t("companyFinance.fullPackageShort") || "پاکێجی تەواو", profit: revenueBySource.fullPackage?.profit || 0 },
                       { name: t("companyFinance.commissionShort") || "عمولە", profit: revenueBySource.commission?.totalCommission || 0 },
                       { name: t("companyFinance.serviceShort") || "خزمەتگوزاری", profit: revenueBySource.service?.profit || 0 },
                     ]}>

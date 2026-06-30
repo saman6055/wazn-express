@@ -247,14 +247,14 @@ export default function CommissionOrders() {
                 <ShoppingBag className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">کڕین بە عمولە</h1>
+                <h1 className="text-2xl font-bold">کڕین بە تێچوو</h1>
                 <p className="text-emerald-100">کڕین بۆ کڕیار بە عمولە</p>
               </div>
             </div>
             <Link href="/commission-orders/new">
               <Button className="bg-white text-emerald-700 hover:bg-emerald-50">
                 <Plus className="h-4 w-4 ms-2" />
-                پەتی نوێ
+                ئۆردەری نوێ
               </Button>
             </Link>
           </div>
@@ -266,7 +266,7 @@ export default function CommissionOrders() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-emerald-600 font-medium">کۆی پەتەکان</p>
+                  <p className="text-sm text-emerald-600 font-medium">کۆی ئۆردەرەکان</p>
                   <p className="text-2xl font-bold text-emerald-700">{totalOrders}</p>
                 </div>
                 <div className="p-3 bg-emerald-100 rounded-xl">
@@ -538,7 +538,7 @@ export default function CommissionOrders() {
               {/* Results count + clear filters */}
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="text-sm text-muted-foreground">
-                  {fullPackageOrders.length} پەت دۆزرایەوە
+                  {fullPackageOrders.length} ئۆردەر دۆزرایەوە
                 </div>
                 {hasActiveFilters && (
                   <Button
@@ -564,11 +564,11 @@ export default function CommissionOrders() {
             ) : fullPackageOrders.length === 0 ? (
               <div className="text-center py-12">
                 <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">هیچ پەتێک نییە</p>
+                <p className="text-muted-foreground">هیچ ئۆردەرێک نییە</p>
                 <Link href="/commission-orders/new">
                   <Button className="mt-4" variant="outline">
                     <Plus className="h-4 w-4 ms-2" />
-                    پەتی نوێ زیاد بکە
+                    ئۆردەری نوێ زیاد بکە
                   </Button>
                 </Link>
               </div>
@@ -576,7 +576,7 @@ export default function CommissionOrders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>کۆدی پەت</TableHead>
+                    <TableHead>کۆدی ئۆردەر</TableHead>
                     <TableHead>کڕیار</TableHead>
                     <TableHead>ناوی کاڵا</TableHead>
                     <TableHead>باچ</TableHead>

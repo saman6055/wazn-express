@@ -199,7 +199,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         `🏷️ Version: ${diag.version || 'unknown'}`,
         `📦 پاکەت: ${diag.packageCount} (${diag.packagesWithOrderId} لینک کراون، ${diag.packagesUnlinked} بێ لینک)`,
         `📥 کۆکراوە: ${diag.phase1?.fpOrdersCollected || 0} FP, ${diag.phase1?.cmOrdersCollected || 0} CM, ${diag.phase1?.normalPkgsCollected || 0} پاکەت`,
-        `🧾 ئینڤۆیسی نوێ: ~${totalNew}`,
+        `🧾 پسوڵەی نوێ: ~${totalNew}`,
         `💰 ئۆردەری چارجکراو: ~${totalCharged}`,
       ];
       if (diag.phase3?.stragglersFound > 0) {
@@ -220,7 +220,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     onSuccess: (data) => {
       const d = data?.diagnostics;
       const msg = d
-        ? `✅ پشکنی تەواو بوو\n📦 پاکەت: ${d.packageCount}\n🔍 ئۆردەری پشکنیکراو: ${d.ordersChecked}\n✓ پێشتر چارجکراو: ${d.alreadyCharged}\n⚠️ ماوە بۆ چارج: ${d.stragglersFound}\n🧾 ئینڤۆیسی نوێ: ${(d.recoveryFpInvoices || 0) + (d.recoveryCmInvoices || 0)}`
+        ? `✅ پشکنی تەواو بوو\n📦 پاکەت: ${d.packageCount}\n🔍 ئۆردەری پشکنیکراو: ${d.ordersChecked}\n✓ پێشتر چارجکراو: ${d.alreadyCharged}\n⚠️ ماوە بۆ چارج: ${d.stragglersFound}\n🧾 پسوڵەی نوێ: ${(d.recoveryFpInvoices || 0) + (d.recoveryCmInvoices || 0)}`
         : `پشکنی تەواو بوو`;
       toast.success(msg, { duration: 12000 });
       refetch();
@@ -1114,7 +1114,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                 reprocessMutation.mutate({ batchId: batch.id });
                               }
                             }}
-                            title="دووبارە پرۆسێسکردنی ئینڤۆیسی ئۆردەرە چارجنەکراوەکان"
+                            title="دووبارە پرۆسێسکردنی پسوڵەی ئۆردەرە چارجنەکراوەکان"
                           >
                             {reprocessMutation.isPending ? "..." : "🧾 Reprocess"}
                           </Button>
@@ -1710,7 +1710,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       🔗 ئۆردەری هاوبەش لە دەرەوەی کۆمەڵە ({auditData.findings.sharedSiblingNotInBatch.length})
                     </div>
                     <div className="text-[11px] text-orange-800/80 dark:text-orange-300/80 mb-2">
-                      ئەم ئۆردەرانە تراکینگیان لەگەڵ ئۆردەرەکانی ئەم کۆمەڵە هاوبەشە بەڵام لە کۆمەڵە نین. ئەگەر گەیاندن ئەنجام بدرێ بەبێ یەکخستنیان، ئینڤۆیسیان دەرناچێ.
+                      ئەم ئۆردەرانە تراکینگیان لەگەڵ ئۆردەرەکانی ئەم کۆمەڵە هاوبەشە بەڵام لە کۆمەڵە نین. ئەگەر گەیاندن ئەنجام بدرێ بەبێ یەکخستنیان، پسوڵەیان دەرناچێ.
                     </div>
                     <div className="space-y-1.5">
                       {auditData.findings.sharedSiblingNotInBatch.map((f: any, i: number) => (

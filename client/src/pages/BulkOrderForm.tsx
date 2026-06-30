@@ -370,11 +370,11 @@ export default function BulkOrderForm() {
                 {resultData.errors === 0 ? "تەواو بوو!" : "تەواو بوو بە هەندێ کێشە"}
               </h2>
               <p className="text-muted-foreground">
-                {resultData.created} پەت بە سەرکەوتوویی دروست کران
+                {resultData.created} ئۆردەر بە سەرکەوتوویی دروست کران
               </p>
               {resultData.errors > 0 && (
                 <p className="text-amber-600 mt-1">
-                  {resultData.errors} پەت کێشەیان هەبوو
+                  {resultData.errors} ئۆردەر کێشەیان هەبوو
                 </p>
               )}
             </div>
@@ -423,10 +423,10 @@ export default function BulkOrderForm() {
               </div>
               <div>
                 <h1 className="text-xl font-bold">
-                  دروستکردنی پەت بە کۆمەڵ
+                  دروستکردنی ئۆردەر بە کۆمەڵ
                 </h1>
                 <p className="text-sm opacity-80">
-                  {isCommission ? "کڕین بە عمولە" : "فول پاکیج"} - {items.length} پەت
+                  {isCommission ? "کڕین بە تێچوو" : "پاکێجی تەواو"} - {items.length} ئۆردەر
                 </p>
               </div>
             </div>
@@ -562,7 +562,7 @@ export default function BulkOrderForm() {
             </Button>
           </div>
           <Badge variant="secondary" className="text-sm">
-            {summary.validItems} / {summary.totalItems} پەت پڕکراوە
+            {summary.validItems} / {summary.totalItems} ئۆردەر پڕکراوە
           </Badge>
         </div>
 
@@ -952,7 +952,7 @@ export default function BulkOrderForm() {
             onClick={addItem}
           >
             <Plus className="w-5 h-5 ms-2" />
-            زیادکردنی پەتی نوێ
+            زیادکردنی ئۆردەری نوێ
           </Button>
         </div>
 
@@ -967,7 +967,7 @@ export default function BulkOrderForm() {
               <div className="flex items-center gap-6 flex-wrap">
                 <div className="text-center">
                   <div className="text-2xl font-bold">{summary.totalItems}</div>
-                  <div className="text-xs text-muted-foreground">کۆی پەتەکان</div>
+                  <div className="text-xs text-muted-foreground">کۆی ئۆردەرەکان</div>
                 </div>
                 <Separator orientation="vertical" className="h-10" />
                 <div className="text-center">
@@ -1029,7 +1029,7 @@ export default function BulkOrderForm() {
                 ) : (
                   <>
                     <PackagePlus className="w-5 h-5 ms-2" />
-                    دروستکردنی {summary.validItems} پەت
+                    دروستکردنی {summary.validItems} ئۆردەر
                   </>
                 )}
               </Button>

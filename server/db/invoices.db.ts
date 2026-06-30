@@ -504,7 +504,7 @@ export async function getInvoicesByServiceTypeReport(startDate?: Date, endDate?:
       
       if (desc.includes('package') || desc.includes('پاکەت')) {
         serviceType = 'Package Shipping';
-      } else if (desc.includes('full package') || desc.includes('فول پاکێج')) {
+      } else if (desc.includes('full package') || desc.includes('پاکێجی تەواو')) {
         serviceType = 'Full Package';
       } else if (desc.includes('purchase') || desc.includes('کڕین')) {
         serviceType = 'Purchase Request';

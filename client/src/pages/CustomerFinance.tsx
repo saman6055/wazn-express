@@ -381,7 +381,7 @@ export default function CustomerFinance() {
   const getTransactionTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       'DEBIT_PACKAGE': 'نرخی پاکەت',
-      'DEBIT_FULL_PACKAGE': 'فول پاکێج',
+      'DEBIT_FULL_PACKAGE': 'پاکێجی تەواو',
       'DEBIT_PURCHASE_REQUEST': 'داواکاری کڕین',
       'DEBIT_COMMISSION': 'عمولە',
       'DEBIT_SERVICE': 'خزمەتگوزاری',
@@ -416,7 +416,7 @@ export default function CustomerFinance() {
   const transactionTypeOptions = [
     { value: 'all', label: 'هەموو' },
     { value: 'DEBIT_PACKAGE', label: 'نرخی پاکەت' },
-    { value: 'DEBIT_FULL_PACKAGE', label: 'فول پاکێج' },
+    { value: 'DEBIT_FULL_PACKAGE', label: 'پاکێجی تەواو' },
     { value: 'DEBIT_COMMISSION', label: 'عمولە' },
     { value: 'DEBIT_SERVICE', label: 'خزمەتگوزاری' },
     { value: 'CREDIT_PAYMENT', label: 'پارەدان' },
@@ -974,7 +974,7 @@ export default function CustomerFinance() {
                 <div class="breakdown-value">$${breakdown.packageDebt.toFixed(2)}</div>
               </div>
               <div class="breakdown-card fullpackage">
-                <div class="breakdown-label">نرخی فول پاکێج</div>
+                <div class="breakdown-label">نرخی پاکێجی تەواو</div>
                 <div class="breakdown-value">$${breakdown.fullPackageDebt.toFixed(2)}</div>
               </div>
               <div class="breakdown-card commission">
@@ -1107,7 +1107,7 @@ export default function CustomerFinance() {
     const breakdownInfo = breakdown ? [
       ['شیکاری فرۆشتن'],
       [`نرخی پاکەتەکان:,$${breakdown.packageDebt.toFixed(2)}`],
-      [`نرخی فول پاکێج:,$${breakdown.fullPackageDebt.toFixed(2)}`],
+      [`نرخی پاکێجی تەواو:,$${breakdown.fullPackageDebt.toFixed(2)}`],
       [`نرخی عموڵە:,$${breakdown.commissionDebt.toFixed(2)}`],
       [`نرخی خزمەتگوزاری:,$${breakdown.serviceDebt.toFixed(2)}`],
       [`کۆی پارەدان:,$${breakdown.creditBalance.toFixed(2)}`],
@@ -1575,7 +1575,7 @@ export default function CustomerFinance() {
                       </div>
                       <div className="text-center p-4 bg-emerald-50 rounded-xl border border-emerald-100">
                         <ShoppingCart className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
-                        <p className="text-xs text-muted-foreground mb-1">نرخی فول پاکێج</p>
+                        <p className="text-xs text-muted-foreground mb-1">نرخی پاکێجی تەواو</p>
                         <p className="text-lg font-bold text-emerald-600">${breakdown.fullPackageDebt.toFixed(2)}</p>
                       </div>
                       <div className="text-center p-4 bg-amber-50 rounded-xl border border-amber-100">

@@ -132,7 +132,7 @@ async function emitFpInvoices(
         paidAt: invoiceStatus === 'paid' ? new Date() : undefined,
         lineItems,
         notes: [
-          `📦 پسووڵەی گەیاندنی فول پاکیج`,
+          `📦 پسووڵەی گەیاندنی پاکێجی تەواو`,
           `باچ: ${batch?.batchCode || ''} (${typeLabel})`,
           `ژمارەی ئۆردەر: ${fpItems.length}`,
           `کۆی گشتی: $${totalAmount.toFixed(2)}`,
@@ -170,7 +170,7 @@ async function emitFpInvoices(
           const txn = await db.applyChargeToInvoice(
             customerId, customer.customerCode, 'FULL_PACKAGE',
             order.id, chargeAmount,
-            `فول پاکێج ${order.orderCode} - ${order.productName} - گەیاندن`,
+            `پاکێجی تەواو ${order.orderCode} - ${order.productName} - گەیاندن`,
             ctx.user.id, invoice.id,
           );
           await db.updateFullPackageOrder(order.id, {
@@ -376,7 +376,7 @@ async function emitCmInvoices(
         paidAt: invoiceStatus === 'paid' ? new Date() : undefined,
         lineItems,
         notes: [
-          `🛍️ پسووڵەی گەیاندنی کڕین بە عمولە`,
+          `🛍️ پسووڵەی گەیاندنی کڕین بە تێچوو`,
           `باچ: ${batch?.batchCode || ''} (${typeLabel})`,
           `ژمارەی ئۆردەر: ${cmItems.length}${legacyOnlyCount > 0 ? ` (${legacyOnlyCount} ئۆردەری پێشتر چارجکراو، تەنها شیپینگ)` : ''}`,
           `کۆی نرخی کاڵا + شیپینگ: $${totalAmount.toFixed(2)}`,
@@ -415,7 +415,7 @@ async function emitCmInvoices(
               await db.applyChargeToInvoice(
                 customerId, customer.customerCode, 'PACKAGE',
                 order.id, shippingShare,
-                `کڕین بە عمولە ${order.orderCode} - کرێی گواستنەوە (پاشاکەوتکراو)`,
+                `کڕین بە تێچوو ${order.orderCode} - کرێی گواستنەوە (پاشاکەوتکراو)`,
                 ctx.user.id, invoice.id,
               );
 
@@ -443,7 +443,7 @@ async function emitCmInvoices(
           const mainTxn = await db.applyChargeToInvoice(
             customerId, customer.customerCode, 'COMMISSION',
             order.id, chargeAmount,
-            `کڕین بە عمولە ${order.orderCode} - ${order.productName} (کاڵا + عمولە)`,
+            `کڕین بە تێچوو ${order.orderCode} - ${order.productName} (کاڵا + عمولە)`,
             ctx.user.id, invoice.id,
           );
 
@@ -451,7 +451,7 @@ async function emitCmInvoices(
             await db.applyChargeToInvoice(
               customerId, customer.customerCode, 'PACKAGE',
               order.id, shippingShare,
-              `کڕین بە عمولە ${order.orderCode} - کرێی گواستنەوە`,
+              `کڕین بە تێچوو ${order.orderCode} - کرێی گواستنەوە`,
               ctx.user.id, invoice.id,
             );
           }

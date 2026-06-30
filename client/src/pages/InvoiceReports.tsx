@@ -469,8 +469,8 @@ export default function InvoiceReports() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">ڕاپۆرتی ئینڤۆیسەکان</h1>
-            <p className="text-muted-foreground">پوختەی ئینڤۆیسەکان و ئاماری دارایی</p>
+            <h1 className="text-2xl font-bold">ڕاپۆرتی پسوڵەکان</h1>
+            <p className="text-muted-foreground">پوختەی پسوڵەکان و ئاماری دارایی</p>
           </div>
           
           <div className="flex items-center gap-3">
@@ -505,7 +505,7 @@ export default function InvoiceReports() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">کۆی ئینڤۆیس</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">کۆی پسوڵە</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -543,7 +543,7 @@ export default function InvoiceReports() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">ناوەندی ئینڤۆیس</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">ناوەندی پسوڵە</CardTitle>
               <TrendingUp className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
@@ -555,7 +555,7 @@ export default function InvoiceReports() {
                     {formatCurrency(summary?.averageInvoiceUsd || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    بۆ هەر ئینڤۆیسێک
+                    بۆ هەر پسوڵەیەک
                   </p>
                 </>
               )}
@@ -590,7 +590,7 @@ export default function InvoiceReports() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle>ڕاپۆرتی مانگانە - {selectedYear}</CardTitle>
-                  <CardDescription>پوختەی ئینڤۆیسەکان بۆ هەر مانگێک</CardDescription>
+                  <CardDescription>پوختەی پسوڵەکان بۆ هەر مانگێک</CardDescription>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -644,7 +644,7 @@ export default function InvoiceReports() {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="text-right">مانگ</TableHead>
-                          <TableHead className="text-right">ژمارەی ئینڤۆیس</TableHead>
+                          <TableHead className="text-right">ژمارەی پسوڵە</TableHead>
                           <TableHead className="text-right">کۆی بڕ</TableHead>
                           <TableHead className="text-right">پارەدراو</TableHead>
                         </TableRow>
@@ -672,7 +672,7 @@ export default function InvoiceReports() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle>ڕاپۆرتی کڕیارەکان</CardTitle>
-                  <CardDescription>سەرەوەترین کڕیارەکان بەپێی بڕی ئینڤۆیس</CardDescription>
+                  <CardDescription>سەرەوەترین کڕیارەکان بەپێی بڕی پسوڵە</CardDescription>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -706,7 +706,7 @@ export default function InvoiceReports() {
                       <TableRow>
                         <TableHead className="text-right">کڕیار</TableHead>
                         <TableHead className="text-right">کۆدی کڕیار</TableHead>
-                        <TableHead className="text-right">ژمارەی ئینڤۆیس</TableHead>
+                        <TableHead className="text-right">ژمارەی پسوڵە</TableHead>
                         <TableHead className="text-right">کۆی بڕ</TableHead>
                         <TableHead className="text-right">پارەدراو</TableHead>
                         <TableHead className="text-right">ماوە</TableHead>
@@ -745,7 +745,7 @@ export default function InvoiceReports() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle>ڕاپۆرتی خزمەتگوزارییەکان</CardTitle>
-                  <CardDescription>دابەشکردنی ئینڤۆیسەکان بەپێی جۆری خزمەتگوزاری</CardDescription>
+                  <CardDescription>دابەشکردنی پسوڵەکان بەپێی جۆری خزمەتگوزاری</CardDescription>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -786,7 +786,7 @@ export default function InvoiceReports() {
                                 <p className="text-2xl font-bold mt-1">{formatCurrency(s.totalAmountUsd)}</p>
                               </div>
                               <div className="text-right">
-                                <p className="text-sm text-muted-foreground">{s.totalInvoices} ئینڤۆیس</p>
+                                <p className="text-sm text-muted-foreground">{s.totalInvoices} پسوڵە</p>
                                 <p className="text-sm text-muted-foreground">
                                   ناوەندی: {formatCurrency(s.averageAmountUsd)}
                                 </p>
@@ -812,8 +812,8 @@ export default function InvoiceReports() {
           <TabsContent value="recent" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>دوایین ئینڤۆیسەکان</CardTitle>
-                <CardDescription>١٠ ئینڤۆیسی دوایین</CardDescription>
+                <CardTitle>دوایین پسوڵەکان</CardTitle>
+                <CardDescription>١٠ پسوڵەی دوایین</CardDescription>
               </CardHeader>
               <CardContent>
                 {recentLoading ? (
@@ -826,7 +826,7 @@ export default function InvoiceReports() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-right">ژمارەی ئینڤۆیس</TableHead>
+                        <TableHead className="text-right">ژمارەی پسوڵە</TableHead>
                         <TableHead className="text-right">بەروار</TableHead>
                         <TableHead className="text-right">بڕ</TableHead>
                         <TableHead className="text-right">دۆخ</TableHead>
@@ -846,7 +846,7 @@ export default function InvoiceReports() {
                       {(!recentInvoices?.invoices || recentInvoices.invoices.length === 0) && (
                         <TableRow>
                           <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                            هیچ ئینڤۆیسێک نییە
+                            هیچ پسوڵەیەک نییە
                           </TableCell>
                         </TableRow>
                       )}

@@ -112,9 +112,9 @@ describe("Full Package Delivery Auto-Charge", () => {
     it("should generate correct invoice description for full package", () => {
       const orderCode = "FP-ABC123";
       const productName = "iPhone 15";
-      const description = `فول پاکیج - ${orderCode} - ${productName}`;
+      const description = `پاکێجی تەواو - ${orderCode} - ${productName}`;
       
-      expect(description).toBe("فول پاکیج - FP-ABC123 - iPhone 15");
+      expect(description).toBe("پاکێجی تەواو - FP-ABC123 - iPhone 15");
     });
 
     it("should include all required invoice fields", () => {
@@ -123,7 +123,7 @@ describe("Full Package Delivery Auto-Charge", () => {
         amount: 100.0,
         currency: "USD",
         type: "CHARGE",
-        description: "فول پاکیج - FP-ABC123 - iPhone 15",
+        description: "پاکێجی تەواو - FP-ABC123 - iPhone 15",
         referenceType: "full_package_order",
         referenceId: 123,
       };

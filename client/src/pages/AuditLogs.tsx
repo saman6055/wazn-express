@@ -28,9 +28,9 @@ const categoryConfig: Record<string, { icon: any; color: string; bgColor: string
   customer: { icon: Users, color: "text-blue-600", bgColor: "bg-blue-100", label: "کڕیارەکان" },
   package: { icon: Package, color: "text-purple-600", bgColor: "bg-purple-100", label: "پاکەتەکان" },
   batch: { icon: Truck, color: "text-orange-600", bgColor: "bg-orange-100", label: "باچەکان" },
-  full_package: { icon: ShoppingCart, color: "text-green-600", bgColor: "bg-green-100", label: "فول پاکیج" },
+  full_package: { icon: ShoppingCart, color: "text-green-600", bgColor: "bg-green-100", label: "پاکێجی تەواو" },
 
-  commission: { icon: DollarSign, color: "text-yellow-600", bgColor: "bg-yellow-100", label: "کڕین بە عمولە" },
+  commission: { icon: DollarSign, color: "text-yellow-600", bgColor: "bg-yellow-100", label: "کڕین بە تێچوو" },
   finance: { icon: DollarSign, color: "text-emerald-600", bgColor: "bg-emerald-100", label: "دارایی" },
   settings: { icon: Settings, color: "text-gray-600", bgColor: "bg-gray-100", label: "ڕێکخستنەکان" },
   user: { icon: User, color: "text-indigo-600", bgColor: "bg-indigo-100", label: "بەکارهێنەرەکان" },

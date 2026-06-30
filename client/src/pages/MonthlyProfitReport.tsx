@@ -47,7 +47,7 @@ const monthNames = {
 const orderTypeConfig = {
   full_package: { 
     label: "Full Package", 
-    labelKu: "فول پاکێج",
+    labelKu: "پاکێجی تەواو",
     color: "#10b981",
     bgColor: "bg-emerald-100",
     textColor: "text-emerald-600",
@@ -194,7 +194,7 @@ export default function MonthlyProfitReport() {
               {isKurdish ? "ڕاپۆرتی قازانجی مانگانە" : "Monthly Profit Report"}
             </h1>
             <p className="text-muted-foreground">
-              {isKurdish ? "قازانج بەپێی مانگ و جۆری پەت" : "Profit by month and order type"}
+              {isKurdish ? "قازانج بەپێی مانگ و جۆری ئۆردەر" : "Profit by month and order type"}
             </p>
           </div>
           
@@ -247,7 +247,7 @@ export default function MonthlyProfitReport() {
                     <p className="text-3xl font-bold">${yearlyTotals.total.profit.toLocaleString()}</p>
                   )}
                   <p className="text-blue-200 text-xs mt-1">
-                    {yearlyTotals.total.count} {isKurdish ? "پەت" : "orders"}
+                    {yearlyTotals.total.count} {isKurdish ? "ئۆردەر" : "orders"}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -325,7 +325,7 @@ export default function MonthlyProfitReport() {
                         ${(yearlyTotals.total.profit / 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {(yearlyTotals.total.count / 12).toFixed(1)} {isKurdish ? "پەت/مانگ" : "orders/mo"}
+                        {(yearlyTotals.total.count / 12).toFixed(1)} {isKurdish ? "ئۆردەر/مانگ" : "orders/mo"}
                       </p>
                     </>
                   )}
@@ -353,7 +353,7 @@ export default function MonthlyProfitReport() {
                     </div>
                     <div>
                       <p className="font-semibold">{isKurdish ? config.labelKu : config.label}</p>
-                      <p className="text-xs text-muted-foreground">{data.count} {isKurdish ? "پەت" : "orders"}</p>
+                      <p className="text-xs text-muted-foreground">{data.count} {isKurdish ? "ئۆردەر" : "orders"}</p>
                     </div>
                   </div>
                   
@@ -401,8 +401,8 @@ export default function MonthlyProfitReport() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[150px]">{isKurdish ? "مانگ" : "Month"}</TableHead>
-                      <TableHead className="text-center">{isKurdish ? "پەت" : "Orders"}</TableHead>
-                      <TableHead className="text-right text-emerald-600">{isKurdish ? "فول پاکێج" : "Full Pack"}</TableHead>
+                      <TableHead className="text-center">{isKurdish ? "ئۆردەر" : "Orders"}</TableHead>
+                      <TableHead className="text-right text-emerald-600">{isKurdish ? "پاکێجی تەواو" : "Full Pack"}</TableHead>
 
                       <TableHead className="text-right text-amber-600">{isKurdish ? "عمولە" : "Commission"}</TableHead>
                       <TableHead className="text-right font-bold">{isKurdish ? "کۆی گشتی" : "Total"}</TableHead>
@@ -475,7 +475,7 @@ export default function MonthlyProfitReport() {
         <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-emerald-500" />
-            <span>{isKurdish ? "فول پاکێج" : "Full Package"}</span>
+            <span>{isKurdish ? "پاکێجی تەواو" : "Full Package"}</span>
           </div>
 
           <div className="flex items-center gap-2">

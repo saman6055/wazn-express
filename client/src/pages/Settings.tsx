@@ -207,7 +207,7 @@ const [companyData, setCompanyData] = useState({
               <CardHeader>
                 <CardTitle>{t("settings.companyInfo")}</CardTitle>
                 <CardDescription>
-                  ئەم زانیاریانە لە هەموو ڕاپۆرت و ئینڤۆیسەکاندا بەکاردێت
+                  ئەم زانیاریانە لە هەموو ڕاپۆرت و پسوڵەکاندا بەکاردێت
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">

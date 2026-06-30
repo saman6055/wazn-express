@@ -124,7 +124,7 @@ const packageTypeConfig: Record<string, { color: string; label: string; labelKu:
   full_package: {
     color: "bg-purple-100 text-purple-700 border-purple-200",
     label: "Full Package",
-    labelKu: "فول پاکێج",
+    labelKu: "پاکێجی تەواو",
     icon: "📦",
     tKey: "packages.fullPackage"
   },
@@ -132,7 +132,7 @@ const packageTypeConfig: Record<string, { color: string; label: string; labelKu:
   commission: {
     color: "bg-orange-100 text-orange-700 border-orange-200",
     label: "Commission",
-    labelKu: "کڕین بە عمولە",
+    labelKu: "کڕین بە تێچوو",
     icon: "💰",
     tKey: "packages.commission"
   }

@@ -328,7 +328,7 @@ function generatePrintContent(
               <td style="text-align: center;">$${(pkg.calculatedCostUsd || 0).toFixed(2)}</td>
               <td>
                 <span class="badge ${pkg.isFullPackage ? (pkg.fullPackageOrderType === 'commission' ? 'badge-commission' : 'badge-full') : 'badge-normal'}">
-                  ${pkg.isFullPackage ? (pkg.fullPackageOrderType === 'commission' ? 'کڕین بە عمولە' : 'فول پاکێج') : 'ئاسایی'}
+                  ${pkg.isFullPackage ? (pkg.fullPackageOrderType === 'commission' ? 'کڕین بە تێچوو' : 'پاکێجی تەواو') : 'ئاسایی'}
                 </span>
               </td>
             </tr>
@@ -737,7 +737,7 @@ function generateLabelContent(
                 ${packages.map((pkg, idx) => {
                   const weight = isSea ? (pkg.volumeCbm || 0) : (pkg.weightKg || 0);
                   const pkgType = pkg.isFullPackage 
-                    ? (pkg.fullPackageOrderType === 'commission' ? 'کرین بە عمولە' : 'فول پاکیج')
+                    ? (pkg.fullPackageOrderType === 'commission' ? 'کرین بە عمولە' : 'پاکێجی تەواو')
                     : 'ئاسایی';
                   const typeClass = pkg.isFullPackage && pkg.fullPackageOrderType === 'commission' 
                     ? 'type-commission' 
@@ -1350,7 +1350,7 @@ export default function BatchFinancialReport() {
                 </Card>
                 <Card className="bg-purple-50 border-purple-200">
                   <CardContent className="p-4 text-center">
-                    <p className="text-sm text-purple-600">فول پاکێج</p>
+                    <p className="text-sm text-purple-600">پاکێجی تەواو</p>
                     <p className="text-2xl font-bold text-purple-700">
                       {customerPackages.filter(p => p.isFullPackage && p.fullPackageOrderType === 'full_package').length}
                     </p>
@@ -1358,7 +1358,7 @@ export default function BatchFinancialReport() {
                 </Card>
                 <Card className="bg-amber-50 border-amber-200">
                   <CardContent className="p-4 text-center">
-                    <p className="text-sm text-amber-600">کڕین بە عمولە</p>
+                    <p className="text-sm text-amber-600">کڕین بە تێچوو</p>
                     <p className="text-2xl font-bold text-amber-700">
                       {customerPackages.filter(p => p.isFullPackage && p.fullPackageOrderType === 'commission').length}
                     </p>
@@ -1422,12 +1422,12 @@ export default function BatchFinancialReport() {
                             pkg.fullPackageOrderType === 'commission' ? (
                               <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200">
                                 <DollarSign className="h-3 w-3 ms-1" />
-                                کڕین بە عمولە
+                                کڕین بە تێچوو
                               </Badge>
                             ) : (
                               <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">
                                 <ShoppingBag className="h-3 w-3 ms-1" />
-                                فول پاکێج
+                                پاکێجی تەواو
                               </Badge>
                             )
                           ) : (
@@ -1507,7 +1507,7 @@ export default function BatchFinancialReport() {
                           toast.error('هیچ پاکەتێکی ئاسایی یان عمولە نییە');
                           return;
                         }
-                        openPrintWindow(generatePrintContent('پاکەتی ئاسایی + کڕین بە عمولە', regularAndCommission, batch, selectedCustomer, company));
+                        openPrintWindow(generatePrintContent('پاکەتی ئاسایی + کڕین بە تێچوو', regularAndCommission, batch, selectedCustomer, company));
                         toast.success('پرینت ئامادەیە');
                       }}
                       className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 bg-slate-50/50 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 text-right min-h-[100px]"
@@ -1525,10 +1525,10 @@ export default function BatchFinancialReport() {
                       onClick={() => {
                         const fullPackages = customerPackages?.filter(p => p.isFullPackage && p.fullPackageOrderType !== 'commission') || [];
                         if (fullPackages.length === 0) {
-                          toast.error('هیچ فول پاکیجێک نییە');
+                          toast.error('هیچ پاکێجی تەواو نییە');
                           return;
                         }
-                        openPrintWindow(generatePrintContent('فول پاکیج', fullPackages, batch, selectedCustomer, company));
+                        openPrintWindow(generatePrintContent('پاکێجی تەواو', fullPackages, batch, selectedCustomer, company));
                         toast.success('پرینت ئامادەیە');
                       }}
                       className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 bg-slate-50/50 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 text-right min-h-[100px]"
@@ -1536,7 +1536,7 @@ export default function BatchFinancialReport() {
                       <div className="p-2.5 rounded-xl bg-purple-100">
                         <ShoppingBag className="h-6 w-6 text-purple-600" />
                       </div>
-                      <span className="text-sm font-semibold text-slate-800">فول پاکیج بەتەنیا</span>
+                      <span className="text-sm font-semibold text-slate-800">پاکێجی تەواو بەتەنیا</span>
                       <Badge variant="secondary" className="bg-purple-100 text-purple-700 font-medium">
                         {(customerPackages?.filter(p => p.isFullPackage && p.fullPackageOrderType !== 'commission')?.length || 0)} پاکەت
                       </Badge>
@@ -1617,7 +1617,7 @@ export default function BatchFinancialReport() {
                         <Tag className="h-8 w-8 text-white" />
                       </div>
                       <div className="text-center">
-                        <span className="text-base font-bold text-slate-800 block">پاکەتی ئاسایی + کڕین بە عمولە</span>
+                        <span className="text-base font-bold text-slate-800 block">پاکەتی ئاسایی + کڕین بە تێچوو</span>
                         <span className="text-sm text-emerald-700 font-medium mt-1 block">
                           {(customerPackages?.filter(p => !p.isFullPackage || p.fullPackageOrderType === 'commission')?.length || 0)} لەیبڵ
                         </span>
@@ -1628,7 +1628,7 @@ export default function BatchFinancialReport() {
                       onClick={async () => {
                         const fullPackages = customerPackages?.filter(p => p.isFullPackage && p.fullPackageOrderType !== 'commission') || [];
                         if (fullPackages.length === 0) {
-                          toast.error('هیچ فول پاکیجێک نییە');
+                          toast.error('هیچ پاکێجی تەواو نییە');
                           return;
                         }
                         const fullCustomer = customers?.find(c => c.id === selectedCustomer?.id);
@@ -1669,7 +1669,7 @@ export default function BatchFinancialReport() {
                         <Tag className="h-8 w-8 text-white" />
                       </div>
                       <div className="text-center">
-                        <span className="text-base font-bold text-slate-800 block">فول پاکیج</span>
+                        <span className="text-base font-bold text-slate-800 block">پاکێجی تەواو</span>
                         <span className="text-sm text-violet-700 font-medium mt-1 block">
                           {(customerPackages?.filter(p => p.isFullPackage && p.fullPackageOrderType !== 'commission')?.length || 0)} لەیبڵ
                         </span>
@@ -1690,7 +1690,7 @@ export default function BatchFinancialReport() {
                         pkg.trackingNumber || '-',
                         batch?.shippingType === 'sea' ? pkg.volumeCbm?.toFixed(3) : pkg.weightKg?.toFixed(2),
                         pkg.calculatedCostUsd?.toFixed(2),
-                        pkg.isFullPackage ? (pkg.fullPackageOrderType === 'commission' ? 'کڕین بە عمولە' : 'فول پاکێج') : 'ئاسایی'
+                        pkg.isFullPackage ? (pkg.fullPackageOrderType === 'commission' ? 'کڕین بە تێچوو' : 'پاکێجی تەواو') : 'ئاسایی'
                       ]) || [];
                       const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
                       const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });

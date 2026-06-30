@@ -106,7 +106,7 @@ export default function CommissionForm() {
   // Create mutation
   const createMutation = trpc.fullPackage.create.useMutation({
     onSuccess: () => {
-      toast.success("پەتی عمولە بە سەرکەوتوویی داخڵ کرا — خانەکان بۆ ئۆردەری دواتر ئامادەن");
+      toast.success("ئۆردەری کڕین بە تێچوو بە سەرکەوتوویی داخڵ کرا — خانەکان بۆ ئۆردەری دواتر ئامادەن");
       utils.fullPackage.list.invalidate();
       const keepCustomerId = formData.customerId;
       if (keepCustomerId) {
@@ -296,7 +296,7 @@ export default function CommissionForm() {
               <Percent className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-tight">پەتی عمولەی نوێ</h1>
+              <h1 className="text-xl font-bold leading-tight">ئۆردەری کڕین بە تێچووی نوێ</h1>
               <p className="text-sm text-muted-foreground">کڕیار نرخ دەزانێت، کۆمپانیا تەنها عمولە وەردەگرێت</p>
             </div>
           </div>
@@ -304,7 +304,7 @@ export default function CommissionForm() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Customer Selection */}
-          <Section icon={User} title="کڕیار" hint="کڕیارێک هەڵبژێرە بۆ ئەم پەتە" accent="amber">
+          <Section icon={User} title="کڕیار" hint="کڕیارێک هەڵبژێرە بۆ ئەم ئۆردەرە" accent="amber">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">کڕیار *</Label>

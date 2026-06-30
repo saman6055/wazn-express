@@ -173,7 +173,7 @@ function PackageTypeBadge({
   if (lookup.type === 'commission') {
     return (
       <Badge className="text-[10px] px-1.5 py-0 font-normal bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 border-amber-300">
-        💰 کڕین بە عمولە
+        💰 کڕین بە تێچوو
       </Badge>
     );
   }
@@ -181,7 +181,7 @@ function PackageTypeBadge({
   if (lookup.type === 'full_package') {
     return (
       <Badge className="text-[10px] px-1.5 py-0 font-normal bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 border-purple-300">
-        📦 فول پاکێج
+        📦 پاکێجی تەواو
       </Badge>
     );
   }

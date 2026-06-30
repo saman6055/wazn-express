@@ -104,8 +104,8 @@ export default function BusinessAnalytics() {
     // Profit by type
     csv += 'قازانج بە جۆر\n';
     csv += 'جۆر,ژمارە,کۆی قازانج,تێکڕای قازانج\n';
-    csv += `فول پاکێج,${profitByType?.fullPackage?.count || 0},${profitByType?.fullPackage?.totalProfit || 0},${profitByType?.fullPackage?.avgProfit?.toFixed(2) || 0}\n`;
-    csv += `کڕین بە عمولە,${profitByType?.commission?.count || 0},${profitByType?.commission?.totalProfit || 0},${profitByType?.commission?.avgProfit?.toFixed(2) || 0}\n`;
+    csv += `پاکێجی تەواو,${profitByType?.fullPackage?.count || 0},${profitByType?.fullPackage?.totalProfit || 0},${profitByType?.fullPackage?.avgProfit?.toFixed(2) || 0}\n`;
+    csv += `کڕین بە تێچوو,${profitByType?.commission?.count || 0},${profitByType?.commission?.totalProfit || 0},${profitByType?.commission?.avgProfit?.toFixed(2) || 0}\n`;
     csv += `پاکەتی ئاسایی,${profitByType?.packages?.count || 0},${profitByType?.packages?.totalRevenue || 0},-\n\n`;
     
     // Top customers
@@ -239,7 +239,7 @@ export default function BusinessAnalytics() {
                       <Boxes className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-purple-900">فول پاکێج</p>
+                      <p className="font-semibold text-purple-900">پاکێجی تەواو</p>
                       <p className="text-sm text-purple-600">{profitByType?.fullPackage?.count || 0} ئۆردەر</p>
                     </div>
                   </div>
@@ -256,7 +256,7 @@ export default function BusinessAnalytics() {
                       <Percent className="h-5 w-5 text-orange-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-orange-900">کڕین بە عمولە</p>
+                      <p className="font-semibold text-orange-900">کڕین بە تێچوو</p>
                       <p className="text-sm text-orange-600">{profitByType?.commission?.count || 0} ئۆردەر</p>
                     </div>
                   </div>

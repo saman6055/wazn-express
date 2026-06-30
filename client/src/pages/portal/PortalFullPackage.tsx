@@ -150,7 +150,7 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
 const orderTypeConfig: Record<string, { label: string; labelKu: string; labelAr: string; color: string; bgColor: string; textColor: string; icon: any }> = {
   full_package: { 
     label: "Full Package", 
-    labelKu: "فول پاکێج", 
+    labelKu: "پاکێجی تەواو", 
     labelAr: "الباقة الكاملة",
     color: "bg-emerald-500", 
     bgColor: "bg-emerald-50",
@@ -284,10 +284,10 @@ export default function PortalFullPackage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">
-                  {isKurdish ? "پەتەکانم" : language === "ar" ? "طلباتي" : "My Orders"}
+                  {isKurdish ? "ئۆردەرەکانم" : language === "ar" ? "طلباتي" : "My Orders"}
                 </h1>
                 <p className="text-white/70 text-sm">
-                  {isKurdish ? "بەڕێوەبردنی پەتەکانت" : language === "ar" ? "إدارة طلباتك" : "Manage your orders"}
+                  {isKurdish ? "بەڕێوەبردنی ئۆردەرەکانت" : language === "ar" ? "إدارة طلباتك" : "Manage your orders"}
                 </p>
               </div>
             </div>
@@ -376,7 +376,7 @@ export default function PortalFullPackage() {
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
             )}
           >
-{isKurdish ? "فول پاکێج" : language === "ar" ? "الباقة الكاملة" : "Full Package"}
+{isKurdish ? "پاکێجی تەواو" : language === "ar" ? "الباقة الكاملة" : "Full Package"}
           </button>
           <button
             onClick={() => setActiveTab("commission")}

@@ -736,8 +736,8 @@ export default function BatchFinancialReportFull() {
                             }>
                               {pkg.isFullPackage 
                                 ? pkg.fullPackageOrderType === 'commission' 
-                                  ? 'کڕین بە عمولە' 
-                                  : 'فول پاکێج'
+                                  ? 'کڕین بە تێچوو' 
+                                  : 'پاکێجی تەواو'
                                 : 'ئاسایی'
                               }
                             </Badge>

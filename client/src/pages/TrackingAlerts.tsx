@@ -43,7 +43,7 @@ const ORDER_TYPES = [
   },
   { 
     value: "full_package", 
-    labelKu: "فول پاکێج", 
+    labelKu: "پاکێجی تەواو", 
     labelEn: "Full Package",
     icon: Box,
     color: "red"
@@ -51,7 +51,7 @@ const ORDER_TYPES = [
 
   { 
     value: "commission", 
-    labelKu: "کڕین بە عمولە", 
+    labelKu: "کڕین بە تێچوو", 
     labelEn: "Commission",
     icon: Percent,
     color: "amber"
@@ -307,7 +307,7 @@ export default function TrackingAlerts() {
       'ناوی بەرهەم': order.productName,
       'ژمارەی ئۆردەر': order.orderNumber || '-',
       'ژمارەی ڕۆژ': order.daysWaiting,
-      'جۆر': order.orderType === 'full_package' ? 'فول پاکێج' : 'کۆمیشن',
+      'جۆر': order.orderType === 'full_package' ? 'پاکێجی تەواو' : 'کۆمیشن',
       'ئاستی ئاگاداری': order.daysWaiting >= 7 ? 'فریاکەوتن' : order.daysWaiting >= 5 ? 'گرنگ' : order.daysWaiting >= 3 ? 'ئاگاداری' : 'نوێ',
     }));
     
@@ -405,7 +405,7 @@ export default function TrackingAlerts() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-red-600">
-                          {isKurdish ? "فول پاکێج" : "Full Package"}
+                          {isKurdish ? "پاکێجی تەواو" : "Full Package"}
                         </p>
                         <p className="text-3xl font-bold text-red-700">{typeStats.full_package}</p>
                       </div>
@@ -433,7 +433,7 @@ export default function TrackingAlerts() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-amber-600">
-                          {isKurdish ? "کڕین بە عمولە" : "Commission"}
+                          {isKurdish ? "کڕین بە تێچوو" : "Commission"}
                         </p>
                         <p className="text-3xl font-bold text-amber-700">{typeStats.commission}</p>
                       </div>

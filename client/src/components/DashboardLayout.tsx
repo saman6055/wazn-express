@@ -247,7 +247,7 @@ function DashboardLayoutContent({
         items: [
           { icon: AlertTriangle, label: t("nav.trackingAlerts") || "ئاگاداری تراکینگ", path: "/tracking-alerts" },
           { icon: Package, label: t("nav.completePackage") || "پاکێجی تەواو", path: "/full-package" },
-          { icon: DollarSign, label: t("nav.markupPurchase") || "کڕین بە خستنەسەر", path: "/commission" },
+          { icon: DollarSign, label: t("nav.markupPurchase") || "کڕین بە تێچوو", path: "/commission" },
           { icon: ShoppingBag, label: t("nav.selfOrders") || "سێلف ئۆردەر", path: "/self-orders" },
           { icon: Building2, label: t("nav.suppliers") || "فرۆشیارەکان", path: "/suppliers" },
           { icon: LayoutDashboard, label: t("nav.unifiedOrders") || "داشبۆردی یەکگرتوو", path: "/unified-orders" },
@@ -353,9 +353,9 @@ function DashboardLayoutContent({
           { icon: Wrench, label: t("nav.serviceProfitReport") || "Service Report", path: "/reports/services" },
           { icon: TrendingUp, label: t("nav.profitDashboard") || "داشبۆردی قازانج", path: "/reports/profit" },
           { icon: Calendar, label: t("nav.monthlyProfitReport") || "ڕاپۆرتی مانگانە", path: "/reports/monthly-profit" },
-          { icon: CircleDollarSign, label: t("nav.profitByType") || "قازانج بە جۆری پەت", path: "/profit-by-type" },
+          { icon: CircleDollarSign, label: t("nav.profitByType") || "قازانج بە جۆری ئۆردەر", path: "/profit-by-type" },
           { icon: FileText, label: t("nav.scanReports") || "ڕاپۆرتی سکان", path: "/scan-reports" },
-          { icon: Receipt, label: t("nav.invoiceReports") || "ڕاپۆرتی ئینڤۆیسەکان", path: "/invoice-reports" },
+          { icon: Receipt, label: t("nav.invoiceReports") || "ڕاپۆرتی پسوڵەکان", path: "/invoice-reports" },
           { icon: Target, label: t("nav.businessAnalytics") || "شیکاری بازرگانی", path: "/business-analytics" },
         ]
       });

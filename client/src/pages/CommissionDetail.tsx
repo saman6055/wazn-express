@@ -168,10 +168,10 @@ export default function CommissionDetail() {
       const delta = (res as any)?.chargeDeltaUsd ?? 0;
       if (Math.abs(delta) > 0.005) {
         toast.success(
-          `پەت نوێکرایەوە · ${delta > 0 ? "+" : ""}$${delta.toFixed(2)}`
+          `ئۆردەر نوێکرایەوە · ${delta > 0 ? "+" : ""}$${delta.toFixed(2)}`
         );
       } else {
-        toast.success("پەت نوێکرایەوە");
+        toast.success("ئۆردەر نوێکرایەوە");
       }
       setEditReason("");
       utils.fullPackage.list.invalidate();
@@ -212,7 +212,7 @@ export default function CommissionDetail() {
       const rawMsg =
         typeof error.message === "string" ? error.message.trim() : "";
       const code = error.data?.code ?? "UNKNOWN";
-      const title = rawMsg || `هەڵە لە نوێکردنەوەی پەت | Failed to update order`;
+      const title = rawMsg || `هەڵە لە نوێکردنەوەی ئۆردەر | Failed to update order`;
       toast.error(title, {
         description: `کۆدی هەڵە | Error code: ${code}`,
         duration: 10000,
@@ -336,7 +336,7 @@ export default function CommissionDetail() {
           <div className="p-6 bg-purple-50 rounded-full mb-6">
             <Percent className="h-16 w-16 text-purple-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("commission.orderNotFound") || "پەت نەدۆزرایەوە"}</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("commission.orderNotFound") || "ئۆردەر نەدۆزرایەوە"}</h2>
           <p className="text-muted-foreground mb-6">{t("fullPackage.orderNotFoundDesc")}</p>
           <Button onClick={() => navigate("/commission")} size="lg" className="bg-purple-600 hover:bg-purple-700">
             <ArrowRight className="h-4 w-4 ms-2" />
@@ -367,11 +367,11 @@ export default function CommissionDetail() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold">
-                  {isEditMode ? t("commission.editOrder") || "دەستکاری پەت" : t("commission.orderDetails") || "وردەکاری پەت"}
+                  {isEditMode ? t("commission.editOrder") || "دەستکاری ئۆردەر" : t("commission.orderDetails") || "وردەکاری ئۆردەر"}
                 </h1>
                 <p className="text-purple-100 flex items-center gap-2 mt-1">
                   <Hash className="h-4 w-4" />
-                  {t("commission.orderCode") || "کۆدی پەت"}: <span className="font-mono font-bold">{order.orderCode}</span>
+                  {t("commission.orderCode") || "کۆدی ئۆردەر"}: <span className="font-mono font-bold">{order.orderCode}</span>
                   {isPendingCharge && (
                     <Badge className="bg-amber-100 text-amber-800 border-amber-200 ms-2">
                       <Clock className="h-3 w-3 me-1" />

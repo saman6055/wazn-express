@@ -130,7 +130,7 @@ export default function FullPackageForm() {
 
   const createMutation = trpc.fullPackage.create.useMutation({
     onSuccess: () => {
-      toast.success("ئۆردەری فوول پاکێج بە سەرکەوتوویی داخڵ کرا — خانەکان بۆ ئۆردەری دواتر ئامادەن");
+      toast.success("ئۆردەری پاکێجی تەواو بە سەرکەوتوویی داخڵ کرا — خانەکان بۆ ئۆردەری دواتر ئامادەن");
       utils.fullPackage.list.invalidate();
       const keepCustomerId = formData.customerId;
       if (keepCustomerId) {
@@ -310,7 +310,7 @@ export default function FullPackageForm() {
               <ShoppingBag className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-tight">پەتی فول پاکیجی نوێ</h1>
+              <h1 className="text-xl font-bold leading-tight">ئۆردەری پاکێجی تەواوی نوێ</h1>
               <p className="text-sm text-muted-foreground">کڕین و فرۆشتنەوە بە قازانج</p>
             </div>
           </div>
@@ -318,7 +318,7 @@ export default function FullPackageForm() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Customer Selection */}
-          <Section icon={User} title="کڕیار" hint="کڕیارێک هەڵبژێرە بۆ ئەم پەتە" accent="emerald">
+          <Section icon={User} title="کڕیار" hint="کڕیارێک هەڵبژێرە بۆ ئەم ئۆردەرە" accent="emerald">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">کڕیار *</Label>
