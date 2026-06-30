@@ -162,6 +162,9 @@ function DashboardLayoutContent({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["main"]);
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
+  // A group the user explicitly clicked to close while still hovering it — this
+  // overrides the hover-open until the mouse leaves, so one click really closes.
+  const [clickClosedGroup, setClickClosedGroup] = useState<string | null>(null);
   const hoverLeaveTimer = useRef<number | null>(null);
   const [cmdOpen, setCmdOpen] = useState(false);
 
@@ -432,17 +435,22 @@ function DashboardLayoutContent({
 
   const isItemActive = (path: string) => location === path || location.startsWith(path + '/');
 
-  const toggleGroup = (groupId: string) => {
-    setExpandedGroups(prev =>
-      prev.includes(groupId)
-        ? prev.filter(id => id !== groupId)
-        : [...prev, groupId]
-    );
+  // Click toggles a group, and the click wins over hover: clicking an
+  // already-open (incl. hover-opened) group closes it on the spot, and clicking
+  // a closed one pins it open. Works the same on desktop and touch.
+  const handleGroupClick = (groupId: string, currentlyExpanded: boolean) => {
+    if (currentlyExpanded) {
+      setExpandedGroups(prev => prev.filter(id => id !== groupId));
+      setClickClosedGroup(groupId); // override hover so it really closes
+    } else {
+      setExpandedGroups(prev => (prev.includes(groupId) ? prev : [...prev, groupId]));
+      setClickClosedGroup(prev => (prev === groupId ? null : prev));
+    }
   };
 
   // Desktop convenience: open a group on hover, close it shortly after the
-  // mouse leaves. Click still works (and pins a group open via expandedGroups),
-  // and on touch devices hover is disabled so tapping is the only trigger.
+  // mouse leaves. On touch devices hover is disabled so tapping is the only
+  // trigger. Leaving resets the click-close override for the next hover.
   const handleGroupEnter = (groupId: string) => {
     if (isMobile) return;
     if (hoverLeaveTimer.current) {
@@ -454,7 +462,10 @@ function DashboardLayoutContent({
   const handleGroupLeave = () => {
     if (isMobile) return;
     if (hoverLeaveTimer.current) window.clearTimeout(hoverLeaveTimer.current);
-    hoverLeaveTimer.current = window.setTimeout(() => setHoveredGroup(null), 220);
+    hoverLeaveTimer.current = window.setTimeout(() => {
+      setHoveredGroup(null);
+      setClickClosedGroup(null);
+    }, 220);
   };
   useEffect(() => () => {
     if (hoverLeaveTimer.current) window.clearTimeout(hoverLeaveTimer.current);
@@ -546,7 +557,10 @@ function DashboardLayoutContent({
         {/* Sidebar Content - Scrollable */}
         <div className="flex-1 overflow-y-auto py-3 px-2">
           {menuGroups.map((group) => {
-            const isExpanded = expandedGroups.includes(group.id) || hoveredGroup === group.id;
+            const isExpanded =
+              clickClosedGroup === group.id
+                ? false
+                : expandedGroups.includes(group.id) || hoveredGroup === group.id;
             const hasActiveItem = group.items.some(item => isItemActive(item.path));
             const colorClasses = getColorClasses(group.color, hasActiveItem);
 
@@ -559,7 +573,7 @@ function DashboardLayoutContent({
               >
                 {/* Group Header */}
                 <button
-                  onClick={() => toggleGroup(group.id)}
+                  onClick={() => handleGroupClick(group.id, isExpanded)}
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                     hasActiveItem 
