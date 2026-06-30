@@ -226,26 +226,7 @@ function DashboardLayoutContent({
       ]
     });
 
-    // 2. Packages & Operations - Employees
-    if (isEmployee) {
-      groups.push({
-        id: "operations",
-        title: t("nav.operations") || "ئۆپەریشن",
-        icon: Package,
-        color: "blue",
-        items: [
-          { icon: Truck, label: t("nav.quickRegister") || "تۆمارکردنی خێرا", path: "/packages/quick-register" },
-          { icon: ShoppingBag, label: t("nav.selfOrders") || "سێلف ئۆردەر", path: "/self-orders" },
-          { icon: Package, label: t("nav.allPackages") || "هەموو پاکەتەکان", path: "/packages/all" },
-          { icon: ClipboardList, label: t("nav.bulkRegister") || "تۆماری کۆمەڵە", path: "/packages/bulk-register" },
-          { icon: Layers, label: t("nav.batches") || "باچەکان", path: "/batches" },
-          { icon: AlertTriangle, label: t("nav.unclaimedPackages") || "پاکەتی بێ خاوەن", path: "/packages/unclaimed" },
-          { icon: FileText, label: t("nav.claimRequests") || "داواکاری خاوەنداری", path: "/packages/claim-requests" },
-        ]
-      });
-    }
-
-    // 3. Full Package & Commission - Employees
+    // 2. Packages (full package / markup / self orders) - Employees — above operations
     if (isEmployee) {
       groups.push({
         id: "fullPackage",
@@ -256,8 +237,27 @@ function DashboardLayoutContent({
           { icon: AlertTriangle, label: t("nav.trackingAlerts") || "ئاگاداری تراکینگ", path: "/tracking-alerts" },
           { icon: Package, label: t("nav.completePackage") || "پاکێجی تەواو", path: "/full-package" },
           { icon: DollarSign, label: t("nav.markupPurchase") || "کڕین بە خستنەسەر", path: "/commission" },
+          { icon: ShoppingBag, label: t("nav.selfOrders") || "سێلف ئۆردەر", path: "/self-orders" },
           { icon: Building2, label: t("nav.suppliers") || "فرۆشیارەکان", path: "/suppliers" },
           { icon: LayoutDashboard, label: t("nav.unifiedOrders") || "داشبۆردی یەکگرتوو", path: "/unified-orders" },
+        ]
+      });
+    }
+
+    // 3. Operations (registration, batches, claims) - Employees — below packages
+    if (isEmployee) {
+      groups.push({
+        id: "operations",
+        title: t("nav.operations") || "ئۆپەریشن",
+        icon: Package,
+        color: "blue",
+        items: [
+          { icon: Truck, label: t("nav.quickRegister") || "تۆمارکردنی خێرا", path: "/packages/quick-register" },
+          { icon: Package, label: t("nav.allPackages") || "هەموو پاکەتەکان", path: "/packages/all" },
+          { icon: ClipboardList, label: t("nav.bulkRegister") || "تۆماری کۆمەڵە", path: "/packages/bulk-register" },
+          { icon: Layers, label: t("nav.batches") || "باچەکان", path: "/batches" },
+          { icon: AlertTriangle, label: t("nav.unclaimedPackages") || "پاکەتی بێ خاوەن", path: "/packages/unclaimed" },
+          { icon: FileText, label: t("nav.claimRequests") || "داواکاری خاوەنداری", path: "/packages/claim-requests" },
         ]
       });
     }
