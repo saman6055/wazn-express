@@ -1,26 +1,32 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useLocation } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { Lightbulb, X, ArrowRight as NextIcon, ChevronDown, ChevronUp } from "lucide-react";
+import { Lightbulb, X, ChevronDown, ChevronUp } from "lucide-react";
 import { STAFF_TIPS, MOTIVATION_MESSAGES, type TipLang } from "@/constants/staffTips";
 
-// Tip-of-the-day card (bottom-left) + a one-time motivation toast after the
-// staff member has been in the system for 10 minutes. Both speak the active UI
-// language. State is kept in storage so it survives the layout re-mounting on
-// every page navigation.
+// A "tip of the day" card (bottom-left) that teaches good system use, plus a
+// one-time motivation toast 10 minutes into the session.
+//
+// Timing is deliberately UN-intrusive: a tip appears on login, then NOT again
+// while the staff member is actively working (so it never pulls their mind off
+// the task). It only goes quiet after 10 minutes of no mouse/keyboard activity,
+// and a fresh tip appears the next time they become active again. Rendered once
+// at the app root (not in the per-page layout) so the idle timer is continuous.
 const TIP_INDEX_KEY = "wazn-tip-index";
 const TIP_DISMISS_DATE_KEY = "wazn-tip-dismissed-date";
-const TIP_CLOSED_SESSION_KEY = "wazn-tip-closed-session";
+const TIP_SESSION_INIT_KEY = "wazn-tip-session-init";
 const SESSION_START_KEY = "wazn-session-start";
 const MOTIVATION_SHOWN_KEY = "wazn-motivation-shown";
-const MOTIVATION_DELAY_MS = 10 * 60 * 1000;
+const IDLE_MS = 10 * 60 * 1000;
+const ACTIVITY_THROTTLE_MS = 1500;
 
-const UI: Record<TipLang, { tip: string; more: string; less: string; next: string; example: string; hideToday: string; close: string }> = {
-  ku: { tip: "ئامۆژگاری", more: "زیاتر بزانە", less: "کەمتر", next: "دواتر", example: "نموونە", hideToday: "ئەمڕۆ پیشانی مەدە", close: "داخستن" },
-  en: { tip: "Tip", more: "Learn more", less: "Less", next: "Next", example: "Example", hideToday: "Hide for today", close: "Close" },
-  ar: { tip: "نصيحة", more: "اعرف المزيد", less: "أقل", next: "التالي", example: "مثال", hideToday: "إخفاء لليوم", close: "إغلاق" },
-  zh: { tip: "提示", more: "了解更多", less: "收起", next: "下一条", example: "示例", hideToday: "今天不再显示", close: "关闭" },
+const UI: Record<TipLang, { tip: string; more: string; less: string; example: string; hideToday: string; close: string }> = {
+  ku: { tip: "ئامۆژگاری", more: "زانیاری زیاتر", less: "کەمتر", example: "نموونە", hideToday: "ئەمڕۆ پیشانی مەدە", close: "داخستن" },
+  en: { tip: "Tip", more: "Learn more", less: "Less", example: "Example", hideToday: "Hide for today", close: "Close" },
+  ar: { tip: "نصيحة", more: "معلومات أكثر", less: "أقل", example: "مثال", hideToday: "إخفاء لليوم", close: "إغلاق" },
+  zh: { tip: "提示", more: "了解更多", less: "收起", example: "示例", hideToday: "今天不再显示", close: "关闭" },
 };
 
 function todayStr() {
@@ -30,8 +36,21 @@ function todayStr() {
 export function StaffTips() {
   const { language, isRTL } = useTranslation();
   const { user } = useAuth();
+  const [location] = useLocation();
   const lang: TipLang = (["ku", "en", "ar", "zh"].includes(language) ? language : "ku") as TipLang;
   const labels = UI[lang];
+
+  // Only on staff pages (auth.me is staff-only, so user is null on the portal /
+  // login / landing — but guard the path too for the rare staff-on-portal case).
+  const onStaffArea =
+    !!user &&
+    !location.startsWith("/portal") &&
+    location !== "/" &&
+    location !== "/customer-login" &&
+    location !== "/staff-login" &&
+    location !== "/404";
+  const onStaffAreaRef = useRef(onStaffArea);
+  onStaffAreaRef.current = onStaffArea;
 
   const [index, setIndex] = useState(() => {
     const v = Number(localStorage.getItem(TIP_INDEX_KEY) || "0");
@@ -40,16 +59,62 @@ export function StaffTips() {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
-  // Decide whether to show the tip card (skip if closed this session or
-  // dismissed for today). Runs on every mount (navigation re-mounts the layout).
-  useEffect(() => {
-    if (sessionStorage.getItem(TIP_CLOSED_SESSION_KEY) === "1") return;
-    if (localStorage.getItem(TIP_DISMISS_DATE_KEY) === todayStr()) return;
+  const lastActivityRef = useRef(0);
+  const idleRef = useRef(false);
+  const idleTimerRef = useRef<number | null>(null);
+
+  const showNextTip = useCallback(() => {
+    setExpanded(false);
+    setIndex((i) => {
+      const n = i + 1;
+      localStorage.setItem(TIP_INDEX_KEY, String(n));
+      return n;
+    });
     setOpen(true);
   }, []);
 
-  // One motivation toast, 10 minutes into the session (session-based timer so it
-  // survives navigation), personalised with the staff member's name.
+  // Show on login, then drive show/hide off real activity (mouse + keyboard).
+  useEffect(() => {
+    if (localStorage.getItem(TIP_DISMISS_DATE_KEY) === todayStr()) return;
+
+    // One tip the first time we enter the session (login / fresh tab).
+    if (sessionStorage.getItem(TIP_SESSION_INIT_KEY) !== "1") {
+      sessionStorage.setItem(TIP_SESSION_INIT_KEY, "1");
+      setOpen(true);
+    }
+
+    const armIdleTimer = () => {
+      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = window.setTimeout(() => {
+        idleRef.current = true;
+        setOpen(false); // go quiet while the desk is idle
+      }, IDLE_MS);
+    };
+
+    const onActivity = () => {
+      const now = Date.now();
+      if (now - lastActivityRef.current < ACTIVITY_THROTTLE_MS) return;
+      lastActivityRef.current = now;
+      if (localStorage.getItem(TIP_DISMISS_DATE_KEY) === todayStr()) return;
+      // Returned to the desk after being idle → surface a fresh tip.
+      if (idleRef.current && onStaffAreaRef.current) {
+        idleRef.current = false;
+        showNextTip();
+      }
+      armIdleTimer();
+    };
+
+    window.addEventListener("mousemove", onActivity, { passive: true });
+    window.addEventListener("keydown", onActivity);
+    armIdleTimer();
+    return () => {
+      window.removeEventListener("mousemove", onActivity);
+      window.removeEventListener("keydown", onActivity);
+      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+    };
+  }, [showNextTip]);
+
+  // One personalised motivation toast, 10 minutes into the session.
   useEffect(() => {
     if (sessionStorage.getItem(MOTIVATION_SHOWN_KEY) === "1") return;
     let start = Number(sessionStorage.getItem(SESSION_START_KEY) || "0");
@@ -57,37 +122,27 @@ export function StaffTips() {
       start = Date.now();
       sessionStorage.setItem(SESSION_START_KEY, String(start));
     }
-    const remaining = Math.max(0, MOTIVATION_DELAY_MS - (Date.now() - start));
-    const timer = setTimeout(() => {
+    const remaining = Math.max(0, IDLE_MS - (Date.now() - start));
+    const timer = window.setTimeout(() => {
       if (sessionStorage.getItem(MOTIVATION_SHOWN_KEY) === "1") return;
+      if (!onStaffAreaRef.current) return;
       sessionStorage.setItem(MOTIVATION_SHOWN_KEY, "1");
       const name = ((user?.name as string) || "").trim() || (lang === "ku" ? "هاوکار" : lang === "ar" ? "زميلنا" : lang === "zh" ? "同事" : "colleague");
       const msg = MOTIVATION_MESSAGES[Math.floor(Math.random() * MOTIVATION_MESSAGES.length)];
       const text = (msg.text[lang] || msg.text.ku).replace(/\{name\}/g, name);
       toast(text, { duration: 12000 });
     }, remaining);
-    return () => clearTimeout(timer);
+    return () => window.clearTimeout(timer);
   }, [user, lang]);
 
-  if (!open || STAFF_TIPS.length === 0) return null;
+  if (!onStaffArea || !open || STAFF_TIPS.length === 0) return null;
 
   const tip = STAFF_TIPS[((index % STAFF_TIPS.length) + STAFF_TIPS.length) % STAFF_TIPS.length];
   const short = tip.short[lang] || tip.short.ku;
   const detail = tip.detail ? (tip.detail[lang] || tip.detail.ku) : undefined;
   const example = tip.example ? (tip.example[lang] || tip.example.ku) : undefined;
 
-  const next = () => {
-    setExpanded(false);
-    setIndex((i) => {
-      const n = i + 1;
-      localStorage.setItem(TIP_INDEX_KEY, String(n));
-      return n;
-    });
-  };
-  const close = () => {
-    sessionStorage.setItem(TIP_CLOSED_SESSION_KEY, "1");
-    setOpen(false);
-  };
+  const close = () => setOpen(false);
   const hideToday = () => {
     localStorage.setItem(TIP_DISMISS_DATE_KEY, todayStr());
     setOpen(false);
@@ -133,18 +188,10 @@ export function StaffTips() {
           ) : (
             <span />
           )}
-          <button
-            onClick={next}
-            className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors"
-          >
-            <NextIcon className={isRTL ? "h-3.5 w-3.5" : "h-3.5 w-3.5 rotate-180"} />
-            {labels.next}
+          <button onClick={hideToday} className="text-[11px] text-muted-foreground hover:text-foreground hover:underline">
+            {labels.hideToday}
           </button>
         </div>
-
-        <button onClick={hideToday} className="text-[11px] text-muted-foreground hover:text-foreground hover:underline">
-          {labels.hideToday}
-        </button>
       </div>
     </div>
   );

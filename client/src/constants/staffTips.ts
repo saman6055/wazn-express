@@ -19,71 +19,214 @@ export interface MotivationMessage {
 }
 
 export const STAFF_TIPS: StaffTip[] = [
-  { id: "tip-1", short: {
-    ku: "هەمیشە لە کاتی تۆمارکردنی ئۆردەری نوێ ئاگاداربە — لەسەر موشتەری هەڵە تۆماری مەکە.",
-    en: "When registering a new order, double-check the customer — never enter it on the wrong one.",
-    ar: "عند تسجيل طلب جديد، تحقّق من العميل — لا تسجّله على العميل الخطأ.",
-    zh: "登记新订单时务必核对客户，切勿登记到错误的客户名下。" } },
-  { id: "tip-2", short: {
-    ku: "پێش پاشەکەوتکردن، دووجار کۆد و ناوی موشتەری بپشکنە.",
-    en: "Before saving, re-check the customer's code and name twice.",
-    ar: "قبل الحفظ، راجِع رمز العميل واسمه مرّتين.",
-    zh: "保存前，请再次核对客户的编号和姓名。" } },
-  { id: "tip-3", short: {
-    ku: "ئەگەر تراکینگ ئامادە بوو، لە کاتی تۆمارکردنەوە داخڵی بکە — دواتر کاتت کەم دەکاتەوە.",
-    en: "If the tracking number is ready, enter it while registering — it saves time later.",
-    ar: "إذا كان رقم التتبّع جاهزاً، أدخِله أثناء التسجيل — يوفّر وقتك لاحقاً.",
-    zh: "如果已有运单号，登记时一并录入，可节省后续时间。" } },
-  { id: "tip-4", short: {
-    ku: "جۆری کاڵا و عەدەد بە وردی پڕبکەرەوە — کاریگەری ڕاستەوخۆی لەسەر نرخ هەیە.",
-    en: "Fill in the product type and quantity carefully — they directly affect the price.",
-    ar: "املأ نوع المنتج والكمية بدقّة — لهما تأثير مباشر على السعر.",
-    zh: "仔细填写商品类型和数量，它们直接影响价格。" } },
-  { id: "tip-5", short: {
-    ku: "وێنەی کاڵا زیاد بکە — لە کاتی گەیاندندا ناسینەوەی پاکەت ئاسانتر دەکات.",
-    en: "Add a product photo — it makes the package easier to identify at delivery.",
-    ar: "أضِف صورة للمنتج — تُسهّل التعرّف على الطرد عند التسليم.",
-    zh: "添加商品照片，便于交付时识别包裹。" } },
-  { id: "tip-6", short: {
-    ku: "ئۆردەر نەمبەری دووبارە داخڵ مەکە — هەر ئۆردەرێک ئۆردەر نەمبەرێکی ناوازەی هەیە.",
-    en: "Don't reuse an order number — each order has a unique one.",
-    ar: "لا تُكرّر رقم الطلب — لكل طلب رقم فريد.",
-    zh: "不要重复使用订单号——每个订单都有唯一编号。" } },
-  { id: "tip-7", short: {
-    ku: "ئۆردەری بێ تراکینگ زۆر مەهێڵەرەوە — لە «ئاگاداری تراکینگ» بەردەوام بیانپشکنە.",
-    en: "Don't leave orders without tracking for long — check them in \"Tracking alerts\".",
-    ar: "لا تترك الطلبات بدون تتبّع طويلاً — تابِعها في «تنبيهات التتبّع».",
-    zh: "不要让订单长期没有运单号——在「追踪提醒」中及时查看。" } },
-  { id: "tip-8", short: {
-    ku: "پێش داخستنی بۆکس، دووبارە هەموو پاکەتەکان سکان بکە تاکو هیچ پاکێجێک لە یاد نەچێت.",
-    en: "Before sealing a box, re-scan every package so none is forgotten.",
-    ar: "قبل إغلاق الصندوق، أعِد مسح كل الطرود حتى لا يُنسى أيٌّ منها.",
-    zh: "封箱前重新扫描所有包裹，确保不遗漏任何一个。" } },
-  { id: "tip-9", short: {
-    ku: "نرخی گواستنەوەی بۆکس پشکنین بکە پێش ناردن — دوای ناردن گۆڕینی ئاستەمە.",
-    en: "Check the box's shipping price before sending — it's hard to change afterwards.",
-    ar: "تحقّق من سعر شحن الصندوق قبل الإرسال — تغييره لاحقاً صعب.",
-    zh: "发货前核对箱子的运费——发货后很难更改。" } },
-  { id: "tip-10", short: {
-    ku: "پاکەتە بێخاوەنەکان زوو خاوەنیان بدۆزەرەوە — درەنگکەوتن دەبێتە کێشە.",
-    en: "Find owners for unclaimed packages quickly — delays cause problems.",
-    ar: "ابحث عن أصحاب الطرود غير المطالَب بها بسرعة — التأخير يسبّب مشاكل.",
-    zh: "尽快为无主包裹找到主人——拖延会带来麻烦。" } },
-  { id: "tip-11", short: {
-    ku: "ژمارەی مۆبایلی کڕیار بە دروستی تۆمار بکە — بۆ ئاگادارکردنەوەکان گرنگە.",
-    en: "Record the customer's phone number correctly — it matters for notifications.",
-    ar: "سجّل رقم هاتف العميل بشكل صحيح — مهم للإشعارات.",
-    zh: "正确录入客户的手机号——这对通知很重要。" } },
-  { id: "tip-12", short: {
-    ku: "جۆری خزمەتی کڕیار دیاری بکە (پاکێجی تەواو / کرین بە تێچوو / سێلف ئۆردەر) بۆ فلتەری خێراتر.",
-    en: "Set the customer's service types (full package / cost purchase / self order) for faster filtering.",
-    ar: "حدّد أنواع خدمة العميل (الطرد الكامل / الشراء بالتكلفة / الطلب الذاتي) لتصفية أسرع.",
-    zh: "设置客户的服务类型（完整包裹 / 成本代购 / 自购订单），便于快速筛选。" } },
-  { id: "tip-13", short: {
-    ku: "زانیاریی کڕیار تەواو پڕبکەرەوە — داتای ناتەواو دواتر دەبێتە کێشە.",
-    en: "Fill in the customer's details completely — incomplete data causes problems later.",
-    ar: "املأ بيانات العميل كاملةً — البيانات الناقصة تسبّب مشاكل لاحقاً.",
-    zh: "完整填写客户信息——信息不全日后会出问题。" } },
+  { id: "tip-1",
+    short: {
+      ku: "هەمیشە لە کاتی تۆمارکردنی ئۆردەری نوێ ئاگاداربە — لەسەر موشتەری هەڵە تۆماری مەکە.",
+      en: "When registering a new order, double-check the customer — never enter it on the wrong one.",
+      ar: "عند تسجيل طلب جديد، تحقّق من العميل — لا تسجّله على العميل الخطأ.",
+      zh: "登记新订单时务必核对客户，切勿登记到错误的客户名下。" },
+    detail: {
+      ku: "هەر ئۆردەرێک بەستراوەتەوە بە کڕیارێکی دیاریکراو، و پارە و گەیاندن لەسەر بنەمای ئەو بەستنە دەڕۆن. ئەگەر ئۆردەر لەسەر کڕیاری هەڵە تۆمار بکەیت، پاکەتەکە بۆ کەسی هەڵە دەچێت و حسابی دارایی تێکدەچێت. بۆیە پێش هەر شتێک دڵنیابە کڕیارە هەڵبژێردراوەکە دروستە.",
+      en: "Every order is tied to a specific customer, and billing and delivery both follow that link. If you log the order on the wrong customer, the package goes to the wrong person and the finances get tangled. So before anything else, confirm the selected customer is correct.",
+      ar: "كل طلب مرتبط بعميل محدّد، والتحصيل والتسليم يتبعان هذا الارتباط. إذا سجّلت الطلب على العميل الخطأ، يذهب الطرد للشخص الخطأ ويختلّ الحساب المالي. لذا قبل أي شيء تأكّد أن العميل المُختار صحيح.",
+      zh: "每个订单都绑定到特定客户，计费和交付都依据这一关联。如果登记到错误的客户，包裹会送错人，财务也会混乱。所以在做任何事之前，先确认所选客户无误。" },
+    example: {
+      ku: "دوو کڕیارت هەیە: AZ001 «ئاکام» و AZ010 «ئاکۆ». پێش پاشەکەوت دڵنیابە کۆدی AZ001 هەڵبژێردراوە، نەک بە هەڵە AZ010.",
+      en: "You have two customers: AZ001 \"Akam\" and AZ010 \"Ako\". Before saving, make sure code AZ001 is selected, not AZ010 by mistake.",
+      ar: "لديك عميلان: AZ001 «أكام» و AZ010 «أكو». قبل الحفظ تأكّد أن الرمز AZ001 مُختار، لا AZ010 بالخطأ.",
+      zh: "你有两位客户：AZ001「阿卡姆」和 AZ010「阿科」。保存前确认所选编号是 AZ001，而非误选 AZ010。" } },
+  { id: "tip-2",
+    short: {
+      ku: "پێش پاشەکەوتکردن، دووجار کۆد و ناوی موشتەری بپشکنە.",
+      en: "Before saving, re-check the customer's code and name twice.",
+      ar: "قبل الحفظ، راجِع رمز العميل واسمه مرّتين.",
+      zh: "保存前，请再次核对客户的编号和姓名。" },
+    detail: {
+      ku: "هەندێ کات کۆدی کڕیارەکان لێک دەچن یان ناوەکان هاوشێوەن، بۆیە ئاسانە یەکێک لە جیاتی ئەوی دیکە هەڵبژێریت. تەنها چرکەیەک خایەنە کە کۆد و ناو پێکەوە بپشکنیت، بەڵام چاککردنی هەڵە دوای پاشەکەوت کاتی زۆرتر دەخوات. ئەم پشکنینە دووجارە تۆ لە کێشەی گەورە دەپارێزێت.",
+      en: "Sometimes customer codes look alike or names are similar, so it's easy to pick one instead of another. It takes only a second to check the code and name together, but fixing the mistake after saving costs far more time. This double-check protects you from a big headache.",
+      ar: "أحياناً تتشابه رموز العملاء أو تتقارب الأسماء، فيسهل اختيار أحدهم بدل الآخر. لا يستغرق التحقق من الرمز والاسم معاً سوى ثانية، لكن تصحيح الخطأ بعد الحفظ يكلّف وقتاً أكثر بكثير. هذا التحقق المزدوج يحميك من مشكلة كبيرة.",
+      zh: "有时客户编号相像或姓名相似，很容易选错。一起核对编号和姓名只需一秒，但保存后再纠错要花费多得多的时间。这个二次核对能让你免去大麻烦。" },
+    example: {
+      ku: "لیست AZ001 «ئاکام محەمەد» پیشان دەدات. پێش پاشەکەوت دڵنیابە کۆد AZ001ـە و ناو «ئاکام محەمەد»ـە، نەک «ئاکام ئەحمەد».",
+      en: "The list shows AZ001 \"Akam Mohammed\". Before saving, confirm the code is AZ001 and the name is \"Akam Mohammed\", not \"Akam Ahmed\".",
+      ar: "تُظهِر القائمة AZ001 «أكام محمد». قبل الحفظ تأكّد أن الرمز AZ001 والاسم «أكام محمد»، لا «أكام أحمد».",
+      zh: "列表显示 AZ001「阿卡姆·穆罕默德」。保存前确认编号是 AZ001、姓名是「阿卡姆·穆罕默德」，而非「阿卡姆·艾哈迈德」。" } },
+  { id: "tip-3",
+    short: {
+      ku: "ئەگەر تراکینگ ئامادە بوو، لە کاتی تۆمارکردنەوە داخڵی بکە — دواتر کاتت کەم دەکاتەوە.",
+      en: "If the tracking number is ready, enter it while registering — it saves time later.",
+      ar: "إذا كان رقم التتبّع جاهزاً، أدخِله أثناء التسجيل — يوفّر وقتك لاحقاً.",
+      zh: "如果已有运单号，登记时一并录入，可节省后续时间。" },
+    detail: {
+      ku: "تراکینگ نەمبەر ئەو ژمارەیەیە کە پاکەتەکە پێی دەناسرێتەوە و بەدوایدا دەگەڕێیت. ئەگەر لە کاتی تۆمارکردنی ئۆردەردا ئامادە بوو و یەکسەر داخڵی بکەیت، پێویست ناکات دواتر بگەڕێیتەوە و ئۆردەرەکە بکەیتەوە بۆ زیادکردنی. ئەمە کارەکە یەک جار تەواو دەکات و لیستی «بێ تراکینگ» کورت دەکاتەوە.",
+      en: "The tracking number is the code by which the package is identified and traced. If it's ready while you register the order and you enter it right away, you won't have to come back and reopen the order to add it. This finishes the job in one go and shortens the \"no tracking\" list.",
+      ar: "رقم التتبّع هو الرمز الذي يُعرَف به الطرد ويُتتبَّع. إذا كان جاهزاً أثناء تسجيل الطلب وأدخلته فوراً، فلن تضطر للعودة وإعادة فتح الطلب لإضافته. هذا يُنهي العمل دفعة واحدة ويقصّر قائمة «بدون تتبّع».",
+      zh: "运单号是识别和追踪包裹的编号。如果登记订单时它已就绪并立即录入，就不必稍后返回重新打开订单去补录。这样一次性完成工作，也缩短了「无运单号」列表。" },
+    example: {
+      ku: "کڕیار AZ001 تراکینگی YT7612345678 پێیداویت → لە هەمان فۆرمی تۆمارکردندا داخڵی بکە، نەک دواتر.",
+      en: "Customer AZ001 gave you tracking YT7612345678 → enter it in the same registration form, not later.",
+      ar: "أعطاك العميل AZ001 رقم التتبّع YT7612345678 → أدخِله في نفس نموذج التسجيل، لا لاحقاً.",
+      zh: "客户 AZ001 给了你运单号 YT7612345678 → 在同一登记表单中录入，而非稍后补录。" } },
+  { id: "tip-4",
+    short: {
+      ku: "جۆری کاڵا و عەدەد بە وردی پڕبکەرەوە — کاریگەری ڕاستەوخۆی لەسەر نرخ هەیە.",
+      en: "Fill in the product type and quantity carefully — they directly affect the price.",
+      ar: "املأ نوع المنتج والكمية بدقّة — لهما تأثير مباشر على السعر.",
+      zh: "仔细填写商品类型和数量，它们直接影响价格。" },
+    detail: {
+      ku: "جۆری کاڵا و عەدەد بنەمای حسابی نرخن — هەندێ جۆر کرێی جیاوازیان هەیە و عەدەد کۆی گشتی دیاری دەکات. ئەگەر بە هەڵە داخڵیان بکەیت، نرخی ئۆردەر هەڵە دەبێت و یان کڕیار زۆر چارج دەکرێت یان کەم. وردی لێرەدا ڕاستەوخۆ دەبێتە پارەی دروست.",
+      en: "Product type and quantity are the basis of the price calculation — some types carry different rates, and quantity sets the total. If you enter them wrong, the order price is wrong and the customer is over- or under-charged. Accuracy here turns directly into correct money.",
+      ar: "نوع المنتج والكمية هما أساس احتساب السعر — بعض الأنواع لها أسعار مختلفة، والكمية تحدّد الإجمالي. إذا أدخلتهما خطأً، يصبح سعر الطلب خاطئاً ويُحصَّل العميل أكثر أو أقل. الدقّة هنا تتحوّل مباشرة إلى مبلغ صحيح.",
+      zh: "商品类型和数量是价格计算的基础——有些类型费率不同，数量决定总额。录入错误会导致订单价格出错，向客户多收或少收。这里的准确直接转化为正确的金额。" },
+    example: {
+      ku: "کڕیار ٣ دانە مۆبایل دەنێرێت بەڵام تۆ ١ داخڵ دەکەیت → نرخ بۆ ١ دانە حساب دەکرێت و کۆمپانیا قازانجی ٢ دانە لەدەست دەدات.",
+      en: "The customer ships 3 phones but you enter 1 → the price is calculated for 1, and the company loses the profit on 2.",
+      ar: "يشحن العميل 3 هواتف لكنك تُدخِل 1 → يُحتسَب السعر لقطعة واحدة وتخسر الشركة ربح القطعتين.",
+      zh: "客户寄了 3 部手机但你录入 1 → 按 1 件计价，公司损失了 2 件的利润。" } },
+  { id: "tip-5",
+    short: {
+      ku: "وێنەی کاڵا زیاد بکە — لە کاتی گەیاندندا ناسینەوەی پاکەت ئاسانتر دەکات.",
+      en: "Add a product photo — it makes the package easier to identify at delivery.",
+      ar: "أضِف صورة للمنتج — تُسهّل التعرّف على الطرد عند التسليم.",
+      zh: "添加商品照片，便于交付时识别包裹。" },
+    detail: {
+      ku: "وێنەی کاڵا وایدەکات ستاف و کڕیار بزانن ناوەڕۆکی پاکەت چییە، بەبێ ئەوەی بیکەنەوە. لە کاتی گەیاندن یان دۆزینەوەی پاکەتی بێخاوەن، وێنە یارمەتیدەرێکی گەورەیە بۆ پشتڕاستکردنەوە. هەروەها ئەگەر کاڵا زیان ببینێت، وێنەی پێشوەخت بەڵگەیە.",
+      en: "A product photo lets staff and the customer know what's inside the package without opening it. At delivery, or when finding an unclaimed package, the photo is a big help for confirmation. It's also evidence if the item is damaged later.",
+      ar: "صورة المنتج تُمكّن الموظّفين والعميل من معرفة محتوى الطرد دون فتحه. عند التسليم أو عند إيجاد طرد بلا صاحب، تكون الصورة عوناً كبيراً للتأكيد. وهي أيضاً دليل إن تضرّرت السلعة لاحقاً.",
+      zh: "商品照片让员工和客户无需打开包裹即可知道内容。在交付或寻找无主包裹时，照片对确认大有帮助。如果商品日后受损，它也是证据。" },
+    example: {
+      ku: "پاکەتی AZ001 وێنەی جووتە پێڵاوێکی هەیە → لە کاتی گەیاندن، خێرا لەگەڵ داواکارییەکەی دەگونجێنیت بەبێ کردنەوەی.",
+      en: "AZ001's package has a photo of a pair of shoes → at delivery you quickly match it to the order without opening it.",
+      ar: "طرد AZ001 يحمل صورة لزوج أحذية → عند التسليم تطابقه بسرعة مع الطلب دون فتحه.",
+      zh: "AZ001 的包裹有一张鞋子的照片 → 交付时无需打开即可快速与订单匹配。" } },
+  { id: "tip-6",
+    short: {
+      ku: "ئۆردەر نەمبەری دووبارە داخڵ مەکە — هەر ئۆردەرێک ئۆردەر نەمبەرێکی ناوازەی هەیە.",
+      en: "Don't reuse an order number — each order has a unique one.",
+      ar: "لا تُكرّر رقم الطلب — لكل طلب رقم فريد.",
+      zh: "不要重复使用订单号——每个订单都有唯一编号。" },
+    detail: {
+      ku: "ئۆردەر نەمبەر ناسنامەی تاکی هەر ئۆردەرێکە و سیستەم پێی جیایان دەکاتەوە. ئەگەر ژمارەیەک دووبارە بەکاربهێنیت، سیستەم تێکدەچێت کە کام ئۆردەر مەبەستە و گەڕان و راپۆرتەکان هەڵە دەبن. هەمیشە ژمارەی نوێ بەکاربهێنە بۆ هەر ئۆردەرێکی نوێ.",
+      en: "The order number is the unique identity of each order, and the system tells orders apart by it. If you reuse a number, the system can't tell which order you mean, and searches and reports go wrong. Always use a fresh number for each new order.",
+      ar: "رقم الطلب هو الهوية الفريدة لكل طلب، والنظام يميّز الطلبات به. إذا أعدت استخدام رقم، يلتبس على النظام أيّ طلب تقصد، وتختلّ عمليات البحث والتقارير. استخدم دائماً رقماً جديداً لكل طلب جديد.",
+      zh: "订单号是每个订单的唯一身份，系统据此区分订单。若重复使用某个编号，系统无法分辨你指的是哪个订单，搜索和报表都会出错。每个新订单务必使用新编号。" },
+    example: {
+      ku: "ئۆردەری AZ001 ژمارەی ORD-1042 هەیە. بۆ ئۆردەری دواتری هەمان کڕیار، ORD-1043 بەکاربهێنە، نەک دووبارە ORD-1042.",
+      en: "AZ001's order has number ORD-1042. For the same customer's next order, use ORD-1043, not ORD-1042 again.",
+      ar: "طلب AZ001 يحمل الرقم ORD-1042. لطلب العميل التالي استخدم ORD-1043، لا ORD-1042 مجدداً.",
+      zh: "AZ001 的订单编号为 ORD-1042。该客户的下一个订单应使用 ORD-1043，而非再次使用 ORD-1042。" } },
+  { id: "tip-7",
+    short: {
+      ku: "ئۆردەری بێ تراکینگ زۆر مەهێڵەرەوە — لە «ئاگاداری تراکینگ» بەردەوام بیانپشکنە.",
+      en: "Don't leave orders without tracking for long — check them in \"Tracking alerts\".",
+      ar: "لا تترك الطلبات بدون تتبّع طويلاً — تابِعها في «تنبيهات التتبّع».",
+      zh: "不要让订单长期没有运单号——在「追踪提醒」中及时查看。" },
+    detail: {
+      ku: "ئۆردەری بێ تراکینگ ناتوانرێت بەدوایدا بگەڕێیت یان لە بۆکس سکان بکرێت — بەکردەوە ون دەبێت. بەشی «ئاگاداری تراکینگ» ئەو ئۆردەرانە کۆدەکاتەوە تاکو زوو چارەسەریان بکەیت. هەرچی زووتر تراکینگ زیاد بکەیت، ئۆردەرەکە خێراتر دەچێتە پرۆسەی گواستنەوە.",
+      en: "An order without tracking can't be traced or scanned into a box — in practice it gets lost. The \"Tracking alerts\" section gathers those orders so you can resolve them early. The sooner you add a tracking number, the faster the order enters the shipping flow.",
+      ar: "الطلب بدون تتبّع لا يمكن تتبّعه أو مسحه في صندوق — عملياً يضيع. قسم «تنبيهات التتبّع» يجمع تلك الطلبات لتعالجها مبكراً. وكلما أضفت رقم التتبّع أسرع، دخل الطلب مسار الشحن أسرع.",
+      zh: "没有运单号的订单无法追踪，也无法扫描入箱——实际上会丢失。「追踪提醒」区汇集这些订单，便于你尽早处理。越早补录运单号，订单就越快进入运输流程。" },
+    example: {
+      ku: "ئۆردەری AZ001 سێ ڕۆژە بێ تراکینگە و لە «ئاگاداری تراکینگ» دەردەکەوێت → پەیوەندی بە کڕیارەوە بکە و ژمارەکە وەربگرە.",
+      en: "AZ001's order has been without tracking for three days and shows up in \"Tracking alerts\" → contact the customer and get the number.",
+      ar: "طلب AZ001 بلا تتبّع منذ ثلاثة أيام ويظهر في «تنبيهات التتبّع» → تواصل مع العميل واحصل على الرقم.",
+      zh: "AZ001 的订单已三天没有运单号，出现在「追踪提醒」中 → 联系客户并取得编号。" } },
+  { id: "tip-8",
+    short: {
+      ku: "پێش داخستنی بۆکس، دووبارە هەموو پاکەتەکان سکان بکە تاکو هیچ پاکێجێک لە یاد نەچێت.",
+      en: "Before sealing a box, re-scan every package so none is forgotten.",
+      ar: "قبل إغلاق الصندوق، أعِد مسح كل الطرود حتى لا يُنسى أيٌّ منها.",
+      zh: "封箱前重新扫描所有包裹，确保不遗漏任何一个。" },
+    detail: {
+      ku: "هەر پاکەتێک کە سکان دەکرێت، دەچێتە ناو بۆکسەکەوە و لە سیستەمدا تۆمار دەبێت. ئەگەر پاکەتێک سکان نەکرابێت، لە بۆکس بەجێدەمێنێتەوە و کڕیارەکەی پاکەتەکەی ناگاتێ. پشکنینی کۆتایی پێش داخستن دڵنیات دەکات ژمارەی پاکەتە سکانکراوەکان لەگەڵ ئەوانەی لەبەردەستن یەکن.",
+      en: "Every scanned package goes into the box and is recorded in the system. If a package wasn't scanned, it's left out of the box and its customer never receives it. A final check before sealing makes sure the number of scanned packages matches the ones in hand.",
+      ar: "كل طرد يُمسَح يدخل الصندوق ويُسجَّل في النظام. إذا لم يُمسَح طرد، يبقى خارج الصندوق ولا يستلمه عميله أبداً. التحقق النهائي قبل الإغلاق يضمن تطابق عدد الطرود الممسوحة مع التي بين يديك.",
+      zh: "每个扫描的包裹都进入箱子并记入系统。若某包裹未被扫描，就会被遗漏在箱外，其客户永远收不到。封箱前的最终核对可确保扫描数量与手中实物相符。" },
+    example: {
+      ku: "١٢ پاکەتت لەبەردەستە بەڵام سیستەم تەنها ١١ سکانکراو پیشان دەدات → یەک پاکەت لەبیر کراوە، بیدۆزەرەوە و سکانی بکە پێش داخستن.",
+      en: "You have 12 packages in hand but the system shows only 11 scanned → one was missed; find it and scan it before sealing.",
+      ar: "لديك 12 طرداً لكن النظام يُظهِر 11 ممسوحاً فقط → نُسي واحد؛ جِده وامسَحه قبل الإغلاق.",
+      zh: "你手上有 12 个包裹，但系统只显示 11 个已扫描 → 漏了一个；封箱前找到并扫描它。" } },
+  { id: "tip-9",
+    short: {
+      ku: "نرخی گواستنەوەی بۆکس پشکنین بکە پێش ناردن — دوای ناردن گۆڕینی ئاستەمە.",
+      en: "Check the box's shipping price before sending — it's hard to change afterwards.",
+      ar: "تحقّق من سعر شحن الصندوق قبل الإرسال — تغييره لاحقاً صعب.",
+      zh: "发货前核对箱子的运费——发货后很难更改。" },
+    detail: {
+      ku: "کاتێک بۆکس دەنێردرێت، نرخی گواستنەوەکەی لە کڕیار(ەکان) چارج دەکرێت و لە حساباتدا جێگیر دەبێت. گۆڕینی دوای ناردن مانای گەڕاندنەوەی چارج و دووبارە حسابکردنە، کە ئاڵۆزە. بۆیە پێش کرتەی «ناردن» نرخەکە بپشکنە.",
+      en: "When a box is sent, its shipping price is charged to the customer(s) and locked into the accounts. Changing it after sending means reversing the charge and recalculating, which is messy. So check the price before you click \"Send\".",
+      ar: "عند إرسال الصندوق، يُحصَّل سعر شحنه من العميل(العملاء) ويُثبَّت في الحسابات. تغييره بعد الإرسال يعني عكس التحصيل وإعادة الاحتساب، وهو أمر معقّد. لذا تحقّق من السعر قبل النقر على «إرسال».",
+      zh: "箱子发出时，其运费会向客户计费并锁定到账目中。发货后更改意味着撤销计费并重新计算，相当麻烦。所以点击「发送」前先核对价格。" },
+    example: {
+      ku: "بۆکسێک ١٠kg لەخۆ دەگرێت بە نرخی $7/kg → نرخی گواستنەوە دەبێت $70. پێش ناردن دڵنیابە ٧٠ـە، نەک ٦٠ بەهۆی هەڵەی کێش.",
+      en: "A box holds 10 kg at $7/kg → shipping should be $70. Before sending, confirm it's $70, not $60 due to a weight error.",
+      ar: "صندوق يحوي 10 كغ بسعر 7$/كغ → يجب أن يكون الشحن 70$. قبل الإرسال تأكّد أنه 70$، لا 60$ بسبب خطأ في الوزن.",
+      zh: "一个箱子装 10 公斤、每公斤 7 美元 → 运费应为 70 美元。发货前确认是 70 美元，而非因重量错误变成 60 美元。" } },
+  { id: "tip-10",
+    short: {
+      ku: "پاکەتە بێخاوەنەکان زوو خاوەنیان بدۆزەرەوە — درەنگکەوتن دەبێتە کێشە.",
+      en: "Find owners for unclaimed packages quickly — delays cause problems.",
+      ar: "ابحث عن أصحاب الطرود غير المطالَب بها بسرعة — التأخير يسبّب مشاكل.",
+      zh: "尽快为无主包裹找到主人——拖延会带来麻烦。" },
+    detail: {
+      ku: "پاکەتی بێخاوەن ئەوەیە کە گەیشتووە بەڵام بە هیچ کڕیارێکەوە نەبەستراوەتەوە. هەرچی زیاتر بمێنێتەوە، بیرکردنەوەی لێی سەختتر دەبێت و شوێنی کۆگا داگیر دەکات. بە تراکینگ یان وێنە بەدوای خاوەنەکەیدا بگەڕێ و یەکسەر ببەستەوە بە ئۆردەرەکەیەوە.",
+      en: "An unclaimed package is one that has arrived but isn't linked to any customer. The longer it sits, the harder it is to recall and the more storage space it ties up. Use the tracking number or photo to find its owner and link it to the order right away.",
+      ar: "الطرد بلا صاحب هو الذي وصل لكنه غير مرتبط بأي عميل. كلما طال بقاؤه، صعب تذكّره وشغل مساحة في المخزن. استخدم رقم التتبّع أو الصورة لإيجاد صاحبه واربطه بالطلب فوراً.",
+      zh: "无主包裹是已到货但未关联任何客户的包裹。它停留越久，越难追溯，也越占用仓储空间。用运单号或照片找到主人，并立即关联到订单。" },
+    example: {
+      ku: "پاکەتێک بە تراکینگ YT7600001111 گەیشتووە بەڵام بێخاوەنە → لە سیستەم بگەڕێ؛ دەردەکەوێت هی AZ001ـە و یەکسەر ببەستەوە.",
+      en: "A package arrived with tracking YT7600001111 but is unclaimed → search the system; it turns out to be AZ001's and link it at once.",
+      ar: "وصل طرد برقم التتبّع YT7600001111 لكنه بلا صاحب → ابحث في النظام؛ يتبيّن أنه لـ AZ001 فاربطه فوراً.",
+      zh: "一个运单号为 YT7600001111 的包裹到货但无主 → 在系统中搜索；发现属于 AZ001，立即关联。" } },
+  { id: "tip-11",
+    short: {
+      ku: "ژمارەی مۆبایلی کڕیار بە دروستی تۆمار بکە — بۆ ئاگادارکردنەوەکان گرنگە.",
+      en: "Record the customer's phone number correctly — it matters for notifications.",
+      ar: "سجّل رقم هاتف العميل بشكل صحيح — مهم للإشعارات.",
+      zh: "正确录入客户的手机号——这对通知很重要。" },
+    detail: {
+      ku: "ژمارەی مۆبایل ڕێگای سەرەکی پەیوەندی لەگەڵ کڕیارە — بۆ ئاگادارکردنەوەی دۆخی ئۆردەر و وەرگرتنی پاکەت. ئەگەر ژمارەکە هەڵە بێت، کڕیار هیچ پەیامێک وەرناگرێت و لەوانەیە پاکەتەکەی درەنگ وەربگرێت. بۆیە ژمارەکە بە وردی و بە ژمارەی دروستی نێودەوڵەتی تۆمار بکە.",
+      en: "The phone number is the main channel to reach the customer — for order-status alerts and package pickup. If the number is wrong, the customer gets no message and may collect their package late. So record it accurately, with the correct country format.",
+      ar: "رقم الهاتف هو القناة الرئيسية للوصول للعميل — لتنبيهات حالة الطلب واستلام الطرد. إذا كان الرقم خاطئاً، لا يصل العميل أي رسالة وقد يتأخّر في استلام طرده. لذا سجّله بدقّة وبالصيغة الدولية الصحيحة.",
+      zh: "手机号是联系客户的主要渠道——用于订单状态通知和包裹取件。号码错误，客户收不到任何信息，可能延迟取件。所以请准确录入，并采用正确的国际格式。" },
+    example: {
+      ku: "کڕیار AZ001 ژمارەی 0750 123 4567 ـە. ئەگەر بە هەڵە 0750 123 4576 بنووسیت، پەیامەکان بۆ کەسی هەڵە دەچن.",
+      en: "Customer AZ001's number is 0750 123 4567. If you mistype it as 0750 123 4576, the messages go to the wrong person.",
+      ar: "رقم العميل AZ001 هو 0750 123 4567. إذا كتبته خطأً 0750 123 4576، تذهب الرسائل للشخص الخطأ.",
+      zh: "客户 AZ001 的号码是 0750 123 4567。若误输为 0750 123 4576，信息会发给错误的人。" } },
+  { id: "tip-12",
+    short: {
+      ku: "جۆری خزمەتی کڕیار دیاری بکە (پاکێجی تەواو / کرین بە تێچوو / سێلف ئۆردەر) بۆ فلتەری خێراتر.",
+      en: "Set the customer's service types (full package / cost purchase / self order) for faster filtering.",
+      ar: "حدّد أنواع خدمة العميل (الطرد الكامل / الشراء بالتكلفة / الطلب الذاتي) لتصفية أسرع.",
+      zh: "设置客户的服务类型（完整包裹 / 成本代购 / 自购订单），便于快速筛选。" },
+    detail: {
+      ku: "هەر کڕیارێک لەوانەیە یەک یان چەند جۆری خزمەتی بەکاربهێنێت، و دیاریکردنیان وایدەکات لیستەکان بەپێی جۆری خزمەت فلتەر بکەیت. ئەمە یارمەتیت دەدات خێراتر کڕیارە گونجاوەکان بدۆزیتەوە و راپۆرتە دروستەکان دروست بکەیت. دیاریکردنی دروست لە سەرەتاوە کاتت دەپارێزێت لە داهاتوودا.",
+      en: "Each customer may use one or several service types, and tagging them lets you filter lists by service type. This helps you find the right customers faster and build accurate reports. Setting it right from the start saves time down the road.",
+      ar: "قد يستخدم كل عميل نوعاً أو عدّة أنواع من الخدمة، ووسمها يتيح لك تصفية القوائم حسب نوع الخدمة. هذا يساعدك في إيجاد العملاء المناسبين أسرع وبناء تقارير دقيقة. الضبط الصحيح من البداية يوفّر الوقت لاحقاً.",
+      zh: "每位客户可能使用一种或多种服务类型，标注后即可按服务类型筛选列表。这能帮你更快找到合适的客户并生成准确报表。一开始设置正确可省去日后的时间。" },
+    example: {
+      ku: "کڕیار AZ001 هەردوو «پاکێجی تەواو» و «سێلف ئۆردەر» بەکاردەهێنێت → هەردووکیان هەڵبژێرە؛ دواتر لە فلتەری «سێلف ئۆردەر» دەردەکەوێت.",
+      en: "Customer AZ001 uses both \"full package\" and \"self order\" → select both; later they appear in the \"self order\" filter.",
+      ar: "العميل AZ001 يستخدم «الطرد الكامل» و«الطلب الذاتي» معاً → اختَر كليهما؛ لاحقاً يظهر في تصفية «الطلب الذاتي».",
+      zh: "客户 AZ001 同时使用「完整包裹」和「自购订单」 → 两者都选中；日后在「自购订单」筛选中会出现。" } },
+  { id: "tip-13",
+    short: {
+      ku: "زانیاریی کڕیار تەواو پڕبکەرەوە — داتای ناتەواو دواتر دەبێتە کێشە.",
+      en: "Fill in the customer's details completely — incomplete data causes problems later.",
+      ar: "املأ بيانات العميل كاملةً — البيانات الناقصة تسبّب مشاكل لاحقاً.",
+      zh: "完整填写客户信息——信息不全日后会出问题。" },
+    detail: {
+      ku: "زانیاریی تەواوی کڕیار — ناو، ژمارە، شار، جۆری خزمەت — بنەمای پەیوەندی و گەیاندن و راپۆرتە. ئەگەر خانەیەک بەتاڵ بمێنێتەوە، لەوانەیە دواتر نەتوانیت پەیوەندی بکەیت یان پاکەتەکە بگەیەنیت. لە سەرەتاوە تەواوی بکە، تاکو دواتر بەدوای زانیاریدا نەگەڕێیت.",
+      en: "Complete customer data — name, phone, city, service type — is the basis for contact, delivery, and reports. If a field is left blank, you may later be unable to reach the customer or deliver the package. Fill it in fully at the start so you're not chasing missing info later.",
+      ar: "بيانات العميل الكاملة — الاسم، الهاتف، المدينة، نوع الخدمة — هي أساس التواصل والتسليم والتقارير. إذا تُرك حقل فارغاً، قد لا تتمكّن لاحقاً من الوصول للعميل أو تسليم الطرد. املأها كاملةً من البداية كي لا تطارد المعلومات الناقصة لاحقاً.",
+      zh: "完整的客户资料——姓名、电话、城市、服务类型——是联系、交付和报表的基础。若某字段留空，日后可能无法联系客户或交付包裹。一开始就填完整，免得日后到处找缺失信息。" },
+    example: {
+      ku: "بۆ AZ001 شارەکەی بەتاڵ هێشتووەتەوە → لە کاتی گەیاندن نازانیت بۆ کام شار بنێردرێت و کاتی زۆر لەدەست دەدەیت.",
+      en: "You left AZ001's city blank → at delivery you don't know which city to send to and waste a lot of time.",
+      ar: "تركت مدينة AZ001 فارغة → عند التسليم لا تعرف لأي مدينة تُرسِل وتُهدر وقتاً كثيراً.",
+      zh: "你把 AZ001 的城市留空了 → 交付时不知道该送往哪个城市，浪费大量时间。" } },
   { id: "tip-14",
     short: {
       ku: "پێش گۆڕینی نرخی ئۆردەری چارجکراو، دڵنیابە — کاریگەری لەسەر والێتی کڕیار هەیە.",
@@ -100,31 +243,86 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "An order was charged at $50. If you make it $60, the system bills the extra $10 to the customer and asks for a reason.",
       ar: "طلب حُصّل بمبلغ 50$. إذا جعلته 60$، يحتسب النظام 10$ الإضافية على العميل ويطلب سبباً.",
       zh: "某订单已按 50 美元计费。若改为 60 美元，系统会向客户收取额外的 10 美元并要求填写原因。" } },
-  { id: "tip-15", short: {
-    ku: "پارەی پێشەکی بە وردی تۆمار بکە — دواتر چارەسەری ئاستەمە.",
-    en: "Record advance payments carefully — they're hard to fix later.",
-    ar: "سجّل الدفعات المقدّمة بدقّة — يصعب تصحيحها لاحقاً.",
-    zh: "认真登记预付款——日后很难更正。" } },
-  { id: "tip-16", short: {
-    ku: "کڕیارە قەرزدارەکان لە داشبۆرد چاودێری بکە.",
-    en: "Keep an eye on debtor customers from the dashboard.",
-    ar: "راقِب العملاء المدينين من لوحة التحكم.",
-    zh: "在仪表板上留意欠款客户。" } },
-  { id: "tip-17", short: {
-    ku: "ئۆردەری گەورە (زیاتر لە $1000) چاوت لەسەر بێت.",
-    en: "Keep an eye on large orders (over $1000).",
-    ar: "راقِب الطلبات الكبيرة (أكثر من 1000$).",
-    zh: "留意大额订单（超过 1000 美元）。" } },
-  { id: "tip-18", short: {
-    ku: "قازانج و خەرجیی ڕۆژانە لە داشبۆرد بپشکنە.",
-    en: "Review daily profit and expenses on the dashboard.",
-    ar: "راجِع الأرباح والمصاريف اليومية في لوحة التحكم.",
-    zh: "在仪表板上查看每日利润和支出。" } },
-  { id: "tip-19", short: {
-    ku: "پێش ناردن، دڵنیابە پاکەتەکان لە باچی دروستدان.",
-    en: "Before shipping, make sure the packages are in the correct batch.",
-    ar: "قبل الشحن، تأكّد أن الطرود في الدفعة الصحيحة.",
-    zh: "发货前，确认包裹在正确的批次中。" } },
+  { id: "tip-15",
+    short: {
+      ku: "پارەی پێشەکی بە وردی تۆمار بکە — دواتر چارەسەری ئاستەمە.",
+      en: "Record advance payments carefully — they're hard to fix later.",
+      ar: "سجّل الدفعات المقدّمة بدقّة — يصعب تصحيحها لاحقاً.",
+      zh: "认真登记预付款——日后很难更正。" },
+    detail: {
+      ku: "پارەی پێشەکی ئەو بڕەیە کە کڕیار پێش تەواوبوونی ئۆردەر دەیدات، و لە باڵانسی کڕیار دادەنرێت. ئەگەر بە هەڵە تۆماری بکەیت، حسابی کڕیار تێکدەچێت و دواتر دۆزینەوە و چاککردنی ئاڵۆزە. بۆیە بڕ و کڕیارەکە بە وردی بپشکنە پێش تۆمارکردن.",
+      en: "An advance payment is the amount a customer pays before the order is finished, and it sits in the customer's balance. If recorded wrong, the customer's account is thrown off and tracing and fixing it later is messy. So check the amount and the customer carefully before recording.",
+      ar: "الدفعة المقدّمة هي المبلغ الذي يدفعه العميل قبل اكتمال الطلب، وتُدرَج في رصيد العميل. إذا سُجّلت خطأً، يختلّ حساب العميل ويصعب تتبّعها وتصحيحها لاحقاً. لذا تحقّق من المبلغ والعميل بدقّة قبل التسجيل.",
+      zh: "预付款是客户在订单完成前支付的金额，计入客户余额。若登记错误，客户账户会出错，日后追查和更正都很麻烦。所以登记前请仔细核对金额和客户。" },
+    example: {
+      ku: "کڕیار AZ001 پێشەکی $30 دەدات → بە دروستی $30 لەسەر AZ001 تۆمار بکە؛ ئەگەر بە هەڵە $300 بنووسیت، باڵانسی هەڵە دەبێت.",
+      en: "Customer AZ001 pays a $30 advance → record exactly $30 on AZ001; if you mistype $300, the balance is wrong.",
+      ar: "يدفع العميل AZ001 دفعة مقدّمة 30$ → سجّل 30$ بالضبط على AZ001؛ إذا كتبت 300$ خطأً، يصبح الرصيد خاطئاً.",
+      zh: "客户 AZ001 预付 30 美元 → 在 AZ001 名下准确登记 30 美元；若误输 300 美元，余额就会出错。" } },
+  { id: "tip-16",
+    short: {
+      ku: "کڕیارە قەرزدارەکان لە داشبۆرد چاودێری بکە.",
+      en: "Keep an eye on debtor customers from the dashboard.",
+      ar: "راقِب العملاء المدينين من لوحة التحكم.",
+      zh: "在仪表板上留意欠款客户。" },
+    detail: {
+      ku: "کڕیاری قەرزدار ئەوەیە کە باڵانسەکەی نەرێیە — واتە زیاتری لێ چارج کراوە لەوەی پارەی داوە. داشبۆرد ئەم کڕیارانە کۆدەکاتەوە تاکو زوو پەیوەندییان پێوە بکەیت و قەرز کۆبکەیتەوە. چاودێریی بەردەوام ڕێگری دەکات لە کۆبوونەوەی قەرزی گەورە.",
+      en: "A debtor customer is one whose balance is negative — that is, charged more than they've paid. The dashboard gathers these customers so you can contact them early and collect the debt. Steady monitoring prevents large debts from piling up.",
+      ar: "العميل المدين هو من رصيده سالب — أي حُصّل منه أكثر مما دفع. تجمع لوحة التحكم هؤلاء العملاء لتتواصل معهم مبكراً وتُحصّل الدين. المراقبة المستمرّة تمنع تراكم الديون الكبيرة.",
+      zh: "欠款客户是指余额为负的客户——即计费多于其已付款。仪表板汇集这些客户，便于你尽早联系并催收。持续监控可防止大额欠款堆积。" },
+    example: {
+      ku: "لە داشبۆرد دەبینیت AZ001 باڵانسی −$420ـە → پەیوەندی پێوە بکە بۆ یەکلایی کردنەوەی قەرزەکە پێش ئەوەی زیاتر بێت.",
+      en: "On the dashboard you see AZ001 has a −$420 balance → contact them to settle the debt before it grows.",
+      ar: "في لوحة التحكم ترى أن رصيد AZ001 هو −420$ → تواصل معه لتسوية الدين قبل أن يكبر.",
+      zh: "在仪表板上你看到 AZ001 余额为 −420 美元 → 联系他在欠款增大前结清。" } },
+  { id: "tip-17",
+    short: {
+      ku: "ئۆردەری گەورە (زیاتر لە $1000) چاوت لەسەر بێت.",
+      en: "Keep an eye on large orders (over $1000).",
+      ar: "راقِب الطلبات الكبيرة (أكثر من 1000$).",
+      zh: "留意大额订单（超过 1000 美元）。" },
+    detail: {
+      ku: "ئۆردەری گەورە مەترسیی داراییی زیاتری هەیە — هەڵەیەکی بچووک لە نرخ یان کێش دەبێتە زیانێکی گەورە. داشبۆرد ئەم ئۆردەرانە جیادەکاتەوە تاکو دووبارە بپشکنیت و دڵنیابیت هەموو شتێک دروستە. چاودێریی زیاتر بۆ ئۆردەری گەورە، پاراستنی پارەی زیاترە.",
+      en: "A large order carries more financial risk — a small error in price or weight becomes a big loss. The dashboard flags these orders so you can re-check them and make sure everything is right. Extra attention on large orders means protecting more money.",
+      ar: "الطلب الكبير يحمل مخاطر مالية أكبر — خطأ صغير في السعر أو الوزن يصبح خسارة كبيرة. تُبرِز لوحة التحكم هذه الطلبات لتعيد التحقق منها وتتأكّد أن كل شيء صحيح. الاهتمام الإضافي بالطلبات الكبيرة يعني حماية أموال أكثر.",
+      zh: "大额订单财务风险更大——价格或重量上的小错误会变成大损失。仪表板会标记这些订单，便于你复核并确保一切无误。对大额订单多加留意，就是保护更多的钱。" },
+    example: {
+      ku: "ئۆردەری AZ001 بە $1,250 لە داشبۆرد دەردەکەوێت → نرخ و کێش و کڕیار دووبارە بپشکنە پێش چارجکردن.",
+      en: "AZ001's $1,250 order appears on the dashboard → re-check the price, weight, and customer before charging.",
+      ar: "يظهر طلب AZ001 بقيمة 1,250$ في لوحة التحكم → أعِد التحقق من السعر والوزن والعميل قبل التحصيل.",
+      zh: "AZ001 价值 1,250 美元的订单出现在仪表板上 → 计费前复核价格、重量和客户。" } },
+  { id: "tip-18",
+    short: {
+      ku: "قازانج و خەرجیی ڕۆژانە لە داشبۆرد بپشکنە.",
+      en: "Review daily profit and expenses on the dashboard.",
+      ar: "راجِع الأرباح والمصاريف اليومية في لوحة التحكم.",
+      zh: "在仪表板上查看每日利润和支出。" },
+    detail: {
+      ku: "داشبۆرد قازانج و خەرجیی هەر ڕۆژێک پیشان دەدات، تاکو دۆخی داراییی کۆمپانیا بزانیت. پشکنینی ڕۆژانە یارمەتیت دەدات زوو هەڵە یان لاوازی بدۆزیتەوە — وەک ڕۆژێک کە خەرجی لە قازانج زیاترە. ئەم چاودێرییە بڕیاری باشتر دەداتە دەستت.",
+      en: "The dashboard shows each day's profit and expenses so you can see the company's financial health. A daily review helps you spot problems or weakness early — like a day where expenses exceed profit. This monitoring leads to better decisions.",
+      ar: "تُظهِر لوحة التحكم أرباح ومصاريف كل يوم لتعرف الوضع المالي للشركة. المراجعة اليومية تساعدك على اكتشاف المشاكل أو الضعف مبكراً — كيوم تتجاوز فيه المصاريف الأرباح. هذه المراقبة تقود لقرارات أفضل.",
+      zh: "仪表板显示每天的利润和支出，让你了解公司的财务状况。每日查看有助于尽早发现问题或薄弱环节——比如支出超过利润的某一天。这种监控带来更好的决策。" },
+    example: {
+      ku: "ئەمڕۆ قازانج $320 و خەرجی $400 → داشبۆرد زیانی $80 پیشان دەدات؛ هۆکارەکە بدۆزەرەوە.",
+      en: "Today's profit is $320 and expenses $400 → the dashboard shows an $80 loss; find out why.",
+      ar: "ربح اليوم 320$ والمصاريف 400$ → تُظهِر لوحة التحكم خسارة 80$؛ ابحث عن السبب.",
+      zh: "今天利润 320 美元、支出 400 美元 → 仪表板显示亏损 80 美元；查明原因。" } },
+  { id: "tip-19",
+    short: {
+      ku: "پێش ناردن، دڵنیابە پاکەتەکان لە باچی دروستدان.",
+      en: "Before shipping, make sure the packages are in the correct batch.",
+      ar: "قبل الشحن، تأكّد أن الطرود في الدفعة الصحيحة.",
+      zh: "发货前，确认包裹在正确的批次中。" },
+    detail: {
+      ku: "باچ کۆمەڵێک پاکەتە کە پێکەوە بە یەک ڕێگا (ئاسمانی/دەریایی) و یەک ڕێژەی نرخ دەنێردرێن. ئەگەر پاکەتێک لە باچی هەڵە بێت، بە ڕێگا یان نرخی هەڵە حساب دەکرێت و گەیشتنەکەی دواخراو دەبێت. بۆیە پێش ناردن دڵنیابە هەر پاکەتێک لە باچی دروستی خۆیەتی.",
+      en: "A batch is a group of packages sent together by one route (air/sea) and one rate. If a package is in the wrong batch, it's priced by the wrong route or rate and its arrival is delayed. So before shipping, make sure each package is in its correct batch.",
+      ar: "الدفعة مجموعة طرود تُرسَل معاً بمسار واحد (جوّي/بحري) وسعر واحد. إذا كان طرد في الدفعة الخطأ، يُسعّر بمسار أو سعر خاطئ ويتأخّر وصوله. لذا قبل الشحن تأكّد أن كل طرد في دفعته الصحيحة.",
+      zh: "批次是一组按同一路线（空运/海运）和同一费率一起发运的包裹。若某包裹在错误的批次中，会按错误的路线或费率计价，到货也会延误。所以发货前确认每个包裹都在正确的批次中。" },
+    example: {
+      ku: "پاکەتی AZ001 بە ئاسمانی دەچێت بەڵام بە هەڵە لە باچی دەریایی دایە → بیگوازەرەوە بۆ باچی ئاسمانی پێش ناردن.",
+      en: "AZ001's package goes by air but is wrongly in the sea batch → move it to the air batch before shipping.",
+      ar: "طرد AZ001 يُشحَن جوّاً لكنه خطأً في دفعة بحرية → انقله إلى الدفعة الجوّية قبل الشحن.",
+      zh: "AZ001 的包裹走空运，却被误放在海运批次中 → 发货前将其移至空运批次。" } },
   { id: "tip-20",
     short: {
       ku: "نرخی هەر باچێک (تێچوو/نرخ) بە وردی دابنێ — قازانج لێوەی دەردەچێت.",
@@ -141,66 +339,198 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Air: cost $4/kg, price $7/kg → $3 profit per kg.",
       ar: "جوّي: التكلفة 4$/كغ، السعر 7$/كغ → ربح 3$ لكل كغ.",
       zh: "空运：成本 4 美元/公斤，售价 7 美元/公斤 → 每公斤利润 3 美元。" } },
-  { id: "tip-21", short: {
-    ku: "خێراییی باچەکان (چەند ڕۆژ گەیشتوون) بەراورد بکە بۆ باشترکردنی خزمەت.",
-    en: "Compare batch speeds (days to arrive) to improve service.",
-    ar: "قارِن سرعة الدفعات (أيام الوصول) لتحسين الخدمة.",
-    zh: "比较各批次的速度（到货天数）以改进服务。" } },
-  { id: "tip-22", short: {
-    ku: "بۆ دۆزینەوەی خێرای هەر فەنکشنێک، Ctrl+K بەکاربهێنە.",
-    en: "Press Ctrl+K to quickly find any function.",
-    ar: "اضغط Ctrl+K للعثور بسرعة على أي وظيفة.",
-    zh: "按 Ctrl+K 可快速查找任意功能。" } },
-  { id: "tip-23", short: {
-    ku: "لە ستریپە سەرەوەکە دوگمەی گەڕانەوە/پێش هەیە — خێراتر دەگەڕێیتەوە.",
-    en: "The top bar has back/forward buttons — navigate faster.",
-    ar: "يحتوي الشريط العلوي على أزرار رجوع/تقدّم — تنقّل أسرع.",
-    zh: "顶部栏有后退/前进按钮，可更快导航。" } },
-  { id: "tip-24", short: {
-    ku: "شۆرتکەتە پینکراوەکانی سەرەوە بۆ کارە ڕۆژانەییەکان بەکاربهێنە.",
-    en: "Use the pinned top-bar shortcuts for your daily tasks.",
-    ar: "استخدم اختصارات الشريط العلوي المثبّتة لمهامك اليومية.",
-    zh: "使用顶部栏固定的快捷方式处理日常任务。" } },
-  { id: "tip-25", short: {
-    ku: "لە لیستەکاندا، بە ئایکۆنی کۆپی، کۆد/تراکینگ بە یەک کرتە کۆپی بکە.",
-    en: "In lists, copy a code/tracking with one click using the copy icon.",
-    ar: "في القوائم، انسخ الرمز/التتبّع بنقرة واحدة عبر أيقونة النسخ.",
-    zh: "在列表中，用复制图标一键复制编号/运单号。" } },
-  { id: "tip-26", short: {
-    ku: "لە لیستەکاندا، ماوس بخەرە سەر وێنەی کاڵا بۆ بینینی گەورەتر.",
-    en: "In lists, hover over a product photo to see it larger.",
-    ar: "في القوائم، مرّر المؤشّر فوق صورة المنتج لرؤيتها أكبر.",
-    zh: "在列表中，将鼠标悬停在商品照片上可放大查看。" } },
-  { id: "tip-27", short: {
-    ku: "دۆخی تاریک/ڕووناک لە سەرەوەی شاشە بەپێی حەزی خۆت بگۆڕە.",
-    en: "Toggle dark/light mode at the top of the screen to your liking.",
-    ar: "بدّل بين الوضع الداكن/الفاتح من أعلى الشاشة حسب رغبتك.",
-    zh: "在屏幕顶部按喜好切换深色/浅色模式。" } },
-  { id: "tip-28", short: {
-    ku: "ئەگەر کۆمپیوتەرەکە هاوبەشە، دوای کار لە سیستەم دەربچۆ.",
-    en: "If the computer is shared, log out when you finish.",
-    ar: "إذا كان الحاسوب مشتركاً، سجّل الخروج عند الانتهاء.",
-    zh: "如果是共用电脑，完成后请退出登录。" } },
-  { id: "tip-29", short: {
-    ku: "وشەی نهێنی خۆت لەگەڵ کەس هاوبەش مەکە.",
-    en: "Never share your password with anyone.",
-    ar: "لا تُشارك كلمة مرورك مع أحد.",
-    zh: "切勿与任何人分享你的密码。" } },
-  { id: "tip-30", short: {
-    ku: "پێش سڕینەوەی هەر شتێک دڵنیابە — هەندێ سڕینەوە ناگەڕێتەوە.",
-    en: "Be sure before deleting anything — some deletions can't be undone.",
-    ar: "تأكّد قبل حذف أي شيء — بعض عمليات الحذف لا يمكن التراجع عنها.",
-    zh: "删除任何内容前请确认——有些删除无法撤销。" } },
-  { id: "tip-31", short: {
-    ku: "هەڵە بینیت؟ یەکسەر چاکی بکە — هەڵەی بچووک دەبێتە کێشەی گەورە.",
-    en: "Spot a mistake? Fix it right away — small errors grow into big problems.",
-    ar: "رأيت خطأً؟ صحّحه فوراً — الأخطاء الصغيرة تتحوّل إلى مشاكل كبيرة.",
-    zh: "发现错误？立即纠正——小错误会演变成大问题。" } },
-  { id: "tip-32", short: {
-    ku: "کێشی پاکەت بە دروستی بنووسە — نرخ ڕاستەوخۆ لەسەری دەردەچێت.",
-    en: "Enter the package weight accurately — the price depends on it directly.",
-    ar: "أدخِل وزن الطرد بدقّة — يعتمد السعر عليه مباشرةً.",
-    zh: "准确录入包裹重量——价格直接取决于此。" } },
+  { id: "tip-21",
+    short: {
+      ku: "خێراییی باچەکان (چەند ڕۆژ گەیشتوون) بەراورد بکە بۆ باشترکردنی خزمەت.",
+      en: "Compare batch speeds (days to arrive) to improve service.",
+      ar: "قارِن سرعة الدفعات (أيام الوصول) لتحسين الخدمة.",
+      zh: "比较各批次的速度（到货天数）以改进服务。" },
+    detail: {
+      ku: "هەر باچێک ماوەیەکی جیاوازی گەیشتنی هەیە، و بەراوردکردنیان پیشانی دەدات کام ڕێگا و کام لۆجستیک خێراترن. ئەم زانیارییە یارمەتیت دەدات باشترین هەڵبژاردن بۆ کڕیار پێشنیار بکەیت و خزمەت باشتر بکەیت. باچی خاو بکەرە هۆکاری ناڕەزایی کڕیار، بۆیە بەدوایدا بگەڕێ.",
+      en: "Each batch arrives in a different time, and comparing them shows which route and which logistics are faster. This information helps you recommend the best option to the customer and improve service. A slow batch becomes a source of customer complaints, so look into it.",
+      ar: "تصل كل دفعة في وقت مختلف، ومقارنتها تُظهِر أي مسار وأي خدمة لوجستية أسرع. هذه المعلومة تساعدك على اقتراح الخيار الأفضل للعميل وتحسين الخدمة. الدفعة البطيئة تصبح مصدر شكاوى العملاء، فتقصّاها.",
+      zh: "每个批次到货时间不同，比较它们可看出哪条路线、哪家物流更快。这些信息帮你向客户推荐最佳选项并改进服务。慢批次会引发客户投诉，应予以排查。" },
+    example: {
+      ku: "باچی ئاسمانی A ٧ ڕۆژ گەیشت، باچی ئاسمانی B ١٢ ڕۆژ → بۆ ئۆردەری بەپەلە، باچی A پێشنیار بکە.",
+      en: "Air batch A arrived in 7 days, air batch B in 12 → for urgent orders, recommend batch A.",
+      ar: "وصلت الدفعة الجوّية A في 7 أيام، والدفعة B في 12 → للطلبات العاجلة اقترِح الدفعة A.",
+      zh: "空运批次 A 用 7 天到货，批次 B 用 12 天 → 加急订单推荐批次 A。" } },
+  { id: "tip-22",
+    short: {
+      ku: "بۆ دۆزینەوەی خێرای هەر فەنکشنێک، Ctrl+K بەکاربهێنە.",
+      en: "Press Ctrl+K to quickly find any function.",
+      ar: "اضغط Ctrl+K للعثور بسرعة على أي وظيفة.",
+      zh: "按 Ctrl+K 可快速查找任意功能。" },
+    detail: {
+      ku: "Ctrl+K سندوقی گەڕانی خێرا دەکاتەوە کە تێیدا دەتوانیت ناوی هەر پەڕە یان کارێک بنووسیت و یەکسەر بیکەیتەوە. ئەمە کاتت دەپارێزێت لە گەڕان بەناو مێنیووەکاندا. هەرچی زیاتر بەکاری بهێنیت، کارەکانت خێراتر دەبن.",
+      en: "Ctrl+K opens a quick-search box where you can type the name of any page or action and jump straight to it. This saves the time of hunting through menus. The more you use it, the faster your work gets.",
+      ar: "يفتح Ctrl+K صندوق بحث سريع تكتب فيه اسم أي صفحة أو إجراء وتنتقل إليه مباشرةً. هذا يوفّر وقت البحث في القوائم. كلما استخدمته أكثر، صار عملك أسرع.",
+      zh: "Ctrl+K 打开快速搜索框，输入任意页面或操作的名称即可直接跳转。这省去了在菜单中翻找的时间。用得越多，工作越快。" },
+    example: {
+      ku: "دەتەوێت ئۆردەرێکی نوێ تۆمار بکەیت → Ctrl+K بکەرەوە، «ئۆردەری نوێ» بنووسە و Enter بکە؛ یەکسەر فۆرمەکە دەکرێتەوە.",
+      en: "You want to register a new order → press Ctrl+K, type \"New order\" and hit Enter; the form opens right away.",
+      ar: "تريد تسجيل طلب جديد → اضغط Ctrl+K، اكتب «طلب جديد» واضغط Enter؛ يُفتَح النموذج فوراً.",
+      zh: "你想登记新订单 → 按 Ctrl+K，输入「新订单」并回车；表单立即打开。" } },
+  { id: "tip-23",
+    short: {
+      ku: "لە ستریپە سەرەوەکە دوگمەی گەڕانەوە/پێش هەیە — خێراتر دەگەڕێیتەوە.",
+      en: "The top bar has back/forward buttons — navigate faster.",
+      ar: "يحتوي الشريط العلوي على أزرار رجوع/تقدّم — تنقّل أسرع.",
+      zh: "顶部栏有后退/前进按钮，可更快导航。" },
+    detail: {
+      ku: "دوگمەی گەڕانەوە/پێش لە ستریپی سەرەوە وایدەکات بەبێ گەڕانەوە بۆ مێنیووی سەرەکی، بچیتەوە بۆ پەڕەی پێشوو یان پێشەوە. ئەمە کاتت دەپارێزێت کاتێک نێوان چەند پەڕەدا دەجوڵێیتەوە. وەک گەڕانەوەی وێبگەڕ کاردەکات بەڵام لەناو سیستەمەکەدا.",
+      en: "The back/forward buttons in the top bar let you return to the previous page or move ahead without going back to the main menu. This saves time when you're moving between several pages. It works like a browser's back button, but inside the system.",
+      ar: "تتيح لك أزرار الرجوع/التقدّم في الشريط العلوي العودة للصفحة السابقة أو التقدّم دون العودة للقائمة الرئيسية. هذا يوفّر الوقت عند التنقّل بين عدّة صفحات. تعمل كزر الرجوع في المتصفّح لكن داخل النظام.",
+      zh: "顶部栏的后退/前进按钮让你无需回到主菜单即可返回上一页或前进。在多个页面间移动时这能省时间。它的作用类似浏览器的后退按钮，但在系统内部。" },
+    example: {
+      ku: "لە لیستی ئۆردەرەوە چوویتە ناو ئۆردەرێک، دەتەوێت بگەڕێیتەوە لیست → دوگمەی گەڕانەوە لێبدە، نەک مێنیووی سەرەکی.",
+      en: "You went from the order list into an order and want to return to the list → click the back button, not the main menu.",
+      ar: "انتقلت من قائمة الطلبات إلى طلب وتريد العودة للقائمة → انقر زر الرجوع، لا القائمة الرئيسية.",
+      zh: "你从订单列表进入某个订单，想返回列表 → 点击后退按钮，而非主菜单。" } },
+  { id: "tip-24",
+    short: {
+      ku: "شۆرتکەتە پینکراوەکانی سەرەوە بۆ کارە ڕۆژانەییەکان بەکاربهێنە.",
+      en: "Use the pinned top-bar shortcuts for your daily tasks.",
+      ar: "استخدم اختصارات الشريط العلوي المثبّتة لمهامك اليومية.",
+      zh: "使用顶部栏固定的快捷方式处理日常任务。" },
+    detail: {
+      ku: "شۆرتکەتی پینکراو دوگمەی خێرایە بۆ ئەو کارانەی زۆرجار بەکاریان دەهێنیت، وەک تۆمارکردنی ئۆردەر یان کردنەوەی بۆکس. لە جیاتی گەڕان بەناو مێنیووەکاندا، بە یەک کرتە دەگەیتە کارەکە. پینکردنی کارە ڕۆژانەییەکان ڕۆژەکەت خێراتر و ڕێکتر دەکات.",
+      en: "A pinned shortcut is a quick button for the actions you use most, like registering an order or opening a box. Instead of digging through menus, you reach the task in one click. Pinning your daily tasks makes your day faster and smoother.",
+      ar: "الاختصار المثبّت زر سريع للإجراءات التي تستخدمها كثيراً، كتسجيل طلب أو فتح صندوق. بدل البحث في القوائم، تصل للمهمّة بنقرة واحدة. تثبيت مهامك اليومية يجعل يومك أسرع وأكثر سلاسة.",
+      zh: "固定的快捷方式是你最常用操作的快速按钮，比如登记订单或打开箱子。无需在菜单中翻找，一键即可到达任务。固定日常任务让你的一天更快更顺。" },
+    example: {
+      ku: "هەموو ڕۆژێک ئۆردەر تۆمار دەکەیت → «ئۆردەری نوێ» پین بکە تاکو هەمیشە لە سەرەوەی شاشە بەردەست بێت.",
+      en: "You register orders every day → pin \"New order\" so it's always available at the top of the screen.",
+      ar: "تسجّل طلبات كل يوم → ثبّت «طلب جديد» ليكون دائماً متاحاً أعلى الشاشة.",
+      zh: "你每天都登记订单 → 固定「新订单」，让它始终在屏幕顶部可用。" } },
+  { id: "tip-25",
+    short: {
+      ku: "لە لیستەکاندا، بە ئایکۆنی کۆپی، کۆد/تراکینگ بە یەک کرتە کۆپی بکە.",
+      en: "In lists, copy a code/tracking with one click using the copy icon.",
+      ar: "في القوائم، انسخ الرمز/التتبّع بنقرة واحدة عبر أيقونة النسخ.",
+      zh: "在列表中，用复制图标一键复制编号/运单号。" },
+    detail: {
+      ku: "ئایکۆنی کۆپی لەتەنیشت کۆد و تراکینگەکاندا وایدەکات بە یەک کرتە ژمارەکە کۆپی بکەیت، بەبێ نووسینەوەی بە دەست. ئەمە هەڵەی نووسین کەم دەکاتەوە — بەتایبەت لە تراکینگە درێژەکاندا. پاشان دەتوانیت لە شوێنی دیکە پەیستی بکەیت.",
+      en: "The copy icon next to codes and tracking numbers lets you copy the number with one click, without retyping it by hand. This cuts typing errors — especially on long tracking numbers. You can then paste it elsewhere.",
+      ar: "أيقونة النسخ بجانب الرموز وأرقام التتبّع تتيح لك نسخ الرقم بنقرة واحدة دون إعادة كتابته يدوياً. هذا يقلّل أخطاء الكتابة — خاصةً في أرقام التتبّع الطويلة. ثم يمكنك لصقه في مكان آخر.",
+      zh: "编号和运单号旁的复制图标让你一键复制，无需手动重输。这能减少输入错误——尤其是较长的运单号。随后可粘贴到别处。" },
+    example: {
+      ku: "دەتەوێت تراکینگی YT7612345678 بدەیتە کڕیار → ئایکۆنی کۆپی لێبدە و لە واتساپ پەیستی بکە، نەک بە دەست بینووسیتەوە.",
+      en: "You want to send tracking YT7612345678 to a customer → click the copy icon and paste it into WhatsApp, instead of typing it by hand.",
+      ar: "تريد إرسال رقم التتبّع YT7612345678 لعميل → انقر أيقونة النسخ والصِقه في واتساب بدل كتابته يدوياً.",
+      zh: "你想把运单号 YT7612345678 发给客户 → 点击复制图标并粘贴到 WhatsApp，而非手动输入。" } },
+  { id: "tip-26",
+    short: {
+      ku: "لە لیستەکاندا، ماوس بخەرە سەر وێنەی کاڵا بۆ بینینی گەورەتر.",
+      en: "In lists, hover over a product photo to see it larger.",
+      ar: "في القوائم، مرّر المؤشّر فوق صورة المنتج لرؤيتها أكبر.",
+      zh: "在列表中，将鼠标悬停在商品照片上可放大查看。" },
+    detail: {
+      ku: "وێنەکانی کاڵا لە لیستدا بچووکن بۆ پاراستنی شوێن، بەڵام بە خستنی ماوس بەسەریاندا گەورە دەبنەوە. ئەمە وایدەکات وردەکارییەکانی کاڵا ببینیت بەبێ کردنەوەی پەڕەیەکی نوێ. کاتت دەپارێزێت کاتێک بەخێرایی بەناو چەند ئۆردەردا دەڕوانیت.",
+      en: "Product photos in the list are small to save space, but hovering over them enlarges them. This lets you see the item's details without opening a new page. It saves time when you're quickly scanning through several orders.",
+      ar: "صور المنتجات في القائمة صغيرة لتوفير المساحة، لكن تمرير المؤشّر فوقها يُكبّرها. هذا يتيح لك رؤية تفاصيل السلعة دون فتح صفحة جديدة. يوفّر الوقت عند تصفّح عدّة طلبات بسرعة.",
+      zh: "列表中的商品照片为节省空间而较小，但悬停即可放大。这让你无需打开新页面即可看清商品细节。在快速浏览多个订单时能省时间。" },
+    example: {
+      ku: "لیستی ئۆردەرەکان بینیت و دەتەوێت بزانیت کاڵای AZ001 چییە → ماوس بخەرە سەر وێنەکەی، گەورە دەبێتەوە و دەیبینیت.",
+      en: "You're viewing the order list and want to know what AZ001's item is → hover over its photo, it enlarges and you can see it.",
+      ar: "تتصفّح قائمة الطلبات وتريد معرفة ما هي سلعة AZ001 → مرّر المؤشّر فوق صورتها، تكبر فتراها.",
+      zh: "你在浏览订单列表，想知道 AZ001 的商品是什么 → 悬停在其照片上即可放大查看。" } },
+  { id: "tip-27",
+    short: {
+      ku: "دۆخی تاریک/ڕووناک لە سەرەوەی شاشە بەپێی حەزی خۆت بگۆڕە.",
+      en: "Toggle dark/light mode at the top of the screen to your liking.",
+      ar: "بدّل بين الوضع الداكن/الفاتح من أعلى الشاشة حسب رغبتك.",
+      zh: "在屏幕顶部按喜好切换深色/浅色模式。" },
+    detail: {
+      ku: "دۆخی تاریک و ڕووناک تەنها جیاوازیی دیمەنە و کاریگەری لەسەر داتا نییە. دۆخی تاریک لە شوێنی کەمڕووناک چاو کەمتر ماندوو دەکات، دۆخی ڕووناک لە ڕووناکیی زۆردا ئاسانترە. ئەوەی بۆ تۆ ئاسوودەترە هەڵبژێرە تاکو بە ئاسوودەیی کاربکەیت.",
+      en: "Dark and light mode are only a visual difference and don't affect data. Dark mode tires the eyes less in dim places; light mode is easier in bright light. Pick whichever is more comfortable so you can work at ease.",
+      ar: "الوضع الداكن والفاتح مجرّد فرق بصري ولا يؤثّر على البيانات. الوضع الداكن يُجهِد العين أقل في الأماكن المعتمة؛ والفاتح أسهل في الإضاءة القوية. اختَر الأريح لك كي تعمل بارتياح.",
+      zh: "深色与浅色模式只是视觉差异，不影响数据。深色模式在昏暗处不易使眼睛疲劳；浅色模式在强光下更易看清。选择更舒适的那种，让你轻松工作。" },
+    example: {
+      ku: "بەیانی لە ئۆفیسی ڕووناکدا دۆخی ڕووناک بەکاربهێنە؛ شەو لە ژووری کەمڕووناکدا بیگۆڕە بۆ تاریک.",
+      en: "Use light mode in the bright office in the morning; switch to dark at night in a dim room.",
+      ar: "استخدم الوضع الفاتح في المكتب المضيء صباحاً؛ وبدّل للداكن ليلاً في غرفة معتمة.",
+      zh: "早上在明亮的办公室用浅色模式；夜里在昏暗房间切换为深色。" } },
+  { id: "tip-28",
+    short: {
+      ku: "ئەگەر کۆمپیوتەرەکە هاوبەشە، دوای کار لە سیستەم دەربچۆ.",
+      en: "If the computer is shared, log out when you finish.",
+      ar: "إذا كان الحاسوب مشتركاً، سجّل الخروج عند الانتهاء.",
+      zh: "如果是共用电脑，完成后请退出登录。" },
+    detail: {
+      ku: "هەر کارێک کە لە سیستەمدا دەیکەیت، بە ناوی ئەو ستافەوە تۆمار دەبێت کە چووەتە ژوورەوە. ئەگەر دەرنەچیت و کەسێکی دیکە بەکاربهێنێت، کارەکانیان بە ناوی تۆ تۆمار دەبێت و بەرپرسیارێتی تێکدەچێت. دەرچوون لە کۆمپیوتەری هاوبەش حسابەکەت و راستیی مێژووەکە دەپارێزێت.",
+      en: "Everything you do in the system is recorded under the name of whoever is logged in. If you don't log out and someone else uses it, their actions are recorded as yours and accountability breaks down. Logging out on a shared computer protects your account and the accuracy of the history.",
+      ar: "كل ما تفعله في النظام يُسجَّل باسم من سجّل الدخول. إذا لم تسجّل الخروج واستخدمه شخص آخر، تُسجَّل أفعاله باسمك وتنهار المساءلة. تسجيل الخروج على حاسوب مشترك يحمي حسابك ودقّة السجل.",
+      zh: "你在系统中所做的一切都记录在当前登录者名下。若不退出而他人使用，其操作会记在你名下，问责便无从谈起。在共用电脑上退出登录可保护你的账户和历史记录的准确性。" },
+    example: {
+      ku: "کارت تەواوبوو و دەچیت → دەربچۆ؛ ئەگەر دەرنەچیت و هاوکارت ئۆردەرێک بسڕێتەوە، مێژوو دەڵێت تۆ سڕیوتەتەوە.",
+      en: "You finish your work and leave → log out; if you don't and a colleague deletes an order, the history says you did it.",
+      ar: "تنهي عملك وتغادر → سجّل الخروج؛ إن لم تفعل وحذف زميل طلباً، يقول السجل إنك أنت من حذفه.",
+      zh: "你做完工作要离开 → 退出登录；若不退出而同事删了某订单，历史会显示是你删的。" } },
+  { id: "tip-29",
+    short: {
+      ku: "وشەی نهێنی خۆت لەگەڵ کەس هاوبەش مەکە.",
+      en: "Never share your password with anyone.",
+      ar: "لا تُشارك كلمة مرورك مع أحد.",
+      zh: "切勿与任何人分享你的密码。" },
+    detail: {
+      ku: "وشەی نهێنی کلیلی حسابی تۆیە و هەموو کارەکانت پێی دەبەسترێنەوە. ئەگەر کەسێکی دیکە بیزانێت، دەتوانێت بە ناوی تۆ کاربکات و تۆ بەرپرسیار دەبیت. هیچ کات وشەی نهێنیت بە کەس مەدە، تەنانەت هاوکار یان بەڕێوەبەریش.",
+      en: "Your password is the key to your account, and all your actions are tied to it. If someone else knows it, they can act in your name and you'll be held responsible. Never give your password to anyone, not even a colleague or a manager.",
+      ar: "كلمة مرورك هي مفتاح حسابك، وكل أفعالك مرتبطة بها. إذا عرفها شخص آخر، يمكنه التصرّف باسمك وتتحمّل أنت المسؤولية. لا تُعطِ كلمة مرورك لأحد أبداً، ولا حتى لزميل أو مدير.",
+      zh: "密码是你账户的钥匙，你的所有操作都与之关联。若他人知晓，便可冒你之名行事，而责任由你承担。切勿把密码告诉任何人，哪怕是同事或主管。" },
+    example: {
+      ku: "هاوکارێک داوای وشەی نهێنیت لێ دەکات بۆ ئەوەی «خێرا ئۆردەرێک تۆمار بکات» → ڕەتی بکەرەوە؛ با بە حسابی خۆی بچێتە ژوورەوە.",
+      en: "A colleague asks for your password to \"quickly register an order\" → refuse; let them log in with their own account.",
+      ar: "يطلب زميل كلمة مرورك ليُسجّل طلباً «بسرعة» → ارفض؛ دعه يسجّل الدخول بحسابه.",
+      zh: "同事索要你的密码以「快速登记一个订单」 → 拒绝；让他用自己的账户登录。" } },
+  { id: "tip-30",
+    short: {
+      ku: "پێش سڕینەوەی هەر شتێک دڵنیابە — هەندێ سڕینەوە ناگەڕێتەوە.",
+      en: "Be sure before deleting anything — some deletions can't be undone.",
+      ar: "تأكّد قبل حذف أي شيء — بعض عمليات الحذف لا يمكن التراجع عنها.",
+      zh: "删除任何内容前请确认——有些删除无法撤销。" },
+    detail: {
+      ku: "هەندێ سڕینەوە لە سیستەمدا «نەرمن» و دەگەڕێنەوە، بەڵام هەندێکی دیکە نەمر و کۆتایین. ئەگەر بەبێ دڵنیایی شتێک بسڕیتەوە، لەوانەیە داتایەکی گرنگ بۆ هەمیشە لەدەست بدەیت. بۆیە پێش هەر سڕینەوەیەک دووجار بیر بکەرەوە کە دروست شت هەڵبژێردراوە.",
+      en: "Some deletions in the system are \"soft\" and can be recovered, but others are permanent and final. If you delete something without being sure, you may lose important data forever. So before any deletion, think twice that the right thing is selected.",
+      ar: "بعض عمليات الحذف في النظام «ناعمة» وقابلة للاسترجاع، لكن أخرى دائمة ونهائية. إذا حذفت شيئاً دون تأكّد، قد تفقد بيانات مهمّة للأبد. لذا قبل أي حذف فكّر مرّتين أن الشيء الصحيح هو المُختار.",
+      zh: "系统中有些删除是「软删除」可恢复，但有些是永久且不可逆的。若不确定就删除，可能永远丢失重要数据。所以每次删除前，请再三确认选中的是正确的对象。" },
+    example: {
+      ku: "دەتەوێت ئۆردەری AZ001 بسڕیتەوە بەڵام لیست AZ010 پیشان دەدات → بوەستە، دڵنیابە کام ئۆردەرە، پاشان بیسڕەوە.",
+      en: "You mean to delete AZ001's order but the row shows AZ010 → stop, confirm which order it is, then delete.",
+      ar: "تقصد حذف طلب AZ001 لكن الصفّ يُظهِر AZ010 → توقّف، تأكّد من الطلب، ثم احذف.",
+      zh: "你想删除 AZ001 的订单，但该行显示的是 AZ010 → 停下，确认是哪个订单，再删除。" } },
+  { id: "tip-31",
+    short: {
+      ku: "هەڵە بینیت؟ یەکسەر چاکی بکە — هەڵەی بچووک دەبێتە کێشەی گەورە.",
+      en: "Spot a mistake? Fix it right away — small errors grow into big problems.",
+      ar: "رأيت خطأً؟ صحّحه فوراً — الأخطاء الصغيرة تتحوّل إلى مشاكل كبيرة.",
+      zh: "发现错误？立即纠正——小错误会演变成大问题。" },
+    detail: {
+      ku: "لە سیستەمی گواستنەوەدا، هەڵەیەکی بچووکی وەک کێشێکی هەڵە یان کڕیارێکی هەڵە، دواتر دەبێتە چارجی هەڵە و گەیاندنی هەڵە. هەرچی زووتر چاکی بکەیت، چاکردنەکەی ئاسانترە و کاریگەرییەکەی کەمترە. هەڵە بەجێ مەهێڵە بەهیوای ئەوەی دواتر چاک بێتەوە — یەکسەر چارەسەری بکە.",
+      en: "In a shipping system, a small error like a wrong weight or wrong customer later turns into a wrong charge and a wrong delivery. The sooner you fix it, the easier the fix and the smaller its effect. Don't leave an error hoping it sorts itself out later — solve it at once.",
+      ar: "في نظام الشحن، يتحوّل خطأ صغير كوزن خاطئ أو عميل خاطئ لاحقاً إلى تحصيل خاطئ وتسليم خاطئ. كلما صحّحته أسرع، كان التصحيح أسهل وأثره أقل. لا تترك الخطأ آملاً أن يُحَلّ لاحقاً — عالِجه فوراً.",
+      zh: "在运输系统中，重量错误或客户错误这样的小失误日后会变成计费错误和交付错误。越早纠正，修正越容易、影响越小。别指望错误自行消失而搁置——立即解决。" },
+    example: {
+      ku: "تێبینی دەکەیت کێشی پاکەتی AZ001 بە هەڵە ٢kg تۆمار کراوە لەجیاتی ٥kg → یەکسەر چاکی بکە پێش ئەوەی بۆکس بنێردرێت.",
+      en: "You notice AZ001's package weight was logged as 2 kg instead of 5 kg → fix it right away, before the box is sent.",
+      ar: "تلاحظ أن وزن طرد AZ001 سُجّل 2 كغ بدل 5 كغ → صحّحه فوراً قبل إرسال الصندوق.",
+      zh: "你发现 AZ001 的包裹重量被误录为 2 公斤而非 5 公斤 → 在箱子发出前立即纠正。" } },
+  { id: "tip-32",
+    short: {
+      ku: "کێشی پاکەت بە دروستی بنووسە — نرخ ڕاستەوخۆ لەسەری دەردەچێت.",
+      en: "Enter the package weight accurately — the price depends on it directly.",
+      ar: "أدخِل وزن الطرد بدقّة — يعتمد السعر عليه مباشرةً.",
+      zh: "准确录入包裹重量——价格直接取决于此。" },
+    detail: {
+      ku: "لە گواستنەوەدا، نرخ زۆرجار بەپێی کێش (دۆلار بۆ هەر کیلۆیەک) حساب دەکرێت. ئەگەر کێش کەمتر تۆمار بکەیت، کڕیار کەمتر چارج دەکرێت و قازانج لەدەست دەچێت؛ ئەگەر زیاتر بێت، کڕیار زۆر چارج دەکرێت و ناڕازی دەبێت. بۆیە کێش بە دروستی لە تەرازوو وەربگرە و داخڵی بکە.",
+      en: "In shipping, the price is often calculated by weight (dollars per kilogram). If you log the weight too low, the customer is undercharged and profit is lost; too high, and the customer is overcharged and unhappy. So read the weight accurately from the scale and enter it.",
+      ar: "في الشحن، يُحتسَب السعر غالباً حسب الوزن (دولار لكل كيلوغرام). إذا سجّلت الوزن أقل، يُحصَّل العميل أقل ويضيع الربح؛ وإذا أكثر، يُحصَّل أكثر فيستاء. لذا اقرأ الوزن بدقّة من الميزان وأدخِله.",
+      zh: "运输中价格通常按重量计算（每公斤多少美元）。重量录得过低，会少收客户、损失利润；过高则多收客户、令其不满。所以请从秤上准确读取重量并录入。" },
+    example: {
+      ku: "نرخ $7/kgـە. پاکەتی AZ001 لەسەر تەرازوو ٣kgـە → داخڵی بکە؛ ئەگەر بە هەڵە ٢kg بنووسیت، کۆمپانیا $7 لەدەست دەدات.",
+      en: "The rate is $7/kg. AZ001's package weighs 3 kg on the scale → enter 3 kg; if you mistype 2 kg, the company loses $7.",
+      ar: "السعر 7$/كغ. طرد AZ001 يزن 3 كغ على الميزان → أدخِل 3 كغ؛ إذا كتبت 2 كغ خطأً، تخسر الشركة 7$.",
+      zh: "费率为 7 美元/公斤。AZ001 的包裹在秤上重 3 公斤 → 录入 3 公斤；若误输 2 公斤，公司损失 7 美元。" } },
   { id: "tip-33",
     short: {
       ku: "بۆ ئاسمانی، قەبارە داخڵ بکە — کێشی قەبارەیی لەوانەیە لە کێشی ڕاستەقینە زیاتر بێت و نرخ بەو حساب بکرێت.",
@@ -249,11 +579,22 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Customer AZ001 has three items in one carton under one tracking → all three orders are AZ001's, and only one shipping fee is charged for the carton.",
       ar: "العميل AZ001 لديه ثلاثة أصناف في كرتونة واحدة بتتبّع واحد → الطلبات الثلاثة كلها لـ AZ001، وتُحتسب أجرة شحن واحدة فقط للكرتونة.",
       zh: "客户 AZ001 在一个纸箱中有三件商品、同一运单号 → 三个订单都属于 AZ001，整箱只收一笔运费。" } },
-  { id: "tip-36", short: {
-    ku: "یەک کارتۆن = یەک کرێی گواستنەوە، هەرچەند ئۆردەری لێبێت.",
-    en: "One carton = one shipping fee, no matter how many orders it holds.",
-    ar: "كرتونة واحدة = أجرة شحن واحدة، مهما بلغ عدد الطلبات فيها.",
-    zh: "一个纸箱 = 一笔运费，无论里面有多少订单。" } },
+  { id: "tip-36",
+    short: {
+      ku: "یەک کارتۆن = یەک کرێی گواستنەوە، هەرچەند ئۆردەری لێبێت.",
+      en: "One carton = one shipping fee, no matter how many orders it holds.",
+      ar: "كرتونة واحدة = أجرة شحن واحدة، مهما بلغ عدد الطلبات فيها.",
+      zh: "一个纸箱 = 一笔运费，无论里面有多少订单。" },
+    detail: {
+      ku: "کرێی گواستنەوە بەسەر کارتۆنی فیزیکیدا حساب دەکرێت (بەپێی کێش یان حەجم)، نەک بەسەر ژمارەی ئۆردەرەکاندا. واتە ئەگەر یەک کارتۆن چەند ئۆردەری تێدابێت، تەنها یەک کرێ بۆ کارتۆنەکە دادەنرێت. ئەمە لە دووبارە چارجکردنی هەڵە دەپارێزێت.",
+      en: "The shipping fee is charged on the physical carton (by weight or volume), not on the number of orders. So if one carton holds several orders, only one fee is charged for that carton. This avoids charging twice by mistake.",
+      ar: "تُحتسَب أجرة الشحن على الكرتونة الفيزيائية (بالوزن أو الحجم)، لا على عدد الطلبات. فإذا حوت كرتونة واحدة عدّة طلبات، تُحتسَب أجرة واحدة فقط لتلك الكرتونة. هذا يتجنّب التحصيل مرّتين بالخطأ.",
+      zh: "运费按实物纸箱计算（按重量或体积），而非按订单数量。所以若一个纸箱装有多个订单，整箱只收一笔运费。这可避免误重复收费。" },
+    example: {
+      ku: "کارتۆنی AZ001 سێ ئۆردەری تێدایە و کێشی ٦kgـە بە $7/kg → کرێی گواستنەوە $42 بۆ تەواوی کارتۆنەکە، نەک ٣ جار.",
+      en: "AZ001's carton holds three orders and weighs 6 kg at $7/kg → the shipping fee is $42 for the whole carton, not three times.",
+      ar: "كرتونة AZ001 تحوي ثلاثة طلبات وتزن 6 كغ بسعر 7$/كغ → أجرة الشحن 42$ للكرتونة كاملة، لا ثلاث مرّات.",
+      zh: "AZ001 的纸箱装有三个订单、重 6 公斤、每公斤 7 美元 → 整箱运费为 42 美元，而非收三次。" } },
   { id: "tip-37",
     short: {
       ku: "دوای داخستنی بۆکس، ئەگەر هەڵە هەبوو دەتوانیت بیکەیتەوە و چاکی بکەیت — بەس پێش ناردن.",
@@ -270,21 +611,54 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You sealed a box but forgot a package → reopen it, add the package, seal again.",
       ar: "أغلقت صندوقاً لكنك نسيت طرداً → أعِد فتحه، أضِف الطرد، أغلقه مجدداً.",
       zh: "你封了箱却忘了一个包裹 → 重新打开，加入包裹，再封箱。" } },
-  { id: "tip-38", short: {
-    ku: "لە کردنەوەی بۆکس، خانەی سکان فۆکەسی لەسەر دەمێنێتەوە — بەردەوام سکان بکە بەبێ کلیک.",
-    en: "When a box is open, the scan field keeps focus — keep scanning without clicking.",
-    ar: "عند فتح الصندوق، يبقى حقل المسح نشطاً — تابِع المسح دون نقر.",
-    zh: "箱子打开时，扫描框保持焦点——无需点击即可连续扫描。" } },
-  { id: "tip-39", short: {
-    ku: "پاکەتی نوێ بۆ باچ زیادبوو دوای دروستکردنی بۆکس؟ «نوێکردنەوەی بۆکس» بەکاربهێنە.",
-    en: "New package added to the batch after the box was made? Use \"Refresh box\".",
-    ar: "أُضيف طرد جديد للدفعة بعد إنشاء الصندوق؟ استخدم «تحديث الصندوق».",
-    zh: "建箱后批次中又加入了新包裹？使用「刷新箱子」。" } },
-  { id: "tip-40", short: {
-    ku: "بۆکسی خاڵی مەنێرە — سەرەتا پاکەت زیاد بکە.",
-    en: "Don't send an empty box — add packages first.",
-    ar: "لا تُرسل صندوقاً فارغاً — أضِف الطرود أولاً.",
-    zh: "不要发送空箱——请先加入包裹。" } },
+  { id: "tip-38",
+    short: {
+      ku: "لە کردنەوەی بۆکس، خانەی سکان فۆکەسی لەسەر دەمێنێتەوە — بەردەوام سکان بکە بەبێ کلیک.",
+      en: "When a box is open, the scan field keeps focus — keep scanning without clicking.",
+      ar: "عند فتح الصندوق، يبقى حقل المسح نشطاً — تابِع المسح دون نقر.",
+      zh: "箱子打开时，扫描框保持焦点——无需点击即可连续扫描。" },
+    detail: {
+      ku: "کاتێک بۆکس کراوەیە، خانەی سکان بەردەوام «فۆکەس»ـە، واتە ئامادەیە بۆ وەرگرتنی سکانی دواتر بەبێ ئەوەی کلیکی بکەیت. ئەمە وایدەکات پاکەتەکان پشتەوەپشت و بەخێرایی سکان بکەیت. تەنها ئامێری سکان بەکاربهێنە و فۆکەسەکە مەبڕە بە کلیککردنی شوێنی دیکە.",
+      en: "When a box is open, the scan field stays \"focused\", meaning it's ready to receive the next scan without you clicking it. This lets you scan packages one after another, quickly. Just use the scanner and don't break the focus by clicking elsewhere.",
+      ar: "عندما يكون الصندوق مفتوحاً، يبقى حقل المسح «نشطاً»، أي جاهزاً لاستقبال المسح التالي دون نقر. هذا يتيح لك مسح الطرود واحداً تلو الآخر بسرعة. استخدم الماسح فقط ولا تكسر التركيز بالنقر في مكان آخر.",
+      zh: "箱子打开时，扫描框保持「焦点」，即无需点击便可接收下一次扫描。这让你快速地一个接一个扫描包裹。只需使用扫描枪，不要点击别处而打断焦点。" },
+    example: {
+      ku: "١٥ پاکەتت هەیە بۆ سکانکردن → یەک لەدوای یەک سکانیان بکە؛ پێویست ناکات نێوان هەر سکانێکدا کلیکی خانەکە بکەیت.",
+      en: "You have 15 packages to scan → scan them one after another; you don't need to click the field between each scan.",
+      ar: "لديك 15 طرداً لمسحها → امسَحها واحداً تلو الآخر؛ لا تحتاج للنقر على الحقل بين كل مسح.",
+      zh: "你有 15 个包裹要扫描 → 一个接一个地扫；每次扫描之间无需点击扫描框。" } },
+  { id: "tip-39",
+    short: {
+      ku: "پاکەتی نوێ بۆ باچ زیادبوو دوای دروستکردنی بۆکس؟ «نوێکردنەوەی بۆکس» بەکاربهێنە.",
+      en: "New package added to the batch after the box was made? Use \"Refresh box\".",
+      ar: "أُضيف طرد جديد للدفعة بعد إنشاء الصندوق؟ استخدم «تحديث الصندوق».",
+      zh: "建箱后批次中又加入了新包裹？使用「刷新箱子」。" },
+    detail: {
+      ku: "بۆکس لیستی پاکەتەکانی باچ لە کاتی دروستکردنیدا دەگرێتە خۆی. ئەگەر دوای ئەوە پاکەتی نوێ بۆ باچ زیاد ببێت، بۆکس خۆکارانە نایبینێت — پێویستی بە «نوێکردنەوەی بۆکس» هەیە تاکو لیستەکە نوێ بکاتەوە. بەبێ ئەمە، پاکەتە نوێیەکان لە بۆکس بەجێدەمێننەوە.",
+      en: "A box captures the batch's package list at the time it's created. If a new package is added to the batch afterwards, the box won't see it automatically — it needs \"Refresh box\" to update the list. Without this, the new packages are left out of the box.",
+      ar: "يلتقط الصندوق قائمة طرود الدفعة وقت إنشائه. إذا أُضيف طرد جديد للدفعة بعد ذلك، لن يراه الصندوق تلقائياً — يحتاج «تحديث الصندوق» لتحديث القائمة. بدون ذلك تبقى الطرود الجديدة خارج الصندوق.",
+      zh: "箱子在创建时捕获批次的包裹列表。若之后批次中又加入新包裹，箱子不会自动识别——需要「刷新箱子」来更新列表。否则新包裹会被遗漏在箱外。" },
+    example: {
+      ku: "بۆکست بۆ باچی ئاسمانی دروستکرد، پاشان پاکەتی AZ001 بۆ هەمان باچ زیاد بوو → «نوێکردنەوەی بۆکس» لێبدە تاکو پاکەتەکە دەربکەوێت.",
+      en: "You made a box for the air batch, then AZ001's package was added to that batch → click \"Refresh box\" so the package appears.",
+      ar: "أنشأت صندوقاً للدفعة الجوّية، ثم أُضيف طرد AZ001 لنفس الدفعة → انقر «تحديث الصندوق» ليظهر الطرد.",
+      zh: "你为空运批次建了箱，之后 AZ001 的包裹被加入该批次 → 点击「刷新箱子」让该包裹显示。" } },
+  { id: "tip-40",
+    short: {
+      ku: "بۆکسی خاڵی مەنێرە — سەرەتا پاکەت زیاد بکە.",
+      en: "Don't send an empty box — add packages first.",
+      ar: "لا تُرسل صندوقاً فارغاً — أضِف الطرود أولاً.",
+      zh: "不要发送空箱——请先加入包裹。" },
+    detail: {
+      ku: "بۆکس بۆ گواستنەوەی پاکەتە؛ بۆکسی خاڵی هیچ مانایەکی نییە و تەنها لیستەکان و راپۆرتەکان تێکدەدات. پێش کرتەی «ناردن»، دڵنیابە لانیکەم یەک پاکەت سکانکراوە و لەناویدایە. ئەمە ڕێگری دەکات لە بۆکسی بەتاڵی بێ سوود لە سیستەمدا.",
+      en: "A box exists to ship packages; an empty box is meaningless and only clutters lists and reports. Before clicking \"Send\", make sure at least one package has been scanned into it. This prevents useless empty boxes in the system.",
+      ar: "الصندوق موجود لشحن الطرود؛ والصندوق الفارغ بلا معنى ويُفسِد القوائم والتقارير فقط. قبل النقر على «إرسال» تأكّد أن طرداً واحداً على الأقل مُسِح بداخله. هذا يمنع وجود صناديق فارغة عديمة الفائدة في النظام.",
+      zh: "箱子是为运送包裹而存在的；空箱毫无意义，只会扰乱列表和报表。点击「发送」前，确认至少有一个包裹已扫描入箱。这能避免系统中出现无用的空箱。" },
+    example: {
+      ku: "بۆکست دروستکرد بەڵام هێشتا هیچ پاکەتێکت سکان نەکردووە → سەرەتا پاکەتی AZ001 سکان بکە، پاشان بینێرە.",
+      en: "You created a box but haven't scanned any package yet → scan AZ001's package first, then send.",
+      ar: "أنشأت صندوقاً لكنك لم تمسَح أي طرد بعد → امسَح طرد AZ001 أولاً، ثم أرسِل.",
+      zh: "你建了箱却还没扫描任何包裹 → 先扫描 AZ001 的包裹，再发送。" } },
   { id: "tip-41",
     short: {
       ku: "ئۆردەری چارجکراو کڕیارەکەی ناگۆڕێت — سەرەتا چارجەکە بگەڕێنەوە.",
@@ -333,11 +707,22 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "AZ001's limit = $500. If their debt becomes $620 → it shows as a red alert on the dashboard.",
       ar: "حدّ AZ001 = 500$. إذا أصبح دينه 620$ → يظهر كتنبيه أحمر في لوحة التحكم.",
       zh: "AZ001 的额度 = 500 美元。若其欠款达到 620 美元 → 仪表板会显示红色提醒。" } },
-  { id: "tip-44", short: {
-    ku: "پارەی پێشەکی دەگەڕێتەوە کاتێ ئۆردەر دەسڕیتەوە — بەڵام پێش سڕینەوە دڵنیابە.",
-    en: "An advance payment is refunded when an order is deleted — but be sure before deleting.",
-    ar: "تُسترَدّ الدفعة المقدّمة عند حذف الطلب — لكن تأكّد قبل الحذف.",
-    zh: "删除订单时会退还预付款——但删除前请确认。" } },
+  { id: "tip-44",
+    short: {
+      ku: "پارەی پێشەکی دەگەڕێتەوە کاتێ ئۆردەر دەسڕیتەوە — بەڵام پێش سڕینەوە دڵنیابە.",
+      en: "An advance payment is refunded when an order is deleted — but be sure before deleting.",
+      ar: "تُسترَدّ الدفعة المقدّمة عند حذف الطلب — لكن تأكّد قبل الحذف.",
+      zh: "删除订单时会退还预付款——但删除前请确认。" },
+    detail: {
+      ku: "ئەگەر ئۆردەرێک پارەی پێشەکیی هەبووبێت و بیسڕیتەوە، سیستەم ئەو پارەیە بۆ باڵانسی کڕیار دەگەڕێنێتەوە تاکو حساب ڕاست بمێنێتەوە. بەڵام ئەگەر بە هەڵە ئۆردەری چالاک بسڕیتەوە، پرۆسەی گواستنەوەش تێکدەچێت. بۆیە پێش سڕینەوە دڵنیابە کە دروست ئۆردەرە و سڕینەوەکە پێویستە.",
+      en: "If an order had an advance payment and you delete it, the system returns that money to the customer's balance so the account stays correct. But if you delete an active order by mistake, the shipping flow is disrupted too. So before deleting, be sure it's the right order and the deletion is needed.",
+      ar: "إذا كان للطلب دفعة مقدّمة وحذفته، يُعيد النظام ذلك المبلغ لرصيد العميل ليبقى الحساب صحيحاً. لكن إذا حذفت طلباً نشطاً بالخطأ، يتعطّل مسار الشحن أيضاً. لذا قبل الحذف تأكّد أنه الطلب الصحيح وأن الحذف ضروري.",
+      zh: "若某订单有预付款而你删除它，系统会把这笔钱退回客户余额，以保持账目正确。但若误删活跃订单，运输流程也会被打乱。所以删除前请确认是正确的订单且确实需要删除。" },
+    example: {
+      ku: "ئۆردەری AZ001 پێشەکی $30ـی هەیە. ئەگەر بیسڕیتەوە، $30 دەگەڕێتەوە باڵانسی AZ001 → بەڵام دڵنیابە بەڕاستی دەتەوێت بیسڕیتەوە.",
+      en: "AZ001's order has a $30 advance. If you delete it, $30 returns to AZ001's balance → but be sure you really mean to delete it.",
+      ar: "طلب AZ001 له دفعة مقدّمة 30$. إذا حذفته، تعود 30$ لرصيد AZ001 → لكن تأكّد أنك تقصد حذفه فعلاً.",
+      zh: "AZ001 的订单有 30 美元预付款。若删除它，30 美元退回 AZ001 的余额 → 但请确认你确实要删除。" } },
   { id: "tip-45",
     short: {
       ku: "لە کرین بە تێچوو، نرخی کاڵا و عمولە جیان — هەردووکی بە دروستی داخڵ بکە.",
@@ -370,11 +755,22 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Purchase $60, selling $85 → profit $25.",
       ar: "الشراء 60$، البيع 85$ → الربح 25$.",
       zh: "采购价 60 美元，售价 85 美元 → 利润 25 美元。" } },
-  { id: "tip-47", short: {
-    ku: "نرخی ¥ (RMB) ڕۆژانە نوێ بکەرەوە — هەڵەی نرخ قازانج کەم دەکات.",
-    en: "Update the ¥ (RMB) rate daily — a wrong rate eats into profit.",
-    ar: "حدّث سعر اليوان (¥/RMB) يومياً — السعر الخاطئ يقلّل الربح.",
-    zh: "每天更新人民币（¥）汇率——汇率错误会侵蚀利润。" } },
+  { id: "tip-47",
+    short: {
+      ku: "نرخی ¥ (RMB) ڕۆژانە نوێ بکەرەوە — هەڵەی نرخ قازانج کەم دەکات.",
+      en: "Update the ¥ (RMB) rate daily — a wrong rate eats into profit.",
+      ar: "حدّث سعر اليوان (¥/RMB) يومياً — السعر الخاطئ يقلّل الربح.",
+      zh: "每天更新人民币（¥）汇率——汇率错误会侵蚀利润。" },
+    detail: {
+      ku: "زۆربەی کاڵاکان لە چین بە یوان (¥) دەکڕدرێن، بەڵام لە عێراق بە دۆلار حساب دەکرێن، بۆیە نرخی گۆڕینەوە (¥ بۆ $) ڕاستەوخۆ کاریگەری لەسەر تێچوو هەیە. نرخی یوان ڕۆژانە دەگۆڕێت؛ ئەگەر نرخی کۆن بەکاربهێنیت، حسابی تێچوو هەڵە دەبێت و قازانج کەم دەبێتەوە. بۆیە هەموو ڕۆژێک نرخی نوێ تۆمار بکە.",
+      en: "Most goods are bought in China in yuan (¥) but accounted for in Iraq in dollars, so the exchange rate (¥ to $) directly affects cost. The yuan rate changes daily; if you use an old rate, the cost calculation is wrong and profit shrinks. So enter the fresh rate every day.",
+      ar: "تُشترى معظم البضائع في الصين باليوان (¥) لكن تُحتسَب في العراق بالدولار، فسعر الصرف (¥ إلى $) يؤثّر مباشرةً على التكلفة. سعر اليوان يتغيّر يومياً؛ إذا استخدمت سعراً قديماً، يصبح احتساب التكلفة خاطئاً ويقلّ الربح. لذا أدخِل السعر الجديد كل يوم.",
+      zh: "大多数货物在中国以人民币（¥）采购，但在伊拉克以美元核算，因此汇率（人民币兑美元）直接影响成本。人民币汇率每日变动；若使用旧汇率，成本计算就会出错，利润随之减少。所以每天都要录入最新汇率。" },
+    example: {
+      ku: "ئەمڕۆ ١$ = ٧.٢¥. ئەگەر نرخی دوێنێ (٧.٠¥) بەکاربهێنیت بۆ کاڵای ٧٢٠¥، تێچوو بە هەڵە $102.86 حساب دەکرێت لەجیاتی $100.",
+      en: "Today $1 = ¥7.2. If you use yesterday's rate (¥7.0) for a ¥720 item, the cost is wrongly computed as $102.86 instead of $100.",
+      ar: "اليوم 1$ = 7.2¥. إذا استخدمت سعر الأمس (7.0¥) لسلعة بـ720¥، تُحتسَب التكلفة خطأً 102.86$ بدل 100$.",
+      zh: "今天 1 美元 = 7.2 人民币。若对一件 720 人民币的商品使用昨天的汇率（7.0），成本会被错算为 102.86 美元，而非 100 美元。" } },
   { id: "tip-48",
     short: {
       ku: "پەیامی «ئۆردەرەکە لەلایەن کەسێکی دیکەوە گۆڕدراوە» بینیت؟ پەڕەکە نوێ بکەرەوە پێش هەوڵی دووبارە — داتای کۆن مەنووسەرەوە.",
@@ -391,56 +787,166 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You changed the price, but a colleague changed the status at the same moment → on save, the message appears. Reload, see your colleague's change, then set the price.",
       ar: "غيّرت السعر، لكن زميلاً غيّر الحالة في اللحظة نفسها → عند الحفظ تظهر الرسالة. أعِد التحميل، شاهد تغيير زميلك، ثم اضبط السعر.",
       zh: "你改了价格，但同事在同一时刻改了状态 → 保存时出现提示。刷新后看到同事的更改，再设置价格。" } },
-  { id: "tip-49", short: {
-    ku: "هەموو گۆڕانکارییەک لە مێژووی ئۆردەردا تۆمار دەبێت — کێ، کەی، چی گۆڕی.",
-    en: "Every change is recorded in the order's history — who, when, and what changed.",
-    ar: "كل تغيير يُسجَّل في سجل الطلب — مَن ومتى وماذا تغيّر.",
-    zh: "每次更改都会记入订单历史——谁、何时、改了什么。" } },
-  { id: "tip-50", short: {
-    ku: "سڕینەوەی ئۆردەر «نەرمە» (دەگەڕێتەوە) — بەڵام هەر وردبە.",
-    en: "Order deletion is \"soft\" (recoverable) — but stay careful anyway.",
-    ar: "حذف الطلب «ناعم» (قابل للاسترجاع) — لكن ابقَ حذِراً مع ذلك.",
-    zh: "订单删除是「软删除」（可恢复）——但仍请谨慎。" } },
-  { id: "tip-51", short: {
-    ku: "دۆخی ئۆردەر بە دروستی نوێ بکەرەوە — کڕیار بەپێی دۆخ ئاگادار دەبێتەوە.",
-    en: "Keep the order status up to date — the customer is notified based on it.",
-    ar: "حدّث حالة الطلب باستمرار — يُخطَر العميل بناءً عليها.",
-    zh: "及时更新订单状态——客户会据此收到通知。" } },
-  { id: "tip-52", short: {
-    ku: "بەشی «مەشاکل» لە داشبۆرد ڕۆژانە بپشکنە — بێ تراکینگ، قەرز، ئۆردەری گەورە.",
-    en: "Check the dashboard's \"Problems\" section daily — no tracking, debt, large orders.",
-    ar: "راجِع قسم «المشاكل» في لوحة التحكم يومياً — بدون تتبّع، ديون، طلبات كبيرة.",
-    zh: "每天查看仪表板的「问题」区——无运单号、欠款、大额订单。" } },
-  { id: "tip-53", short: {
-    ku: "بەشی «سەرکەوتنەکانی ئەم هەفتەیە» — بزانە کام کڕیار ئاکتیفترینە و قازانجت چۆنە.",
-    en: "Check \"Wins this week\" — see your most active customer and how profit is doing.",
-    ar: "راجِع «إنجازات هذا الأسبوع» — لتعرف أنشط عميل وكيف يسير الربح.",
-    zh: "查看「本周成绩」——了解最活跃的客户和利润情况。" } },
-  { id: "tip-54", short: {
-    ku: "خێراییی باچەکان (چەند ڕۆژ گەیشتوون) بەراورد بکە.",
-    en: "Compare batch speeds (days to arrive).",
-    ar: "قارِن سرعة الدفعات (أيام الوصول).",
-    zh: "比较各批次的速度（到货天数）。" } },
-  { id: "tip-55", short: {
-    ku: "کڕیارێک زۆر ئۆردەر دەکات؟ یەکجار هەڵیبژێرە و هەمووی پشتەوەپشت داخڵ بکە — فۆرم دوای سەیڤ دانەخراوە.",
-    en: "Customer with many orders? Pick them once and enter all back-to-back — the form stays open after saving.",
-    ar: "عميل لديه طلبات كثيرة؟ اختَره مرّة وأدخِلها كلها تباعاً — يبقى النموذج مفتوحاً بعد الحفظ.",
-    zh: "客户订单很多？选定一次即可连续录入——保存后表单仍保持打开。" } },
-  { id: "tip-56", short: {
-    ku: "وێنەی کاڵای لەبیرکراو دەکرێت دواتر لە ئیدیتدا زیاد بکرێت.",
-    en: "A forgotten product photo can be added later in edit mode.",
-    ar: "يمكن إضافة صورة المنتج المنسيّة لاحقاً في وضع التعديل.",
-    zh: "忘记添加的商品照片可稍后在编辑中补充。" } },
-  { id: "tip-57", short: {
-    ku: "تراکینگ نەمبەری هەڵە = نەدۆزینەوەی پاکەت — بە وردی داخڵی بکە.",
-    en: "A wrong tracking number = a package that can't be found — enter it carefully.",
-    ar: "رقم تتبّع خاطئ = طرد لا يُعثَر عليه — أدخِله بدقّة.",
-    zh: "运单号错误 = 找不到包裹——请仔细录入。" } },
-  { id: "tip-58", short: {
-    ku: "پێش پاشەکەوتکردنی فۆرم، خانە پێویستەکان (بەستەرە سوورەکان *) پڕبکەرەوە.",
-    en: "Before saving a form, fill the required fields (marked with a red *).",
-    ar: "قبل حفظ النموذج، املأ الحقول المطلوبة (المعلّمة بنجمة حمراء *).",
-    zh: "保存表单前，请填写必填字段（带红色 * 标记）。" } },
+  { id: "tip-49",
+    short: {
+      ku: "هەموو گۆڕانکارییەک لە مێژووی ئۆردەردا تۆمار دەبێت — کێ، کەی، چی گۆڕی.",
+      en: "Every change is recorded in the order's history — who, when, and what changed.",
+      ar: "كل تغيير يُسجَّل في سجل الطلب — مَن ومتى وماذا تغيّر.",
+      zh: "每次更改都会记入订单历史——谁、何时、改了什么。" },
+    detail: {
+      ku: "سیستەم بۆ هەر ئۆردەرێک مێژوویەک هەڵدەگرێت کە تێیدا هەموو گۆڕانکارییەک — کێ کردوویەتی، لە چ کاتێکدا و چی گۆڕاوە — تۆمار دەکات. ئەمە شەفافیەت دروست دەکات و یارمەتیدەرە بۆ دۆزینەوەی هۆکاری هەڵە یان ناکۆکی. بۆیە نیگەران مەبە لە تۆمارکردنی گۆڕانکاری دروست — مێژوو پاراستنی هەموانە.",
+      en: "For each order the system keeps a history that records every change — who made it, when, and what changed. This creates transparency and helps trace the cause of an error or dispute. So don't worry about logging a legitimate change — the history protects everyone.",
+      ar: "يحتفظ النظام لكل طلب بسجل يدوّن كل تغيير — من أجراه ومتى وماذا تغيّر. هذا يخلق شفافية ويساعد على تتبّع سبب خطأ أو نزاع. لذا لا تقلق من تسجيل تغيير مشروع — السجل يحمي الجميع.",
+      zh: "系统为每个订单保留一份历史记录，记下每次更改——由谁、何时所做，改了什么。这带来透明度，并有助于追溯错误或纠纷的原因。所以不必担心记录正当的更改——历史记录保护每一个人。" },
+    example: {
+      ku: "ئۆردەری AZ001 نرخی گۆڕاوە. لە مێژوودا دەردەکەوێت: «ئاکام، ٢٠٢٦/٠٦/٣٠، نرخ لە $50 → $45».",
+      en: "AZ001's order had its price changed. The history shows: \"Akam, 2026/06/30, price $50 → $45\".",
+      ar: "طلب AZ001 تغيّر سعره. يُظهِر السجل: «أكام، 2026/06/30، السعر 50$ ← 45$».",
+      zh: "AZ001 的订单价格被更改。历史记录显示：「阿卡姆，2026/06/30，价格 50 美元 → 45 美元」。" } },
+  { id: "tip-50",
+    short: {
+      ku: "سڕینەوەی ئۆردەر «نەرمە» (دەگەڕێتەوە) — بەڵام هەر وردبە.",
+      en: "Order deletion is \"soft\" (recoverable) — but stay careful anyway.",
+      ar: "حذف الطلب «ناعم» (قابل للاسترجاع) — لكن ابقَ حذِراً مع ذلك.",
+      zh: "订单删除是「软删除」（可恢复）——但仍请谨慎。" },
+    detail: {
+      ku: "سڕینەوەی «نەرم» واتە ئۆردەرەکە بەتەواوی لە داتابەیس نایسڕێتەوە، تەنها وەک سڕاو نیشانە دەکرێت و دەکرێت بگەڕێنرێتەوە. ئەمە تۆ دەپارێزێت لە سڕینەوەی هەڵە بەشێوەیەکی کۆتایی. لەگەڵ ئەوەشدا، با ئەمە وانەکات سادە مامەڵە لەگەڵ سڕینەوەدا بکەیت — هەر جارێک دڵنیابە.",
+      en: "A \"soft\" deletion means the order isn't truly removed from the database — it's only marked as deleted and can be restored. This protects you from a final, irreversible mistaken deletion. Even so, don't let it make you careless about deleting — be sure each time.",
+      ar: "الحذف «الناعم» يعني أن الطلب لا يُزال فعلياً من قاعدة البيانات — يُعلَّم فقط كمحذوف ويمكن استرجاعه. هذا يحميك من حذف خاطئ نهائي لا رجعة فيه. ومع ذلك لا تدع هذا يجعلك متهاوناً في الحذف — تأكّد في كل مرّة.",
+      zh: "「软删除」意味着订单并未真正从数据库移除——只是标记为已删除，可以恢复。这能保护你免于一次不可逆的错误删除。即便如此，也别因此对删除掉以轻心——每次都要确认。" },
+    example: {
+      ku: "ئۆردەری AZ001ت بە هەڵە سڕیەوە → نیگەران مەبە، دەتوانیت بیگەڕێنیتەوە؛ بەڵام باشترە لە سەرەتاوە هەڵە نەکەیت.",
+      en: "You deleted AZ001's order by mistake → don't panic, you can restore it; but it's better not to err in the first place.",
+      ar: "حذفت طلب AZ001 بالخطأ → لا تقلق، يمكنك استرجاعه؛ لكن الأفضل ألّا تُخطئ من الأساس.",
+      zh: "你误删了 AZ001 的订单 → 不必惊慌，可以恢复；但最好一开始就不出错。" } },
+  { id: "tip-51",
+    short: {
+      ku: "دۆخی ئۆردەر بە دروستی نوێ بکەرەوە — کڕیار بەپێی دۆخ ئاگادار دەبێتەوە.",
+      en: "Keep the order status up to date — the customer is notified based on it.",
+      ar: "حدّث حالة الطلب باستمرار — يُخطَر العميل بناءً عليها.",
+      zh: "及时更新订单状态——客户会据此收到通知。" },
+    detail: {
+      ku: "دۆخی ئۆردەر (وەک «گەیشتە کۆگا»، «لە ڕێگادایە»، «گەیەنرا») پیشانی دەدات ئۆردەرەکە لە چ قۆناغێکدایە، و کڕیار بەپێی ئەم دۆخە ئاگادار دەکرێتەوە. ئەگەر دۆخەکە نوێ نەکەیتەوە، کڕیار زانیاریی هەڵە وەردەگرێت یان هیچ ئاگادارییەک پێ ناگات. بۆیە هەر کاتێک قۆناغ گۆڕا، دۆخەکەش نوێ بکەرەوە.",
+      en: "The order status (like \"arrived at warehouse\", \"in transit\", \"delivered\") shows which stage the order is in, and the customer is notified based on it. If you don't update the status, the customer gets wrong information or no alert at all. So whenever the stage changes, update the status too.",
+      ar: "حالة الطلب (مثل «وصل المخزن»، «في الطريق»، «تم التسليم») تُظهِر المرحلة التي يمرّ بها الطلب، ويُخطَر العميل بناءً عليها. إذا لم تحدّث الحالة، يتلقّى العميل معلومات خاطئة أو لا يصله أي تنبيه. لذا كلما تغيّرت المرحلة، حدّث الحالة أيضاً.",
+      zh: "订单状态（如「到达仓库」「运输途中」「已交付」）显示订单处于哪个阶段，客户据此收到通知。若不更新状态，客户会收到错误信息或根本收不到提醒。所以每当阶段变化，也要更新状态。" },
+    example: {
+      ku: "پاکەتی AZ001 گەیشتە کۆگای هەولێر → دۆخەکە بکە «گەیشتە کۆگا»؛ کڕیار یەکسەر پەیامی ئاگادارکردنەوە وەردەگرێت.",
+      en: "AZ001's package arrives at the Erbil warehouse → set the status to \"arrived at warehouse\"; the customer immediately gets a notification.",
+      ar: "يصل طرد AZ001 إلى مخزن أربيل → اضبط الحالة على «وصل المخزن»؛ يتلقّى العميل إشعاراً فوراً.",
+      zh: "AZ001 的包裹到达埃尔比勒仓库 → 将状态设为「到达仓库」；客户立即收到通知。" } },
+  { id: "tip-52",
+    short: {
+      ku: "بەشی «مەشاکل» لە داشبۆرد ڕۆژانە بپشکنە — بێ تراکینگ، قەرز، ئۆردەری گەورە.",
+      en: "Check the dashboard's \"Problems\" section daily — no tracking, debt, large orders.",
+      ar: "راجِع قسم «المشاكل» في لوحة التحكم يومياً — بدون تتبّع، ديون، طلبات كبيرة.",
+      zh: "每天查看仪表板的「问题」区——无运单号、欠款、大额订单。" },
+    detail: {
+      ku: "بەشی «مەشاکل» هەموو ئەو شتانە لە یەک شوێندا کۆدەکاتەوە کە پێویستیان بە سەرنجی تۆیە — ئۆردەری بێ تراکینگ، کڕیاری قەرزدار، و ئۆردەری گەورە. پشکنینی ڕۆژانەی ئەم بەشە وایدەکات هیچ کێشەیەک بەبێ چارەسەری نەمێنێتەوە. وەک لیستی «کارەکانی ئەمڕۆ»ی تۆیە.",
+      en: "The \"Problems\" section gathers in one place everything that needs your attention — orders with no tracking, debtor customers, and large orders. A daily check of this section keeps any issue from going unresolved. It's like your \"things to handle today\" list.",
+      ar: "قسم «المشاكل» يجمع في مكان واحد كل ما يحتاج انتباهك — طلبات بلا تتبّع، عملاء مدينون، وطلبات كبيرة. مراجعة هذا القسم يومياً تمنع بقاء أي مشكلة دون حلّ. إنه أشبه بقائمة «مهام اليوم» لديك.",
+      zh: "「问题」区把所有需要你关注的事项汇集到一处——无运单号的订单、欠款客户、大额订单。每天查看这一区，可避免任何问题被搁置。它就像你的「今日待办」清单。" },
+    example: {
+      ku: "بەیانی «مەشاکل» دەکەیتەوە و دەبینیت: ٣ ئۆردەری بێ تراکینگ، کڕیار AZ001 قەرزدار، و ١ ئۆردەری $1,300 → یەک بە یەک چارەسەریان بکە.",
+      en: "In the morning you open \"Problems\" and see: 3 orders without tracking, customer AZ001 in debt, and 1 order of $1,300 → handle them one by one.",
+      ar: "صباحاً تفتح «المشاكل» وترى: 3 طلبات بلا تتبّع، العميل AZ001 مدين، وطلب واحد بقيمة 1,300$ → عالِجها واحدة تلو الأخرى.",
+      zh: "早上你打开「问题」区，看到：3 个无运单号的订单、客户 AZ001 欠款、1 个 1,300 美元的订单 → 逐一处理。" } },
+  { id: "tip-53",
+    short: {
+      ku: "بەشی «سەرکەوتنەکانی ئەم هەفتەیە» — بزانە کام کڕیار ئاکتیفترینە و قازانجت چۆنە.",
+      en: "Check \"Wins this week\" — see your most active customer and how profit is doing.",
+      ar: "راجِع «إنجازات هذا الأسبوع» — لتعرف أنشط عميل وكيف يسير الربح.",
+      zh: "查看「本周成绩」——了解最活跃的客户和利润情况。" },
+    detail: {
+      ku: "بەشی «سەرکەوتنەکانی ئەم هەفتەیە» کورتەیەکی ئەرێنی هەفتانە پیشان دەدات — کام کڕیار زۆرترین ئۆردەری کردووە و قازانج چۆن گەشە دەکات. ئەمە یارمەتیت دەدات کڕیارە بەنرخەکان بناسیت و خزمەتیان باشتر بکەیت. هەروەها وروژێنەرە بۆ بینینی ئەنجامی کارەکانت.",
+      en: "The \"Wins this week\" section shows a positive weekly summary — which customer placed the most orders and how profit is growing. This helps you recognize your most valuable customers and serve them better. It's also motivating to see the results of your work.",
+      ar: "قسم «إنجازات هذا الأسبوع» يعرض ملخّصاً أسبوعياً إيجابياً — أي عميل قدّم أكثر الطلبات وكيف ينمو الربح. هذا يساعدك على معرفة أثمن عملائك وخدمتهم أفضل. وهو أيضاً محفّز لرؤية نتائج عملك.",
+      zh: "「本周成绩」区展示一份积极的周度总结——哪位客户下单最多、利润如何增长。这能帮你识别最有价值的客户并更好地服务他们。看到自己工作的成果也很激励人心。" },
+    example: {
+      ku: "ئەم هەفتە «سەرکەوتنەکان» پیشان دەدات: کڕیاری ئاکتیفترین AZ001 بە ٢٢ ئۆردەر، قازانجی هەفتە $1,840 → بزانە کام کڕیار گرنگترینە.",
+      en: "This week \"Wins\" shows: most active customer AZ001 with 22 orders, weekly profit $1,840 → you see which customer matters most.",
+      ar: "هذا الأسبوع تُظهِر «الإنجازات»: أنشط عميل AZ001 بـ22 طلباً، وربح الأسبوع 1,840$ → تعرف أي عميل هو الأهم.",
+      zh: "本周「成绩」显示：最活跃客户 AZ001 共 22 个订单，周利润 1,840 美元 → 你能看出哪位客户最重要。" } },
+  { id: "tip-54",
+    short: {
+      ku: "خێراییی باچەکان (چەند ڕۆژ گەیشتوون) بەراورد بکە.",
+      en: "Compare batch speeds (days to arrive).",
+      ar: "قارِن سرعة الدفعات (أيام الوصول).",
+      zh: "比较各批次的速度（到货天数）。" },
+    detail: {
+      ku: "بەراوردکردنی ماوەی گەیشتنی باچەکان وایدەکات بزانیت کام لۆجیستیک پشتپێبەستراوترە و کام لای دواکەوتنی هەیە. ئەم زانیارییە بنەمای بڕیاری باشترە بۆ هەفتە و مانگەکانی داهاتوو. بەراوردێکی سادەی ژمارەی ڕۆژەکان پلانی گواستنەوەت باشتر دەکات.",
+      en: "Comparing how long batches take to arrive shows you which logistics partner is more reliable and which tends to be late. This information is the basis of better decisions for the weeks and months ahead. A simple comparison of the day counts improves your shipping plan.",
+      ar: "مقارنة مدّة وصول الدفعات تُظهِر لك أي شريك لوجستي أكثر موثوقية وأيّهم يميل للتأخّر. هذه المعلومة أساس قرارات أفضل للأسابيع والأشهر القادمة. مقارنة بسيطة لعدد الأيام تحسّن خطّة الشحن لديك.",
+      zh: "比较各批次的到货时长，可看出哪家物流伙伴更可靠、哪家常常延误。这些信息是未来数周乃至数月作出更优决策的基础。简单比较天数即可改进你的运输计划。" },
+    example: {
+      ku: "ئەم مانگ سێ باچی دەریایی هەبووە: ٢٨ ڕۆژ، ٣٥ ڕۆژ، ٣٠ ڕۆژ → باچی ٣٥ ڕۆژ دواکەوتووە؛ هۆکارەکەی بپرسە.",
+      en: "This month there were three sea batches: 28 days, 35 days, 30 days → the 35-day batch lagged; ask why.",
+      ar: "هذا الشهر كانت هناك ثلاث دفعات بحرية: 28 يوماً، 35 يوماً، 30 يوماً → الدفعة ذات الـ35 يوماً تأخّرت؛ اسأل عن السبب.",
+      zh: "本月有三个海运批次：28 天、35 天、30 天 → 35 天的批次落后了；查问原因。" } },
+  { id: "tip-55",
+    short: {
+      ku: "کڕیارێک زۆر ئۆردەر دەکات؟ یەکجار هەڵیبژێرە و هەمووی پشتەوەپشت داخڵ بکە — فۆرم دوای سەیڤ دانەخراوە.",
+      en: "Customer with many orders? Pick them once and enter all back-to-back — the form stays open after saving.",
+      ar: "عميل لديه طلبات كثيرة؟ اختَره مرّة وأدخِلها كلها تباعاً — يبقى النموذج مفتوحاً بعد الحفظ.",
+      zh: "客户订单很多？选定一次即可连续录入——保存后表单仍保持打开。" },
+    detail: {
+      ku: "کاتێک ئۆردەرێک پاشەکەوت دەکەیت، فۆرمەکە داناخرێت بەڵکو کراوە دەمێنێتەوە و کڕیارە هەڵبژێردراوەکە لەسەری دەمێنێتەوە. ئەمەت بۆ ئەوەیە بۆ کڕیارێک کە چەند ئۆردەری هەیە، تەنها یەکجار هەڵیبژێریت و هەمووی بەخێرایی پشتەوەپشت داخڵ بکەیت. ئەمە کات و کلیک دەپارێزێت.",
+      en: "When you save an order, the form doesn't close — it stays open with the selected customer kept in place. This means that for a customer with several orders, you select them once and enter all of them quickly, back-to-back. It saves time and clicks.",
+      ar: "عند حفظ طلب، لا يُغلَق النموذج بل يبقى مفتوحاً مع بقاء العميل المُختار في مكانه. هذا يعني أنه لعميل لديه عدّة طلبات، تختاره مرّة واحدة وتُدخِلها كلها بسرعة تباعاً. هذا يوفّر الوقت والنقرات.",
+      zh: "保存订单时，表单不会关闭，而是保持打开，所选客户仍然保留。这意味着对于有多个订单的客户，你只需选定一次，便可快速连续录入全部。既省时间又省点击。" },
+    example: {
+      ku: "کڕیار AZ001 ٥ ئۆردەری هەیە → یەکجار AZ001 هەڵبژێرە، ئۆردەری یەکەم سەیڤ بکە، فۆرم کراوە دەمێنێتەوە، چوارەکەی دیکەش بەخێرایی داخڵ بکە.",
+      en: "Customer AZ001 has 5 orders → select AZ001 once, save the first order, the form stays open, and enter the other four quickly.",
+      ar: "العميل AZ001 لديه 5 طلبات → اختَر AZ001 مرّة، احفظ الطلب الأول، يبقى النموذج مفتوحاً، وأدخِل الأربعة الأخرى بسرعة.",
+      zh: "客户 AZ001 有 5 个订单 → 选定 AZ001 一次，保存第一个订单，表单保持打开，再快速录入其余四个。" } },
+  { id: "tip-56",
+    short: {
+      ku: "وێنەی کاڵای لەبیرکراو دەکرێت دواتر لە ئیدیتدا زیاد بکرێت.",
+      en: "A forgotten product photo can be added later in edit mode.",
+      ar: "يمكن إضافة صورة المنتج المنسيّة لاحقاً في وضع التعديل.",
+      zh: "忘记添加的商品照片可稍后在编辑中补充。" },
+    detail: {
+      ku: "ئەگەر لە کاتی تۆمارکردندا وێنەی کاڵات لەبیر کرد، پێویست ناکات نیگەران بیت — دەتوانیت دواتر ئۆردەرەکە بکەیتەوە لە دۆخی «ئیدیت» و وێنەکە زیاد بکەیت. لەگەڵ ئەوەشدا، باشترە لە سەرەتاوە وێنە زیاد بکەیت تاکو ناسینەوەی پاکەت ئاسانتر بێت. ئەم ئیمکانە تۆ لە دووبارە تۆمارکردن دەپارێزێت.",
+      en: "If you forgot the product photo while registering, don't worry — you can later open the order in \"edit\" mode and add the photo. Even so, it's better to add it from the start so the package is easier to identify. This option saves you from re-registering.",
+      ar: "إذا نسيت صورة المنتج أثناء التسجيل، فلا تقلق — يمكنك لاحقاً فتح الطلب في وضع «التعديل» وإضافة الصورة. ومع ذلك، الأفضل إضافتها من البداية ليسهل التعرّف على الطرد. هذا الخيار يجنّبك إعادة التسجيل.",
+      zh: "如果登记时忘了商品照片，不必担心——稍后可在「编辑」模式打开订单并补充照片。即便如此，最好一开始就添加，以便更容易识别包裹。这个功能让你免于重新登记。" },
+    example: {
+      ku: "ئۆردەری AZ001ت بێ وێنە تۆمارکرد → دواتر بیکەرەوە لە ئیدیت، وێنەی کاڵاکە بەرز بکەرەوە و سەیڤی بکە.",
+      en: "You registered AZ001's order without a photo → later open it in edit, upload the product photo, and save.",
+      ar: "سجّلت طلب AZ001 بلا صورة → افتحه لاحقاً في التعديل، ارفع صورة المنتج، واحفظ.",
+      zh: "你登记 AZ001 的订单时没加照片 → 稍后在编辑中打开，上传商品照片并保存。" } },
+  { id: "tip-57",
+    short: {
+      ku: "تراکینگ نەمبەری هەڵە = نەدۆزینەوەی پاکەت — بە وردی داخڵی بکە.",
+      en: "A wrong tracking number = a package that can't be found — enter it carefully.",
+      ar: "رقم تتبّع خاطئ = طرد لا يُعثَر عليه — أدخِله بدقّة.",
+      zh: "运单号错误 = 找不到包裹——请仔细录入。" },
+    detail: {
+      ku: "تراکینگ نەمبەر تاکە ڕێگایە بۆ ناسینەوە و دۆزینەوەی پاکەت لە کاتی سکانکردن و گەیاندندا. ئەگەر تەنها یەک پیت یان ژمارەی هەڵە بێت، سیستەم پاکەتەکە ناناسێتەوە و وەک بێخاوەن دەمێنێتەوە. بۆیە بە وردی داخڵی بکە، یان باشتر، بە ئامێری سکان یان کۆپی بیخەرە ناوەوە.",
+      en: "The tracking number is the only way to identify and find a package when scanning and delivering. If even one letter or digit is wrong, the system won't recognize the package and it stays as unclaimed. So enter it carefully, or better, put it in with a scanner or by copy-paste.",
+      ar: "رقم التتبّع هو الطريقة الوحيدة للتعرّف على الطرد وإيجاده عند المسح والتسليم. إذا كان حرف أو رقم واحد خاطئاً، لن يتعرّف النظام على الطرد ويبقى بلا صاحب. لذا أدخِله بدقّة، أو الأفضل أدخِله بالماسح أو بالنسخ واللصق.",
+      zh: "运单号是扫描和交付时识别、查找包裹的唯一途径。哪怕错了一个字母或数字，系统都无法识别该包裹，它会一直处于无主状态。所以请仔细录入，或更好的方式是用扫描枪或复制粘贴录入。" },
+    example: {
+      ku: "تراکینگی ڕاست YT7612345678ـە بەڵام YT7612345670 داخڵ دەکەیت → پاکەتەکە لە سکاندا نادۆزرێتەوە و بێخاوەن دەمێنێتەوە.",
+      en: "The correct tracking is YT7612345678 but you enter YT7612345670 → the package won't be found on scan and stays unclaimed.",
+      ar: "رقم التتبّع الصحيح YT7612345678 لكنك تُدخِل YT7612345670 → لن يُعثَر على الطرد عند المسح ويبقى بلا صاحب.",
+      zh: "正确运单号是 YT7612345678，但你录入 YT7612345670 → 扫描时找不到该包裹，它会一直无主。" } },
+  { id: "tip-58",
+    short: {
+      ku: "پێش پاشەکەوتکردنی فۆرم، خانە پێویستەکان (بەستەرە سوورەکان *) پڕبکەرەوە.",
+      en: "Before saving a form, fill the required fields (marked with a red *).",
+      ar: "قبل حفظ النموذج، املأ الحقول المطلوبة (المعلّمة بنجمة حمراء *).",
+      zh: "保存表单前，请填写必填字段（带红色 * 标记）。" },
+    detail: {
+      ku: "خانە پێویستەکان بە ئەستێرەی سوور (*) نیشانە کراون، چونکە سیستەم بەبێ ئەوان ناتوانێت بە دروستی کار بکات. ئەگەر بەتاڵیان بهێڵیتەوە، فۆرم پاشەکەوت نابێت و پەیامی هەڵە دەردەکەوێت. بۆیە پێش کرتەی «سەیڤ»، دڵنیابە هەموو خانە ئەستێرەدارەکان پڕکراونەتەوە.",
+      en: "Required fields are marked with a red asterisk (*) because the system can't work correctly without them. If you leave them blank, the form won't save and an error message appears. So before clicking \"Save\", make sure every starred field is filled in.",
+      ar: "الحقول المطلوبة معلّمة بنجمة حمراء (*) لأن النظام لا يعمل بشكل صحيح دونها. إذا تركتها فارغة، لن يُحفَظ النموذج وتظهر رسالة خطأ. لذا قبل النقر على «حفظ» تأكّد أن كل حقل بنجمة قد مُلئ.",
+      zh: "必填字段以红色星号（*）标记，因为没有它们系统无法正常工作。若留空，表单将无法保存并显示错误提示。所以点击「保存」前，确认每个带星号的字段都已填写。" },
+    example: {
+      ku: "لە فۆرمی ئۆردەری نوێدا، «کڕیار *» و «جۆری کاڵا *» بەتاڵن → پڕیان بکەرەوە؛ ئەگەر نا، سەیڤ ناکات و ئاگادارت دەکاتەوە.",
+      en: "On the new-order form, \"Customer *\" and \"Product type *\" are empty → fill them; otherwise it won't save and warns you.",
+      ar: "في نموذج الطلب الجديد، «العميل *» و«نوع المنتج *» فارغان → املأهما؛ وإلّا لن يُحفَظ ويُنبّهك.",
+      zh: "在新订单表单中，「客户 *」和「商品类型 *」为空 → 请填写；否则无法保存并会提示你。" } },
 ];
 
 export const MOTIVATION_MESSAGES: MotivationMessage[] = [

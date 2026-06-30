@@ -12,6 +12,7 @@ import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import QueryErrorBoundary from "./components/QueryErrorBoundary";
 import { MutationToastHandler } from "./components/MutationToastHandler";
 import { OfflineProvider } from "./contexts/OfflineContext";
+import { StaffTips } from "./components/StaffTips";
 
 // ---------------------------------------------------------------------------
 // Core & Home
@@ -333,6 +334,7 @@ function App() {
                 <QueryErrorBoundary>
                   <Router />
                 </QueryErrorBoundary>
+                <StaffTips />
                 <PWAInstallPrompt />
               </TooltipProvider>
               </LandingThemeProvider>
