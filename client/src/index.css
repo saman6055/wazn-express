@@ -311,6 +311,20 @@
   --color-gray-800: oklch(28% 0.03 350);
   --color-gray-900: oklch(21.5% 0.03 350);
   --color-gray-950: oklch(14% 0.028 350);
+  /* Slate too — the page-header "gradient" hero is built from slate-700/800/900;
+     re-hueing slate turns that dark navy band into a soft deep-plum/rose that
+     matches the feminine canvas (lightness kept, a touch more warmth). */
+  --color-slate-50: oklch(98.4% 0.004 350);
+  --color-slate-100: oklch(96.8% 0.008 350);
+  --color-slate-200: oklch(92.9% 0.014 350);
+  --color-slate-300: oklch(86.9% 0.024 350);
+  --color-slate-400: oklch(70.4% 0.04 350);
+  --color-slate-500: oklch(55.4% 0.05 350);
+  --color-slate-600: oklch(44.6% 0.055 350);
+  --color-slate-700: oklch(37.2% 0.06 350);
+  --color-slate-800: oklch(27.9% 0.06 350);
+  --color-slate-900: oklch(20.8% 0.055 350);
+  --color-slate-950: oklch(12.9% 0.05 350);
 }
 [data-theme="violet"] {
   --color-emerald-50: oklch(97.9% 0.021 300);
