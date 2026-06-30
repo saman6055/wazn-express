@@ -71,7 +71,7 @@ import {
   Search,
   type LucideIcon
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
@@ -161,6 +161,8 @@ function DashboardLayoutContent({
   useDynamicFavicon();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["main"]);
+  const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
+  const hoverLeaveTimer = useRef<number | null>(null);
   const [cmdOpen, setCmdOpen] = useState(false);
 
   // Most-repeated daily functions, pinned to the top bar for one-click access.
@@ -431,12 +433,32 @@ function DashboardLayoutContent({
   const isItemActive = (path: string) => location === path || location.startsWith(path + '/');
 
   const toggleGroup = (groupId: string) => {
-    setExpandedGroups(prev => 
-      prev.includes(groupId) 
+    setExpandedGroups(prev =>
+      prev.includes(groupId)
         ? prev.filter(id => id !== groupId)
         : [...prev, groupId]
     );
   };
+
+  // Desktop convenience: open a group on hover, close it shortly after the
+  // mouse leaves. Click still works (and pins a group open via expandedGroups),
+  // and on touch devices hover is disabled so tapping is the only trigger.
+  const handleGroupEnter = (groupId: string) => {
+    if (isMobile) return;
+    if (hoverLeaveTimer.current) {
+      window.clearTimeout(hoverLeaveTimer.current);
+      hoverLeaveTimer.current = null;
+    }
+    setHoveredGroup(groupId);
+  };
+  const handleGroupLeave = () => {
+    if (isMobile) return;
+    if (hoverLeaveTimer.current) window.clearTimeout(hoverLeaveTimer.current);
+    hoverLeaveTimer.current = window.setTimeout(() => setHoveredGroup(null), 220);
+  };
+  useEffect(() => () => {
+    if (hoverLeaveTimer.current) window.clearTimeout(hoverLeaveTimer.current);
+  }, []);
 
   const getColorClasses = (color: string, isActive: boolean) => {
     const colors: Record<string, { bg: string; text: string; icon: string; activeBg: string }> = {
@@ -524,12 +546,17 @@ function DashboardLayoutContent({
         {/* Sidebar Content - Scrollable */}
         <div className="flex-1 overflow-y-auto py-3 px-2">
           {menuGroups.map((group) => {
-            const isExpanded = expandedGroups.includes(group.id);
+            const isExpanded = expandedGroups.includes(group.id) || hoveredGroup === group.id;
             const hasActiveItem = group.items.some(item => isItemActive(item.path));
             const colorClasses = getColorClasses(group.color, hasActiveItem);
 
             return (
-              <div key={group.id} className="mb-1">
+              <div
+                key={group.id}
+                className="mb-1"
+                onMouseEnter={() => handleGroupEnter(group.id)}
+                onMouseLeave={handleGroupLeave}
+              >
                 {/* Group Header */}
                 <button
                   onClick={() => toggleGroup(group.id)}
