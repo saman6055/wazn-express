@@ -16,7 +16,6 @@ import { STAFF_TIPS, MOTIVATION_MESSAGES, type TipLang } from "@/constants/staff
 // at the app root (not in the per-page layout) so the idle timer is continuous.
 const TIP_INDEX_KEY = "wazn-tip-index";
 const TIP_DISMISS_DATE_KEY = "wazn-tip-dismissed-date";
-const TIP_SESSION_INIT_KEY = "wazn-tip-session-init";
 const SESSION_START_KEY = "wazn-session-start";
 const MOTIVATION_SHOWN_KEY = "wazn-motivation-shown";
 const IDLE_MS = 10 * 60 * 1000;
@@ -73,13 +72,12 @@ export function StaffTips() {
     setOpen(true);
   }, []);
 
-  // Show on login, then drive show/hide off real activity (mouse + keyboard).
+  // Show on each app load, then drive show/hide off real activity. Because this
+  // lives at the app root it does NOT re-mount on page navigation, so a tip only
+  // greets the staff member on a real (re)load — never mid-work.
   useEffect(() => {
-    if (localStorage.getItem(TIP_DISMISS_DATE_KEY) === todayStr()) return;
-
-    // One tip the first time we enter the session (login / fresh tab).
-    if (sessionStorage.getItem(TIP_SESSION_INIT_KEY) !== "1") {
-      sessionStorage.setItem(TIP_SESSION_INIT_KEY, "1");
+    // Auto-greet on load unless they chose to hide tips for today.
+    if (localStorage.getItem(TIP_DISMISS_DATE_KEY) !== todayStr()) {
       setOpen(true);
     }
 
@@ -135,7 +133,25 @@ export function StaffTips() {
     return () => window.clearTimeout(timer);
   }, [user, lang]);
 
-  if (!onStaffArea || !open || STAFF_TIPS.length === 0) return null;
+  if (!onStaffArea || STAFF_TIPS.length === 0) return null;
+
+  // Card closed → leave a small lightbulb button so a tip is always one click
+  // away (and the feature stays discoverable).
+  if (!open) {
+    return (
+      <button
+        onClick={() => {
+          idleRef.current = false;
+          showNextTip();
+        }}
+        title={labels.tip}
+        aria-label={labels.tip}
+        className="fixed bottom-4 left-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg hover:bg-amber-600 transition-colors"
+      >
+        <Lightbulb className="h-5 w-5" />
+      </button>
+    );
+  }
 
   const tip = STAFF_TIPS[((index % STAFF_TIPS.length) + STAFF_TIPS.length) % STAFF_TIPS.length];
   const short = tip.short[lang] || tip.short.ku;
