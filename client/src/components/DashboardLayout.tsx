@@ -77,6 +77,7 @@ import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import { CommandPalette } from "./CommandPalette";
 import { ScrollButtons } from "./ScrollButtons";
+import { ThemePicker } from "./ThemePicker";
 import { useLanguage, Language } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -722,6 +723,9 @@ function DashboardLayoutContent({
               <span className="hidden lg:inline">گەڕان بۆ فەنکشن…</span>
               <kbd className="hidden lg:inline rounded border border-gray-300 dark:border-gray-600 px-1 text-[10px] font-mono">Ctrl K</kbd>
             </button>
+
+            {/* Accent theme (skin) picker */}
+            <ThemePicker />
 
             {/* Dark / light mode — one-click toggle */}
             <Button

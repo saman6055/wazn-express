@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
+export type Accent = "default" | "rose" | "violet" | "ocean" | "amber";
 
 interface ThemeContextType {
   theme: Theme;
   toggleTheme?: () => void;
   switchable: boolean;
+  accent: Accent;
+  setAccent: (a: Accent) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -29,6 +32,11 @@ export function ThemeProvider({
     return defaultTheme;
   });
 
+  const [accent, setAccent] = useState<Accent>(() => {
+    const stored = localStorage.getItem("theme-accent") as Accent | null;
+    return stored || "default";
+  });
+
   useEffect(() => {
     const root = document.documentElement;
     if (theme === "dark") {
@@ -42,6 +50,18 @@ export function ThemeProvider({
     }
   }, [theme, switchable]);
 
+  // Accent skin is applied via a data-theme attribute on <html>; "default" keeps
+  // the brand teal (no attribute). Independent of light/dark.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (accent && accent !== "default") {
+      root.setAttribute("data-theme", accent);
+    } else {
+      root.removeAttribute("data-theme");
+    }
+    localStorage.setItem("theme-accent", accent);
+  }, [accent]);
+
   const toggleTheme = switchable
     ? () => {
         setTheme(prev => (prev === "light" ? "dark" : "light"));
@@ -49,7 +69,7 @@ export function ThemeProvider({
     : undefined;
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, switchable, accent, setAccent }}>
       {children}
     </ThemeContext.Provider>
   );

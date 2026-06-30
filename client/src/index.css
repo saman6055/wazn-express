@@ -133,6 +133,114 @@
   --warning-foreground: oklch(0.15 0.02 70);
 }
 
+/* ---------------------------------------------------------------------------
+   Accent themes (skins). Each only shifts the brand hue of the core tokens
+   (primary / ring / accent / chart-1 / sidebar accents), keeping the same
+   lightness/chroma structure so contrast and dark-mode behaviour stay intact.
+   Applied via <html data-theme="…">. Default (no attribute) = the teal brand.
+   Light scope: [data-theme]:not(.dark) ; dark scope: .dark[data-theme].
+--------------------------------------------------------------------------- */
+
+/* 🌸 Rose — soft & elegant */
+[data-theme="rose"]:not(.dark) {
+  --primary: oklch(0.53 0.15 350);
+  --primary-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.53 0.15 350);
+  --sidebar-primary: oklch(0.53 0.15 350);
+  --sidebar-ring: oklch(0.53 0.15 350);
+  --chart-1: oklch(0.60 0.17 350);
+  --accent: oklch(0.95 0.03 350);
+  --accent-foreground: oklch(0.32 0.07 350);
+  --sidebar-accent: oklch(0.95 0.03 350);
+  --sidebar-accent-foreground: oklch(0.32 0.07 350);
+}
+.dark[data-theme="rose"] {
+  --primary: oklch(0.64 0.16 350);
+  --ring: oklch(0.64 0.16 350);
+  --sidebar-primary: oklch(0.64 0.16 350);
+  --sidebar-ring: oklch(0.64 0.16 350);
+  --chart-1: oklch(0.64 0.16 350);
+  --accent: oklch(0.27 0.05 350);
+  --accent-foreground: oklch(0.92 0.03 350);
+  --sidebar-accent: oklch(0.27 0.05 350);
+  --sidebar-accent-foreground: oklch(0.92 0.03 350);
+}
+
+/* 💜 Violet — calm lavender */
+[data-theme="violet"]:not(.dark) {
+  --primary: oklch(0.51 0.16 300);
+  --primary-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.51 0.16 300);
+  --sidebar-primary: oklch(0.51 0.16 300);
+  --sidebar-ring: oklch(0.51 0.16 300);
+  --chart-1: oklch(0.58 0.18 300);
+  --accent: oklch(0.95 0.03 300);
+  --accent-foreground: oklch(0.32 0.07 300);
+  --sidebar-accent: oklch(0.95 0.03 300);
+  --sidebar-accent-foreground: oklch(0.32 0.07 300);
+}
+.dark[data-theme="violet"] {
+  --primary: oklch(0.63 0.16 300);
+  --ring: oklch(0.63 0.16 300);
+  --sidebar-primary: oklch(0.63 0.16 300);
+  --sidebar-ring: oklch(0.63 0.16 300);
+  --chart-1: oklch(0.63 0.16 300);
+  --accent: oklch(0.27 0.05 300);
+  --accent-foreground: oklch(0.92 0.03 300);
+  --sidebar-accent: oklch(0.27 0.05 300);
+  --sidebar-accent-foreground: oklch(0.92 0.03 300);
+}
+
+/* 🔵 Ocean — professional blue */
+[data-theme="ocean"]:not(.dark) {
+  --primary: oklch(0.50 0.15 245);
+  --primary-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.50 0.15 245);
+  --sidebar-primary: oklch(0.50 0.15 245);
+  --sidebar-ring: oklch(0.50 0.15 245);
+  --chart-1: oklch(0.57 0.16 245);
+  --accent: oklch(0.95 0.03 245);
+  --accent-foreground: oklch(0.30 0.06 245);
+  --sidebar-accent: oklch(0.95 0.03 245);
+  --sidebar-accent-foreground: oklch(0.30 0.06 245);
+}
+.dark[data-theme="ocean"] {
+  --primary: oklch(0.62 0.15 245);
+  --ring: oklch(0.62 0.15 245);
+  --sidebar-primary: oklch(0.62 0.15 245);
+  --sidebar-ring: oklch(0.62 0.15 245);
+  --chart-1: oklch(0.62 0.15 245);
+  --accent: oklch(0.27 0.05 245);
+  --accent-foreground: oklch(0.92 0.03 245);
+  --sidebar-accent: oklch(0.27 0.05 245);
+  --sidebar-accent-foreground: oklch(0.92 0.03 245);
+}
+
+/* 🧡 Amber — warm caramel */
+[data-theme="amber"]:not(.dark) {
+  --primary: oklch(0.52 0.12 65);
+  --primary-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.52 0.12 65);
+  --sidebar-primary: oklch(0.52 0.12 65);
+  --sidebar-ring: oklch(0.52 0.12 65);
+  --chart-1: oklch(0.62 0.14 65);
+  --accent: oklch(0.95 0.04 65);
+  --accent-foreground: oklch(0.32 0.06 65);
+  --sidebar-accent: oklch(0.95 0.04 65);
+  --sidebar-accent-foreground: oklch(0.32 0.06 65);
+}
+.dark[data-theme="amber"] {
+  --primary: oklch(0.66 0.13 65);
+  --ring: oklch(0.66 0.13 65);
+  --sidebar-primary: oklch(0.66 0.13 65);
+  --sidebar-ring: oklch(0.66 0.13 65);
+  --chart-1: oklch(0.66 0.13 65);
+  --accent: oklch(0.28 0.05 65);
+  --accent-foreground: oklch(0.93 0.03 65);
+  --sidebar-accent: oklch(0.28 0.05 65);
+  --sidebar-accent-foreground: oklch(0.93 0.03 65);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
