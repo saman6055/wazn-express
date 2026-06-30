@@ -271,6 +271,7 @@ export default function CommissionDetail() {
       // Plan v3 — OCC + reason for audit trail on any money change.
       expectedVersion: (order as any)?.version,
       reason: moneyChangeDetected ? editReason.trim() : undefined,
+      customerId: formData.customerId ? Number(formData.customerId) : undefined,
       supplierId: formData.supplierId ? Number(formData.supplierId) : null,
       productName: formData.productName,
       productLink: formData.productLink || undefined,
@@ -439,7 +440,6 @@ export default function CommissionDetail() {
                     <Select
                       value={formData.customerId}
                       onValueChange={(value) => setFormData({ ...formData, customerId: value })}
-                      disabled
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="کڕیارێک هەڵبژێرە" />

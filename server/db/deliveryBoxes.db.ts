@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lte, sql, inArray, isNull } from "drizzle-orm";
+import { eq, ne, desc, and, gte, lte, sql, inArray, isNull } from "drizzle-orm";
 import { getDb } from "./connection";
 import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, fullPackageOrderTrackings, batches, customers } from "../../drizzle/schema";
 import type { DeliveryBox, InsertDeliveryBox, DeliveryBoxItem, InsertDeliveryBoxItem } from "../../drizzle/schema/packages.schema";
@@ -425,6 +425,25 @@ export async function isFPOrderInAnyBox(fpOrderId: number): Promise<{ inBox: boo
     return { inBox: true, boxCode: items[0].boxCode, boxId: items[0].boxId };
   }
   return { inBox: false };
+}
+
+// Stricter variant for the customer-reassignment guard: true if the order sits
+// in ANY box that isn't cancelled — including a DELIVERED box (whose delivery
+// charge was already billed to that box's customer). isFPOrderInAnyBox above
+// only flags active boxes, which is right for "can I still add this to a box"
+// but NOT for "is this order financially/physically committed to a customer".
+export async function isFPOrderBoxedNonCancelled(fpOrderId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const items = await db.select({ boxId: deliveryBoxItems.boxId })
+    .from(deliveryBoxItems)
+    .innerJoin(deliveryBoxes, eq(deliveryBoxItems.boxId, deliveryBoxes.id))
+    .where(and(
+      eq(deliveryBoxItems.fullPackageOrderId, fpOrderId),
+      ne(deliveryBoxes.status, 'cancelled'),
+    ))
+    .limit(1);
+  return items.length > 0;
 }
 
 // ============ RECALCULATE BOX TOTALS ============

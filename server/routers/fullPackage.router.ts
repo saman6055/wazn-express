@@ -524,6 +524,11 @@ export const fullPackageRouter = router({
         // Embedded into the ledger adjustment description and the audit log.
         reason: z.string().optional(),
 
+        // Customer reassignment — only allowed on a financially-clean,
+        // unlinked order (see guard in handler). Optional so existing
+        // callers that never touch the customer keep working unchanged.
+        customerId: z.number().optional(),
+
         supplierId: z.number().nullable().optional(),
         productName: z.string().optional(),
         productLink: z.string().optional(),
@@ -578,7 +583,7 @@ export const fullPackageRouter = router({
         advancePaymentMethod: z.enum(['CASH','BANK_TRANSFER','FIB','FASTPAY','ZAINCASH','ASIAHAWALA','CARD','OTHER']).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { id, expectedVersion, reason, advancePaidUsd, advancePaymentMethod, ...rest } = input;
+        const { id, expectedVersion, reason, advancePaidUsd, advancePaymentMethod, customerId, ...rest } = input;
 
         // 1. Load existing order. Soft-deleted orders are already hidden by
         //    getFullPackageOrderById (notDeleted filter applied in Phase 1).
@@ -593,6 +598,54 @@ export const fullPackageRouter = router({
             code: "CONFLICT",
             message: "This order was modified by someone else. Please reload and try again.",
           });
+        }
+
+        // 2a. Customer reassignment guard.
+        //     Changing the customer on an order that already has financial
+        //     entries (ledger charge, advance payment) or physical linkage
+        //     (package / delivery box) would desync money & logistics: the
+        //     charge/advance stays on the OLD customer while the order moves
+        //     to the NEW one. We only permit reassignment on a fully-clean
+        //     order; otherwise the operator must reverse the charge/advance
+        //     and unlink the package/box first.
+        const customerChanged =
+          customerId !== undefined && customerId !== existing.customerId;
+        if (customerChanged) {
+          // Financial-cleanliness flags (mirror the handler's own
+          // isUncharged definition, plus advance + shipping charge).
+          const financiallyClean =
+            !existing.isCharged &&
+            !existing.chargeTransactionId &&
+            !(existing as any).isChargedToCustomer &&
+            !(existing as any).isShippingCharged &&
+            Number((existing as any).advancePaidUsd || 0) === 0 &&
+            !(existing as any).advancePaidAt &&
+            !(existing as any).advancePaymentTransactionId;
+
+          // Physical linkage. The box check must catch DELIVERED boxes too —
+          // those already billed the delivery charge to the OLD customer — so
+          // we use isFPOrderBoxedNonCancelled (any box except cancelled), not
+          // the active-only isFPOrderInAnyBox.
+          const linkedPackages = await db.getPackagesByOrderId(id);
+          const boxed = await db.isFPOrderBoxedNonCancelled(id);
+          const unlinked = linkedPackages.length === 0 && !boxed;
+
+          if (!financiallyClean || !unlinked) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message:
+                "ناتوانرێت کڕیار بگۆڕدرێت — ئەم ئۆردەرە چارج کراوە/پێشەکی یان پاکەت/باچی پێوە بەستراوە. سەرەتا چارج/پێشەکی بگەڕێنەوە یان پەیوەندییەکان لاببە. | Can't change the customer: this order is charged/has an advance/is linked to packages or a box. Reverse the charge/advance or unlink first.",
+            });
+          }
+
+          // Confirm the target customer exists.
+          const newCustomer = await db.getCustomerById(customerId);
+          if (!newCustomer) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "کڕیاری هەڵبژێردراو نەدۆزرایەوە | Selected customer not found",
+            });
+          }
         }
 
         // 2b. Order-number uniqueness — only when the edit actually changes the
@@ -687,6 +740,10 @@ export const fullPackageRouter = router({
 
         // 6. Handle advance payment delta (same logic as before, preserved).
         const data: any = { ...rest };
+        // Persist the validated customer reassignment (guard passed in 2a).
+        if (customerChanged) {
+          data.customerId = customerId;
+        }
         if (advancePaidUsd !== undefined) {
           const newAdvance = parseFloat(advancePaidUsd || '0');
           const oldAdvance = parseFloat(String(existing.advancePaidUsd || '0'));

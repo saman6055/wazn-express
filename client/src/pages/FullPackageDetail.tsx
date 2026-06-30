@@ -359,6 +359,7 @@ export default function FullPackageDetail() {
       // Plan v3 — OCC + reason for audit trail on any money change.
       expectedVersion: (order as any)?.version,
       reason: moneyChangeDetected ? editReason.trim() : undefined,
+      customerId: formData.customerId ? Number(formData.customerId) : undefined,
       supplierId: formData.supplierId && formData.supplierId !== "none" ? Number(formData.supplierId) : null,
       productName: formData.productName,
       productLink: formData.productLink || undefined,
