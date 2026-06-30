@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { 
   Package, DollarSign, TrendingUp, TrendingDown, Plane, Ship, AlertTriangle,
   Eye, Search, Filter, Download, FileSpreadsheet, Printer, BarChart3,
@@ -35,36 +37,38 @@ const formatDate = (date: Date | string | null) => {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
+type LangMap = { ku: string; en: string; ar: string; zh: string };
+
 // Shipping type labels and icons
-const shippingTypeConfig: Record<string, { label: string; icon: React.ReactNode; color: string; bgColor: string }> = {
-  air_regular: { 
-    label: "ئاسمانی", 
-    icon: <Plane className="h-4 w-4" />, 
+const shippingTypeConfig: Record<string, { label: LangMap; icon: React.ReactNode; color: string; bgColor: string }> = {
+  air_regular: {
+    label: { ku: "ئاسمانی", en: "Air", ar: "جوي", zh: "空运" },
+    icon: <Plane className="h-4 w-4" />,
     color: "text-blue-700",
     bgColor: "bg-blue-100"
   },
-  air_irregular: { 
-    label: "ئاسمانی مەترسیدار", 
-    icon: <AlertTriangle className="h-4 w-4" />, 
+  air_irregular: {
+    label: { ku: "ئاسمانی مەترسیدار", en: "Air (hazardous)", ar: "جوي خطر", zh: "空运（危险品）" },
+    icon: <AlertTriangle className="h-4 w-4" />,
     color: "text-orange-700",
     bgColor: "bg-orange-100"
   },
-  sea: { 
-    label: "دەریایی", 
-    icon: <Ship className="h-4 w-4" />, 
+  sea: {
+    label: { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" },
+    icon: <Ship className="h-4 w-4" />,
     color: "text-cyan-700",
     bgColor: "bg-cyan-100"
   }
 };
 
 // Status labels and colors
-const statusConfig: Record<string, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
-  preparing: { label: "ئامادەکاری", color: "text-yellow-700", bgColor: "bg-yellow-100", icon: <Clock className="h-3 w-3" /> },
-  in_transit: { label: "لە ڕێگادا", color: "text-blue-700", bgColor: "bg-blue-100", icon: <Truck className="h-3 w-3" /> },
-  arrived: { label: "گەیشتووە", color: "text-green-700", bgColor: "bg-green-100", icon: <CheckCircle className="h-3 w-3" /> },
-  customs: { label: "گومرگ", color: "text-purple-700", bgColor: "bg-purple-100", icon: <Building2 className="h-3 w-3" /> },
-  delivered: { label: "گەیەندرا", color: "text-emerald-700", bgColor: "bg-emerald-100", icon: <CheckCircle className="h-3 w-3" /> },
-  closed: { label: "داخراوە", color: "text-gray-700", bgColor: "bg-gray-100", icon: <Archive className="h-3 w-3" /> }
+const statusConfig: Record<string, { label: LangMap; color: string; bgColor: string; icon: React.ReactNode }> = {
+  preparing: { label: { ku: "ئامادەکاری", en: "Preparing", ar: "قيد التحضير", zh: "准备中" }, color: "text-yellow-700", bgColor: "bg-yellow-100", icon: <Clock className="h-3 w-3" /> },
+  in_transit: { label: { ku: "لە ڕێگادا", en: "In transit", ar: "في الطريق", zh: "运输中" }, color: "text-blue-700", bgColor: "bg-blue-100", icon: <Truck className="h-3 w-3" /> },
+  arrived: { label: { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" }, color: "text-green-700", bgColor: "bg-green-100", icon: <CheckCircle className="h-3 w-3" /> },
+  customs: { label: { ku: "گومرگ", en: "Customs", ar: "الجمارك", zh: "海关" }, color: "text-purple-700", bgColor: "bg-purple-100", icon: <Building2 className="h-3 w-3" /> },
+  delivered: { label: { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }, color: "text-emerald-700", bgColor: "bg-emerald-100", icon: <CheckCircle className="h-3 w-3" /> },
+  closed: { label: { ku: "داخراوە", en: "Closed", ar: "مغلقة", zh: "已关闭" }, color: "text-gray-700", bgColor: "bg-gray-100", icon: <Archive className="h-3 w-3" /> }
 };
 
 // Generate month options
@@ -95,6 +99,7 @@ const getYearOptions = () => {
 };
 
 export default function BatchReports() {
+  const { language } = useTranslation();
   const [shippingTypeFilter, setShippingTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -253,11 +258,21 @@ export default function BatchReports() {
   // Export to Excel
   const handleExportExcel = () => {
     // Create CSV content
-    const headers = ["کۆدی باچ", "جۆر", "دۆخ", "پاکەت", "کێش حسابکراو", "تێچوون", "داهات", "قازانج", "ڕێژە"];
+    const headers = [
+      pickLang(language, { ku: "کۆدی باچ", en: "Batch code", ar: "رمز الدفعة", zh: "批次代码" }),
+      pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" }),
+      pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" }),
+      pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" }),
+      pickLang(language, { ku: "کێش حسابکراو", en: "Chargeable weight", ar: "الوزن المحسوب", zh: "计费重量" }),
+      pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" }),
+      pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" }),
+      pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" }),
+      pickLang(language, { ku: "ڕێژە", en: "Margin", ar: "النسبة", zh: "利润率" }),
+    ];
     const rows = filteredBatches.map(batch => [
       batch.batchCode,
-      shippingTypeConfig[batch.shippingType]?.label || batch.shippingType,
-      statusConfig[batch.status]?.label || batch.status,
+      shippingTypeConfig[batch.shippingType] ? pickLang(language, shippingTypeConfig[batch.shippingType].label) : batch.shippingType,
+      statusConfig[batch.status] ? pickLang(language, statusConfig[batch.status].label) : batch.status,
       batch.packageCount,
       batch.shippingType === 'sea' ? `${formatNumber(batch.totalCbm)} CBM` : `${formatNumber(batch.totalChargeableWeight)} KG`,
       formatNumber(batch.totalCost),
@@ -268,7 +283,7 @@ export default function BatchReports() {
     
     // Add totals row
     rows.push([
-      "کۆی گشتی",
+      pickLang(language, { ku: "کۆی گشتی", en: "Grand total", ar: "الإجمالي العام", zh: "总计" }),
       "",
       "",
       totals.totalPackages,
@@ -287,7 +302,7 @@ export default function BatchReports() {
     link.download = `batch-report-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("فایلی Excel داگیرا");
+    toast.success(pickLang(language, { ku: "فایلی Excel داگیرا", en: "Excel file downloaded", ar: "تم تنزيل ملف Excel", zh: "Excel 文件已下载" }));
   };
 
   // Print report
@@ -298,7 +313,7 @@ export default function BatchReports() {
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>ڕاپۆرتی دارایی باچەکان</title>
+        <title>${pickLang(language, { ku: "ڕاپۆرتی دارایی باچەکان", en: "Batch financial report", ar: "التقرير المالي للدفعات", zh: "批次财务报告" })}</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; direction: rtl; }
@@ -324,25 +339,25 @@ export default function BatchReports() {
       </head>
       <body>
         <div class="header">
-          <h1>ڕاپۆرتی دارایی باچەکان</h1>
+          <h1>${pickLang(language, { ku: "ڕاپۆرتی دارایی باچەکان", en: "Batch financial report", ar: "التقرير المالي للدفعات", zh: "批次财务报告" })}</h1>
           <p>${company.name} - ${new Date().toLocaleDateString('ku')}</p>
         </div>
-        
+
         <div class="summary">
           <div class="summary-card batches">
-            <h3>کۆی باچەکان</h3>
+            <h3>${pickLang(language, { ku: "کۆی باچەکان", en: "Total batches", ar: "إجمالي الدفعات", zh: "批次总数" })}</h3>
             <div class="value">${totals.totalBatches}</div>
           </div>
           <div class="summary-card cost">
-            <h3>کۆی تێچوون</h3>
+            <h3>${pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</h3>
             <div class="value">${formatCurrency(totals.totalCost)}</div>
           </div>
           <div class="summary-card revenue">
-            <h3>کۆی داهات</h3>
+            <h3>${pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</h3>
             <div class="value">${formatCurrency(totals.totalRevenue)}</div>
           </div>
           <div class="summary-card profit">
-            <h3>کۆی قازانج</h3>
+            <h3>${pickLang(language, { ku: "کۆی قازانج", en: "Total profit", ar: "إجمالي الربح", zh: "总利润" })}</h3>
             <div class="value">${formatCurrency(totals.totalProfit)}</div>
           </div>
         </div>
@@ -350,23 +365,23 @@ export default function BatchReports() {
         <table>
           <thead>
             <tr>
-              <th>کۆدی باچ</th>
-              <th>جۆر</th>
-              <th>دۆخ</th>
-              <th>پاکەت</th>
-              <th>کێش</th>
-              <th>تێچوون</th>
-              <th>داهات</th>
-              <th>قازانج</th>
-              <th>ڕێژە</th>
+              <th>${pickLang(language, { ku: "کۆدی باچ", en: "Batch code", ar: "رمز الدفعة", zh: "批次代码" })}</th>
+              <th>${pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</th>
+              <th>${pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</th>
+              <th>${pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" })}</th>
+              <th>${pickLang(language, { ku: "کێش", en: "Weight", ar: "الوزن", zh: "重量" })}</th>
+              <th>${pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</th>
+              <th>${pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</th>
+              <th>${pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</th>
+              <th>${pickLang(language, { ku: "ڕێژە", en: "Margin", ar: "النسبة", zh: "利润率" })}</th>
             </tr>
           </thead>
           <tbody>
             ${filteredBatches.map(batch => `
               <tr>
                 <td>${batch.batchCode}</td>
-                <td>${shippingTypeConfig[batch.shippingType]?.label || batch.shippingType}</td>
-                <td>${statusConfig[batch.status]?.label || batch.status}</td>
+                <td>${shippingTypeConfig[batch.shippingType] ? pickLang(language, shippingTypeConfig[batch.shippingType].label) : batch.shippingType}</td>
+                <td>${statusConfig[batch.status] ? pickLang(language, statusConfig[batch.status].label) : batch.status}</td>
                 <td>${batch.packageCount}</td>
                 <td>${batch.shippingType === 'sea' ? `${formatNumber(batch.totalCbm)} CBM` : `${formatNumber(batch.totalChargeableWeight)} KG`}</td>
                 <td style="color: #dc2626;">${formatCurrency(batch.totalCost)}</td>
@@ -378,7 +393,7 @@ export default function BatchReports() {
           </tbody>
           <tfoot>
             <tr style="font-weight: bold; background: #f3f4f6;">
-              <td>کۆی گشتی</td>
+              <td>${pickLang(language, { ku: "کۆی گشتی", en: "Grand total", ar: "الإجمالي العام", zh: "总计" })}</td>
               <td></td>
               <td></td>
               <td>${totals.totalPackages}</td>
@@ -392,7 +407,7 @@ export default function BatchReports() {
         </table>
 
         <div class="footer">
-          <p>دروستکراوە لە ${new Date().toLocaleString('ku')} - ${company.name}</p>
+          <p>${pickLang(language, { ku: "دروستکراوە لە", en: "Generated on", ar: "أُنشئ في", zh: "生成于" })} ${new Date().toLocaleString('ku')} - ${company.name}</p>
         </div>
       </body>
       </html>
@@ -437,11 +452,11 @@ export default function BatchReports() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Boxes className="h-6 w-6" />
-                <span className="text-sm font-medium opacity-90">ڕاپۆرتەکان</span>
+                <span className="text-sm font-medium opacity-90">{pickLang(language, { ku: "ڕاپۆرتەکان", en: "Reports", ar: "التقارير", zh: "报告" })}</span>
               </div>
-              <h1 className="text-3xl font-bold tracking-tight mb-2">ڕاپۆرتی دارایی باچەکان</h1>
+              <h1 className="text-3xl font-bold tracking-tight mb-2">{pickLang(language, { ku: "ڕاپۆرتی دارایی باچەکان", en: "Batch financial report", ar: "التقرير المالي للدفعات", zh: "批次财务报告" })}</h1>
               <p className="text-white/80 max-w-lg">
-                شیکاری دارایی هەموو باچەکان بە یەکجار
+                {pickLang(language, { ku: "شیکاری دارایی هەموو باچەکان بە یەکجار", en: "Financial analysis of all batches at once", ar: "تحليل مالي لجميع الدفعات دفعة واحدة", zh: "一次性分析所有批次的财务情况" })}
               </p>
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -452,7 +467,7 @@ export default function BatchReports() {
                   onClick={() => setShowComparison(true)}
                 >
                   <GitCompare className="h-4 w-4 ms-2" />
-                  بەراوردکردن ({selectedBatches.size})
+                  {pickLang(language, { ku: "بەراوردکردن", en: "Compare", ar: "مقارنة", zh: "对比" })} ({selectedBatches.size})
                 </Button>
               )}
               <Button 
@@ -461,7 +476,7 @@ export default function BatchReports() {
                 onClick={handlePrint}
               >
                 <Printer className="h-4 w-4 ms-2" />
-                چاپکردن
+                {pickLang(language, { ku: "چاپکردن", en: "Print", ar: "طباعة", zh: "打印" })}
               </Button>
               <Button 
                 variant="outline" 
@@ -481,7 +496,7 @@ export default function BatchReports() {
           {/* Total Batches */}
           <Card className="border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-indigo-700">کۆی باچەکان</CardTitle>
+              <CardTitle className="text-sm font-medium text-indigo-700">{pickLang(language, { ku: "کۆی باچەکان", en: "Total batches", ar: "إجمالي الدفعات", zh: "批次总数" })}</CardTitle>
               <div className="p-2 bg-indigo-100 rounded-lg">
                 <Boxes className="h-5 w-5 text-indigo-600" />
               </div>
@@ -489,7 +504,7 @@ export default function BatchReports() {
             <CardContent>
               <div className="text-3xl font-bold text-indigo-700">{totals.totalBatches}</div>
               <p className="text-sm text-indigo-600/70 mt-1">
-                {totals.totalPackages} پاکەت
+                {totals.totalPackages} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرد", zh: "包裹" })}
               </p>
             </CardContent>
           </Card>
@@ -497,7 +512,7 @@ export default function BatchReports() {
           {/* Total Cost */}
           <Card className="border-2 border-red-200 bg-gradient-to-br from-red-50 to-rose-50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-red-700">کۆی تێچوون</CardTitle>
+              <CardTitle className="text-sm font-medium text-red-700">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</CardTitle>
               <div className="p-2 bg-red-100 rounded-lg">
                 <DollarSign className="h-5 w-5 text-red-600" />
               </div>
@@ -514,7 +529,7 @@ export default function BatchReports() {
           {/* Total Revenue */}
           <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-green-700">کۆی داهات</CardTitle>
+              <CardTitle className="text-sm font-medium text-green-700">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</CardTitle>
               <div className="p-2 bg-green-100 rounded-lg">
                 <Wallet className="h-5 w-5 text-green-600" />
               </div>
@@ -522,7 +537,7 @@ export default function BatchReports() {
             <CardContent>
               <div className="text-3xl font-bold text-green-600">{formatCurrency(totals.totalRevenue)}</div>
               <p className="text-sm text-green-600/70 mt-1">
-                لە {totals.totalPackages} پاکەت
+                {pickLang(language, { ku: "لە", en: "from", ar: "من", zh: "来自" })} {totals.totalPackages} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرد", zh: "包裹" })}
               </p>
             </CardContent>
           </Card>
@@ -533,7 +548,9 @@ export default function BatchReports() {
             : 'border-red-200 bg-gradient-to-br from-red-50 to-rose-50'}`}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className={`text-sm font-medium ${totals.totalProfit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                {totals.totalProfit >= 0 ? 'کۆی قازانج' : 'کۆی زیان'}
+                {totals.totalProfit >= 0
+                  ? pickLang(language, { ku: "کۆی قازانج", en: "Total profit", ar: "إجمالي الربح", zh: "总利润" })
+                  : pickLang(language, { ku: "کۆی زیان", en: "Total loss", ar: "إجمالي الخسارة", zh: "总亏损" })}
               </CardTitle>
               <div className={`p-2 rounded-lg ${totals.totalProfit >= 0 ? 'bg-emerald-100' : 'bg-red-100'}`}>
                 {totals.totalProfit >= 0 
@@ -547,7 +564,7 @@ export default function BatchReports() {
                 {formatCurrency(Math.abs(totals.totalProfit))}
               </div>
               <p className={`text-sm mt-1 ${totals.totalProfit >= 0 ? 'text-emerald-600/70' : 'text-red-600/70'}`}>
-                ڕێژە: {overallProfitMargin.toFixed(1)}%
+                {pickLang(language, { ku: "ڕێژە", en: "Margin", ar: "النسبة", zh: "利润率" })}: {overallProfitMargin.toFixed(1)}%
               </p>
             </CardContent>
           </Card>
@@ -558,7 +575,7 @@ export default function BatchReports() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Filter className="h-5 w-5" />
-              فیلتەرەکان
+              {pickLang(language, { ku: "فیلتەرەکان", en: "Filters", ar: "عوامل التصفية", zh: "筛选" })}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -568,7 +585,7 @@ export default function BatchReports() {
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="گەڕان بە کۆدی باچ..."
+                  placeholder={pickLang(language, { ku: "گەڕان بە کۆدی باچ...", en: "Search by batch code...", ar: "البحث برمز الدفعة...", zh: "按批次代码搜索..." })}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pr-10"
@@ -578,29 +595,29 @@ export default function BatchReports() {
               {/* Shipping Type Filter */}
               <Select value={shippingTypeFilter} onValueChange={setShippingTypeFilter}>
                 <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="جۆری گواستنەوە" />
+                  <SelectValue placeholder={pickLang(language, { ku: "جۆری گواستنەوە", en: "Shipping type", ar: "نوع الشحن", zh: "运输类型" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">هەموو جۆرەکان</SelectItem>
-                  <SelectItem value="air_regular">✈️ ئاسمانی</SelectItem>
-                  <SelectItem value="air_irregular">⚠️ ئاسمانی مەترسیدار</SelectItem>
-                  <SelectItem value="sea">🚢 دەریایی</SelectItem>
+                  <SelectItem value="all">{pickLang(language, { ku: "هەموو جۆرەکان", en: "All types", ar: "كل الأنواع", zh: "所有类型" })}</SelectItem>
+                  <SelectItem value="air_regular">✈️ {pickLang(language, { ku: "ئاسمانی", en: "Air", ar: "جوي", zh: "空运" })}</SelectItem>
+                  <SelectItem value="air_irregular">⚠️ {pickLang(language, { ku: "ئاسمانی مەترسیدار", en: "Air (hazardous)", ar: "جوي خطر", zh: "空运（危险品）" })}</SelectItem>
+                  <SelectItem value="sea">🚢 {pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" })}</SelectItem>
                 </SelectContent>
               </Select>
 
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="دۆخ" />
+                  <SelectValue placeholder={pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">هەموو دۆخەکان</SelectItem>
-                  <SelectItem value="preparing">ئامادەکاری</SelectItem>
-                  <SelectItem value="in_transit">لە ڕێگادا</SelectItem>
-                  <SelectItem value="arrived">گەیشتووە</SelectItem>
-                  <SelectItem value="customs">گومرگ</SelectItem>
-                  <SelectItem value="delivered">گەیەندرا</SelectItem>
-                  <SelectItem value="closed">داخراوە</SelectItem>
+                  <SelectItem value="all">{pickLang(language, { ku: "هەموو دۆخەکان", en: "All statuses", ar: "كل الحالات", zh: "所有状态" })}</SelectItem>
+                  <SelectItem value="preparing">{pickLang(language, { ku: "ئامادەکاری", en: "Preparing", ar: "قيد التحضير", zh: "准备中" })}</SelectItem>
+                  <SelectItem value="in_transit">{pickLang(language, { ku: "لە ڕێگادا", en: "In transit", ar: "في الطريق", zh: "运输中" })}</SelectItem>
+                  <SelectItem value="arrived">{pickLang(language, { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" })}</SelectItem>
+                  <SelectItem value="customs">{pickLang(language, { ku: "گومرگ", en: "Customs", ar: "الجمارك", zh: "海关" })}</SelectItem>
+                  <SelectItem value="delivered">{pickLang(language, { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" })}</SelectItem>
+                  <SelectItem value="closed">{pickLang(language, { ku: "داخراوە", en: "Closed", ar: "مغلقة", zh: "已关闭" })}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -609,19 +626,19 @@ export default function BatchReports() {
             <div className="flex flex-wrap gap-4 items-end border-t pt-4">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">فیلتەری بەروار:</span>
+                <span className="text-sm font-medium">{pickLang(language, { ku: "فیلتەری بەروار", en: "Date filter", ar: "تصفية حسب التاريخ", zh: "日期筛选" })}:</span>
               </div>
 
               {/* Date Filter Type */}
               <Select value={dateFilterType} onValueChange={(v) => { setDateFilterType(v); if (v === "all") clearDateFilter(); }}>
                 <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="جۆری فیلتەر" />
+                  <SelectValue placeholder={pickLang(language, { ku: "جۆری فیلتەر", en: "Filter type", ar: "نوع التصفية", zh: "筛选类型" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">هەموو کات</SelectItem>
-                  <SelectItem value="range">ماوەی دیاریکراو</SelectItem>
-                  <SelectItem value="month">مانگانە</SelectItem>
-                  <SelectItem value="year">ساڵانە</SelectItem>
+                  <SelectItem value="all">{pickLang(language, { ku: "هەموو کات", en: "All time", ar: "كل الأوقات", zh: "全部时间" })}</SelectItem>
+                  <SelectItem value="range">{pickLang(language, { ku: "ماوەی دیاریکراو", en: "Date range", ar: "نطاق محدد", zh: "指定区间" })}</SelectItem>
+                  <SelectItem value="month">{pickLang(language, { ku: "مانگانە", en: "Monthly", ar: "شهري", zh: "按月" })}</SelectItem>
+                  <SelectItem value="year">{pickLang(language, { ku: "ساڵانە", en: "Yearly", ar: "سنوي", zh: "按年" })}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -629,7 +646,7 @@ export default function BatchReports() {
               {dateFilterType === "range" && (
                 <>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">لە:</span>
+                    <span className="text-sm text-muted-foreground">{pickLang(language, { ku: "لە", en: "From", ar: "من", zh: "从" })}:</span>
                     <Input
                       type="date"
                       value={startDate}
@@ -638,7 +655,7 @@ export default function BatchReports() {
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">بۆ:</span>
+                    <span className="text-sm text-muted-foreground">{pickLang(language, { ku: "بۆ", en: "To", ar: "إلى", zh: "至" })}:</span>
                     <Input
                       type="date"
                       value={endDate}
@@ -653,7 +670,7 @@ export default function BatchReports() {
               {dateFilterType === "month" && (
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                   <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="هەڵبژاردنی مانگ" />
+                    <SelectValue placeholder={pickLang(language, { ku: "هەڵبژاردنی مانگ", en: "Select month", ar: "اختر الشهر", zh: "选择月份" })} />
                   </SelectTrigger>
                   <SelectContent>
                     {monthOptions.map(month => (
@@ -669,7 +686,7 @@ export default function BatchReports() {
               {dateFilterType === "year" && (
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
                   <SelectTrigger className="w-[160px]">
-                    <SelectValue placeholder="هەڵبژاردنی ساڵ" />
+                    <SelectValue placeholder={pickLang(language, { ku: "هەڵبژاردنی ساڵ", en: "Select year", ar: "اختر السنة", zh: "选择年份" })} />
                   </SelectTrigger>
                   <SelectContent>
                     {yearOptions.map(year => (
@@ -685,7 +702,7 @@ export default function BatchReports() {
               {dateFilterType !== "all" && (
                 <Button variant="ghost" size="sm" onClick={clearDateFilter} className="text-muted-foreground">
                   <X className="h-4 w-4 ms-1" />
-                  پاککردنەوە
+                  {pickLang(language, { ku: "پاککردنەوە", en: "Clear", ar: "مسح", zh: "清除" })}
                 </Button>
               )}
             </div>
@@ -699,7 +716,7 @@ export default function BatchReports() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <BarChart3 className="h-5 w-5" />
-                بەراوردی تێچوون و داهات
+                {pickLang(language, { ku: "بەراوردی تێچوون و داهات", en: "Cost vs revenue", ar: "مقارنة التكلفة والإيرادات", zh: "成本与收入对比" })}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -713,12 +730,12 @@ export default function BatchReports() {
                         <div className={`p-1.5 rounded ${config.bgColor}`}>
                           {config.icon}
                         </div>
-                        <span className="font-medium">{config.label}</span>
-                        <span className="text-sm text-muted-foreground">({data.count} باچ)</span>
+                        <span className="font-medium">{pickLang(language, config.label)}</span>
+                        <span className="text-sm text-muted-foreground">({data.count} {pickLang(language, { ku: "باچ", en: "batches", ar: "دفعة", zh: "批次" })})</span>
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs w-16 text-red-600">تێچوون</span>
+                          <span className="text-xs w-16 text-red-600">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</span>
                           <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-red-500 rounded-full transition-all duration-500"
@@ -728,7 +745,7 @@ export default function BatchReports() {
                           <span className="text-xs w-20 text-left">{formatCurrency(data.cost)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs w-16 text-green-600">داهات</span>
+                          <span className="text-xs w-16 text-green-600">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</span>
                           <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-green-500 rounded-full transition-all duration-500"
@@ -750,7 +767,7 @@ export default function BatchReports() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <PieChart className="h-5 w-5" />
-                دابەشبوونی قازانج
+                {pickLang(language, { ku: "دابەشبوونی قازانج", en: "Profit distribution", ar: "توزيع الأرباح", zh: "利润分布" })}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -768,7 +785,7 @@ export default function BatchReports() {
                     if (totalProfit === 0) {
                       return (
                         <div className="w-full h-full rounded-full bg-gray-100 flex items-center justify-center">
-                          <span className="text-muted-foreground text-sm">هیچ قازانجێک نییە</span>
+                          <span className="text-muted-foreground text-sm">{pickLang(language, { ku: "هیچ قازانجێک نییە", en: "No profit", ar: "لا يوجد ربح", zh: "无利润" })}</span>
                         </div>
                       );
                     }
@@ -816,7 +833,7 @@ export default function BatchReports() {
                   return (
                     <div key={type} className="text-center">
                       <div className={`w-3 h-3 rounded-full mx-auto mb-1 ${type === 'air_regular' ? 'bg-blue-500' : type === 'air_irregular' ? 'bg-orange-500' : 'bg-cyan-500'}`} />
-                      <div className="text-xs font-medium">{config.label}</div>
+                      <div className="text-xs font-medium">{pickLang(language, config.label)}</div>
                       <div className="text-xs text-muted-foreground">{percentage}%</div>
                     </div>
                   );
@@ -832,7 +849,7 @@ export default function BatchReports() {
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-lg">
                 <BarChart3 className="h-5 w-5" />
-                لیستی باچەکان ({filteredBatches.length})
+                {pickLang(language, { ku: "لیستی باچەکان", en: "Batch list", ar: "قائمة الدفعات", zh: "批次列表" })} ({filteredBatches.length})
               </div>
               {selectedBatches.size > 0 && (
                 <Button 
@@ -841,7 +858,7 @@ export default function BatchReports() {
                   onClick={() => setSelectedBatches(new Set())}
                 >
                   <X className="h-4 w-4 ms-1" />
-                  پاککردنەوەی هەڵبژاردن ({selectedBatches.size})
+                  {pickLang(language, { ku: "پاککردنەوەی هەڵبژاردن", en: "Clear selection", ar: "مسح التحديد", zh: "清除选择" })} ({selectedBatches.size})
                 </Button>
               )}
             </CardTitle>
@@ -854,7 +871,7 @@ export default function BatchReports() {
             ) : filteredBatches.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Boxes className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>هیچ باچێک نەدۆزرایەوە</p>
+                <p>{pickLang(language, { ku: "هیچ باچێک نەدۆزرایەوە", en: "No batches found", ar: "لم يتم العثور على دفعات", zh: "未找到批次" })}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -873,16 +890,16 @@ export default function BatchReports() {
                           }}
                         />
                       </TableHead>
-                      <TableHead className="text-right font-bold">کۆدی باچ</TableHead>
-                      <TableHead className="text-right font-bold">جۆر</TableHead>
-                      <TableHead className="text-right font-bold">دۆخ</TableHead>
-                      <TableHead className="text-right font-bold">پاکەت</TableHead>
-                      <TableHead className="text-right font-bold">کێش حسابکراو</TableHead>
-                      <TableHead className="text-right font-bold">تێچوون</TableHead>
-                      <TableHead className="text-right font-bold">داهات</TableHead>
-                      <TableHead className="text-right font-bold">قازانج</TableHead>
-                      <TableHead className="text-right font-bold">ڕێژە</TableHead>
-                      <TableHead className="text-center font-bold">کردار</TableHead>
+                      <TableHead className="text-right font-bold">{pickLang(language, { ku: "کۆدی باچ", en: "Batch code", ar: "رمز الدفعة", zh: "批次代码" })}</TableHead>
+                      <TableHead className="text-right font-bold">{pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</TableHead>
+                      <TableHead className="text-right font-bold">{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
+                      <TableHead className="text-right font-bold">{pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" })}</TableHead>
+                      <TableHead className="text-right font-bold">{pickLang(language, { ku: "کێش حسابکراو", en: "Chargeable weight", ar: "الوزن المحسوب", zh: "计费重量" })}</TableHead>
+                      <TableHead className="text-right font-bold">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</TableHead>
+                      <TableHead className="text-right font-bold">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</TableHead>
+                      <TableHead className="text-right font-bold">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</TableHead>
+                      <TableHead className="text-right font-bold">{pickLang(language, { ku: "ڕێژە", en: "Margin", ar: "النسبة", zh: "利润率" })}</TableHead>
+                      <TableHead className="text-center font-bold">{pickLang(language, { ku: "کردار", en: "Action", ar: "إجراء", zh: "操作" })}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -913,13 +930,13 @@ export default function BatchReports() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className={`${typeConfig.color} ${typeConfig.bgColor} border-0`}>
-                              {typeConfig.label}
+                              {pickLang(language, typeConfig.label)}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className={`${statusCfg.color} ${statusCfg.bgColor} border-0 flex items-center gap-1 w-fit`}>
                               {statusCfg.icon}
-                              {statusCfg.label}
+                              {pickLang(language, statusCfg.label)}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -962,7 +979,7 @@ export default function BatchReports() {
                             <Link href={`/reports/batch-financial/${batch.id}`}>
                               <Button variant="ghost" size="sm" className="hover:bg-primary/10">
                                 <Eye className="h-4 w-4 ms-1" />
-                                بینین
+                                {pickLang(language, { ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
                                 <ChevronRight className="h-4 w-4 me-1" />
                               </Button>
                             </Link>
@@ -984,25 +1001,25 @@ export default function BatchReports() {
             <CardHeader className="bg-gradient-to-r from-blue-50 to-sky-50 rounded-t-lg">
               <CardTitle className="flex items-center gap-2 text-blue-700">
                 <Plane className="h-5 w-5" />
-                ئاسمانی
+                {pickLang(language, { ku: "ئاسمانی", en: "Air", ar: "جوي", zh: "空运" })}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">باچ:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "باچ", en: "Batches", ar: "الدفعات", zh: "批次" })}:</span>
                   <span className="font-bold">{chartData.air_regular.count}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">تێچوون:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}:</span>
                   <span className="font-bold text-red-600">{formatCurrency(chartData.air_regular.cost)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">داهات:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}:</span>
                   <span className="font-bold text-green-600">{formatCurrency(chartData.air_regular.revenue)}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
-                  <span className="text-muted-foreground">قازانج:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}:</span>
                   <span className={`font-bold ${chartData.air_regular.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     {formatCurrency(chartData.air_regular.profit)}
                   </span>
@@ -1016,25 +1033,25 @@ export default function BatchReports() {
             <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-t-lg">
               <CardTitle className="flex items-center gap-2 text-orange-700">
                 <AlertTriangle className="h-5 w-5" />
-                ئاسمانی مەترسیدار
+                {pickLang(language, { ku: "ئاسمانی مەترسیدار", en: "Air (hazardous)", ar: "جوي خطر", zh: "空运（危险品）" })}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">باچ:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "باچ", en: "Batches", ar: "الدفعات", zh: "批次" })}:</span>
                   <span className="font-bold">{chartData.air_irregular.count}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">تێچوون:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}:</span>
                   <span className="font-bold text-red-600">{formatCurrency(chartData.air_irregular.cost)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">داهات:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}:</span>
                   <span className="font-bold text-green-600">{formatCurrency(chartData.air_irregular.revenue)}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
-                  <span className="text-muted-foreground">قازانج:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}:</span>
                   <span className={`font-bold ${chartData.air_irregular.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     {formatCurrency(chartData.air_irregular.profit)}
                   </span>
@@ -1048,25 +1065,25 @@ export default function BatchReports() {
             <CardHeader className="bg-gradient-to-r from-cyan-50 to-teal-50 rounded-t-lg">
               <CardTitle className="flex items-center gap-2 text-cyan-700">
                 <Ship className="h-5 w-5" />
-                دەریایی
+                {pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" })}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">باچ:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "باچ", en: "Batches", ar: "الدفعات", zh: "批次" })}:</span>
                   <span className="font-bold">{chartData.sea.count}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">تێچوون:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}:</span>
                   <span className="font-bold text-red-600">{formatCurrency(chartData.sea.cost)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">داهات:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}:</span>
                   <span className="font-bold text-green-600">{formatCurrency(chartData.sea.revenue)}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
-                  <span className="text-muted-foreground">قازانج:</span>
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}:</span>
                   <span className={`font-bold ${chartData.sea.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     {formatCurrency(chartData.sea.profit)}
                   </span>
@@ -1082,13 +1099,13 @@ export default function BatchReports() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <GitCompare className="h-5 w-5" />
-                بەراوردکردنی باچەکان ({comparisonBatches.length})
+                {pickLang(language, { ku: "بەراوردکردنی باچەکان", en: "Compare batches", ar: "مقارنة الدفعات", zh: "对比批次" })} ({comparisonBatches.length})
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {comparisonBatches.length < 2 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  تکایە لانیکەم ٢ باچ هەڵبژێرە بۆ بەراوردکردن
+                  {pickLang(language, { ku: "تکایە لانیکەم ٢ باچ هەڵبژێرە بۆ بەراوردکردن", en: "Please select at least 2 batches to compare", ar: "يرجى تحديد دفعتين على الأقل للمقارنة", zh: "请至少选择 2 个批次进行对比" })}
                 </p>
               ) : (
                 <>
@@ -1096,7 +1113,7 @@ export default function BatchReports() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="text-right font-bold">تایبەتمەندی</TableHead>
+                          <TableHead className="text-right font-bold">{pickLang(language, { ku: "تایبەتمەندی", en: "Property", ar: "الخاصية", zh: "属性" })}</TableHead>
                           {comparisonBatches.map(batch => (
                             <TableHead key={batch.id} className="text-center font-bold">
                               {batch.batchCode}
@@ -1106,17 +1123,17 @@ export default function BatchReports() {
                       </TableHeader>
                       <TableBody>
                         <TableRow>
-                          <TableCell className="font-medium">جۆر</TableCell>
+                          <TableCell className="font-medium">{pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</TableCell>
                           {comparisonBatches.map(batch => (
                             <TableCell key={batch.id} className="text-center">
                               <Badge className={`${shippingTypeConfig[batch.shippingType]?.bgColor} ${shippingTypeConfig[batch.shippingType]?.color} border-0`}>
-                                {shippingTypeConfig[batch.shippingType]?.label}
+                                {shippingTypeConfig[batch.shippingType] ? pickLang(language, shippingTypeConfig[batch.shippingType].label) : batch.shippingType}
                               </Badge>
                             </TableCell>
                           ))}
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">پاکەت</TableCell>
+                          <TableCell className="font-medium">{pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" })}</TableCell>
                           {comparisonBatches.map(batch => (
                             <TableCell key={batch.id} className="text-center font-bold">
                               {batch.packageCount}
@@ -1124,7 +1141,7 @@ export default function BatchReports() {
                           ))}
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">کێش حسابکراو</TableCell>
+                          <TableCell className="font-medium">{pickLang(language, { ku: "کێش حسابکراو", en: "Chargeable weight", ar: "الوزن المحسوب", zh: "计费重量" })}</TableCell>
                           {comparisonBatches.map(batch => (
                             <TableCell key={batch.id} className="text-center font-bold">
                               {batch.shippingType === 'sea' 
@@ -1135,7 +1152,7 @@ export default function BatchReports() {
                           ))}
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">تێچوون</TableCell>
+                          <TableCell className="font-medium">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</TableCell>
                           {comparisonBatches.map(batch => (
                             <TableCell key={batch.id} className="text-center font-bold text-red-600">
                               {formatCurrency(batch.totalCost)}
@@ -1143,7 +1160,7 @@ export default function BatchReports() {
                           ))}
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">داهات</TableCell>
+                          <TableCell className="font-medium">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</TableCell>
                           {comparisonBatches.map(batch => (
                             <TableCell key={batch.id} className="text-center font-bold text-green-600">
                               {formatCurrency(batch.totalRevenue)}
@@ -1151,7 +1168,7 @@ export default function BatchReports() {
                           ))}
                         </TableRow>
                         <TableRow className="bg-muted/30">
-                          <TableCell className="font-bold">قازانج</TableCell>
+                          <TableCell className="font-bold">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</TableCell>
                           {comparisonBatches.map(batch => (
                             <TableCell key={batch.id} className={`text-center font-bold ${batch.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                               {formatCurrency(batch.profit)}
@@ -1159,7 +1176,7 @@ export default function BatchReports() {
                           ))}
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium">ڕێژەی قازانج</TableCell>
+                          <TableCell className="font-medium">{pickLang(language, { ku: "ڕێژەی قازانج", en: "Profit margin", ar: "نسبة الربح", zh: "利润率" })}</TableCell>
                           {comparisonBatches.map(batch => (
                             <TableCell key={batch.id} className="text-center">
                               <Badge 
@@ -1184,25 +1201,25 @@ export default function BatchReports() {
                     <CardContent className="pt-4">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                         <div>
-                          <div className="text-sm text-muted-foreground">کۆی پاکەت</div>
+                          <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی پاکەت", en: "Total packages", ar: "إجمالي الطرود", zh: "包裹总数" })}</div>
                           <div className="text-xl font-bold">
                             {comparisonBatches.reduce((sum, b) => sum + b.packageCount, 0)}
                           </div>
                         </div>
                         <div>
-                          <div className="text-sm text-muted-foreground">کۆی تێچوون</div>
+                          <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</div>
                           <div className="text-xl font-bold text-red-600">
                             {formatCurrency(comparisonBatches.reduce((sum, b) => sum + b.totalCost, 0))}
                           </div>
                         </div>
                         <div>
-                          <div className="text-sm text-muted-foreground">کۆی داهات</div>
+                          <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</div>
                           <div className="text-xl font-bold text-green-600">
                             {formatCurrency(comparisonBatches.reduce((sum, b) => sum + b.totalRevenue, 0))}
                           </div>
                         </div>
                         <div>
-                          <div className="text-sm text-muted-foreground">کۆی قازانج</div>
+                          <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی قازانج", en: "Total profit", ar: "إجمالي الربح", zh: "总利润" })}</div>
                           <div className={`text-xl font-bold ${comparisonBatches.reduce((sum, b) => sum + b.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                             {formatCurrency(comparisonBatches.reduce((sum, b) => sum + b.profit, 0))}
                           </div>

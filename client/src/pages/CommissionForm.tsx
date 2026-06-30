@@ -14,6 +14,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { pickLang } from "@/lib/lang";
 import { toast } from "sonner";
 
 // Lightweight section wrapper — small bold title + thin divider. Defined at
@@ -38,7 +39,7 @@ const Section = ({ icon: Icon, title, hint, accent = "amber", children }: { icon
 
 export default function CommissionForm() {
   const [, setLocation] = useLocation();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const utils = trpc.useUtils();
 
   // Customer search state
@@ -129,7 +130,7 @@ export default function CommissionForm() {
   // Create mutation
   const createMutation = trpc.fullPackage.create.useMutation({
     onSuccess: () => {
-      toast.success("ئۆردەری کڕین بە تێچوو بە سەرکەوتوویی داخڵ کرا — خانەکان بۆ ئۆردەری دواتر ئامادەن");
+      toast.success(pickLang(language, { ku: "ئۆردەری کڕین بە تێچوو بە سەرکەوتوویی داخڵ کرا — خانەکان بۆ ئۆردەری دواتر ئامادەن", en: "Commission purchase order created successfully — fields are ready for the next order", ar: "تم إنشاء طلب الشراء بالعمولة بنجاح — الحقول جاهزة للطلب التالي", zh: "代购订单创建成功 — 字段已为下一个订单准备就绪" }));
       utils.fullPackage.list.invalidate();
       const keepCustomerId = formData.customerId;
       if (keepCustomerId) {
@@ -233,27 +234,27 @@ export default function CommissionForm() {
     e.preventDefault();
 
     if (!formData.customerId) {
-      toast.error("تکایە کڕیارێک هەڵبژێرە");
+      toast.error(pickLang(language, { ku: "تکایە کڕیارێک هەڵبژێرە", en: "Please select a customer", ar: "يرجى اختيار عميل", zh: "请选择客户" }));
       return;
     }
 
     if (!formData.productType) {
-      toast.error("تکایە جۆری کاڵا هەڵبژێرە");
+      toast.error(pickLang(language, { ku: "تکایە جۆری کاڵا هەڵبژێرە", en: "Please select a product type", ar: "يرجى اختيار نوع المنتج", zh: "请选择商品类型" }));
       return;
     }
 
     if (!formData.itemPriceUsd || itemPrice <= 0) {
-      toast.error("تکایە نرخی کاڵا داخڵ بکە");
+      toast.error(pickLang(language, { ku: "تکایە نرخی کاڵا داخڵ بکە", en: "Please enter the item price", ar: "يرجى إدخال سعر المنتج", zh: "请输入商品价格" }));
       return;
     }
 
     if (!formData.commissionFeeUsd || commissionFee <= 0) {
-      toast.error("تکایە عمولەی کڕین داخڵ بکە");
+      toast.error(pickLang(language, { ku: "تکایە عمولەی کڕین داخڵ بکە", en: "Please enter the purchase commission", ar: "يرجى إدخال عمولة الشراء", zh: "请输入采购佣金" }));
       return;
     }
 
     if (!formData.shippingType) {
-      toast.error("تکایە شێوازی گواستنەوە دیاری بکە");
+      toast.error(pickLang(language, { ku: "تکایە شێوازی گواستنەوە دیاری بکە", en: "Please choose a shipping method", ar: "يرجى تحديد طريقة الشحن", zh: "请选择运输方式" }));
       return;
     }
 
@@ -301,18 +302,18 @@ export default function CommissionForm() {
               <Percent className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-tight">ئۆردەری کڕین بە تێچووی نوێ</h1>
-              <p className="text-sm text-muted-foreground">کڕیار نرخ دەزانێت، کۆمپانیا تەنها عمولە وەردەگرێت</p>
+              <h1 className="text-xl font-bold leading-tight">{pickLang(language, { ku: "ئۆردەری کڕین بە تێچووی نوێ", en: "New commission purchase order", ar: "طلب شراء بالعمولة جديد", zh: "新建代购订单" })}</h1>
+              <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کڕیار نرخ دەزانێت، کۆمپانیا تەنها عمولە وەردەگرێت", en: "The customer knows the price; the company only takes a commission", ar: "العميل يعرف السعر، والشركة تأخذ العمولة فقط", zh: "客户知道价格，公司仅收取佣金" })}</p>
             </div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Customer Selection */}
-          <Section icon={User} title="کڕیار" hint="کڕیارێک هەڵبژێرە بۆ ئەم ئۆردەرە" accent="amber">
+          <Section icon={User} title={pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })} hint={pickLang(language, { ku: "کڕیارێک هەڵبژێرە بۆ ئەم ئۆردەرە", en: "Select a customer for this order", ar: "اختر عميلاً لهذا الطلب", zh: "为此订单选择客户" })} accent="amber">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">کڕیار *</Label>
+                <Label className="text-xs">{pickLang(language, { ku: "کڕیار *", en: "Customer *", ar: "العميل *", zh: "客户 *" })}</Label>
                 <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -323,19 +324,19 @@ export default function CommissionForm() {
                     >
                       {selectedCustomer
                         ? `${selectedCustomer.fullName || selectedCustomer.fullNameKurdish} (${selectedCustomer.customerCode})`
-                        : "کڕیارێک هەڵبژێرە..."}
+                        : pickLang(language, { ku: "کڕیارێک هەڵبژێرە...", en: "Select a customer...", ar: "اختر عميلاً...", zh: "选择客户..." })}
                       <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
                     <Command>
                       <CommandInput
-                        placeholder="گەڕان بە ناو، کۆد یان مۆبایل..."
+                        placeholder={pickLang(language, { ku: "گەڕان بە ناو، کۆد یان مۆبایل...", en: "Search by name, code, or mobile...", ar: "البحث بالاسم أو الرمز أو الجوال...", zh: "按姓名、编号或手机搜索..." })}
                         value={customerSearch}
                         onValueChange={setCustomerSearch}
                       />
                       <CommandList>
-                        <CommandEmpty>کڕیار نەدۆزرایەوە</CommandEmpty>
+                        <CommandEmpty>{pickLang(language, { ku: "کڕیار نەدۆزرایەوە", en: "No customer found", ar: "لم يُعثر على عميل", zh: "未找到客户" })}</CommandEmpty>
                         <CommandGroup>
                           {filteredCustomers.map((customer) => (
                             <CommandItem
@@ -368,16 +369,16 @@ export default function CommissionForm() {
                 </Popover>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">فرۆشیار</Label>
+                <Label className="text-xs">{pickLang(language, { ku: "فرۆشیار", en: "Supplier", ar: "المورّد", zh: "供应商" })}</Label>
                 <Select
                   value={formData.supplierId}
                   onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
                 >
                   <SelectTrigger className={cn("h-10", filledCls(formData.supplierId && formData.supplierId !== "none" ? formData.supplierId : ""))}>
-                    <SelectValue placeholder="فرۆشیارێک هەڵبژێرە (ئارەزوومەندانە)" />
+                    <SelectValue placeholder={pickLang(language, { ku: "فرۆشیارێک هەڵبژێرە (ئارەزوومەندانە)", en: "Select a supplier (optional)", ar: "اختر مورّداً (اختياري)", zh: "选择供应商（可选）" })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">بێ فرۆشیار</SelectItem>
+                    <SelectItem value="none">{pickLang(language, { ku: "بێ فرۆشیار", en: "No supplier", ar: "بدون مورّد", zh: "无供应商" })}</SelectItem>
                     {suppliers?.map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id.toString()}>
                         {supplier.name}
@@ -390,7 +391,7 @@ export default function CommissionForm() {
           </Section>
 
           {/* ── Shipping Method (moved to top) ── */}
-          <Section icon={Plane} title="ریگاکانی گواستنەوە" hint="ریگای گواستنەوەی کاڵاکە هەڵبژێرە" accent="sky">
+          <Section icon={Plane} title={pickLang(language, { ku: "ریگاکانی گواستنەوە", en: "Shipping methods", ar: "طرق الشحن", zh: "运输方式" })} hint={pickLang(language, { ku: "ریگای گواستنەوەی کاڵاکە هەڵبژێرە", en: "Choose the shipping method for the item", ar: "اختر طريقة شحن المنتج", zh: "选择商品的运输方式" })} accent="sky">
             {/* Method Selector — compact horizontal pills */}
             <div className="grid grid-cols-3 gap-3">
               {/* Air Regular */}
@@ -412,7 +413,7 @@ export default function CommissionForm() {
                   <Plane className={`h-4 w-4 ${formData.shippingType === "air_regular" ? "text-white" : "text-gray-500"}`} />
                 </div>
                 <div className="text-start min-w-0">
-                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "air_regular" ? "text-sky-700" : "text-gray-700"}`}>ئاسمانی ئاسایی</p>
+                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "air_regular" ? "text-sky-700" : "text-gray-700"}`}>{pickLang(language, { ku: "ئاسمانی ئاسایی", en: "Air Regular", ar: "جوي عادي", zh: "普通空运" })}</p>
                   <p className="text-[10px] text-muted-foreground">Air Regular</p>
                 </div>
               </button>
@@ -437,7 +438,7 @@ export default function CommissionForm() {
                   <Zap className={`h-2.5 w-2.5 absolute -bottom-0.5 -end-0.5 ${formData.shippingType === "air_irregular" ? "text-yellow-200" : "text-amber-400"}`} />
                 </div>
                 <div className="text-start min-w-0">
-                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "air_irregular" ? "text-amber-700" : "text-gray-700"}`}>ئاسمانی مەرسیدار</p>
+                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "air_irregular" ? "text-amber-700" : "text-gray-700"}`}>{pickLang(language, { ku: "ئاسمانی مەرسیدار", en: "Air Irregular", ar: "جوي غير منتظم", zh: "特殊空运" })}</p>
                   <p className="text-[10px] text-muted-foreground">Air Irregular</p>
                 </div>
               </button>
@@ -461,7 +462,7 @@ export default function CommissionForm() {
                   <Ship className={`h-4 w-4 ${formData.shippingType === "sea" ? "text-white" : "text-gray-500"}`} />
                 </div>
                 <div className="text-start min-w-0">
-                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "sea" ? "text-teal-700" : "text-gray-700"}`}>دەریایی</p>
+                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "sea" ? "text-teal-700" : "text-gray-700"}`}>{pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" })}</p>
                   <p className="text-[10px] text-muted-foreground">Sea Freight</p>
                 </div>
               </button>
@@ -469,21 +470,21 @@ export default function CommissionForm() {
           </Section>
 
           {/* Product Info — compact multi-column grid */}
-          <Section icon={Package} title="زانیاری کاڵا" hint="زانیاری کاڵاکە داخڵ بکە" accent="amber">
+          <Section icon={Package} title={pickLang(language, { ku: "زانیاری کاڵا", en: "Product info", ar: "معلومات المنتج", zh: "商品信息" })} hint={pickLang(language, { ku: "زانیاری کاڵاکە داخڵ بکە", en: "Enter the product details", ar: "أدخل تفاصيل المنتج", zh: "输入商品详情" })} accent="amber">
             <div className="space-y-3">
               {/* Row 1: type / order# / tracking / link */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs">جۆری کاڵا *</Label>
+                  <Label className="text-xs">{pickLang(language, { ku: "جۆری کاڵا *", en: "Product type *", ar: "نوع المنتج *", zh: "商品类型 *" })}</Label>
                   <Select
                     value={formData.productType}
                     onValueChange={(v) => setFormData({ ...formData, productType: v === "__none__" ? "" : v })}
                   >
                     <SelectTrigger className={cn("h-10", filledCls(formData.productType))}>
-                      <SelectValue placeholder="جۆر هەڵبژێرە" />
+                      <SelectValue placeholder={pickLang(language, { ku: "جۆر هەڵبژێرە", en: "Select type", ar: "اختر النوع", zh: "选择类型" })} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— بێ جۆر —</SelectItem>
+                      <SelectItem value="__none__">{pickLang(language, { ku: "— بێ جۆر —", en: "— No type —", ar: "— بدون نوع —", zh: "— 无类型 —" })}</SelectItem>
                       {typeAttrs?.map(a => (
                         <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
                       ))}
@@ -491,11 +492,11 @@ export default function CommissionForm() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">ئۆردەر نەمبەر</Label>
+                  <Label className="text-xs">{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order number", ar: "رقم الطلب", zh: "订单编号" })}</Label>
                   <Input
                     value={formData.orderNumber}
                     onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
-                    placeholder="ژمارەی ئۆردەر"
+                    placeholder={pickLang(language, { ku: "ژمارەی ئۆردەر", en: "Order number", ar: "رقم الطلب", zh: "订单编号" })}
                     className={cn("h-10", filledCls(formData.orderNumber))}
                     dir="ltr"
                   />
@@ -503,12 +504,12 @@ export default function CommissionForm() {
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center gap-1.5">
                     <ScanBarcode className="h-3.5 w-3.5" />
-                    تراکینگ نەمبەر <span className="text-muted-foreground font-normal">(ئیختیاری)</span>
+                    {pickLang(language, { ku: "تراکینگ نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "运单号" })} <span className="text-muted-foreground font-normal">{pickLang(language, { ku: "(ئیختیاری)", en: "(optional)", ar: "(اختياري)", zh: "（可选）" })}</span>
                   </Label>
                   <Input
                     value={formData.trackingNumber}
                     onChange={(e) => setFormData({ ...formData, trackingNumber: e.target.value })}
-                    placeholder="ئەگەر ئێستا بەردەستە، داخڵی بکە"
+                    placeholder={pickLang(language, { ku: "ئەگەر ئێستا بەردەستە، داخڵی بکە", en: "Enter it if available now", ar: "أدخله إن كان متاحاً الآن", zh: "如已有请输入" })}
                     className={cn("h-10", filledCls(formData.trackingNumber))}
                     dir="ltr"
                   />
@@ -516,7 +517,7 @@ export default function CommissionForm() {
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center gap-1.5">
                     <LinkIcon className="h-3.5 w-3.5" />
-                    لینکی کاڵا
+                    {pickLang(language, { ku: "لینکی کاڵا", en: "Product link", ar: "رابط المنتج", zh: "商品链接" })}
                   </Label>
                   <Input
                     value={formData.productLink}
@@ -531,16 +532,16 @@ export default function CommissionForm() {
               {/* Row 2: color / size / image */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs">ڕەنگ</Label>
+                  <Label className="text-xs">{pickLang(language, { ku: "ڕەنگ", en: "Color", ar: "اللون", zh: "颜色" })}</Label>
                   <Select
                     value={formData.color}
                     onValueChange={(v) => setFormData({ ...formData, color: v === "__none__" ? "" : v })}
                   >
                     <SelectTrigger className={cn("h-10", filledCls(formData.color))}>
-                      <SelectValue placeholder="ڕەنگ هەڵبژێرە" />
+                      <SelectValue placeholder={pickLang(language, { ku: "ڕەنگ هەڵبژێرە", en: "Select color", ar: "اختر اللون", zh: "选择颜色" })} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— بێ ڕەنگ —</SelectItem>
+                      <SelectItem value="__none__">{pickLang(language, { ku: "— بێ ڕەنگ —", en: "— No color —", ar: "— بدون لون —", zh: "— 无颜色 —" })}</SelectItem>
                       {colorAttrs?.map(a => (
                         <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
                       ))}
@@ -548,16 +549,16 @@ export default function CommissionForm() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">قەبارە</Label>
+                  <Label className="text-xs">{pickLang(language, { ku: "قەبارە", en: "Size", ar: "المقاس", zh: "尺寸" })}</Label>
                   <Select
                     value={formData.size}
                     onValueChange={(v) => setFormData({ ...formData, size: v === "__none__" ? "" : v })}
                   >
                     <SelectTrigger className={cn("h-10", filledCls(formData.size))}>
-                      <SelectValue placeholder="قەبارە هەڵبژێرە" />
+                      <SelectValue placeholder={pickLang(language, { ku: "قەبارە هەڵبژێرە", en: "Select size", ar: "اختر المقاس", zh: "选择尺寸" })} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— بێ قەبارە —</SelectItem>
+                      <SelectItem value="__none__">{pickLang(language, { ku: "— بێ قەبارە —", en: "— No size —", ar: "— بدون مقاس —", zh: "— 无尺寸 —" })}</SelectItem>
                       {sizeAttrs?.map(a => (
                         <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
                       ))}
@@ -567,7 +568,7 @@ export default function CommissionForm() {
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center gap-1.5">
                     <ImageIcon className="h-3.5 w-3.5" />
-                    وێنەی کاڵا
+                    {pickLang(language, { ku: "وێنەی کاڵا", en: "Product image", ar: "صورة المنتج", zh: "商品图片" })}
                   </Label>
                   <CompressedImageUpload
                     images={productImages}
@@ -581,11 +582,11 @@ export default function CommissionForm() {
 
               {/* Row 3: description full width */}
               <div className="space-y-1.5">
-                <Label className="text-xs">وەسف</Label>
+                <Label className="text-xs">{pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" })}</Label>
                 <Textarea
                   value={formData.productDescription}
                   onChange={(e) => setFormData({ ...formData, productDescription: e.target.value })}
-                  placeholder="وەسفی کاڵا..."
+                  placeholder={pickLang(language, { ku: "وەسفی کاڵا...", en: "Product description...", ar: "وصف المنتج...", zh: "商品描述..." })}
                   rows={2}
                   className={cn(filledCls(formData.productDescription))}
                 />
@@ -594,7 +595,7 @@ export default function CommissionForm() {
           </Section>
 
           {/* Pricing & Quantity */}
-          <Section icon={DollarSign} title="نرخەکان و عەدەد" hint="نرخی کاڵا، عمولەی کۆمپانیا و ژمارە" accent="amber">
+          <Section icon={DollarSign} title={pickLang(language, { ku: "نرخەکان و عەدەد", en: "Pricing and quantity", ar: "الأسعار والكمية", zh: "价格和数量" })} hint={pickLang(language, { ku: "نرخی کاڵا، عمولەی کۆمپانیا و ژمارە", en: "Item price, company commission, and quantity", ar: "سعر المنتج وعمولة الشركة والكمية", zh: "商品价格、公司佣金和数量" })} accent="amber">
             <div className="space-y-3">
 
               {/* ¥ Converter Section — quantity inline + per-unit ¥ + total ¥ */}
@@ -606,13 +607,13 @@ export default function CommissionForm() {
                       <Banknote className="h-4 w-4 text-white" />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-orange-900 text-sm">نرخی کاڵا بە یوانی چینی</p>
+                      <p className="font-bold text-orange-900 text-sm">{pickLang(language, { ku: "نرخی کاڵا بە یوانی چینی", en: "Item price in Chinese yuan", ar: "سعر المنتج باليوان الصيني", zh: "商品价格（人民币）" })}</p>
                       {rmbRate > 0 ? (
                         <p className="text-xs text-orange-700 truncate">
-                          نرخی بەراورد: ١ دۆلار = {rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} یوانی چینی
+                          {pickLang(language, { ku: `نرخی بەراورد: ١ دۆلار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} یوانی چینی`, en: `Exchange rate: 1 USD = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} CNY`, ar: `سعر الصرف: 1 دولار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} يوان صيني`, zh: `汇率：1 美元 = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} 人民币` })}
                         </p>
                       ) : (
-                        <p className="text-xs text-red-600">تکایە نرخی بەراورد لە سیتینگی سیستەم داخڵ بکە</p>
+                        <p className="text-xs text-red-600">{pickLang(language, { ku: "تکایە نرخی بەراورد لە سیتینگی سیستەم داخڵ بکە", en: "Please set the exchange rate in system settings", ar: "يرجى إدخال سعر الصرف في إعدادات النظام", zh: "请在系统设置中设置汇率" })}</p>
                       )}
                     </div>
                   </div>
@@ -629,7 +630,7 @@ export default function CommissionForm() {
                   <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_1fr] gap-3 items-end">
                     {/* 1. Quantity — compact stepper */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-slate-600">عەدەد *</Label>
+                      <Label className="text-xs font-semibold text-slate-600">{pickLang(language, { ku: "عەدەد *", en: "Quantity *", ar: "الكمية *", zh: "数量 *" })}</Label>
                       <div className="flex items-center gap-1 w-[10rem]">
                         <Button
                           type="button"
@@ -662,7 +663,7 @@ export default function CommissionForm() {
 
                     {/* 2. Per-unit ¥ */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-amber-700">نرخی ١ دانە بە یوانی چینی</Label>
+                      <Label className="text-xs font-semibold text-amber-700">{pickLang(language, { ku: "نرخی ١ دانە بە یوانی چینی", en: "Price per unit in Chinese yuan", ar: "سعر الوحدة باليوان الصيني", zh: "单件价格（人民币）" })}</Label>
                       <div className="relative">
                         <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
                         <Input
@@ -680,7 +681,7 @@ export default function CommissionForm() {
 
                     {/* 3. Total ¥ */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-orange-700">کۆی نرخ بە یوانی چینی ({quantity} دانە)</Label>
+                      <Label className="text-xs font-semibold text-orange-700">{pickLang(language, { ku: `کۆی نرخ بە یوانی چینی (${quantity} دانە)`, en: `Total price in Chinese yuan (${quantity} units)`, ar: `إجمالي السعر باليوان الصيني (${quantity} قطعة)`, zh: `总价（人民币）（${quantity} 件）` })}</Label>
                       <div className="relative">
                         <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
                         <Input
@@ -701,15 +702,15 @@ export default function CommissionForm() {
                   {(parseFloat(rmbPerUnit) > 0 || parseFloat(rmbTotal) > 0) && (
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-amber-50 rounded-lg p-2 text-center border border-amber-100">
-                        <p className="text-[10px] text-amber-500 uppercase tracking-wide mb-0.5">١ دانە یوانی چینی</p>
+                        <p className="text-[10px] text-amber-500 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: "١ دانە یوانی چینی", en: "1 unit CNY", ar: "وحدة واحدة يوان", zh: "单件人民币" })}</p>
                         <p className="font-bold text-amber-700 font-mono text-sm">{Number(rmbPerUnit || 0).toLocaleString("en-US")} ¥</p>
                       </div>
                       <div className="bg-orange-50 rounded-lg p-2 text-center border border-orange-100">
-                        <p className="text-[10px] text-orange-500 uppercase tracking-wide mb-0.5">کۆی {quantity} دانە</p>
+                        <p className="text-[10px] text-orange-500 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: `کۆی ${quantity} دانە`, en: `Total ${quantity} units`, ar: `إجمالي ${quantity} قطعة`, zh: `共 ${quantity} 件` })}</p>
                         <p className="font-bold text-orange-700 font-mono text-sm">{Number(rmbTotal || 0).toLocaleString("en-US")} ¥</p>
                       </div>
                       <div className="bg-gradient-to-b from-amber-500 to-orange-500 rounded-lg p-2 text-center shadow-sm">
-                        <p className="text-[10px] text-amber-100 uppercase tracking-wide mb-0.5">نرخی $ یەک دانە</p>
+                        <p className="text-[10px] text-amber-100 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: "نرخی $ یەک دانە", en: "Unit price $", ar: "سعر الوحدة $", zh: "单件价格 $" })}</p>
                         <p className="font-bold text-white font-mono text-sm">${formData.itemPriceUsd || "0.0000"}</p>
                       </div>
                     </div>
@@ -720,7 +721,7 @@ export default function CommissionForm() {
               {/* 4. Commission Fee + 5. Item Price ($) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-purple-700">عموڵەی کڕین *</Label>
+                  <Label className="text-xs font-semibold text-purple-700">{pickLang(language, { ku: "عموڵەی کڕین *", en: "Purchase commission *", ar: "عمولة الشراء *", zh: "采购佣金 *" })}</Label>
                   <div className="relative">
                     <span className="absolute start-3 top-1/2 -translate-y-1/2 text-purple-600 font-bold">$</span>
                     <Input
@@ -734,11 +735,11 @@ export default function CommissionForm() {
                       dir="ltr"
                     />
                   </div>
-                  <p className="text-[11px] text-purple-600">قازانجی کۆمپانیا بۆ هەر دانەیەک</p>
+                  <p className="text-[11px] text-purple-600">{pickLang(language, { ku: "قازانجی کۆمپانیا بۆ هەر دانەیەک", en: "Company profit per unit", ar: "ربح الشركة لكل وحدة", zh: "公司每件利润" })}</p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-amber-700">نرخی کاڵا (یەک دانە) *</Label>
+                  <Label className="text-xs font-semibold text-amber-700">{pickLang(language, { ku: "نرخی کاڵا (یەک دانە) *", en: "Item price (per unit) *", ar: "سعر المنتج (للوحدة) *", zh: "商品价格（单件）*" })}</Label>
                   <div className="relative">
                     <span className="absolute start-3 top-1/2 -translate-y-1/2 text-amber-600 font-bold">$</span>
                     <Input
@@ -754,7 +755,7 @@ export default function CommissionForm() {
                   </div>
                   {rmbPerUnit && rmbRate > 0 && (
                     <div className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1 border border-orange-200">
-                      <span className="text-[11px] text-orange-600">١ دانە بە یوانی چینی</span>
+                      <span className="text-[11px] text-orange-600">{pickLang(language, { ku: "١ دانە بە یوانی چینی", en: "1 unit in Chinese yuan", ar: "وحدة واحدة باليوان الصيني", zh: "单件人民币" })}</span>
                       <span className="text-sm font-bold text-orange-700 font-mono">{Number(rmbPerUnit).toLocaleString("en-US")} ¥</span>
                     </div>
                   )}
@@ -767,34 +768,34 @@ export default function CommissionForm() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-amber-600" />
-                      <span className="font-bold text-sm text-amber-800">پێشبینی پارەدان</span>
+                      <span className="font-bold text-sm text-amber-800">{pickLang(language, { ku: "پێشبینی پارەدان", en: "Payment preview", ar: "معاينة الدفع", zh: "付款预览" })}</span>
                     </div>
-                    <span className="bg-white px-2.5 py-0.5 rounded-full border border-amber-300 text-amber-700 font-bold text-xs">{formData.quantity || 1} عەدەد</span>
+                    <span className="bg-white px-2.5 py-0.5 rounded-full border border-amber-300 text-amber-700 font-bold text-xs">{pickLang(language, { ku: `${formData.quantity || 1} عەدەد`, en: `${formData.quantity || 1} units`, ar: `${formData.quantity || 1} قطعة`, zh: `${formData.quantity || 1} 件` })}</span>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     <div className="bg-white rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-slate-500 mb-0.5">نرخی کاڵا (١ دانە)</p>
+                      <p className="text-[10px] text-slate-500 mb-0.5">{pickLang(language, { ku: "نرخی کاڵا (١ دانە)", en: "Item price (1 unit)", ar: "سعر المنتج (وحدة واحدة)", zh: "商品价格（单件）" })}</p>
                       <p className="text-base font-bold text-amber-600">${itemPrice.toFixed(2)}</p>
                     </div>
                     <div className="bg-amber-100 rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-amber-700 mb-0.5">کۆی نرخ ({formData.quantity || 1} دانە)</p>
+                      <p className="text-[10px] text-amber-700 mb-0.5">{pickLang(language, { ku: `کۆی نرخ (${formData.quantity || 1} دانە)`, en: `Total price (${formData.quantity || 1} units)`, ar: `إجمالي السعر (${formData.quantity || 1} قطعة)`, zh: `总价（${formData.quantity || 1} 件）` })}</p>
                       <p className="text-base font-bold text-amber-700">${(itemPrice * quantity).toFixed(2)}</p>
                     </div>
                     <div className="bg-white rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-slate-500 mb-0.5">عمولە (١ دانە)</p>
+                      <p className="text-[10px] text-slate-500 mb-0.5">{pickLang(language, { ku: "عمولە (١ دانە)", en: "Commission (1 unit)", ar: "العمولة (وحدة واحدة)", zh: "佣金（单件）" })}</p>
                       <p className="text-base font-bold text-purple-600">${commissionFee.toFixed(2)}</p>
                     </div>
                     <div className="bg-purple-100 rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-purple-700 mb-0.5">کۆی عمولە ({formData.quantity || 1} دانە)</p>
+                      <p className="text-[10px] text-purple-700 mb-0.5">{pickLang(language, { ku: `کۆی عمولە (${formData.quantity || 1} دانە)`, en: `Total commission (${formData.quantity || 1} units)`, ar: `إجمالي العمولة (${formData.quantity || 1} قطعة)`, zh: `总佣金（${formData.quantity || 1} 件）` })}</p>
                       <p className="text-base font-bold text-purple-700">${(commissionFee * quantity).toFixed(2)}</p>
                     </div>
                   </div>
 
                   <div className="mt-2 pt-2 border-t border-amber-300 flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-amber-700">کۆی پارەدانی پێشوەخت</p>
-                      <p className="text-[10px] text-slate-500">(نرخ + عمولە) × {formData.quantity || 1}</p>
+                      <p className="text-xs text-amber-700">{pickLang(language, { ku: "کۆی پارەدانی پێشوەخت", en: "Total prepayment", ar: "إجمالي الدفع المسبق", zh: "预付总额" })}</p>
+                      <p className="text-[10px] text-slate-500">{pickLang(language, { ku: `(نرخ + عمولە) × ${formData.quantity || 1}`, en: `(price + commission) × ${formData.quantity || 1}`, ar: `(السعر + العمولة) × ${formData.quantity || 1}`, zh: `（价格 + 佣金）× ${formData.quantity || 1}` })}</p>
                     </div>
                     <div className="text-end">
                       <div className="text-xl font-bold text-amber-700">${totalPrepaid.toFixed(2)}</div>
@@ -807,7 +808,7 @@ export default function CommissionForm() {
                   </div>
 
                   <p className="text-[11px] text-center text-amber-600 mt-2 bg-white/50 rounded-lg py-1">
-                    💡 قازانجی کۆمپانیا = ${(commissionFee * quantity).toFixed(2)} (عمولەی {formData.quantity || 1} دانە)
+                    💡 {pickLang(language, { ku: `قازانجی کۆمپانیا = $${(commissionFee * quantity).toFixed(2)} (عمولەی ${formData.quantity || 1} دانە)`, en: `Company profit = $${(commissionFee * quantity).toFixed(2)} (commission for ${formData.quantity || 1} units)`, ar: `ربح الشركة = $${(commissionFee * quantity).toFixed(2)} (عمولة ${formData.quantity || 1} قطعة)`, zh: `公司利润 = $${(commissionFee * quantity).toFixed(2)}（${formData.quantity || 1} 件的佣金）` })}
                   </p>
                 </div>
               )}
@@ -815,11 +816,11 @@ export default function CommissionForm() {
           </Section>
 
           {/* ── Advance Payment ── */}
-          <Section icon={Wallet} title="پارەدانی پێشەکی (ئاختیاری)" hint="ڕاستەوخۆ لە حسابی کڕیار کەم دەبێتەوە" accent="teal">
+          <Section icon={Wallet} title={pickLang(language, { ku: "پارەدانی پێشەکی (ئاختیاری)", en: "Advance payment (optional)", ar: "دفعة مقدمة (اختياري)", zh: "预付款（可选）" })} hint={pickLang(language, { ku: "ڕاستەوخۆ لە حسابی کڕیار کەم دەبێتەوە", en: "Deducted directly from the customer's account", ar: "يُخصم مباشرة من حساب العميل", zh: "直接从客户账户扣除" })} accent="teal">
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-teal-700">بڕی پارەی پێشەکی (USD)</Label>
+                  <Label className="text-xs font-semibold text-teal-700">{pickLang(language, { ku: "بڕی پارەی پێشەکی (USD)", en: "Advance amount (USD)", ar: "مبلغ الدفعة المقدمة (USD)", zh: "预付金额 (USD)" })}</Label>
                   <div className="relative">
                     <span className="absolute start-3 top-1/2 -translate-y-1/2 text-teal-500 font-bold select-none">$</span>
                     <Input
@@ -834,10 +835,10 @@ export default function CommissionForm() {
                       dir="ltr"
                     />
                   </div>
-                  <p className="text-[11px] text-teal-600">بۆ بێ پارەدان دابمێنە بە 0</p>
+                  <p className="text-[11px] text-teal-600">{pickLang(language, { ku: "بۆ بێ پارەدان دابمێنە بە 0", en: "Leave at 0 for no payment", ar: "اتركه 0 لعدم وجود دفعة", zh: "无付款则保留为 0" })}</p>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-teal-700">شێوازی پارەدان</Label>
+                  <Label className="text-xs font-semibold text-teal-700">{pickLang(language, { ku: "شێوازی پارەدان", en: "Payment method", ar: "طريقة الدفع", zh: "付款方式" })}</Label>
                   <Select
                     value={formData.advancePaymentMethod}
                     onValueChange={(v) => setFormData({ ...formData, advancePaymentMethod: v as any })}
@@ -846,14 +847,14 @@ export default function CommissionForm() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="CASH">کاش</SelectItem>
-                      <SelectItem value="BANK_TRANSFER">گواستنەوەی بانک</SelectItem>
+                      <SelectItem value="CASH">{pickLang(language, { ku: "کاش", en: "Cash", ar: "نقدًا", zh: "现金" })}</SelectItem>
+                      <SelectItem value="BANK_TRANSFER">{pickLang(language, { ku: "گواستنەوەی بانک", en: "Bank transfer", ar: "تحويل بنكي", zh: "银行转账" })}</SelectItem>
                       <SelectItem value="FIB">FIB</SelectItem>
                       <SelectItem value="FASTPAY">FastPay</SelectItem>
                       <SelectItem value="ZAINCASH">ZainCash</SelectItem>
                       <SelectItem value="ASIAHAWALA">AsiaHawala</SelectItem>
-                      <SelectItem value="CARD">کارتی بانکی</SelectItem>
-                      <SelectItem value="OTHER">هیتر</SelectItem>
+                      <SelectItem value="CARD">{pickLang(language, { ku: "کارتی بانکی", en: "Bank card", ar: "بطاقة بنكية", zh: "银行卡" })}</SelectItem>
+                      <SelectItem value="OTHER">{pickLang(language, { ku: "هیتر", en: "Other", ar: "أخرى", zh: "其他" })}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -862,22 +863,22 @@ export default function CommissionForm() {
               {parseFloat(formData.advancePaidUsd || "0") > 0 && totalPrepaid > 0 && (
                 <div className="rounded-xl bg-teal-50 p-3 border border-teal-200 space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">کۆی نرخ</span>
+                    <span className="text-slate-600">{pickLang(language, { ku: "کۆی نرخ", en: "Total price", ar: "إجمالي السعر", zh: "总价" })}</span>
                     <span className="font-mono font-bold">${totalPrepaid.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-teal-700">پارەی پێشەکی</span>
+                    <span className="text-teal-700">{pickLang(language, { ku: "پارەی پێشەکی", en: "Advance payment", ar: "الدفعة المقدمة", zh: "预付款" })}</span>
                     <span className="font-mono font-bold text-teal-700">-${parseFloat(formData.advancePaidUsd || "0").toFixed(2)}</span>
                   </div>
                   <div className="h-px bg-teal-200" />
                   <div className="flex items-center justify-between text-base">
-                    <span className="font-semibold text-slate-800">ماوە بۆ پارەدان</span>
+                    <span className="font-semibold text-slate-800">{pickLang(language, { ku: "ماوە بۆ پارەدان", en: "Remaining to pay", ar: "المتبقي للدفع", zh: "待付余额" })}</span>
                     <span className="font-mono font-bold text-xl text-emerald-700">
                       ${Math.max(0, totalPrepaid - parseFloat(formData.advancePaidUsd || "0")).toFixed(2)}
                     </span>
                   </div>
                   {parseFloat(formData.advancePaidUsd || "0") > totalPrepaid && (
-                    <p className="text-xs text-red-600 font-medium">⚠️ پارەی پێشەکی زیاترە لە کۆی نرخ</p>
+                    <p className="text-xs text-red-600 font-medium">⚠️ {pickLang(language, { ku: "پارەی پێشەکی زیاترە لە کۆی نرخ", en: "Advance payment exceeds the total price", ar: "الدفعة المقدمة تتجاوز إجمالي السعر", zh: "预付款超过总价" })}</p>
                   )}
                 </div>
               )}
@@ -886,21 +887,21 @@ export default function CommissionForm() {
 
           {/* ── Weight & Size (moved to second-to-last; only when a shipping type is chosen) ── */}
           {formData.shippingType && (
-            <Section icon={Scale} title="کێش و قەبارە" hint="کێش و قەبارەی کاڵا بۆ ژماردنی کرێی گواستنەوە" accent="sky">
+            <Section icon={Scale} title={pickLang(language, { ku: "کێش و قەبارە", en: "Weight and size", ar: "الوزن والحجم", zh: "重量和尺寸" })} hint={pickLang(language, { ku: "کێش و قەبارەی کاڵا بۆ ژماردنی کرێی گواستنەوە", en: "Item weight and size for calculating shipping cost", ar: "وزن المنتج وحجمه لحساب تكلفة الشحن", zh: "用于计算运费的商品重量和尺寸" })} accent="sky">
               {/* Air fields */}
               <div className="mt-3 space-y-3">
                 {(formData.shippingType === "air_regular" || formData.shippingType === "air_irregular") && (
                   <div className={`rounded-xl border overflow-hidden ${formData.shippingType === "air_irregular" ? "border-amber-200" : "border-sky-200"}`}>
                     <div className={`px-4 py-2 flex items-center gap-2 border-b ${formData.shippingType === "air_irregular" ? "bg-amber-50 border-amber-100" : "bg-sky-50 border-sky-100"}`}>
                       <Scale className={`h-4 w-4 ${formData.shippingType === "air_irregular" ? "text-amber-600" : "text-sky-600"}`} />
-                      <span className="text-sm font-semibold">کێش و قەبارە</span>
-                      <span className="text-xs text-muted-foreground ms-auto">max(ڕاستەقینە، ئەندازەیی)</span>
+                      <span className="text-sm font-semibold">{pickLang(language, { ku: "کێش و قەبارە", en: "Weight and size", ar: "الوزن والحجم", zh: "重量和尺寸" })}</span>
+                      <span className="text-xs text-muted-foreground ms-auto">{pickLang(language, { ku: "max(ڕاستەقینە، ئەندازەیی)", en: "max(actual, volumetric)", ar: "max(الفعلي، الحجمي)", zh: "max(实际, 体积)" })}</span>
                     </div>
                     <div className="p-3 space-y-3 bg-white">
                       {/* Weight */}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">کێشی ڕاستەقینە (کیلۆگرام)</Label>
+                          <Label className="text-sm font-medium">{pickLang(language, { ku: "کێشی ڕاستەقینە (کیلۆگرام)", en: "Actual weight (kilograms)", ar: "الوزن الفعلي (كيلوغرام)", zh: "实际重量（千克）" })}</Label>
                           <div className="relative">
                             <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">kg</span>
                             <Input type="number" step="0.01" min="0" value={formData.weightKg}
@@ -910,9 +911,9 @@ export default function CommissionForm() {
                         </div>
                         {volumetricKg > 0 && (
                           <div className={`rounded-xl p-3 flex flex-col justify-center ${chargeableKg === volumetricKg ? "bg-amber-50 border border-amber-200" : "bg-sky-50 border border-sky-200"}`}>
-                            <p className="text-[11px] text-muted-foreground">کێشی پارەدان</p>
+                            <p className="text-[11px] text-muted-foreground">{pickLang(language, { ku: "کێشی پارەدان", en: "Chargeable weight", ar: "الوزن المحتسب", zh: "计费重量" })}</p>
                             <p className={`text-xl font-bold font-mono ${chargeableKg === volumetricKg ? "text-amber-700" : "text-sky-700"}`}>{chargeableKg.toFixed(3)} kg</p>
-                            <p className="text-[10px] text-muted-foreground">{chargeableKg === volumetricKg ? "ئەندازەیی" : "ڕاستەقینە"} بە کار هاتووە</p>
+                            <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: `${chargeableKg === volumetricKg ? "ئەندازەیی" : "ڕاستەقینە"} بە کار هاتووە`, en: `${chargeableKg === volumetricKg ? "Volumetric" : "Actual"} used`, ar: `${chargeableKg === volumetricKg ? "الحجمي" : "الفعلي"} مُستخدم`, zh: `已使用${chargeableKg === volumetricKg ? "体积" : "实际"}` })}</p>
                           </div>
                         )}
                       </div>
@@ -921,10 +922,10 @@ export default function CommissionForm() {
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <Ruler className="h-4 w-4 text-muted-foreground" />
-                            <Label className="text-sm font-medium">قەبارە (سانتیمەتر) — ئارەزووی</Label>
+                            <Label className="text-sm font-medium">{pickLang(language, { ku: "قەبارە (سانتیمەتر) — ئارەزووی", en: "Dimensions (cm) — optional", ar: "الأبعاد (سم) — اختياري", zh: "尺寸（厘米）— 可选" })}</Label>
                           </div>
                           <div className="grid grid-cols-3 gap-3">
-                            {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
+                            {[["dimensionLength", pickLang(language, { ku: "درێژی (L)", en: "Length (L)", ar: "الطول (L)", zh: "长度 (L)" })], ["dimensionWidth", pickLang(language, { ku: "پانی (W)", en: "Width (W)", ar: "العرض (W)", zh: "宽度 (W)" })], ["dimensionHeight", pickLang(language, { ku: "بەرزی (H)", en: "Height (H)", ar: "الارتفاع (H)", zh: "高度 (H)" })]].map(([field, label]) => (
                               <div key={field} className="space-y-1">
                                 <Label className="text-xs text-muted-foreground">{label}</Label>
                                 <div className="relative">
@@ -939,7 +940,7 @@ export default function CommissionForm() {
                           </div>
                           {volumetricKg > 0 && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              کێشی ئەندازەیی: ({dimL}×{dimW}×{dimH}) ÷ 6000 = <strong>{volumetricKg.toFixed(3)} kg</strong>
+                              {pickLang(language, { ku: `کێشی ئەندازەیی: (${dimL}×${dimW}×${dimH}) ÷ 6000 = `, en: `Volumetric weight: (${dimL}×${dimW}×${dimH}) ÷ 6000 = `, ar: `الوزن الحجمي: (${dimL}×${dimW}×${dimH}) ÷ 6000 = `, zh: `体积重量：(${dimL}×${dimW}×${dimH}) ÷ 6000 = ` })}<strong>{volumetricKg.toFixed(3)} kg</strong>
                             </p>
                           )}
                         </div>
@@ -953,30 +954,30 @@ export default function CommissionForm() {
                   <div className="rounded-xl border border-teal-200 overflow-hidden">
                     <div className="px-4 py-2 flex items-center gap-2 bg-teal-50 border-b border-teal-100">
                       <Calculator className="h-4 w-4 text-teal-600" />
-                      <span className="text-sm font-semibold text-teal-800">قەبارەی CBM</span>
-                      <span className="text-xs text-muted-foreground ms-auto">١ CBM = ١٠٠cm × ١٠٠cm × ١٠٠cm</span>
+                      <span className="text-sm font-semibold text-teal-800">{pickLang(language, { ku: "قەبارەی CBM", en: "CBM volume", ar: "حجم CBM", zh: "CBM 体积" })}</span>
+                      <span className="text-xs text-muted-foreground ms-auto">{pickLang(language, { ku: "١ CBM = ١٠٠cm × ١٠٠cm × ١٠٠cm", en: "1 CBM = 100cm × 100cm × 100cm", ar: "1 CBM = 100سم × 100سم × 100سم", zh: "1 CBM = 100cm × 100cm × 100cm" })}</span>
                     </div>
                     <div className="p-3 space-y-3 bg-white">
                       <div className="grid grid-cols-2 gap-3">
                         {/* Direct CBM */}
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">CBM ڕاستەوخۆ</Label>
+                          <Label className="text-sm font-medium">{pickLang(language, { ku: "CBM ڕاستەوخۆ", en: "Direct CBM", ar: "CBM مباشر", zh: "直接 CBM" })}</Label>
                           <div className="relative">
                             <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">m³</span>
                             <Input type="number" step="0.0001" min="0" value={formData.volumeCbm}
                               onChange={e => setFormData(p => ({ ...p, volumeCbm: e.target.value }))}
                               placeholder="0.0000" className={cn("pe-10 h-10 font-mono", filledCls(formData.volumeCbm))} dir="ltr" />
                           </div>
-                          <p className="text-xs text-muted-foreground">ئەگەر CBM دەزانیت</p>
+                          <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "ئەگەر CBM دەزانیت", en: "If you know the CBM", ar: "إذا كنت تعرف CBM", zh: "如果你知道 CBM" })}</p>
                         </div>
                         {/* Auto CBM from dims */}
                         {autoCbm > 0 && (
                           <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex flex-col justify-center">
-                            <p className="text-[11px] text-teal-600">CBM خۆکار</p>
+                            <p className="text-[11px] text-teal-600">{pickLang(language, { ku: "CBM خۆکار", en: "Auto CBM", ar: "CBM تلقائي", zh: "自动 CBM" })}</p>
                             <p className="text-xl font-bold font-mono text-teal-700">{autoCbm.toFixed(4)} m³</p>
                             <button type="button" onClick={() => setFormData(p => ({ ...p, volumeCbm: autoCbm.toFixed(4) }))}
                               className="text-[11px] text-teal-600 underline text-start mt-1 hover:text-teal-800">
-                              بەکاربێنە ←
+                              {pickLang(language, { ku: "بەکاربێنە ←", en: "Use ←", ar: "استخدم ←", zh: "使用 ←" })}
                             </button>
                           </div>
                         )}
@@ -985,10 +986,10 @@ export default function CommissionForm() {
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <Ruler className="h-4 w-4 text-muted-foreground" />
-                          <Label className="text-sm font-medium">قەبارە بۆ حساب کردنی CBM — ئارەزووی</Label>
+                          <Label className="text-sm font-medium">{pickLang(language, { ku: "قەبارە بۆ حساب کردنی CBM — ئارەزووی", en: "Dimensions for CBM calculation — optional", ar: "الأبعاد لحساب CBM — اختياري", zh: "用于计算 CBM 的尺寸 — 可选" })}</Label>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
-                          {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
+                          {[["dimensionLength", pickLang(language, { ku: "درێژی (L)", en: "Length (L)", ar: "الطول (L)", zh: "长度 (L)" })], ["dimensionWidth", pickLang(language, { ku: "پانی (W)", en: "Width (W)", ar: "العرض (W)", zh: "宽度 (W)" })], ["dimensionHeight", pickLang(language, { ku: "بەرزی (H)", en: "Height (H)", ar: "الارتفاع (H)", zh: "高度 (H)" })]].map(([field, label]) => (
                             <div key={field} className="space-y-1">
                               <Label className="text-xs text-muted-foreground">{label}</Label>
                               <div className="relative">
@@ -1010,11 +1011,11 @@ export default function CommissionForm() {
           )}
 
           {/* Notes */}
-          <Section icon={Save} title="تێبینی" accent="slate">
+          <Section icon={Save} title={pickLang(language, { ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" })} accent="slate">
             <Textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="تێبینی..."
+              placeholder={pickLang(language, { ku: "تێبینی...", en: "Notes...", ar: "ملاحظات...", zh: "备注..." })}
               rows={2}
               className={cn(filledCls(formData.notes))}
             />
@@ -1023,7 +1024,7 @@ export default function CommissionForm() {
           {/* Submit */}
           <StickyFormBar>
             <Button type="button" variant="outline" onClick={() => setLocation("/commission")}>
-              {t("common.cancel") || "پاشگەزبوونەوە"}
+              {t("common.cancel") || pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button
               type="submit"
@@ -1035,7 +1036,7 @@ export default function CommissionForm() {
               ) : (
                 <Save className="h-4 w-4 ms-2" />
               )}
-              {t("common.save") || "پاشەکەوتکردن"}
+              {t("common.save") || pickLang(language, { ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" })}
             </Button>
           </StickyFormBar>
         </form>

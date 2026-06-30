@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import {
   ArrowRight,
   Package,
@@ -69,7 +70,7 @@ const Section = ({ icon: Icon, title, hint, accent = "emerald", children }: { ic
 
 export default function FullPackageForm() {
   const [, navigate] = useLocation();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const utils = trpc.useUtils();
 
@@ -155,7 +156,7 @@ export default function FullPackageForm() {
 
   const createMutation = trpc.fullPackage.create.useMutation({
     onSuccess: () => {
-      toast.success("ئۆردەری پاکێجی تەواو بە سەرکەوتوویی داخڵ کرا — خانەکان بۆ ئۆردەری دواتر ئامادەن");
+      toast.success(pickLang(language, { ku: "ئۆردەری پاکێجی تەواو بە سەرکەوتوویی داخڵ کرا — خانەکان بۆ ئۆردەری دواتر ئامادەن", en: "Full package order created successfully — fields are ready for the next order", ar: "تم إنشاء طلب الحزمة الكاملة بنجاح — الحقول جاهزة للطلب التالي", zh: "完整套餐订单创建成功 — 字段已为下一个订单准备就绪" }));
       utils.fullPackage.list.invalidate();
       const keepCustomerId = formData.customerId;
       if (keepCustomerId) {
@@ -202,17 +203,17 @@ export default function FullPackageForm() {
     e.preventDefault();
 
     if (!formData.customerId) {
-      toast.error("تکایە کڕیارێک هەڵبژێرە");
+      toast.error(pickLang(language, { ku: "تکایە کڕیارێک هەڵبژێرە", en: "Please select a customer", ar: "يرجى اختيار عميل", zh: "请选择客户" }));
       return;
     }
 
     if (!formData.shippingType) {
-      toast.error("تکایە شێوازی گواستنەوە دیاری بکە");
+      toast.error(pickLang(language, { ku: "تکایە شێوازی گواستنەوە دیاری بکە", en: "Please select a shipping method", ar: "يرجى تحديد طريقة الشحن", zh: "请选择运输方式" }));
       return;
     }
 
     if (!formData.productType) {
-      toast.error("تکایە جۆری کاڵا هەڵبژێرە");
+      toast.error(pickLang(language, { ku: "تکایە جۆری کاڵا هەڵبژێرە", en: "Please select a product type", ar: "يرجى اختيار نوع المنتج", zh: "请选择商品类型" }));
       return;
     }
 
@@ -316,18 +317,18 @@ export default function FullPackageForm() {
               <ShoppingBag className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-tight">ئۆردەری پاکێجی تەواوی نوێ</h1>
-              <p className="text-sm text-muted-foreground">کڕین و فرۆشتنەوە بە قازانج</p>
+              <h1 className="text-xl font-bold leading-tight">{pickLang(language, { ku: "ئۆردەری پاکێجی تەواوی نوێ", en: "New full package order", ar: "طلب حزمة كاملة جديد", zh: "新建完整套餐订单" })}</h1>
+              <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کڕین و فرۆشتنەوە بە قازانج", en: "Buy and resell at a profit", ar: "الشراء وإعادة البيع بربح", zh: "买入并加价转售" })}</p>
             </div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Customer Selection */}
-          <Section icon={User} title="کڕیار" hint="کڕیارێک هەڵبژێرە بۆ ئەم ئۆردەرە" accent="emerald">
+          <Section icon={User} title={pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })} hint={pickLang(language, { ku: "کڕیارێک هەڵبژێرە بۆ ئەم ئۆردەرە", en: "Select a customer for this order", ar: "اختر عميلاً لهذا الطلب", zh: "为此订单选择客户" })} accent="emerald">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">کڕیار *</Label>
+                <Label className="text-xs">{pickLang(language, { ku: "کڕیار *", en: "Customer *", ar: "العميل *", zh: "客户 *" })}</Label>
                 <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -338,19 +339,19 @@ export default function FullPackageForm() {
                     >
                       {selectedCustomer
                         ? `${selectedCustomer.fullName || selectedCustomer.fullNameKurdish} (${selectedCustomer.customerCode})`
-                        : "کڕیارێک هەڵبژێرە..."}
+                        : pickLang(language, { ku: "کڕیارێک هەڵبژێرە...", en: "Select a customer...", ar: "اختر عميلاً...", zh: "选择客户..." })}
                       <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent variant="panel" className="w-full min-w-[320px]" align="start">
                     <Command>
                       <CommandInput
-                        placeholder="گەڕان بە ناو، کۆد یان مۆبایل..."
+                        placeholder={pickLang(language, { ku: "گەڕان بە ناو، کۆد یان مۆبایل...", en: "Search by name, code or mobile...", ar: "ابحث بالاسم أو الرمز أو الجوال...", zh: "按姓名、编号或手机号搜索..." })}
                         value={customerSearch}
                         onValueChange={setCustomerSearch}
                       />
                       <CommandList>
-                        <CommandEmpty>کڕیار نەدۆزرایەوە</CommandEmpty>
+                        <CommandEmpty>{pickLang(language, { ku: "کڕیار نەدۆزرایەوە", en: "No customer found", ar: "لم يتم العثور على عميل", zh: "未找到客户" })}</CommandEmpty>
                         <CommandGroup>
                           {filteredCustomers.map((customer) => (
                             <CommandItem
@@ -383,16 +384,16 @@ export default function FullPackageForm() {
                 </Popover>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">فرۆشیار</Label>
+                <Label className="text-xs">{pickLang(language, { ku: "فرۆشیار", en: "Supplier", ar: "المورّد", zh: "供应商" })}</Label>
                 <Select
                   value={formData.supplierId}
                   onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
                 >
                   <SelectTrigger className={cn("h-10", filledCls(formData.supplierId && formData.supplierId !== "none" ? formData.supplierId : ""))}>
-                    <SelectValue placeholder="فرۆشیارێک هەڵبژێرە (ئارەزوومەندانە)" />
+                    <SelectValue placeholder={pickLang(language, { ku: "فرۆشیارێک هەڵبژێرە (ئارەزوومەندانە)", en: "Select a supplier (optional)", ar: "اختر مورّداً (اختياري)", zh: "选择供应商（可选）" })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">بێ فرۆشیار</SelectItem>
+                    <SelectItem value="none">{pickLang(language, { ku: "بێ فرۆشیار", en: "No supplier", ar: "بدون مورّد", zh: "无供应商" })}</SelectItem>
                     {suppliers?.map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id.toString()}>
                         {supplier.name}
@@ -405,7 +406,7 @@ export default function FullPackageForm() {
           </Section>
 
           {/* ── Shipping Method (moved to top) ── */}
-          <Section icon={Plane} title="ریگاکانی گواستنەوە" hint="ریگای گواستنەوەی کاڵاکە هەڵبژێرە" accent="sky">
+          <Section icon={Plane} title={pickLang(language, { ku: "ریگاکانی گواستنەوە", en: "Shipping methods", ar: "طرق الشحن", zh: "运输方式" })} hint={pickLang(language, { ku: "ریگای گواستنەوەی کاڵاکە هەڵبژێرە", en: "Choose how the goods are shipped", ar: "اختر طريقة شحن البضائع", zh: "选择商品的运输方式" })} accent="sky">
             {/* Method Selector — compact horizontal pills */}
             <div className="grid grid-cols-3 gap-3">
               {/* Air Regular */}
@@ -427,7 +428,7 @@ export default function FullPackageForm() {
                   <Plane className={`h-4 w-4 ${formData.shippingType === "air_regular" ? "text-white" : "text-gray-500"}`} />
                 </div>
                 <div className="text-start min-w-0">
-                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "air_regular" ? "text-sky-700" : "text-gray-700"}`}>ئاسمانی ئاسایی</p>
+                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "air_regular" ? "text-sky-700" : "text-gray-700"}`}>{pickLang(language, { ku: "ئاسمانی ئاسایی", en: "Air regular", ar: "جوي عادي", zh: "普通空运" })}</p>
                   <p className="text-[10px] text-muted-foreground">Air Regular</p>
                 </div>
               </button>
@@ -452,7 +453,7 @@ export default function FullPackageForm() {
                   <Zap className={`h-2.5 w-2.5 absolute -bottom-0.5 -end-0.5 ${formData.shippingType === "air_irregular" ? "text-yellow-200" : "text-amber-400"}`} />
                 </div>
                 <div className="text-start min-w-0">
-                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "air_irregular" ? "text-amber-700" : "text-gray-700"}`}>ئاسمانی مەرسیدار</p>
+                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "air_irregular" ? "text-amber-700" : "text-gray-700"}`}>{pickLang(language, { ku: "ئاسمانی مەرسیدار", en: "Air irregular", ar: "جوي غير منتظم", zh: "异形空运" })}</p>
                   <p className="text-[10px] text-muted-foreground">Air Irregular</p>
                 </div>
               </button>
@@ -476,7 +477,7 @@ export default function FullPackageForm() {
                   <Ship className={`h-4 w-4 ${formData.shippingType === "sea" ? "text-white" : "text-gray-500"}`} />
                 </div>
                 <div className="text-start min-w-0">
-                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "sea" ? "text-teal-700" : "text-gray-700"}`}>دەریایی</p>
+                  <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "sea" ? "text-teal-700" : "text-gray-700"}`}>{pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" })}</p>
                   <p className="text-[10px] text-muted-foreground">Sea Freight</p>
                 </div>
               </button>
@@ -484,21 +485,21 @@ export default function FullPackageForm() {
           </Section>
 
           {/* Product Info — compact multi-column grid */}
-          <Section icon={Package} title="زانیاری کاڵا" hint="زانیاری کاڵاکە داخڵ بکە" accent="emerald">
+          <Section icon={Package} title={pickLang(language, { ku: "زانیاری کاڵا", en: "Product info", ar: "معلومات المنتج", zh: "商品信息" })} hint={pickLang(language, { ku: "زانیاری کاڵاکە داخڵ بکە", en: "Enter the product details", ar: "أدخل تفاصيل المنتج", zh: "输入商品详情" })} accent="emerald">
             <div className="space-y-3">
               {/* Row 1: type / order# / tracking / link */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs">جۆری کاڵا *</Label>
+                  <Label className="text-xs">{pickLang(language, { ku: "جۆری کاڵا *", en: "Product type *", ar: "نوع المنتج *", zh: "商品类型 *" })}</Label>
                   <Select
                     value={formData.productType}
                     onValueChange={(v) => setFormData({ ...formData, productType: v === "__none__" ? "" : v })}
                   >
                     <SelectTrigger className={cn("h-10", filledCls(formData.productType))}>
-                      <SelectValue placeholder="جۆر هەڵبژێرە" />
+                      <SelectValue placeholder={pickLang(language, { ku: "جۆر هەڵبژێرە", en: "Select a type", ar: "اختر نوعاً", zh: "选择类型" })} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— بێ جۆر —</SelectItem>
+                      <SelectItem value="__none__">{pickLang(language, { ku: "— بێ جۆر —", en: "— No type —", ar: "— بدون نوع —", zh: "— 无类型 —" })}</SelectItem>
                       {typeAttrs?.map(a => (
                         <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
                       ))}
@@ -506,11 +507,11 @@ export default function FullPackageForm() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">ئۆردەر نەمبەر</Label>
+                  <Label className="text-xs">{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order number", ar: "رقم الطلب", zh: "订单号" })}</Label>
                   <Input
                     value={formData.orderNumber}
                     onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
-                    placeholder="ژمارەی ئۆردەر"
+                    placeholder={pickLang(language, { ku: "ژمارەی ئۆردەر", en: "Order number", ar: "رقم الطلب", zh: "订单号" })}
                     className={cn("h-10", filledCls(formData.orderNumber))}
                     dir="ltr"
                   />
@@ -518,12 +519,12 @@ export default function FullPackageForm() {
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center gap-1.5">
                     <ScanBarcode className="h-3.5 w-3.5" />
-                    تراکینگ نەمبەر <span className="text-muted-foreground font-normal">(ئیختیاری)</span>
+                    {pickLang(language, { ku: "تراکینگ نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "追踪号" })} <span className="text-muted-foreground font-normal">{pickLang(language, { ku: "(ئیختیاری)", en: "(optional)", ar: "(اختياري)", zh: "（可选）" })}</span>
                   </Label>
                   <Input
                     value={formData.trackingNumber}
                     onChange={(e) => setFormData({ ...formData, trackingNumber: e.target.value })}
-                    placeholder="ئەگەر ئێستا بەردەستە، داخڵی بکە"
+                    placeholder={pickLang(language, { ku: "ئەگەر ئێستا بەردەستە، داخڵی بکە", en: "Enter it if already available", ar: "أدخله إن كان متاحاً الآن", zh: "如已有则填写" })}
                     className={cn("h-10", filledCls(formData.trackingNumber))}
                     dir="ltr"
                   />
@@ -531,7 +532,7 @@ export default function FullPackageForm() {
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center gap-1.5">
                     <LinkIcon className="h-3.5 w-3.5" />
-                    لینکی کاڵا
+                    {pickLang(language, { ku: "لینکی کاڵا", en: "Product link", ar: "رابط المنتج", zh: "商品链接" })}
                   </Label>
                   <Input
                     value={formData.productLink}
@@ -546,16 +547,16 @@ export default function FullPackageForm() {
               {/* Row 2: color / size / image */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs">ڕەنگ</Label>
+                  <Label className="text-xs">{pickLang(language, { ku: "ڕەنگ", en: "Color", ar: "اللون", zh: "颜色" })}</Label>
                   <Select
                     value={formData.color}
                     onValueChange={(v) => setFormData({ ...formData, color: v === "__none__" ? "" : v })}
                   >
                     <SelectTrigger className={cn("h-10", filledCls(formData.color))}>
-                      <SelectValue placeholder="ڕەنگ هەڵبژێرە" />
+                      <SelectValue placeholder={pickLang(language, { ku: "ڕەنگ هەڵبژێرە", en: "Select a color", ar: "اختر لوناً", zh: "选择颜色" })} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— بێ ڕەنگ —</SelectItem>
+                      <SelectItem value="__none__">{pickLang(language, { ku: "— بێ ڕەنگ —", en: "— No color —", ar: "— بدون لون —", zh: "— 无颜色 —" })}</SelectItem>
                       {colorAttrs?.map(a => (
                         <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
                       ))}
@@ -563,16 +564,16 @@ export default function FullPackageForm() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">قەبارە</Label>
+                  <Label className="text-xs">{pickLang(language, { ku: "قەبارە", en: "Size", ar: "المقاس", zh: "尺寸" })}</Label>
                   <Select
                     value={formData.size}
                     onValueChange={(v) => setFormData({ ...formData, size: v === "__none__" ? "" : v })}
                   >
                     <SelectTrigger className={cn("h-10", filledCls(formData.size))}>
-                      <SelectValue placeholder="قەبارە هەڵبژێرە" />
+                      <SelectValue placeholder={pickLang(language, { ku: "قەبارە هەڵبژێرە", en: "Select a size", ar: "اختر مقاساً", zh: "选择尺寸" })} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— بێ قەبارە —</SelectItem>
+                      <SelectItem value="__none__">{pickLang(language, { ku: "— بێ قەبارە —", en: "— No size —", ar: "— بدون مقاس —", zh: "— 无尺寸 —" })}</SelectItem>
                       {sizeAttrs?.map(a => (
                         <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
                       ))}
@@ -582,7 +583,7 @@ export default function FullPackageForm() {
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center gap-1.5">
                     <ImageIcon className="h-3.5 w-3.5" />
-                    وێنەی کاڵا
+                    {pickLang(language, { ku: "وێنەی کاڵا", en: "Product image", ar: "صورة المنتج", zh: "商品图片" })}
                   </Label>
                   <CompressedImageUpload
                     images={productImages}
@@ -596,11 +597,11 @@ export default function FullPackageForm() {
 
               {/* Row 3: description full width */}
               <div className="space-y-1.5">
-                <Label className="text-xs">وەسف</Label>
+                <Label className="text-xs">{pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" })}</Label>
                 <Textarea
                   value={formData.productDescription}
                   onChange={(e) => setFormData({ ...formData, productDescription: e.target.value })}
-                  placeholder="وەسفی کاڵا..."
+                  placeholder={pickLang(language, { ku: "وەسفی کاڵا...", en: "Product description...", ar: "وصف المنتج...", zh: "商品描述..." })}
                   rows={2}
                   className={cn(filledCls(formData.productDescription))}
                 />
@@ -609,7 +610,7 @@ export default function FullPackageForm() {
           </Section>
 
           {/* Pricing & Quantity */}
-          <Section icon={DollarSign} title="نرخەکان و عەدەد" hint="نرخی کڕین و فرۆشتن — کۆستی گواستنەوە دواتر کاتی باچ حساب دەکرێت" accent="emerald">
+          <Section icon={DollarSign} title={pickLang(language, { ku: "نرخەکان و عەدەد", en: "Prices & quantity", ar: "الأسعار والكمية", zh: "价格与数量" })} hint={pickLang(language, { ku: "نرخی کڕین و فرۆشتن — کۆستی گواستنەوە دواتر کاتی باچ حساب دەکرێت", en: "Purchase & selling price — shipping cost is calculated later at batch time", ar: "سعر الشراء والبيع — تُحتسب تكلفة الشحن لاحقاً عند تجهيز الدفعة", zh: "采购价与销售价 — 运费在批次时再计算" })} accent="emerald">
             <div className="space-y-3">
 
               {/* ¥ Converter Section — quantity inline + per-unit ¥ + total ¥ (feeds purchase price $) */}
@@ -621,13 +622,13 @@ export default function FullPackageForm() {
                       <Banknote className="h-4 w-4 text-white" />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-orange-900 text-sm">نرخی کڕین بە یوانی چینی</p>
+                      <p className="font-bold text-orange-900 text-sm">{pickLang(language, { ku: "نرخی کڕین بە یوانی چینی", en: "Purchase price in Chinese yuan", ar: "سعر الشراء باليوان الصيني", zh: "采购价（人民币）" })}</p>
                       {rmbRate > 0 ? (
                         <p className="text-xs text-orange-700 truncate">
-                          نرخی بەراورد: ١ دۆلار = {rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} یوانی چینی
+                          {pickLang(language, { ku: `نرخی بەراورد: ١ دۆلار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} یوانی چینی`, en: `Exchange rate: 1 USD = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} CNY`, ar: `سعر الصرف: 1 دولار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} يوان صيني`, zh: `汇率：1 美元 = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} 人民币` })}
                         </p>
                       ) : (
-                        <p className="text-xs text-red-600">تکایە نرخی بەراورد لە سیتینگی سیستەم داخڵ بکە</p>
+                        <p className="text-xs text-red-600">{pickLang(language, { ku: "تکایە نرخی بەراورد لە سیتینگی سیستەم داخڵ بکە", en: "Please enter the exchange rate in system settings", ar: "يرجى إدخال سعر الصرف في إعدادات النظام", zh: "请在系统设置中输入汇率" })}</p>
                       )}
                     </div>
                   </div>
@@ -644,7 +645,7 @@ export default function FullPackageForm() {
                   <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_1fr] gap-3 items-end">
                     {/* 1. Quantity — compact stepper */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-slate-600">عەدەد *</Label>
+                      <Label className="text-xs font-semibold text-slate-600">{pickLang(language, { ku: "عەدەد *", en: "Quantity *", ar: "الكمية *", zh: "数量 *" })}</Label>
                       <div className="flex items-center gap-1 w-[10rem]">
                         <Button
                           type="button"
@@ -677,7 +678,7 @@ export default function FullPackageForm() {
 
                     {/* 2. Per-unit ¥ */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-amber-700">نرخی ١ دانە بە یوانی چینی</Label>
+                      <Label className="text-xs font-semibold text-amber-700">{pickLang(language, { ku: "نرخی ١ دانە بە یوانی چینی", en: "Price per unit in CNY", ar: "سعر الوحدة باليوان الصيني", zh: "单件价格（人民币）" })}</Label>
                       <div className="relative">
                         <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
                         <Input
@@ -695,7 +696,7 @@ export default function FullPackageForm() {
 
                     {/* 3. Total ¥ */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-orange-700">کۆی نرخ بە یوانی چینی ({quantity} دانە)</Label>
+                      <Label className="text-xs font-semibold text-orange-700">{pickLang(language, { ku: `کۆی نرخ بە یوانی چینی (${quantity} دانە)`, en: `Total price in CNY (${quantity} units)`, ar: `إجمالي السعر باليوان الصيني (${quantity} وحدة)`, zh: `总价（人民币，${quantity} 件）` })}</Label>
                       <div className="relative">
                         <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
                         <Input
@@ -716,15 +717,15 @@ export default function FullPackageForm() {
                   {(parseFloat(rmbPerUnit) > 0 || parseFloat(rmbTotal) > 0) && (
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-amber-50 rounded-lg p-2 text-center border border-amber-100">
-                        <p className="text-[10px] text-amber-500 uppercase tracking-wide mb-0.5">١ دانە یوانی چینی</p>
+                        <p className="text-[10px] text-amber-500 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: "١ دانە یوانی چینی", en: "Per unit CNY", ar: "وحدة واحدة باليوان", zh: "单件人民币" })}</p>
                         <p className="font-bold text-amber-700 font-mono text-sm">{Number(rmbPerUnit || 0).toLocaleString("en-US")} ¥</p>
                       </div>
                       <div className="bg-orange-50 rounded-lg p-2 text-center border border-orange-100">
-                        <p className="text-[10px] text-orange-500 uppercase tracking-wide mb-0.5">کۆی {quantity} دانە</p>
+                        <p className="text-[10px] text-orange-500 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: `کۆی ${quantity} دانە`, en: `Total ${quantity} units`, ar: `إجمالي ${quantity} وحدة`, zh: `共 ${quantity} 件` })}</p>
                         <p className="font-bold text-orange-700 font-mono text-sm">{Number(rmbTotal || 0).toLocaleString("en-US")} ¥</p>
                       </div>
                       <div className="bg-gradient-to-b from-amber-500 to-orange-500 rounded-lg p-2 text-center shadow-sm">
-                        <p className="text-[10px] text-amber-100 uppercase tracking-wide mb-0.5">نرخی کڕین $ یەک دانە</p>
+                        <p className="text-[10px] text-amber-100 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: "نرخی کڕین $ یەک دانە", en: "Purchase price $ per unit", ar: "سعر الشراء $ للوحدة", zh: "单件采购价 $" })}</p>
                         <p className="font-bold text-white font-mono text-sm">${formData.purchasePriceUsd || "0.0000"}</p>
                       </div>
                     </div>
@@ -735,7 +736,7 @@ export default function FullPackageForm() {
               {/* 4. Purchase Price ($) + 5. Selling Price ($) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-amber-700">نرخی کڕین (یەک عەدەد)</Label>
+                  <Label className="text-xs font-semibold text-amber-700">{pickLang(language, { ku: "نرخی کڕین (یەک عەدەد)", en: "Purchase price (per unit)", ar: "سعر الشراء (للوحدة)", zh: "采购价（单件）" })}</Label>
                   <div className="relative">
                     <span className="absolute start-3 top-1/2 -translate-y-1/2 text-amber-600 font-bold">$</span>
                     <Input
@@ -751,16 +752,16 @@ export default function FullPackageForm() {
                   </div>
                   {rmbPerUnit && rmbRate > 0 ? (
                     <div className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1 border border-orange-200">
-                      <span className="text-[11px] text-orange-600">١ دانە بە یوانی چینی</span>
+                      <span className="text-[11px] text-orange-600">{pickLang(language, { ku: "١ دانە بە یوانی چینی", en: "Per unit in CNY", ar: "وحدة واحدة باليوان الصيني", zh: "单件人民币" })}</span>
                       <span className="text-sm font-bold text-orange-700 font-mono">{Number(rmbPerUnit).toLocaleString("en-US")} ¥</span>
                     </div>
                   ) : (
-                    <p className="text-[11px] text-amber-600">نرخی کاڵا لە چین</p>
+                    <p className="text-[11px] text-amber-600">{pickLang(language, { ku: "نرخی کاڵا لە چین", en: "Product price in China", ar: "سعر المنتج في الصين", zh: "中国商品价格" })}</p>
                   )}
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-emerald-700">نرخی فرۆشتن (یەک عەدەد)</Label>
+                  <Label className="text-xs font-semibold text-emerald-700">{pickLang(language, { ku: "نرخی فرۆشتن (یەک عەدەد)", en: "Selling price (per unit)", ar: "سعر البيع (للوحدة)", zh: "销售价（单件）" })}</Label>
                   <div className="relative">
                     <span className="absolute start-3 top-1/2 -translate-y-1/2 text-emerald-600 font-bold">$</span>
                     <Input
@@ -774,7 +775,7 @@ export default function FullPackageForm() {
                       dir="ltr"
                     />
                   </div>
-                  <p className="text-[11px] text-emerald-600">نرخی فرۆشتن بە کڕیار — بە دۆلار</p>
+                  <p className="text-[11px] text-emerald-600">{pickLang(language, { ku: "نرخی فرۆشتن بە کڕیار — بە دۆلار", en: "Selling price to the customer — in USD", ar: "سعر البيع للعميل — بالدولار", zh: "对客户的销售价 — 美元" })}</p>
                 </div>
               </div>
 
@@ -784,33 +785,33 @@ export default function FullPackageForm() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-emerald-600" />
-                      <span className="font-bold text-sm text-emerald-800">پێشبینی قازانج</span>
+                      <span className="font-bold text-sm text-emerald-800">{pickLang(language, { ku: "پێشبینی قازانج", en: "Profit forecast", ar: "توقّع الربح", zh: "利润预测" })}</span>
                     </div>
-                    <span className="bg-white px-2.5 py-0.5 rounded-full border border-emerald-300 text-emerald-700 font-bold text-xs">{formData.quantity || 1} عەدەد</span>
+                    <span className="bg-white px-2.5 py-0.5 rounded-full border border-emerald-300 text-emerald-700 font-bold text-xs">{pickLang(language, { ku: `${formData.quantity || 1} عەدەد`, en: `${formData.quantity || 1} units`, ar: `${formData.quantity || 1} وحدة`, zh: `${formData.quantity || 1} 件` })}</span>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     <div className="bg-white rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-slate-500 mb-0.5">نرخی کڕین (١ عەدەد)</p>
+                      <p className="text-[10px] text-slate-500 mb-0.5">{pickLang(language, { ku: "نرخی کڕین (١ عەدەد)", en: "Purchase price (1 unit)", ar: "سعر الشراء (وحدة واحدة)", zh: "采购价（1 件）" })}</p>
                       <p className="text-base font-bold text-amber-600">${purchasePrice.toFixed(2)}</p>
                     </div>
                     <div className="bg-amber-100 rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-amber-700 mb-0.5">کۆی کڕین ({formData.quantity || 1} عەدەد)</p>
+                      <p className="text-[10px] text-amber-700 mb-0.5">{pickLang(language, { ku: `کۆی کڕین (${formData.quantity || 1} عەدەد)`, en: `Total purchase (${formData.quantity || 1} units)`, ar: `إجمالي الشراء (${formData.quantity || 1} وحدة)`, zh: `采购总额（${formData.quantity || 1} 件）` })}</p>
                       <p className="text-base font-bold text-amber-700">${(purchasePrice * quantity).toFixed(2)}</p>
                     </div>
                     <div className="bg-white rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-slate-500 mb-0.5">نرخی فرۆشتن (١ عەدەد)</p>
+                      <p className="text-[10px] text-slate-500 mb-0.5">{pickLang(language, { ku: "نرخی فرۆشتن (١ عەدەد)", en: "Selling price (1 unit)", ar: "سعر البيع (وحدة واحدة)", zh: "销售价（1 件）" })}</p>
                       <p className="text-base font-bold text-emerald-600">${sellingPrice.toFixed(2)}</p>
                     </div>
                     <div className="bg-emerald-200 rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-emerald-700 mb-0.5">کۆی فرۆشتن ({formData.quantity || 1} عەدەد)</p>
+                      <p className="text-[10px] text-emerald-700 mb-0.5">{pickLang(language, { ku: `کۆی فرۆشتن (${formData.quantity || 1} عەدەد)`, en: `Total selling (${formData.quantity || 1} units)`, ar: `إجمالي البيع (${formData.quantity || 1} وحدة)`, zh: `销售总额（${formData.quantity || 1} 件）` })}</p>
                       <p className="text-base font-bold text-emerald-700">${(sellingPrice * quantity).toFixed(2)}</p>
                     </div>
                   </div>
 
                   <div className="mt-2 pt-2 border-t border-emerald-300 flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-emerald-700">قازانجی خاو (بەبێ گواستنەوە)</p>
+                      <p className="text-xs text-emerald-700">{pickLang(language, { ku: "قازانجی خاو (بەبێ گواستنەوە)", en: "Gross profit (excluding shipping)", ar: "الربح الإجمالي (بدون الشحن)", zh: "毛利润（不含运费）" })}</p>
                       <p className="text-[10px] text-slate-500">({sellingPrice.toFixed(2)} - {purchasePrice.toFixed(2)}) × {formData.quantity || 1}</p>
                     </div>
                     <div className={`text-xl font-bold ${grossProfit * quantity >= 0 ? "text-green-600" : "text-red-600"}`}>
@@ -819,7 +820,7 @@ export default function FullPackageForm() {
                   </div>
 
                   <p className="text-[11px] text-center text-emerald-600 mt-2 bg-white/50 rounded-lg py-1">
-                    💡 قازانجی خاوێن = قازانجی خاو - کۆستی گواستنەوە (دواتر کاتی باچ حساب دەکرێت)
+                    💡 {pickLang(language, { ku: "قازانجی خاوێن = قازانجی خاو - کۆستی گواستنەوە (دواتر کاتی باچ حساب دەکرێت)", en: "Net profit = gross profit - shipping cost (calculated later at batch time)", ar: "صافي الربح = الربح الإجمالي - تكلفة الشحن (تُحتسب لاحقاً عند تجهيز الدفعة)", zh: "净利润 = 毛利润 - 运费（在批次时再计算）" })}
                   </p>
                 </div>
               )}
@@ -827,11 +828,11 @@ export default function FullPackageForm() {
           </Section>
 
           {/* ── Advance Payment ── */}
-          <Section icon={Wallet} title="پارەدانی پێشەکی (ئاختیاری)" hint="ڕاستەوخۆ لە حسابی کڕیار تۆمار دەبێت" accent="teal">
+          <Section icon={Wallet} title={pickLang(language, { ku: "پارەدانی پێشەکی (ئاختیاری)", en: "Advance payment (optional)", ar: "دفعة مقدمة (اختياري)", zh: "预付款（可选）" })} hint={pickLang(language, { ku: "ڕاستەوخۆ لە حسابی کڕیار تۆمار دەبێت", en: "Recorded directly in the customer's account", ar: "يُسجَّل مباشرة في حساب العميل", zh: "直接记入客户账户" })} accent="teal">
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-teal-700">بڕی پارەی پێشەکی (USD)</Label>
+                  <Label className="text-xs font-semibold text-teal-700">{pickLang(language, { ku: "بڕی پارەی پێشەکی (USD)", en: "Advance amount (USD)", ar: "مبلغ الدفعة المقدمة (USD)", zh: "预付金额（USD）" })}</Label>
                   <div className="relative">
                     <span className="absolute start-3 top-1/2 -translate-y-1/2 text-teal-500 font-bold select-none">$</span>
                     <Input
@@ -845,10 +846,10 @@ export default function FullPackageForm() {
                       dir="ltr"
                     />
                   </div>
-                  <p className="text-[11px] text-teal-600">بۆ بێ پارەدان دابمێنە بە 0</p>
+                  <p className="text-[11px] text-teal-600">{pickLang(language, { ku: "بۆ بێ پارەدان دابمێنە بە 0", en: "Leave at 0 for no payment", ar: "اتركه 0 لعدم وجود دفعة", zh: "无付款则保持为 0" })}</p>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-teal-700">شێوازی پارەدان</Label>
+                  <Label className="text-xs font-semibold text-teal-700">{pickLang(language, { ku: "شێوازی پارەدان", en: "Payment method", ar: "طريقة الدفع", zh: "付款方式" })}</Label>
                   <Select
                     value={formData.advancePaymentMethod}
                     onValueChange={(v) => setFormData({ ...formData, advancePaymentMethod: v as any })}
@@ -857,14 +858,14 @@ export default function FullPackageForm() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="CASH">کاش</SelectItem>
-                      <SelectItem value="BANK_TRANSFER">گواستنەوەی بانک</SelectItem>
+                      <SelectItem value="CASH">{pickLang(language, { ku: "کاش", en: "Cash", ar: "نقداً", zh: "现金" })}</SelectItem>
+                      <SelectItem value="BANK_TRANSFER">{pickLang(language, { ku: "گواستنەوەی بانک", en: "Bank transfer", ar: "تحويل بنكي", zh: "银行转账" })}</SelectItem>
                       <SelectItem value="FIB">FIB</SelectItem>
                       <SelectItem value="FASTPAY">FastPay</SelectItem>
                       <SelectItem value="ZAINCASH">ZainCash</SelectItem>
                       <SelectItem value="ASIAHAWALA">AsiaHawala</SelectItem>
-                      <SelectItem value="CARD">کارتی بانکی</SelectItem>
-                      <SelectItem value="OTHER">هیتر</SelectItem>
+                      <SelectItem value="CARD">{pickLang(language, { ku: "کارتی بانکی", en: "Bank card", ar: "بطاقة بنكية", zh: "银行卡" })}</SelectItem>
+                      <SelectItem value="OTHER">{pickLang(language, { ku: "هیتر", en: "Other", ar: "أخرى", zh: "其他" })}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -875,20 +876,20 @@ export default function FullPackageForm() {
                   {formData.sellingPriceUsd && parseFloat(formData.sellingPriceUsd) > 0 ? (
                     <>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">نرخی فرۆشتن × ژمارە</span>
+                        <span className="text-slate-600">{pickLang(language, { ku: "نرخی فرۆشتن × ژمارە", en: "Selling price × quantity", ar: "سعر البيع × الكمية", zh: "销售价 × 数量" })}</span>
                         <span className="font-mono font-bold">
                           ${(parseFloat(formData.sellingPriceUsd) * quantity).toFixed(2)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-teal-700">پارەی پێشەکی</span>
+                        <span className="text-teal-700">{pickLang(language, { ku: "پارەی پێشەکی", en: "Advance payment", ar: "الدفعة المقدمة", zh: "预付款" })}</span>
                         <span className="font-mono font-bold text-teal-700">
                           -${parseFloat(formData.advancePaidUsd || "0").toFixed(2)}
                         </span>
                       </div>
                       <div className="h-px bg-teal-200" />
                       <div className="flex items-center justify-between text-base">
-                        <span className="font-semibold text-slate-800">ماوە بۆ پارەدان لە کاتی گەیشتن</span>
+                        <span className="font-semibold text-slate-800">{pickLang(language, { ku: "ماوە بۆ پارەدان لە کاتی گەیشتن", en: "Remaining due on arrival", ar: "المتبقي للدفع عند الوصول", zh: "到货时应付余额" })}</span>
                         <span className="font-mono font-bold text-xl text-emerald-700">
                           ${Math.max(0, (parseFloat(formData.sellingPriceUsd) * quantity) - parseFloat(formData.advancePaidUsd || "0")).toFixed(2)}
                         </span>
@@ -897,7 +898,7 @@ export default function FullPackageForm() {
                   ) : (
                     <div className="flex items-center gap-2 text-sm text-teal-700">
                       <Wallet className="h-4 w-4" />
-                      پارەی پێشەکی ${parseFloat(formData.advancePaidUsd || "0").toFixed(2)} لە حسابی کڕیار تۆمار دەکرێت.
+                      {pickLang(language, { ku: `پارەی پێشەکی $${parseFloat(formData.advancePaidUsd || "0").toFixed(2)} لە حسابی کڕیار تۆمار دەکرێت.`, en: `Advance payment $${parseFloat(formData.advancePaidUsd || "0").toFixed(2)} will be recorded in the customer's account.`, ar: `سيتم تسجيل الدفعة المقدمة $${parseFloat(formData.advancePaidUsd || "0").toFixed(2)} في حساب العميل.`, zh: `预付款 $${parseFloat(formData.advancePaidUsd || "0").toFixed(2)} 将记入客户账户。` })}
                     </div>
                   )}
                 </div>
@@ -907,21 +908,21 @@ export default function FullPackageForm() {
 
           {/* ── Weight & Size (moved to second-to-last; only when a shipping type is chosen) ── */}
           {formData.shippingType && (
-            <Section icon={Scale} title="کێش و قەبارە" hint="کێش و قەبارەی کاڵا بۆ ژماردنی کرێی گواستنەوە" accent="sky">
+            <Section icon={Scale} title={pickLang(language, { ku: "کێش و قەبارە", en: "Weight & dimensions", ar: "الوزن والأبعاد", zh: "重量与尺寸" })} hint={pickLang(language, { ku: "کێش و قەبارەی کاڵا بۆ ژماردنی کرێی گواستنەوە", en: "Product weight & dimensions for shipping cost calculation", ar: "وزن وأبعاد المنتج لحساب أجرة الشحن", zh: "用于计算运费的商品重量与尺寸" })} accent="sky">
               <div className="mt-3 space-y-3">
                 {/* Air fields */}
                 {(formData.shippingType === "air_regular" || formData.shippingType === "air_irregular") && (
                   <div className={`rounded-xl border overflow-hidden ${formData.shippingType === "air_irregular" ? "border-amber-200" : "border-sky-200"}`}>
                     <div className={`px-4 py-2 flex items-center gap-2 border-b ${formData.shippingType === "air_irregular" ? "bg-amber-50 border-amber-100" : "bg-sky-50 border-sky-100"}`}>
                       <Scale className={`h-4 w-4 ${formData.shippingType === "air_irregular" ? "text-amber-600" : "text-sky-600"}`} />
-                      <span className="text-sm font-semibold">کێش و قەبارە</span>
-                      <span className="text-xs text-muted-foreground ms-auto">max(ڕاستەقینە، ئەندازەیی)</span>
+                      <span className="text-sm font-semibold">{pickLang(language, { ku: "کێش و قەبارە", en: "Weight & dimensions", ar: "الوزن والأبعاد", zh: "重量与尺寸" })}</span>
+                      <span className="text-xs text-muted-foreground ms-auto">max({pickLang(language, { ku: "ڕاستەقینە، ئەندازەیی", en: "actual, volumetric", ar: "الفعلي، الحجمي", zh: "实重，体积重" })})</span>
                     </div>
                     <div className="p-3 space-y-3 bg-white">
                       {/* Weight */}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">کێشی ڕاستەقینە (کیلۆگرام)</Label>
+                          <Label className="text-sm font-medium">{pickLang(language, { ku: "کێشی ڕاستەقینە (کیلۆگرام)", en: "Actual weight (kg)", ar: "الوزن الفعلي (كغ)", zh: "实际重量（千克）" })}</Label>
                           <div className="relative">
                             <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">kg</span>
                             <Input type="number" step="0.01" min="0" value={formData.weightKg}
@@ -931,9 +932,9 @@ export default function FullPackageForm() {
                         </div>
                         {volumetricKg > 0 && (
                           <div className={`rounded-xl p-3 flex flex-col justify-center ${chargeableKg === volumetricKg ? "bg-amber-50 border border-amber-200" : "bg-sky-50 border border-sky-200"}`}>
-                            <p className="text-[11px] text-muted-foreground">کێشی پارەدان</p>
+                            <p className="text-[11px] text-muted-foreground">{pickLang(language, { ku: "کێشی پارەدان", en: "Chargeable weight", ar: "الوزن المحتسب", zh: "计费重量" })}</p>
                             <p className={`text-xl font-bold font-mono ${chargeableKg === volumetricKg ? "text-amber-700" : "text-sky-700"}`}>{chargeableKg.toFixed(3)} kg</p>
-                            <p className="text-[10px] text-muted-foreground">{chargeableKg === volumetricKg ? "ئەندازەیی" : "ڕاستەقینە"} بە کار هاتووە</p>
+                            <p className="text-[10px] text-muted-foreground">{pickLang(language, chargeableKg === volumetricKg ? { ku: "ئەندازەیی بە کار هاتووە", en: "Volumetric used", ar: "تم استخدام الحجمي", zh: "使用体积重" } : { ku: "ڕاستەقینە بە کار هاتووە", en: "Actual used", ar: "تم استخدام الفعلي", zh: "使用实重" })}</p>
                           </div>
                         )}
                       </div>
@@ -942,10 +943,10 @@ export default function FullPackageForm() {
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <Ruler className="h-4 w-4 text-muted-foreground" />
-                            <Label className="text-sm font-medium">قەبارە (سانتیمەتر) — ئارەزووی</Label>
+                            <Label className="text-sm font-medium">{pickLang(language, { ku: "قەبارە (سانتیمەتر) — ئارەزووی", en: "Dimensions (cm) — optional", ar: "الأبعاد (سم) — اختياري", zh: "尺寸（厘米）— 可选" })}</Label>
                           </div>
                           <div className="grid grid-cols-3 gap-3">
-                            {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
+                            {[["dimensionLength", pickLang(language, { ku: "درێژی (L)", en: "Length (L)", ar: "الطول (L)", zh: "长 (L)" })], ["dimensionWidth", pickLang(language, { ku: "پانی (W)", en: "Width (W)", ar: "العرض (W)", zh: "宽 (W)" })], ["dimensionHeight", pickLang(language, { ku: "بەرزی (H)", en: "Height (H)", ar: "الارتفاع (H)", zh: "高 (H)" })]].map(([field, label]) => (
                               <div key={field} className="space-y-1">
                                 <Label className="text-xs text-muted-foreground">{label}</Label>
                                 <div className="relative">
@@ -960,7 +961,7 @@ export default function FullPackageForm() {
                           </div>
                           {volumetricKg > 0 && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              کێشی ئەندازەیی: ({dimL}×{dimW}×{dimH}) ÷ 6000 = <strong>{volumetricKg.toFixed(3)} kg</strong>
+                              {pickLang(language, { ku: "کێشی ئەندازەیی:", en: "Volumetric weight:", ar: "الوزن الحجمي:", zh: "体积重量：" })} ({dimL}×{dimW}×{dimH}) ÷ 6000 = <strong>{volumetricKg.toFixed(3)} kg</strong>
                             </p>
                           )}
                         </div>
@@ -974,30 +975,30 @@ export default function FullPackageForm() {
                   <div className="rounded-xl border border-teal-200 overflow-hidden">
                     <div className="px-4 py-2 flex items-center gap-2 bg-teal-50 border-b border-teal-100">
                       <Calculator className="h-4 w-4 text-teal-600" />
-                      <span className="text-sm font-semibold text-teal-800">قەبارەی CBM</span>
+                      <span className="text-sm font-semibold text-teal-800">{pickLang(language, { ku: "قەبارەی CBM", en: "CBM volume", ar: "حجم CBM", zh: "CBM 体积" })}</span>
                       <span className="text-xs text-muted-foreground ms-auto">١ CBM = ١٠٠cm × ١٠٠cm × ١٠٠cm</span>
                     </div>
                     <div className="p-3 space-y-3 bg-white">
                       <div className="grid grid-cols-2 gap-3">
                         {/* Direct CBM */}
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">CBM ڕاستەوخۆ</Label>
+                          <Label className="text-sm font-medium">{pickLang(language, { ku: "CBM ڕاستەوخۆ", en: "Direct CBM", ar: "CBM مباشر", zh: "直接输入 CBM" })}</Label>
                           <div className="relative">
                             <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">m³</span>
                             <Input type="number" step="0.0001" min="0" value={formData.volumeCbm}
                               onChange={e => setFormData(p => ({ ...p, volumeCbm: e.target.value }))}
                               placeholder="0.0000" className={cn("pe-10 h-10 font-mono", filledCls(formData.volumeCbm))} dir="ltr" />
                           </div>
-                          <p className="text-xs text-muted-foreground">ئەگەر CBM دەزانیت</p>
+                          <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "ئەگەر CBM دەزانیت", en: "If you know the CBM", ar: "إذا كنت تعرف الـ CBM", zh: "如果您知道 CBM" })}</p>
                         </div>
                         {/* Auto CBM from dims */}
                         {autoCbm > 0 && (
                           <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex flex-col justify-center">
-                            <p className="text-[11px] text-teal-600">CBM خۆکار</p>
+                            <p className="text-[11px] text-teal-600">{pickLang(language, { ku: "CBM خۆکار", en: "Auto CBM", ar: "CBM تلقائي", zh: "自动 CBM" })}</p>
                             <p className="text-xl font-bold font-mono text-teal-700">{autoCbm.toFixed(4)} m³</p>
                             <button type="button" onClick={() => setFormData(p => ({ ...p, volumeCbm: autoCbm.toFixed(4) }))}
                               className="text-[11px] text-teal-600 underline text-start mt-1 hover:text-teal-800">
-                              بەکاربێنە ←
+                              {pickLang(language, { ku: "بەکاربێنە", en: "Use this", ar: "استخدم هذا", zh: "使用此值" })} ←
                             </button>
                           </div>
                         )}
@@ -1006,10 +1007,10 @@ export default function FullPackageForm() {
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <Ruler className="h-4 w-4 text-muted-foreground" />
-                          <Label className="text-sm font-medium">قەبارە بۆ حساب کردنی CBM — ئارەزووی</Label>
+                          <Label className="text-sm font-medium">{pickLang(language, { ku: "قەبارە بۆ حساب کردنی CBM — ئارەزووی", en: "Dimensions for CBM calculation — optional", ar: "الأبعاد لحساب الـ CBM — اختياري", zh: "用于计算 CBM 的尺寸 — 可选" })}</Label>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
-                          {[["dimensionLength", "درێژی (L)"], ["dimensionWidth", "پانی (W)"], ["dimensionHeight", "بەرزی (H)"]].map(([field, label]) => (
+                          {[["dimensionLength", pickLang(language, { ku: "درێژی (L)", en: "Length (L)", ar: "الطول (L)", zh: "长 (L)" })], ["dimensionWidth", pickLang(language, { ku: "پانی (W)", en: "Width (W)", ar: "العرض (W)", zh: "宽 (W)" })], ["dimensionHeight", pickLang(language, { ku: "بەرزی (H)", en: "Height (H)", ar: "الارتفاع (H)", zh: "高 (H)" })]].map(([field, label]) => (
                             <div key={field} className="space-y-1">
                               <Label className="text-xs text-muted-foreground">{label}</Label>
                               <div className="relative">
@@ -1031,11 +1032,11 @@ export default function FullPackageForm() {
           )}
 
           {/* Notes */}
-          <Section icon={Save} title="تێبینی" accent="slate">
+          <Section icon={Save} title={pickLang(language, { ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" })} accent="slate">
             <Textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="تێبینی..."
+              placeholder={pickLang(language, { ku: "تێبینی...", en: "Notes...", ar: "ملاحظات...", zh: "备注..." })}
               rows={2}
               className={cn(filledCls(formData.notes))}
             />
@@ -1044,7 +1045,7 @@ export default function FullPackageForm() {
           {/* Submit */}
           <StickyFormBar>
             <Button type="button" variant="outline" onClick={() => navigate("/full-package")}>
-              {t("common.cancel") || "پاشگەزبوونەوە"}
+              {t("common.cancel") || pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button
               type="submit"
@@ -1056,7 +1057,7 @@ export default function FullPackageForm() {
               ) : (
                 <Save className="h-4 w-4 ms-2" />
               )}
-              {t("common.save") || "پاشەکەوتکردن"}
+              {t("common.save") || pickLang(language, { ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" })}
             </Button>
           </StickyFormBar>
         </form>

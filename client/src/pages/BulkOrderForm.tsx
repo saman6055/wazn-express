@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import {
   Package,
@@ -99,7 +100,7 @@ const emptyItem = (): OrderItem => ({
 });
 
 export default function BulkOrderForm() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [, navigate] = useLocation();
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);
@@ -298,7 +299,7 @@ export default function BulkOrderForm() {
     }
 
     if (!shippingType) {
-      toast.error("تکایە شێوازی گواستنەوە دیاری بکە");
+      toast.error(pickLang(language, { ku: "تکایە شێوازی گواستنەوە دیاری بکە", en: "Please select a shipping method", ar: "يرجى اختيار طريقة الشحن", zh: "请选择运输方式" }));
       return;
     }
 
@@ -367,14 +368,16 @@ export default function BulkOrderForm() {
             
             <div>
               <h2 className="text-2xl font-bold mb-2">
-                {resultData.errors === 0 ? "تەواو بوو!" : "تەواو بوو بە هەندێ کێشە"}
+                {resultData.errors === 0
+                  ? pickLang(language, { ku: "تەواو بوو!", en: "Done!", ar: "تم بنجاح!", zh: "完成!" })
+                  : pickLang(language, { ku: "تەواو بوو بە هەندێ کێشە", en: "Completed with some issues", ar: "اكتمل مع بعض المشكلات", zh: "完成但有部分问题" })}
               </h2>
               <p className="text-muted-foreground">
-                {resultData.created} ئۆردەر بە سەرکەوتوویی دروست کران
+                {pickLang(language, { ku: `${resultData.created} ئۆردەر بە سەرکەوتوویی دروست کران`, en: `${resultData.created} orders created successfully`, ar: `تم إنشاء ${resultData.created} طلب بنجاح`, zh: `已成功创建 ${resultData.created} 个订单` })}
               </p>
               {resultData.errors > 0 && (
                 <p className="text-amber-600 mt-1">
-                  {resultData.errors} ئۆردەر کێشەیان هەبوو
+                  {pickLang(language, { ku: `${resultData.errors} ئۆردەر کێشەیان هەبوو`, en: `${resultData.errors} orders had issues`, ar: `${resultData.errors} طلب واجهت مشكلات`, zh: `${resultData.errors} 个订单存在问题` })}
                 </p>
               )}
             </div>
@@ -390,13 +393,13 @@ export default function BulkOrderForm() {
                 }}
               >
                 <Plus className="w-4 h-4 ms-2" />
-                دروستکردنی نوێ
+                {pickLang(language, { ku: "دروستکردنی نوێ", en: "Create new", ar: "إنشاء جديد", zh: "新建" })}
               </Button>
               <Button
                 className="flex-1"
                 onClick={() => navigate(isCommission ? "/commission" : "/full-package")}
               >
-                گەڕانەوە بۆ داشبۆرد
+                {pickLang(language, { ku: "گەڕانەوە بۆ داشبۆرد", en: "Back to dashboard", ar: "العودة إلى لوحة التحكم", zh: "返回仪表板" })}
                 <ArrowRight className="w-4 h-4 me-2" />
               </Button>
             </div>
@@ -423,10 +426,12 @@ export default function BulkOrderForm() {
               </div>
               <div>
                 <h1 className="text-xl font-bold">
-                  دروستکردنی ئۆردەر بە کۆمەڵ
+                  {pickLang(language, { ku: "دروستکردنی ئۆردەر بە کۆمەڵ", en: "Create bulk order", ar: "إنشاء طلب بالجملة", zh: "批量创建订单" })}
                 </h1>
                 <p className="text-sm opacity-80">
-                  {isCommission ? "کڕین بە تێچوو" : "پاکێجی تەواو"} - {items.length} ئۆردەر
+                  {isCommission
+                    ? pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission purchase", ar: "شراء بعمولة", zh: "代购" })
+                    : pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "الباقة الكاملة", zh: "全包" })} - {pickLang(language, { ku: `${items.length} ئۆردەر`, en: `${items.length} orders`, ar: `${items.length} طلب`, zh: `${items.length} 个订单` })}
                 </p>
               </div>
             </div>
@@ -437,7 +442,7 @@ export default function BulkOrderForm() {
                 className="text-white hover:bg-white/20"
                 onClick={() => navigate(isCommission ? "/commission" : "/full-package")}
               >
-                گەڕانەوە
+                {pickLang(language, { ku: "گەڕانەوە", en: "Back", ar: "رجوع", zh: "返回" })}
                 <ArrowRight className="w-4 h-4 me-1" />
               </Button>
             </div>
@@ -457,7 +462,7 @@ export default function BulkOrderForm() {
                 <ShoppingBag className={cn("w-6 h-6", isCommission ? "text-amber-600" : "text-emerald-600")} />
               </div>
               <div className="flex-1">
-                <Label className="text-sm font-medium text-muted-foreground mb-2 block">هەڵبژاردنی کڕیار *</Label>
+                <Label className="text-sm font-medium text-muted-foreground mb-2 block">{pickLang(language, { ku: "هەڵبژاردنی کڕیار *", en: "Select customer *", ar: "اختيار العميل *", zh: "选择客户 *" })}</Label>
                 <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -472,7 +477,7 @@ export default function BulkOrderForm() {
                           {selectedCustomer.fullName || selectedCustomer.fullNameKurdish}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">گەڕان بە ناو، کۆد، یان ژمارە...</span>
+                        <span className="text-muted-foreground">{pickLang(language, { ku: "گەڕان بە ناو، کۆد، یان ژمارە...", en: "Search by name, code, or number...", ar: "البحث بالاسم أو الرمز أو الرقم...", zh: "按姓名、编号或号码搜索..." })}</span>
                       )}
                       <ChevronsUpDown className="w-4 h-4 opacity-50" />
                     </Button>
@@ -480,12 +485,12 @@ export default function BulkOrderForm() {
                   <PopoverContent variant="panel" className="w-[400px]" align="start">
                     <Command>
                       <CommandInput
-                        placeholder="گەڕان بە ناو، کۆد، یان ژمارە..."
+                        placeholder={pickLang(language, { ku: "گەڕان بە ناو، کۆد، یان ژمارە...", en: "Search by name, code, or number...", ar: "البحث بالاسم أو الرمز أو الرقم...", zh: "按姓名、编号或号码搜索..." })}
                         value={customerSearch}
                         onValueChange={setCustomerSearch}
                       />
                       <CommandList>
-                        <CommandEmpty>هیچ کڕیارێک نەدۆزرایەوە</CommandEmpty>
+                        <CommandEmpty>{pickLang(language, { ku: "هیچ کڕیارێک نەدۆزرایەوە", en: "No customers found", ar: "لم يتم العثور على عملاء", zh: "未找到客户" })}</CommandEmpty>
                         <CommandGroup>
                           {filteredCustomers.slice(0, 50).map((customer) => (
                             <CommandItem
@@ -517,12 +522,12 @@ export default function BulkOrderForm() {
 
         {/* Shipping Type Selector */}
         <div>
-          <Label className="text-sm font-medium text-muted-foreground mb-2 block">شێوازی گواستنەوە *</Label>
+          <Label className="text-sm font-medium text-muted-foreground mb-2 block">{pickLang(language, { ku: "شێوازی گواستنەوە *", en: "Shipping method *", ar: "طريقة الشحن *", zh: "运输方式 *" })}</Label>
           <div className="grid grid-cols-3 gap-2">
             {([
-              { value: "air_regular", label: "ئاسمانی ئاسایی", icon: Plane },
-              { value: "air_irregular", label: "ئاسمانی مەرسیدار", icon: Plane },
-              { value: "sea", label: "دەریایی", icon: Ship },
+              { value: "air_regular", label: pickLang(language, { ku: "ئاسمانی ئاسایی", en: "Regular air", ar: "جوي عادي", zh: "普通空运" }), icon: Plane },
+              { value: "air_irregular", label: pickLang(language, { ku: "ئاسمانی مەرسیدار", en: "Express air", ar: "جوي سريع", zh: "加急空运" }), icon: Plane },
+              { value: "sea", label: pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" }), icon: Ship },
             ] as const).map((opt) => {
               const Icon = opt.icon;
               const active = shippingType === opt.value;
@@ -551,18 +556,18 @@ export default function BulkOrderForm() {
           <div className="flex items-center gap-2">
             <Button onClick={addItem} size="sm" variant="outline" className="gap-1">
               <Plus className="w-4 h-4" />
-              ڕیزی نوێ
+              {pickLang(language, { ku: "ڕیزی نوێ", en: "New row", ar: "صف جديد", zh: "新增行" })}
             </Button>
             <Separator orientation="vertical" className="h-6" />
             <Button onClick={expandAll} size="sm" variant="ghost" className="text-xs">
-              کردنەوەی هەموو
+              {pickLang(language, { ku: "کردنەوەی هەموو", en: "Expand all", ar: "توسيع الكل", zh: "全部展开" })}
             </Button>
             <Button onClick={collapseAll} size="sm" variant="ghost" className="text-xs">
-              داخستنی هەموو
+              {pickLang(language, { ku: "داخستنی هەموو", en: "Collapse all", ar: "طي الكل", zh: "全部收起" })}
             </Button>
           </div>
           <Badge variant="secondary" className="text-sm">
-            {summary.validItems} / {summary.totalItems} ئۆردەر پڕکراوە
+            {pickLang(language, { ku: `${summary.validItems} / ${summary.totalItems} ئۆردەر پڕکراوە`, en: `${summary.validItems} / ${summary.totalItems} orders filled`, ar: `${summary.validItems} / ${summary.totalItems} طلب مكتمل`, zh: `${summary.validItems} / ${summary.totalItems} 个订单已填写` })}
           </Badge>
         </div>
 
@@ -624,10 +629,10 @@ export default function BulkOrderForm() {
                         onValueChange={(v) => updateItem(item.id, "productType", v === "__none__" ? "" : v)}
                       >
                         <SelectTrigger className="h-9 text-sm">
-                          <SelectValue placeholder="جۆری کاڵا *" />
+                          <SelectValue placeholder={pickLang(language, { ku: "جۆری کاڵا *", en: "Product type *", ar: "نوع المنتج *", zh: "商品类型 *" })} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__none__">— بێ جۆر —</SelectItem>
+                          <SelectItem value="__none__">{pickLang(language, { ku: "— بێ جۆر —", en: "— None —", ar: "— بدون —", zh: "— 无 —" })}</SelectItem>
                           {typeAttrs?.map(a => (
                             <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
                           ))}
@@ -636,7 +641,7 @@ export default function BulkOrderForm() {
                     </div>
                     <div className="col-span-1">
                       <Input
-                        placeholder="ژمارە"
+                        placeholder={pickLang(language, { ku: "ژمارە", en: "Qty", ar: "الكمية", zh: "数量" })}
                         type="number"
                         min="1"
                         value={item.quantity}
@@ -648,7 +653,7 @@ export default function BulkOrderForm() {
                       <>
                         <div className="col-span-2">
                           <Input
-                            placeholder="نرخی کاڵا ($)"
+                            placeholder={pickLang(language, { ku: "نرخی کاڵا ($)", en: "Item price ($)", ar: "سعر المنتج ($)", zh: "商品价格 ($)" })}
                             value={item.itemPriceUsd}
                             onChange={e => setItemUsd(item.id, e.target.value)}
                             className="h-9 text-sm"
@@ -656,7 +661,7 @@ export default function BulkOrderForm() {
                         </div>
                         <div className="col-span-2">
                           <Input
-                            placeholder="عمولە ($)"
+                            placeholder={pickLang(language, { ku: "عمولە ($)", en: "Commission ($)", ar: "العمولة ($)", zh: "佣金 ($)" })}
                             value={item.commissionFeeUsd}
                             onChange={e => updateItem(item.id, "commissionFeeUsd", e.target.value)}
                             className="h-9 text-sm"
@@ -667,7 +672,7 @@ export default function BulkOrderForm() {
                       <>
                         <div className="col-span-2">
                           <Input
-                            placeholder="نرخی کڕین ($)"
+                            placeholder={pickLang(language, { ku: "نرخی کڕین ($)", en: "Purchase price ($)", ar: "سعر الشراء ($)", zh: "采购价 ($)" })}
                             value={item.purchasePriceUsd}
                             onChange={e => updateItem(item.id, "purchasePriceUsd", e.target.value)}
                             className="h-9 text-sm"
@@ -675,7 +680,7 @@ export default function BulkOrderForm() {
                         </div>
                         <div className="col-span-2">
                           <Input
-                            placeholder="نرخی فرۆشتن ($)"
+                            placeholder={pickLang(language, { ku: "نرخی فرۆشتن ($)", en: "Selling price ($)", ar: "سعر البيع ($)", zh: "售价 ($)" })}
                             value={item.sellingPriceUsd}
                             onChange={e => updateItem(item.id, "sellingPriceUsd", e.target.value)}
                             className="h-9 text-sm"
@@ -694,7 +699,7 @@ export default function BulkOrderForm() {
                         size="icon"
                         className="h-7 w-7"
                         onClick={(e) => { e.stopPropagation(); duplicateItem(item.id); }}
-                        title="کۆپی"
+                        title={pickLang(language, { ku: "کۆپی", en: "Copy", ar: "نسخ", zh: "复制" })}
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </Button>
@@ -703,7 +708,7 @@ export default function BulkOrderForm() {
                         size="icon"
                         className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50"
                         onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
-                        title="سڕینەوە"
+                        title={pickLang(language, { ku: "سڕینەوە", en: "Delete", ar: "حذف", zh: "删除" })}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
@@ -719,11 +724,11 @@ export default function BulkOrderForm() {
                     {isCommission && (
                       <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50/50 dark:bg-orange-900/10 p-3">
                         <div className="flex items-center justify-between mb-2">
-                          <Label className="text-xs font-semibold text-orange-700 dark:text-orange-400">نرخی کاڵا بە یوانی چینی (¥)</Label>
+                          <Label className="text-xs font-semibold text-orange-700 dark:text-orange-400">{pickLang(language, { ku: "نرخی کاڵا بە یوانی چینی (¥)", en: "Item price in Chinese Yuan (¥)", ar: "سعر المنتج باليوان الصيني (¥)", zh: "商品价格（人民币 ¥）" })}</Label>
                           {rmbRate > 0 ? (
                             <span className="text-[11px] font-mono text-orange-600">١ $ = {rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} ¥</span>
                           ) : (
-                            <span className="text-[11px] text-red-600">نرخی گۆڕین لە سیتینگ دانەنراوە</span>
+                            <span className="text-[11px] text-red-600">{pickLang(language, { ku: "نرخی گۆڕین لە سیتینگ دانەنراوە", en: "Exchange rate not set in settings", ar: "لم يتم تعيين سعر الصرف في الإعدادات", zh: "设置中未设定汇率" })}</span>
                           )}
                         </div>
                         <div className="grid grid-cols-2 gap-3 items-center">
@@ -734,14 +739,14 @@ export default function BulkOrderForm() {
                               min="0"
                               step="0.01"
                               dir="ltr"
-                              placeholder="نرخی ١ دانە بە یوان"
+                              placeholder={pickLang(language, { ku: "نرخی ١ دانە بە یوان", en: "Price per unit in Yuan", ar: "سعر الوحدة باليوان", zh: "单件人民币价格" })}
                               value={item.itemPriceCny}
                               onChange={e => setItemCny(item.id, e.target.value)}
                               className="h-9 text-sm pe-8"
                             />
                           </div>
                           <div className="text-sm">
-                            <span className="text-xs text-muted-foreground">= نرخی کاڵا: </span>
+                            <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "= نرخی کاڵا: ", en: "= Item price: ", ar: "= سعر المنتج: ", zh: "= 商品价格：" })}</span>
                             <span className="font-bold text-emerald-700 dark:text-emerald-400 font-mono" dir="ltr">${item.itemPriceUsd || "0.00"}</span>
                           </div>
                         </div>
@@ -749,16 +754,16 @@ export default function BulkOrderForm() {
                     )}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
                       <div>
-                        <Label className="text-xs text-muted-foreground">ڕەنگ</Label>
+                        <Label className="text-xs text-muted-foreground">{pickLang(language, { ku: "ڕەنگ", en: "Color", ar: "اللون", zh: "颜色" })}</Label>
                         <Select
                           value={item.color}
                           onValueChange={(v) => updateItem(item.id, "color", v === "__none__" ? "" : v)}
                         >
                           <SelectTrigger className="h-9 text-sm mt-1">
-                            <SelectValue placeholder="ڕەنگ هەڵبژێرە" />
+                            <SelectValue placeholder={pickLang(language, { ku: "ڕەنگ هەڵبژێرە", en: "Select color", ar: "اختر اللون", zh: "选择颜色" })} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="__none__">— بێ ڕەنگ —</SelectItem>
+                            <SelectItem value="__none__">{pickLang(language, { ku: "— بێ ڕەنگ —", en: "— No color —", ar: "— بدون لون —", zh: "— 无颜色 —" })}</SelectItem>
                             {colorAttrs?.map(a => (
                               <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
                             ))}
@@ -766,16 +771,16 @@ export default function BulkOrderForm() {
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">قەبارە</Label>
+                        <Label className="text-xs text-muted-foreground">{pickLang(language, { ku: "قەبارە", en: "Size", ar: "المقاس", zh: "尺寸" })}</Label>
                         <Select
                           value={item.size}
                           onValueChange={(v) => updateItem(item.id, "size", v === "__none__" ? "" : v)}
                         >
                           <SelectTrigger className="h-9 text-sm mt-1">
-                            <SelectValue placeholder="قەبارە هەڵبژێرە" />
+                            <SelectValue placeholder={pickLang(language, { ku: "قەبارە هەڵبژێرە", en: "Select size", ar: "اختر المقاس", zh: "选择尺寸" })} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="__none__">— بێ قەبارە —</SelectItem>
+                            <SelectItem value="__none__">{pickLang(language, { ku: "— بێ قەبارە —", en: "— No size —", ar: "— بدون مقاس —", zh: "— 无尺寸 —" })}</SelectItem>
                             {sizeAttrs?.map(a => (
                               <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
                             ))}
@@ -783,16 +788,16 @@ export default function BulkOrderForm() {
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">ژمارەی ئۆردەر</Label>
+                        <Label className="text-xs text-muted-foreground">{pickLang(language, { ku: "ژمارەی ئۆردەر", en: "Order number", ar: "رقم الطلب", zh: "订单号" })}</Label>
                         <Input
-                          placeholder="ژمارەی ئۆردەر"
+                          placeholder={pickLang(language, { ku: "ژمارەی ئۆردەر", en: "Order number", ar: "رقم الطلب", zh: "订单号" })}
                           value={item.orderNumber}
                           onChange={e => updateItem(item.id, "orderNumber", e.target.value)}
                           className="h-9 text-sm mt-1"
                         />
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">لینکی کاڵا</Label>
+                        <Label className="text-xs text-muted-foreground">{pickLang(language, { ku: "لینکی کاڵا", en: "Product link", ar: "رابط المنتج", zh: "商品链接" })}</Label>
                         <Input
                           placeholder="https://..."
                           value={item.productLink}
@@ -801,13 +806,13 @@ export default function BulkOrderForm() {
                         />
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">دابینکەر</Label>
+                        <Label className="text-xs text-muted-foreground">{pickLang(language, { ku: "دابینکەر", en: "Supplier", ar: "المورّد", zh: "供应商" })}</Label>
                         <Select
                           value={item.supplierId}
                           onValueChange={v => updateItem(item.id, "supplierId", v)}
                         >
                           <SelectTrigger className="h-9 text-sm mt-1">
-                            <SelectValue placeholder="هەڵبژاردن" />
+                            <SelectValue placeholder={pickLang(language, { ku: "هەڵبژاردن", en: "Select", ar: "اختيار", zh: "选择" })} />
                           </SelectTrigger>
                           <SelectContent>
                             {suppliers?.map((s) => (
@@ -819,18 +824,18 @@ export default function BulkOrderForm() {
                         </Select>
                       </div>
                       <div className="col-span-2 md:col-span-3">
-                        <Label className="text-xs text-muted-foreground">وەسف</Label>
+                        <Label className="text-xs text-muted-foreground">{pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" })}</Label>
                         <Textarea
-                          placeholder="وەسفی کاڵا..."
+                          placeholder={pickLang(language, { ku: "وەسفی کاڵا...", en: "Product description...", ar: "وصف المنتج...", zh: "商品描述..." })}
                           value={item.productDescription}
                           onChange={e => updateItem(item.id, "productDescription", e.target.value)}
                           className="text-sm mt-1 min-h-[60px]"
                         />
                       </div>
                       <div className="col-span-2 md:col-span-3">
-                        <Label className="text-xs text-muted-foreground">تێبینی</Label>
+                        <Label className="text-xs text-muted-foreground">{pickLang(language, { ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" })}</Label>
                         <Textarea
-                          placeholder="تێبینی..."
+                          placeholder={pickLang(language, { ku: "تێبینی...", en: "Notes...", ar: "ملاحظات...", zh: "备注..." })}
                           value={item.notes}
                           onChange={e => updateItem(item.id, "notes", e.target.value)}
                           className="text-sm mt-1 min-h-[60px]"
@@ -838,7 +843,7 @@ export default function BulkOrderForm() {
                       </div>
                       {/* Image Upload */}
                       <div className="col-span-2 md:col-span-3">
-                        <Label className="text-xs text-muted-foreground mb-1 block">وێنەی کاڵا</Label>
+                        <Label className="text-xs text-muted-foreground mb-1 block">{pickLang(language, { ku: "وێنەی کاڵا", en: "Product image", ar: "صورة المنتج", zh: "商品图片" })}</Label>
                         <CompressedImageUpload
                           images={item.productImages}
                           onChange={(imgs) => updateItemImages(item.id, imgs)}
@@ -859,11 +864,11 @@ export default function BulkOrderForm() {
                         <div className="mt-3 rounded-lg border-2 border-teal-200 dark:border-teal-900/50 bg-gradient-to-l from-teal-50/60 to-emerald-50/60 dark:from-teal-950/20 dark:to-emerald-950/20 p-3">
                           <div className="flex items-center gap-2 mb-2">
                             <Wallet className="w-4 h-4 text-teal-600" />
-                            <span className="text-xs font-semibold text-teal-700 dark:text-teal-400">پارەدانی پێشەکی (ئاختیاری)</span>
+                            <span className="text-xs font-semibold text-teal-700 dark:text-teal-400">{pickLang(language, { ku: "پارەدانی پێشەکی (ئاختیاری)", en: "Advance payment (optional)", ar: "دفعة مقدمة (اختياري)", zh: "预付款（可选）" })}</span>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                              <Label className="text-xs text-teal-700 dark:text-teal-400">بڕی پارەی پێشەکی ($)</Label>
+                              <Label className="text-xs text-teal-700 dark:text-teal-400">{pickLang(language, { ku: "بڕی پارەی پێشەکی ($)", en: "Advance amount ($)", ar: "مبلغ الدفعة المقدمة ($)", zh: "预付金额 ($)" })}</Label>
                               <div className="relative mt-1">
                                 <span className="absolute start-3 top-1/2 -translate-y-1/2 text-teal-500 font-bold select-none text-sm">$</span>
                                 <Input
@@ -879,7 +884,7 @@ export default function BulkOrderForm() {
                               </div>
                             </div>
                             <div>
-                              <Label className="text-xs text-teal-700 dark:text-teal-400">شێوازی پارەدان</Label>
+                              <Label className="text-xs text-teal-700 dark:text-teal-400">{pickLang(language, { ku: "شێوازی پارەدان", en: "Payment method", ar: "طريقة الدفع", zh: "支付方式" })}</Label>
                               <Select
                                 value={item.advancePaymentMethod}
                                 onValueChange={(v) => updateItem(item.id, "advancePaymentMethod", v as AdvancePaymentMethod)}
@@ -888,14 +893,14 @@ export default function BulkOrderForm() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="CASH">کاش</SelectItem>
-                                  <SelectItem value="BANK_TRANSFER">گواستنەوەی بانک</SelectItem>
+                                  <SelectItem value="CASH">{pickLang(language, { ku: "کاش", en: "Cash", ar: "نقدًا", zh: "现金" })}</SelectItem>
+                                  <SelectItem value="BANK_TRANSFER">{pickLang(language, { ku: "گواستنەوەی بانک", en: "Bank transfer", ar: "تحويل بنكي", zh: "银行转账" })}</SelectItem>
                                   <SelectItem value="FIB">FIB</SelectItem>
                                   <SelectItem value="FASTPAY">FastPay</SelectItem>
                                   <SelectItem value="ZAINCASH">ZainCash</SelectItem>
                                   <SelectItem value="ASIAHAWALA">AsiaHawala</SelectItem>
-                                  <SelectItem value="CARD">کارتی بانکی</SelectItem>
-                                  <SelectItem value="OTHER">هیتر</SelectItem>
+                                  <SelectItem value="CARD">{pickLang(language, { ku: "کارتی بانکی", en: "Bank card", ar: "بطاقة بنكية", zh: "银行卡" })}</SelectItem>
+                                  <SelectItem value="OTHER">{pickLang(language, { ku: "هیتر", en: "Other", ar: "أخرى", zh: "其他" })}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -903,15 +908,15 @@ export default function BulkOrderForm() {
                           {hasAdvance && (
                             <div className="mt-2 flex items-center justify-between gap-3 text-xs">
                               <span className="text-teal-700 dark:text-teal-400">
-                                پێشەکی: <span className="font-mono font-bold">-${advanceNum.toFixed(2)}</span>
+                                {pickLang(language, { ku: "پێشەکی:", en: "Advance:", ar: "المقدّم:", zh: "预付：" })} <span className="font-mono font-bold">-${advanceNum.toFixed(2)}</span>
                               </span>
                               <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-                                ماوە: <span className="font-mono font-bold">${remaining.toFixed(2)}</span>
+                                {pickLang(language, { ku: "ماوە:", en: "Remaining:", ar: "المتبقي:", zh: "剩余：" })} <span className="font-mono font-bold">${remaining.toFixed(2)}</span>
                               </span>
                             </div>
                           )}
                           {overpaid && (
-                            <p className="text-xs text-red-600 dark:text-red-400 font-medium mt-2">⚠️ پارەی پێشەکی زیاترە لە کۆی نرخ</p>
+                            <p className="text-xs text-red-600 dark:text-red-400 font-medium mt-2">⚠️ {pickLang(language, { ku: "پارەی پێشەکی زیاترە لە کۆی نرخ", en: "Advance exceeds the total price", ar: "الدفعة المقدمة تتجاوز إجمالي السعر", zh: "预付款超过总价" })}</p>
                           )}
                         </div>
                       );
@@ -922,19 +927,19 @@ export default function BulkOrderForm() {
                       {isCommission ? (
                         <>
                           <span className="text-muted-foreground">
-                            کۆی پارەدان: <span className="font-semibold text-foreground">${itemTotal.toFixed(2)}</span>
+                            {pickLang(language, { ku: "کۆی پارەدان:", en: "Total payment:", ar: "إجمالي الدفع:", zh: "付款总额：" })} <span className="font-semibold text-foreground">${itemTotal.toFixed(2)}</span>
                           </span>
                           <span className="text-green-600">
-                            قازانج (عمولە): <span className="font-semibold">${itemProfit.toFixed(2)}</span>
+                            {pickLang(language, { ku: "قازانج (عمولە):", en: "Profit (commission):", ar: "الربح (العمولة):", zh: "利润（佣金）：" })} <span className="font-semibold">${itemProfit.toFixed(2)}</span>
                           </span>
                         </>
                       ) : (
                         <>
                           <span className="text-muted-foreground">
-                            کۆی فرۆشتن: <span className="font-semibold text-foreground">${itemTotal.toFixed(2)}</span>
+                            {pickLang(language, { ku: "کۆی فرۆشتن:", en: "Total selling:", ar: "إجمالي البيع:", zh: "销售总额：" })} <span className="font-semibold text-foreground">${itemTotal.toFixed(2)}</span>
                           </span>
                           <span className={cn("font-semibold", itemProfit >= 0 ? "text-green-600" : "text-red-600")}>
-                            قازانج: ${itemProfit.toFixed(2)}
+                            {pickLang(language, { ku: "قازانج:", en: "Profit:", ar: "الربح:", zh: "利润：" })} ${itemProfit.toFixed(2)}
                           </span>
                         </>
                       )}
@@ -952,7 +957,7 @@ export default function BulkOrderForm() {
             onClick={addItem}
           >
             <Plus className="w-5 h-5 ms-2" />
-            زیادکردنی ئۆردەری نوێ
+            {pickLang(language, { ku: "زیادکردنی ئۆردەری نوێ", en: "Add new order", ar: "إضافة طلب جديد", zh: "添加新订单" })}
           </Button>
         </div>
 
@@ -967,43 +972,43 @@ export default function BulkOrderForm() {
               <div className="flex items-center gap-6 flex-wrap">
                 <div className="text-center">
                   <div className="text-2xl font-bold">{summary.totalItems}</div>
-                  <div className="text-xs text-muted-foreground">کۆی ئۆردەرەکان</div>
+                  <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی ئۆردەرەکان", en: "Total orders", ar: "إجمالي الطلبات", zh: "订单总数" })}</div>
                 </div>
                 <Separator orientation="vertical" className="h-10" />
                 <div className="text-center">
                   <div className="text-2xl font-bold">{summary.totalQuantity}</div>
-                  <div className="text-xs text-muted-foreground">کۆی ژمارە</div>
+                  <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی ژمارە", en: "Total quantity", ar: "إجمالي الكمية", zh: "总数量" })}</div>
                 </div>
                 <Separator orientation="vertical" className="h-10" />
                 {isCommission ? (
                   <>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-amber-600">${summary.totalPrepaid.toFixed(2)}</div>
-                      <div className="text-xs text-muted-foreground">کۆی پارەدان</div>
+                      <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی پارەدان", en: "Total payment", ar: "إجمالي الدفع", zh: "付款总额" })}</div>
                     </div>
                     <Separator orientation="vertical" className="h-10" />
                     <div className="text-center">
                       <div className="text-2xl font-bold text-green-600">${summary.totalCommission.toFixed(2)}</div>
-                      <div className="text-xs text-muted-foreground">کۆی عمولە</div>
+                      <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی عمولە", en: "Total commission", ar: "إجمالي العمولة", zh: "佣金总额" })}</div>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-red-600">${summary.totalPurchase.toFixed(2)}</div>
-                      <div className="text-xs text-muted-foreground">کۆی کڕین</div>
+                      <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی کڕین", en: "Total purchase", ar: "إجمالي الشراء", zh: "采购总额" })}</div>
                     </div>
                     <Separator orientation="vertical" className="h-10" />
                     <div className="text-center">
                       <div className="text-2xl font-bold text-blue-600">${summary.totalSelling.toFixed(2)}</div>
-                      <div className="text-xs text-muted-foreground">کۆی فرۆشتن</div>
+                      <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی فرۆشتن", en: "Total selling", ar: "إجمالي البيع", zh: "销售总额" })}</div>
                     </div>
                     <Separator orientation="vertical" className="h-10" />
                     <div className="text-center">
                       <div className={cn("text-2xl font-bold", summary.totalProfit >= 0 ? "text-green-600" : "text-red-600")}>
                         ${summary.totalProfit.toFixed(2)}
                       </div>
-                      <div className="text-xs text-muted-foreground">کۆی قازانج</div>
+                      <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی قازانج", en: "Total profit", ar: "إجمالي الربح", zh: "利润总额" })}</div>
                     </div>
                   </>
                 )}
@@ -1024,12 +1029,12 @@ export default function BulkOrderForm() {
                 {bulkCreateMutation.isPending ? (
                   <>
                     <Loader2 className="w-5 h-5 ms-2 animate-spin" />
-                    چاوەڕوان بە...
+                    {pickLang(language, { ku: "چاوەڕوان بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." })}
                   </>
                 ) : (
                   <>
                     <PackagePlus className="w-5 h-5 ms-2" />
-                    دروستکردنی {summary.validItems} ئۆردەر
+                    {pickLang(language, { ku: `دروستکردنی ${summary.validItems} ئۆردەر`, en: `Create ${summary.validItems} orders`, ar: `إنشاء ${summary.validItems} طلب`, zh: `创建 ${summary.validItems} 个订单` })}
                   </>
                 )}
               </Button>

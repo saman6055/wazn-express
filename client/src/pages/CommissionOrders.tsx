@@ -55,6 +55,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { pickLang } from "@/lib/lang";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 
 const statusColors: Record<string, string> = {
@@ -70,33 +72,36 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-red-100 text-red-800",
 };
 
-const statusLabels: Record<string, string> = {
-  pending: "چاوەڕوان",
-  approved: "پەسەندکراو",
-  ordered: "کڕدرا",
-  tracking_added: "تراکینگ زیادکرا",
-  in_china_warehouse: "لە کۆگای چین",
-  in_batch: "لە باچ",
-  in_transit: "لە ڕێگادا",
-  arrived: "گەیشتووە",
-  delivered: "گەیەندرا",
-  cancelled: "هەڵوەشاوە",
-};
+const getStatusLabels = (language: string): Record<string, string> => ({
+  pending: pickLang(language, { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" }),
+  approved: pickLang(language, { ku: "پەسەندکراو", en: "Approved", ar: "تمت الموافقة", zh: "已批准" }),
+  ordered: pickLang(language, { ku: "کڕدرا", en: "Ordered", ar: "تم الطلب", zh: "已下单" }),
+  tracking_added: pickLang(language, { ku: "تراکینگ زیادکرا", en: "Tracking added", ar: "تمت إضافة التتبع", zh: "已添加追踪号" }),
+  in_china_warehouse: pickLang(language, { ku: "لە کۆگای چین", en: "In China warehouse", ar: "في مستودع الصين", zh: "在中国仓库" }),
+  in_batch: pickLang(language, { ku: "لە باچ", en: "In batch", ar: "في الدفعة", zh: "在批次中" }),
+  in_transit: pickLang(language, { ku: "لە ڕێگادا", en: "In transit", ar: "قيد الشحن", zh: "运输中" }),
+  arrived: pickLang(language, { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" }),
+  delivered: pickLang(language, { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }),
+  cancelled: pickLang(language, { ku: "هەڵوەشاوە", en: "Cancelled", ar: "ملغاة", zh: "已取消" }),
+});
 
-const statusOptions = [
-  { value: "pending", label: "چاوەڕوان" },
-  { value: "approved", label: "پەسەندکراو" },
-  { value: "ordered", label: "کڕدرا" },
-  { value: "tracking_added", label: "تراکینگ زیادکرا" },
-  { value: "in_china_warehouse", label: "لە کۆگای چین" },
-  { value: "in_batch", label: "لە باچ" },
-  { value: "in_transit", label: "لە ڕێگادا" },
-  { value: "arrived", label: "گەیشتووە" },
-  { value: "delivered", label: "گەیەندرا" },
-  { value: "cancelled", label: "هەڵوەشاوە" },
+const getStatusOptions = (language: string) => [
+  { value: "pending", label: pickLang(language, { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" }) },
+  { value: "approved", label: pickLang(language, { ku: "پەسەندکراو", en: "Approved", ar: "تمت الموافقة", zh: "已批准" }) },
+  { value: "ordered", label: pickLang(language, { ku: "کڕدرا", en: "Ordered", ar: "تم الطلب", zh: "已下单" }) },
+  { value: "tracking_added", label: pickLang(language, { ku: "تراکینگ زیادکرا", en: "Tracking added", ar: "تمت إضافة التتبع", zh: "已添加追踪号" }) },
+  { value: "in_china_warehouse", label: pickLang(language, { ku: "لە کۆگای چین", en: "In China warehouse", ar: "في مستودع الصين", zh: "在中国仓库" }) },
+  { value: "in_batch", label: pickLang(language, { ku: "لە باچ", en: "In batch", ar: "في الدفعة", zh: "在批次中" }) },
+  { value: "in_transit", label: pickLang(language, { ku: "لە ڕێگادا", en: "In transit", ar: "قيد الشحن", zh: "运输中" }) },
+  { value: "arrived", label: pickLang(language, { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" }) },
+  { value: "delivered", label: pickLang(language, { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }) },
+  { value: "cancelled", label: pickLang(language, { ku: "هەڵوەشاوە", en: "Cancelled", ar: "ملغاة", zh: "已取消" }) },
 ];
 
 export default function CommissionOrders() {
+  const { language } = useTranslation();
+  const statusLabels = getStatusLabels(language);
+  const statusOptions = getStatusOptions(language);
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -174,7 +179,7 @@ export default function CommissionOrders() {
 
   const updateStatusMutation = trpc.fullPackage.updateStatus.useMutation({
     onSuccess: () => {
-      toast.success("بارودۆخ نوێکرایەوە");
+      toast.success(pickLang(language, { ku: "بارودۆخ نوێکرایەوە", en: "Status updated", ar: "تم تحديث الحالة", zh: "状态已更新" }));
       refetch();
     },
     onError: (error) => {
@@ -249,14 +254,14 @@ export default function CommissionOrders() {
                 <ShoppingBag className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">کڕین بە تێچوو</h1>
-                <p className="text-emerald-100">کڕین بۆ کڕیار بە عمولە</p>
+                <h1 className="text-2xl font-bold">{pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission purchasing", ar: "الشراء بالعمولة", zh: "代购订单" })}</h1>
+                <p className="text-emerald-100">{pickLang(language, { ku: "کڕین بۆ کڕیار بە عمولە", en: "Purchasing for customers with commission", ar: "الشراء للعملاء مقابل عمولة", zh: "为客户代购并收取佣金" })}</p>
               </div>
             </div>
             <Link href="/commission-orders/new">
               <Button className="bg-white text-emerald-700 hover:bg-emerald-50">
                 <Plus className="h-4 w-4 ms-2" />
-                ئۆردەری نوێ
+                {pickLang(language, { ku: "ئۆردەری نوێ", en: "New order", ar: "طلب جديد", zh: "新订单" })}
               </Button>
             </Link>
           </div>
@@ -268,7 +273,7 @@ export default function CommissionOrders() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-emerald-600 font-medium">کۆی ئۆردەرەکان</p>
+                  <p className="text-sm text-emerald-600 font-medium">{pickLang(language, { ku: "کۆی ئۆردەرەکان", en: "Total orders", ar: "إجمالي الطلبات", zh: "订单总数" })}</p>
                   <p className="text-2xl font-bold text-emerald-700">{totalOrders}</p>
                 </div>
                 <div className="p-3 bg-emerald-100 rounded-xl">
@@ -282,7 +287,7 @@ export default function CommissionOrders() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-amber-600 font-medium">چاوەڕوان</p>
+                  <p className="text-sm text-amber-600 font-medium">{pickLang(language, { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" })}</p>
                   <p className="text-2xl font-bold text-amber-700">{pendingOrders}</p>
                 </div>
                 <div className="p-3 bg-amber-100 rounded-xl">
@@ -296,7 +301,7 @@ export default function CommissionOrders() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-600 font-medium">لە ڕێگادا</p>
+                  <p className="text-sm text-blue-600 font-medium">{pickLang(language, { ku: "لە ڕێگادا", en: "In transit", ar: "قيد الشحن", zh: "运输中" })}</p>
                   <p className="text-2xl font-bold text-blue-700">{inTransitOrders}</p>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-xl">
@@ -310,7 +315,7 @@ export default function CommissionOrders() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-600 font-medium">قازانجی خاو</p>
+                  <p className="text-sm text-green-600 font-medium">{pickLang(language, { ku: "قازانجی خاو", en: "Gross profit", ar: "الربح الإجمالي", zh: "毛利润" })}</p>
                   <p className="text-2xl font-bold text-green-700">${totalGrossProfit.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-green-100 rounded-xl">
@@ -324,7 +329,7 @@ export default function CommissionOrders() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-purple-600 font-medium">قازانجی خاوێن</p>
+                  <p className="text-sm text-purple-600 font-medium">{pickLang(language, { ku: "قازانجی خاوێن", en: "Net profit", ar: "صافي الربح", zh: "净利润" })}</p>
                   <p className="text-2xl font-bold text-purple-700">${totalNetProfit.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-purple-100 rounded-xl">
@@ -344,7 +349,7 @@ export default function CommissionOrders() {
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="گەڕان بە کۆد، ئۆردەر نەمبەر، تراکینگ، کڕیار..."
+                    placeholder={pickLang(language, { ku: "گەڕان بە کۆد، ئۆردەر نەمبەر، تراکینگ، کڕیار...", en: "Search by code, order number, tracking, customer...", ar: "البحث بالكود أو رقم الطلب أو التتبع أو العميل...", zh: "按编码、订单号、追踪号、客户搜索..." })}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pr-10"
@@ -353,10 +358,10 @@ export default function CommissionOrders() {
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full sm:w-48">
                     <Filter className="h-4 w-4 ms-2" />
-                    <SelectValue placeholder="هەموو" />
+                    <SelectValue placeholder={pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">هەموو</SelectItem>
+                    <SelectItem value="all">{pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}</SelectItem>
                     {statusOptions.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
@@ -366,13 +371,13 @@ export default function CommissionOrders() {
                 <Select value={shippingFilter} onValueChange={setShippingFilter}>
                   <SelectTrigger className="w-full sm:w-44">
                     <Plane className="h-4 w-4 ms-2" />
-                    <SelectValue placeholder="هەموو ڕێگاکان" />
+                    <SelectValue placeholder={pickLang(language, { ku: "هەموو ڕێگاکان", en: "All methods", ar: "كل الطرق", zh: "所有方式" })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">هەموو ڕێگاکان</SelectItem>
-                    <SelectItem value="air_regular">ئاسمانی ئاسایی</SelectItem>
-                    <SelectItem value="air_irregular">ئاسمانی مەرسیدار</SelectItem>
-                    <SelectItem value="sea">دەریایی</SelectItem>
+                    <SelectItem value="all">{pickLang(language, { ku: "هەموو ڕێگاکان", en: "All methods", ar: "كل الطرق", zh: "所有方式" })}</SelectItem>
+                    <SelectItem value="air_regular">{pickLang(language, { ku: "ئاسمانی ئاسایی", en: "Air regular", ar: "جوي عادي", zh: "普通空运" })}</SelectItem>
+                    <SelectItem value="air_irregular">{pickLang(language, { ku: "ئاسمانی مەرسیدار", en: "Air special", ar: "جوي خاص", zh: "特殊空运" })}</SelectItem>
+                    <SelectItem value="sea">{pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -399,7 +404,7 @@ export default function CommissionOrders() {
                           </span>
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">هەموو کریارەکان</span>
+                        <span className="text-muted-foreground">{pickLang(language, { ku: "هەموو کریارەکان", en: "All customers", ar: "كل العملاء", zh: "所有客户" })}</span>
                       )}
                       <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
                     </Button>
@@ -407,12 +412,12 @@ export default function CommissionOrders() {
                   <PopoverContent variant="panel" className="w-[320px] p-0" align="start">
                     <Command>
                       <CommandInput
-                        placeholder="گەڕان بە کۆد، ناو، یان ژمارە..."
+                        placeholder={pickLang(language, { ku: "گەڕان بە کۆد، ناو، یان ژمارە...", en: "Search by code, name, or number...", ar: "البحث بالكود أو الاسم أو الرقم...", zh: "按编码、姓名或号码搜索..." })}
                         value={customerSearch}
                         onValueChange={setCustomerSearch}
                       />
                       <CommandList>
-                        <CommandEmpty>هیچ کڕیارێک نەدۆزرایەوە</CommandEmpty>
+                        <CommandEmpty>{pickLang(language, { ku: "هیچ کڕیارێک نەدۆزرایەوە", en: "No customer found", ar: "لم يتم العثور على عميل", zh: "未找到客户" })}</CommandEmpty>
                         <CommandGroup>
                           <CommandItem
                             value="__all__"
@@ -427,7 +432,7 @@ export default function CommissionOrders() {
                                 customerFilter === "" ? "opacity-100" : "opacity-0",
                               )}
                             />
-                            <span className="text-muted-foreground">هەموو کریارەکان</span>
+                            <span className="text-muted-foreground">{pickLang(language, { ku: "هەموو کریارەکان", en: "All customers", ar: "كل العملاء", zh: "所有客户" })}</span>
                           </CommandItem>
                           {filteredCustomers.slice(0, 50).map((customer: any) => (
                             <CommandItem
@@ -469,12 +474,12 @@ export default function CommissionOrders() {
                 >
                   <SelectTrigger className="w-full sm:w-44">
                     <Truck className="h-4 w-4 ms-2" />
-                    <SelectValue placeholder="هەموو" />
+                    <SelectValue placeholder={pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">هەموو</SelectItem>
-                    <SelectItem value="with">بە تراکینگ</SelectItem>
-                    <SelectItem value="without">بێ تراکینگ</SelectItem>
+                    <SelectItem value="all">{pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}</SelectItem>
+                    <SelectItem value="with">{pickLang(language, { ku: "بە تراکینگ", en: "With tracking", ar: "مع تتبع", zh: "有追踪号" })}</SelectItem>
+                    <SelectItem value="without">{pickLang(language, { ku: "بێ تراکینگ", en: "Without tracking", ar: "بدون تتبع", zh: "无追踪号" })}</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -482,11 +487,11 @@ export default function CommissionOrders() {
                 <Select value={batchFilter} onValueChange={setBatchFilter}>
                   <SelectTrigger className="w-full sm:w-44">
                     <Layers className="h-4 w-4 ms-2" />
-                    <SelectValue placeholder="هەموو" />
+                    <SelectValue placeholder={pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">هەموو</SelectItem>
-                    <SelectItem value="none">بێ باچ</SelectItem>
+                    <SelectItem value="all">{pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}</SelectItem>
+                    <SelectItem value="none">{pickLang(language, { ku: "بێ باچ", en: "No batch", ar: "بدون دفعة", zh: "无批次" })}</SelectItem>
                     {batchList.map((batch: any) => (
                       <SelectItem key={batch.id} value={String(batch.id)}>
                         {batch.batchCode}
@@ -500,7 +505,7 @@ export default function CommissionOrders() {
                   <div className="flex flex-col gap-1">
                     <label className="text-xs text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      لە بەرواری
+                      {pickLang(language, { ku: "لە بەرواری", en: "From date", ar: "من تاريخ", zh: "起始日期" })}
                     </label>
                     <Input
                       type="date"
@@ -512,7 +517,7 @@ export default function CommissionOrders() {
                   <div className="flex flex-col gap-1">
                     <label className="text-xs text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      تا بەرواری
+                      {pickLang(language, { ku: "تا بەرواری", en: "To date", ar: "إلى تاريخ", zh: "结束日期" })}
                     </label>
                     <Input
                       type="date"
@@ -527,12 +532,12 @@ export default function CommissionOrders() {
                 <Select value={sortBy} onValueChange={(v) => setSortBy(v as "newest" | "oldest" | "value")}>
                   <SelectTrigger className="w-full sm:w-44">
                     <ArrowDownUp className="h-4 w-4 ms-2" />
-                    <SelectValue placeholder="نوێترین" />
+                    <SelectValue placeholder={pickLang(language, { ku: "نوێترین", en: "Newest", ar: "الأحدث", zh: "最新" })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="newest">نوێترین</SelectItem>
-                    <SelectItem value="oldest">کۆنترین</SelectItem>
-                    <SelectItem value="value">بەهادارترین</SelectItem>
+                    <SelectItem value="newest">{pickLang(language, { ku: "نوێترین", en: "Newest", ar: "الأحدث", zh: "最新" })}</SelectItem>
+                    <SelectItem value="oldest">{pickLang(language, { ku: "کۆنترین", en: "Oldest", ar: "الأقدم", zh: "最早" })}</SelectItem>
+                    <SelectItem value="value">{pickLang(language, { ku: "بەهادارترین", en: "Highest value", ar: "الأعلى قيمة", zh: "价值最高" })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -540,7 +545,7 @@ export default function CommissionOrders() {
               {/* Results count + clear filters */}
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="text-sm text-muted-foreground">
-                  {fullPackageOrders.length} ئۆردەر دۆزرایەوە
+                  {pickLang(language, { ku: `${fullPackageOrders.length} ئۆردەر دۆزرایەوە`, en: `${fullPackageOrders.length} orders found`, ar: `تم العثور على ${fullPackageOrders.length} طلب`, zh: `找到 ${fullPackageOrders.length} 个订单` })}
                 </div>
                 {hasActiveFilters && (
                   <Button
@@ -550,7 +555,7 @@ export default function CommissionOrders() {
                     className="text-muted-foreground h-8"
                   >
                     <X className="h-3.5 w-3.5 ms-1" />
-                    پاککردنەوەی فلتەرەکان
+                    {pickLang(language, { ku: "پاککردنەوەی فلتەرەکان", en: "Clear filters", ar: "مسح عوامل التصفية", zh: "清除筛选" })}
                   </Button>
                 )}
               </div>
@@ -566,11 +571,11 @@ export default function CommissionOrders() {
             ) : fullPackageOrders.length === 0 ? (
               <div className="text-center py-12">
                 <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">هیچ ئۆردەرێک نییە</p>
+                <p className="text-muted-foreground">{pickLang(language, { ku: "هیچ ئۆردەرێک نییە", en: "No orders", ar: "لا توجد طلبات", zh: "暂无订单" })}</p>
                 <Link href="/commission-orders/new">
                   <Button className="mt-4" variant="outline">
                     <Plus className="h-4 w-4 ms-2" />
-                    ئۆردەری نوێ زیاد بکە
+                    {pickLang(language, { ku: "ئۆردەری نوێ زیاد بکە", en: "Add new order", ar: "إضافة طلب جديد", zh: "添加新订单" })}
                   </Button>
                 </Link>
               </div>
@@ -578,17 +583,17 @@ export default function CommissionOrders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>کۆدی ئۆردەر</TableHead>
-                    <TableHead>کڕیار</TableHead>
-                    <TableHead>ناوی کاڵا</TableHead>
-                    <TableHead>باچ</TableHead>
-                    <TableHead>کڕین</TableHead>
-                    <TableHead>فرۆشتن</TableHead>
-                    <TableHead>قازانج</TableHead>
-                    <TableHead>تراکینگ</TableHead>
-                    <TableHead>بارودۆخ</TableHead>
-                    <TableHead>بەروار</TableHead>
-                    <TableHead className="text-left">کردارەکان</TableHead>
+                    <TableHead>{pickLang(language, { ku: "کۆدی ئۆردەر", en: "Order code", ar: "كود الطلب", zh: "订单编码" })}</TableHead>
+                    <TableHead>{pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</TableHead>
+                    <TableHead>{pickLang(language, { ku: "ناوی کاڵا", en: "Product name", ar: "اسم المنتج", zh: "商品名称" })}</TableHead>
+                    <TableHead>{pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}</TableHead>
+                    <TableHead>{pickLang(language, { ku: "کڕین", en: "Purchase", ar: "الشراء", zh: "采购价" })}</TableHead>
+                    <TableHead>{pickLang(language, { ku: "فرۆشتن", en: "Selling", ar: "البيع", zh: "售价" })}</TableHead>
+                    <TableHead>{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</TableHead>
+                    <TableHead>{pickLang(language, { ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪号" })}</TableHead>
+                    <TableHead>{pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
+                    <TableHead>{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</TableHead>
+                    <TableHead className="text-left">{pickLang(language, { ku: "کردارەکان", en: "Actions", ar: "الإجراءات", zh: "操作" })}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -602,18 +607,18 @@ export default function CommissionOrders() {
                           <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300">
                             {order.orderCode}
                           </Badge>
-                          <CopyButton value={order.orderCode} label="کۆپی کۆدی ئۆردەر" />
+                          <CopyButton value={order.orderCode} label={pickLang(language, { ku: "کۆپی کۆدی ئۆردەر", en: "Copy order code", ar: "نسخ كود الطلب", zh: "复制订单编码" })} />
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <div>
-                            <p className="font-medium">{(order as any).customer?.fullName || "کڕیار"}</p>
+                            <p className="font-medium">{(order as any).customer?.fullName || pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</p>
                             <p className="text-xs text-muted-foreground font-mono">
                               {(order as any).customer?.customerCode || ""}
                             </p>
                           </div>
-                          <CopyButton value={(order as any).customer?.fullName} label="کۆپی ناوی کڕیار" />
+                          <CopyButton value={(order as any).customer?.fullName} label={pickLang(language, { ku: "کۆپی ناوی کڕیار", en: "Copy customer name", ar: "نسخ اسم العميل", zh: "复制客户姓名" })} />
                         </div>
                       </TableCell>
                       <TableCell>
@@ -632,7 +637,7 @@ export default function CommissionOrders() {
                           <div>
                             <p className="font-medium text-sm">{order.productName}</p>
                             {order.quantity > 1 && (
-                              <p className="text-xs text-muted-foreground">{order.quantity} دانە</p>
+                              <p className="text-xs text-muted-foreground">{pickLang(language, { ku: `${order.quantity} دانە`, en: `${order.quantity} pcs`, ar: `${order.quantity} قطعة`, zh: `${order.quantity} 件` })}</p>
                             )}
                           </div>
                         </div>
@@ -644,11 +649,11 @@ export default function CommissionOrders() {
                               <Layers className="h-3 w-3 me-1" />
                               {(order as any).batch.batchCode}
                             </Badge>
-                            <CopyButton value={(order as any).batch.batchCode} label="کۆپی کۆدی باچ" />
+                            <CopyButton value={(order as any).batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ كود الدفعة", zh: "复制批次编码" })} />
                           </div>
                         ) : (
                           <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                            بێ باچ
+                            {pickLang(language, { ku: "بێ باچ", en: "No batch", ar: "بدون دفعة", zh: "无批次" })}
                           </Badge>
                         )}
                       </TableCell>
@@ -664,7 +669,7 @@ export default function CommissionOrders() {
                               <Badge variant="secondary" className="font-mono text-xs">
                                 {order.trackingNumber}
                               </Badge>
-                              <CopyButton value={order.trackingNumber} label="کۆپی تراکینگ" />
+                              <CopyButton value={order.trackingNumber} label={pickLang(language, { ku: "کۆپی تراکینگ", en: "Copy tracking", ar: "نسخ التتبع", zh: "复制追踪号" })} />
                             </div>
                             {order.trackingAddedDate && (
                               <p className="text-xs text-muted-foreground">
@@ -674,7 +679,7 @@ export default function CommissionOrders() {
                           </div>
                         ) : (
                           <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                            بێ تراکینگ
+                            {pickLang(language, { ku: "بێ تراکینگ", en: "No tracking", ar: "بدون تتبع", zh: "无追踪号" })}
                           </Badge>
                         )}
                       </TableCell>

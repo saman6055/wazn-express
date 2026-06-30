@@ -41,9 +41,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { pickLang } from "@/lib/lang";
 
 export default function ServicesReport() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const company = useCompanyInfo();
   const [, navigate] = useLocation();
   
@@ -100,7 +101,7 @@ export default function ServicesReport() {
     
     filteredServices.forEach((service: any) => {
       const typeId = service.serviceTypeId;
-      const typeName = service.serviceType?.nameKu || service.serviceType?.nameEn || 'نادیار';
+      const typeName = service.serviceType?.nameKu || service.serviceType?.nameEn || pickLang(language, { ku: "نادیار", en: "Unknown", ar: "غير معروف", zh: "未知" });
       
       if (!typeMap.has(typeId)) {
         typeMap.set(typeId, { name: typeName, count: 0, revenue: 0, cost: 0, profit: 0 });
@@ -114,7 +115,7 @@ export default function ServicesReport() {
     });
     
     return Array.from(typeMap.values()).sort((a, b) => b.revenue - a.revenue);
-  }, [filteredServices]);
+  }, [filteredServices, language]);
   
   // Calculate by customer (top 10)
   const byCustomer = useMemo(() => {
@@ -125,7 +126,7 @@ export default function ServicesReport() {
       if (!customerId) return;
       
       const customer = customers?.find((c: any) => c.id === customerId);
-      const customerName = customer?.fullName || `کڕیار #${customerId}`;
+      const customerName = customer?.fullName || `${pickLang(language, { ku: "کڕیار", en: "Customer", ar: "عميل", zh: "客户" })} #${customerId}`;
       
       if (!customerMap.has(customerId)) {
         customerMap.set(customerId, { name: customerName, count: 0, revenue: 0, profit: 0 });
@@ -140,7 +141,7 @@ export default function ServicesReport() {
     return Array.from(customerMap.values())
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
-  }, [filteredServices, customers]);
+  }, [filteredServices, customers, language]);
   
   // Calculate monthly trend (last 6 months)
   const monthlyTrend = useMemo(() => {
@@ -179,7 +180,7 @@ export default function ServicesReport() {
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>ڕاپۆرتی دارایی خزمەتگوزارییەکان</title>
+        <title>${pickLang(language, { ku: "ڕاپۆرتی دارایی خزمەتگوزارییەکان", en: "Services Financial Report", ar: "التقرير المالي للخدمات", zh: "服务财务报告" })}</title>
         <style>
           body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 30px; direction: rtl; background: white; }
           .header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid #10b981; }
@@ -204,41 +205,41 @@ export default function ServicesReport() {
       </head>
       <body>
         <div class="header">
-          <h1>🔧 ڕاپۆرتی دارایی خزمەتگوزارییەکان</h1>
+          <h1>🔧 ${pickLang(language, { ku: "ڕاپۆرتی دارایی خزمەتگوزارییەکان", en: "Services Financial Report", ar: "التقرير المالي للخدمات", zh: "服务财务报告" })}</h1>
           <div class="company">${company.name} - ${company.nameKu}</div>
-          <div class="date">بەرواری دروستکردن: ${new Date().toLocaleDateString('ku')} - ${new Date().toLocaleTimeString('ku')}</div>
+          <div class="date">${pickLang(language, { ku: "بەرواری دروستکردن", en: "Generated", ar: "تاريخ الإنشاء", zh: "生成日期" })}: ${new Date().toLocaleDateString('ku')} - ${new Date().toLocaleTimeString('ku')}</div>
         </div>
         
         <div class="stats">
           <div class="stat">
             <div class="stat-value">${totals.total}</div>
-            <div class="stat-label">کۆی خزمەتگوزاری</div>
+            <div class="stat-label">${pickLang(language, { ku: "کۆی خزمەتگوزاری", en: "Total services", ar: "إجمالي الخدمات", zh: "服务总数" })}</div>
           </div>
           <div class="stat">
             <div class="stat-value">$${totals.totalRevenue.toFixed(2)}</div>
-            <div class="stat-label">کۆی داهات</div>
+            <div class="stat-label">${pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</div>
           </div>
           <div class="stat">
             <div class="stat-value">$${totals.totalCost.toFixed(2)}</div>
-            <div class="stat-label">کۆی تێچوون</div>
+            <div class="stat-label">${pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</div>
           </div>
           <div class="stat">
             <div class="stat-value ${totals.totalProfit >= 0 ? 'profit-positive' : 'profit-negative'}">$${totals.totalProfit.toFixed(2)}</div>
-            <div class="stat-label">قازانجی خاوێن (${totals.profitMargin.toFixed(1)}%)</div>
+            <div class="stat-label">${pickLang(language, { ku: "قازانجی خاوێن", en: "Net profit", ar: "صافي الربح", zh: "净利润" })} (${totals.profitMargin.toFixed(1)}%)</div>
           </div>
         </div>
         
         <div class="section">
-          <div class="section-title">📊 شیکاری بەپێی جۆری خزمەتگوزاری</div>
+          <div class="section-title">📊 ${pickLang(language, { ku: "شیکاری بەپێی جۆری خزمەتگوزاری", en: "Breakdown by service type", ar: "التحليل حسب نوع الخدمة", zh: "按服务类型分析" })}</div>
           <table>
             <thead>
               <tr>
-                <th>جۆر</th>
-                <th>ژمارە</th>
-                <th>تێچوون</th>
-                <th>داهات</th>
-                <th>قازانج</th>
-                <th>ڕێژە</th>
+                <th>${pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</th>
+                <th>${pickLang(language, { ku: "ژمارە", en: "Count", ar: "العدد", zh: "数量" })}</th>
+                <th>${pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</th>
+                <th>${pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</th>
+                <th>${pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</th>
+                <th>${pickLang(language, { ku: "ڕێژە", en: "Margin", ar: "النسبة", zh: "利润率" })}</th>
               </tr>
             </thead>
             <tbody>
@@ -260,14 +261,14 @@ export default function ServicesReport() {
         </div>
         
         <div class="section">
-          <div class="section-title">👥 باشترین ١٠ کڕیار بەپێی داهات</div>
+          <div class="section-title">👥 ${pickLang(language, { ku: "باشترین ١٠ کڕیار بەپێی داهات", en: "Top 10 customers by revenue", ar: "أفضل 10 عملاء حسب الإيرادات", zh: "收入前十客户" })}</div>
           <table>
             <thead>
               <tr>
-                <th>کڕیار</th>
-                <th>ژمارەی خزمەتگوزاری</th>
-                <th>کۆی داهات</th>
-                <th>کۆی قازانج</th>
+                <th>${pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</th>
+                <th>${pickLang(language, { ku: "ژمارەی خزمەتگوزاری", en: "Services count", ar: "عدد الخدمات", zh: "服务数量" })}</th>
+                <th>${pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</th>
+                <th>${pickLang(language, { ku: "کۆی قازانج", en: "Total profit", ar: "إجمالي الربح", zh: "总利润" })}</th>
               </tr>
             </thead>
             <tbody>
@@ -284,14 +285,14 @@ export default function ServicesReport() {
         </div>
         
         <div class="section">
-          <div class="section-title">📈 ترێندی مانگانە (٦ مانگی کۆتایی)</div>
+          <div class="section-title">📈 ${pickLang(language, { ku: "ترێندی مانگانە (٦ مانگی کۆتایی)", en: "Monthly trend (last 6 months)", ar: "الاتجاه الشهري (آخر 6 أشهر)", zh: "月度趋势（最近6个月）" })}</div>
           <table>
             <thead>
               <tr>
-                <th>مانگ</th>
-                <th>تێچوون</th>
-                <th>داهات</th>
-                <th>قازانج</th>
+                <th>${pickLang(language, { ku: "مانگ", en: "Month", ar: "الشهر", zh: "月份" })}</th>
+                <th>${pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</th>
+                <th>${pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</th>
+                <th>${pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</th>
               </tr>
             </thead>
             <tbody>
@@ -321,7 +322,15 @@ export default function ServicesReport() {
   // Handle CSV export
   const handleExportCSV = () => {
     // Export detailed services data
-    const headers = ["بەروار", "کڕیار", "جۆر", "وەسف", "تێچوون", "داهات", "قازانج"];
+    const headers = [
+      pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" }),
+      pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" }),
+      pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" }),
+      pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" }),
+      pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" }),
+      pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" }),
+      pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" }),
+    ];
     const rows = filteredServices.map((service: any) => {
       const customer = customers?.find((c: any) => c.id === service.customerId);
       const profit = Number(service.priceAmount || 0) - Number(service.costAmount || 0);
@@ -371,8 +380,8 @@ export default function ServicesReport() {
               </div>
               <div>
                 <p className="text-emerald-100 text-sm">{company.name}</p>
-                <h1 className="text-2xl font-bold">ڕاپۆرتی دارایی خزمەتگوزارییەکان</h1>
-                <p className="text-emerald-100 mt-1">شیکاری تەواو بۆ داهات و قازانجی خزمەتگوزارییەکان</p>
+                <h1 className="text-2xl font-bold">{pickLang(language, { ku: "ڕاپۆرتی دارایی خزمەتگوزارییەکان", en: "Services Financial Report", ar: "التقرير المالي للخدمات", zh: "服务财务报告" })}</h1>
+                <p className="text-emerald-100 mt-1">{pickLang(language, { ku: "شیکاری تەواو بۆ داهات و قازانجی خزمەتگوزارییەکان", en: "Complete analysis of services revenue and profit", ar: "تحليل كامل لإيرادات وأرباح الخدمات", zh: "服务收入与利润的完整分析" })}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -382,14 +391,14 @@ export default function ServicesReport() {
                 onClick={handlePrint}
               >
                 <Printer className="h-4 w-4 ms-2" />
-                چاپکردن
+                {pickLang(language, { ku: "چاپکردن", en: "Print", ar: "طباعة", zh: "打印" })}
               </Button>
               <Button
                 className="bg-white text-emerald-600 hover:bg-emerald-50"
                 onClick={handleExportCSV}
               >
                 <Download className="h-4 w-4 ms-2" />
-                داگرتنی Excel
+                {pickLang(language, { ku: "داگرتنی Excel", en: "Download Excel", ar: "تنزيل Excel", zh: "下载 Excel" })}
               </Button>
             </div>
           </div>
@@ -398,13 +407,13 @@ export default function ServicesReport() {
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <Select value={dateFilterType} onValueChange={(v: any) => setDateFilterType(v)}>
               <SelectTrigger className="w-40 bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="فیلتەری بەروار" />
+                <SelectValue placeholder={pickLang(language, { ku: "فیلتەری بەروار", en: "Date filter", ar: "تصفية حسب التاريخ", zh: "日期筛选" })} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">هەموو کات</SelectItem>
-                <SelectItem value="range">ماوەی دیاریکراو</SelectItem>
-                <SelectItem value="month">مانگانە</SelectItem>
-                <SelectItem value="year">ساڵانە</SelectItem>
+                <SelectItem value="all">{pickLang(language, { ku: "هەموو کات", en: "All time", ar: "كل الأوقات", zh: "全部时间" })}</SelectItem>
+                <SelectItem value="range">{pickLang(language, { ku: "ماوەی دیاریکراو", en: "Custom range", ar: "نطاق محدد", zh: "指定范围" })}</SelectItem>
+                <SelectItem value="month">{pickLang(language, { ku: "مانگانە", en: "Monthly", ar: "شهري", zh: "按月" })}</SelectItem>
+                <SelectItem value="year">{pickLang(language, { ku: "ساڵانە", en: "Yearly", ar: "سنوي", zh: "按年" })}</SelectItem>
               </SelectContent>
             </Select>
             
@@ -416,7 +425,7 @@ export default function ServicesReport() {
                   onChange={(e) => setStartDate(e.target.value)}
                   className="w-40 bg-white/10 border-white/20 text-white"
                 />
-                <span className="text-white/60">بۆ</span>
+                <span className="text-white/60">{pickLang(language, { ku: "بۆ", en: "to", ar: "إلى", zh: "至" })}</span>
                 <Input
                   type="date"
                   value={endDate}
@@ -438,7 +447,7 @@ export default function ServicesReport() {
             {dateFilterType === "year" && (
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger className="w-40 bg-white/10 border-white/20 text-white">
-                  <SelectValue placeholder="ساڵ هەڵبژێرە" />
+                  <SelectValue placeholder={pickLang(language, { ku: "ساڵ هەڵبژێرە", en: "Select year", ar: "اختر السنة", zh: "选择年份" })} />
                 </SelectTrigger>
                 <SelectContent>
                   {years.map((year) => (
@@ -458,7 +467,7 @@ export default function ServicesReport() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">کۆی خزمەتگوزاری</p>
+                  <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی خزمەتگوزاری", en: "Total services", ar: "إجمالي الخدمات", zh: "服务总数" })}</p>
                   <p className="text-3xl font-bold text-blue-600 mt-1">{totals.total}</p>
                 </div>
                 <div className="p-3 bg-blue-500/10 rounded-xl">
@@ -472,7 +481,7 @@ export default function ServicesReport() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">کۆی داهات</p>
+                  <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</p>
                   <p className="text-3xl font-bold text-green-600 mt-1">${totals.totalRevenue.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-green-500/10 rounded-xl">
@@ -486,7 +495,7 @@ export default function ServicesReport() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">کۆی تێچوون</p>
+                  <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</p>
                   <p className="text-3xl font-bold text-red-600 mt-1">${totals.totalCost.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-red-500/10 rounded-xl">
@@ -500,12 +509,12 @@ export default function ServicesReport() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">قازانجی خاوێن</p>
+                  <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "قازانجی خاوێن", en: "Net profit", ar: "صافي الربح", zh: "净利润" })}</p>
                   <p className={`text-3xl font-bold mt-1 ${totals.totalProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     ${totals.totalProfit.toFixed(2)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {totals.profitMargin.toFixed(1)}% ڕێژەی قازانج
+                    {totals.profitMargin.toFixed(1)}% {pickLang(language, { ku: "ڕێژەی قازانج", en: "profit margin", ar: "هامش الربح", zh: "利润率" })}
                   </p>
                 </div>
                 <div className="p-3 bg-emerald-500/10 rounded-xl">
@@ -527,14 +536,14 @@ export default function ServicesReport() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-emerald-600" />
-                <CardTitle className="text-lg">داهات بەپێی جۆری خزمەتگوزاری</CardTitle>
+                <CardTitle className="text-lg">{pickLang(language, { ku: "داهات بەپێی جۆری خزمەتگوزاری", en: "Revenue by service type", ar: "الإيرادات حسب نوع الخدمة", zh: "按服务类型的收入" })}</CardTitle>
               </div>
-              <CardDescription>بەراوردی تێچوون و داهات</CardDescription>
+              <CardDescription>{pickLang(language, { ku: "بەراوردی تێچوون و داهات", en: "Cost vs revenue comparison", ar: "مقارنة التكلفة بالإيرادات", zh: "成本与收入对比" })}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {byServiceType.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">هیچ داتایەک نییە</p>
+                  <p className="text-center text-muted-foreground py-8">{pickLang(language, { ku: "هیچ داتایەک نییە", en: "No data available", ar: "لا توجد بيانات", zh: "暂无数据" })}</p>
                 ) : (
                   byServiceType.map((type, index) => (
                     <div key={index} className="space-y-2">
@@ -547,13 +556,13 @@ export default function ServicesReport() {
                         <div 
                           className="bg-red-400 rounded-r-sm transition-all duration-500"
                           style={{ width: `${(type.cost / maxRevenue) * 100}%` }}
-                          title={`تێچوون: $${type.cost.toFixed(2)}`}
+                          title={`${pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}: $${type.cost.toFixed(2)}`}
                         />
                         {/* Revenue bar */}
                         <div 
                           className="bg-emerald-500 rounded-l-sm transition-all duration-500"
                           style={{ width: `${(type.revenue / maxRevenue) * 100}%` }}
-                          title={`داهات: $${type.revenue.toFixed(2)}`}
+                          title={`${pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}: $${type.revenue.toFixed(2)}`}
                         />
                       </div>
                     </div>
@@ -563,11 +572,11 @@ export default function ServicesReport() {
               <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-red-400 rounded-sm" />
-                  <span className="text-sm text-muted-foreground">تێچوون</span>
+                  <span className="text-sm text-muted-foreground">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-emerald-500 rounded-sm" />
-                  <span className="text-sm text-muted-foreground">داهات</span>
+                  <span className="text-sm text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</span>
                 </div>
               </div>
             </CardContent>
@@ -578,14 +587,14 @@ export default function ServicesReport() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <PieChart className="h-5 w-5 text-emerald-600" />
-                <CardTitle className="text-lg">دابەشبوونی قازانج</CardTitle>
+                <CardTitle className="text-lg">{pickLang(language, { ku: "دابەشبوونی قازانج", en: "Profit distribution", ar: "توزيع الأرباح", zh: "利润分布" })}</CardTitle>
               </div>
-              <CardDescription>بەپێی جۆری خزمەتگوزاری</CardDescription>
+              <CardDescription>{pickLang(language, { ku: "بەپێی جۆری خزمەتگوزاری", en: "By service type", ar: "حسب نوع الخدمة", zh: "按服务类型" })}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-center">
                 {byServiceType.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">هیچ داتایەک نییە</p>
+                  <p className="text-center text-muted-foreground py-8">{pickLang(language, { ku: "هیچ داتایەک نییە", en: "No data available", ar: "لا توجد بيانات", zh: "暂无数据" })}</p>
                 ) : (
                   <div className="relative w-48 h-48">
                     {/* Simple pie chart visualization */}
@@ -623,7 +632,7 @@ export default function ServicesReport() {
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
                         <p className="text-2xl font-bold text-emerald-600">${totals.totalProfit.toFixed(0)}</p>
-                        <p className="text-xs text-muted-foreground">قازانج</p>
+                        <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</p>
                       </div>
                     </div>
                   </div>
@@ -650,9 +659,9 @@ export default function ServicesReport() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-emerald-600" />
-              <CardTitle className="text-lg">ترێندی مانگانە</CardTitle>
+              <CardTitle className="text-lg">{pickLang(language, { ku: "ترێندی مانگانە", en: "Monthly trend", ar: "الاتجاه الشهري", zh: "月度趋势" })}</CardTitle>
             </div>
-            <CardDescription>داهات و قازانجی ٦ مانگی کۆتایی</CardDescription>
+            <CardDescription>{pickLang(language, { ku: "داهات و قازانجی ٦ مانگی کۆتایی", en: "Revenue and profit for the last 6 months", ar: "الإيرادات والأرباح لآخر 6 أشهر", zh: "最近6个月的收入与利润" })}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -661,10 +670,10 @@ export default function ServicesReport() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium w-24">{month.month}</span>
                     <div className="flex items-center gap-4">
-                      <span className="text-red-600 text-xs">تێچوون: ${month.cost.toFixed(0)}</span>
-                      <span className="text-green-600 text-xs">داهات: ${month.revenue.toFixed(0)}</span>
+                      <span className="text-red-600 text-xs">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}: ${month.cost.toFixed(0)}</span>
+                      <span className="text-green-600 text-xs">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}: ${month.revenue.toFixed(0)}</span>
                       <span className={`font-bold ${month.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                        قازانج: ${month.profit.toFixed(0)}
+                        {pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}: ${month.profit.toFixed(0)}
                       </span>
                     </div>
                   </div>
@@ -691,26 +700,26 @@ export default function ServicesReport() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Wrench className="h-5 w-5 text-emerald-600" />
-                <CardTitle className="text-lg">شیکاری بەپێی جۆر</CardTitle>
+                <CardTitle className="text-lg">{pickLang(language, { ku: "شیکاری بەپێی جۆر", en: "Breakdown by type", ar: "التحليل حسب النوع", zh: "按类型分析" })}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <TableHead className="text-right">جۆر</TableHead>
-                    <TableHead className="text-right">ژمارە</TableHead>
-                    <TableHead className="text-right">تێچوون</TableHead>
-                    <TableHead className="text-right">داهات</TableHead>
-                    <TableHead className="text-right">قازانج</TableHead>
-                    <TableHead className="text-right">ڕێژە</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: "ژمارە", en: "Count", ar: "العدد", zh: "数量" })}</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: "ڕێژە", en: "Margin", ar: "النسبة", zh: "利润率" })}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {byServiceType.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        هیچ داتایەک نییە
+                        {pickLang(language, { ku: "هیچ داتایەک نییە", en: "No data available", ar: "لا توجد بيانات", zh: "暂无数据" })}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -744,26 +753,26 @@ export default function ServicesReport() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-emerald-600" />
-                <CardTitle className="text-lg">باشترین ١٠ کڕیار</CardTitle>
+                <CardTitle className="text-lg">{pickLang(language, { ku: "باشترین ١٠ کڕیار", en: "Top 10 customers", ar: "أفضل 10 عملاء", zh: "前十客户" })}</CardTitle>
               </div>
-              <CardDescription>بەپێی داهات لە خزمەتگوزارییەکان</CardDescription>
+              <CardDescription>{pickLang(language, { ku: "بەپێی داهات لە خزمەتگوزارییەکان", en: "By revenue from services", ar: "حسب الإيرادات من الخدمات", zh: "按服务收入" })}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
                     <TableHead className="text-right">#</TableHead>
-                    <TableHead className="text-right">کڕیار</TableHead>
-                    <TableHead className="text-right">ژمارە</TableHead>
-                    <TableHead className="text-right">داهات</TableHead>
-                    <TableHead className="text-right">قازانج</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: "ژمارە", en: "Count", ar: "العدد", zh: "数量" })}</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</TableHead>
+                    <TableHead className="text-right">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {byCustomer.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        هیچ داتایەک نییە
+                        {pickLang(language, { ku: "هیچ داتایەک نییە", en: "No data available", ar: "لا توجد بيانات", zh: "暂无数据" })}
                       </TableCell>
                     </TableRow>
                   ) : (

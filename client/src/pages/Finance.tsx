@@ -79,13 +79,14 @@ import {
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 type SortField = 'balance' | 'name' | 'date' | 'code';
 type SortDirection = 'asc' | 'desc';
 type AccountFilter = 'all' | 'debtors' | 'credit' | 'zero' | 'active' | 'inactive';
 
 export default function Finance() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentSearch, setPaymentSearch] = useState("");
@@ -254,11 +255,11 @@ export default function Finance() {
       <table border="1" style="direction: rtl; text-align: right;">
         <tr style="background: #059669; color: white; font-weight: bold;">
           <th>#</th>
-          <th>\u06a9\u06c6\u062f\u06cc \u06a9\u0695\u06cc\u0627\u0631</th>
-          <th>\u0646\u0627\u0648</th>
-          <th>\u0698\u0645\u0627\u0631\u06d5\u06cc \u0645\u06c6\u0628\u0627\u06cc\u0644</th>
-          <th>\u0628\u0695\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a (USD)</th>
-          <th>\u0628\u0627\u0631\u0648\u062f\u06c6\u062e</th>
+          <th>${pickLang(language, { ku: "\u06a9\u06c6\u062f\u06cc \u06a9\u0695\u06cc\u0627\u0631", en: "Customer code", ar: "\u0631\u0645\u0632 \u0627\u0644\u0639\u0645\u064a\u0644", zh: "\u5ba2\u6237\u7f16\u53f7" })}</th>
+          <th>${pickLang(language, { ku: "\u0646\u0627\u0648", en: "Name", ar: "\u0627\u0644\u0627\u0633\u0645", zh: "\u59d3\u540d" })}</th>
+          <th>${pickLang(language, { ku: "\u0698\u0645\u0627\u0631\u06d5\u06cc \u0645\u06c6\u0628\u0627\u06cc\u0644", en: "Mobile number", ar: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641", zh: "\u624b\u673a\u53f7" })}</th>
+          <th>${pickLang(language, { ku: "\u0628\u0695\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a (USD)", en: "Credit amount (USD)", ar: "\u0645\u0628\u0644\u063a \u0627\u0644\u0631\u0635\u064a\u062f (USD)", zh: "\u8d37\u65b9\u91d1\u989d (USD)" })}</th>
+          <th>${pickLang(language, { ku: "\u0628\u0627\u0631\u0648\u062f\u06c6\u062e", en: "Status", ar: "\u0627\u0644\u062d\u0627\u0644\u0629", zh: "\u72b6\u6001" })}</th>
         </tr>
     `;
     
@@ -271,16 +272,16 @@ export default function Finance() {
           <td>${account.customer?.fullName || ''}</td>
           <td>${account.customer?.mobileNumber || '-'}</td>
           <td style="color: #059669; font-weight: bold;">$${balance.toFixed(2)}</td>
-          <td>${account.accountStatus === 'active' ? '\u0686\u0627\u0644\u0627\u06a9' : '\u0646\u0627\u0686\u0627\u0644\u0627\u06a9'}</td>
+          <td>${account.accountStatus === 'active' ? pickLang(language, { ku: "\u0686\u0627\u0644\u0627\u06a9", en: "Active", ar: "\u0646\u0634\u0637", zh: "\u6d3b\u8dc3" }) : pickLang(language, { ku: "\u0646\u0627\u0686\u0627\u0644\u0627\u06a9", en: "Inactive", ar: "\u063a\u064a\u0631 \u0646\u0634\u0637", zh: "\u505c\u7528" })}</td>
         </tr>
       `;
     });
-    
+
     html += `
       <tr style="background: #f0fdf4; font-weight: bold;">
-        <td colspan="4">\u06a9\u06c6\u06cc \u06af\u0634\u062a\u06cc</td>
+        <td colspan="4">${pickLang(language, { ku: "\u06a9\u06c6\u06cc \u06af\u0634\u062a\u06cc", en: "Grand total", ar: "\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0639\u0627\u0645", zh: "\u603b\u8ba1" })}</td>
         <td style="color: #059669;">$${totalCreditAmount.toFixed(2)}</td>
-        <td>${creditCustomers.length} \u06a9\u0695\u06cc\u0627\u0631</td>
+        <td>${creditCustomers.length} ${pickLang(language, { ku: "\u06a9\u0695\u06cc\u0627\u0631", en: "customers", ar: "\u0639\u0645\u064a\u0644", zh: "\u5ba2\u6237" })}</td>
       </tr>
     </table></body></html>`;
     
@@ -289,7 +290,7 @@ export default function Finance() {
     link.href = URL.createObjectURL(blob);
     link.download = `credit-customers-${new Date().toISOString().split('T')[0]}.xls`;
     link.click();
-    toast.success('Excel \u062f\u0627\u0648\u0646\u0644\u06c6\u062f \u06a9\u0631\u0627');
+    toast.success(pickLang(language, { ku: "Excel \u062f\u0627\u0648\u0646\u0644\u06c6\u062f \u06a9\u0631\u0627", en: "Excel downloaded", ar: "\u062a\u0645 \u062a\u0646\u0632\u064a\u0644 Excel", zh: "Excel \u5df2\u4e0b\u8f7d" }));
   };
   
   const exportCreditToPDF = () => {
@@ -307,17 +308,17 @@ export default function Finance() {
           <td>${account.customer?.fullName || ''}</td>
           <td>${account.customer?.mobileNumber || '-'}</td>
           <td class="credit">$${balance.toFixed(2)}</td>
-          <td><span class="badge ${account.accountStatus === 'active' ? 'active' : 'inactive'}">${account.accountStatus === 'active' ? '\u0686\u0627\u0644\u0627\u06a9' : '\u0646\u0627\u0686\u0627\u0644\u0627\u06a9'}</span></td>
+          <td><span class="badge ${account.accountStatus === 'active' ? 'active' : 'inactive'}">${account.accountStatus === 'active' ? pickLang(language, { ku: "\u0686\u0627\u0644\u0627\u06a9", en: "Active", ar: "\u0646\u0634\u0637", zh: "\u6d3b\u8dc3" }) : pickLang(language, { ku: "\u0646\u0627\u0686\u0627\u0644\u0627\u06a9", en: "Inactive", ar: "\u063a\u064a\u0631 \u0646\u0634\u0637", zh: "\u505c\u7528" })}</span></td>
         </tr>
       `;
     });
-    
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>\u0695\u0627\u067e\u06c6\u0631\u062a\u06cc \u06a9\u0695\u06cc\u0627\u0631\u0627\u0646\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a\u062f\u0627\u0631</title>
+        <title>${pickLang(language, { ku: "\u0695\u0627\u067e\u06c6\u0631\u062a\u06cc \u06a9\u0695\u06cc\u0627\u0631\u0627\u0646\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a\u062f\u0627\u0631", en: "Credit customers report", ar: "\u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0623\u0635\u062d\u0627\u0628 \u0627\u0644\u0631\u0635\u064a\u062f", zh: "\u8d37\u65b9\u5ba2\u6237\u62a5\u544a" })}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
           * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -348,21 +349,21 @@ export default function Finance() {
       <body>
         <div class="header">
           <div class="company">${company.name}</div>
-          <h1>\u0695\u0627\u067e\u06c6\u0631\u062a\u06cc \u06a9\u0695\u06cc\u0627\u0631\u0627\u0646\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a\u062f\u0627\u0631</h1>
+          <h1>${pickLang(language, { ku: "\u0695\u0627\u067e\u06c6\u0631\u062a\u06cc \u06a9\u0695\u06cc\u0627\u0631\u0627\u0646\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a\u062f\u0627\u0631", en: "Credit customers report", ar: "\u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0623\u0635\u062d\u0627\u0628 \u0627\u0644\u0631\u0635\u064a\u062f", zh: "\u8d37\u65b9\u5ba2\u6237\u62a5\u544a" })}</h1>
           <div class="date">${new Date().toLocaleDateString('ku', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
         </div>
         
         <div class="summary-cards">
           <div class="summary-card">
-            <div class="label">\u06a9\u06c6\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a</div>
+            <div class="label">${pickLang(language, { ku: "\u06a9\u06c6\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a", en: "Total credit", ar: "\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0631\u0635\u064a\u062f", zh: "\u8d37\u65b9\u603b\u989d" })}</div>
             <div class="value">$${totalCreditAmount.toFixed(2)}</div>
           </div>
           <div class="summary-card">
-            <div class="label">\u0698\u0645\u0627\u0631\u06d5\u06cc \u06a9\u0695\u06cc\u0627\u0631</div>
+            <div class="label">${pickLang(language, { ku: "\u0698\u0645\u0627\u0631\u06d5\u06cc \u06a9\u0695\u06cc\u0627\u0631", en: "Number of customers", ar: "\u0639\u062f\u062f \u0627\u0644\u0639\u0645\u0644\u0627\u0621", zh: "\u5ba2\u6237\u6570\u91cf" })}</div>
             <div class="value">${creditCustomers.length}</div>
           </div>
           <div class="summary-card">
-            <div class="label">\u0646\u0627\u0648\u06d5\u0646\u062f\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a</div>
+            <div class="label">${pickLang(language, { ku: "\u0646\u0627\u0648\u06d5\u0646\u062f\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a", en: "Average credit", ar: "\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0631\u0635\u064a\u062f", zh: "\u5e73\u5747\u8d37\u65b9" })}</div>
             <div class="value">$${creditCustomers.length > 0 ? (totalCreditAmount / creditCustomers.length).toFixed(2) : '0.00'}</div>
           </div>
         </div>
@@ -371,38 +372,38 @@ export default function Finance() {
           <thead>
             <tr>
               <th>#</th>
-              <th>\u06a9\u06c6\u062f\u06cc \u06a9\u0695\u06cc\u0627\u0631</th>
-              <th>\u0646\u0627\u0648</th>
-              <th>\u0698\u0645\u0627\u0631\u06d5\u06cc \u0645\u06c6\u0628\u0627\u06cc\u0644</th>
-              <th>\u0628\u0695\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a (USD)</th>
-              <th>\u0628\u0627\u0631\u0648\u062f\u06c6\u062e</th>
+              <th>${pickLang(language, { ku: "\u06a9\u06c6\u062f\u06cc \u06a9\u0695\u06cc\u0627\u0631", en: "Customer code", ar: "\u0631\u0645\u0632 \u0627\u0644\u0639\u0645\u064a\u0644", zh: "\u5ba2\u6237\u7f16\u53f7" })}</th>
+              <th>${pickLang(language, { ku: "\u0646\u0627\u0648", en: "Name", ar: "\u0627\u0644\u0627\u0633\u0645", zh: "\u59d3\u540d" })}</th>
+              <th>${pickLang(language, { ku: "\u0698\u0645\u0627\u0631\u06d5\u06cc \u0645\u06c6\u0628\u0627\u06cc\u0644", en: "Mobile number", ar: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641", zh: "\u624b\u673a\u53f7" })}</th>
+              <th>${pickLang(language, { ku: "\u0628\u0695\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a (USD)", en: "Credit amount (USD)", ar: "\u0645\u0628\u0644\u063a \u0627\u0644\u0631\u0635\u064a\u062f (USD)", zh: "\u8d37\u65b9\u91d1\u989d (USD)" })}</th>
+              <th>${pickLang(language, { ku: "\u0628\u0627\u0631\u0648\u062f\u06c6\u062e", en: "Status", ar: "\u0627\u0644\u062d\u0627\u0644\u0629", zh: "\u72b6\u6001" })}</th>
             </tr>
           </thead>
           <tbody>
             ${tableRows}
             <tr class="total-row">
-              <td colspan="4">\u06a9\u06c6\u06cc \u06af\u0634\u062a\u06cc</td>
+              <td colspan="4">${pickLang(language, { ku: "\u06a9\u06c6\u06cc \u06af\u0634\u062a\u06cc", en: "Grand total", ar: "\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0639\u0627\u0645", zh: "\u603b\u8ba1" })}</td>
               <td class="credit">$${totalCreditAmount.toFixed(2)}</td>
-              <td>${creditCustomers.length} \u06a9\u0695\u06cc\u0627\u0631</td>
+              <td>${creditCustomers.length} ${pickLang(language, { ku: "\u06a9\u0695\u06cc\u0627\u0631", en: "customers", ar: "\u0639\u0645\u064a\u0644", zh: "\u5ba2\u6237" })}</td>
             </tr>
           </tbody>
         </table>
         
         <div class="footer">
-          <span>${company.name} - \u0633\u06cc\u0633\u062a\u06d5\u0645\u06cc \u0628\u06d5\u0695\u06ce\u0648\u06d5\u0628\u0631\u062f\u0646\u06cc \u062f\u0627\u0631\u0627\u06cc\u06cc</span>
+          <span>${company.name} - ${pickLang(language, { ku: "\u0633\u06cc\u0633\u062a\u06d5\u0645\u06cc \u0628\u06d5\u0695\u06ce\u0648\u06d5\u0628\u0631\u062f\u0646\u06cc \u062f\u0627\u0631\u0627\u06cc\u06cc", en: "Financial management system", ar: "\u0646\u0638\u0627\u0645 \u0627\u0644\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0645\u0627\u0644\u064a\u0629", zh: "\u8d22\u52a1\u7ba1\u7406\u7cfb\u7edf" })}</span>
           <span>${new Date().toLocaleString('ku')}</span>
         </div>
         
         <div class="no-print" style="text-align: center; margin-top: 30px;">
-          <button onclick="window.print()" style="background: #059669; color: white; border: none; padding: 12px 40px; border-radius: 8px; font-size: 16px; cursor: pointer; font-family: inherit;">\u0686\u0627\u067e\u06a9\u0631\u062f\u0646 / \u062f\u0627\u0648\u0646\u0644\u06c6\u062f PDF</button>
+          <button onclick="window.print()" style="background: #059669; color: white; border: none; padding: 12px 40px; border-radius: 8px; font-size: 16px; cursor: pointer; font-family: inherit;">${pickLang(language, { ku: "\u0686\u0627\u067e\u06a9\u0631\u062f\u0646 / \u062f\u0627\u0648\u0646\u0644\u06c6\u062f PDF", en: "Print / Download PDF", ar: "\u0637\u0628\u0627\u0639\u0629 / \u062a\u0646\u0632\u064a\u0644 PDF", zh: "\u6253\u5370 / \u4e0b\u8f7d PDF" })}</button>
         </div>
       </body>
       </html>
     `);
     printWindow.document.close();
-    toast.success('PDF \u0626\u0627\u0645\u0627\u062f\u06d5\u06cc\u06d5 \u0628\u06c6 \u0686\u0627\u067e\u06a9\u0631\u062f\u0646');
+    toast.success(pickLang(language, { ku: "PDF \u0626\u0627\u0645\u0627\u062f\u06d5\u06cc\u06d5 \u0628\u06c6 \u0686\u0627\u067e\u06a9\u0631\u062f\u0646", en: "PDF ready to print", ar: "\u0645\u0644\u0641 PDF \u062c\u0627\u0647\u0632 \u0644\u0644\u0637\u0628\u0627\u0639\u0629", zh: "PDF \u5df2\u51c6\u5907\u597d\u6253\u5370" }));
   };
-  
+
   // Filter payment transactions from ledger
   const filteredPayments = payments?.filter(p => {
     const matchesSearch = !paymentSearch || 
@@ -491,11 +492,11 @@ export default function Finance() {
   // Export functions
   const exportToCSV = () => {
     const data = filteredAndSortedAccounts.map(account => ({
-      'کۆدی کڕیار': account.customer?.customerCode || '',
-      'ناو': account.customer?.fullName || '',
-      'ژمارەی حساب': account.accountNumber || '',
-      'باڵانس (USD)': parseFloat(account.currentBalanceUsd || '0').toFixed(2),
-      'بارودۆخ': account.accountStatus === 'active' ? 'چالاک' : 'ناچالاک',
+      [pickLang(language, { ku: "کۆدی کڕیار", en: "Customer code", ar: "رمز العميل", zh: "客户编号" })]: account.customer?.customerCode || '',
+      [pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "姓名" })]: account.customer?.fullName || '',
+      [pickLang(language, { ku: "ژمارەی حساب", en: "Account number", ar: "رقم الحساب", zh: "账户号" })]: account.accountNumber || '',
+      [pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })]: parseFloat(account.currentBalanceUsd || '0').toFixed(2),
+      [pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })]: account.accountStatus === 'active' ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" }),
     }));
     
     const headers = Object.keys(data[0] || {}).join(',');
@@ -507,7 +508,7 @@ export default function Finance() {
     link.href = URL.createObjectURL(blob);
     link.download = `accounts-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-    toast.success('CSV داونلۆد کرا');
+    toast.success(pickLang(language, { ku: "CSV داونلۆد کرا", en: "CSV downloaded", ar: "تم تنزيل CSV", zh: "CSV 已下载" }));
   };
   
   const exportToExcel = () => {
@@ -518,11 +519,11 @@ export default function Finance() {
       <body>
       <table border="1" style="direction: rtl; text-align: right;">
         <tr style="background: #10b981; color: white; font-weight: bold;">
-          <th>کۆدی کڕیار</th>
-          <th>ناو</th>
-          <th>ژمارەی حساب</th>
-          <th>باڵانس (USD)</th>
-          <th>بارودۆخ</th>
+          <th>${pickLang(language, { ku: "کۆدی کڕیار", en: "Customer code", ar: "رمز العميل", zh: "客户编号" })}</th>
+          <th>${pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "姓名" })}</th>
+          <th>${pickLang(language, { ku: "ژمارەی حساب", en: "Account number", ar: "رقم الحساب", zh: "账户号" })}</th>
+          <th>${pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })}</th>
+          <th>${pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</th>
         </tr>
     `;
     
@@ -535,11 +536,11 @@ export default function Finance() {
           <td>${account.customer?.fullName || ''}</td>
           <td>${account.accountNumber || ''}</td>
           <td style="color: ${balanceColor}; font-weight: bold;">$${balance.toFixed(2)}</td>
-          <td>${account.accountStatus === 'active' ? 'چالاک' : 'ناچالاک'}</td>
+          <td>${account.accountStatus === 'active' ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}</td>
         </tr>
       `;
     });
-    
+
     html += '</table></body></html>';
     
     const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
@@ -547,7 +548,7 @@ export default function Finance() {
     link.href = URL.createObjectURL(blob);
     link.download = `accounts-${new Date().toISOString().split('T')[0]}.xls`;
     link.click();
-    toast.success('Excel داونلۆد کرا');
+    toast.success(pickLang(language, { ku: "Excel داونلۆد کرا", en: "Excel downloaded", ar: "تم تنزيل Excel", zh: "Excel 已下载" }));
   };
   
   const exportToPDF = () => {
@@ -576,17 +577,17 @@ export default function Finance() {
           <td>${account.customer?.fullName || ''}</td>
           <td class="mono">${account.accountNumber || ''}</td>
           <td class="${balanceClass}">$${balance.toFixed(2)}</td>
-          <td><span class="badge ${account.accountStatus === 'active' ? 'active' : 'inactive'}">${account.accountStatus === 'active' ? 'چالاک' : 'ناچالاک'}</span></td>
+          <td><span class="badge ${account.accountStatus === 'active' ? 'active' : 'inactive'}">${account.accountStatus === 'active' ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}</span></td>
         </tr>
       `;
     });
-    
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>ڕاپۆرتی حسابەکان - ${company.name}</title>
+        <title>${pickLang(language, { ku: "ڕاپۆرتی حسابەکان", en: "Accounts report", ar: "تقرير الحسابات", zh: "账户报告" })} - ${company.name}</title>
         <style>
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 40px; background: #f8fafc; }
@@ -615,21 +616,21 @@ export default function Finance() {
       </head>
       <body>
         <div class="header">
-          <h1>📊 ڕاپۆرتی حسابەکان</h1>
+          <h1>📊 ${pickLang(language, { ku: "ڕاپۆرتی حسابەکان", en: "Accounts report", ar: "تقرير الحسابات", zh: "账户报告" })}</h1>
           <p>${company.name} - ${new Date().toLocaleDateString('ku-IQ')}</p>
         </div>
         
         <div class="stats">
           <div class="stat-card">
-            <h3>کۆی حسابەکان</h3>
+            <h3>${pickLang(language, { ku: "کۆی حسابەکان", en: "Total accounts", ar: "إجمالي الحسابات", zh: "账户总数" })}</h3>
             <div class="value">${filteredAndSortedAccounts.length}</div>
           </div>
           <div class="stat-card">
-            <h3>کۆی قەرز</h3>
+            <h3>${pickLang(language, { ku: "کۆی قەرز", en: "Total debt", ar: "إجمالي الدين", zh: "欠款总额" })}</h3>
             <div class="value debt">$${totalDebt.toFixed(2)}</div>
           </div>
           <div class="stat-card">
-            <h3>کۆی کریدیت</h3>
+            <h3>${pickLang(language, { ku: "کۆی کریدیت", en: "Total credit", ar: "إجمالي الرصيد", zh: "贷方总额" })}</h3>
             <div class="value credit">$${totalCredit.toFixed(2)}</div>
           </div>
         </div>
@@ -638,11 +639,11 @@ export default function Finance() {
           <thead>
             <tr>
               <th>#</th>
-              <th>کۆدی کڕیار</th>
-              <th>ناو</th>
-              <th>ژمارەی حساب</th>
-              <th>باڵانس (USD)</th>
-              <th>بارودۆخ</th>
+              <th>${pickLang(language, { ku: "کۆدی کڕیار", en: "Customer code", ar: "رمز العميل", zh: "客户编号" })}</th>
+              <th>${pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "姓名" })}</th>
+              <th>${pickLang(language, { ku: "ژمارەی حساب", en: "Account number", ar: "رقم الحساب", zh: "账户号" })}</th>
+              <th>${pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })}</th>
+              <th>${pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</th>
             </tr>
           </thead>
           <tbody>
@@ -651,7 +652,7 @@ export default function Finance() {
         </table>
         
         <div class="footer">
-          <p>ئەم ڕاپۆرتە لە ${new Date().toLocaleString('ku-IQ')} دروستکراوە</p>
+          <p>${pickLang(language, { ku: `ئەم ڕاپۆرتە لە ${new Date().toLocaleString('ku-IQ')} دروستکراوە`, en: `This report was generated on ${new Date().toLocaleString('ku-IQ')}`, ar: `تم إنشاء هذا التقرير في ${new Date().toLocaleString('ku-IQ')}`, zh: `本报告生成于 ${new Date().toLocaleString('ku-IQ')}` })}</p>
         </div>
       </body>
       </html>
@@ -661,18 +662,18 @@ export default function Finance() {
     setTimeout(() => {
       printWindow.print();
     }, 500);
-    toast.success('PDF ئامادەیە بۆ چاپکردن');
+    toast.success(pickLang(language, { ku: "PDF ئامادەیە بۆ چاپکردن", en: "PDF ready to print", ar: "ملف PDF جاهز للطباعة", zh: "PDF 已准备好打印" }));
   };
-  
+
   // Filter label helper
   const getFilterLabel = (filter: AccountFilter) => {
     const labels: Record<AccountFilter, string> = {
-      'all': 'هەموو',
-      'debtors': 'قەرزدارەکان',
-      'credit': 'کریدیتدارەکان',
-      'zero': 'سفر',
-      'active': 'چالاک',
-      'inactive': 'ناچالاک',
+      'all': pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" }),
+      'debtors': pickLang(language, { ku: "قەرزدارەکان", en: "Debtors", ar: "المدينون", zh: "欠款客户" }),
+      'credit': pickLang(language, { ku: "کریدیتدارەکان", en: "Credit holders", ar: "أصحاب الرصيد", zh: "贷方客户" }),
+      'zero': pickLang(language, { ku: "سفر", en: "Zero", ar: "صفر", zh: "零" }),
+      'active': pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }),
+      'inactive': pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" }),
     };
     return labels[filter];
   };
@@ -680,10 +681,10 @@ export default function Finance() {
   // Sort label helper
   const getSortLabel = (field: SortField) => {
     const labels: Record<SortField, string> = {
-      'balance': 'باڵانس',
-      'name': 'ناو',
-      'code': 'کۆد',
-      'date': 'بەروار',
+      'balance': pickLang(language, { ku: "باڵانس", en: "Balance", ar: "الرصيد", zh: "余额" }),
+      'name': pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "姓名" }),
+      'code': pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编号" }),
+      'date': pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" }),
     };
     return labels[field];
   };
@@ -707,7 +708,7 @@ export default function Finance() {
               <Link href="/finance/debtors">
                 <Button variant="secondary" className="bg-red-500/20 hover:bg-red-500/30 text-white border-0">
                   <AlertTriangle className="w-4 h-4 me-2" />
-                  قەرزدارەکان
+                  {pickLang(language, { ku: "قەرزدارەکان", en: "Debtors", ar: "المدينون", zh: "欠款客户" })}
                 </Button>
               </Link>
               <Dialog open={isCreatePaymentOpen} onOpenChange={setIsCreatePaymentOpen}>
@@ -751,12 +752,12 @@ export default function Finance() {
                           <PopoverContent variant="panel" className="w-[400px]" align="start">
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder={t("finance.searchCustomer") || "گەڕان بە ناو یان کۆد..."}
+                                placeholder={t("finance.searchCustomer") || pickLang(language, { ku: "گەڕان بە ناو یان کۆد...", en: "Search by name or code...", ar: "ابحث بالاسم أو الرمز...", zh: "按姓名或编号搜索..." })}
                                 value={customerSearchQuery}
                                 onValueChange={setCustomerSearchQuery}
                               />
                               <CommandList>
-                                <CommandEmpty>{t("common.noResults") || "هیچ ئەنجامێک نییە"}</CommandEmpty>
+                                <CommandEmpty>{t("common.noResults") || pickLang(language, { ku: "هیچ ئەنجامێک نییە", en: "No results", ar: "لا توجد نتائج", zh: "无结果" })}</CommandEmpty>
                                 <CommandGroup>
                                   {customers
                                     ?.filter(c => {
@@ -819,30 +820,30 @@ export default function Finance() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="CASH">کاش</SelectItem>
-                              <SelectItem value="BANK_TRANSFER">گواستنەوەی بانکی</SelectItem>
+                              <SelectItem value="CASH">{pickLang(language, { ku: "کاش", en: "Cash", ar: "نقدًا", zh: "现金" })}</SelectItem>
+                              <SelectItem value="BANK_TRANSFER">{pickLang(language, { ku: "گواستنەوەی بانکی", en: "Bank transfer", ar: "تحويل بنكي", zh: "银行转账" })}</SelectItem>
                               <SelectItem value="FIB">FIB</SelectItem>
                               <SelectItem value="FASTPAY">FastPay</SelectItem>
                               <SelectItem value="ZAINCASH">ZainCash</SelectItem>
                               <SelectItem value="ASIAHAWALA">Asia Hawala</SelectItem>
-                              <SelectItem value="CARD">کارت</SelectItem>
-                              <SelectItem value="OTHER">شێوازی تر</SelectItem>
+                              <SelectItem value="CARD">{pickLang(language, { ku: "کارت", en: "Card", ar: "بطاقة", zh: "卡" })}</SelectItem>
+                              <SelectItem value="OTHER">{pickLang(language, { ku: "شێوازی تر", en: "Other", ar: "أخرى", zh: "其他" })}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
                       {/* Cash Account Selection */}
                       <div className="grid gap-2">
-                        <Label>{t("bankAccounts.selectAccount") || "هەژمار هەڵبژێرە"}</Label>
+                        <Label>{t("bankAccounts.selectAccount") || pickLang(language, { ku: "هەژمار هەڵبژێرە", en: "Select account", ar: "اختر الحساب", zh: "选择账户" })}</Label>
                         <Popover modal={true}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" className="h-11 w-full justify-between font-normal">
                               {selectedCashAccountId && selectedCashAccountId !== 'none'
                                 ? (() => {
                                     const acc = activeCashAccounts?.find(a => a.id.toString() === selectedCashAccountId);
-                                    return acc ? `${acc.accountNameKu || acc.accountName} ($${Number(acc.currentBalance).toLocaleString()})` : t("bankAccounts.selectAccountOptional") || "هەژمارێک هەڵبژێرە (ئارەزوومەندانە)";
+                                    return acc ? `${acc.accountNameKu || acc.accountName} ($${Number(acc.currentBalance).toLocaleString()})` : t("bankAccounts.selectAccountOptional") || pickLang(language, { ku: "هەژمارێک هەڵبژێرە (ئارەزوومەندانە)", en: "Select an account (optional)", ar: "اختر حسابًا (اختياري)", zh: "选择账户（可选）" });
                                   })()
-                                : t("bankAccounts.selectAccountOptional") || "هەژمارێک هەڵبژێرە (ئارەزوومەندانە)"}
+                                : t("bankAccounts.selectAccountOptional") || pickLang(language, { ku: "هەژمارێک هەڵبژێرە (ئارەزوومەندانە)", en: "Select an account (optional)", ar: "اختر حسابًا (اختياري)", zh: "选择账户（可选）" })}
                               <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -855,7 +856,7 @@ export default function Finance() {
                                     className="cursor-pointer"
                                   >
                                     <Check className={`me-2 h-4 w-4 ${selectedCashAccountId === 'none' || !selectedCashAccountId ? 'opacity-100' : 'opacity-0'}`} />
-                                    {t("bankAccounts.noAccount") || "بێ هەژمار"}
+                                    {t("bankAccounts.noAccount") || pickLang(language, { ku: "بێ هەژمار", en: "No account", ar: "بدون حساب", zh: "无账户" })}
                                   </CommandItem>
                                   {activeCashAccounts?.map((acc) => (
                                     <CommandItem
@@ -876,7 +877,7 @@ export default function Finance() {
                             </Command>
                           </PopoverContent>
                         </Popover>
-                        <p className="text-xs text-muted-foreground">{t("bankAccounts.accountSelectionHint") || "حسابێک هەڵبژێرە بۆ تۆمارکردنی پارەدان لە حسابەکەدا"}</p>
+                        <p className="text-xs text-muted-foreground">{t("bankAccounts.accountSelectionHint") || pickLang(language, { ku: "حسابێک هەڵبژێرە بۆ تۆمارکردنی پارەدان لە حسابەکەدا", en: "Select an account to record the payment in that account", ar: "اختر حسابًا لتسجيل الدفعة في ذلك الحساب", zh: "选择一个账户以将付款记入该账户" })}</p>
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="referenceNumber">{t("finance.referenceNumber")}</Label>
@@ -918,11 +919,11 @@ export default function Finance() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-red-600 dark:text-red-400">کۆی قەرز</p>
+                  <p className="text-sm font-medium text-red-600 dark:text-red-400">{pickLang(language, { ku: "کۆی قەرز", en: "Total debt", ar: "إجمالي الدين", zh: "欠款总额" })}</p>
                   <p className="text-3xl font-bold text-red-700 dark:text-red-300">
                     {formatCurrency(summary?.totalDebtUsd || 0)}
                   </p>
-                  <p className="text-xs text-red-500 mt-1">{debtors?.length || 0} کڕیاری قەرزدار</p>
+                  <p className="text-xs text-red-500 mt-1">{debtors?.length || 0} {pickLang(language, { ku: "کڕیاری قەرزدار", en: "debtor customers", ar: "عميل مدين", zh: "欠款客户" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white shadow-lg">
                   <TrendingUp className="h-7 w-7" />
@@ -935,11 +936,11 @@ export default function Finance() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-600 dark:text-green-400">کۆی پارەدان</p>
+                  <p className="text-sm font-medium text-green-600 dark:text-green-400">{pickLang(language, { ku: "کۆی پارەدان", en: "Total paid", ar: "إجمالي المدفوع", zh: "已付总额" })}</p>
                   <p className="text-3xl font-bold text-green-700 dark:text-green-300">
                     {formatCurrency(summary?.totalCreditUsd || 0)}
                   </p>
-                  <p className="text-xs text-green-500 mt-1">{payments?.length || 0} پارەدان</p>
+                  <p className="text-xs text-green-500 mt-1">{payments?.length || 0} {pickLang(language, { ku: "پارەدان", en: "payments", ar: "دفعة", zh: "笔付款" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white shadow-lg">
                   <TrendingDown className="h-7 w-7" />
@@ -952,11 +953,11 @@ export default function Finance() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">کۆی حسابەکان</p>
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{pickLang(language, { ku: "کۆی حسابەکان", en: "Total accounts", ar: "إجمالي الحسابات", zh: "账户总数" })}</p>
                   <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">
                     {accounts?.length || 0}
                   </p>
-                  <p className="text-xs text-blue-500 mt-1">حسابی چالاک</p>
+                  <p className="text-xs text-blue-500 mt-1">{pickLang(language, { ku: "حسابی چالاک", en: "Active accounts", ar: "حسابات نشطة", zh: "活跃账户" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
                   <Users className="h-7 w-7" />
@@ -969,11 +970,11 @@ export default function Finance() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">باڵانسی نێت</p>
+                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">{pickLang(language, { ku: "باڵانسی نێت", en: "Net balance", ar: "الرصيد الصافي", zh: "净余额" })}</p>
                   <p className={`text-3xl font-bold ${((summary?.totalDebtUsd || 0) - (summary?.totalCreditUsd || 0)) > 0 ? 'text-red-600' : 'text-green-600'}`}>
                     {formatCurrency((summary?.totalDebtUsd || 0) - (summary?.totalCreditUsd || 0))}
                   </p>
-                  <p className="text-xs text-amber-500 mt-1">قەرز - کریدیت</p>
+                  <p className="text-xs text-amber-500 mt-1">{pickLang(language, { ku: "قەرز - کریدیت", en: "Debt - Credit", ar: "الدين - الرصيد", zh: "欠款 - 贷方" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg">
                   <DollarSign className="h-7 w-7" />
@@ -988,19 +989,19 @@ export default function Finance() {
           <TabsList className="bg-muted/50 p-1 h-12 w-full justify-start gap-1">
             <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 h-10 gap-2">
               <Receipt className="w-4 h-4" />
-              پارەدانەکان
+              {pickLang(language, { ku: "پارەدانەکان", en: "Payments", ar: "المدفوعات", zh: "付款" })}
             </TabsTrigger>
             <TabsTrigger value="accounts" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 h-10 gap-2">
               <Users className="w-4 h-4" />
-              حسابەکان
+              {pickLang(language, { ku: "حسابەکان", en: "Accounts", ar: "الحسابات", zh: "账户" })}
             </TabsTrigger>
             <TabsTrigger value="payments" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 h-10 gap-2">
               <FileText className="w-4 h-4" />
-              پوختە
+              {pickLang(language, { ku: "پوختە", en: "Summary", ar: "ملخص", zh: "摘要" })}
             </TabsTrigger>
             <TabsTrigger value="credit-customers" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 h-10 gap-2">
               <CreditCard className="w-4 h-4" />
-              کریدیتدارەکان
+              {pickLang(language, { ku: "کریدیتدارەکان", en: "Credit holders", ar: "أصحاب الرصيد", zh: "贷方客户" })}
             </TabsTrigger>
           </TabsList>
           
@@ -1012,11 +1013,11 @@ export default function Finance() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Users className="w-5 h-5 text-blue-500" />
-                    حسابی کڕیاران
+                    {pickLang(language, { ku: "حسابی کڕیاران", en: "Customer accounts", ar: "حسابات العملاء", zh: "客户账户" })}
                   </CardTitle>
                   <Link href="/finance?tab=accounts">
                     <Button variant="outline" size="sm">
-                      هەموو ببینە
+                      {pickLang(language, { ku: "هەموو ببینە", en: "View all", ar: "عرض الكل", zh: "查看全部" })}
                       <ArrowUpRight className="w-3 h-3 ms-1" />
                     </Button>
                   </Link>
@@ -1027,9 +1028,9 @@ export default function Finance() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/30">
-                        <TableHead>کڕیارەکان</TableHead>
-                        <TableHead>بارودۆخ</TableHead>
-                        <TableHead className="text-right">باڵانس (USD)</TableHead>
+                        <TableHead>{pickLang(language, { ku: "کڕیارەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TableHead>
+                        <TableHead>{pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
+                        <TableHead className="text-right">{pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })}</TableHead>
                         <TableHead></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1052,7 +1053,7 @@ export default function Finance() {
                             <TableCell>
                               <Badge variant={account.accountStatus === 'active' ? 'default' : 'destructive'} className="gap-1">
                                 {account.accountStatus === 'active' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                                {account.accountStatus === 'active' ? 'چالاک' : 'ناچالاک'}
+                                {account.accountStatus === 'active' ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}
                               </Badge>
                             </TableCell>
                             <TableCell className={`text-right font-bold text-lg ${balanceUsd > 0 ? 'text-red-600' : balanceUsd < 0 ? 'text-green-600' : ''}`}>
@@ -1061,7 +1062,7 @@ export default function Finance() {
                             <TableCell>
                               <Link href={`/finance/customer/${account.customerId}`}>
                                 <Button variant="ghost" size="sm" className="gap-1">
-                                  بینین
+                                  {pickLang(language, { ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
                                   <ArrowUpRight className="w-3 h-3" />
                                 </Button>
                               </Link>
@@ -1081,7 +1082,7 @@ export default function Finance() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <History className="w-5 h-5 text-purple-500" />
-                    کۆی باڵانس
+                    {pickLang(language, { ku: "کۆی باڵانس", en: "Recent transactions", ar: "أحدث المعاملات", zh: "近期交易" })}
                   </CardTitle>
                 </div>
               </CardHeader>
@@ -1164,7 +1165,7 @@ export default function Finance() {
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Users className="w-5 h-5 text-blue-500" />
-                    هەموو حسابەکان
+                    {pickLang(language, { ku: "هەموو حسابەکان", en: "All accounts", ar: "جميع الحسابات", zh: "所有账户" })}
                     <Badge variant="secondary" className="ms-2">{filteredAndSortedAccounts.length}</Badge>
                   </CardTitle>
                   
@@ -1173,7 +1174,7 @@ export default function Finance() {
                     <div className="relative w-64">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                       <Input
-                        placeholder="گەڕان بە کۆد، ناو، یان مۆبایل..."
+                        placeholder={pickLang(language, { ku: "گەڕان بە کۆد، ناو، یان مۆبایل...", en: "Search by code, name, or mobile...", ar: "ابحث بالرمز أو الاسم أو الهاتف...", zh: "按编号、姓名或手机搜索..." })}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-9 h-10"
@@ -1190,30 +1191,30 @@ export default function Finance() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>فلتەری حساب</DropdownMenuLabel>
+                        <DropdownMenuLabel>{pickLang(language, { ku: "فلتەری حساب", en: "Account filter", ar: "تصفية الحساب", zh: "账户筛选" })}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setAccountFilter('all')} className={accountFilter === 'all' ? 'bg-muted' : ''}>
-                          هەموو
+                          {pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('debtors')} className={accountFilter === 'debtors' ? 'bg-muted' : ''}>
                           <TrendingUp className="w-4 h-4 me-2 text-red-500" />
-                          قەرزدارەکان
+                          {pickLang(language, { ku: "قەرزدارەکان", en: "Debtors", ar: "المدينون", zh: "欠款客户" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('credit')} className={accountFilter === 'credit' ? 'bg-muted' : ''}>
                           <TrendingDown className="w-4 h-4 me-2 text-green-500" />
-                          کریدیتدارەکان
+                          {pickLang(language, { ku: "کریدیتدارەکان", en: "Credit holders", ar: "أصحاب الرصيد", zh: "贷方客户" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('zero')} className={accountFilter === 'zero' ? 'bg-muted' : ''}>
-                          سفر
+                          {pickLang(language, { ku: "سفر", en: "Zero", ar: "صفر", zh: "零" })}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setAccountFilter('active')} className={accountFilter === 'active' ? 'bg-muted' : ''}>
                           <CheckCircle className="w-4 h-4 me-2 text-green-500" />
-                          چالاک
+                          {pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('inactive')} className={accountFilter === 'inactive' ? 'bg-muted' : ''}>
                           <XCircle className="w-4 h-4 me-2 text-red-500" />
-                          ناچالاک
+                          {pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1228,24 +1229,24 @@ export default function Finance() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>ڕیزکردن بەپێی</DropdownMenuLabel>
+                        <DropdownMenuLabel>{pickLang(language, { ku: "ڕیزکردن بەپێی", en: "Sort by", ar: "ترتيب حسب", zh: "排序方式" })}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => { setSortField('balance'); setSortDirection('desc'); }}>
                           <TrendingUp className="w-4 h-4 me-2" />
-                          زۆرترین قەرز
+                          {pickLang(language, { ku: "زۆرترین قەرز", en: "Highest debt", ar: "أعلى دين", zh: "欠款最多" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => { setSortField('balance'); setSortDirection('asc'); }}>
                           <TrendingDown className="w-4 h-4 me-2" />
-                          زۆرترین کریدیت
+                          {pickLang(language, { ku: "زۆرترین کریدیت", en: "Highest credit", ar: "أعلى رصيد", zh: "贷方最多" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => { setSortField('name'); setSortDirection('asc'); }}>
-                          ناو (A-Z)
+                          {pickLang(language, { ku: "ناو (A-Z)", en: "Name (A-Z)", ar: "الاسم (أ-ي)", zh: "姓名 (A-Z)" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => { setSortField('code'); setSortDirection('asc'); }}>
-                          کۆد
+                          {pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编号" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => { setSortField('date'); setSortDirection('desc'); }}>
-                          نوێترین
+                          {pickLang(language, { ku: "نوێترین", en: "Newest", ar: "الأحدث", zh: "最新" })}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1255,12 +1256,12 @@ export default function Finance() {
                       <DropdownMenuTrigger asChild>
                         <Button variant="default" className="h-10 gap-2 bg-emerald-600 hover:bg-emerald-700">
                           <Download className="w-4 h-4" />
-                          داونلۆد
+                          {pickLang(language, { ku: "داونلۆد", en: "Download", ar: "تنزيل", zh: "下载" })}
                           <ChevronDown className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>داونلۆدی ڕاپۆرت</DropdownMenuLabel>
+                        <DropdownMenuLabel>{pickLang(language, { ku: "داونلۆدی ڕاپۆرت", en: "Download report", ar: "تنزيل التقرير", zh: "下载报告" })}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={exportToPDF}>
                           <FileText className="w-4 h-4 me-2 text-red-500" />
@@ -1287,10 +1288,10 @@ export default function Finance() {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
-                          <TableHead className="font-semibold">کڕیارەکان</TableHead>
-                          <TableHead className="font-semibold">ژمارەی حساب</TableHead>
-                          <TableHead className="text-right font-semibold">باڵانس (USD)</TableHead>
-                          <TableHead className="font-semibold">بارودۆخ</TableHead>
+                          <TableHead className="font-semibold">{pickLang(language, { ku: "کڕیارەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TableHead>
+                          <TableHead className="font-semibold">{pickLang(language, { ku: "ژمارەی حساب", en: "Account number", ar: "رقم الحساب", zh: "账户号" })}</TableHead>
+                          <TableHead className="text-right font-semibold">{pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })}</TableHead>
+                          <TableHead className="font-semibold">{pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
                           <TableHead></TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1317,7 +1318,7 @@ export default function Finance() {
                               <TableCell>
                                 <Badge variant={account.accountStatus === 'active' ? 'default' : 'destructive'} className="gap-1">
                                   {account.accountStatus === 'active' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                                  {account.accountStatus === 'active' ? 'چالاک' : 'ناچالاک'}
+                                  {account.accountStatus === 'active' ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}
                                 </Badge>
                               </TableCell>
                               <TableCell>
@@ -1502,7 +1503,7 @@ export default function Finance() {
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">کۆی کریدیت</p>
+                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{pickLang(language, { ku: "کۆی کریدیت", en: "Total credit", ar: "إجمالي الرصيد", zh: "贷方总额" })}</p>
                       <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-300">
                         {formatCurrency(totalCreditAmount)}
                       </p>
@@ -1518,7 +1519,7 @@ export default function Finance() {
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-blue-600 dark:text-blue-400">ژمارەی کڕیاری کریدیتدار</p>
+                      <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{pickLang(language, { ku: "ژمارەی کڕیاری کریدیتدار", en: "Number of credit holders", ar: "عدد العملاء أصحاب الرصيد", zh: "贷方客户数量" })}</p>
                       <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">
                         {creditCustomers.length}
                       </p>
@@ -1534,7 +1535,7 @@ export default function Finance() {
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-purple-600 dark:text-purple-400">ناوەندی کریدیت</p>
+                      <p className="text-sm font-medium text-purple-600 dark:text-purple-400">{pickLang(language, { ku: "ناوەندی کریدیت", en: "Average credit", ar: "متوسط الرصيد", zh: "平均贷方" })}</p>
                       <p className="text-3xl font-bold text-purple-700 dark:text-purple-300">
                         {formatCurrency(creditCustomers.length > 0 ? totalCreditAmount / creditCustomers.length : 0)}
                       </p>
@@ -1553,7 +1554,7 @@ export default function Finance() {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <CreditCard className="w-5 h-5 text-emerald-500" />
-                    کڕیارانی کریدیتدار
+                    {pickLang(language, { ku: "کڕیارانی کریدیتدار", en: "Credit customers", ar: "العملاء أصحاب الرصيد", zh: "贷方客户" })}
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={exportCreditToExcel} className="gap-1">
@@ -1573,7 +1574,7 @@ export default function Finance() {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="گەڕان بە ناو، کۆد، یان ژمارە..."
+                      placeholder={pickLang(language, { ku: "گەڕان بە ناو، کۆد، یان ژمارە...", en: "Search by name, code, or number...", ar: "ابحث بالاسم أو الرمز أو الرقم...", zh: "按姓名、编号或号码搜索..." })}
                       value={creditSearch}
                       onChange={(e) => setCreditSearch(e.target.value)}
                       className="pl-10 h-10"
@@ -1582,14 +1583,14 @@ export default function Finance() {
                   <div className="flex gap-2">
                     <Input
                       type="number"
-                      placeholder="کەمترین بڕ"
+                      placeholder={pickLang(language, { ku: "کەمترین بڕ", en: "Min amount", ar: "أقل مبلغ", zh: "最小金额" })}
                       value={creditMinAmount}
                       onChange={(e) => setCreditMinAmount(e.target.value)}
                       className="w-32 h-10"
                     />
                     <Input
                       type="number"
-                      placeholder="زۆرترین بڕ"
+                      placeholder={pickLang(language, { ku: "زۆرترین بڕ", en: "Max amount", ar: "أقصى مبلغ", zh: "最大金额" })}
                       value={creditMaxAmount}
                       onChange={(e) => setCreditMaxAmount(e.target.value)}
                       className="w-32 h-10"
@@ -1600,10 +1601,10 @@ export default function Finance() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="balance">بڕی کریدیت</SelectItem>
-                      <SelectItem value="name">ناو</SelectItem>
-                      <SelectItem value="code">کۆد</SelectItem>
-                      <SelectItem value="lastTransaction">دوایین مامەڵە</SelectItem>
+                      <SelectItem value="balance">{pickLang(language, { ku: "بڕی کریدیت", en: "Credit amount", ar: "مبلغ الرصيد", zh: "贷方金额" })}</SelectItem>
+                      <SelectItem value="name">{pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "姓名" })}</SelectItem>
+                      <SelectItem value="code">{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编号" })}</SelectItem>
+                      <SelectItem value="lastTransaction">{pickLang(language, { ku: "دوایین مامەڵە", en: "Last transaction", ar: "آخر معاملة", zh: "最近交易" })}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button
@@ -1622,10 +1623,10 @@ export default function Finance() {
                     <TableHeader>
                       <TableRow className="bg-muted/30">
                         <TableHead className="w-12">#</TableHead>
-                        <TableHead>کڕیار</TableHead>
-                        <TableHead>ژمارەی مۆبایل</TableHead>
-                        <TableHead className="text-right">بڕی کریدیت (USD)</TableHead>
-                        <TableHead>بارودۆخ</TableHead>
+                        <TableHead>{pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</TableHead>
+                        <TableHead>{pickLang(language, { ku: "ژمارەی مۆبایل", en: "Mobile number", ar: "رقم الهاتف", zh: "手机号" })}</TableHead>
+                        <TableHead className="text-right">{pickLang(language, { ku: "بڕی کریدیت (USD)", en: "Credit amount (USD)", ar: "مبلغ الرصيد (USD)", zh: "贷方金额 (USD)" })}</TableHead>
+                        <TableHead>{pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
                         <TableHead className="w-16"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1634,8 +1635,8 @@ export default function Finance() {
                         <TableRow>
                           <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                             <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                            <p className="text-lg font-medium">هیچ کڕیارێکی کریدیتدار نییە</p>
-                            <p className="text-sm">کاتێک کڕیارێک کریدیتی هەبێت لێرە نیشان دەدرێت</p>
+                            <p className="text-lg font-medium">{pickLang(language, { ku: "هیچ کڕیارێکی کریدیتدار نییە", en: "No credit customers", ar: "لا يوجد عملاء أصحاب رصيد", zh: "没有贷方客户" })}</p>
+                            <p className="text-sm">{pickLang(language, { ku: "کاتێک کڕیارێک کریدیتی هەبێت لێرە نیشان دەدرێت", en: "When a customer has credit, they appear here", ar: "عندما يكون لدى عميل رصيد، يظهر هنا", zh: "当客户有贷方余额时将显示在此处" })}</p>
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -1665,7 +1666,7 @@ export default function Finance() {
                               </TableCell>
                               <TableCell>
                                 <Badge variant="secondary" className={account.accountStatus === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}>
-                                  {account.accountStatus === 'active' ? 'چالاک' : 'ناچالاک'}
+                                  {account.accountStatus === 'active' ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}
                                 </Badge>
                               </TableCell>
                               <TableCell>
@@ -1689,7 +1690,7 @@ export default function Finance() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
                         <CreditCard className="w-5 h-5" />
-                        <span className="font-semibold">کۆی گشتی: {creditCustomers.length} کڕیار</span>
+                        <span className="font-semibold">{pickLang(language, { ku: "کۆی گشتی", en: "Grand total", ar: "الإجمالي العام", zh: "总计" })}: {creditCustomers.length} {pickLang(language, { ku: "کڕیار", en: "customers", ar: "عميل", zh: "客户" })}</span>
                       </div>
                       <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                         {formatCurrency(totalCreditAmount)}
