@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CopyButton } from "@/components/CopyButton";
+import { ZoomImage } from "@/components/ZoomImage";
 import {
   Package,
   Plus,
@@ -591,27 +593,36 @@ export default function CommissionOrders() {
                 </TableHeader>
                 <TableBody>
                   {fullPackageOrders.map((order) => (
-                    <TableRow key={order.id}>
+                    <TableRow
+                      key={order.id}
+                      className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"
+                    >
                       <TableCell>
-                        <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300">
-                          {order.orderCode}
-                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300">
+                            {order.orderCode}
+                          </Badge>
+                          <CopyButton value={order.orderCode} label="کۆپی کۆدی ئۆردەر" />
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <p className="font-medium">{(order as any).customer?.fullName || "کڕیار"}</p>
-                          <p className="text-xs text-muted-foreground font-mono">
-                            {(order as any).customer?.customerCode || ""}
-                          </p>
+                        <div className="flex items-center gap-1">
+                          <div>
+                            <p className="font-medium">{(order as any).customer?.fullName || "کڕیار"}</p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {(order as any).customer?.customerCode || ""}
+                            </p>
+                          </div>
+                          <CopyButton value={(order as any).customer?.fullName} label="کۆپی ناوی کڕیار" />
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {order.productImage ? (
-                            <img
+                            <ZoomImage
                               src={order.productImage}
                               alt={order.productName}
-                              className="w-10 h-10 rounded-lg object-cover"
+                              className="w-10 h-10"
                             />
                           ) : (
                             <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
@@ -628,10 +639,13 @@ export default function CommissionOrders() {
                       </TableCell>
                       <TableCell>
                         {(order as any).batch ? (
-                          <Badge variant="secondary" className="text-xs font-mono">
-                            <Layers className="h-3 w-3 me-1" />
-                            {(order as any).batch.batchCode}
-                          </Badge>
+                          <div className="flex items-center gap-1">
+                            <Badge variant="secondary" className="text-xs font-mono">
+                              <Layers className="h-3 w-3 me-1" />
+                              {(order as any).batch.batchCode}
+                            </Badge>
+                            <CopyButton value={(order as any).batch.batchCode} label="کۆپی کۆدی باچ" />
+                          </div>
                         ) : (
                           <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
                             بێ باچ
@@ -646,9 +660,12 @@ export default function CommissionOrders() {
                       <TableCell>
                         {order.trackingNumber ? (
                           <div className="flex flex-col gap-1">
-                            <Badge variant="secondary" className="font-mono text-xs">
-                              {order.trackingNumber}
-                            </Badge>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="secondary" className="font-mono text-xs">
+                                {order.trackingNumber}
+                              </Badge>
+                              <CopyButton value={order.trackingNumber} label="کۆپی تراکینگ" />
+                            </div>
                             {order.trackingAddedDate && (
                               <p className="text-xs text-muted-foreground">
                                 {new Date(order.trackingAddedDate).toLocaleDateString("ku")}

@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CopyButton } from "@/components/CopyButton";
+import { ZoomImage } from "@/components/ZoomImage";
 import { 
   AlertTriangle, AlertCircle, XCircle, Clock, RefreshCw, Package, 
   TrendingUp, Plus, Check, AlertOctagon, BarChart3, Search, Filter,
@@ -676,9 +678,9 @@ export default function TrackingAlerts() {
                       </TableHeader>
                       <TableBody>
                         {filteredOrders.map((order: OrderForTracking, index: number) => (
-                          <TableRow 
+                          <TableRow
                             key={`${order.orderType}-${order.id}`}
-                            className={`hover:bg-slate-50 ${
+                            className={`transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50 ${
                               order.daysWaiting >= 7 ? "bg-red-50/50" :
                               order.daysWaiting >= 5 ? "bg-orange-50/50" :
                               order.daysWaiting >= 3 ? "bg-yellow-50/50" : ""
@@ -697,10 +699,10 @@ export default function TrackingAlerts() {
                             </TableCell>
                             <TableCell>
                               {order.productImage ? (
-                                <img
+                                <ZoomImage
                                   src={order.productImage}
                                   alt={order.productName}
-                                  className="w-12 h-12 rounded-lg object-cover border border-slate-200"
+                                  className="w-12 h-12 border border-slate-200"
                                 />
                               ) : (
                                 <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center">
@@ -709,9 +711,15 @@ export default function TrackingAlerts() {
                               )}
                             </TableCell>
                             <TableCell>
-                              <p className="font-mono text-sm font-medium">{order.orderCode}</p>
+                              <div className="flex items-center gap-1">
+                                <p className="font-mono text-sm font-medium">{order.orderCode}</p>
+                                <CopyButton value={order.orderCode} label="کۆپی کۆدی ئۆردەر" />
+                              </div>
                               {order.orderNumber && (
-                                <p className="text-xs text-slate-500 mt-0.5">#{order.orderNumber}</p>
+                                <div className="flex items-center gap-1">
+                                  <p className="text-xs text-slate-500 mt-0.5">#{order.orderNumber}</p>
+                                  <CopyButton value={order.orderNumber} label="کۆپی ئۆردەر نەمبەر" />
+                                </div>
                               )}
                             </TableCell>
                             <TableCell>
