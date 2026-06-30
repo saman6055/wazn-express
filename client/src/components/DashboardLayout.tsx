@@ -681,6 +681,18 @@ function DashboardLayoutContent({
               <kbd className="hidden lg:inline rounded border border-gray-300 dark:border-gray-600 px-1 text-[10px] font-mono">Ctrl K</kbd>
             </button>
 
+            {/* Dark / light mode — one-click toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              title={theme === "dark" ? (t("lightMode") || "دۆخی ڕووناک") : (t("darkMode") || "دۆخی تاریک")}
+              aria-label={theme === "dark" ? (t("lightMode") || "دۆخی ڕووناک") : (t("darkMode") || "دۆخی تاریک")}
+              onClick={toggleTheme}
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4 text-amber-500" /> : <Moon className="h-4 w-4 text-indigo-500" />}
+            </Button>
+
             {/* Language */}
             <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
               <SelectTrigger className="h-8 w-auto gap-1 px-2 text-xs">
