@@ -689,57 +689,57 @@ export default function QuickRegister() {
         )}
 
         {/* Professional Header with Stats */}
-        <div className="mb-6">
+        <div className="mb-4">
           {/* Top Bar with Title and Stats */}
-          <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-2xl p-4 shadow-xl">
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
             <div className="flex items-center justify-between flex-wrap gap-4">
               {/* Title Section */}
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shadow-lg">
-                  <Zap className="h-8 w-8 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center">
+                  <Zap className="h-6 w-6" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">{t("quickRegister.title")}</h1>
-                  <p className="text-white/80 text-sm">{t("quickRegister.shortcutsHint")}</p>
+                  <h1 className="text-xl font-bold text-foreground">{t("quickRegister.title")}</h1>
+                  <p className="text-muted-foreground text-sm">{t("quickRegister.shortcutsHint")}</p>
                 </div>
               </div>
-              
+
               {/* Today's Counter */}
               <div className="flex items-center gap-3">
-                <div className="bg-white/20 backdrop-blur rounded-xl px-5 py-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center">
-                    <Calendar className="h-5 w-5 text-white" />
+                <div className="bg-muted/50 rounded-lg px-4 py-2 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center">
+                    <Calendar className="h-5 w-5" />
                   </div>
-                  <div className="text-white">
-                    <div className="text-xs opacity-80">{t("quickRegister.todayRegistered")}</div>
-                    <div className="text-3xl font-bold">{packageStats?.todayCount || 0}</div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">{t("quickRegister.todayRegistered")}</div>
+                    <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{packageStats?.todayCount || 0}</div>
                   </div>
                 </div>
-                
+
                 {/* Clear All Button */}
                 <Button
                   type="button"
                   variant="outline"
                   onClick={clearAllForm}
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30 h-14 px-4"
+                  className="h-12 px-4"
                 >
                   <RotateCcw className="h-5 w-5 ms-2" />
                   {t("quickRegister.clear")}
                 </Button>
               </div>
             </div>
-            
+
             {/* Last Registered Package */}
             {lastRegistered && (
-              <div className="mt-4 bg-white/20 backdrop-blur rounded-xl px-4 py-3 flex items-center gap-3">
-                <CheckCircle2 className="h-6 w-6 text-white" />
-                <div className="text-white">
-                  <span className="font-bold">{t("quickRegister.lastRegistered")}: </span>
+              <div className="mt-3 bg-muted/50 rounded-lg px-4 py-2.5 flex items-center gap-3 text-sm">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div className="text-foreground">
+                  <span className="font-semibold">{t("quickRegister.lastRegistered")}: </span>
                   <span className="font-mono">{lastRegistered.packageCode}</span>
-                  <span className="mx-2">•</span>
-                  <span className="opacity-80">{lastRegistered.trackingNumber}</span>
-                  <span className="mx-2">•</span>
-                  <span className="opacity-80">{lastRegistered.customerName}</span>
+                  <span className="mx-2 text-muted-foreground">•</span>
+                  <span className="text-muted-foreground">{lastRegistered.trackingNumber}</span>
+                  <span className="mx-2 text-muted-foreground">•</span>
+                  <span className="text-muted-foreground">{lastRegistered.customerName}</span>
                 </div>
               </div>
             )}
@@ -754,13 +754,13 @@ export default function QuickRegister() {
               {/* Row 1: Tracking + Customer + Warehouse + Shipping Type */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 {/* Tracking Number */}
-                <Card className="border-2 border-amber-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-white to-amber-50/50">
+                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                        <PackageSearch className="h-4 w-4 text-white" />
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center">
+                        <PackageSearch className="h-4 w-4" />
                       </div>
-                      <span className="text-sm font-bold text-amber-800">{t("quickRegister.stepTracking")}</span>
+                      <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{t("quickRegister.stepTracking")}</span>
                       {isSearching && <Loader2 className="h-4 w-4 animate-spin text-amber-500" />}
                     </div>
                     <div className="flex gap-2">
@@ -790,7 +790,7 @@ export default function QuickRegister() {
                             handleTrackingSearch();
                           }
                         }}
-                        className="font-mono text-base h-12 flex-1 border-2 border-amber-200 focus:border-amber-400"
+                        className="font-mono text-base h-12 flex-1"
                         autoFocus
                       />
                       <Button
@@ -798,7 +798,7 @@ export default function QuickRegister() {
                         size="lg"
                         onClick={handleTrackingSearch}
                         disabled={trackingNumber.trim().length < 1 || isSearching}
-                        className="h-12 px-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                        className="h-12 px-4 bg-amber-500 hover:bg-amber-600 text-white"
                       >
                         {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
                       </Button>
@@ -923,13 +923,13 @@ export default function QuickRegister() {
                 </Card>
 
                 {/* Customer Selection */}
-                <Card className="border-2 border-blue-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-white to-blue-50/50">
+                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-                        <User className="h-4 w-4 text-white" />
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 flex items-center justify-center">
+                        <User className="h-4 w-4" />
                       </div>
-                      <span className="text-sm font-bold text-blue-800">{t("quickRegister.stepCustomer")}</span>
+                      <span className="text-sm font-bold text-blue-700 dark:text-blue-400">{t("quickRegister.stepCustomer")}</span>
                     </div>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
@@ -945,24 +945,24 @@ export default function QuickRegister() {
                           onFocus={() => setShowCustomerDropdown(true)}
                           onKeyDown={handleCustomerKeyDown}
                           disabled={isUnclaimed || (foundOrder?.customer != null)}
-                          className="text-base h-12 border-2 border-blue-200 focus:border-blue-400"
+                          className="text-base h-12"
                         />
                         {showCustomerDropdown && filteredCustomers.length > 0 && !isUnclaimed && !foundOrder?.customer && (
-                          <div className="absolute z-50 w-full mt-1 bg-popover border-2 border-blue-200 rounded-xl shadow-2xl max-h-48 overflow-auto">
+                          <div className="absolute z-50 w-full mt-1 bg-popover border rounded-xl shadow-lg max-h-48 overflow-auto">
                             {filteredCustomers.map((customer, index) => (
                               <button
                                 key={customer.id}
                                 type="button"
                                 className={cn(
-                                  "w-full px-4 py-3 text-sm text-left transition-colors",
-                                  index === highlightedCustomerIndex 
-                                    ? "bg-blue-100 text-blue-900" 
-                                    : "hover:bg-blue-50"
+                                  "w-full px-4 py-3 text-sm text-start transition-colors",
+                                  index === highlightedCustomerIndex
+                                    ? "bg-blue-50 text-blue-900 dark:bg-blue-900/30 dark:text-blue-200"
+                                    : "hover:bg-muted"
                                 )}
                                 onClick={() => selectCustomer(customer)}
                                 onMouseEnter={() => setHighlightedCustomerIndex(index)}
                               >
-                                <span className="font-bold text-blue-600">{customer.customerCode}</span>
+                                <span className="font-bold text-blue-600 dark:text-blue-400">{customer.customerCode}</span>
                                 <span className="text-muted-foreground me-2">- {customer.fullName}</span>
                               </button>
                             ))}
@@ -975,7 +975,7 @@ export default function QuickRegister() {
                         variant={isUnclaimed ? "default" : "outline"}
                         onClick={toggleUnclaimed}
                         disabled={foundOrder?.customer != null}
-                        className={cn("h-12 px-3 border-2", isUnclaimed && "bg-amber-500 hover:bg-amber-600 border-amber-500")}
+                        className={cn("h-12 px-3", isUnclaimed && "bg-amber-500 hover:bg-amber-600 text-white border-amber-500")}
                       >
                         <AlertTriangle className="h-4 w-4" />
                       </Button>
@@ -1001,20 +1001,20 @@ export default function QuickRegister() {
                 </Card>
 
                 {/* Warehouse Selection */}
-                <Card className="border-2 border-slate-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-white to-slate-50/50">
+                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center">
-                        <Warehouse className="h-4 w-4 text-white" />
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 flex items-center justify-center">
+                        <Warehouse className="h-4 w-4" />
                       </div>
-                      <span className="text-sm font-bold text-slate-800">{t("quickRegister.stepWarehouse")}</span>
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{t("quickRegister.stepWarehouse")}</span>
                     </div>
                     <Select
                       value={originWarehouseId != null ? String(originWarehouseId) : ""}
                       onValueChange={(v) => setOriginWarehouseId(v ? parseInt(v, 10) : null)}
                       disabled={!warehouses?.length}
                     >
-                      <SelectTrigger className="h-12 text-base border-2 border-slate-200 focus:border-slate-400">
+                      <SelectTrigger className="h-12 text-base">
                         <SelectValue placeholder={t("quickRegister.warehousePlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -1029,8 +1029,8 @@ export default function QuickRegister() {
                       </SelectContent>
                     </Select>
                     {selectedWarehouse && (
-                      <div className="mt-3 p-2 rounded-lg text-sm bg-slate-50 text-slate-700 border border-slate-200 flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-slate-600" />
+                      <div className="mt-3 p-2 rounded-lg text-sm bg-muted/50 text-slate-700 dark:text-slate-300 border flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-slate-500" />
                         <span className="font-medium">{selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? t("quickRegister.warehouseN", { id: selectedWarehouse.id })}</span>
                       </div>
                     )}
@@ -1038,16 +1038,16 @@ export default function QuickRegister() {
                 </Card>
 
                 {/* Shipping Type - Dropdown */}
-                <Card className="border-2 border-indigo-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-white to-indigo-50/50">
+                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
-                        <Package className="h-4 w-4 text-white" />
+                      <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center justify-center">
+                        <Package className="h-4 w-4" />
                       </div>
-                      <span className="text-sm font-bold text-indigo-800">{t("quickRegister.stepShipping")}</span>
+                      <span className="text-sm font-bold text-indigo-700 dark:text-indigo-400">{t("quickRegister.stepShipping")}</span>
                     </div>
                     <Select value={shippingType} onValueChange={(v) => { setShippingType(v as any); setBatchId(""); }}>
-                      <SelectTrigger className="h-12 text-base border-2 border-indigo-200 focus:border-indigo-400">
+                      <SelectTrigger className="h-12 text-base">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1074,7 +1074,7 @@ export default function QuickRegister() {
                     {/* Batch Selection */}
                     <div className="mt-3">
                       <Select value={batchId} onValueChange={setBatchId}>
-                        <SelectTrigger className="h-10 text-sm border-2 border-indigo-200 focus:border-indigo-400">
+                        <SelectTrigger className="h-10 text-sm">
                           <SelectValue placeholder={t("quickRegister.batchPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -1092,13 +1092,13 @@ export default function QuickRegister() {
               </div>
 
               {/* Row 2: Weight - Always visible */}
-              <Card className="border-2 border-emerald-300 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-white to-emerald-50/50">
+              <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-md">
-                      <Scale className="h-5 w-5 text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center">
+                      <Scale className="h-5 w-5" />
                     </div>
-                    <span className="text-base font-bold text-emerald-800">{t("quickRegister.stepWeight")}</span>
+                    <span className="text-base font-bold text-emerald-700 dark:text-emerald-400">{t("quickRegister.stepWeight")}</span>
                   </div>
                   <Input
                     ref={weightRef}
@@ -1107,72 +1107,72 @@ export default function QuickRegister() {
                     placeholder="0.00"
                     value={weightKg}
                     onChange={(e) => setWeightKg(e.target.value)}
-                    className="h-16 text-3xl font-mono font-bold text-center border-3 border-emerald-300 focus:border-emerald-500 bg-white"
+                    className="h-16 text-3xl font-mono font-bold text-center"
                   />
                 </CardContent>
               </Card>
 
               {/* Row 2.5: Dimensions - Only for Air shipping */}
               {(shippingType === "air_regular" || shippingType === "air_irregular") && (
-                <Card className="border-2 border-violet-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-white to-violet-50/50">
+                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md">
-                        <Ruler className="h-5 w-5 text-white" />
+                      <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 flex items-center justify-center">
+                        <Ruler className="h-5 w-5" />
                       </div>
-                      <span className="text-base font-bold text-violet-800">{t("quickRegister.stepDimensions")}</span>
-                      <span className="text-xs text-violet-500 me-2">{t("quickRegister.forVolumetricWeight")}</span>
+                      <span className="text-base font-bold text-violet-700 dark:text-violet-400">{t("quickRegister.stepDimensions")}</span>
+                      <span className="text-xs text-muted-foreground me-2">{t("quickRegister.forVolumetricWeight")}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-violet-700">{t("quickRegister.length")}</Label>
+                        <Label className="text-sm font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.length")}</Label>
                         <Input
                           type="number"
                           step="0.1"
                           placeholder="0"
                           value={lengthCm}
                           onChange={(e) => setLengthCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center border-2 border-violet-300 focus:border-violet-500"
+                          className="h-14 text-xl font-mono font-bold text-center"
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-violet-700">{t("quickRegister.width")}</Label>
+                        <Label className="text-sm font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.width")}</Label>
                         <Input
                           type="number"
                           step="0.1"
                           placeholder="0"
                           value={widthCm}
                           onChange={(e) => setWidthCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center border-2 border-violet-300 focus:border-violet-500"
+                          className="h-14 text-xl font-mono font-bold text-center"
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-violet-700">{t("quickRegister.height")}</Label>
+                        <Label className="text-sm font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.height")}</Label>
                         <Input
                           type="number"
                           step="0.1"
                           placeholder="0"
                           value={heightCm}
                           onChange={(e) => setHeightCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center border-2 border-violet-300 focus:border-violet-500"
+                          className="h-14 text-xl font-mono font-bold text-center"
                         />
                       </div>
                     </div>
                     {/* Volumetric Weight Result */}
                     {volumetricWeight > 0 && (
-                      <div className="mt-4 p-4 bg-gradient-to-r from-violet-100 to-purple-100 rounded-xl border border-violet-200">
+                      <div className="mt-4 p-4 bg-violet-50 dark:bg-violet-950/30 rounded-xl border border-violet-200 dark:border-violet-900/50">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <Calculator className="h-5 w-5 text-violet-600" />
+                            <Calculator className="h-5 w-5 text-violet-600 dark:text-violet-400" />
                             <div>
-                              <span className="text-sm text-violet-700">{t("quickRegister.volumetricWeight")}: </span>
-                              <span className="font-bold text-violet-900">{volumetricWeight.toFixed(2)} kg</span>
-                              <span className="text-xs text-violet-500 me-2">(÷ {volumetricDivisor})</span>
+                              <span className="text-sm text-violet-700 dark:text-violet-300">{t("quickRegister.volumetricWeight")}: </span>
+                              <span className="font-bold text-violet-900 dark:text-violet-200">{volumetricWeight.toFixed(2)} kg</span>
+                              <span className="text-xs text-muted-foreground me-2">(÷ {volumetricDivisor})</span>
                             </div>
                           </div>
-                          <div className="p-3 bg-white rounded-lg shadow">
-                            <span className="font-bold text-xl text-violet-800">{chargeableWeight.toFixed(2)} kg</span>
-                            <span className="text-xs text-violet-500 block">{t("quickRegister.chargeableWeight")}</span>
+                          <div className="p-3 bg-card rounded-lg shadow-sm border">
+                            <span className="font-bold text-xl text-violet-800 dark:text-violet-300">{chargeableWeight.toFixed(2)} kg</span>
+                            <span className="text-xs text-muted-foreground block">{t("quickRegister.chargeableWeight")}</span>
                           </div>
                         </div>
                       </div>
@@ -1183,69 +1183,69 @@ export default function QuickRegister() {
 
               {/* Sea shipping - CBM input */}
               {shippingType === "sea" && (
-                <Card className="border-2 border-cyan-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-white to-cyan-50/50">
+                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-md">
-                        <Ship className="h-5 w-5 text-white" />
+                      <div className="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400 flex items-center justify-center">
+                        <Ship className="h-5 w-5" />
                       </div>
-                      <span className="text-base font-bold text-cyan-800">{t("quickRegister.stepDimensionsSea")}</span>
+                      <span className="text-base font-bold text-cyan-700 dark:text-cyan-400">{t("quickRegister.stepDimensionsSea")}</span>
                     </div>
                     <div className="grid grid-cols-4 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700">{t("quickRegister.length")}</Label>
+                        <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.length")}</Label>
                         <Input
                           type="number"
                           step="0.1"
                           placeholder="0"
                           value={lengthCm}
                           onChange={(e) => setLengthCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center border-2 border-cyan-300 focus:border-cyan-500"
+                          className="h-14 text-xl font-mono font-bold text-center"
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700">{t("quickRegister.width")}</Label>
+                        <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.width")}</Label>
                         <Input
                           type="number"
                           step="0.1"
                           placeholder="0"
                           value={widthCm}
                           onChange={(e) => setWidthCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center border-2 border-cyan-300 focus:border-cyan-500"
+                          className="h-14 text-xl font-mono font-bold text-center"
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700">{t("quickRegister.height")}</Label>
+                        <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.height")}</Label>
                         <Input
                           type="number"
                           step="0.1"
                           placeholder="0"
                           value={heightCm}
                           onChange={(e) => setHeightCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center border-2 border-cyan-300 focus:border-cyan-500"
+                          className="h-14 text-xl font-mono font-bold text-center"
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700">{t("quickRegister.orCbm")}</Label>
+                        <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.orCbm")}</Label>
                         <Input
                           type="number"
                           step="0.0001"
                           placeholder="0.0000"
                           value={directCbm}
                           onChange={(e) => setDirectCbm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center border-2 border-cyan-300 focus:border-cyan-500"
+                          className="h-14 text-xl font-mono font-bold text-center"
                         />
                       </div>
                     </div>
                     {/* CBM Result */}
-                    <div className="mt-4 p-4 bg-gradient-to-r from-cyan-100 to-teal-100 rounded-xl border border-cyan-200">
+                    <div className="mt-4 p-4 bg-cyan-50 dark:bg-cyan-950/30 rounded-xl border border-cyan-200 dark:border-cyan-900/50">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Ship className="h-5 w-5 text-cyan-600" />
-                          <span className="text-sm text-cyan-700">{t("quickRegister.fromDimensions")}: <strong>{calculatedCbm.toFixed(4)} m³</strong></span>
+                          <Ship className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                          <span className="text-sm text-cyan-700 dark:text-cyan-300">{t("quickRegister.fromDimensions")}: <strong>{calculatedCbm.toFixed(4)} m³</strong></span>
                         </div>
-                        <div className="p-3 bg-white rounded-lg shadow">
-                          <span className="font-bold text-xl text-cyan-800">{cbm.toFixed(4)} m³</span>
+                        <div className="p-3 bg-card rounded-lg shadow-sm border">
+                          <span className="font-bold text-xl text-cyan-800 dark:text-cyan-300">{cbm.toFixed(4)} m³</span>
                         </div>
                       </div>
                     </div>
@@ -1254,7 +1254,7 @@ export default function QuickRegister() {
               )}
 
               {/* Row 3: Optional Fields */}
-              <Card className="border shadow-lg hover:shadow-xl transition-shadow">
+              <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <button
                     type="button"
@@ -1262,8 +1262,8 @@ export default function QuickRegister() {
                     className="flex items-center justify-between w-full"
                   >
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center">
-                        <Tags className="h-4 w-4 text-white" />
+                      <div className="w-8 h-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center">
+                        <Tags className="h-4 w-4" />
                       </div>
                       <span className="text-sm font-bold">{t("quickRegister.additionalInfo")}</span>
                       <span className="text-xs text-muted-foreground">{t("quickRegister.optional")}</span>
@@ -1305,17 +1305,17 @@ export default function QuickRegister() {
                         <div className="flex flex-wrap gap-3">
                           {photos.map((photo, index) => (
                             <div key={index} className="relative group">
-                              <img src={photo} alt="" className="w-16 h-16 object-cover rounded-lg border-2 shadow" />
+                              <img src={photo} alt="" className="w-16 h-16 object-cover rounded-lg border shadow-sm" />
                               <button
                                 type="button"
                                 onClick={() => removePhoto(index)}
-                                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                                className="absolute -top-2 -end-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
                               >
                                 <X className="h-4 w-4" />
                               </button>
                             </div>
                           ))}
-                          <label className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                          <label className="w-16 h-16 border border-dashed border-muted-foreground/40 rounded-lg flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
                             <input
                               type="file"
                               accept="image/*"
@@ -1340,81 +1340,81 @@ export default function QuickRegister() {
 
             {/* Summary Sidebar */}
             <div className="lg:col-span-1">
-              <Card className="sticky top-4 border-2 shadow-xl bg-gradient-to-br from-white to-gray-50">
+              <Card className="sticky top-4 border bg-card rounded-xl shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow">
-                      <Clipboard className="h-5 w-5 text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                      <Clipboard className="h-5 w-5" />
                     </div>
                     <span className="font-bold text-lg">{t("quickRegister.summary")}</span>
                   </div>
-                  
+
                   <div className="space-y-3 text-sm">
-                    <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-lg">
                       <span className="text-muted-foreground">{t("quickRegister.summaryCustomer")}</span>
                       <span className="font-bold text-primary">
                         {isUnclaimed ? t("quickRegister.unclaimed") : (customerId ? customers?.find(c => c.id === customerId)?.customerCode : "-")}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-lg">
                       <span className="text-muted-foreground">{t("quickRegister.summaryWarehouse")}</span>
                       <span className="font-medium">
                         {selectedWarehouse ? (selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? t("quickRegister.warehouseN", { id: selectedWarehouse.id })) : "-"}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-lg">
                       <span className="text-muted-foreground">{t("quickRegister.summaryShipping")}</span>
                       <span className="font-medium">
                         {shippingType === "air_regular" ? t("quickRegister.summaryAir") : shippingType === "air_irregular" ? t("quickRegister.summaryIrregular") : t("quickRegister.summarySea")}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 px-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                      <span className="text-emerald-700">{t("quickRegister.summaryWeight")}</span>
-                      <span className="font-mono font-bold text-emerald-800">{parseFloat(weightKg || "0").toFixed(2)} kg</span>
+                    <div className="flex justify-between items-center py-2 px-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-900/50">
+                      <span className="text-emerald-700 dark:text-emerald-400">{t("quickRegister.summaryWeight")}</span>
+                      <span className="font-mono font-bold text-emerald-800 dark:text-emerald-300">{parseFloat(weightKg || "0").toFixed(2)} kg</span>
                     </div>
-                    
+
                     {(shippingType === "air_regular" || shippingType === "air_irregular") && chargeableWeight > 0 && (
-                      <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/50">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-amber-700">{t("quickRegister.chargeableWeight")}</span>
-                          <span className="font-mono font-bold text-amber-900">{chargeableWeight.toFixed(2)} kg</span>
+                          <span className="text-xs text-amber-700 dark:text-amber-400">{t("quickRegister.chargeableWeight")}</span>
+                          <span className="font-mono font-bold text-amber-900 dark:text-amber-300">{chargeableWeight.toFixed(2)} kg</span>
                         </div>
                       </div>
                     )}
-                    
+
                     {shippingType === "sea" && cbm > 0 && (
-                      <div className="p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                      <div className="p-3 bg-cyan-50 dark:bg-cyan-950/30 rounded-lg border border-cyan-200 dark:border-cyan-900/50">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-cyan-700">CBM</span>
-                          <span className="font-mono font-bold text-cyan-900">{cbm.toFixed(4)} m³</span>
+                          <span className="text-xs text-cyan-700 dark:text-cyan-400">CBM</span>
+                          <span className="font-mono font-bold text-cyan-900 dark:text-cyan-300">{cbm.toFixed(4)} m³</span>
                         </div>
                       </div>
                     )}
-                    
+
                     {batchId && batchId !== "none" && (
-                      <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-lg">
                         <span className="text-muted-foreground">{t("quickRegister.summaryBatch")}</span>
                         <span className="font-medium">{batches?.find((b: any) => b.id === parseInt(batchId))?.batchCode}</span>
                       </div>
                     )}
-                    
+
                     {estimatedPrice > 0 && (
-                      <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl mt-3 border border-primary/20">
+                      <div className="p-4 bg-primary/5 rounded-xl mt-3 border border-primary/20">
                         <div className="text-xs text-muted-foreground mb-1">{t("quickRegister.estimatedPrice")}</div>
                         <div className="text-3xl font-bold text-primary">${estimatedPrice.toFixed(2)}</div>
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Submit Button - Below Summary */}
                   <Button
                     type="submit"
                     size="lg"
                     className={cn(
-                      "w-full h-14 text-lg font-bold shadow-xl mt-5 transition-all",
+                      "w-full h-14 text-lg font-bold shadow-sm mt-5 transition-all",
                       !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-gradient-to-r from-primary via-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                        ? "bg-muted text-muted-foreground cursor-not-allowed"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90"
                     )}
                     disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
                   >
