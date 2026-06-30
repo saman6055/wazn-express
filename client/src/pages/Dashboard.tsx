@@ -206,7 +206,10 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="pro-page space-y-6">
+      {/* Flex column + `order-last` on the chart sections pushes ALL charts to
+          the very bottom while keeping the dense stat/alert/list cards on top
+          for the most info-per-screen on a laptop — without relocating JSX. */}
+      <div className="pro-page flex flex-col gap-5">
         <PageHeader
           icon={LayoutDashboard}
           title={t("dashboard.title")}
@@ -344,8 +347,8 @@ export default function Dashboard() {
           </div>
         </DashboardSection>
 
-        {/* Revenue, Profit & Loss — داهات، قازانج و زیان */}
-        <DashboardSection className="pro-section"
+        {/* Revenue, Profit & Loss — داهات، قازانج و زیان (charts → bottom) */}
+        <DashboardSection className="pro-section order-last"
           title={t("dashboard.revenueProfitLossTitle")}
           description={t("dashboard.revenueProfitLossDesc")}
         >
@@ -576,8 +579,8 @@ export default function Dashboard() {
           </DashboardSection>
         )}
 
-        {/* Analytics */}
-        <DashboardSection className="pro-section" title={t("dashboard.analytics") || "Analytics"} description={t("dashboard.revenueAndPackagesByDay")}>
+        {/* Analytics (charts → bottom) */}
+        <DashboardSection className="pro-section order-last" title={t("dashboard.analytics") || "Analytics"} description={t("dashboard.revenueAndPackagesByDay")}>
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Revenue Chart - Last 30 days income (line) */}
           <Card className="pro-card lg:col-span-2 overflow-hidden">
