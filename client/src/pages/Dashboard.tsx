@@ -7,6 +7,8 @@ import {
   DashboardSection,
 } from "@/components/dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { TodayGlance } from "@/components/dashboard/TodayGlance";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { trpc } from "@/lib/trpc";
 import {
   Package,
@@ -273,6 +275,32 @@ export default function Dashboard() {
               </Dialog>
             </>
           }
+        />
+
+        {/* Today at a glance — uses only data already on the page */}
+        <TodayGlance
+          items={[
+            {
+              icon: <DollarSign />,
+              label: t("dashboard.todayIncome") || "داهاتی ئەمڕۆ",
+              value: `$${(financialStats?.todayRevenue || 0).toFixed(2)}`,
+            },
+            {
+              icon: <Users />,
+              label: t("dashboard.newCustomers7Days") || "کڕیاری نوێ (٧ ڕۆژ)",
+              value: newCustomersCount ?? 0,
+            },
+            {
+              icon: <Users />,
+              label: t("dashboard.totalCustomers") || "کۆی کڕیاران",
+              value: customers?.length ?? 0,
+            },
+            {
+              icon: <Layers />,
+              label: t("dashboard.activeBatches") || "باچە چالاکەکان",
+              value: activeBatches?.length || 0,
+            },
+          ]}
         />
 
         {/* Financial overview */}
@@ -905,9 +933,7 @@ export default function Dashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium">{batch.batchCode}</p>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs capitalize">
-                          {batch.status.replace(/_/g, ' ')}
-                        </Badge>
+                        <StatusBadge status={batch.status} kind="batch" />
                         <span className="text-xs text-muted-foreground">
                           {batch.packageCount} {t('common.package')}
                         </span>

@@ -25,6 +25,10 @@ import { IRAQI_GOVERNORATES, IRAQI_CITIES } from "../../../shared/iraqi-cities";
 import { CUSTOMER_CODE_PREFIXES } from "../../../shared/types";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { RelativeTime } from "@/components/ui/relative-time";
+import { FilterChips } from "@/components/ui/filter-chips";
 
 // Default options - these can be customized in settings
 const DEFAULT_NATIONALITIES = [
@@ -1098,6 +1102,72 @@ const [, setLocation] = useLocation();
                   </div>
                 </CollapsibleContent>
               </Collapsible>
+
+              {/* Active filter chips */}
+              <FilterChips
+                chips={[
+                  ...(search
+                    ? [{
+                        id: "search",
+                        label: `${t("common.search") || "گەڕان"}: ${search}`,
+                        onRemove: () => setSearch(""),
+                      }]
+                    : []),
+                  ...(statusFilter !== "all"
+                    ? [{
+                        id: "status",
+                        label: statusFilter === "active" ? t("common.active") : t("common.inactive"),
+                        onRemove: () => setStatusFilter("all"),
+                      }]
+                    : []),
+                  ...(governorateFilter && governorateFilter !== "all_gov"
+                    ? [{
+                        id: "governorate",
+                        label: `${t("customers.form.governorate")}: ${
+                          IRAQI_GOVERNORATES.find((g) => g.id === governorateFilter)?.nameKu ?? governorateFilter
+                        }`,
+                        onRemove: () => {
+                          setGovernorateFilter("");
+                          setCityFilter("");
+                        },
+                      }]
+                    : []),
+                  ...(cityFilter && cityFilter !== "all_city"
+                    ? [{
+                        id: "city",
+                        label: `${t("customers.form.city")}: ${cityFilter}`,
+                        onRemove: () => setCityFilter(""),
+                      }]
+                    : []),
+                  ...(balanceFilter !== "all"
+                    ? [{
+                        id: "balance",
+                        label:
+                          balanceFilter === "positive"
+                            ? t("customers.positiveBalance")
+                            : balanceFilter === "negative"
+                            ? t("customers.negativeBalance")
+                            : t("customers.zeroBalance"),
+                        onRemove: () => setBalanceFilter("all"),
+                      }]
+                    : []),
+                  ...(vipFilter !== "all"
+                    ? [{
+                        id: "vip",
+                        label: vipFilter === "vip" ? t("customers.vipOnly") : t("customers.regularOnly"),
+                        onRemove: () => setVipFilter("all"),
+                      }]
+                    : []),
+                  ...(serviceTypeFilter !== "all"
+                    ? [{
+                        id: "serviceType",
+                        label: `${t("customers.serviceType") || "جۆری خزمەت"}: ${getServiceTypeLabel(serviceTypeFilter)}`,
+                        onRemove: () => setServiceTypeFilter("all"),
+                      }]
+                    : []),
+                ]}
+                onClearAll={clearAllFilters}
+              />
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -1116,11 +1186,7 @@ const [, setLocation] = useLocation();
                   <TableRow key={customer.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
-                          <span className="text-sm font-semibold text-primary">
-                            {customer.fullName?.charAt(0)?.toUpperCase() || "?"}
-                          </span>
-                        </div>
+                        <InitialsAvatar name={customer.fullName ?? ""} size={40} className="ring-2 ring-primary/10" />
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{customer.fullName}</p>
@@ -1136,6 +1202,12 @@ const [, setLocation] = useLocation();
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground font-mono">{customer.customerCode}</p>
+                          {(customer as any).createdAt && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {t("customers.joined") || "بەشداربوو"}{" "}
+                              <RelativeTime date={(customer as any).createdAt} />
+                            </p>
+                          )}
                           {Array.isArray((customer as any).serviceTypes) && (customer as any).serviceTypes.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
                               {(customer as any).serviceTypes.map((st: string) => (
@@ -1173,12 +1245,7 @@ const [, setLocation] = useLocation();
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        variant={customer.isActive ? "default" : "secondary"}
-                        className={customer.isActive ? "bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400" : ""}
-                      >
-                        {customer.isActive ? t("common.active") : t("common.inactive")}
-                      </Badge>
+                      <StatusBadge status={customer.isActive ? "active" : "inactive"} />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">

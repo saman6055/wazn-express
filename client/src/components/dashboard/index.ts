@@ -7,3 +7,5 @@ export { DashboardSection } from "./DashboardSection";
 export { ChartContainer, ChartEmpty } from "./ChartContainer";
 export { Sparkline } from "./Sparkline";
 export type { SparklineProps } from "./Sparkline";
+export { TodayGlance } from "./TodayGlance";
+export type { TodayGlanceItem } from "./TodayGlance";

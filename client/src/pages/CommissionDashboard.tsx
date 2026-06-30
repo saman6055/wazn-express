@@ -57,6 +57,9 @@ import {
 } from "@/components/ui/popover";
 import * as XLSX from "xlsx";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { RelativeTime } from "@/components/ui/relative-time";
+import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -245,6 +248,65 @@ export default function CommissionDashboard() {
     setStatusFilter("all");
     setSearchQuery("");
   };
+
+  // Active-filter chips built from existing filter state + setters
+  const filterChips: FilterChip[] = [];
+  if (searchQuery) {
+    filterChips.push({
+      id: "search",
+      label: `${t("commission.searchChip") || "گەڕان"}: ${searchQuery}`,
+      onRemove: () => setSearchQuery(""),
+    });
+  }
+  if (statusFilter !== "all") {
+    filterChips.push({
+      id: "status",
+      label: `${t("commission.statusColumn")}: ${statusLabels[statusFilter] || statusFilter}`,
+      onRemove: () => setStatusFilter("all"),
+    });
+  }
+  if (customerFilter !== "all") {
+    filterChips.push({
+      id: "customer",
+      label: `${t("commission.customer")}: ${customers?.find(c => c.id.toString() === customerFilter)?.fullName || customerFilter}`,
+      onRemove: () => setCustomerFilter("all"),
+    });
+  }
+  if (batchFilter !== "all") {
+    filterChips.push({
+      id: "batch",
+      label: `${t("commission.batchLabel")}: ${batches?.find(b => b.id.toString() === batchFilter)?.batchCode || batchFilter}`,
+      onRemove: () => setBatchFilter("all"),
+    });
+  }
+  if (dateFrom) {
+    filterChips.push({
+      id: "dateFrom",
+      label: `${t("commission.fromPlaceholder") || "لە"}: ${dateFrom}`,
+      onRemove: () => setDateFrom(""),
+    });
+  }
+  if (dateTo) {
+    filterChips.push({
+      id: "dateTo",
+      label: `${t("commission.toPlaceholder") || "بۆ"}: ${dateTo}`,
+      onRemove: () => setDateTo(""),
+    });
+  }
+  if (minPrice) {
+    filterChips.push({
+      id: "minPrice",
+      label: `${t("commission.minPricePlaceholder") || "کەمترین"}: ${minPrice}`,
+      onRemove: () => setMinPrice(""),
+    });
+  }
+  if (maxPrice) {
+    filterChips.push({
+      id: "maxPrice",
+      label: `${t("commission.maxPricePlaceholder") || "زۆرترین"}: ${maxPrice}`,
+      onRemove: () => setMaxPrice(""),
+    });
+  }
 
   // Toggle sort
   const toggleSort = (field: SortField) => {
@@ -794,6 +856,9 @@ export default function CommissionDashboard() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+
+              {/* Active filter chips */}
+              <FilterChips chips={filterChips} onClearAll={clearAllFilters} />
             </div>
           </CardHeader>
           <CardContent>
@@ -944,10 +1009,10 @@ export default function CommissionDashboard() {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button
-                                className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all flex items-center gap-1 ${statusColors[order.status] || "bg-gray-100"}`}
+                                className="cursor-pointer hover:ring-2 hover:ring-primary/50 rounded-full transition-all inline-flex items-center gap-1"
                               >
-                                {statusLabels[order.status] || order.status}
-                                <ChevronDown className="h-3 w-3" />
+                                <StatusBadge status={order.status} />
+                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start">
@@ -973,7 +1038,7 @@ export default function CommissionDashboard() {
                           </DropdownMenu>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {new Date(order.createdAt).toLocaleDateString()}
+                          <RelativeTime date={order.createdAt} />
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">

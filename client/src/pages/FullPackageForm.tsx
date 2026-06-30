@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
+import { StickyFormBar } from "@/components/forms/sticky-form-bar";
+import { useTranslation } from "@/contexts/LanguageContext";
 import {
   ArrowRight,
   Package,
@@ -67,6 +69,7 @@ const Section = ({ icon: Icon, title, hint, accent = "emerald", children }: { ic
 
 export default function FullPackageForm() {
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
 
   const utils = trpc.useUtils();
 
@@ -1039,9 +1042,9 @@ export default function FullPackageForm() {
           </Section>
 
           {/* Submit */}
-          <div className="flex justify-end gap-3">
+          <StickyFormBar>
             <Button type="button" variant="outline" onClick={() => navigate("/full-package")}>
-              پاشگەزبوونەوە
+              {t("common.cancel") || "پاشگەزبوونەوە"}
             </Button>
             <Button
               type="submit"
@@ -1053,9 +1056,9 @@ export default function FullPackageForm() {
               ) : (
                 <Save className="h-4 w-4 ms-2" />
               )}
-              پاشەکەوتکردن
+              {t("common.save") || "پاشەکەوتکردن"}
             </Button>
-          </div>
+          </StickyFormBar>
         </form>
       </div>
     </DashboardLayout>

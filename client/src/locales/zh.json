@@ -722,7 +722,8 @@
     "period": "剩余",
     "last7Days": "最近7天",
     "last12Months": "最近12个月",
-    "downloadReport": "下载报告"
+    "downloadReport": "下载报告",
+    "newCustomers7Days": "新客户（7天）"
   },
   "staffDashboard": {
     "title": "员工工作台",
@@ -987,7 +988,8 @@
     "enterNameError": "请输入客户名称",
     "addCustomerTitle": "添加新客户",
     "addCustomerDescription": "快速添加新客户",
-    "customerSince": "客户始于"
+    "customerSince": "客户始于",
+    "joined": "加入于"
   },
   "fullPackage": {
     "shippingMethodLabel": "运输方式",
@@ -1276,7 +1278,8 @@
     "productImages": "产品图片",
     "imagesCount": "张图片",
     "noImages": "无图片",
-    "noNotes": "无备注"
+    "noNotes": "无备注",
+    "searchChip": "搜索"
   },
   "commission": {
     "title": "佣金采购",
@@ -1360,7 +1363,8 @@
       "delivered": "已交付",
       "completed": "已完成",
       "cancelled": "已取消"
-    }
+    },
+    "searchChip": "搜索"
   },
   "trackingAlerts": {
     "title": "追踪提醒",
@@ -1980,7 +1984,11 @@
     "relatedOrder": "相关订单",
     "notesPlaceholder": "关于付款的备注...",
     "notes": "备注",
-    "searchCustomer": "按名称或代码搜索..."
+    "searchCustomer": "按名称或代码搜索...",
+    "debtAging": "账龄分析",
+    "aging0_30": "0–30 天",
+    "aging30_60": "30–60 天",
+    "aging60Plus": "60+ 天"
   },
   "reports": {
     "title": "报告",
@@ -2998,7 +3006,23 @@
     "customsHold": "海关扣留",
     "ordered": "已下单",
     "trackingAdded": "已添加追踪",
-    "arrived": "已到达"
+    "arrived": "已到达",
+    "in_transit": "运输中",
+    "preparing": "准备中",
+    "customs": "海关",
+    "paid": "已付款",
+    "unpaid": "未付款",
+    "partially_paid": "部分付款",
+    "overdue": "逾期",
+    "failed": "失败",
+    "scheduled": "已排期",
+    "issued": "已签发",
+    "ready_for_delivery": "待配送",
+    "out_for_delivery": "配送中",
+    "ready": "就绪",
+    "in_progress": "进行中",
+    "pending_quote": "待报价",
+    "received": "已接收"
   },
   "units": {
     "kg": "公斤",
@@ -5767,5 +5791,20 @@
     "inBatch": "已装批 / 已发货",
     "arrived": "已到仓库",
     "delivered": "已送达"
+  },
+  "filterChips": {
+    "remove": "移除",
+    "clearAll": "全部清除"
+  },
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "description": "使用这些快捷键更快地工作。",
+    "commandPalette": "打开命令面板",
+    "showShortcuts": "显示快捷键",
+    "closeDialog": "关闭对话框"
+  },
+  "recentlyViewed": {
+    "title": "最近查看",
+    "empty": "暂无最近项目"
   }
 }

@@ -34,6 +34,8 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { Money } from "@/components/ui/money";
+import { MiniProgress } from "@/components/dashboard/MiniProgress";
 
 type AgingCategory = 'all' | '0-30' | '30-60' | '60-90' | '90+';
 
@@ -241,7 +243,63 @@ const [searchTerm, setSearchTerm] = useState("");
             </CardContent>
           </Card>
         </div>
-        
+
+        {/* Debt Aging breakdown — display-only aggregation of already-computed stats */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="w-4 h-4" />
+              {t("finance.debtAging") || "تەمەنی قەرز"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {(() => {
+              const sixtyPlusTotal = stats.aging60_90 + stats.aging90Plus;
+              const sixtyPlusCount = stats.count60_90 + stats.count90Plus;
+              const maxBucket = Math.max(
+                stats.aging0_30,
+                stats.aging30_60,
+                sixtyPlusTotal,
+                1,
+              );
+              const buckets = [
+                {
+                  label: t("finance.aging0_30") || "٠–٣٠ ڕۆژ",
+                  total: stats.aging0_30,
+                  count: stats.count0_30,
+                  color: "bg-emerald-500",
+                },
+                {
+                  label: t("finance.aging30_60") || "٣٠–٦٠ ڕۆژ",
+                  total: stats.aging30_60,
+                  count: stats.count30_60,
+                  color: "bg-amber-500",
+                },
+                {
+                  label: t("finance.aging60Plus") || "٦٠+ ڕۆژ",
+                  total: sixtyPlusTotal,
+                  count: sixtyPlusCount,
+                  color: "bg-red-600",
+                },
+              ];
+              return buckets.map((b) => (
+                <div key={b.label} className="space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm font-medium text-foreground">{b.label}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {b.count} {t("common.customer")}
+                    </span>
+                  </div>
+                  <div className="text-lg font-bold text-foreground">
+                    <Money value={b.total} decimals={0} />
+                  </div>
+                  <MiniProgress value={Math.round(b.total)} max={Math.round(maxBucket)} color={b.color} />
+                </div>
+              ));
+            })()}
+          </CardContent>
+        </Card>
+
         {/* Filters */}
         <Card>
           <CardContent className="p-4">

@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet, ScanBarcode } from "lucide-react";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
+import { StickyFormBar } from "@/components/forms/sticky-form-bar";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -36,6 +38,7 @@ const Section = ({ icon: Icon, title, hint, accent = "amber", children }: { icon
 
 export default function CommissionForm() {
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
   const utils = trpc.useUtils();
 
   // Customer search state
@@ -1018,9 +1021,9 @@ export default function CommissionForm() {
           </Section>
 
           {/* Submit */}
-          <div className="flex justify-end gap-3">
+          <StickyFormBar>
             <Button type="button" variant="outline" onClick={() => setLocation("/commission")}>
-              پاشگەزبوونەوە
+              {t("common.cancel") || "پاشگەزبوونەوە"}
             </Button>
             <Button
               type="submit"
@@ -1032,9 +1035,9 @@ export default function CommissionForm() {
               ) : (
                 <Save className="h-4 w-4 ms-2" />
               )}
-              پاشەکەوتکردن
+              {t("common.save") || "پاشەکەوتکردن"}
             </Button>
-          </div>
+          </StickyFormBar>
         </form>
       </div>
     </DashboardLayout>

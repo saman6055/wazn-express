@@ -721,7 +721,8 @@
     "period": "المتبقي",
     "last7Days": "آخر 7 أيام",
     "last12Months": "آخر 12 شهر",
-    "downloadReport": "تحميل التقرير"
+    "downloadReport": "تحميل التقرير",
+    "newCustomers7Days": "عملاء جدد (٧ أيام)"
   },
   "staffDashboard": {
     "title": "لوحة الموظفين",
@@ -986,7 +987,8 @@
     "enterNameError": "يرجى إدخال اسم العميل",
     "addCustomerTitle": "إضافة عميل جديد",
     "addCustomerDescription": "إضافة عميل جديد بسرعة",
-    "customerSince": "عميل منذ"
+    "customerSince": "عميل منذ",
+    "joined": "انضم"
   },
   "fullPackage": {
     "shippingMethodLabel": "طريقة الشحن",
@@ -1275,7 +1277,8 @@
     "productImages": "صور المنتج",
     "imagesCount": "صور",
     "noImages": "لا توجد صور",
-    "noNotes": "لا توجد ملاحظات"
+    "noNotes": "لا توجد ملاحظات",
+    "searchChip": "بحث"
   },
   "commission": {
     "title": "الشراء بالعمولة",
@@ -1359,7 +1362,8 @@
       "delivered": "تم التسليم",
       "completed": "مكتمل",
       "cancelled": "ملغي"
-    }
+    },
+    "searchChip": "بحث"
   },
   "suppliers": {
     "1688": "1688",
@@ -2041,7 +2045,11 @@
     "relatedOrder": "الطلب المرتبط",
     "notesPlaceholder": "ملاحظات حول الدفع...",
     "notes": "ملاحظات",
-    "searchCustomer": "البحث بالاسم أو الرمز..."
+    "searchCustomer": "البحث بالاسم أو الرمز...",
+    "debtAging": "أعمار الديون",
+    "aging0_30": "٠–٣٠ يوماً",
+    "aging30_60": "٣٠–٦٠ يوماً",
+    "aging60Plus": "٦٠+ يوماً"
   },
   "companyFinance": {
     "title": "مالية الشركة",
@@ -2994,7 +3002,23 @@
     "customsHold": "محتجز بالجمرك",
     "ordered": "مطلوب",
     "trackingAdded": "تمت إضافة التتبع",
-    "arrived": "وصل"
+    "arrived": "وصل",
+    "in_transit": "قيد النقل",
+    "preparing": "قيد التحضير",
+    "customs": "الجمارك",
+    "paid": "مدفوع",
+    "unpaid": "غير مدفوع",
+    "partially_paid": "مدفوع جزئياً",
+    "overdue": "متأخر",
+    "failed": "فشل",
+    "scheduled": "مجدول",
+    "issued": "صادر",
+    "ready_for_delivery": "جاهز للتسليم",
+    "out_for_delivery": "خرج للتسليم",
+    "ready": "جاهز",
+    "in_progress": "قيد التنفيذ",
+    "pending_quote": "بانتظار عرض السعر",
+    "received": "تم الاستلام"
   },
   "units": {
     "kg": "كغ",
@@ -5780,5 +5804,20 @@
     "inBatch": "في الدفعة / تم الشحن",
     "arrived": "وصل إلى المستودع",
     "delivered": "تم التسليم"
+  },
+  "filterChips": {
+    "remove": "إزالة",
+    "clearAll": "مسح الكل"
+  },
+  "shortcuts": {
+    "title": "اختصارات لوحة المفاتيح",
+    "description": "استخدم هذه الاختصارات للعمل بشكل أسرع.",
+    "commandPalette": "فتح لوحة الأوامر",
+    "showShortcuts": "إظهار الاختصارات",
+    "closeDialog": "إغلاق الحوار"
+  },
+  "recentlyViewed": {
+    "title": "المعروضة مؤخراً",
+    "empty": "لا توجد عناصر حديثة"
   }
 }

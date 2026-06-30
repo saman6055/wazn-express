@@ -50,6 +50,9 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { RelativeTime } from "@/components/ui/relative-time";
+import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
 
 const statusColors: Record<string, string> = {
   registered: "bg-blue-100 text-blue-800",
@@ -255,11 +258,11 @@ const PackageTableRow = memo(function PackageTableRow({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all flex items-center gap-1 ${statusColors[pkg.status] || "bg-gray-100"}`}
+              className="inline-flex cursor-pointer items-center gap-1 rounded-full transition-all hover:ring-2 hover:ring-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               title={t("packages.clickToChangeStatus")}
             >
-              {pkg.status.replace(/_/g, " ")}
-              <ChevronDown className="h-3 w-3" />
+              <StatusBadge status={pkg.status} kind="package" />
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -290,7 +293,7 @@ const PackageTableRow = memo(function PackageTableRow({
         })()}
       </TableCell>
       <TableCell className="text-sm text-muted-foreground">
-        {new Date(pkg.createdAt).toLocaleDateString()}
+        <RelativeTime date={pkg.createdAt} />
       </TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-1">
@@ -618,6 +621,85 @@ const [, setLocation] = useLocation();
     minWeight !== "",
     maxWeight !== "",
   ].filter(Boolean).length;
+
+  // Active-filter pills shown above the table. Each removal reuses an existing setter.
+  const filterChips = useMemo<FilterChip[]>(() => {
+    const chips: FilterChip[] = [];
+    if (statusFilter !== "all") {
+      const opt = statusOptions.find(o => o.value === statusFilter);
+      chips.push({
+        id: "status",
+        label: `${t("common.status")}: ${t(`status.${statusFilter}`) || opt?.label || statusFilter}`,
+        onRemove: () => setStatusFilter("all"),
+      });
+    }
+    if (shippingTypeFilter !== "all") {
+      const opt = shippingTypeOptions.find(o => o.value === shippingTypeFilter);
+      chips.push({
+        id: "shippingType",
+        label: `${t("packages.shippingType")}: ${opt?.label || shippingTypeFilter}`,
+        onRemove: () => setShippingTypeFilter("all"),
+      });
+    }
+    if (batchFilter !== "all") {
+      const label = batchFilter === "no_batch"
+        ? t("packages.noBatch")
+        : getBatchCode(parseInt(batchFilter, 10));
+      chips.push({
+        id: "batch",
+        label: `${t("batches.title")}: ${label}`,
+        onRemove: () => setBatchFilterWithHook("all"),
+      });
+    }
+    if (packageTypeFilter !== "all") {
+      const cfg = packageTypeConfig[packageTypeFilter];
+      chips.push({
+        id: "packageType",
+        label: `${t("packages.packageType")}: ${cfg ? t(cfg.tKey) : packageTypeFilter}`,
+        onRemove: () => setPackageTypeFilter("all"),
+      });
+    }
+    if (alertFilter !== "all") {
+      const label = alertFilter === "delivered"
+        ? t("packages.delivered")
+        : `${alertFilter} ${t("common.days")}`;
+      chips.push({
+        id: "alert",
+        label: `${t("packages.alertDays")}: ${label}`,
+        onRemove: () => setAlertFilter("all"),
+      });
+    }
+    if (dateFrom) {
+      chips.push({
+        id: "dateFrom",
+        label: `${t("common.fromDate")}: ${format(dateFrom, "yyyy-MM-dd")}`,
+        onRemove: () => setDateFrom(undefined),
+      });
+    }
+    if (dateTo) {
+      chips.push({
+        id: "dateTo",
+        label: `${t("common.toDate")}: ${format(dateTo, "yyyy-MM-dd")}`,
+        onRemove: () => setDateTo(undefined),
+      });
+    }
+    if (minWeight !== "") {
+      chips.push({
+        id: "minWeight",
+        label: `${t("packages.minWeight")}: ${minWeight}`,
+        onRemove: () => setMinWeight(""),
+      });
+    }
+    if (maxWeight !== "") {
+      chips.push({
+        id: "maxWeight",
+        label: `${t("packages.maxWeight")}: ${maxWeight}`,
+        onRemove: () => setMaxWeight(""),
+      });
+    }
+    return chips;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, shippingTypeFilter, batchFilter, packageTypeFilter, alertFilter, dateFrom, dateTo, minWeight, maxWeight, t, batches]);
 
   const clearAllFilters = () => {
     setStatusFilter("all");
@@ -1220,6 +1302,9 @@ const [, setLocation] = useLocation();
             </div>
           </CardHeader>
           <CardContent>
+            {filterChips.length > 0 && (
+              <FilterChips chips={filterChips} onClearAll={clearAllFilters} className="mb-4" />
+            )}
             <Table>
               <TableHeader>
                 <TableRow>

@@ -721,7 +721,8 @@
     "period": "Remaining",
     "last7Days": "Last 7 Days",
     "last12Months": "Last 12 Months",
-    "downloadReport": "Download Report"
+    "downloadReport": "Download Report",
+    "newCustomers7Days": "New customers (7 days)"
   },
   "staffDashboard": {
     "title": "Staff Dashboard",
@@ -986,7 +987,8 @@
     "enterNameError": "Please enter customer name",
     "addCustomerTitle": "Add New Customer",
     "addCustomerDescription": "Quickly add a new customer",
-    "customerSince": "Customer since"
+    "customerSince": "Customer since",
+    "joined": "Joined"
   },
   "fullPackage": {
     "shippingMethodLabel": "Shipping method",
@@ -1275,7 +1277,8 @@
     "productImages": "Product Images",
     "imagesCount": "images",
     "noImages": "No images",
-    "noNotes": "No notes"
+    "noNotes": "No notes",
+    "searchChip": "Search"
   },
   "commission": {
     "title": "Commission Purchase",
@@ -1359,7 +1362,8 @@
       "delivered": "Delivered",
       "completed": "Completed",
       "cancelled": "Cancelled"
-    }
+    },
+    "searchChip": "Search"
   },
   "suppliers": {
     "1688": "1688",
@@ -2041,7 +2045,11 @@
     "balanceAfter": "Balance After",
     "relatedOrder": "Related Order",
     "notesPlaceholder": "Notes about payment...",
-    "notes": "Notes"
+    "notes": "Notes",
+    "debtAging": "Debt aging",
+    "aging0_30": "0–30 days",
+    "aging30_60": "30–60 days",
+    "aging60Plus": "60+ days"
   },
   "companyFinance": {
     "dashboardTitle": "Company Finance Dashboard",
@@ -2935,7 +2943,23 @@
     "customsHold": "Customs Hold",
     "ordered": "Ordered",
     "trackingAdded": "Tracking Added",
-    "arrived": "Arrived"
+    "arrived": "Arrived",
+    "in_transit": "In transit",
+    "preparing": "Preparing",
+    "customs": "Customs",
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "partially_paid": "Partially paid",
+    "overdue": "Overdue",
+    "failed": "Failed",
+    "scheduled": "Scheduled",
+    "issued": "Issued",
+    "ready_for_delivery": "Ready for delivery",
+    "out_for_delivery": "Out for delivery",
+    "ready": "Ready",
+    "in_progress": "In progress",
+    "pending_quote": "Pending quote",
+    "received": "Received"
   },
   "units": {
     "kg": "kg",
@@ -5723,5 +5747,20 @@
     "inBatch": "In batch / shipped",
     "arrived": "Arrived at warehouse",
     "delivered": "Delivered"
+  },
+  "filterChips": {
+    "remove": "Remove",
+    "clearAll": "Clear all"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "description": "Use these shortcuts to work faster.",
+    "commandPalette": "Open command palette",
+    "showShortcuts": "Show keyboard shortcuts",
+    "closeDialog": "Close dialog"
+  },
+  "recentlyViewed": {
+    "title": "Recently viewed",
+    "empty": "No recent items"
   }
 }

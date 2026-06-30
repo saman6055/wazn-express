@@ -742,7 +742,8 @@
     "quickActionRegisterPackage": "تۆمارکردنی پاکەت",
     "quickActionCreateBatch": "دروستکردنی باچ",
     "quickActionRecordPayment": "تۆمارکردنی پارەدان",
-    "overdueDebtAlerts": "ئاگاداری قەرزی دواکەوتوو"
+    "overdueDebtAlerts": "ئاگاداری قەرزی دواکەوتوو",
+    "newCustomers7Days": "کڕیاری نوێ (٧ ڕۆژ)"
   },
   "staffDashboard": {
     "title": "داشبۆردی کارمەند",
@@ -1007,7 +1008,8 @@
     "enterNameError": "تکایە ناوی کڕیار بنووسە",
     "addCustomerTitle": "زیادکردنی کڕیاری نوێ",
     "addCustomerDescription": "کڕیارێکی نوێ زیاد بکە بە خێرایی",
-    "customerSince": "بەژداربوو لە"
+    "customerSince": "بەژداربوو لە",
+    "joined": "بەشداربوو"
   },
   "fullPackage": {
     "shippingMethodLabel": "ڕێگای گەیاندن",
@@ -1296,7 +1298,8 @@
     "productImages": "وێنەکانی کاڵا",
     "imagesCount": "وێنە",
     "noImages": "هیچ وێنەیەک نییە",
-    "noNotes": "تێبینی نییە"
+    "noNotes": "تێبینی نییە",
+    "searchChip": "گەڕان"
   },
   "commission": {
     "title": "کڕین بە تێچوو",
@@ -1380,7 +1383,8 @@
       "delivered": "گەیشتووە",
       "completed": "تەواوبووە",
       "cancelled": "هەڵوەشاوە"
-    }
+    },
+    "searchChip": "گەڕان"
   },
   "suppliers": {
     "1688": "١٦٨٨",
@@ -2062,7 +2066,11 @@
     "relatedOrder": "ئۆردەری پەیوەندیدار",
     "notesPlaceholder": "تێبینی سەبارەت بە پارەدان...",
     "notes": "تێبینییەکان",
-    "searchCustomer": "گەڕان بە ناو یان کۆد..."
+    "searchCustomer": "گەڕان بە ناو یان کۆد...",
+    "debtAging": "تەمەنی قەرز",
+    "aging0_30": "٠–٣٠ ڕۆژ",
+    "aging30_60": "٣٠–٦٠ ڕۆژ",
+    "aging60Plus": "٦٠+ ڕۆژ"
   },
   "customerOptions": {
     "title": "ڕێکخستنەکانی کڕیار",
@@ -2980,7 +2988,23 @@
     "customsHold": "گومرگ",
     "ordered": "داواکراو",
     "trackingAdded": "تراک زیادکرا",
-    "arrived": "گەیشتووە"
+    "arrived": "گەیشتووە",
+    "in_transit": "لە ڕێگادا",
+    "preparing": "ئامادەکردن",
+    "customs": "گومرگ",
+    "paid": "پارەدراو",
+    "unpaid": "پارەنەدراو",
+    "partially_paid": "بەشێک پارەدراو",
+    "overdue": "دواکەوتوو",
+    "failed": "سەرنەکەوتوو",
+    "scheduled": "خشتەکراو",
+    "issued": "دەرکراو",
+    "ready_for_delivery": "ئامادەی گەیاندن",
+    "out_for_delivery": "لە گەیاندندایە",
+    "ready": "ئامادە",
+    "in_progress": "لە جێبەجێکردندایە",
+    "pending_quote": "چاوەڕوانی نرخ",
+    "received": "وەرگیراو"
   },
   "units": {
     "kg": "کگ",
@@ -5721,5 +5745,20 @@
     "inBatch": "بارکرا / لە باچ",
     "arrived": "گەیشتە بنکە",
     "delivered": "گەیەنرا"
+  },
+  "filterChips": {
+    "remove": "لابردن",
+    "clearAll": "سڕینەوەی هەموو"
+  },
+  "shortcuts": {
+    "title": "قەدبڕە تەختەکلیلەکان",
+    "description": "ئەم قەدبڕانە بەکاربهێنە بۆ خێراتر کارکردن.",
+    "commandPalette": "کردنەوەی فەرماندە",
+    "showShortcuts": "پیشاندانی قەدبڕەکان",
+    "closeDialog": "داخستنی دیالۆگ"
+  },
+  "recentlyViewed": {
+    "title": "دواترین بینراوەکان",
+    "empty": "هیچ تۆمارێک نییە"
   }
 }

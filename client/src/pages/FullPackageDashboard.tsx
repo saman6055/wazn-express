@@ -12,6 +12,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
 import { ZoomImage } from "@/components/ZoomImage";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { RelativeTime } from "@/components/ui/relative-time";
+import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
 import {
   Package,
   Plus,
@@ -257,6 +260,89 @@ export default function FullPackageDashboard() {
     setStatusFilter("all");
     setSearch("");
   };
+
+  // Active-filter chips (presentational; each reuses an existing setter)
+  const filterChips = useMemo<FilterChip[]>(() => {
+    const chips: FilterChip[] = [];
+    if (search) {
+      chips.push({
+        id: "search",
+        label: `${t("fullPackage.searchChip") || "گەڕان"}: ${search}`,
+        onRemove: () => setSearch(""),
+      });
+    }
+    if (statusFilter !== "all") {
+      chips.push({
+        id: "status",
+        label: `${t("fullPackage.statusColumn")}: ${statusLabels[statusFilter] || statusFilter}`,
+        onRemove: () => setStatusFilter("all"),
+      });
+    }
+    if (customerFilter !== "all") {
+      const name = customers?.find(c => c.id.toString() === customerFilter)?.fullName || customerFilter;
+      chips.push({
+        id: "customer",
+        label: `${t("fullPackage.customer")}: ${name}`,
+        onRemove: () => setCustomerFilter("all"),
+      });
+    }
+    if (batchFilter !== "all") {
+      const code = batches?.find(b => b.id.toString() === batchFilter)?.batchCode || batchFilter;
+      chips.push({
+        id: "batch",
+        label: `${t("fullPackage.batchLabel")}: ${code}`,
+        onRemove: () => setBatchFilter("all"),
+      });
+    }
+    if (dateFrom) {
+      chips.push({
+        id: "dateFrom",
+        label: `${t("fullPackage.fromPlaceholder") || "لە"}: ${dateFrom}`,
+        onRemove: () => setDateFrom(""),
+      });
+    }
+    if (dateTo) {
+      chips.push({
+        id: "dateTo",
+        label: `${t("fullPackage.toPlaceholder") || "بۆ"}: ${dateTo}`,
+        onRemove: () => setDateTo(""),
+      });
+    }
+    if (minPrice) {
+      chips.push({
+        id: "minPrice",
+        label: `${t("fullPackage.minPricePlaceholder") || "کەمترین نرخ"}: ${minPrice}`,
+        onRemove: () => setMinPrice(""),
+      });
+    }
+    if (maxPrice) {
+      chips.push({
+        id: "maxPrice",
+        label: `${t("fullPackage.maxPricePlaceholder") || "زۆرترین نرخ"}: ${maxPrice}`,
+        onRemove: () => setMaxPrice(""),
+      });
+    }
+    if (shippingFilter !== "all") {
+      const shippingLabels: Record<string, string> = {
+        air_regular: t("fullPackage.airRegular"),
+        air_irregular: t("fullPackage.airIrregular"),
+        sea: t("fullPackage.sea"),
+      };
+      chips.push({
+        id: "shipping",
+        label: `${t("fullPackage.shippingMethodLabel")}: ${shippingLabels[shippingFilter] || shippingFilter}`,
+        onRemove: () => setShippingFilter("all"),
+      });
+    }
+    if (trackingFilter !== "all") {
+      chips.push({
+        id: "tracking",
+        label: `${t("fullPackage.trackingLabel")}: ${trackingFilter === "with" ? t("fullPackage.withTracking") : t("fullPackage.withoutTracking")}`,
+        onRemove: () => setTrackingFilter("all"),
+      });
+    }
+    return chips;
+  }, [search, statusFilter, customerFilter, batchFilter, dateFrom, dateTo, minPrice, maxPrice, shippingFilter, trackingFilter, customers, batches, statusLabels, t]);
 
   // Toggle sort
   const toggleSort = (field: SortField) => {
@@ -831,6 +917,9 @@ export default function FullPackageDashboard() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+
+              {/* Active filter chips */}
+              <FilterChips chips={filterChips} onClearAll={clearAllFilters} />
             </div>
           </CardHeader>
           <CardContent>
@@ -993,10 +1082,10 @@ export default function FullPackageDashboard() {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button
-                                className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all flex items-center gap-1 ${statusColors[order.status] || "bg-gray-100"}`}
+                                className="inline-flex items-center gap-1 cursor-pointer rounded-full hover:ring-2 hover:ring-primary/50 transition-all"
                               >
-                                {statusLabels[order.status] || order.status}
-                                <ChevronDown className="h-3 w-3" />
+                                <StatusBadge status={order.status} kind="order" />
+                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start">
@@ -1022,7 +1111,7 @@ export default function FullPackageDashboard() {
                           </DropdownMenu>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {new Date(order.createdAt).toLocaleDateString()}
+                          <RelativeTime date={order.createdAt} />
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">

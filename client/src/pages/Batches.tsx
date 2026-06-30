@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { ZoomImage } from "@/components/ZoomImage";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1000,9 +1001,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       {batch.departureDate ? new Date(batch.departureDate).toLocaleDateString() : "-"}
                     </TableCell>
                     <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[batch.status] || "bg-gray-100"}`}>
-                        {batch.status.replace(/_/g, " ")}
-                      </span>
+                      <StatusBadge status={batch.status} kind="batch" />
                     </TableCell>
                     <TableCell>
                       {(() => {

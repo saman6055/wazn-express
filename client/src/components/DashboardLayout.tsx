@@ -76,6 +76,9 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import { CommandPalette } from "./CommandPalette";
+import { ShortcutsOverlay } from "./ShortcutsOverlay";
+import { RecentlyViewed } from "./RecentlyViewed";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { ScrollButtons } from "./ScrollButtons";
 import { ThemePicker } from "./ThemePicker";
 import { useLanguage, Language } from "@/contexts/LanguageContext";
@@ -437,6 +440,24 @@ function DashboardLayoutContent({
 
   const isItemActive = (path: string) => location === path || location.startsWith(path + '/');
 
+  // Record visited locations for the "recently viewed" dropdown — client-only
+  // UI state. Prefer a known menu-item label; otherwise derive a best-effort
+  // label from the last path segment.
+  const { record } = useRecentlyViewed();
+  useEffect(() => {
+    if (!location || location === "/") return;
+    const matched = menuGroups
+      .flatMap((g) => g.items)
+      .find((item) => location === item.path || location.startsWith(item.path + '/'));
+    const fallback = decodeURIComponent(
+      location.split("/").filter(Boolean).pop() || location
+    )
+      .replace(/[-_]/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+    record(location, matched?.label || fallback);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]);
+
   // Click toggles a group, and the click wins over hover: clicking an
   // already-open (incl. hover-opened) group closes it on the spot, and clicking
   // a closed one pins it open. Works the same on desktop and touch.
@@ -724,6 +745,9 @@ function DashboardLayoutContent({
               <kbd className="hidden lg:inline rounded border border-gray-300 dark:border-gray-600 px-1 text-[10px] font-mono">Ctrl K</kbd>
             </button>
 
+            {/* Recently viewed pages dropdown */}
+            <RecentlyViewed className="h-8 w-8" />
+
             {/* Accent theme (skin) picker */}
             <ThemePicker />
 
@@ -804,6 +828,7 @@ function DashboardLayoutContent({
       </main>
 
       <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
+      <ShortcutsOverlay />
       <ScrollButtons />
     </div>
   );
