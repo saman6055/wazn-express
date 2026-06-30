@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -164,7 +165,7 @@ export default function PortalMessages() {
         attachmentType = attachmentFile.type;
         messageType = attachmentFile.type.startsWith("image/") ? "image" : "file";
       } catch {
-        toast.error(isKurdish ? "هەڵە لە ئەپڵۆدکردنی فایل" : "File upload failed");
+        toast.error(pickLang(language, { ku: "هەڵە لە ئەپڵۆدکردنی فایل", en: "File upload failed", ar: "فشل رفع الملف", zh: "文件上传失败" }));
         setIsUploading(false);
         return;
       }
@@ -191,7 +192,7 @@ export default function PortalMessages() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      toast.error(isKurdish ? "فایل زۆر گەورەیە (max 10MB)" : "File too large (max 10MB)");
+      toast.error(pickLang(language, { ku: "فایل زۆر گەورەیە (max 10MB)", en: "File too large (max 10MB)", ar: "الملف كبير جداً (الحد الأقصى 10 ميغابايت)", zh: "文件过大（最大 10MB）" }));
       return;
     }
     setAttachmentFile(file);
@@ -246,7 +247,7 @@ export default function PortalMessages() {
         attachmentType: file.type,
       });
     } catch {
-      toast.error(isKurdish ? "هەڵە لە ناردنی دەنگ" : "Voice send failed");
+      toast.error(pickLang(language, { ku: "هەڵە لە ناردنی دەنگ", en: "Voice send failed", ar: "فشل إرسال الرسالة الصوتية", zh: "语音发送失败" }));
     }
     setIsUploading(false);
   };
@@ -265,9 +266,9 @@ export default function PortalMessages() {
     yesterday.setDate(yesterday.getDate() - 1);
     
     if (d.toDateString() === today.toDateString()) {
-      return isKurdish ? "ئەمڕۆ" : "Today";
+      return pickLang(language, { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" });
     } else if (d.toDateString() === yesterday.toDateString()) {
-      return isKurdish ? "دوێنێ" : "Yesterday";
+      return pickLang(language, { ku: "دوێنێ", en: "Yesterday", ar: "أمس", zh: "昨天" });
     } else {
       return d.toLocaleDateString(isKurdish ? 'ku' : 'en-US');
     }
@@ -285,9 +286,9 @@ export default function PortalMessages() {
   
   // Quick replies
   const quickReplies = [
-    { text: isKurdish ? "دۆخی داواکاری" : "Request Status", icon: "📦" },
-    { text: isKurdish ? "پرسیار لەسەر نرخ" : "Price Question", icon: "💰" },
-    { text: isKurdish ? "کێشەی پارەدان" : "Payment Issue", icon: "💳" },
+    { text: pickLang(language, { ku: "دۆخی داواکاری", en: "Request Status", ar: "حالة الطلب", zh: "请求状态" }), icon: "📦" },
+    { text: pickLang(language, { ku: "پرسیار لەسەر نرخ", en: "Price Question", ar: "استفسار عن السعر", zh: "价格咨询" }), icon: "💰" },
+    { text: pickLang(language, { ku: "کێشەی پارەدان", en: "Payment Issue", ar: "مشكلة في الدفع", zh: "付款问题" }), icon: "💳" },
   ];
 
   return (
@@ -324,11 +325,11 @@ export default function PortalMessages() {
                 </div>
                 <div>
                   <h1 className="font-bold text-white text-lg">
-                    {isKurdish ? "ناوەندی پەیام" : "Message Center"}
+                    {pickLang(language, { ku: "ناوەندی پەیام", en: "Message Center", ar: "مركز الرسائل", zh: "消息中心" })}
                   </h1>
                   <p className="text-white/70 text-xs flex items-center gap-1">
                     <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                    {isKurdish ? "پشتگیری ئۆنلاین" : "Support Online"}
+                    {pickLang(language, { ku: "پشتگیری ئۆنلاین", en: "Support Online", ar: "الدعم متصل", zh: "客服在线" })}
                   </p>
                 </div>
               </div>
@@ -355,7 +356,7 @@ export default function PortalMessages() {
                     )}
                   >
                     <MessageSquare className="w-4 h-4 me-2" />
-                    {isKurdish ? "چات" : "Chat"}
+                    {pickLang(language, { ku: "چات", en: "Chat", ar: "الدردشة", zh: "聊天" })}
                     {(unreadQuery.data || 0) > 0 && (
                       <Badge className="ms-2 bg-red-500 text-white text-xs px-1.5 py-0">
                         {unreadQuery.data}
@@ -370,7 +371,7 @@ export default function PortalMessages() {
                     )}
                   >
                     <Bell className="w-4 h-4 me-2" />
-                    {isKurdish ? "ئاگادارییەکان" : "Notifications"}
+                    {pickLang(language, { ku: "ئاگادارییەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" })}
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -394,7 +395,7 @@ export default function PortalMessages() {
                     "text-sm",
                     isDark ? "text-slate-400" : "text-slate-600"
                   )}>
-                    {isKurdish ? "چاوەڕوانبە..." : "Loading..."}
+                    {pickLang(language, { ku: "چاوەڕوانبە...", en: "Loading...", ar: "جارٍ التحميل...", zh: "加载中..." })}
                   </p>
                 </div>
               )}
@@ -422,15 +423,13 @@ export default function PortalMessages() {
                     "font-bold text-lg mb-2",
                     isDark ? "text-white" : "text-gray-800"
                   )}>
-                    {isKurdish ? "بەخێربێیت!" : "Welcome!"}
+                    {pickLang(language, { ku: "بەخێربێیت!", en: "Welcome!", ar: "أهلاً بك!", zh: "欢迎！" })}
                   </h3>
                   <p className={cn(
                     "text-sm max-w-xs mb-6",
                     isDark ? "text-slate-400" : "text-gray-500"
                   )}>
-                    {isKurdish 
-                      ? "گفتوگۆیەک دەستپێبکە لەگەڵ تیمی پشتگیریمان. ئێمە لێرەین بۆ یارمەتیدان!" 
-                      : "Start a conversation with our support team. We're here to help!"}
+                    {pickLang(language, { ku: "گفتوگۆیەک دەستپێبکە لەگەڵ تیمی پشتگیریمان. ئێمە لێرەین بۆ یارمەتیدان!", en: "Start a conversation with our support team. We're here to help!", ar: "ابدأ محادثة مع فريق الدعم لدينا. نحن هنا لمساعدتك!", zh: "与我们的客服团队开始对话。我们随时为您提供帮助！" })}
                   </p>
                   
                   {/* Quick Replies */}
@@ -672,7 +671,7 @@ export default function PortalMessages() {
                         {formattedDuration}
                       </span>
                       <span className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-500")}>
-                        {isKurdish ? "تۆمارکردن..." : "Recording..."}
+                        {pickLang(language, { ku: "تۆمارکردن...", en: "Recording...", ar: "جارٍ التسجيل...", zh: "录音中..." })}
                       </span>
                     </div>
                     <Button
@@ -694,7 +693,7 @@ export default function PortalMessages() {
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      placeholder={isKurdish ? "نامەکەت بنووسە..." : "Type a message..."}
+                      placeholder={pickLang(language, { ku: "نامەکەت بنووسە...", en: "Type a message...", ar: "اكتب رسالة...", zh: "输入消息..." })}
                       className={cn(
                         "flex-1 rounded-full",
                         isDark
@@ -722,7 +721,7 @@ export default function PortalMessages() {
                       <button
                         onClick={async () => {
                           const ok = await startRecording();
-                          if (!ok) toast.error(isKurdish ? "ڕێگەپێدانی مایکرۆفۆن نییە" : "Microphone permission denied");
+                          if (!ok) toast.error(pickLang(language, { ku: "ڕێگەپێدانی مایکرۆفۆن نییە", en: "Microphone permission denied", ar: "تم رفض إذن الميكروفون", zh: "麦克风权限被拒绝" }));
                         }}
                         disabled={!chatId}
                         className={cn(
@@ -745,9 +744,7 @@ export default function PortalMessages() {
                 "text-xs text-center mt-2",
                 isDark ? "text-slate-500" : "text-gray-400"
               )}>
-                {isKurdish
-                  ? "تیمی پشتگیریمان بە زووترین کات وەڵامت دەداتەوە"
-                  : "Our team typically responds within a few hours"}
+                {pickLang(language, { ku: "تیمی پشتگیریمان بە زووترین کات وەڵامت دەداتەوە", en: "Our team typically responds within a few hours", ar: "يرد فريقنا عادةً خلال بضع ساعات", zh: "我们的团队通常会在几小时内回复" })}
               </p>
             </div>
           </>
@@ -780,15 +777,13 @@ export default function PortalMessages() {
                 "font-bold text-lg mb-2",
                 isDark ? "text-white" : "text-gray-800"
               )}>
-                {isKurdish ? "ئاگاداری نییە" : "No Notifications"}
+                {pickLang(language, { ku: "ئاگاداری نییە", en: "No Notifications", ar: "لا توجد إشعارات", zh: "暂无通知" })}
               </h3>
               <p className={cn(
                 "text-sm max-w-xs",
                 isDark ? "text-slate-400" : "text-gray-500"
               )}>
-                {isKurdish 
-                  ? "کاتێک ئاگاداریت هەبێت، لێرە دەردەکەوێت" 
-                  : "When you have notifications, they'll appear here"}
+                {pickLang(language, { ku: "کاتێک ئاگاداریت هەبێت، لێرە دەردەکەوێت", en: "When you have notifications, they'll appear here", ar: "عند وصول إشعارات، ستظهر هنا", zh: "当您有通知时，将显示在这里" })}
               </p>
             </div>
           </div>
@@ -808,7 +803,7 @@ export default function PortalMessages() {
               )}
             >
               <Phone className="w-4 h-4" />
-              <span>{isKurdish ? "پەیوەندی" : "Call"}</span>
+              <span>{pickLang(language, { ku: "پەیوەندی", en: "Call", ar: "اتصال", zh: "致电" })}</span>
             </a>
             <a 
               href="mailto:support@waznexpress.com" 
@@ -818,7 +813,7 @@ export default function PortalMessages() {
               )}
             >
               <Mail className="w-4 h-4" />
-              <span>{isKurdish ? "ئیمەیل" : "Email"}</span>
+              <span>{pickLang(language, { ku: "ئیمەیل", en: "Email", ar: "البريد الإلكتروني", zh: "电子邮件" })}</span>
             </a>
           </div>
         </div>

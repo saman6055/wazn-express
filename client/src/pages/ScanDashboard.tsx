@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { Link } from "wouter";
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { SCANNER_MODULES } from "@/constants/scannerModules";
@@ -76,10 +77,10 @@ export default function ScanDashboard() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold">
-                    {isKurdish ? "داشبۆردی سکان" : "Scan Dashboard"}
+                    {pickLang(language, { ku: "داشبۆردی سکان", en: "Scan Dashboard", ar: "لوحة المسح", zh: "扫描仪表板" })}
                   </h1>
                   <p className="text-cyan-100 mt-1">
-                    {isKurdish ? "بەڕێوەبردنی هەموو کارەکانی سکان" : "Manage all scanning operations"}
+                    {pickLang(language, { ku: "بەڕێوەبردنی هەموو کارەکانی سکان", en: "Manage all scanning operations", ar: "إدارة جميع عمليات المسح", zh: "管理所有扫描操作" })}
                   </p>
                 </div>
               </div>
@@ -87,12 +88,12 @@ export default function ScanDashboard() {
               {/* Today's Summary */}
               <div className="flex items-center gap-6 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-4">
                 <div className="text-center">
-                  <p className="text-cyan-200 text-sm">{isKurdish ? "ئەمڕۆ" : "Today"}</p>
+                  <p className="text-cyan-200 text-sm">{pickLang(language, { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" })}</p>
                   <p className="text-3xl font-bold">{todayTotal}</p>
                 </div>
                 <div className="h-12 w-px bg-white/20" />
                 <div className="text-center">
-                  <p className="text-cyan-200 text-sm">{isKurdish ? "کۆی گشتی" : "Total"}</p>
+                  <p className="text-cyan-200 text-sm">{pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "总计" })}</p>
                   <p className="text-3xl font-bold">{totalScans}</p>
                 </div>
               </div>
@@ -127,7 +128,7 @@ export default function ScanDashboard() {
                         {isKurdish ? module.descKu : module.descEn}
                       </p>
                       <div className="flex items-center gap-2 mt-4 text-sm font-medium text-slate-600 group-hover:text-slate-800">
-                        <span>{isKurdish ? "دەستپێکردن" : "Start"}</span>
+                        <span>{pickLang(language, { ku: "دەستپێکردن", en: "Start", ar: "بدء", zh: "开始" })}</span>
                         <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </CardContent>
@@ -148,10 +149,10 @@ export default function ScanDashboard() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">
-                      {isKurdish ? "دابەشبوونی سکان" : "Scan Distribution"}
+                      {pickLang(language, { ku: "دابەشبوونی سکان", en: "Scan Distribution", ar: "توزيع عمليات المسح", zh: "扫描分布" })}
                     </CardTitle>
                     <CardDescription>
-                      {isKurdish ? "بە پێی مۆدیول" : "By module"}
+                      {pickLang(language, { ku: "بە پێی مۆدیول", en: "By module", ar: "حسب الوحدة", zh: "按模块" })}
                     </CardDescription>
                   </div>
                 </div>
@@ -162,10 +163,10 @@ export default function ScanDashboard() {
                     <PieChart>
                       <Pie
                         data={[
-                          { name: isKurdish ? 'تۆماری خێرا' : 'Quick Register', value: moduleStats.registered || 0, color: '#3b82f6' },
-                          { name: isKurdish ? 'خستنە ناو باچ' : 'Batch Assignment', value: moduleStats.inBatch || 0, color: '#8b5cf6' },
-                          { name: isKurdish ? 'پشکنینی گەیشتن' : 'Arrival Verification', value: moduleStats.arrived || 0, color: '#14b8a6' },
-                          { name: isKurdish ? 'گەیاندن بە کڕیار' : 'Customer Delivery', value: moduleStats.delivered || 0, color: '#22c55e' },
+                          { name: pickLang(language, { ku: 'تۆماری خێرا', en: 'Quick Register', ar: 'تسجيل سريع', zh: '快速登记' }), value: moduleStats.registered || 0, color: '#3b82f6' },
+                          { name: pickLang(language, { ku: 'خستنە ناو باچ', en: 'Batch Assignment', ar: 'تعيين الدفعة', zh: '批次分配' }), value: moduleStats.inBatch || 0, color: '#8b5cf6' },
+                          { name: pickLang(language, { ku: 'پشکنینی گەیشتن', en: 'Arrival Verification', ar: 'التحقق من الوصول', zh: '到货核验' }), value: moduleStats.arrived || 0, color: '#14b8a6' },
+                          { name: pickLang(language, { ku: 'گەیاندن بە کڕیار', en: 'Customer Delivery', ar: 'التسليم للعميل', zh: '客户交付' }), value: moduleStats.delivered || 0, color: '#22c55e' },
                         ]}
                         cx="50%"
                         cy="50%"
@@ -200,10 +201,10 @@ export default function ScanDashboard() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">
-                      {isKurdish ? "ڕێژەی ڕۆژانە" : "Daily Trend"}
+                      {pickLang(language, { ku: "ڕێژەی ڕۆژانە", en: "Daily Trend", ar: "الاتجاه اليومي", zh: "每日趋势" })}
                     </CardTitle>
                     <CardDescription>
-                      {isKurdish ? "سکانەکانی ئەم هەفتەیە" : "This week's scans"}
+                      {pickLang(language, { ku: "سکانەکانی ئەم هەفتەیە", en: "This week's scans", ar: "عمليات المسح لهذا الأسبوع", zh: "本周扫描" })}
                     </CardDescription>
                   </div>
                 </div>
@@ -213,13 +214,13 @@ export default function ScanDashboard() {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                       data={[
-                        { day: isKurdish ? 'شەممە' : 'Sat', scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: isKurdish ? 'یەکشەممە' : 'Sun', scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: isKurdish ? 'دووشەممە' : 'Mon', scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: isKurdish ? 'سێشەممە' : 'Tue', scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: isKurdish ? 'چوارشەممە' : 'Wed', scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: isKurdish ? 'پێنجشەممە' : 'Thu', scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: isKurdish ? 'هەینی' : 'Fri', scans: todayTotal },
+                        { day: pickLang(language, { ku: 'شەممە', en: 'Sat', ar: 'السبت', zh: '周六' }), scans: Math.floor(Math.random() * 50) + 10 },
+                        { day: pickLang(language, { ku: 'یەکشەممە', en: 'Sun', ar: 'الأحد', zh: '周日' }), scans: Math.floor(Math.random() * 50) + 10 },
+                        { day: pickLang(language, { ku: 'دووشەممە', en: 'Mon', ar: 'الإثنين', zh: '周一' }), scans: Math.floor(Math.random() * 50) + 10 },
+                        { day: pickLang(language, { ku: 'سێشەممە', en: 'Tue', ar: 'الثلاثاء', zh: '周二' }), scans: Math.floor(Math.random() * 50) + 10 },
+                        { day: pickLang(language, { ku: 'چوارشەممە', en: 'Wed', ar: 'الأربعاء', zh: '周三' }), scans: Math.floor(Math.random() * 50) + 10 },
+                        { day: pickLang(language, { ku: 'پێنجشەممە', en: 'Thu', ar: 'الخميس', zh: '周四' }), scans: Math.floor(Math.random() * 50) + 10 },
+                        { day: pickLang(language, { ku: 'هەینی', en: 'Fri', ar: 'الجمعة', zh: '周五' }), scans: todayTotal },
                       ]}
                       margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                     >
@@ -251,10 +252,10 @@ export default function ScanDashboard() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">
-                      {isKurdish ? "کارایی ئەمڕۆ" : "Today's Performance"}
+                      {pickLang(language, { ku: "کارایی ئەمڕۆ", en: "Today's Performance", ar: "أداء اليوم", zh: "今日表现" })}
                     </CardTitle>
                     <CardDescription>
-                      {isKurdish ? "ئاماری سکانەکانی ئەمڕۆ" : "Today's scanning statistics"}
+                      {pickLang(language, { ku: "ئاماری سکانەکانی ئەمڕۆ", en: "Today's scanning statistics", ar: "إحصائيات المسح لليوم", zh: "今日扫描统计" })}
                     </CardDescription>
                   </div>
                 </div>
@@ -292,7 +293,7 @@ export default function ScanDashboard() {
                     <Zap className="h-5 w-5" />
                   </div>
                   <CardTitle className="text-lg">
-                    {isKurdish ? "کردارە خێراکان" : "Quick Actions"}
+                    {pickLang(language, { ku: "کردارە خێراکان", en: "Quick Actions", ar: "إجراءات سريعة", zh: "快速操作" })}
                   </CardTitle>
                 </div>
               </CardHeader>
@@ -319,7 +320,7 @@ export default function ScanDashboard() {
                       className="w-full justify-start text-cyan-300 hover:bg-white/10 h-12"
                     >
                       <BarChart3 className="h-5 w-5 me-3" />
-                      <span>{isKurdish ? "ڕاپۆرتی سکان" : "Scan Reports"}</span>
+                      <span>{pickLang(language, { ku: "ڕاپۆرتی سکان", en: "Scan Reports", ar: "تقارير المسح", zh: "扫描报告" })}</span>
                       <ChevronRight className="h-4 w-4 mr-auto opacity-50" />
                     </Button>
                   </Link>
@@ -340,16 +341,16 @@ export default function ScanDashboard() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">
-                        {isKurdish ? "دوایین سکانەکان" : "Recent Scans"}
+                        {pickLang(language, { ku: "دوایین سکانەکان", en: "Recent Scans", ar: "عمليات المسح الأخيرة", zh: "最近扫描" })}
                       </CardTitle>
                       <CardDescription>
-                        {isKurdish ? "٥ سکانی کۆتایی" : "Last 5 scans"}
+                        {pickLang(language, { ku: "٥ سکانی کۆتایی", en: "Last 5 scans", ar: "آخر 5 عمليات مسح", zh: "最近 5 次扫描" })}
                       </CardDescription>
                     </div>
                   </div>
                   <Link href="/scan-reports">
                     <Button variant="ghost" size="sm" className="text-blue-600">
-                      {isKurdish ? "هەموو" : "View All"}
+                      {pickLang(language, { ku: "هەموو", en: "View All", ar: "عرض الكل", zh: "查看全部" })}
                       <ArrowRight className="h-4 w-4 me-1" />
                     </Button>
                   </Link>
@@ -365,7 +366,7 @@ export default function ScanDashboard() {
                 ) : latestScans.length === 0 ? (
                   <div className="text-center py-8 text-slate-500">
                     <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                    <p>{isKurdish ? "هیچ سکانێک نییە" : "No scans yet"}</p>
+                    <p>{pickLang(language, { ku: "هیچ سکانێک نییە", en: "No scans yet", ar: "لا توجد عمليات مسح بعد", zh: "暂无扫描" })}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -404,10 +405,10 @@ export default function ScanDashboard() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">
-                      {isKurdish ? "ئاگاداریەکان" : "Alerts"}
+                      {pickLang(language, { ku: "ئاگاداریەکان", en: "Alerts", ar: "التنبيهات", zh: "提醒" })}
                     </CardTitle>
                     <CardDescription>
-                      {isKurdish ? "پاکەتە کێشەدارەکان" : "Packages needing attention"}
+                      {pickLang(language, { ku: "پاکەتە کێشەدارەکان", en: "Packages needing attention", ar: "طرود تحتاج إلى انتباه", zh: "需要关注的包裹" })}
                     </CardDescription>
                   </div>
                 </div>
@@ -421,15 +422,15 @@ export default function ScanDashboard() {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-amber-800">
-                        {isKurdish ? "بێ کێش" : "Missing Weight"}
+                        {pickLang(language, { ku: "بێ کێش", en: "Missing Weight", ar: "بدون وزن", zh: "缺少重量" })}
                       </p>
                       <p className="text-sm text-amber-600">
-                        {missingInfo?.filter((p: any) => !p.actualWeightKg)?.length || 0} {isKurdish ? "پاکەت" : "packages"}
+                        {missingInfo?.filter((p: any) => !p.actualWeightKg)?.length || 0} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرود", zh: "个包裹" })}
                       </p>
                     </div>
                     <Link href="/packages?filter=missing_weight">
                       <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
-                        {isKurdish ? "بینین" : "View"}
+                        {pickLang(language, { ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
                       </Button>
                     </Link>
                   </div>
@@ -441,15 +442,15 @@ export default function ScanDashboard() {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-red-800">
-                        {isKurdish ? "بێ کڕیار" : "Missing Customer"}
+                        {pickLang(language, { ku: "بێ کڕیار", en: "Missing Customer", ar: "بدون عميل", zh: "缺少客户" })}
                       </p>
                       <p className="text-sm text-red-600">
-                        {missingInfo?.filter((p: any) => !p.customerId)?.length || 0} {isKurdish ? "پاکەت" : "packages"}
+                        {missingInfo?.filter((p: any) => !p.customerId)?.length || 0} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرود", zh: "个包裹" })}
                       </p>
                     </div>
                     <Link href="/packages?filter=missing_customer">
                       <Button size="sm" variant="outline" className="border-red-300 text-red-700 hover:bg-red-100">
-                        {isKurdish ? "بینین" : "View"}
+                        {pickLang(language, { ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
                       </Button>
                     </Link>
                   </div>
@@ -461,15 +462,15 @@ export default function ScanDashboard() {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-purple-800">
-                        {isKurdish ? "بێ باچ" : "Missing Batch"}
+                        {pickLang(language, { ku: "بێ باچ", en: "Missing Batch", ar: "بدون دفعة", zh: "缺少批次" })}
                       </p>
                       <p className="text-sm text-purple-600">
-                        {missingInfo?.filter((p: any) => !p.batchId)?.length || 0} {isKurdish ? "پاکەت" : "packages"}
+                        {missingInfo?.filter((p: any) => !p.batchId)?.length || 0} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرود", zh: "个包裹" })}
                       </p>
                     </div>
                     <Link href="/packages?filter=missing_batch">
                       <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-100">
-                        {isKurdish ? "بینین" : "View"}
+                        {pickLang(language, { ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
                       </Button>
                     </Link>
                   </div>

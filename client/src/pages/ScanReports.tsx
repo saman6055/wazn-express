@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import * as XLSX from 'xlsx';
 import { SCANNER_MODULES, getModuleByType } from "@/constants/scannerModules";
 
@@ -113,23 +114,23 @@ export default function ScanReports() {
   // Export to Excel
   const exportToExcel = () => {
     const moduleLabels: Record<string, string> = {
-      registered: isKurdish ? 'تۆماری خێرا' : 'Quick Register',
-      in_batch: isKurdish ? 'خستنە ناو باچ' : 'Batch Assignment',
-      received_local: isKurdish ? 'پشکنینی گەیشتن' : 'Arrival Verification',
-      delivered: isKurdish ? 'گەیاندن بە کڕیار' : 'Customer Delivery',
+      registered: pickLang(language, { ku: 'تۆماری خێرا', en: 'Quick Register', ar: 'تسجيل سريع', zh: '快速登记' }),
+      in_batch: pickLang(language, { ku: 'خستنە ناو باچ', en: 'Batch Assignment', ar: 'إسناد إلى دفعة', zh: '批次分配' }),
+      received_local: pickLang(language, { ku: 'پشکنینی گەیشتن', en: 'Arrival Verification', ar: 'التحقق من الوصول', zh: '到货核验' }),
+      delivered: pickLang(language, { ku: 'گەیاندن بە کڕیار', en: 'Customer Delivery', ar: 'التسليم للعميل', zh: '客户交付' }),
     };
-    
+
     const data = filteredScans.map((scan: any) => ({
-      [isKurdish ? 'بەروار' : 'Date']: new Date(scan.scannedAt).toLocaleDateString(),
-      [isKurdish ? 'تراکینگ' : 'Tracking']: scan.trackingNumber || scan.packageCode,
-      [isKurdish ? 'جۆر' : 'Type']: moduleLabels[scan.scanType] || scan.scanType,
-      [isKurdish ? 'بەکارهێنەر' : 'User']: scan.scannedBy || 'N/A',
-      [isKurdish ? 'کات' : 'Time']: new Date(scan.scannedAt).toLocaleTimeString(),
+      [pickLang(language, { ku: 'بەروار', en: 'Date', ar: 'التاريخ', zh: '日期' })]: new Date(scan.scannedAt).toLocaleDateString(),
+      [pickLang(language, { ku: 'تراکینگ', en: 'Tracking', ar: 'رقم التتبع', zh: '运单号' })]: scan.trackingNumber || scan.packageCode,
+      [pickLang(language, { ku: 'جۆر', en: 'Type', ar: 'النوع', zh: '类型' })]: moduleLabels[scan.scanType] || scan.scanType,
+      [pickLang(language, { ku: 'بەکارهێنەر', en: 'User', ar: 'المستخدم', zh: '用户' })]: scan.scannedBy || 'N/A',
+      [pickLang(language, { ku: 'کات', en: 'Time', ar: 'الوقت', zh: '时间' })]: new Date(scan.scannedAt).toLocaleTimeString(),
     }));
-    
+
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, isKurdish ? 'ڕاپۆرتی سکان' : 'Scan Report');
+    XLSX.utils.book_append_sheet(wb, ws, pickLang(language, { ku: 'ڕاپۆرتی سکان', en: 'Scan Report', ar: 'تقرير المسح', zh: '扫描报告' }));
     XLSX.writeFile(wb, `scan-report-${startDate}-${endDate}.xlsx`);
   };
 
@@ -150,10 +151,10 @@ export default function ScanReports() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold">
-                    {isKurdish ? "ڕاپۆرتی سکان" : "Scan Reports"}
+                    {pickLang(language, { ku: "ڕاپۆرتی سکان", en: "Scan Reports", ar: "تقارير المسح", zh: "扫描报告" })}
                   </h1>
                   <p className="text-indigo-100 mt-1">
-                    {isKurdish ? "شیکاری تەواوی کارەکانی سکان" : "Complete analysis of scanning operations"}
+                    {pickLang(language, { ku: "شیکاری تەواوی کارەکانی سکان", en: "Complete analysis of scanning operations", ar: "تحليل شامل لعمليات المسح", zh: "扫描操作的完整分析" })}
                   </p>
                 </div>
               </div>
@@ -164,7 +165,7 @@ export default function ScanReports() {
                 className="bg-white/20 hover:bg-white/30 text-white border-white/30"
               >
                 <Download className="h-4 w-4 me-2" />
-                {isKurdish ? "داگرتنی Excel" : "Export Excel"}
+                {pickLang(language, { ku: "داگرتنی Excel", en: "Export Excel", ar: "تصدير Excel", zh: "导出 Excel" })}
               </Button>
             </div>
           </div>
@@ -178,7 +179,7 @@ export default function ScanReports() {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-slate-500" />
                   <span className="text-sm text-slate-600">
-                    {isKurdish ? "لە:" : "From:"}
+                    {pickLang(language, { ku: "لە:", en: "From:", ar: "من:", zh: "从：" })}
                   </span>
                   <Input
                     type="date"
@@ -189,7 +190,7 @@ export default function ScanReports() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-600">
-                    {isKurdish ? "بۆ:" : "To:"}
+                    {pickLang(language, { ku: "بۆ:", en: "To:", ar: "إلى:", zh: "至：" })}
                   </span>
                   <Input
                     type="date"
@@ -202,7 +203,7 @@ export default function ScanReports() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
-                    placeholder={isKurdish ? "گەڕان بە تراکینگ..." : "Search tracking..."}
+                    placeholder={pickLang(language, { ku: "گەڕان بە تراکینگ...", en: "Search tracking...", ar: "البحث برقم التتبع...", zh: "搜索运单号…" })}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-64"
@@ -211,11 +212,11 @@ export default function ScanReports() {
                 <Select value={filterModule} onValueChange={setFilterModule}>
                   <SelectTrigger className="w-48">
                     <Filter className="h-4 w-4 me-2 text-slate-500" />
-                    <SelectValue placeholder={isKurdish ? "هەموو" : "All"} />
+                    <SelectValue placeholder={pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">
-                      {isKurdish ? "هەموو" : "All"}
+                      {pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}
                     </SelectItem>
                     {SCANNER_MODULES.map((module) => (
                       <SelectItem key={module.id} value={module.scanType}>
@@ -270,13 +271,13 @@ export default function ScanReports() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6">
               <TabsTrigger value="overview">
-                {isKurdish ? "پوختە" : "Overview"}
+                {pickLang(language, { ku: "پوختە", en: "Overview", ar: "نظرة عامة", zh: "概览" })}
               </TabsTrigger>
               <TabsTrigger value="daily">
-                {isKurdish ? "ڕۆژانە" : "Daily"}
+                {pickLang(language, { ku: "ڕۆژانە", en: "Daily", ar: "يومي", zh: "每日" })}
               </TabsTrigger>
               <TabsTrigger value="details">
-                {isKurdish ? "وردەکاری" : "Details"}
+                {pickLang(language, { ku: "وردەکاری", en: "Details", ar: "التفاصيل", zh: "明细" })}
               </TabsTrigger>
             </TabsList>
             
@@ -288,7 +289,7 @@ export default function ScanReports() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-indigo-600" />
-                      {isKurdish ? "پوختەی ماوە" : "Period Summary"}
+                      {pickLang(language, { ku: "پوختەی ماوە", en: "Period Summary", ar: "ملخص الفترة", zh: "周期汇总" })}
                     </CardTitle>
                     <CardDescription>
                       {formatDate(startDate)} - {formatDate(endDate)}
@@ -298,19 +299,19 @@ export default function ScanReports() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100">
                         <p className="text-sm text-indigo-600 font-medium">
-                          {isKurdish ? "کۆی سکان" : "Total Scans"}
+                          {pickLang(language, { ku: "کۆی سکان", en: "Total Scans", ar: "إجمالي عمليات المسح", zh: "扫描总数" })}
                         </p>
                         <p className="text-3xl font-bold text-indigo-700">{totalScans}</p>
                       </div>
                       <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100">
                         <p className="text-sm text-emerald-600 font-medium">
-                          {isKurdish ? "ئەمڕۆ" : "Today"}
+                          {pickLang(language, { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" })}
                         </p>
                         <p className="text-3xl font-bold text-emerald-700">{todayTotal}</p>
                       </div>
                       <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100">
                         <p className="text-sm text-amber-600 font-medium">
-                          {isKurdish ? "ڕۆژانە بە تێکڕا" : "Daily Average"}
+                          {pickLang(language, { ku: "ڕۆژانە بە تێکڕا", en: "Daily Average", ar: "المعدل اليومي", zh: "日均" })}
                         </p>
                         <p className="text-3xl font-bold text-amber-700">
                           {dailyReport.length > 0 ? Math.round(totalScans / dailyReport.length) : 0}
@@ -318,7 +319,7 @@ export default function ScanReports() {
                       </div>
                       <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">
                         <p className="text-sm text-blue-600 font-medium">
-                          {isKurdish ? "ژمارەی ڕۆژ" : "Days"}
+                          {pickLang(language, { ku: "ژمارەی ڕۆژ", en: "Days", ar: "الأيام", zh: "天数" })}
                         </p>
                         <p className="text-3xl font-bold text-blue-700">{dailyReport.length}</p>
                       </div>
@@ -331,7 +332,7 @@ export default function ScanReports() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Activity className="h-5 w-5 text-purple-600" />
-                      {isKurdish ? "شیکاری مۆدیولەکان" : "Module Breakdown"}
+                      {pickLang(language, { ku: "شیکاری مۆدیولەکان", en: "Module Breakdown", ar: "تفصيل الوحدات", zh: "模块明细" })}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -372,17 +373,17 @@ export default function ScanReports() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-indigo-600" />
-                    {isKurdish ? "ڕاپۆرتی ڕۆژانە" : "Daily Report"}
+                    {pickLang(language, { ku: "ڕاپۆرتی ڕۆژانە", en: "Daily Report", ar: "التقرير اليومي", zh: "每日报告" })}
                   </CardTitle>
                   <CardDescription>
-                    {isKurdish ? "شیکاری سکان بە ڕۆژ" : "Scan analysis by day"}
+                    {pickLang(language, { ku: "شیکاری سکان بە ڕۆژ", en: "Scan analysis by day", ar: "تحليل المسح حسب اليوم", zh: "按日扫描分析" })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>{isKurdish ? "بەروار" : "Date"}</TableHead>
+                        <TableHead>{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</TableHead>
                         {SCANNER_MODULES.map((module) => (
                           <TableHead key={module.id} className="text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -394,7 +395,7 @@ export default function ScanReports() {
                           </TableHead>
                         ))}
                         <TableHead className="text-center">
-                          {isKurdish ? "کۆ" : "Total"}
+                          {pickLang(language, { ku: "کۆ", en: "Total", ar: "الإجمالي", zh: "合计" })}
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -428,7 +429,7 @@ export default function ScanReports() {
                   {dailyReport.length === 0 && (
                     <div className="text-center py-12 text-slate-500">
                       <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                      <p>{isKurdish ? "هیچ داتایەک نییە" : "No data available"}</p>
+                      <p>{pickLang(language, { ku: "هیچ داتایەک نییە", en: "No data available", ar: "لا توجد بيانات متاحة", zh: "暂无数据" })}</p>
                     </div>
                   )}
                 </CardContent>
@@ -443,10 +444,10 @@ export default function ScanReports() {
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         <Clock className="h-5 w-5 text-indigo-600" />
-                        {isKurdish ? "وردەکاری سکانەکان" : "Scan Details"}
+                        {pickLang(language, { ku: "وردەکاری سکانەکان", en: "Scan Details", ar: "تفاصيل المسح", zh: "扫描明细" })}
                       </CardTitle>
                       <CardDescription>
-                        {filteredScans.length} {isKurdish ? "سکان" : "scans"}
+                        {filteredScans.length} {pickLang(language, { ku: "سکان", en: "scans", ar: "عملية مسح", zh: "次扫描" })}
                       </CardDescription>
                     </div>
                   </div>
@@ -455,11 +456,11 @@ export default function ScanReports() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>{isKurdish ? "تراکینگ" : "Tracking"}</TableHead>
-                        <TableHead>{isKurdish ? "جۆر" : "Type"}</TableHead>
-                        <TableHead>{isKurdish ? "بەروار" : "Date"}</TableHead>
-                        <TableHead>{isKurdish ? "کات" : "Time"}</TableHead>
-                        <TableHead>{isKurdish ? "بەکارهێنەر" : "User"}</TableHead>
+                        <TableHead>{pickLang(language, { ku: "تراکینگ", en: "Tracking", ar: "رقم التتبع", zh: "运单号" })}</TableHead>
+                        <TableHead>{pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</TableHead>
+                        <TableHead>{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</TableHead>
+                        <TableHead>{pickLang(language, { ku: "کات", en: "Time", ar: "الوقت", zh: "时间" })}</TableHead>
+                        <TableHead>{pickLang(language, { ku: "بەکارهێنەر", en: "User", ar: "المستخدم", zh: "用户" })}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -498,17 +499,19 @@ export default function ScanReports() {
                   {filteredScans.length === 0 && (
                     <div className="text-center py-12 text-slate-500">
                       <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                      <p>{isKurdish ? "هیچ سکانێک نییە" : "No scans found"}</p>
+                      <p>{pickLang(language, { ku: "هیچ سکانێک نییە", en: "No scans found", ar: "لم يتم العثور على عمليات مسح", zh: "未找到扫描记录" })}</p>
                     </div>
                   )}
                   
                   {filteredScans.length > 50 && (
                     <div className="text-center py-4 text-slate-500 border-t">
                       <p className="text-sm">
-                        {isKurdish 
-                          ? `${filteredScans.length - 50} سکانی تر هەیە...` 
-                          : `${filteredScans.length - 50} more scans...`
-                        }
+                        {pickLang(language, {
+                          ku: `${filteredScans.length - 50} سکانی تر هەیە...`,
+                          en: `${filteredScans.length - 50} more scans...`,
+                          ar: `${filteredScans.length - 50} عملية مسح أخرى...`,
+                          zh: `还有 ${filteredScans.length - 50} 次扫描…`,
+                        })}
                       </p>
                     </div>
                   )}

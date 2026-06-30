@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/table";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 
 // Order type configuration
@@ -259,8 +260,8 @@ export default function UnifiedProfitDashboard() {
   
   // Chart data
   const chartData = [
-    { label: isKurdish ? "پاکێجی تەواو" : "Full Package", value: profitByType.full_package, color: "#10b981" },
-    { label: isKurdish ? "عمولە" : "Commission", value: profitByType.commission, color: "#f59e0b" },
+    { label: pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الحزمة الكاملة", zh: "全包服务" }), value: profitByType.full_package, color: "#10b981" },
+    { label: pickLang(language, { ku: "عمولە", en: "Commission", ar: "العمولة", zh: "佣金" }), value: profitByType.commission, color: "#f59e0b" },
   ];
 
   return (
@@ -270,10 +271,10 @@ export default function UnifiedProfitDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">
-              {isKurdish ? "داشبۆردی قازانجی یەکگرتوو" : "Unified Profit Dashboard"}
+              {pickLang(language, { ku: "داشبۆردی قازانجی یەکگرتوو", en: "Unified Profit Dashboard", ar: "لوحة الأرباح الموحدة", zh: "统一利润仪表板" })}
             </h1>
             <p className="text-muted-foreground">
-              {isKurdish ? "قازانجی هەر سێ جۆری ئۆردەر لە یەک شوێن" : "Profit from all three order types in one place"}
+              {pickLang(language, { ku: "قازانجی هەر سێ جۆری ئۆردەر لە یەک شوێن", en: "Profit from all three order types in one place", ar: "أرباح أنواع الطلبات الثلاثة جميعها في مكان واحد", zh: "在一处查看全部三种订单类型的利润" })}
             </p>
           </div>
           
@@ -284,11 +285,11 @@ export default function UnifiedProfitDashboard() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="week">{isKurdish ? "هەفتەی ڕابردوو" : "Last Week"}</SelectItem>
-                <SelectItem value="month">{isKurdish ? "مانگی ڕابردوو" : "Last Month"}</SelectItem>
-                <SelectItem value="quarter">{isKurdish ? "سێ مانگی ڕابردوو" : "Last Quarter"}</SelectItem>
-                <SelectItem value="year">{isKurdish ? "ساڵی ڕابردوو" : "Last Year"}</SelectItem>
-                <SelectItem value="all">{isKurdish ? "هەموو کات" : "All Time"}</SelectItem>
+                <SelectItem value="week">{pickLang(language, { ku: "هەفتەی ڕابردوو", en: "Last Week", ar: "الأسبوع الماضي", zh: "上周" })}</SelectItem>
+                <SelectItem value="month">{pickLang(language, { ku: "مانگی ڕابردوو", en: "Last Month", ar: "الشهر الماضي", zh: "上月" })}</SelectItem>
+                <SelectItem value="quarter">{pickLang(language, { ku: "سێ مانگی ڕابردوو", en: "Last Quarter", ar: "الربع الماضي", zh: "上季度" })}</SelectItem>
+                <SelectItem value="year">{pickLang(language, { ku: "ساڵی ڕابردوو", en: "Last Year", ar: "السنة الماضية", zh: "去年" })}</SelectItem>
+                <SelectItem value="all">{pickLang(language, { ku: "هەموو کات", en: "All Time", ar: "كل الأوقات", zh: "全部时间" })}</SelectItem>
               </SelectContent>
             </Select>
             
@@ -306,7 +307,7 @@ export default function UnifiedProfitDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm mb-1">
-                    {isKurdish ? "کۆی قازانج" : "Total Profit"}
+                    {pickLang(language, { ku: "کۆی قازانج", en: "Total Profit", ar: "إجمالي الربح", zh: "总利润" })}
                   </p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 bg-blue-400" />
@@ -327,7 +328,7 @@ export default function UnifiedProfitDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">
-                    {isKurdish ? "پاکێجی تەواو" : "Full Package"}
+                    {pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الحزمة الكاملة", zh: "全包服务" })}
                   </p>
                   {isLoading ? (
                     <Skeleton className="h-7 w-20" />
@@ -337,7 +338,7 @@ export default function UnifiedProfitDashboard() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">
-                    {orderCounts.full_package} {isKurdish ? "ئۆردەر" : "orders"}
+                    {orderCounts.full_package} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -354,7 +355,7 @@ export default function UnifiedProfitDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">
-                    {isKurdish ? "عمولە" : "Commission"}
+                    {pickLang(language, { ku: "عمولە", en: "Commission", ar: "العمولة", zh: "佣金" })}
                   </p>
                   {isLoading ? (
                     <Skeleton className="h-7 w-20" />
@@ -364,7 +365,7 @@ export default function UnifiedProfitDashboard() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">
-                    {orderCounts.commission} {isKurdish ? "ئۆردەر" : "orders"}
+                    {orderCounts.commission} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
@@ -382,10 +383,10 @@ export default function UnifiedProfitDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <PieChartIcon className="w-5 h-5" />
-                {isKurdish ? "دابەشبوونی قازانج" : "Profit Distribution"}
+                {pickLang(language, { ku: "دابەشبوونی قازانج", en: "Profit Distribution", ar: "توزيع الأرباح", zh: "利润分布" })}
               </CardTitle>
               <CardDescription>
-                {isKurdish ? "ڕێژەی قازانج بەپێی جۆری ئۆردەر" : "Profit percentage by order type"}
+                {pickLang(language, { ku: "ڕێژەی قازانج بەپێی جۆری ئۆردەر", en: "Profit percentage by order type", ar: "نسبة الربح حسب نوع الطلب", zh: "按订单类型划分的利润百分比" })}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -404,10 +405,10 @@ export default function UnifiedProfitDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
-                {isKurdish ? "بەراوردی قازانج" : "Profit Comparison"}
+                {pickLang(language, { ku: "بەراوردی قازانج", en: "Profit Comparison", ar: "مقارنة الأرباح", zh: "利润对比" })}
               </CardTitle>
               <CardDescription>
-                {isKurdish ? "بەراوردکردنی قازانجی هەر جۆرێک" : "Compare profit across order types"}
+                {pickLang(language, { ku: "بەراوردکردنی قازانجی هەر جۆرێک", en: "Compare profit across order types", ar: "مقارنة الأرباح بين أنواع الطلبات", zh: "比较各订单类型的利润" })}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -429,10 +430,10 @@ export default function UnifiedProfitDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              {isKurdish ? "ڕاپۆرتی مانگانە" : "Monthly Report"}
+              {pickLang(language, { ku: "ڕاپۆرتی مانگانە", en: "Monthly Report", ar: "التقرير الشهري", zh: "月度报告" })}
             </CardTitle>
             <CardDescription>
-              {isKurdish ? "قازانج بەپێی مانگ و جۆری ئۆردەر" : "Profit by month and order type"}
+              {pickLang(language, { ku: "قازانج بەپێی مانگ و جۆری ئۆردەر", en: "Profit by month and order type", ar: "الأرباح حسب الشهر ونوع الطلب", zh: "按月份和订单类型划分的利润" })}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -444,25 +445,25 @@ export default function UnifiedProfitDashboard() {
               </div>
             ) : monthlyBreakdown.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                {isKurdish ? "هیچ داتایەک نییە" : "No data available"}
+                {pickLang(language, { ku: "هیچ داتایەک نییە", en: "No data available", ar: "لا توجد بيانات متاحة", zh: "暂无数据" })}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{isKurdish ? "مانگ" : "Month"}</TableHead>
+                      <TableHead>{pickLang(language, { ku: "مانگ", en: "Month", ar: "الشهر", zh: "月份" })}</TableHead>
                       <TableHead className="text-right text-emerald-600">
-                        {isKurdish ? "پاکێجی تەواو" : "Full Package"}
+                        {pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الحزمة الكاملة", zh: "全包服务" })}
                       </TableHead>
                       <TableHead className="text-right text-purple-600">
-                        {isKurdish ? "داواکاری کڕین" : "Purchase Request"}
+                        {pickLang(language, { ku: "داواکاری کڕین", en: "Purchase Request", ar: "طلب الشراء", zh: "采购请求" })}
                       </TableHead>
                       <TableHead className="text-right text-amber-600">
-                        {isKurdish ? "عمولە" : "Commission"}
+                        {pickLang(language, { ku: "عمولە", en: "Commission", ar: "العمولة", zh: "佣金" })}
                       </TableHead>
                       <TableHead className="text-right font-bold">
-                        {isKurdish ? "کۆی گشتی" : "Total"}
+                        {pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "总计" })}
                       </TableHead>
                     </TableRow>
                   </TableHeader>

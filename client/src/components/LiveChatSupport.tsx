@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -80,7 +81,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
     },
     onError: (error) => {
       console.error('Failed to create chat:', error);
-      toast.error(isKurdish ? 'هەڵەیەک ڕوویدا' : 'An error occurred');
+      toast.error(pickLang(language, { ku: 'هەڵەیەک ڕوویدا', en: 'An error occurred', ar: 'حدث خطأ', zh: '发生错误' }));
     }
   });
   
@@ -100,7 +101,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
     },
     onError: (error) => {
       console.error('Failed to send message:', error);
-      toast.error(isKurdish ? 'نەتوانرا نامەکە بنێردرێت' : 'Failed to send message');
+      toast.error(pickLang(language, { ku: 'نەتوانرا نامەکە بنێردرێت', en: 'Failed to send message', ar: 'فشل إرسال الرسالة', zh: '消息发送失败' }));
     }
   });
   
@@ -166,20 +167,20 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
   
   // Quick replies
   const quickReplies = [
-    { 
-      text: isKurdish ? "دۆخی داواکاری" : "Request Status",
+    {
+      text: pickLang(language, { ku: "دۆخی داواکاری", en: "Request Status", ar: "حالة الطلب", zh: "请求状态" }),
       icon: "📦"
     },
-    { 
-      text: isKurdish ? "پرسیار لەسەر نرخ" : "Price Question",
+    {
+      text: pickLang(language, { ku: "پرسیار لەسەر نرخ", en: "Price Question", ar: "استفسار عن السعر", zh: "价格咨询" }),
       icon: "💰"
     },
-    { 
-      text: isKurdish ? "کێشەی پارەدان" : "Payment Issue",
+    {
+      text: pickLang(language, { ku: "کێشەی پارەدان", en: "Payment Issue", ar: "مشكلة في الدفع", zh: "支付问题" }),
       icon: "💳"
     },
-    { 
-      text: isKurdish ? "شتی تر" : "Something Else",
+    {
+      text: pickLang(language, { ku: "شتی تر", en: "Something Else", ar: "شيء آخر", zh: "其他" }),
       icon: "❓"
     }
   ];
@@ -220,9 +221,12 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
       setIsTyping(false);
       // Auto-reply will be handled by backend in production
       // For now, add a placeholder response
-      const autoReply = isKurdish 
-        ? "سوپاس بۆ نامەکەت! یەکێک لە تیمی پشتگیریمان بەم زووانە وەڵامت دەداتەوە. کاتی کارکردن: ٩ بەیانی - ٩ ئێوارە"
-        : "Thank you for your message! One of our support team members will respond shortly. Working hours: 9 AM - 9 PM";
+      const autoReply = pickLang(language, {
+        ku: "سوپاس بۆ نامەکەت! یەکێک لە تیمی پشتگیریمان بەم زووانە وەڵامت دەداتەوە. کاتی کارکردن: ٩ بەیانی - ٩ ئێوارە",
+        en: "Thank you for your message! One of our support team members will respond shortly. Working hours: 9 AM - 9 PM",
+        ar: "شكراً لرسالتك! سيرد عليك أحد أعضاء فريق الدعم لدينا قريباً. ساعات العمل: 9 صباحاً - 9 مساءً",
+        zh: "感谢您的留言！我们的支持团队成员将很快回复您。工作时间：上午9点 - 晚上9点"
+      });
       
       // This would be replaced by actual staff response in production
       // For demo, we'll add a bot message
@@ -297,11 +301,11 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-sm">
-                    {isKurdish ? "پشتگیری Wazn" : "Wazn Support"}
+                    {pickLang(language, { ku: "پشتگیری Wazn", en: "Wazn Support", ar: "دعم Wazn", zh: "Wazn 支持" })}
                   </h3>
                   <p className="text-white/70 text-xs flex items-center gap-1">
                     <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                    {isKurdish ? "ئۆنلاین" : "Online"}
+                    {pickLang(language, { ku: "ئۆنلاین", en: "Online", ar: "متصل", zh: "在线" })}
                   </p>
                 </div>
               </div>
@@ -366,7 +370,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                       "text-sm",
                       isDark ? "text-slate-400" : "text-slate-600"
                     )}>
-                      {isKurdish ? "چاوەڕوانبە..." : "Loading..."}
+                      {pickLang(language, { ku: "چاوەڕوانبە...", en: "Loading...", ar: "جارٍ التحميل...", zh: "加载中..." })}
                     </p>
                   </div>
                 )}
@@ -479,7 +483,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                     "text-xs mb-2",
                     isDark ? "text-slate-400" : "text-slate-500"
                   )}>
-                    {isKurdish ? "وەڵامی خێرا:" : "Quick replies:"}
+                    {pickLang(language, { ku: "وەڵامی خێرا:", en: "Quick replies:", ar: "ردود سريعة:", zh: "快捷回复：" })}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {quickReplies.map((reply, index) => (
@@ -514,7 +518,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                    placeholder={isKurdish ? "نامەکەت بنووسە..." : "Type your message..."}
+                    placeholder={pickLang(language, { ku: "نامەکەت بنووسە...", en: "Type your message...", ar: "اكتب رسالتك...", zh: "输入您的消息..." })}
                     className={cn(
                       "flex-1 rounded-full",
                       isDark 

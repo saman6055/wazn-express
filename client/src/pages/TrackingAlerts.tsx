@@ -21,6 +21,7 @@ import {
 import * as XLSX from 'xlsx';
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 interface OrderForTracking {
   id: number;
@@ -99,9 +100,12 @@ export default function TrackingAlerts() {
       if (multiSaveCountRef.current > 0) {
         multiSaveCountRef.current--;
         if (multiSaveCountRef.current === 0) {
-          toast.success(isKurdish
-            ? `تراکینگ بۆ ${multiSaveCountRef.total} ئۆردەر زیاد کرا`
-            : `Tracking added to ${multiSaveCountRef.total} orders`);
+          toast.success(pickLang(language, {
+            ku: `تراکینگ بۆ ${multiSaveCountRef.total} ئۆردەر زیاد کرا`,
+            en: `Tracking added to ${multiSaveCountRef.total} orders`,
+            ar: `تمت إضافة التتبّع إلى ${multiSaveCountRef.total} طلب`,
+            zh: `已为 ${multiSaveCountRef.total} 个订单添加追踪`,
+          }));
           setTrackingDialogOpen(false);
           setSelectedOrder(null);
           setSelectedOrders([]);
@@ -113,11 +117,26 @@ export default function TrackingAlerts() {
         return;
       }
       const msg = result.added === 1
-        ? (isKurdish ? "تراکینگ نەمبەر زیاد کرا" : "Tracking number added")
-        : (isKurdish ? `${result.added} تراکینگ زیاد کرا` : `${result.added} tracking numbers added`);
+        ? pickLang(language, {
+            ku: "تراکینگ نەمبەر زیاد کرا",
+            en: "Tracking number added",
+            ar: "تمت إضافة رقم التتبّع",
+            zh: "已添加追踪号",
+          })
+        : pickLang(language, {
+            ku: `${result.added} تراکینگ زیاد کرا`,
+            en: `${result.added} tracking numbers added`,
+            ar: `تمت إضافة ${result.added} رقم تتبّع`,
+            zh: `已添加 ${result.added} 个追踪号`,
+          });
       toast.success(msg);
       if (result.duplicates.length > 0) {
-        toast.warning(isKurdish ? `دووبارە یان پێشتر بەکارهاتوو: ${result.duplicates.join(", ")}` : `Duplicate/skip: ${result.duplicates.join(", ")}`);
+        toast.warning(pickLang(language, {
+          ku: `دووبارە یان پێشتر بەکارهاتوو: ${result.duplicates.join(", ")}`,
+          en: `Duplicate/skip: ${result.duplicates.join(", ")}`,
+          ar: `مكرّر أو تم تخطّيه: ${result.duplicates.join(", ")}`,
+          zh: `重复/跳过：${result.duplicates.join(", ")}`,
+        }));
       }
       setTrackingDialogOpen(false);
       setSelectedOrder(null);
@@ -172,7 +191,12 @@ export default function TrackingAlerts() {
   const handleSaveTracking = () => {
     const list = trackingNumbers.map((s) => s.trim()).filter(Boolean);
     if (list.length === 0) {
-      toast.error(isKurdish ? "هەر شتێک یەک تراکینگ نەمبەر داخڵ بکە" : "Enter at least one tracking number");
+      toast.error(pickLang(language, {
+        ku: "هەر شتێک یەک تراکینگ نەمبەر داخڵ بکە",
+        en: "Enter at least one tracking number",
+        ar: "أدخل رقم تتبّع واحدًا على الأقل",
+        zh: "请至少输入一个追踪号",
+      }));
       return;
     }
 
@@ -203,7 +227,12 @@ export default function TrackingAlerts() {
       return (
         <Badge variant="destructive" className="gap-1 bg-red-600">
           <XCircle className="h-3 w-3" />
-          {isKurdish ? `فریاکەوتن (${daysWaiting} ڕۆژ)` : `Critical (${daysWaiting} days)`}
+          {pickLang(language, {
+            ku: `فریاکەوتن (${daysWaiting} ڕۆژ)`,
+            en: `Critical (${daysWaiting} days)`,
+            ar: `حرج (${daysWaiting} يوم)`,
+            zh: `紧急 (${daysWaiting} 天)`,
+          })}
         </Badge>
       );
     }
@@ -211,7 +240,12 @@ export default function TrackingAlerts() {
       return (
         <Badge className="gap-1 bg-orange-500 hover:bg-orange-600">
           <AlertCircle className="h-3 w-3" />
-          {isKurdish ? `گرنگ (${daysWaiting} ڕۆژ)` : `Urgent (${daysWaiting} days)`}
+          {pickLang(language, {
+            ku: `گرنگ (${daysWaiting} ڕۆژ)`,
+            en: `Urgent (${daysWaiting} days)`,
+            ar: `عاجل (${daysWaiting} يوم)`,
+            zh: `加急 (${daysWaiting} 天)`,
+          })}
         </Badge>
       );
     }
@@ -219,14 +253,24 @@ export default function TrackingAlerts() {
       return (
         <Badge variant="secondary" className="gap-1 bg-yellow-500 text-black hover:bg-yellow-600">
           <AlertTriangle className="h-3 w-3" />
-          {isKurdish ? `ئاگاداری (${daysWaiting} ڕۆژ)` : `Warning (${daysWaiting} days)`}
+          {pickLang(language, {
+            ku: `ئاگاداری (${daysWaiting} ڕۆژ)`,
+            en: `Warning (${daysWaiting} days)`,
+            ar: `تحذير (${daysWaiting} يوم)`,
+            zh: `警告 (${daysWaiting} 天)`,
+          })}
         </Badge>
       );
     }
     return (
       <Badge variant="outline" className="gap-1 bg-blue-50 text-blue-700 border-blue-200">
         <Clock className="h-3 w-3" />
-        {isKurdish ? `نوێ (${daysWaiting} ڕۆژ)` : `New (${daysWaiting} days)`}
+        {pickLang(language, {
+          ku: `نوێ (${daysWaiting} ڕۆژ)`,
+          en: `New (${daysWaiting} days)`,
+          ar: `جديد (${daysWaiting} يوم)`,
+          zh: `新 (${daysWaiting} 天)`,
+        })}
       </Badge>
     );
   };
@@ -336,13 +380,20 @@ export default function TrackingAlerts() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold">
-                    {isKurdish ? "ئاگادارکردنەوەی تراکینگ" : "Tracking Alerts"}
+                    {pickLang(language, {
+                      ku: "ئاگادارکردنەوەی تراکینگ",
+                      en: "Tracking Alerts",
+                      ar: "تنبيهات التتبّع",
+                      zh: "追踪提醒",
+                    })}
                   </h1>
                   <p className="text-red-100 mt-1">
-                    {isKurdish 
-                      ? `پاکەتەکان بێ تراکینگ نەمبەر - ${pendingOrders?.length || 0} پاکەت`
-                      : `Packages without tracking - ${pendingOrders?.length || 0} packages`
-                    }
+                    {pickLang(language, {
+                      ku: `پاکەتەکان بێ تراکینگ نەمبەر - ${pendingOrders?.length || 0} پاکەت`,
+                      en: `Packages without tracking - ${pendingOrders?.length || 0} packages`,
+                      ar: `طرود بدون رقم تتبّع - ${pendingOrders?.length || 0} طرد`,
+                      zh: `无追踪号的包裹 - ${pendingOrders?.length || 0} 个包裹`,
+                    })}
                   </p>
                 </div>
               </div>
@@ -359,12 +410,12 @@ export default function TrackingAlerts() {
                 </Button>
                 <div className="flex items-center gap-6 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-4">
                   <div className="text-center">
-                    <p className="text-red-200 text-sm">{isKurdish ? "کۆی گشتی" : "Total"}</p>
+                    <p className="text-red-200 text-sm">{pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "总计" })}</p>
                     <p className="text-3xl font-bold">{pendingOrders?.length || 0}</p>
                   </div>
                   <div className="h-12 w-px bg-white/20" />
                   <div className="text-center">
-                    <p className="text-red-200 text-sm">{isKurdish ? "فریاکەوتن" : "Critical"}</p>
+                    <p className="text-red-200 text-sm">{pickLang(language, { ku: "فریاکەوتن", en: "Critical", ar: "حرج", zh: "紧急" })}</p>
                     <p className="text-3xl font-bold text-yellow-300">{daysStats.critical}</p>
                   </div>
                 </div>
@@ -379,11 +430,11 @@ export default function TrackingAlerts() {
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="alerts" className="gap-2">
                 <AlertCircle className="h-4 w-4" />
-                {isKurdish ? "ئاگادارکردنەوەکان" : "Alerts"}
+                {pickLang(language, { ku: "ئاگادارکردنەوەکان", en: "Alerts", ar: "التنبيهات", zh: "提醒" })}
               </TabsTrigger>
               <TabsTrigger value="history" className="gap-2">
                 <TrendingUp className="h-4 w-4" />
-                {isKurdish ? "رابردوو" : "History"}
+                {pickLang(language, { ku: "رابردوو", en: "History", ar: "السجلّ", zh: "历史" })}
               </TabsTrigger>
             </TabsList>
 
@@ -407,7 +458,7 @@ export default function TrackingAlerts() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-red-600">
-                          {isKurdish ? "پاکێجی تەواو" : "Full Package"}
+                          {pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الباقة الكاملة", zh: "全包套餐" })}
                         </p>
                         <p className="text-3xl font-bold text-red-700">{typeStats.full_package}</p>
                       </div>
@@ -435,7 +486,7 @@ export default function TrackingAlerts() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-amber-600">
-                          {isKurdish ? "کڕین بە تێچوو" : "Commission"}
+                          {pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission", ar: "بالعمولة", zh: "代购佣金" })}
                         </p>
                         <p className="text-3xl font-bold text-amber-700">{typeStats.commission}</p>
                       </div>
@@ -456,13 +507,15 @@ export default function TrackingAlerts() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">
-                        {isKurdish ? "فلتەر و گەڕان" : "Filter & Search"}
+                        {pickLang(language, { ku: "فلتەر و گەڕان", en: "Filter & Search", ar: "تصفية وبحث", zh: "筛选与搜索" })}
                       </CardTitle>
                       <CardDescription>
-                        {isKurdish 
-                          ? `${filteredOrders.length} ئەنجام لە ${pendingOrders?.length || 0}`
-                          : `${filteredOrders.length} results from ${pendingOrders?.length || 0}`
-                        }
+                        {pickLang(language, {
+                          ku: `${filteredOrders.length} ئەنجام لە ${pendingOrders?.length || 0}`,
+                          en: `${filteredOrders.length} results from ${pendingOrders?.length || 0}`,
+                          ar: `${filteredOrders.length} نتيجة من أصل ${pendingOrders?.length || 0}`,
+                          zh: `${filteredOrders.length} 条结果，共 ${pendingOrders?.length || 0} 条`,
+                        })}
                       </CardDescription>
                     </div>
                   </div>
@@ -472,12 +525,12 @@ export default function TrackingAlerts() {
                     {/* Search */}
                     <div className="md:col-span-1">
                       <Label className="text-sm font-medium mb-2 block">
-                        {isKurdish ? "گەڕان" : "Search"}
+                        {pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}
                       </Label>
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <Input
-                          placeholder={isKurdish ? "ناوی ئایتم یان ئۆردەر نەمبەر..." : "Item name or order number..."}
+                          placeholder={pickLang(language, { ku: "ناوی ئایتم یان ئۆردەر نەمبەر...", en: "Item name or order number...", ar: "اسم الصنف أو رقم الطلب...", zh: "商品名称或订单号..." })}
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className="pl-10"
@@ -488,7 +541,7 @@ export default function TrackingAlerts() {
                     {/* Type Filter */}
                     <div>
                       <Label className="text-sm font-medium mb-2 block">
-                        {isKurdish ? "جۆر" : "Type"}
+                        {pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}
                       </Label>
                       <Select value={typeFilter} onValueChange={setTypeFilter}>
                         <SelectTrigger>
@@ -510,7 +563,7 @@ export default function TrackingAlerts() {
                     {/* Days Filter */}
                     <div>
                       <Label className="text-sm font-medium mb-2 block">
-                        {isKurdish ? "ژمارەی ڕۆژ" : "Days Waiting"}
+                        {pickLang(language, { ku: "ژمارەی ڕۆژ", en: "Days Waiting", ar: "أيام الانتظار", zh: "等待天数" })}
                       </Label>
                       <Select value={daysFilter} onValueChange={setDaysFilter}>
                         <SelectTrigger>
@@ -537,7 +590,7 @@ export default function TrackingAlerts() {
                       disabled={daysStats.critical === 0}
                     >
                       <XCircle className="h-3 w-3" />
-                      {isKurdish ? "فریاکەوتن" : "Critical"} ({daysStats.critical})
+                      {pickLang(language, { ku: "فریاکەوتن", en: "Critical", ar: "حرج", zh: "紧急" })} ({daysStats.critical})
                     </Button>
                     <Button
                       size="sm"
@@ -547,7 +600,7 @@ export default function TrackingAlerts() {
                       disabled={daysStats.urgent === 0}
                     >
                       <AlertCircle className="h-3 w-3" />
-                      {isKurdish ? "گرنگ" : "Urgent"} ({daysStats.urgent})
+                      {pickLang(language, { ku: "گرنگ", en: "Urgent", ar: "عاجل", zh: "加急" })} ({daysStats.urgent})
                     </Button>
                     <Button
                       size="sm"
@@ -557,7 +610,7 @@ export default function TrackingAlerts() {
                       disabled={daysStats.warning === 0}
                     >
                       <AlertTriangle className="h-3 w-3" />
-                      {isKurdish ? "ئاگاداری" : "Warning"} ({daysStats.warning})
+                      {pickLang(language, { ku: "ئاگاداری", en: "Warning", ar: "تحذير", zh: "警告" })} ({daysStats.warning})
                     </Button>
                     <Button
                       size="sm"
@@ -567,7 +620,7 @@ export default function TrackingAlerts() {
                       disabled={daysStats.new === 0}
                     >
                       <Clock className="h-3 w-3" />
-                      {isKurdish ? "نوێ" : "New"} ({daysStats.new})
+                      {pickLang(language, { ku: "نوێ", en: "New", ar: "جديد", zh: "新" })} ({daysStats.new})
                     </Button>
                   </div>
                 </CardContent>
@@ -583,13 +636,15 @@ export default function TrackingAlerts() {
                       </div>
                       <div>
                         <CardTitle className="text-lg">
-                          {isKurdish ? "لیستی پاکەتەکان" : "Package List"}
+                          {pickLang(language, { ku: "لیستی پاکەتەکان", en: "Package List", ar: "قائمة الطرود", zh: "包裹列表" })}
                         </CardTitle>
                         <CardDescription>
-                          {isKurdish 
-                            ? `${filteredOrders.length} پاکەت بێ تراکینگ نەمبەر`
-                            : `${filteredOrders.length} packages without tracking`
-                          }
+                          {pickLang(language, {
+                            ku: `${filteredOrders.length} پاکەت بێ تراکینگ نەمبەر`,
+                            en: `${filteredOrders.length} packages without tracking`,
+                            ar: `${filteredOrders.length} طرد بدون رقم تتبّع`,
+                            zh: `${filteredOrders.length} 个无追踪号的包裹`,
+                          })}
                         </CardDescription>
                       </div>
                     </div>
@@ -600,7 +655,7 @@ export default function TrackingAlerts() {
                       className="gap-2"
                     >
                       <RefreshCw className="h-4 w-4" />
-                      {isKurdish ? "نوێکردنەوە" : "Refresh"}
+                      {pickLang(language, { ku: "نوێکردنەوە", en: "Refresh", ar: "تحديث", zh: "刷新" })}
                     </Button>
                   </div>
                 </CardHeader>
@@ -609,7 +664,7 @@ export default function TrackingAlerts() {
                     <div className="p-8 text-center">
                       <RefreshCw className="h-8 w-8 mx-auto animate-spin text-slate-400" />
                       <p className="mt-2 text-slate-500">
-                        {isKurdish ? "چاوەڕوان بە..." : "Loading..."}
+                        {pickLang(language, { ku: "چاوەڕوان بە...", en: "Loading...", ar: "جارٍ التحميل...", zh: "加载中..." })}
                       </p>
                     </div>
                   ) : filteredOrders.length === 0 ? (
@@ -618,12 +673,12 @@ export default function TrackingAlerts() {
                         <Check className="h-8 w-8 text-green-600" />
                       </div>
                       <p className="text-xl font-bold text-green-700">
-                        {isKurdish ? "هیچ ئەنجامێک نییە" : "No results found"}
+                        {pickLang(language, { ku: "هیچ ئەنجامێک نییە", en: "No results found", ar: "لا توجد نتائج", zh: "未找到结果" })}
                       </p>
                       <p className="text-sm text-slate-500 mt-2">
                         {searchTerm || typeFilter !== "all" || daysFilter !== "all"
-                          ? (isKurdish ? "فلتەرەکان بگۆڕە" : "Try changing filters")
-                          : (isKurdish ? "تەمامی پاکەتەکان تراکینگ نەمبەری تێدایە" : "All packages have tracking numbers")
+                          ? pickLang(language, { ku: "فلتەرەکان بگۆڕە", en: "Try changing filters", ar: "حاول تغيير عوامل التصفية", zh: "尝试更改筛选条件" })
+                          : pickLang(language, { ku: "تەمامی پاکەتەکان تراکینگ نەمبەری تێدایە", en: "All packages have tracking numbers", ar: "جميع الطرود لديها أرقام تتبّع", zh: "所有包裹均已有追踪号" })
                         }
                       </p>
                     </div>
@@ -633,17 +688,20 @@ export default function TrackingAlerts() {
                       {selectedOrders.length > 0 && (
                         <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between gap-3">
                           <span className="text-sm font-medium text-emerald-800">
-                            {isKurdish
-                              ? `${selectedOrders.length} ئۆردەر هەڵبژاردراوە — یەک تراک بۆ هەمووی`
-                              : `${selectedOrders.length} orders selected — assign same tracking to all`}
+                            {pickLang(language, {
+                              ku: `${selectedOrders.length} ئۆردەر هەڵبژاردراوە — یەک تراک بۆ هەمووی`,
+                              en: `${selectedOrders.length} orders selected — assign same tracking to all`,
+                              ar: `تم تحديد ${selectedOrders.length} طلب — تعيين نفس التتبّع للجميع`,
+                              zh: `已选 ${selectedOrders.length} 个订单 — 为全部分配同一追踪号`,
+                            })}
                           </span>
                           <div className="flex gap-2">
                             <Button size="sm" variant="outline" onClick={() => { setSelectedOrders([]); setMultiSelectMode(false); }}>
-                              {isKurdish ? "هەڵوەشاندنەوە" : "Cancel"}
+                              {pickLang(language, { ku: "هەڵوەشاندنەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
                             </Button>
                             <Button size="sm" onClick={handleAddTrackingToSelected} className="gap-1 bg-gradient-to-r from-emerald-500 to-teal-500">
                               <Plus className="h-4 w-4" />
-                              {isKurdish ? "تراک زیاد بکە" : "Add Tracking"}
+                              {pickLang(language, { ku: "تراک زیاد بکە", en: "Add Tracking", ar: "إضافة تتبّع", zh: "添加追踪" })}
                             </Button>
                           </div>
                         </div>
@@ -667,13 +725,13 @@ export default function TrackingAlerts() {
                             />
                           </TableHead>
                           <TableHead className="w-12">#</TableHead>
-                          <TableHead>{isKurdish ? "وێنە" : "Image"}</TableHead>
-                          <TableHead>{isKurdish ? "کۆد" : "Code"}</TableHead>
-                          <TableHead>{isKurdish ? "ناوی ئایتم" : "Item Name"}</TableHead>
-                          <TableHead>{isKurdish ? "جۆر" : "Type"}</TableHead>
-                          <TableHead>{isKurdish ? "بەروار" : "Date"}</TableHead>
-                          <TableHead>{isKurdish ? "چاوەڕوانی" : "Waiting"}</TableHead>
-                          <TableHead className="text-center">{isKurdish ? "کردار" : "Action"}</TableHead>
+                          <TableHead>{pickLang(language, { ku: "وێنە", en: "Image", ar: "الصورة", zh: "图片" })}</TableHead>
+                          <TableHead>{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编码" })}</TableHead>
+                          <TableHead>{pickLang(language, { ku: "ناوی ئایتم", en: "Item Name", ar: "اسم الصنف", zh: "商品名称" })}</TableHead>
+                          <TableHead>{pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</TableHead>
+                          <TableHead>{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</TableHead>
+                          <TableHead>{pickLang(language, { ku: "چاوەڕوانی", en: "Waiting", ar: "الانتظار", zh: "等待" })}</TableHead>
+                          <TableHead className="text-center">{pickLang(language, { ku: "کردار", en: "Action", ar: "إجراء", zh: "操作" })}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -746,7 +804,7 @@ export default function TrackingAlerts() {
                                 className="gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
                               >
                                 <Plus className="h-4 w-4" />
-                                {isKurdish ? "زیادکردن" : "Add"}
+                                {pickLang(language, { ku: "زیادکردن", en: "Add", ar: "إضافة", zh: "添加" })}
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -767,9 +825,9 @@ export default function TrackingAlerts() {
                       <BarChart3 className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <CardTitle>{isKurdish ? "مێژووی تراکینگ" : "Tracking History"}</CardTitle>
+                      <CardTitle>{pickLang(language, { ku: "مێژووی تراکینگ", en: "Tracking History", ar: "سجلّ التتبّع", zh: "追踪历史" })}</CardTitle>
                       <CardDescription>
-                        {isKurdish ? "ئاماری تراکینگە زیادکراوەکان" : "Statistics of added tracking numbers"}
+                        {pickLang(language, { ku: "ئاماری تراکینگە زیادکراوەکان", en: "Statistics of added tracking numbers", ar: "إحصاءات أرقام التتبّع المضافة", zh: "已添加追踪号的统计" })}
                       </CardDescription>
                     </div>
                   </div>
@@ -777,7 +835,7 @@ export default function TrackingAlerts() {
                 <CardContent>
                   <div className="text-center py-12 text-slate-500">
                     <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                    <p>{isKurdish ? "بەزووی دێت..." : "Coming soon..."}</p>
+                    <p>{pickLang(language, { ku: "بەزووی دێت...", en: "Coming soon...", ar: "قريبًا...", zh: "敬请期待..." })}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -791,7 +849,7 @@ export default function TrackingAlerts() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5 text-emerald-600" />
-                {isKurdish ? "زیادکردنی تراکینگ نەمبەر" : "Add Tracking Number(s)"}
+                {pickLang(language, { ku: "زیادکردنی تراکینگ نەمبەر", en: "Add Tracking Number(s)", ar: "إضافة رقم/أرقام التتبّع", zh: "添加追踪号" })}
               </DialogTitle>
               <DialogDescription>
                 {selectedOrder && (
@@ -800,9 +858,12 @@ export default function TrackingAlerts() {
                 {!selectedOrder && selectedOrders.length > 0 && (
                   <div className="space-y-1 mt-1">
                     <span className="block text-emerald-700 font-semibold text-sm">
-                      {isKurdish
-                        ? `🔗 یەک تراک بۆ ${selectedOrders.length} ئۆردەر (هەمان کارتۆن)`
-                        : `🔗 Same tracking for ${selectedOrders.length} orders (same carton)`}
+                      {pickLang(language, {
+                        ku: `🔗 یەک تراک بۆ ${selectedOrders.length} ئۆردەر (هەمان کارتۆن)`,
+                        en: `🔗 Same tracking for ${selectedOrders.length} orders (same carton)`,
+                        ar: `🔗 نفس التتبّع لـ ${selectedOrders.length} طلب (نفس الكرتون)`,
+                        zh: `🔗 为 ${selectedOrders.length} 个订单使用同一追踪号（同一纸箱）`,
+                      })}
                     </span>
                     {selectedOrders.map((o) => (
                       <span key={o.id} className="block text-xs text-muted-foreground">
@@ -813,8 +874,8 @@ export default function TrackingAlerts() {
                 )}
                 <span className="block mt-1 text-muted-foreground text-xs">
                   {!selectedOrder && selectedOrders.length > 0
-                    ? (isKurdish ? "ئەم تراکینگە بۆ هەموو ئۆردەرە هەڵبژاردراوەکان زیاد دەکرێت" : "This tracking will be added to all selected orders")
-                    : (isKurdish ? "دەتوانیت چەند تراکینگ زیاد بکەیت (وەک کارتۆنە جیاکان)" : "You can add multiple trackings (e.g. different cartons)")
+                    ? pickLang(language, { ku: "ئەم تراکینگە بۆ هەموو ئۆردەرە هەڵبژاردراوەکان زیاد دەکرێت", en: "This tracking will be added to all selected orders", ar: "سيُضاف هذا التتبّع إلى جميع الطلبات المحددة", zh: "此追踪号将添加到所有已选订单" })
+                    : pickLang(language, { ku: "دەتوانیت چەند تراکینگ زیاد بکەیت (وەک کارتۆنە جیاکان)", en: "You can add multiple trackings (e.g. different cartons)", ar: "يمكنك إضافة عدة أرقام تتبّع (مثل كراتين مختلفة)", zh: "您可以添加多个追踪号（例如不同纸箱）" })
                   }
                 </span>
               </DialogDescription>
@@ -824,12 +885,22 @@ export default function TrackingAlerts() {
                 <div key={index} className="flex gap-2 items-center">
                   <div className="flex-1 space-y-1">
                     <Label className="sr-only">
-                      {isKurdish ? `تراکینگ ${index + 1}` : `Tracking ${index + 1}`}
+                      {pickLang(language, {
+                        ku: `تراکینگ ${index + 1}`,
+                        en: `Tracking ${index + 1}`,
+                        ar: `التتبّع ${index + 1}`,
+                        zh: `追踪 ${index + 1}`,
+                      })}
                     </Label>
                     <Input
                       value={value}
                       onChange={(e) => setTrackingAt(index, e.target.value)}
-                      placeholder={isKurdish ? `تراکینگ نەمبەر ${index + 1}...` : `Tracking number ${index + 1}...`}
+                      placeholder={pickLang(language, {
+                        ku: `تراکینگ نەمبەر ${index + 1}...`,
+                        en: `Tracking number ${index + 1}...`,
+                        ar: `رقم التتبّع ${index + 1}...`,
+                        zh: `追踪号 ${index + 1}...`,
+                      })}
                       className="font-mono"
                     />
                   </div>
@@ -840,7 +911,7 @@ export default function TrackingAlerts() {
                       size="icon"
                       className="shrink-0 text-muted-foreground hover:text-destructive"
                       onClick={() => removeTrackingField(index)}
-                      title={isKurdish ? "سڕینەوە" : "Remove"}
+                      title={pickLang(language, { ku: "سڕینەوە", en: "Remove", ar: "إزالة", zh: "移除" })}
                     >
                       <XCircle className="h-4 w-4" />
                     </Button>
@@ -855,12 +926,12 @@ export default function TrackingAlerts() {
                 onClick={addTrackingField}
               >
                 <Plus className="h-4 w-4" />
-                {isKurdish ? "تراکینگ زیاد بکە" : "Add another tracking"}
+                {pickLang(language, { ku: "تراکینگ زیاد بکە", en: "Add another tracking", ar: "إضافة تتبّع آخر", zh: "添加另一个追踪号" })}
               </Button>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setTrackingDialogOpen(false)}>
-                {isKurdish ? "پاشگەزبوونەوە" : "Cancel"}
+                {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
               </Button>
               <Button 
                 onClick={handleSaveTracking}
@@ -872,7 +943,7 @@ export default function TrackingAlerts() {
                 ) : (
                   <Check className="h-4 w-4" />
                 )}
-                {isKurdish ? "پاشەکەوتکردن" : "Save"}
+                {pickLang(language, { ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" })}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { pickLang } from "@/lib/lang";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -284,10 +285,10 @@ export default function PortalFullPackage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">
-                  {isKurdish ? "ئۆردەرەکانم" : language === "ar" ? "طلباتي" : "My Orders"}
+                  {pickLang(language, { ku: "ئۆردەرەکانم", en: "My Orders", ar: "طلباتي", zh: "我的订单" })}
                 </h1>
                 <p className="text-white/70 text-sm">
-                  {isKurdish ? "بەڕێوەبردنی ئۆردەرەکانت" : language === "ar" ? "إدارة طلباتك" : "Manage your orders"}
+                  {pickLang(language, { ku: "بەڕێوەبردنی ئۆردەرەکانت", en: "Manage your orders", ar: "إدارة طلباتك", zh: "管理您的订单" })}
                 </p>
               </div>
             </div>
@@ -297,7 +298,7 @@ export default function PortalFullPackage() {
                 className="bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm rounded-xl shadow-lg transition-all hover:scale-105"
               >
                 <Plus className="w-4 h-4 ms-1" />
-{isKurdish ? "داواکاری نوێ" : language === "ar" ? "طلب جديد" : "New Order"}
+{pickLang(language, { ku: "داواکاری نوێ", en: "New Order", ar: "طلب جديد", zh: "新订单" })}
               </Button>
             </Link>
           </div>
@@ -313,7 +314,7 @@ export default function PortalFullPackage() {
               </div>
               <div className="pt-6">
                 <p className="text-4xl font-bold text-white">{stats.total}</p>
-                <p className="text-white/70 text-sm mt-1">{isKurdish ? "کۆی گشتی" : language === "ar" ? "الإجمالي" : "Total"}</p>
+                <p className="text-white/70 text-sm mt-1">{pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "总计" })}</p>
               </div>
             </div>
             
@@ -326,7 +327,7 @@ export default function PortalFullPackage() {
               </div>
               <div className="pt-6">
                 <p className="text-4xl font-bold text-amber-100">{stats.pending}</p>
-                <p className="text-amber-200/70 text-sm mt-1">{isKurdish ? "چاوەڕوان" : language === "ar" ? "قيد الانتظار" : "Pending"}</p>
+                <p className="text-amber-200/70 text-sm mt-1">{pickLang(language, { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" })}</p>
               </div>
             </div>
             
@@ -339,7 +340,7 @@ export default function PortalFullPackage() {
               </div>
               <div className="pt-6">
                 <p className="text-4xl font-bold text-emerald-100">{stats.delivered}</p>
-                <p className="text-emerald-200/70 text-sm mt-1">{isKurdish ? "گەیەندراو" : language === "ar" ? "تم التسليم" : "Delivered"}</p>
+                <p className="text-emerald-200/70 text-sm mt-1">{pickLang(language, { ku: "گەیەندراو", en: "Delivered", ar: "تم التسليم", zh: "已送达" })}</p>
               </div>
             </div>
           </div>
@@ -365,7 +366,7 @@ export default function PortalFullPackage() {
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
             )}
           >
-{isKurdish ? "هەموو" : language === "ar" ? "الكل" : "All"}
+{pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}
           </button>
           <button
             onClick={() => setActiveTab("full_package")}
@@ -376,7 +377,7 @@ export default function PortalFullPackage() {
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
             )}
           >
-{isKurdish ? "پاکێجی تەواو" : language === "ar" ? "الباقة الكاملة" : "Full Package"}
+{pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الباقة الكاملة", zh: "全包套餐" })}
           </button>
           <button
             onClick={() => setActiveTab("commission")}
@@ -387,7 +388,7 @@ export default function PortalFullPackage() {
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
             )}
           >
-{isKurdish ? "عمولە" : language === "ar" ? "عمولة" : "Commission"}
+{pickLang(language, { ku: "عمولە", en: "Commission", ar: "عمولة", zh: "代购佣金" })}
           </button>
         </div>
         
@@ -400,7 +401,7 @@ export default function PortalFullPackage() {
             )} />
             <input
               type="text"
-              placeholder={isKurdish ? "گەڕان بە ناوی کاڵا..." : language === "ar" ? "البحث باسم المنتج..." : "Search by product name..."}
+              placeholder={pickLang(language, { ku: "گەڕان بە ناوی کاڵا...", en: "Search by product name...", ar: "البحث باسم المنتج...", zh: "按产品名称搜索..." })}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn(
@@ -452,7 +453,7 @@ export default function PortalFullPackage() {
                     isDark ? "text-slate-400" : "text-slate-500"
                   )}>
                     <Filter className="w-3.5 h-3.5" />
-                    {isKurdish ? "بارودۆخ" : language === "ar" ? "الحالة" : "Status"}
+                    {pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}
                   </p>
                   <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                     {[
@@ -487,7 +488,7 @@ export default function PortalFullPackage() {
                     isDark ? "text-slate-400" : "text-slate-500"
                   )}>
                     <ArrowUpDown className="w-3.5 h-3.5" />
-                    {isKurdish ? "ڕیزکردن" : language === "ar" ? "الترتيب" : "Sort"}
+                    {pickLang(language, { ku: "ڕیزکردن", en: "Sort", ar: "الترتيب", zh: "排序" })}
                   </p>
                   <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                     {[
@@ -526,7 +527,7 @@ export default function PortalFullPackage() {
                     )}
                   >
                     <XCircle className="w-4 h-4" />
-                    {isKurdish ? "سڕینەوەی فلتەرەکان" : language === "ar" ? "مسح الفلاتر" : "Clear Filters"}
+                    {pickLang(language, { ku: "سڕینەوەی فلتەرەکان", en: "Clear Filters", ar: "مسح الفلاتر", zh: "清除筛选" })}
                   </button>
                 )}
               </div>
@@ -540,7 +541,7 @@ export default function PortalFullPackage() {
             "text-sm mb-3",
             isDark ? "text-slate-400" : "text-slate-500"
           )}>
-            {filteredOrders.length} {isKurdish ? "ئەنجام" : language === "ar" ? "نتيجة" : "results"}
+            {filteredOrders.length} {pickLang(language, { ku: "ئەنجام", en: "results", ar: "نتيجة", zh: "条结果" })}
           </p>
         )}
 
@@ -564,18 +565,18 @@ export default function PortalFullPackage() {
               "text-xl font-bold mb-2",
               isDark ? "text-white" : "text-slate-800"
             )}>
-{isKurdish ? "هیچ داواکارییەک نییە" : language === "ar" ? "لا توجد طلبات بعد" : "No orders yet"}
+{pickLang(language, { ku: "هیچ داواکارییەک نییە", en: "No orders yet", ar: "لا توجد طلبات بعد", zh: "暂无订单" })}
             </h3>
             <p className={cn(
               "mb-6",
               isDark ? "text-slate-400" : "text-slate-500"
             )}>
-{isKurdish ? "دەستپێبکە بە داواکاری نوێ" : language === "ar" ? "ابدأ بإنشاء طلب جديد" : "Start by creating a new request"}
+{pickLang(language, { ku: "دەستپێبکە بە داواکاری نوێ", en: "Start by creating a new request", ar: "ابدأ بإنشاء طلب جديد", zh: "从创建新订单开始" })}
             </p>
             <Link href="/portal/create-full-package">
               <Button className="bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl px-6 py-3 shadow-lg hover:shadow-xl transition-all hover:scale-105">
                 <Plus className="w-5 h-5 ms-2" />
-{isKurdish ? "داواکاری نوێ" : language === "ar" ? "طلب جديد" : "New Order"}
+{pickLang(language, { ku: "داواکاری نوێ", en: "New Order", ar: "طلب جديد", zh: "新订单" })}
               </Button>
             </Link>
           </div>
@@ -853,7 +854,7 @@ export default function PortalFullPackage() {
                   )}>
                     <div className="flex items-center justify-between mb-3">
                       <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-{isKurdish ? "نرخی کڕین" : language === "ar" ? "سعر الشراء" : "Purchase Price"}
+{pickLang(language, { ku: "نرخی کڕین", en: "Purchase Price", ar: "سعر الشراء", zh: "采购价格" })}
                       </span>
                       <span className={cn(
                         "text-xl font-bold",
@@ -867,7 +868,7 @@ export default function PortalFullPackage() {
                     </div>
                     <div className="flex items-center justify-between text-sm mt-1">
                       <span className={isDark ? "text-slate-500" : "text-slate-400"}>
-{isKurdish ? "ژمارە" : language === "ar" ? "الكمية" : "Quantity"}
+{pickLang(language, { ku: "ژمارە", en: "Quantity", ar: "الكمية", zh: "数量" })}
                       </span>
                       <span className={isDark ? "text-slate-300" : "text-slate-600"}>
                         {selectedOrder.quantity}
@@ -888,7 +889,7 @@ export default function PortalFullPackage() {
                             isDark ? "text-blue-400" : "text-blue-500"
                           )} />
                           <span className={isDark ? "text-blue-300" : "text-blue-600"}>
-{isKurdish ? "نرخی گەیاندن" : language === "ar" ? "تكلفة الشحن" : "Shipping Cost"}
+{pickLang(language, { ku: "نرخی گەیاندن", en: "Shipping Cost", ar: "تكلفة الشحن", zh: "运费" })}
                           </span>
                         </div>
                         <span className={cn(
@@ -918,18 +919,18 @@ export default function PortalFullPackage() {
                         <div className="flex items-center gap-2 mb-1">
                           <DollarSign className={cn("w-4 h-4", isDark ? "text-emerald-400" : "text-emerald-600")} />
                           <span className={cn("font-semibold", isDark ? "text-emerald-300" : "text-emerald-700")}>
-                            {isKurdish ? "پوختەی پارەدان" : language === "ar" ? "ملخص الدفع" : "Payment Summary"}
+                            {pickLang(language, { ku: "پوختەی پارەدان", en: "Payment Summary", ar: "ملخص الدفع", zh: "付款摘要" })}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                           <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-                            {isKurdish ? "کۆی نرخ" : language === "ar" ? "السعر الإجمالي" : "Total"}
+                            {pickLang(language, { ku: "کۆی نرخ", en: "Total", ar: "السعر الإجمالي", zh: "总价" })}
                           </span>
                           <span className="font-mono font-semibold">{formatPrice(totalPrice)}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                           <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>
-                            {isKurdish ? "پێشەکی دراو" : language === "ar" ? "مدفوع مقدماً" : "Advance Paid"}
+                            {pickLang(language, { ku: "پێشەکی دراو", en: "Advance Paid", ar: "مدفوع مقدماً", zh: "已付预付款" })}
                           </span>
                           <span className={cn("font-mono font-semibold", isDark ? "text-emerald-400" : "text-emerald-600")}>-{formatPrice(advance)}</span>
                         </div>
@@ -937,12 +938,12 @@ export default function PortalFullPackage() {
                         <div className="flex items-center justify-between">
                           <span className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
                             {isFullyPaid
-                              ? (isKurdish ? "ڕەوش" : language === "ar" ? "الحالة" : "Status")
-                              : (isKurdish ? "ماوە بۆ پارەدان" : language === "ar" ? "المتبقي" : "Remaining")}
+                              ? pickLang(language, { ku: "ڕەوش", en: "Status", ar: "الحالة", zh: "状态" })
+                              : pickLang(language, { ku: "ماوە بۆ پارەدان", en: "Remaining", ar: "المتبقي", zh: "剩余应付" })}
                           </span>
                           {isFullyPaid ? (
                             <span className={cn("font-bold", isDark ? "text-emerald-300" : "text-emerald-700")}>
-                              ✓ {isKurdish ? "تەواو پارەدراوە" : language === "ar" ? "مدفوع بالكامل" : "Fully Paid"}
+                              ✓ {pickLang(language, { ku: "تەواو پارەدراوە", en: "Fully Paid", ar: "مدفوع بالكامل", zh: "已全额付款" })}
                             </span>
                           ) : (
                             <span className={cn("font-mono font-bold text-lg", isDark ? "text-amber-300" : "text-amber-700")}>
@@ -966,7 +967,7 @@ export default function PortalFullPackage() {
                           isDark ? "text-slate-400" : "text-slate-500"
                         )} />
                         <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-{isKurdish ? "تراکینگ نەمبەر" : language === "ar" ? "رقم التتبع" : "Tracking Number"}
+{pickLang(language, { ku: "تراکینگ نەمبەر", en: "Tracking Number", ar: "رقم التتبع", zh: "物流单号" })}
                         </span>
                       </div>
                       <p className={cn(
@@ -997,7 +998,7 @@ export default function PortalFullPackage() {
                           isDark ? "text-slate-400" : "text-slate-500"
                         )} />
                         <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-{isKurdish ? "لینکی کاڵا" : language === "ar" ? "رابط المنتج" : "Product Link"}
+{pickLang(language, { ku: "لینکی کاڵا", en: "Product Link", ar: "رابط المنتج", zh: "产品链接" })}
                         </span>
                       </div>
                       <ChevronRight className={cn(
@@ -1018,7 +1019,7 @@ export default function PortalFullPackage() {
                         isDark ? "text-slate-400" : "text-slate-500"
                       )} />
                       <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-{isKurdish ? "بەرواری دروستکردن" : language === "ar" ? "تاريخ الإنشاء" : "Created Date"}
+{pickLang(language, { ku: "بەرواری دروستکردن", en: "Created Date", ar: "تاريخ الإنشاء", zh: "创建日期" })}
                       </span>
                     </div>
                     <p className={cn(
@@ -1045,7 +1046,7 @@ export default function PortalFullPackage() {
                           isDark ? "text-slate-400" : "text-slate-500"
                         )} />
                         <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-{isKurdish ? "تێبینی" : language === "ar" ? "ملاحظات" : "Notes"}
+{pickLang(language, { ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" })}
                         </span>
                       </div>
                       <p className={cn(
@@ -1066,7 +1067,7 @@ export default function PortalFullPackage() {
                     "bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:opacity-90"
                   )}
                 >
-{isKurdish ? "داخستن" : language === "ar" ? "إغلاق" : "Close"}
+{pickLang(language, { ku: "داخستن", en: "Close", ar: "إغلاق", zh: "关闭" })}
                 </Button>
               </div>
             </>

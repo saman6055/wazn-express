@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/table";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 
 // Month names
@@ -191,10 +192,10 @@ export default function MonthlyProfitReport() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">
-              {isKurdish ? "ڕاپۆرتی قازانجی مانگانە" : "Monthly Profit Report"}
+              {pickLang(language, { ku: "ڕاپۆرتی قازانجی مانگانە", en: "Monthly Profit Report", ar: "تقرير الأرباح الشهري", zh: "月度利润报告" })}
             </h1>
             <p className="text-muted-foreground">
-              {isKurdish ? "قازانج بەپێی مانگ و جۆری ئۆردەر" : "Profit by month and order type"}
+              {pickLang(language, { ku: "قازانج بەپێی مانگ و جۆری ئۆردەر", en: "Profit by month and order type", ar: "الأرباح حسب الشهر ونوع الطلب", zh: "按月份和订单类型划分的利润" })}
             </p>
           </div>
           
@@ -239,7 +240,7 @@ export default function MonthlyProfitReport() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm mb-1">
-                    {isKurdish ? `قازانجی ${selectedYear}` : `${selectedYear} Profit`}
+                    {pickLang(language, { ku: `قازانجی ${selectedYear}`, en: `${selectedYear} Profit`, ar: `أرباح ${selectedYear}`, zh: `${selectedYear} 利润` })}
                   </p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 bg-blue-400" />
@@ -247,7 +248,7 @@ export default function MonthlyProfitReport() {
                     <p className="text-3xl font-bold">${yearlyTotals.total.profit.toLocaleString()}</p>
                   )}
                   <p className="text-blue-200 text-xs mt-1">
-                    {yearlyTotals.total.count} {isKurdish ? "ئۆردەر" : "orders"}
+                    {yearlyTotals.total.count} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلب", zh: "订单" })}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -263,7 +264,7 @@ export default function MonthlyProfitReport() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">
-                    {isKurdish ? "باشترین مانگ" : "Best Month"}
+                    {pickLang(language, { ku: "باشترین مانگ", en: "Best Month", ar: "أفضل شهر", zh: "最佳月份" })}
                   </p>
                   {isLoading ? (
                     <Skeleton className="h-6 w-20" />
@@ -289,7 +290,7 @@ export default function MonthlyProfitReport() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">
-                    {isKurdish ? "خراپترین مانگ" : "Worst Month"}
+                    {pickLang(language, { ku: "خراپترین مانگ", en: "Worst Month", ar: "أسوأ شهر", zh: "最差月份" })}
                   </p>
                   {isLoading ? (
                     <Skeleton className="h-6 w-20" />
@@ -315,7 +316,7 @@ export default function MonthlyProfitReport() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">
-                    {isKurdish ? "تێکڕای مانگانە" : "Monthly Average"}
+                    {pickLang(language, { ku: "تێکڕای مانگانە", en: "Monthly Average", ar: "المتوسط الشهري", zh: "月平均" })}
                   </p>
                   {isLoading ? (
                     <Skeleton className="h-6 w-20" />
@@ -325,7 +326,7 @@ export default function MonthlyProfitReport() {
                         ${(yearlyTotals.total.profit / 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {(yearlyTotals.total.count / 12).toFixed(1)} {isKurdish ? "ئۆردەر/مانگ" : "orders/mo"}
+                        {(yearlyTotals.total.count / 12).toFixed(1)} {pickLang(language, { ku: "ئۆردەر/مانگ", en: "orders/mo", ar: "طلب/شهر", zh: "订单/月" })}
                       </p>
                     </>
                   )}
@@ -353,21 +354,21 @@ export default function MonthlyProfitReport() {
                     </div>
                     <div>
                       <p className="font-semibold">{isKurdish ? config.labelKu : config.label}</p>
-                      <p className="text-xs text-muted-foreground">{data.count} {isKurdish ? "ئۆردەر" : "orders"}</p>
+                      <p className="text-xs text-muted-foreground">{data.count} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلب", zh: "订单" })}</p>
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{isKurdish ? "داهات" : "Revenue"}</span>
+                      <span className="text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</span>
                       <span className="font-medium">${data.revenue.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{isKurdish ? "تێچوو" : "Cost"}</span>
+                      <span className="text-muted-foreground">{pickLang(language, { ku: "تێچوو", en: "Cost", ar: "التكلفة", zh: "成本" })}</span>
                       <span className="font-medium">${data.cost.toLocaleString()}</span>
                     </div>
                     <div className="border-t pt-2 flex justify-between text-sm">
-                      <span className="font-medium">{isKurdish ? "قازانج" : "Profit"}</span>
+                      <span className="font-medium">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</span>
                       <span className={cn("font-bold", config.textColor)}>${data.profit.toLocaleString()}</span>
                     </div>
                   </div>
@@ -382,10 +383,10 @@ export default function MonthlyProfitReport() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              {isKurdish ? "وردەکاری مانگانە" : "Monthly Details"}
+              {pickLang(language, { ku: "وردەکاری مانگانە", en: "Monthly Details", ar: "التفاصيل الشهرية", zh: "月度明细" })}
             </CardTitle>
             <CardDescription>
-              {isKurdish ? `قازانج بەپێی مانگ بۆ ساڵی ${selectedYear}` : `Profit breakdown by month for ${selectedYear}`}
+              {pickLang(language, { ku: `قازانج بەپێی مانگ بۆ ساڵی ${selectedYear}`, en: `Profit breakdown by month for ${selectedYear}`, ar: `تفصيل الأرباح حسب الشهر لعام ${selectedYear}`, zh: `${selectedYear} 年按月利润明细` })}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -400,13 +401,13 @@ export default function MonthlyProfitReport() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[150px]">{isKurdish ? "مانگ" : "Month"}</TableHead>
-                      <TableHead className="text-center">{isKurdish ? "ئۆردەر" : "Orders"}</TableHead>
-                      <TableHead className="text-right text-emerald-600">{isKurdish ? "پاکێجی تەواو" : "Full Pack"}</TableHead>
+                      <TableHead className="w-[150px]">{pickLang(language, { ku: "مانگ", en: "Month", ar: "الشهر", zh: "月份" })}</TableHead>
+                      <TableHead className="text-center">{pickLang(language, { ku: "ئۆردەر", en: "Orders", ar: "الطلبات", zh: "订单" })}</TableHead>
+                      <TableHead className="text-right text-emerald-600">{pickLang(language, { ku: "پاکێجی تەواو", en: "Full Pack", ar: "الباقة الكاملة", zh: "全包" })}</TableHead>
 
-                      <TableHead className="text-right text-amber-600">{isKurdish ? "عمولە" : "Commission"}</TableHead>
-                      <TableHead className="text-right font-bold">{isKurdish ? "کۆی گشتی" : "Total"}</TableHead>
-                      <TableHead className="w-[120px]">{isKurdish ? "دابەشبوون" : "Distribution"}</TableHead>
+                      <TableHead className="text-right text-amber-600">{pickLang(language, { ku: "عمولە", en: "Commission", ar: "العمولة", zh: "佣金" })}</TableHead>
+                      <TableHead className="text-right font-bold">{pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "合计" })}</TableHead>
+                      <TableHead className="w-[120px]">{pickLang(language, { ku: "دابەشبوون", en: "Distribution", ar: "التوزيع", zh: "分布" })}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -443,7 +444,7 @@ export default function MonthlyProfitReport() {
                     
                     {/* Totals Row */}
                     <TableRow className="bg-muted/50 font-bold">
-                      <TableCell>{isKurdish ? "کۆی گشتی" : "Total"}</TableCell>
+                      <TableCell>{pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "合计" })}</TableCell>
                       <TableCell className="text-center">
                         <Badge>{yearlyTotals.total.count}</Badge>
                       </TableCell>
@@ -475,12 +476,12 @@ export default function MonthlyProfitReport() {
         <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-emerald-500" />
-            <span>{isKurdish ? "پاکێجی تەواو" : "Full Package"}</span>
+            <span>{pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الباقة الكاملة", zh: "全包" })}</span>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-amber-500" />
-            <span>{isKurdish ? "عمولە" : "Commission"}</span>
+            <span>{pickLang(language, { ku: "عمولە", en: "Commission", ar: "العمولة", zh: "佣金" })}</span>
           </div>
         </div>
       </div>

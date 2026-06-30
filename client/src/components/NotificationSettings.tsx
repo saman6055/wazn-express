@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { pickLang } from "@/lib/lang";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -60,14 +61,14 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
       setBrowserPermission(Notification.permission);
       
       if (granted) {
-        toast.success(isKurdish ? "ئاگادارییەکان چالاککران!" : "Notifications enabled!");
+        toast.success(pickLang(language, { ku: "ئاگادارییەکان چالاککران!", en: "Notifications enabled!", ar: "تم تفعيل الإشعارات!", zh: "通知已启用！" }));
         // Show a test notification
-        showNotification('new_message', isKurdish ? "ئاگادارییەکان کاردەکەن!" : "Notifications are working!", { isKurdish });
+        showNotification('new_message', pickLang(language, { ku: "ئاگادارییەکان کاردەکەن!", en: "Notifications are working!", ar: "الإشعارات تعمل!", zh: "通知功能正常！" }), { isKurdish });
       } else {
-        toast.error(isKurdish ? "ئاگادارییەکان بلۆککراون" : "Notifications were blocked");
+        toast.error(pickLang(language, { ku: "ئاگادارییەکان بلۆککراون", en: "Notifications were blocked", ar: "تم حظر الإشعارات", zh: "通知已被阻止" }));
       }
     } catch (error) {
-      toast.error(isKurdish ? "هەڵەیەک ڕوویدا" : "An error occurred");
+      toast.error(pickLang(language, { ku: "هەڵەیەک ڕوویدا", en: "An error occurred", ar: "حدث خطأ", zh: "发生错误" }));
     }
     setIsRequesting(false);
   };
@@ -78,9 +79,9 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
     setNotificationPreferences(updated);
     
     if (key === 'enabled' && value) {
-      toast.success(isKurdish ? "ئاگادارییەکان چالاککران" : "Notifications enabled");
+      toast.success(pickLang(language, { ku: "ئاگادارییەکان چالاککران", en: "Notifications enabled", ar: "تم تفعيل الإشعارات", zh: "通知已启用" }));
     } else if (key === 'enabled' && !value) {
-      toast.info(isKurdish ? "ئاگادارییەکان ناچالاککران" : "Notifications disabled");
+      toast.info(pickLang(language, { ku: "ئاگادارییەکان ناچالاککران", en: "Notifications disabled", ar: "تم تعطيل الإشعارات", zh: "通知已禁用" }));
     }
   };
   
@@ -88,32 +89,32 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
     {
       key: 'requestUpdates' as const,
       icon: Package,
-      label: isKurdish ? "نوێکاری داواکارییەکان" : "Request Updates",
-      description: isKurdish ? "ئاگاداری کاتێک دۆخی داواکاری دەگۆڕێت" : "Get notified when request status changes",
+      label: pickLang(language, { ku: "نوێکاری داواکارییەکان", en: "Request Updates", ar: "تحديثات الطلبات", zh: "请求更新" }),
+      description: pickLang(language, { ku: "ئاگاداری کاتێک دۆخی داواکاری دەگۆڕێت", en: "Get notified when request status changes", ar: "احصل على إشعار عند تغيّر حالة الطلب", zh: "请求状态变更时收到通知" }),
       color: "text-purple-500",
       bgColor: "bg-purple-500/10"
     },
     {
       key: 'paymentUpdates' as const,
       icon: CreditCard,
-      label: isKurdish ? "نوێکاری پارەدان" : "Payment Updates",
-      description: isKurdish ? "ئاگاداری پارەدان و گواستنەوەی پارە" : "Get notified about payments and transfers",
+      label: pickLang(language, { ku: "نوێکاری پارەدان", en: "Payment Updates", ar: "تحديثات الدفع", zh: "付款更新" }),
+      description: pickLang(language, { ku: "ئاگاداری پارەدان و گواستنەوەی پارە", en: "Get notified about payments and transfers", ar: "احصل على إشعار بشأن المدفوعات والتحويلات", zh: "收到付款和转账通知" }),
       color: "text-emerald-500",
       bgColor: "bg-emerald-500/10"
     },
     {
       key: 'messages' as const,
       icon: MessageCircle,
-      label: isKurdish ? "نامەکان" : "Messages",
-      description: isKurdish ? "ئاگاداری نامەی نوێ" : "Get notified about new messages",
+      label: pickLang(language, { ku: "نامەکان", en: "Messages", ar: "الرسائل", zh: "消息" }),
+      description: pickLang(language, { ku: "ئاگاداری نامەی نوێ", en: "Get notified about new messages", ar: "احصل على إشعار بالرسائل الجديدة", zh: "收到新消息通知" }),
       color: "text-blue-500",
       bgColor: "bg-blue-500/10"
     },
     {
       key: 'sound' as const,
       icon: preferences.sound ? Volume2 : VolumeX,
-      label: isKurdish ? "دەنگی ئاگاداری" : "Notification Sound",
-      description: isKurdish ? "لێدانی دەنگ کاتێک ئاگاداری دێت" : "Play sound when notification arrives",
+      label: pickLang(language, { ku: "دەنگی ئاگاداری", en: "Notification Sound", ar: "صوت الإشعار", zh: "通知声音" }),
+      description: pickLang(language, { ku: "لێدانی دەنگ کاتێک ئاگاداری دێت", en: "Play sound when notification arrives", ar: "تشغيل صوت عند وصول إشعار", zh: "通知到达时播放声音" }),
       color: "text-amber-500",
       bgColor: "bg-amber-500/10"
     }
@@ -147,12 +148,10 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
               <BellRing className="w-8 h-8 text-white" />
             </motion.div>
             <DialogTitle className="text-xl font-bold text-white mb-2">
-              {isKurdish ? "ڕێکخستنی ئاگادارییەکان" : "Notification Settings"}
+              {pickLang(language, { ku: "ڕێکخستنی ئاگادارییەکان", en: "Notification Settings", ar: "إعدادات الإشعارات", zh: "通知设置" })}
             </DialogTitle>
             <DialogDescription className="text-white/70">
-              {isKurdish 
-                ? "ڕێکخستنی ئاگادارییەکان بۆ نوێکاری داواکارییەکانت" 
-                : "Configure notifications for your request updates"}
+              {pickLang(language, { ku: "ڕێکخستنی ئاگادارییەکان بۆ نوێکاری داواکارییەکانت", en: "Configure notifications for your request updates", ar: "اضبط الإشعارات الخاصة بتحديثات طلباتك", zh: "为您的请求更新配置通知" })}
             </DialogDescription>
           </div>
         </div>
@@ -173,7 +172,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                     "font-medium text-sm",
                     isDark ? "text-amber-400" : "text-amber-800"
                   )}>
-                    {isKurdish ? "ئەم براوزەرە پشتگیری ئاگاداری ناکات" : "This browser doesn't support notifications"}
+                    {pickLang(language, { ku: "ئەم براوزەرە پشتگیری ئاگاداری ناکات", en: "This browser doesn't support notifications", ar: "هذا المتصفح لا يدعم الإشعارات", zh: "此浏览器不支持通知" })}
                   </p>
                 </div>
               </CardContent>
@@ -192,15 +191,13 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                     "font-medium text-sm",
                     isDark ? "text-red-400" : "text-red-800"
                   )}>
-                    {isKurdish ? "ئاگادارییەکان بلۆککراون" : "Notifications are blocked"}
+                    {pickLang(language, { ku: "ئاگادارییەکان بلۆککراون", en: "Notifications are blocked", ar: "تم حظر الإشعارات", zh: "通知已被阻止" })}
                   </p>
                   <p className={cn(
                     "text-xs mt-1",
                     isDark ? "text-red-400/70" : "text-red-600"
                   )}>
-                    {isKurdish 
-                      ? "تکایە لە ڕێکخستنەکانی براوزەر ڕێگەی پێبدە" 
-                      : "Please enable in browser settings"}
+                    {pickLang(language, { ku: "تکایە لە ڕێکخستنەکانی براوزەر ڕێگەی پێبدە", en: "Please enable in browser settings", ar: "يرجى التفعيل من إعدادات المتصفح", zh: "请在浏览器设置中启用" })}
                   </p>
                 </div>
               </CardContent>
@@ -220,15 +217,13 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                       "font-medium text-sm",
                       isDark ? "text-purple-400" : "text-purple-800"
                     )}>
-                      {isKurdish ? "ئاگادارییەکان چالاک نییە" : "Notifications not enabled"}
+                      {pickLang(language, { ku: "ئاگادارییەکان چالاک نییە", en: "Notifications not enabled", ar: "الإشعارات غير مفعّلة", zh: "通知未启用" })}
                     </p>
                     <p className={cn(
                       "text-xs mt-1",
                       isDark ? "text-purple-400/70" : "text-purple-600"
                     )}>
-                      {isKurdish 
-                        ? "ڕێگەی پێبدە بۆ وەرگرتنی نوێکارییەکان" 
-                        : "Enable to receive updates"}
+                      {pickLang(language, { ku: "ڕێگەی پێبدە بۆ وەرگرتنی نوێکارییەکان", en: "Enable to receive updates", ar: "فعّل لتلقّي التحديثات", zh: "启用以接收更新" })}
                     </p>
                   </div>
                 </div>
@@ -247,7 +242,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                   ) : (
                     <Bell className="w-4 h-4 me-2" />
                   )}
-                  {isKurdish ? "چالاککردنی ئاگادارییەکان" : "Enable Notifications"}
+                  {pickLang(language, { ku: "چالاککردنی ئاگادارییەکان", en: "Enable Notifications", ar: "تفعيل الإشعارات", zh: "启用通知" })}
                 </Button>
               </CardContent>
             </Card>
@@ -265,7 +260,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                     "font-medium text-sm",
                     isDark ? "text-emerald-400" : "text-emerald-800"
                   )}>
-                    {isKurdish ? "ئاگادارییەکان چالاکن" : "Notifications are enabled"}
+                    {pickLang(language, { ku: "ئاگادارییەکان چالاکن", en: "Notifications are enabled", ar: "الإشعارات مفعّلة", zh: "通知已启用" })}
                   </p>
                 </div>
                 <Switch
