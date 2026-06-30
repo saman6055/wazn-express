@@ -393,6 +393,11 @@ export const dashboardRouter = router({
         const days = input?.days || 7;
         return cacheGetOrSet(`dashboard:newCustomers:${days}`, CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardNewCustomers(days));
       }),
+
+    // Weekly wins / records to celebrate (cached 30s)
+    weeklyHighlights: staffProcedure.query(async () => {
+      return cacheGetOrSet("dashboard:weeklyHighlights", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getWeeklyHighlights());
+    }),
     
     // Export dashboard as PDF
     exportPDF: staffProcedure.mutation(async () => {

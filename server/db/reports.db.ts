@@ -1034,6 +1034,115 @@ export async function getDashboardNewCustomers(days: number = 7): Promise<number
   }
 }
 
+// Positive counterpart to the alerts: this-week wins / records to celebrate on
+// the dashboard. Each block is isolated in its own try/catch so one failing
+// metric never blanks the whole section.
+export async function getWeeklyHighlights(): Promise<{
+  profit: { thisWeekUsd: number; lastWeekUsd: number; deltaPct: number | null; isRecord: boolean };
+  newCustomers: { thisWeek: number; lastWeek: number };
+  orders: { thisWeek: number; lastWeek: number };
+  topCustomer: { name: string; code: string; orders: number; spentUsd: number } | null;
+  fastestBatch: { code: string; days: number } | null;
+}> {
+  const empty = {
+    profit: { thisWeekUsd: 0, lastWeekUsd: 0, deltaPct: null as number | null, isRecord: false },
+    newCustomers: { thisWeek: 0, lastWeek: 0 },
+    orders: { thisWeek: 0, lastWeek: 0 },
+    topCustomer: null as { name: string; code: string; orders: number; spentUsd: number } | null,
+    fastestBatch: null as { code: string; days: number } | null,
+  };
+  const db = await getDb();
+  if (!db) return empty;
+  try {
+    const now = new Date();
+    const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+    const twoWeeksAgo = new Date(now); twoWeeksAgo.setDate(now.getDate() - 14);
+
+    // Profit — bucket daily P/L into trailing 7-day weeks; this week is a
+    // record if it's the highest of the last ~13 weeks (and positive).
+    const profit = { thisWeekUsd: 0, lastWeekUsd: 0, deltaPct: null as number | null, isRecord: false };
+    try {
+      const daily = await getDashboardProfitLossChart(91);
+      const desc7 = [...daily].sort((a, b) => (a.date < b.date ? 1 : -1));
+      const weeks: number[] = [];
+      for (let i = 0; i < desc7.length; i += 7) {
+        weeks.push(desc7.slice(i, i + 7).reduce((s, d) => s + (d.profit || 0), 0));
+      }
+      const thisWeek = weeks[0] ?? 0;
+      const lastWeek = weeks[1] ?? 0;
+      const maxWeek = weeks.length ? Math.max(...weeks) : 0;
+      profit.thisWeekUsd = thisWeek;
+      profit.lastWeekUsd = lastWeek;
+      profit.deltaPct = lastWeek !== 0 ? ((thisWeek - lastWeek) / Math.abs(lastWeek)) * 100 : null;
+      profit.isRecord = thisWeek > 0 && thisWeek >= maxWeek && weeks.length >= 3;
+    } catch { /* ignore */ }
+
+    // New customers — this week vs the week before
+    const newCustomers = { thisWeek: 0, lastWeek: 0 };
+    try {
+      const [tw] = await db.select({ c: count() }).from(customers).where(gte(customers.createdAt, weekAgo));
+      const [lw] = await db.select({ c: count() }).from(customers).where(and(gte(customers.createdAt, twoWeeksAgo), lt(customers.createdAt, weekAgo)));
+      newCustomers.thisWeek = tw?.c || 0;
+      newCustomers.lastWeek = lw?.c || 0;
+    } catch { /* ignore */ }
+
+    // Orders — this week vs the week before
+    const orders = { thisWeek: 0, lastWeek: 0 };
+    try {
+      const [tw] = await db.select({ c: count() }).from(fullPackageOrders).where(and(isNull(fullPackageOrders.deletedAt), gte(fullPackageOrders.createdAt, weekAgo)));
+      const [lw] = await db.select({ c: count() }).from(fullPackageOrders).where(and(isNull(fullPackageOrders.deletedAt), gte(fullPackageOrders.createdAt, twoWeeksAgo), lt(fullPackageOrders.createdAt, weekAgo)));
+      orders.thisWeek = tw?.c || 0;
+      orders.lastWeek = lw?.c || 0;
+    } catch { /* ignore */ }
+
+    // Most active customer this week (by order count)
+    let topCustomer: { name: string; code: string; orders: number; spentUsd: number } | null = null;
+    try {
+      const rows = await db.select({
+        customerId: fullPackageOrders.customerId,
+        orders: sql<number>`COUNT(*)`,
+        spent: sql<string>`COALESCE(SUM(CAST(COALESCE(${fullPackageOrders.sellingPriceUsd}, ${fullPackageOrders.itemPriceUsd}, '0') AS DECIMAL(12,2)) * COALESCE(${fullPackageOrders.quantity}, 1)), 0)`,
+      }).from(fullPackageOrders)
+        .where(and(isNull(fullPackageOrders.deletedAt), gte(fullPackageOrders.createdAt, weekAgo)))
+        .groupBy(fullPackageOrders.customerId)
+        .orderBy(sql`COUNT(*) DESC`)
+        .limit(1);
+      if (rows[0]?.customerId) {
+        const [cust] = await db.select().from(customers).where(eq(customers.id, rows[0].customerId)).limit(1);
+        if (cust) {
+          topCustomer = {
+            name: (cust as any).fullName || (cust as any).fullNameKurdish || (cust as any).name || "",
+            code: (cust as any).customerCode || "",
+            orders: Number(rows[0].orders) || 0,
+            spentUsd: Number(rows[0].spent) || 0,
+          };
+        }
+      }
+    } catch { /* ignore */ }
+
+    // Fastest recently-arrived batch (last 30 days) by transit days
+    let fastestBatch: { code: string; days: number } | null = null;
+    try {
+      const thirtyAgo = new Date(now); thirtyAgo.setDate(now.getDate() - 30);
+      const rows = await db.select({
+        code: batches.batchCode,
+        days: sql<number>`DATEDIFF(${batches.actualArrival}, ${batches.departureDate})`,
+      }).from(batches)
+        .where(and(isNotNull(batches.actualArrival), isNotNull(batches.departureDate), gte(batches.actualArrival, thirtyAgo)))
+        .orderBy(sql`DATEDIFF(${batches.actualArrival}, ${batches.departureDate}) ASC`)
+        .limit(1);
+      if (rows[0] && rows[0].days != null && Number(rows[0].days) >= 0) {
+        fastestBatch = { code: rows[0].code, days: Number(rows[0].days) };
+      }
+    } catch { /* ignore */ }
+
+    return { profit, newCustomers, orders, topCustomer, fastestBatch };
+  } catch (err) {
+    appLogger.error("getWeeklyHighlights failed", { error: err instanceof Error ? err.message : String(err) });
+    return empty;
+  }
+}
+
 
 
 // ============ ALERT SYSTEM HELPERS ============

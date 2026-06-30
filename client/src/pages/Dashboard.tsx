@@ -149,6 +149,7 @@ export default function Dashboard() {
   const { data: topDebtors } = trpc.dashboard.topDebtors.useQuery({ limit: 10 });
   const { data: recentActivity } = trpc.dashboard.recentActivity.useQuery({ limit: 8 });
   const { data: alerts } = trpc.dashboard.alerts.useQuery();
+  const { data: highlights } = trpc.dashboard.weeklyHighlights.useQuery();
   const { data: newCustomersCount } = trpc.dashboard.newCustomers.useQuery({ days: 7 });
 
   const { totalPackages, deliveredPackages, inTransitPackages, activeCustomers, deliveryRate } = useMemo(() => {
@@ -455,6 +456,90 @@ export default function Dashboard() {
               {alerts.map((alert) => (
                 <AlertCard key={alert.id} alert={alert} />
               ))}
+            </div>
+          </DashboardSection>
+        )}
+
+        {/* Wins / records this week */}
+        {highlights && (
+          <DashboardSection
+            className="pro-section"
+            title={t("dashboard.winsTitle") || "سەرکەوتنەکانی ئەم هەفتەیە"}
+            description={t("dashboard.winsDesc") || "ریکۆرد و خاڵە ئەرێنییەکانی ئەم هەفتەیە"}
+          >
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Weekly profit */}
+              <div className="relative rounded-xl border bg-card p-4 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  <TrendingUp className="h-5 w-5" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">قازانجی ئەم هەفتەیە</p>
+                  <p className="text-xl font-bold">${(highlights.profit.thisWeekUsd || 0).toFixed(0)}</p>
+                  {highlights.profit.deltaPct !== null && (
+                    <p className={`text-xs ${highlights.profit.deltaPct >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                      {highlights.profit.deltaPct >= 0 ? "▲" : "▼"} {Math.abs(Math.round(highlights.profit.deltaPct))}% بەراورد بە هەفتەی ڕابردوو
+                    </p>
+                  )}
+                </div>
+                {highlights.profit.isRecord && (
+                  <Badge className="absolute top-2 end-2 gap-1 bg-amber-500 text-white hover:bg-amber-500">
+                    <Sparkles className="h-3 w-3" /> ریکۆردی نوێ!
+                  </Badge>
+                )}
+              </div>
+
+              {/* New customers */}
+              <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                  <Users className="h-5 w-5" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">کڕیاری نوێی ئەم هەفتەیە</p>
+                  <p className="text-xl font-bold">{highlights.newCustomers.thisWeek}</p>
+                  <p className="text-xs text-muted-foreground">هەفتەی ڕابردوو: {highlights.newCustomers.lastWeek}</p>
+                </div>
+              </div>
+
+              {/* Orders */}
+              <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                  <Package className="h-5 w-5" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">ئۆردەری ئەم هەفتەیە</p>
+                  <p className="text-xl font-bold">{highlights.orders.thisWeek}</p>
+                  <p className="text-xs text-muted-foreground">هەفتەی ڕابردوو: {highlights.orders.lastWeek}</p>
+                </div>
+              </div>
+
+              {/* Most active customer */}
+              {highlights.topCustomer && (
+                <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                    <Crown className="h-5 w-5" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">ئاکتیفترین کڕیار</p>
+                    <p className="text-base font-bold truncate">{highlights.topCustomer.name || highlights.topCustomer.code}</p>
+                    <p className="text-xs text-muted-foreground">{highlights.topCustomer.orders} ئۆردەر · ${highlights.topCustomer.spentUsd.toFixed(0)}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Fastest batch */}
+              {highlights.fastestBatch && (
+                <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400">
+                    <Ship className="h-5 w-5" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">خێراترین باچ</p>
+                    <p className="text-base font-bold truncate font-mono">{highlights.fastestBatch.code}</p>
+                    <p className="text-xs text-muted-foreground">{highlights.fastestBatch.days} ڕۆژ لە ڕێگادا</p>
+                  </div>
+                </div>
+              )}
             </div>
           </DashboardSection>
         )}

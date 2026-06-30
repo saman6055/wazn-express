@@ -608,6 +608,8 @@
   "dashboard": {
     "problemsTitle": "Problems & action needed",
     "problemsDesc": "Things that need attention or action",
+    "winsTitle": "Wins this week",
+    "winsDesc": "Records and positive highlights this week",
     "title": "Dashboard",
     "welcome": "Welcome!",
     "subtitle": "This is a summary of your shipping operations and business status.",
