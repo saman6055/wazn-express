@@ -41,23 +41,29 @@ import { cn } from "@/lib/utils";
 // Month names
 const monthNames = {
   en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-  ku: ["کانوونی دووەم", "شوبات", "ئازار", "نیسان", "ئایار", "حوزەیران", "تەممووز", "ئاب", "ئەیلوول", "تشرینی یەکەم", "تشرینی دووەم", "کانوونی یەکەم"]
+  ku: ["کانوونی دووەم", "شوبات", "ئازار", "نیسان", "ئایار", "حوزەیران", "تەممووز", "ئاب", "ئەیلوول", "تشرینی یەکەم", "تشرینی دووەم", "کانوونی یەکەم"],
+  ar: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+  zh: ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"]
 };
 
 // Order type configuration
 const orderTypeConfig = {
-  full_package: { 
-    label: "Full Package", 
+  full_package: {
+    label: "Full Package",
     labelKu: "پاکێجی تەواو",
+    labelAr: "الباقة الكاملة",
+    labelZh: "全包",
     color: "#10b981",
     bgColor: "bg-emerald-100",
     textColor: "text-emerald-600",
     icon: Package 
   },
 
-  commission: { 
-    label: "Commission", 
+  commission: {
+    label: "Commission",
     labelKu: "عمولە",
+    labelAr: "العمولة",
+    labelZh: "佣金",
     color: "#f59e0b",
     bgColor: "bg-amber-100",
     textColor: "text-amber-600",
@@ -88,8 +94,7 @@ function MiniBarChart({ values, colors }: { values: number[]; colors: string[] }
 
 export default function MonthlyProfitReport() {
   const { t, isRTL, language } = useTranslation();
-  const isKurdish = language === "ku";
-  
+
   // Year selection
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -108,7 +113,7 @@ export default function MonthlyProfitReport() {
   const monthlyData = useMemo(() => {
     const data = Array.from({ length: 12 }, (_, month) => ({
       month,
-      monthName: isKurdish ? monthNames.ku[month] : monthNames.en[month],
+      monthName: (monthNames[language] ?? monthNames.en)[month],
       full_package: { count: 0, profit: 0, revenue: 0, cost: 0 },
       commission: { count: 0, profit: 0, revenue: 0, cost: 0 },
       total: { count: 0, profit: 0, revenue: 0, cost: 0 },
@@ -139,7 +144,7 @@ export default function MonthlyProfitReport() {
     });
     
     return data;
-  }, [fpOrders, isKurdish]);
+  }, [fpOrders, language]);
   
   // Calculate yearly totals
   const yearlyTotals = useMemo(() => {
@@ -353,7 +358,7 @@ export default function MonthlyProfitReport() {
                       <Icon className={cn("w-5 h-5", config.textColor)} />
                     </div>
                     <div>
-                      <p className="font-semibold">{isKurdish ? config.labelKu : config.label}</p>
+                      <p className="font-semibold">{pickLang(language, { ku: config.labelKu, en: config.label, ar: config.labelAr, zh: config.labelZh })}</p>
                       <p className="text-xs text-muted-foreground">{data.count} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلب", zh: "订单" })}</p>
                     </div>
                   </div>

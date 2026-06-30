@@ -24,11 +24,12 @@ import {
 } from "lucide-react";
 
 // Status configuration with beautiful colors
-const statusConfig: Record<string, { label: string; labelKu: string; labelAr: string; color: string; bgColor: string; borderColor: string; icon: any; gradient: string }> = {
-  pending: { 
-    label: "Pending", 
-    labelKu: "چاوەڕوان", 
+const statusConfig: Record<string, { label: string; labelKu: string; labelAr: string; labelZh: string; color: string; bgColor: string; borderColor: string; icon: any; gradient: string }> = {
+  pending: {
+    label: "Pending",
+    labelKu: "چاوەڕوان",
     labelAr: "قيد الانتظار",
+    labelZh: "待处理",
     color: "text-amber-700", 
     bgColor: "bg-amber-100", 
     borderColor: "border-amber-200",
@@ -36,9 +37,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-amber-400 to-orange-500"
   },
   ordered: { 
-    label: "Ordered", 
-    labelKu: "داواکراو", 
+    label: "Ordered",
+    labelKu: "داواکراو",
     labelAr: "تم الطلب",
+    labelZh: "已下单",
     color: "text-blue-700", 
     bgColor: "bg-blue-100", 
     borderColor: "border-blue-200",
@@ -46,9 +48,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-blue-400 to-blue-600"
   },
   tracking_added: { 
-    label: "Tracking Added", 
-    labelKu: "تراکینگ زیادکرا", 
+    label: "Tracking Added",
+    labelKu: "تراکینگ زیادکرا",
     labelAr: "تمت إضافة التتبع",
+    labelZh: "已添加物流单号",
     color: "text-indigo-700", 
     bgColor: "bg-indigo-100", 
     borderColor: "border-indigo-200",
@@ -56,9 +59,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-indigo-400 to-indigo-600"
   },
   in_china_warehouse: { 
-    label: "In China", 
-    labelKu: "لە چین", 
+    label: "In China",
+    labelKu: "لە چین",
     labelAr: "في الصين",
+    labelZh: "在中国仓库",
     color: "text-purple-700", 
     bgColor: "bg-purple-100", 
     borderColor: "border-purple-200",
@@ -66,9 +70,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-purple-400 to-purple-600"
   },
   in_batch: { 
-    label: "In Batch", 
-    labelKu: "لە باچ", 
+    label: "In Batch",
+    labelKu: "لە باچ",
     labelAr: "في الدفعة",
+    labelZh: "已组批",
     color: "text-cyan-700", 
     bgColor: "bg-cyan-100", 
     borderColor: "border-cyan-200",
@@ -76,9 +81,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-cyan-400 to-cyan-600"
   },
   in_transit: { 
-    label: "In Transit", 
-    labelKu: "لە ڕێگادایە", 
+    label: "In Transit",
+    labelKu: "لە ڕێگادایە",
     labelAr: "في الطريق",
+    labelZh: "运输中",
     color: "text-orange-700", 
     bgColor: "bg-orange-100", 
     borderColor: "border-orange-200",
@@ -86,9 +92,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-orange-400 to-orange-600"
   },
   delivered: { 
-    label: "Delivered", 
-    labelKu: "گەیەندراوە", 
+    label: "Delivered",
+    labelKu: "گەیەندراوە",
     labelAr: "تم التسليم",
+    labelZh: "已送达",
     color: "text-emerald-700", 
     bgColor: "bg-emerald-100", 
     borderColor: "border-emerald-200",
@@ -96,9 +103,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-emerald-400 to-emerald-600"
   },
   cancelled: { 
-    label: "Cancelled", 
-    labelKu: "هەڵوەشاوەتەوە", 
+    label: "Cancelled",
+    labelKu: "هەڵوەشاوەتەوە",
     labelAr: "ملغى",
+    labelZh: "已取消",
     color: "text-red-700", 
     bgColor: "bg-red-100", 
     borderColor: "border-red-200",
@@ -106,9 +114,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-red-400 to-red-600"
   },
   completed: { 
-    label: "Completed", 
-    labelKu: "تەواوبوو", 
+    label: "Completed",
+    labelKu: "تەواوبوو",
     labelAr: "مكتمل",
+    labelZh: "已完成",
     color: "text-emerald-700", 
     bgColor: "bg-emerald-100", 
     borderColor: "border-emerald-200",
@@ -116,9 +125,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-emerald-400 to-emerald-600"
   },
   arrived: { 
-    label: "Arrived", 
-    labelKu: "گەیشت", 
+    label: "Arrived",
+    labelKu: "گەیشت",
     labelAr: "وصلت",
+    labelZh: "已到达",
     color: "text-emerald-700", 
     bgColor: "bg-emerald-100", 
     borderColor: "border-emerald-200",
@@ -126,9 +136,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-emerald-400 to-emerald-600"
   },
   purchasing: { 
-    label: "Purchasing", 
-    labelKu: "لە کڕیندایە", 
+    label: "Purchasing",
+    labelKu: "لە کڕیندایە",
     labelAr: "جاري الشراء",
+    labelZh: "采购中",
     color: "text-blue-700", 
     bgColor: "bg-blue-100", 
     borderColor: "border-blue-200",
@@ -136,9 +147,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-blue-400 to-blue-600"
   },
   purchased: { 
-    label: "Purchased", 
-    labelKu: "کڕدرا", 
+    label: "Purchased",
+    labelKu: "کڕدرا",
     labelAr: "تم الشراء",
+    labelZh: "已采购",
     color: "text-indigo-700", 
     bgColor: "bg-indigo-100", 
     borderColor: "border-indigo-200",
@@ -148,20 +160,22 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
 };
 
 // Order type configuration
-const orderTypeConfig: Record<string, { label: string; labelKu: string; labelAr: string; color: string; bgColor: string; textColor: string; icon: any }> = {
-  full_package: { 
-    label: "Full Package", 
-    labelKu: "پاکێجی تەواو", 
+const orderTypeConfig: Record<string, { label: string; labelKu: string; labelAr: string; labelZh: string; color: string; bgColor: string; textColor: string; icon: any }> = {
+  full_package: {
+    label: "Full Package",
+    labelKu: "پاکێجی تەواو",
     labelAr: "الباقة الكاملة",
+    labelZh: "全包套餐",
     color: "bg-emerald-500", 
     bgColor: "bg-emerald-50",
     textColor: "text-emerald-700",
     icon: Package
   },
   commission: { 
-    label: "Commission", 
-    labelKu: "عمولە", 
+    label: "Commission",
+    labelKu: "عمولە",
     labelAr: "عمولة",
+    labelZh: "代购佣金",
     color: "bg-amber-500", 
     bgColor: "bg-amber-50",
     textColor: "text-amber-700",
@@ -174,8 +188,7 @@ export default function PortalFullPackage() {
   const { language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const isKurdish = language === "ku";
-  
+
   const [activeTab, setActiveTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -237,10 +250,12 @@ export default function PortalFullPackage() {
   };
   
   const getStatusInfo = (status: string) => {
-    return statusConfig[status] || { 
-      label: status, 
-      labelKu: status, 
-      color: "text-gray-600", 
+    return statusConfig[status] || {
+      label: status,
+      labelKu: status,
+      labelAr: status,
+      labelZh: status,
+      color: "text-gray-600",
       bgColor: "bg-gray-100", 
       borderColor: "border-gray-200",
       icon: Package,
@@ -457,11 +472,11 @@ export default function PortalFullPackage() {
                   </p>
                   <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                     {[
-                      { key: "all", ku: "هەموو", ar: "الكل", en: "All", gradient: "from-violet-500 to-purple-600" },
-                      { key: "pending", ku: "چاوەڕوان", ar: "قيد الانتظار", en: "Pending", gradient: "from-amber-500 to-orange-500" },
-                      { key: "in_transit", ku: "لە ڕێگادایە", ar: "في الطريق", en: "In Transit", gradient: "from-blue-500 to-cyan-500" },
-                      { key: "delivered", ku: "گەیشت", ar: "تم التسليم", en: "Delivered", gradient: "from-emerald-500 to-teal-500" },
-                      { key: "cancelled", ku: "هەڵوەشاوە", ar: "ملغى", en: "Cancelled", gradient: "from-red-500 to-rose-500" },
+                      { key: "all", ku: "هەموو", ar: "الكل", en: "All", zh: "全部", gradient: "from-violet-500 to-purple-600" },
+                      { key: "pending", ku: "چاوەڕوان", ar: "قيد الانتظار", en: "Pending", zh: "待处理", gradient: "from-amber-500 to-orange-500" },
+                      { key: "in_transit", ku: "لە ڕێگادایە", ar: "في الطريق", en: "In Transit", zh: "运输中", gradient: "from-blue-500 to-cyan-500" },
+                      { key: "delivered", ku: "گەیشت", ar: "تم التسليم", en: "Delivered", zh: "已送达", gradient: "from-emerald-500 to-teal-500" },
+                      { key: "cancelled", ku: "هەڵوەشاوە", ar: "ملغى", en: "Cancelled", zh: "已取消", gradient: "from-red-500 to-rose-500" },
                     ].map(s => (
                       <button
                         key={s.key}
@@ -475,7 +490,7 @@ export default function PortalFullPackage() {
                               : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         )}
                       >
-                        {isKurdish ? s.ku : language === "ar" ? s.ar : s.en}
+                        {pickLang(language, { ku: s.ku, en: s.en, ar: s.ar, zh: s.zh })}
                       </button>
                     ))}
                   </div>
@@ -492,10 +507,10 @@ export default function PortalFullPackage() {
                   </p>
                   <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                     {[
-                      { key: "newest" as const, ku: "نوێترین", ar: "الأحدث", en: "Newest" },
-                      { key: "oldest" as const, ku: "کۆنترین", ar: "الأقدم", en: "Oldest" },
-                      { key: "price_high" as const, ku: "گرانترین", ar: "الأغلى", en: "Highest" },
-                      { key: "price_low" as const, ku: "هەرزانترین", ar: "الأرخص", en: "Lowest" },
+                      { key: "newest" as const, ku: "نوێترین", ar: "الأحدث", en: "Newest", zh: "最新" },
+                      { key: "oldest" as const, ku: "کۆنترین", ar: "الأقدم", en: "Oldest", zh: "最早" },
+                      { key: "price_high" as const, ku: "گرانترین", ar: "الأغلى", en: "Highest", zh: "价格最高" },
+                      { key: "price_low" as const, ku: "هەرزانترین", ar: "الأرخص", en: "Lowest", zh: "价格最低" },
                     ].map(s => (
                       <button
                         key={s.key}
@@ -509,7 +524,7 @@ export default function PortalFullPackage() {
                               : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         )}
                       >
-                        {isKurdish ? s.ku : language === "ar" ? s.ar : s.en}
+                        {pickLang(language, { ku: s.ku, en: s.en, ar: s.ar, zh: s.zh })}
                       </button>
                     ))}
                   </div>
@@ -639,7 +654,7 @@ export default function PortalFullPackage() {
                                 orderTypeInfo.textColor
                               )}>
                                 <TypeIcon className="w-3 h-3" />
-{isKurdish ? orderTypeInfo.labelKu : language === "ar" ? orderTypeInfo.labelAr : orderTypeInfo.label}
+{pickLang(language, { ku: orderTypeInfo.labelKu, en: orderTypeInfo.label, ar: orderTypeInfo.labelAr, zh: orderTypeInfo.labelZh })}
                               </span>
                               <span className={cn(
                                 "inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium",
@@ -647,7 +662,7 @@ export default function PortalFullPackage() {
                                 statusInfo.color
                               )}>
                                 <StatusIcon className="w-3 h-3" />
-{isKurdish ? statusInfo.labelKu : language === "ar" ? statusInfo.labelAr : statusInfo.label}
+{pickLang(language, { ku: statusInfo.labelKu, en: statusInfo.label, ar: statusInfo.labelAr, zh: statusInfo.labelZh })}
                               </span>
                             </div>
                             
@@ -834,14 +849,14 @@ export default function PortalFullPackage() {
                     getOrderTypeInfo(selectedOrder.orderType).bgColor,
                     getOrderTypeInfo(selectedOrder.orderType).textColor
                   )}>
-{isKurdish ? getOrderTypeInfo(selectedOrder.orderType).labelKu : language === "ar" ? getOrderTypeInfo(selectedOrder.orderType).labelAr : getOrderTypeInfo(selectedOrder.orderType).label}
+{pickLang(language, { ku: getOrderTypeInfo(selectedOrder.orderType).labelKu, en: getOrderTypeInfo(selectedOrder.orderType).label, ar: getOrderTypeInfo(selectedOrder.orderType).labelAr, zh: getOrderTypeInfo(selectedOrder.orderType).labelZh })}
                   </span>
                   <span className={cn(
                     "inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-sm font-medium",
                     getStatusInfo(selectedOrder.status).bgColor,
                     getStatusInfo(selectedOrder.status).color
                   )}>
-{isKurdish ? getStatusInfo(selectedOrder.status).labelKu : language === "ar" ? getStatusInfo(selectedOrder.status).labelAr : getStatusInfo(selectedOrder.status).label}
+{pickLang(language, { ku: getStatusInfo(selectedOrder.status).labelKu, en: getStatusInfo(selectedOrder.status).label, ar: getStatusInfo(selectedOrder.status).labelAr, zh: getStatusInfo(selectedOrder.status).labelZh })}
                   </span>
                 </div>
                 

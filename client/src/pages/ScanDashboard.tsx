@@ -19,8 +19,7 @@ import { SCANNER_MODULES } from "@/constants/scannerModules";
 
 export default function ScanDashboard() {
   const { t, language } = useTranslation();
-  const isKurdish = language === "ku" || language === "ar";
-  
+
   // Get today's stats
   const { data: todayStats } = trpc.scanning.todayStats.useQuery();
 
@@ -122,10 +121,10 @@ export default function ScanDashboard() {
                         </Badge>
                       </div>
                       <h3 className="font-bold text-lg text-slate-800 mb-1">
-                        {isKurdish ? module.labelKu : module.labelEn}
+                        {pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}
                       </h3>
                       <p className="text-sm text-slate-500">
-                        {isKurdish ? module.descKu : module.descEn}
+                        {pickLang(language, { ku: module.descKu, en: module.descEn, ar: module.descAr, zh: module.descZh })}
                       </p>
                       <div className="flex items-center gap-2 mt-4 text-sm font-medium text-slate-600 group-hover:text-slate-800">
                         <span>{pickLang(language, { ku: "دەستپێکردن", en: "Start", ar: "بدء", zh: "开始" })}</span>
@@ -274,7 +273,7 @@ export default function ScanDashboard() {
                         </div>
                         <p className="text-2xl font-bold text-slate-800">{count}</p>
                         <p className="text-xs text-slate-500 mb-2">
-                          {isKurdish ? module.labelKu : module.labelEn}
+                          {pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}
                         </p>
                         <Progress value={percentage} className="h-1.5" />
                         <p className="text-xs text-slate-400 mt-1">{percentage}%</p>
@@ -307,7 +306,7 @@ export default function ScanDashboard() {
                         className="w-full justify-start text-white hover:bg-white/10 h-12"
                       >
                         <Icon className="h-5 w-5 me-3" />
-                        <span>{isKurdish ? module.labelKu : module.labelEn}</span>
+                        <span>{pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}</span>
                         <ChevronRight className="h-4 w-4 mr-auto opacity-50" />
                       </Button>
                     </Link>

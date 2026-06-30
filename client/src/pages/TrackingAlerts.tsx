@@ -37,25 +37,31 @@ interface OrderForTracking {
 
 // Type configuration
 const ORDER_TYPES = [
-  { 
-    value: "all", 
-    labelKu: "هەموو", 
+  {
+    value: "all",
+    labelKu: "هەموو",
     labelEn: "All",
+    labelAr: "الكل",
+    labelZh: "全部",
     icon: Package,
     color: "slate"
   },
-  { 
-    value: "full_package", 
-    labelKu: "پاکێجی تەواو", 
+  {
+    value: "full_package",
+    labelKu: "پاکێجی تەواو",
     labelEn: "Full Package",
+    labelAr: "الباقة الكاملة",
+    labelZh: "全包套餐",
     icon: Box,
     color: "red"
   },
 
-  { 
-    value: "commission", 
-    labelKu: "کڕین بە تێچوو", 
+  {
+    value: "commission",
+    labelKu: "کڕین بە تێچوو",
     labelEn: "Commission",
+    labelAr: "بالعمولة",
+    labelZh: "代购佣金",
     icon: Percent,
     color: "amber"
   },
@@ -63,17 +69,16 @@ const ORDER_TYPES = [
 
 // Days filter options
 const DAYS_FILTERS = [
-  { value: "all", labelKu: "هەموو ڕۆژەکان", labelEn: "All Days", min: 0, max: 999 },
-  { value: "1-2", labelKu: "١-٢ ڕۆژ", labelEn: "1-2 Days", min: 1, max: 2 },
-  { value: "3-4", labelKu: "٣-٤ ڕۆژ", labelEn: "3-4 Days", min: 3, max: 4 },
-  { value: "5-6", labelKu: "٥-٦ ڕۆژ", labelEn: "5-6 Days", min: 5, max: 6 },
-  { value: "7+", labelKu: "٧+ ڕۆژ (فریاکەوتن)", labelEn: "7+ Days (Critical)", min: 7, max: 999 },
+  { value: "all", labelKu: "هەموو ڕۆژەکان", labelEn: "All Days", labelAr: "كل الأيام", labelZh: "全部天数", min: 0, max: 999 },
+  { value: "1-2", labelKu: "١-٢ ڕۆژ", labelEn: "1-2 Days", labelAr: "١-٢ يوم", labelZh: "1-2 天", min: 1, max: 2 },
+  { value: "3-4", labelKu: "٣-٤ ڕۆژ", labelEn: "3-4 Days", labelAr: "٣-٤ يوم", labelZh: "3-4 天", min: 3, max: 4 },
+  { value: "5-6", labelKu: "٥-٦ ڕۆژ", labelEn: "5-6 Days", labelAr: "٥-٦ يوم", labelZh: "5-6 天", min: 5, max: 6 },
+  { value: "7+", labelKu: "٧+ ڕۆژ (فریاکەوتن)", labelEn: "7+ Days (Critical)", labelAr: "٧+ يوم (حرج)", labelZh: "7+ 天（紧急）", min: 7, max: 999 },
 ];
 
 export default function TrackingAlerts() {
   const { t, language } = useTranslation();
-  const isKurdish = language === "ku" || language === "ar";
-  
+
   // State
   const [trackingDialogOpen, setTrackingDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderForTracking | null>(null);
@@ -290,7 +295,7 @@ export default function TrackingAlerts() {
     return (
       <Badge variant="outline" className={`gap-1 ${colorClasses[config.color] || ""}`}>
         <Icon className="h-3 w-3" />
-        {isKurdish ? config.labelKu : config.labelEn}
+        {pickLang(language, { ku: config.labelKu, en: config.labelEn, ar: config.labelAr, zh: config.labelZh })}
       </Badge>
     );
   };
@@ -552,7 +557,7 @@ export default function TrackingAlerts() {
                             <SelectItem key={type.value} value={type.value}>
                               <div className="flex items-center gap-2">
                                 <type.icon className="h-4 w-4" />
-                                {isKurdish ? type.labelKu : type.labelEn}
+                                {pickLang(language, { ku: type.labelKu, en: type.labelEn, ar: type.labelAr, zh: type.labelZh })}
                               </div>
                             </SelectItem>
                           ))}
@@ -572,7 +577,7 @@ export default function TrackingAlerts() {
                         <SelectContent>
                           {DAYS_FILTERS.map((filter) => (
                             <SelectItem key={filter.value} value={filter.value}>
-                              {isKurdish ? filter.labelKu : filter.labelEn}
+                              {pickLang(language, { ku: filter.labelKu, en: filter.labelEn, ar: filter.labelAr, zh: filter.labelZh })}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -790,7 +795,7 @@ export default function TrackingAlerts() {
                             </TableCell>
                             <TableCell className="text-sm text-slate-600">
                               {order.orderDate 
-                                ? new Date(order.orderDate).toLocaleDateString(isKurdish ? "ku" : "en")
+                                ? new Date(order.orderDate).toLocaleDateString(pickLang(language, { ku: "ku", en: "en-US", ar: "ar", zh: "zh-CN" }))
                                 : "-"
                               }
                             </TableCell>

@@ -21,10 +21,15 @@ import { pickLang } from "@/lib/lang";
 import * as XLSX from 'xlsx';
 import { SCANNER_MODULES, getModuleByType } from "@/constants/scannerModules";
 
+// Locale code for date/number formatting based on active UI language
+function localeCode(lang: string | undefined) {
+  return pickLang(lang, { ku: 'ku', en: 'en-US', ar: 'ar', zh: 'zh-CN' });
+}
+
 // Format date for display
-function formatDate(date: Date | string) {
+function formatDate(date: Date | string, lang: string | undefined) {
   const d = new Date(date);
-  return d.toLocaleDateString('ku', { year: 'numeric', month: 'long', day: 'numeric' });
+  return d.toLocaleDateString(localeCode(lang), { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 // Format date for input
@@ -34,8 +39,7 @@ function formatDateForInput(date: Date) {
 
 export default function ScanReports() {
   const { t, language } = useTranslation();
-  const isKurdish = language === "ku" || language === "ar";
-  
+
   // Date range state
   const today = useMemo(() => new Date(), []);
   const [startDate, setStartDate] = useState(() => {
@@ -220,7 +224,7 @@ export default function ScanReports() {
                     </SelectItem>
                     {SCANNER_MODULES.map((module) => (
                       <SelectItem key={module.id} value={module.scanType}>
-                        {isKurdish ? module.labelKu : module.labelEn}
+                        {pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -252,7 +256,7 @@ export default function ScanReports() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`text-xs font-medium ${module.textColor} truncate`}>
-                          {isKurdish ? module.labelKu : module.labelEn}
+                          {pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}
                         </p>
                         <p className="text-2xl font-bold text-slate-800">{module.count}</p>
                       </div>
@@ -292,7 +296,7 @@ export default function ScanReports() {
                       {pickLang(language, { ku: "پوختەی ماوە", en: "Period Summary", ar: "ملخص الفترة", zh: "周期汇总" })}
                     </CardTitle>
                     <CardDescription>
-                      {formatDate(startDate)} - {formatDate(endDate)}
+                      {formatDate(startDate, language)} - {formatDate(endDate, language)}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -347,7 +351,7 @@ export default function ScanReports() {
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-sm font-medium text-slate-700">
-                                  {isKurdish ? module.labelKu : module.labelEn}
+                                  {pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}
                                 </span>
                                 <span className="text-sm font-bold text-slate-800">
                                   {module.count}
@@ -389,7 +393,7 @@ export default function ScanReports() {
                             <div className="flex items-center justify-center gap-1">
                               <module.icon className={`h-4 w-4 ${module.textColor}`} />
                               <span className="hidden md:inline">
-                                {isKurdish ? module.labelKu : module.labelEn}
+                                {pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}
                               </span>
                             </div>
                           </TableHead>
@@ -403,10 +407,10 @@ export default function ScanReports() {
                       {dailyReport.slice(0, 15).map((day: any) => (
                         <TableRow key={day.date}>
                           <TableCell className="font-medium">
-                            {new Date(day.date).toLocaleDateString('ku', { 
-                              weekday: 'short', 
-                              month: 'short', 
-                              day: 'numeric' 
+                            {new Date(day.date).toLocaleDateString(localeCode(language), {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric'
                             })}
                           </TableCell>
                           {SCANNER_MODULES.map((module) => (
@@ -475,14 +479,14 @@ export default function ScanReports() {
                             <TableCell>
                               <Badge className={`${module.lightColor} ${module.textColor}`}>
                                 <Icon className="h-3 w-3 me-1" />
-                                {isKurdish ? module.labelKu : module.labelEn}
+                                {pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {new Date(scan.scannedAt).toLocaleDateString('ku')}
+                              {new Date(scan.scannedAt).toLocaleDateString(localeCode(language))}
                             </TableCell>
                             <TableCell className="text-slate-500">
-                              {new Date(scan.scannedAt).toLocaleTimeString('ku')}
+                              {new Date(scan.scannedAt).toLocaleTimeString(localeCode(language))}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
