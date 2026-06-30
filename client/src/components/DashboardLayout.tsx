@@ -76,6 +76,7 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import { CommandPalette } from "./CommandPalette";
+import { ScrollButtons } from "./ScrollButtons";
 import { useLanguage, Language } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -799,6 +800,7 @@ function DashboardLayoutContent({
       </main>
 
       <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
+      <ScrollButtons />
     </div>
   );
 }
