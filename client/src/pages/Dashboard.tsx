@@ -1090,24 +1090,53 @@ export default function Dashboard() {
 // Alert Card Component
 const AlertCard = memo(function AlertCard({ alert }: { alert: { id: string; type: string; title: string; description: string; count?: number; link?: string } }) {
   const typeStyles = {
-    warning: { bg: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800', icon: <AlertTriangle className="h-5 w-5 text-amber-500" /> },
-    info: { bg: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800', icon: <Info className="h-5 w-5 text-blue-500" /> },
-    error: { bg: 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800', icon: <AlertCircle className="h-5 w-5 text-red-500" /> },
-    success: { bg: 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800', icon: <CheckCircle className="h-5 w-5 text-green-500" /> },
+    warning: {
+      card: "from-amber-50 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 border-amber-200/70 dark:border-amber-800/50",
+      chip: "from-amber-400 to-orange-500",
+      badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+      Icon: AlertTriangle,
+    },
+    info: {
+      card: "from-sky-50 to-blue-50/50 dark:from-sky-950/30 dark:to-blue-950/20 border-sky-200/70 dark:border-sky-800/50",
+      chip: "from-sky-400 to-blue-600",
+      badge: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
+      Icon: Info,
+    },
+    error: {
+      card: "from-rose-50 to-red-50/50 dark:from-rose-950/30 dark:to-red-950/20 border-rose-200/70 dark:border-rose-800/50",
+      chip: "from-rose-400 to-red-600",
+      badge: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+      Icon: AlertCircle,
+    },
+    success: {
+      card: "from-violet-50 to-purple-50/50 dark:from-violet-950/30 dark:to-purple-950/20 border-violet-200/70 dark:border-violet-800/50",
+      chip: "from-violet-400 to-purple-600",
+      badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
+      Icon: CheckCircle,
+    },
   };
 
   const style = typeStyles[alert.type as keyof typeof typeStyles] || typeStyles.info;
+  const Icon = style.Icon;
 
   const content = (
-    <div className={`p-4 rounded-xl border ${style.bg} hover:shadow-md transition-all cursor-pointer`}>
+    <div
+      className={`group p-4 rounded-2xl border bg-gradient-to-br ${style.card} hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer`}
+    >
       <div className="flex items-start gap-3">
-        {style.icon}
+        <span
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${style.chip} text-white shadow-sm transition-transform duration-200 group-hover:scale-105`}
+        >
+          <Icon className="h-5 w-5" />
+        </span>
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm">{alert.title}</p>
+          <p className="font-semibold text-sm text-foreground">{alert.title}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{alert.description}</p>
         </div>
-        {alert.count && (
-          <Badge variant="secondary" className="font-mono">{alert.count}</Badge>
+        {alert.count != null && (
+          <span className={`shrink-0 rounded-lg px-2.5 py-1 text-sm font-bold tabular-nums ${style.badge}`}>
+            {alert.count}
+          </span>
         )}
       </div>
     </div>

@@ -26,15 +26,23 @@ export function DashboardSection({
     <section className={cn("space-y-4", className)}>
       {(title || action) && (
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+          <div className="flex items-center gap-3">
             {title && (
-              <h2 className="text-base font-semibold tracking-tight text-foreground md:text-lg">
-                {title}
-              </h2>
+              <span
+                aria-hidden
+                className="h-8 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-sky-400 via-blue-500 to-violet-500"
+              />
             )}
-            {description && (
-              <p className="text-sm text-muted-foreground">{description}</p>
-            )}
+            <div>
+              {title && (
+                <h2 className="text-base font-bold tracking-tight text-foreground md:text-lg">
+                  {title}
+                </h2>
+              )}
+              {description && (
+                <p className="text-sm text-muted-foreground">{description}</p>
+              )}
+            </div>
           </div>
           {action && <div className="shrink-0">{action}</div>}
         </div>
