@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { Sparkline } from "./Sparkline";
+import { CountUp } from "@/components/CountUp";
 
 const colorStyles = {
   blue: "from-blue-500 to-blue-600",
@@ -53,7 +54,7 @@ export const StatsCard = memo(function StatsCard({
             {isLoading ? (
               <div className="h-9 w-24 animate-pulse rounded-md bg-muted" />
             ) : (
-              <p className="text-3xl font-bold tracking-tight">{value.toLocaleString()}</p>
+              <p className="text-3xl font-bold tracking-tight"><CountUp value={value} /></p>
             )}
             {description && (
               <p className="text-xs text-muted-foreground">{description}</p>

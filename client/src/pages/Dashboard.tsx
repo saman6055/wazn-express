@@ -41,7 +41,7 @@ import { pickLang } from "@/lib/lang";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useState, useMemo, memo } from "react";
+import { useState, useMemo, memo, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -206,6 +206,25 @@ export default function Dashboard() {
     ],
     [packageStats]
   );
+
+  // Defer the heavy below-the-fold charts until the browser is idle, so the
+  // first dashboard paint isn't blocked by Recharts. The DOM is identical once
+  // shown — it just mounts a moment later.
+  const [chartsReady, setChartsReady] = useState(false);
+  useEffect(() => {
+    const w = window as unknown as {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    let idle: number | undefined;
+    let timer: number | undefined;
+    if (w.requestIdleCallback) idle = w.requestIdleCallback(() => setChartsReady(true), { timeout: 1500 });
+    else timer = window.setTimeout(() => setChartsReady(true), 250);
+    return () => {
+      if (idle !== undefined && w.cancelIdleCallback) w.cancelIdleCallback(idle);
+      if (timer !== undefined) clearTimeout(timer);
+    };
+  }, []);
 
   return (
     <DashboardLayout>
@@ -380,6 +399,7 @@ export default function Dashboard() {
         </DashboardSection>
 
         {/* Revenue, Profit & Loss — داهات، قازانج و زیان (charts → bottom) */}
+        {chartsReady && (
         <DashboardSection className="pro-section order-last"
           title={t("dashboard.revenueProfitLossTitle")}
           description={t("dashboard.revenueProfitLossDesc")}
@@ -478,6 +498,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </DashboardSection>
+        )}
 
         {/* Alert Summary Section */}
         <AlertSummarySection />
@@ -613,6 +634,7 @@ export default function Dashboard() {
         )}
 
         {/* Analytics (charts → bottom) */}
+        {chartsReady && (
         <DashboardSection className="pro-section order-last" title={t("dashboard.analytics") || "Analytics"} description={t("dashboard.revenueAndPackagesByDay")}>
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Revenue Chart - Last 30 days income (line) */}
@@ -752,6 +774,7 @@ export default function Dashboard() {
           </Card>
         </div>
         </DashboardSection>
+        )}
 
         {/* Activity & Lists Row */}
         <div className="pro-section grid gap-6 lg:grid-cols-3">

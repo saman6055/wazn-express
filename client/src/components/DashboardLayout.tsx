@@ -81,6 +81,7 @@ import { RecentlyViewed } from "./RecentlyViewed";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { ScrollButtons } from "./ScrollButtons";
 import { ThemePicker } from "./ThemePicker";
+import { QuickCreate } from "./QuickCreate";
 import { useLanguage, Language } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -748,6 +749,9 @@ function DashboardLayoutContent({
 
             {/* Recently viewed pages dropdown */}
             <RecentlyViewed className="h-8 w-8" />
+
+            {/* Quick create ("+ New") */}
+            <QuickCreate />
 
             {/* Accent theme (skin) picker */}
             <ThemePicker />

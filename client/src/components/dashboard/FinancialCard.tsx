@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { Sparkline } from "./Sparkline";
+import { CountUp } from "@/components/CountUp";
 
 const colorStyles = {
   green: {
@@ -86,7 +87,7 @@ export const FinancialCard = memo(function FinancialCard({
           )}
         >
           {prefix}
-          {value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          <CountUp value={value} format={(n) => Math.round(n).toLocaleString("en-US")} />
         </p>
         {trend && trend.length >= 2 && (
           <Sparkline data={trend} className={cn("mt-3 opacity-80", sparkColor[color])} />

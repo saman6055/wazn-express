@@ -935,3 +935,24 @@ body.pwa-mode {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ---------------------------------------------------------------------------
+   Subtle modern micro-interactions. GPU-friendly (transform/opacity only), and
+   fully disabled under prefers-reduced-motion, so they add polish without any
+   layout or performance cost.
+--------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .pro-stat-card,
+  .pro-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    will-change: transform;
+  }
+  .pro-stat-card:hover,
+  .pro-card:hover {
+    transform: translateY(-2px);
+  }
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.98);
+  }
+}
