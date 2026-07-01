@@ -49,10 +49,6 @@ export default function Home() {
     return <HomeMinimal />;
   }
 
-  if (variant === "professional") {
-    return <HomeProfessional />;
-  }
-
   if (variant === "classic") {
     return <HomeClassic />;
   }
@@ -61,6 +57,12 @@ export default function Home() {
     return <HomeModern />;
   }
 
-  // New premium default landing (Logistick-style).
+  // The old oversized-typography "professional" design is kept under a new
+  // "editorial" value; the previous "professional" value (and undefined) now
+  // fall through to the new premium Logistick-style default landing.
+  if (variant === "editorial") {
+    return <HomeProfessional />;
+  }
+
   return <HomeLogistick />;
 }
