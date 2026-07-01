@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,18 @@ import {
 
 export default function Dashboard() {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
+
+  // Time-of-day greeting for the dashboard header.
+  const greetingHour = new Date().getHours();
+  const greetingWord =
+    greetingHour < 12
+      ? { ku: "بەیانیت باش", en: "Good morning", ar: "صباح الخير", zh: "早上好" }
+      : greetingHour < 17
+        ? { ku: "ڕۆژباش", en: "Good afternoon", ar: "طاب يومك", zh: "下午好" }
+        : { ku: "ئێوارەت باش", en: "Good evening", ar: "مساء الخير", zh: "晚上好" };
+  const greetingName = ((user?.name as string) || "").trim();
+  const greeting = `${pickLang(language, greetingWord)}${greetingName ? "، " + greetingName : ""}`;
   const [isExporting, setIsExporting] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [exportPeriod, setExportPeriod] = useState<'week' | 'month' | 'year'>('month');
@@ -235,7 +248,7 @@ export default function Dashboard() {
         <PageHeader
           icon={LayoutDashboard}
           title={t("dashboard.title")}
-          subtitle={`${t("dashboard.welcome")} ${t("dashboard.subtitle")}`}
+          subtitle={`${greeting} — ${t("dashboard.subtitle")}`}
           variant="gradient"
           actions={
             <>

@@ -23,6 +23,8 @@ export function ZoomImage({
         <img
           src={src}
           alt={alt || ""}
+          loading="lazy"
+          decoding="async"
           className={cn("cursor-zoom-in rounded-lg object-cover", className)}
         />
       </HoverCardTrigger>
@@ -30,6 +32,8 @@ export function ZoomImage({
         <img
           src={src}
           alt={alt || ""}
+          loading="lazy"
+          decoding="async"
           className="max-h-72 max-w-72 rounded-md object-contain"
         />
       </HoverCardContent>

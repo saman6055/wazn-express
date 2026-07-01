@@ -955,4 +955,27 @@ body.pwa-mode {
   [role="button"]:not([aria-disabled="true"]):active {
     transform: scale(0.98);
   }
+
+  /* Gentle entrance for dashboard cards (plays once on mount). */
+  @keyframes wazn-card-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  .pro-stat-card,
+  .pro-card {
+    animation: wazn-card-in 0.35s ease-out both;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Compact table density — toggled via <html data-density="compact">. Pure CSS
+   targeting the shared Table slots, so every table tightens at once with no
+   per-table changes and no runtime cost.
+--------------------------------------------------------------------------- */
+html[data-density="compact"] [data-slot="table-cell"] {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+html[data-density="compact"] [data-slot="table-head"] {
+  height: 2rem;
 }

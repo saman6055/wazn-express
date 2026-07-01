@@ -82,6 +82,7 @@ import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { ScrollButtons } from "./ScrollButtons";
 import { ThemePicker } from "./ThemePicker";
 import { QuickCreate } from "./QuickCreate";
+import { DensityToggle } from "./DensityToggle";
 import { useLanguage, Language } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -752,6 +753,9 @@ function DashboardLayoutContent({
 
             {/* Quick create ("+ New") */}
             <QuickCreate />
+
+            {/* Compact / comfortable table density */}
+            <DensityToggle />
 
             {/* Accent theme (skin) picker */}
             <ThemePicker />
