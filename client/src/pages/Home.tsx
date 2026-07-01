@@ -45,22 +45,26 @@ export default function Home() {
     );
   }
 
-  if (variant === "minimal") {
+  // Stored variant is a free-form setting; compare as a string so newer values
+  // ("modern", "editorial") type-check against the narrower backend union.
+  const v = variant as string | undefined;
+
+  if (v === "minimal") {
     return <HomeMinimal />;
   }
 
-  if (variant === "classic") {
+  if (v === "classic") {
     return <HomeClassic />;
   }
 
-  if (variant === "modern") {
+  if (v === "modern") {
     return <HomeModern />;
   }
 
   // The old oversized-typography "professional" design is kept under a new
   // "editorial" value; the previous "professional" value (and undefined) now
   // fall through to the new premium Logistick-style default landing.
-  if (variant === "editorial") {
+  if (v === "editorial") {
     return <HomeProfessional />;
   }
 
