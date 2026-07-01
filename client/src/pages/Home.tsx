@@ -8,6 +8,7 @@ import HomeClassic from "./HomeClassic";
 import HomeMinimal from "./HomeMinimal";
 import HomeProfessional from "./HomeProfessional";
 import HomeModern from "./HomeModern";
+import HomeLogistick from "./HomeLogistick";
 
 export default function Home() {
   const { data: variant, isLoading: variantLoading } = trpc.public.getLandingPageVariant.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
@@ -56,6 +57,10 @@ export default function Home() {
     return <HomeClassic />;
   }
 
-  // New premium default landing.
-  return <HomeModern />;
+  if (variant === "modern") {
+    return <HomeModern />;
+  }
+
+  // New premium default landing (Logistick-style).
+  return <HomeLogistick />;
 }

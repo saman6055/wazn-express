@@ -119,3 +119,4 @@ temp/
 # Temp files
 temp_*.txt
 *.xlsx
+_theme/
