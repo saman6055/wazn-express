@@ -19,6 +19,7 @@ const MOTIVATION_SHOWN_KEY = "wazn-motivation-shown";
 const IDLE_MS = 10 * 60 * 1000;
 const ACTIVITY_THROTTLE_MS = 1500;
 const MOTIVATION_VISIBLE_MS = 8500;
+const AUTO_DISMISS_MS = 15 * 1000;
 
 const UI: Record<TipLang, { tip: string; more: string; less: string; example: string; close: string; tapClose: string }> = {
   ku: { tip: "ئامۆژگاری", more: "زانیاری زیاتر", less: "کەمتر", example: "نموونە", close: "داخستن", tapClose: "کرتە بکە بۆ داخستن" },
@@ -186,6 +187,15 @@ export function StaffTips() {
       if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
     };
   }, [showNextTip]);
+
+  // Auto-dismiss the tip card after 15s so it doesn't linger — UNLESS the reader
+  // opened "learn more" (expanded), in which case it stays until they close or
+  // collapse it. The timer resets on a new tip (index) or when expand toggles.
+  useEffect(() => {
+    if (!open || expanded) return;
+    const t = window.setTimeout(() => setOpen(false), AUTO_DISMISS_MS);
+    return () => window.clearTimeout(t);
+  }, [open, expanded, index]);
 
   // One personalised motivation celebration, 10 minutes into the session.
   useEffect(() => {
