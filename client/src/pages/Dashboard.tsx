@@ -37,6 +37,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,7 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isExporting, setIsExporting] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [exportPeriod, setExportPeriod] = useState<'week' | 'month' | 'year'>('month');
@@ -282,22 +283,22 @@ export default function Dashboard() {
           items={[
             {
               icon: <DollarSign />,
-              label: t("dashboard.todayIncome") || "داهاتی ئەمڕۆ",
+              label: t("dashboard.todayIncome") || pickLang(language, { ku: "داهاتی ئەمڕۆ", en: "Today's income", ar: "دخل اليوم", zh: "今日收入" }),
               value: `$${(financialStats?.todayRevenue || 0).toFixed(2)}`,
             },
             {
               icon: <Users />,
-              label: t("dashboard.newCustomers7Days") || "کڕیاری نوێ (٧ ڕۆژ)",
+              label: t("dashboard.newCustomers7Days") || pickLang(language, { ku: "کڕیاری نوێ (٧ ڕۆژ)", en: "New customers (7 days)", ar: "عملاء جدد (٧ أيام)", zh: "新客户（7天）" }),
               value: newCustomersCount ?? 0,
             },
             {
               icon: <Users />,
-              label: t("dashboard.totalCustomers") || "کۆی کڕیاران",
+              label: t("dashboard.totalCustomers") || pickLang(language, { ku: "کۆی کڕیاران", en: "Total customers", ar: "إجمالي العملاء", zh: "客户总数" }),
               value: customers?.length ?? 0,
             },
             {
               icon: <Layers />,
-              label: t("dashboard.activeBatches") || "باچە چالاکەکان",
+              label: t("dashboard.activeBatches") || pickLang(language, { ku: "باچە چالاکەکان", en: "Active batches", ar: "الدفعات النشطة", zh: "活跃批次" }),
               value: activeBatches?.length || 0,
             },
           ]}
@@ -485,8 +486,8 @@ export default function Dashboard() {
         {alerts && alerts.length > 0 && (
           <DashboardSection
             className="pro-section"
-            title={t("dashboard.problemsTitle") || "مەشاکل و کارە پێویستەکان"}
-            description={t("dashboard.problemsDesc") || "ئەو شتانەی پێویستیان بە چاودێری یان کردارە"}
+            title={t("dashboard.problemsTitle") || pickLang(language, { ku: "مەشاکل و کارە پێویستەکان", en: "Problems & required actions", ar: "المشاكل والإجراءات المطلوبة", zh: "问题与待办事项" })}
+            description={t("dashboard.problemsDesc") || pickLang(language, { ku: "ئەو شتانەی پێویستیان بە چاودێری یان کردارە", en: "Items that need attention or action", ar: "العناصر التي تحتاج إلى متابعة أو إجراء", zh: "需要关注或处理的事项" })}
           >
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {alerts.map((alert) => (
@@ -500,8 +501,8 @@ export default function Dashboard() {
         {highlights && (
           <DashboardSection
             className="pro-section"
-            title={t("dashboard.winsTitle") || "سەرکەوتنەکانی ئەم هەفتەیە"}
-            description={t("dashboard.winsDesc") || "ریکۆرد و خاڵە ئەرێنییەکانی ئەم هەفتەیە"}
+            title={t("dashboard.winsTitle") || pickLang(language, { ku: "سەرکەوتنەکانی ئەم هەفتەیە", en: "This week's wins", ar: "إنجازات هذا الأسبوع", zh: "本周成果" })}
+            description={t("dashboard.winsDesc") || pickLang(language, { ku: "ریکۆرد و خاڵە ئەرێنییەکانی ئەم هەفتەیە", en: "Records and positive highlights this week", ar: "الأرقام القياسية والنقاط الإيجابية لهذا الأسبوع", zh: "本周的纪录与亮点" })}
           >
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {/* Weekly profit */}
@@ -510,17 +511,17 @@ export default function Dashboard() {
                   <TrendingUp className="h-5 w-5" />
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">قازانجی ئەم هەفتەیە</p>
+                  <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "قازانجی ئەم هەفتەیە", en: "This week's profit", ar: "ربح هذا الأسبوع", zh: "本周利润" })}</p>
                   <p className="text-xl font-bold">${(highlights.profit.thisWeekUsd || 0).toFixed(0)}</p>
                   {highlights.profit.deltaPct !== null && (
                     <p className={`text-xs ${highlights.profit.deltaPct >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-                      {highlights.profit.deltaPct >= 0 ? "▲" : "▼"} {Math.abs(Math.round(highlights.profit.deltaPct))}% بەراورد بە هەفتەی ڕابردوو
+                      {highlights.profit.deltaPct >= 0 ? "▲" : "▼"} {Math.abs(Math.round(highlights.profit.deltaPct))}% {pickLang(language, { ku: "بەراورد بە هەفتەی ڕابردوو", en: "vs. last week", ar: "مقارنة بالأسبوع الماضي", zh: "对比上周" })}
                     </p>
                   )}
                 </div>
                 {highlights.profit.isRecord && (
                   <Badge className="absolute top-2 end-2 gap-1 bg-amber-500 text-white hover:bg-amber-500">
-                    <Sparkles className="h-3 w-3" /> ریکۆردی نوێ!
+                    <Sparkles className="h-3 w-3" /> {pickLang(language, { ku: "ریکۆردی نوێ!", en: "New record!", ar: "رقم قياسي جديد!", zh: "新纪录！" })}
                   </Badge>
                 )}
               </div>
@@ -531,9 +532,9 @@ export default function Dashboard() {
                   <Users className="h-5 w-5" />
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">کڕیاری نوێی ئەم هەفتەیە</p>
+                  <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "کڕیاری نوێی ئەم هەفتەیە", en: "New customers this week", ar: "عملاء جدد هذا الأسبوع", zh: "本周新客户" })}</p>
                   <p className="text-xl font-bold">{highlights.newCustomers.thisWeek}</p>
-                  <p className="text-xs text-muted-foreground">هەفتەی ڕابردوو: {highlights.newCustomers.lastWeek}</p>
+                  <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "هەفتەی ڕابردوو", en: "Last week", ar: "الأسبوع الماضي", zh: "上周" })}: {highlights.newCustomers.lastWeek}</p>
                 </div>
               </div>
 
@@ -543,9 +544,9 @@ export default function Dashboard() {
                   <Package className="h-5 w-5" />
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">ئۆردەری ئەم هەفتەیە</p>
+                  <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "ئۆردەری ئەم هەفتەیە", en: "Orders this week", ar: "طلبات هذا الأسبوع", zh: "本周订单" })}</p>
                   <p className="text-xl font-bold">{highlights.orders.thisWeek}</p>
-                  <p className="text-xs text-muted-foreground">هەفتەی ڕابردوو: {highlights.orders.lastWeek}</p>
+                  <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "هەفتەی ڕابردوو", en: "Last week", ar: "الأسبوع الماضي", zh: "上周" })}: {highlights.orders.lastWeek}</p>
                 </div>
               </div>
 
@@ -556,9 +557,9 @@ export default function Dashboard() {
                     <Crown className="h-5 w-5" />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground">ئاکتیفترین کڕیار</p>
+                    <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "ئاکتیفترین کڕیار", en: "Most active customer", ar: "العميل الأكثر نشاطًا", zh: "最活跃客户" })}</p>
                     <p className="text-base font-bold truncate">{highlights.topCustomer.name || highlights.topCustomer.code}</p>
-                    <p className="text-xs text-muted-foreground">{highlights.topCustomer.orders} ئۆردەر · ${highlights.topCustomer.spentUsd.toFixed(0)}</p>
+                    <p className="text-xs text-muted-foreground">{highlights.topCustomer.orders} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })} · ${highlights.topCustomer.spentUsd.toFixed(0)}</p>
                   </div>
                 </div>
               )}
@@ -570,9 +571,9 @@ export default function Dashboard() {
                     <Ship className="h-5 w-5" />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground">خێراترین باچ</p>
+                    <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "خێراترین باچ", en: "Fastest batch", ar: "أسرع دفعة", zh: "最快批次" })}</p>
                     <p className="text-base font-bold truncate font-mono">{highlights.fastestBatch.code}</p>
-                    <p className="text-xs text-muted-foreground">{highlights.fastestBatch.days} ڕۆژ لە ڕێگادا</p>
+                    <p className="text-xs text-muted-foreground">{highlights.fastestBatch.days} {pickLang(language, { ku: "ڕۆژ لە ڕێگادا", en: "days in transit", ar: "أيام في الطريق", zh: "天在途" })}</p>
                   </div>
                 </div>
               )}
@@ -585,27 +586,27 @@ export default function Dashboard() {
           <DashboardSection
             className="pro-section"
             title={t("nav.selfOrders") || "سێلف ئۆردەر"}
-            description="پاکێجی خۆکڕاو (تەنها گواستنەوە) — ٣٠ ڕۆژی ڕابردوو"
+            description={pickLang(language, { ku: "پاکێجی خۆکڕاو (تەنها گواستنەوە) — ٣٠ ڕۆژی ڕابردوو", en: "Self-bought packages (shipping only) — last 30 days", ar: "طرود اشتراها العميل (شحن فقط) — آخر ٣٠ يوماً", zh: "客户自购包裹（仅运输）— 最近 30 天" })}
           >
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"><Package className="h-5 w-5" /></span>
-                <div><p className="text-xs text-muted-foreground">ژمارە</p><p className="text-xl font-bold">{selfOrders.summary.count}</p></div>
+                <div><p className="text-xs text-muted-foreground">{pickLang(language, { ku: "ژمارە", en: "Count", ar: "العدد", zh: "数量" })}</p><p className="text-xl font-bold">{selfOrders.summary.count}</p></div>
               </div>
               <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"><DollarSign className="h-5 w-5" /></span>
-                <div><p className="text-xs text-muted-foreground">داهات</p><p className="text-xl font-bold">${selfOrders.summary.revenueUsd.toFixed(0)}</p></div>
+                <div><p className="text-xs text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</p><p className="text-xl font-bold">${selfOrders.summary.revenueUsd.toFixed(0)}</p></div>
               </div>
               <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400"><TrendingUp className="h-5 w-5" /></span>
-                <div><p className="text-xs text-muted-foreground">قازانج</p><p className="text-xl font-bold text-teal-700 dark:text-teal-400">${selfOrders.summary.profitUsd.toFixed(0)}</p></div>
+                <div><p className="text-xs text-muted-foreground">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</p><p className="text-xl font-bold text-teal-700 dark:text-teal-400">${selfOrders.summary.profitUsd.toFixed(0)}</p></div>
               </div>
               <Link href="/self-orders" className="rounded-xl border bg-card p-4 flex items-center justify-between gap-3 hover:bg-accent transition-colors">
                 <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">باشترین کڕیار</p>
+                  <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "باشترین کڕیار", en: "Top customer", ar: "أفضل عميل", zh: "最佳客户" })}</p>
                   <p className="text-base font-bold truncate">{selfOrders.summary.topCustomers[0]?.name || selfOrders.summary.topCustomers[0]?.code || "—"}</p>
                 </div>
-                <Badge variant="secondary">بینینی هەموو</Badge>
+                <Badge variant="secondary">{pickLang(language, { ku: "بینینی هەموو", en: "View all", ar: "عرض الكل", zh: "查看全部" })}</Badge>
               </Link>
             </div>
           </DashboardSection>

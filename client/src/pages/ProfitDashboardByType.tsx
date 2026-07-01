@@ -1,6 +1,8 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
+import { pickLang } from "@/lib/lang";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DollarSign, TrendingUp, Package, ShoppingCart, HandCoins, Calendar, FileDown, FileText } from "lucide-react";
@@ -31,12 +33,16 @@ const COLORS = {
   commission: "#f59e0b", // amber-500
 };
 
-const orderTypeLabels: Record<string, string> = {
-  full_package: "پاکێجی تەواو",
-  commission: "کڕین بە تێچوو",
+const orderTypeLabelMap: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
+  full_package: { ku: "پاکێجی تەواو", en: "Full Package", ar: "الباقة الكاملة", zh: "全包套餐" },
+  commission: { ku: "کڕین بە تێچوو", en: "Buy at Cost", ar: "الشراء بالتكلفة", zh: "代购按成本" },
 };
 
 export default function ProfitDashboardByType() {
+  const { language } = useTranslation();
+  const orderTypeLabel = (orderType: string) =>
+    orderTypeLabelMap[orderType] ? pickLang(language, orderTypeLabelMap[orderType]) : orderType;
+
   const [dateRange, setDateRange] = useState<string>("all");
   const [customStartDate, setCustomStartDate] = useState<string>("");
   const [customEndDate, setCustomEndDate] = useState<string>("");
@@ -50,10 +56,10 @@ export default function ProfitDashboardByType() {
     
     // Prepare data for Excel
     const data = profitByType.map(item => ({
-      "جۆری ئۆردەر": orderTypeLabels[item.orderType],
-      "ژمارەی ئۆردەرەکان": item.totalOrders,
-      "کۆی قازانج ($)": Number(item.totalProfit || 0).toFixed(2),
-      "ناوەندی قازانج ($)": Number(item.avgProfit || 0).toFixed(2),
+      [pickLang(language, { ku: "جۆری ئۆردەر", en: "Order Type", ar: "نوع الطلب", zh: "订单类型" })]: orderTypeLabel(item.orderType),
+      [pickLang(language, { ku: "ژمارەی ئۆردەرەکان", en: "Number of Orders", ar: "عدد الطلبات", zh: "订单数量" })]: item.totalOrders,
+      [pickLang(language, { ku: "کۆی قازانج ($)", en: "Total Profit ($)", ar: "إجمالي الربح ($)", zh: "总利润 ($)" })]: Number(item.totalProfit || 0).toFixed(2),
+      [pickLang(language, { ku: "ناوەندی قازانج ($)", en: "Average Profit ($)", ar: "متوسط الربح ($)", zh: "平均利润 ($)" })]: Number(item.avgProfit || 0).toFixed(2),
     }));
 
     // Convert to CSV
@@ -81,13 +87,13 @@ export default function ProfitDashboardByType() {
 
   // Prepare chart data
   const barChartData = profitByType.map(item => ({
-    name: orderTypeLabels[item.orderType] || item.orderType,
-    قازانج: Number(item.totalProfit || 0),
+    name: orderTypeLabel(item.orderType),
+    profit: Number(item.totalProfit || 0),
     orderType: item.orderType,
   }));
 
   const pieChartData = profitByType.map(item => ({
-    name: orderTypeLabels[item.orderType] || item.orderType,
+    name: orderTypeLabel(item.orderType),
     value: Number(item.totalProfit || 0),
     orderType: item.orderType,
   }));
@@ -103,23 +109,23 @@ export default function ProfitDashboardByType() {
                 <TrendingUp className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">داشبۆردی قازانج</h1>
-                <p className="text-emerald-100">قازانج بە جۆری ئۆردەر</p>
+                <h1 className="text-2xl font-bold">{pickLang(language, { ku: "داشبۆردی قازانج", en: "Profit Dashboard", ar: "لوحة الأرباح", zh: "利润仪表板" })}</h1>
+                <p className="text-emerald-100">{pickLang(language, { ku: "قازانج بە جۆری ئۆردەر", en: "Profit by Order Type", ar: "الربح حسب نوع الطلب", zh: "按订单类型的利润" })}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5" />
               <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger className="w-[200px] bg-white/10 border-white/20 text-white">
-                  <SelectValue placeholder="هەڵبژاردنی ماوە" />
+                  <SelectValue placeholder={pickLang(language, { ku: "هەڵبژاردنی ماوە", en: "Select period", ar: "اختر الفترة", zh: "选择时间段" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">هەموو کاتەکان</SelectItem>
-                  <SelectItem value="today">ئەمڕۆ</SelectItem>
-                  <SelectItem value="this_week">ئەم هەفتەیە</SelectItem>
-                  <SelectItem value="this_month">ئەم مانگە</SelectItem>
-                  <SelectItem value="this_year">ئەم ساڵە</SelectItem>
-                  <SelectItem value="custom">ماوەی دیاریکراو</SelectItem>
+                  <SelectItem value="all">{pickLang(language, { ku: "هەموو کاتەکان", en: "All time", ar: "كل الأوقات", zh: "全部时间" })}</SelectItem>
+                  <SelectItem value="today">{pickLang(language, { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" })}</SelectItem>
+                  <SelectItem value="this_week">{pickLang(language, { ku: "ئەم هەفتەیە", en: "This week", ar: "هذا الأسبوع", zh: "本周" })}</SelectItem>
+                  <SelectItem value="this_month">{pickLang(language, { ku: "ئەم مانگە", en: "This month", ar: "هذا الشهر", zh: "本月" })}</SelectItem>
+                  <SelectItem value="this_year">{pickLang(language, { ku: "ئەم ساڵە", en: "This year", ar: "هذه السنة", zh: "今年" })}</SelectItem>
+                  <SelectItem value="custom">{pickLang(language, { ku: "ماوەی دیاریکراو", en: "Custom range", ar: "نطاق مخصص", zh: "自定义范围" })}</SelectItem>
                 </SelectContent>
               </Select>
               <Button
@@ -149,14 +155,14 @@ export default function ProfitDashboardByType() {
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
                 className="px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white"
-                placeholder="لە بەرواری"
+                placeholder={pickLang(language, { ku: "لە بەرواری", en: "From date", ar: "من تاريخ", zh: "起始日期" })}
               />
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
                 className="px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white"
-                placeholder="بۆ بەرواری"
+                placeholder={pickLang(language, { ku: "بۆ بەرواری", en: "To date", ar: "إلى تاريخ", zh: "结束日期" })}
               />
             </div>
           )}
@@ -168,7 +174,7 @@ export default function ProfitDashboardByType() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-emerald-600 font-medium">کۆی قازانج</p>
+                  <p className="text-sm text-emerald-600 font-medium">{pickLang(language, { ku: "کۆی قازانج", en: "Total Profit", ar: "إجمالي الربح", zh: "总利润" })}</p>
                   <p className="text-2xl font-bold text-emerald-700">${(totalProfit || 0).toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-emerald-100 rounded-xl">
@@ -182,7 +188,7 @@ export default function ProfitDashboardByType() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-600 font-medium">کۆی ئۆردەرەکان</p>
+                  <p className="text-sm text-blue-600 font-medium">{pickLang(language, { ku: "کۆی ئۆردەرەکان", en: "Total Orders", ar: "إجمالي الطلبات", zh: "订单总数" })}</p>
                   <p className="text-2xl font-bold text-blue-700">{totalOrders}</p>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-xl">
@@ -201,9 +207,9 @@ export default function ProfitDashboardByType() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className={`text-sm text-${colorClass}-600 font-medium`}>{orderTypeLabels[item.orderType]}</p>
+                      <p className={`text-sm text-${colorClass}-600 font-medium`}>{orderTypeLabel(item.orderType)}</p>
                       <p className="text-2xl font-bold text-${colorClass}-700">${Number(item.totalProfit || 0).toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">{item.totalOrders} ئۆردەر</p>
+                      <p className="text-xs text-muted-foreground">{item.totalOrders} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })}</p>
                     </div>
                     <div className={`p-3 bg-${colorClass}-100 rounded-xl`}>
                       <Icon className={`h-6 w-6 text-${colorClass}-600`} />
@@ -220,7 +226,7 @@ export default function ProfitDashboardByType() {
           {/* Bar Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>قازانج بە جۆری ئۆردەر</CardTitle>
+              <CardTitle>{pickLang(language, { ku: "قازانج بە جۆری ئۆردەر", en: "Profit by Order Type", ar: "الربح حسب نوع الطلب", zh: "按订单类型的利润" })}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -233,7 +239,7 @@ export default function ProfitDashboardByType() {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="قازانج" fill="#10b981" />
+                    <Bar dataKey="profit" name={pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })} fill="#10b981" />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -243,7 +249,7 @@ export default function ProfitDashboardByType() {
           {/* Pie Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>ڕێژەی قازانج بە جۆری ئۆردەر</CardTitle>
+              <CardTitle>{pickLang(language, { ku: "ڕێژەی قازانج بە جۆری ئۆردەر", en: "Profit Share by Order Type", ar: "نسبة الربح حسب نوع الطلب", zh: "按订单类型的利润占比" })}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -276,7 +282,7 @@ export default function ProfitDashboardByType() {
         {/* Detailed Table */}
         <Card className="print:shadow-none">
           <CardHeader>
-            <CardTitle>وردەکاریەکان</CardTitle>
+            <CardTitle>{pickLang(language, { ku: "وردەکاریەکان", en: "Details", ar: "التفاصيل", zh: "详细信息" })}</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -290,14 +296,14 @@ export default function ProfitDashboardByType() {
                     <div className="flex items-center gap-4">
                       <div className={`w-4 h-4 rounded-full`} style={{ backgroundColor: COLORS[item.orderType as keyof typeof COLORS] }}></div>
                       <div>
-                        <p className="font-medium">{orderTypeLabels[item.orderType]}</p>
-                        <p className="text-sm text-muted-foreground">{item.totalOrders} ئۆردەر</p>
+                        <p className="font-medium">{orderTypeLabel(item.orderType)}</p>
+                        <p className="text-sm text-muted-foreground">{item.totalOrders} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-emerald-600">${Number(item.totalProfit || 0).toFixed(2)}</p>
                       <p className="text-sm text-muted-foreground">
-                        ناوەندی: ${Number(item.avgProfit || 0).toFixed(2)}
+                        {pickLang(language, { ku: "ناوەندی", en: "Average", ar: "المتوسط", zh: "平均" })}: ${Number(item.avgProfit || 0).toFixed(2)}
                       </p>
                     </div>
                   </div>

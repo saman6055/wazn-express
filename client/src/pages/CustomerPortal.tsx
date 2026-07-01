@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 type TabType = "news" | "tran" | "search" | "financial" | "me";
 type ShippingTab = "air" | "sea" | "dangerous";
@@ -42,6 +43,7 @@ function BatchCard({
   eta?: number;
   onViewDetails: () => void;
 }) {
+  const { language } = useTranslation();
   const statusColors: Record<string, string> = {
     in_transit: "bg-green-500",
     arrived: "bg-emerald-500",
@@ -50,13 +52,13 @@ function BatchCard({
     delivered: "bg-teal-500",
   };
 
-  const statusLabels: Record<string, string> = {
-    in_transit: "لە ڕێگادایە",
-    arrived: "گەیشتووە",
-    received: "وەرگیراوە",
-    customs: "گومرگ",
-    delivered: "گەیەندراوە",
-    preparing: "ئامادەکاری",
+  const statusLabels: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
+    in_transit: { ku: "لە ڕێگادایە", en: "In transit", ar: "في الطريق", zh: "运输中" },
+    arrived: { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" },
+    received: { ku: "وەرگیراوە", en: "Received", ar: "تم الاستلام", zh: "已接收" },
+    customs: { ku: "گومرگ", en: "Customs", ar: "الجمارك", zh: "海关" },
+    delivered: { ku: "گەیەندراوە", en: "Delivered", ar: "تم التسليم", zh: "已送达" },
+    preparing: { ku: "ئامادەکاری", en: "Preparing", ar: "قيد التحضير", zh: "准备中" },
   };
 
   return (
@@ -66,7 +68,7 @@ function BatchCard({
         <div className="flex items-center gap-2 flex-wrap mb-2">
           <span className="font-bold text-lg">Batch No.: {batchNo}</span>
           <Badge className={`${statusColors[status] || "bg-gray-500"} text-white text-xs px-3 py-1`}>
-            {statusLabels[status] || status}
+            {statusLabels[status] ? pickLang(language, statusLabels[status]) : status}
           </Badge>
           <Badge className="bg-coral-500 bg-[#FF6B6B] text-white text-xs px-3 py-1">
             {route}
@@ -102,7 +104,12 @@ function BatchCard({
           <div className="mt-3">
             <Badge variant="secondary" className="bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs px-3 py-1">
               <Calendar className="h-3 w-3 me-1 inline" />
-              بەنزیکەیی دەگات: {eta} ڕۆژی تر
+              {pickLang(language, {
+                ku: `بەنزیکەیی دەگات: ${eta} ڕۆژی تر`,
+                en: `Approx. arrival: ${eta} more days`,
+                ar: `الوصول التقريبي: ${eta} يوماً متبقياً`,
+                zh: `预计到达：还有 ${eta} 天`,
+              })}
             </Badge>
           </div>
         )}
@@ -121,6 +128,7 @@ function AirBatchDetail({
   packages: any[]; 
   onClose: () => void;
 }) {
+  const { language } = useTranslation();
   const trackingNumbers = packages.map((p: any) => p.trackingNumber).filter(Boolean);
   const totalWeight = packages.reduce((sum: number, p: any) => sum + (parseFloat(p.weightKg) || 0), 0);
   const totalCtn = packages.length;
@@ -152,7 +160,12 @@ function AirBatchDetail({
                 {batch?.estimatedArrival && (
                   <div className="flex items-center gap-2 mb-2">
                     <Badge className="bg-blue-100 text-blue-700">
-                      بەرواری گەیشتنی چاوەڕوانکراو
+                      {pickLang(language, {
+                        ku: "بەرواری گەیشتنی چاوەڕوانکراو",
+                        en: "Estimated arrival date",
+                        ar: "تاريخ الوصول المتوقع",
+                        zh: "预计到达日期",
+                      })}
                     </Badge>
                     <span className="font-semibold text-blue-600">
                       {new Date(batch.estimatedArrival).toLocaleDateString('ku-IQ', { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -162,17 +175,32 @@ function AirBatchDetail({
                 {batch?.actualArrival ? (
                   <div className="flex items-center gap-2">
                     <Badge className="bg-green-100 text-green-700">
-                      گەیشتووە
+                      {pickLang(language, {
+                        ku: "گەیشتووە",
+                        en: "Arrived",
+                        ar: "وصلت",
+                        zh: "已到达",
+                      })}
                     </Badge>
                     <span className="font-semibold text-green-600">
                       {new Date(batch.actualArrival).toLocaleDateString('ku-IQ', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </span>
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-sm">هێشتا نەگەیشتووە</p>
+                  <p className="text-gray-500 text-sm">{pickLang(language, {
+                    ku: "هێشتا نەگەیشتووە",
+                    en: "Not arrived yet",
+                    ar: "لم تصل بعد",
+                    zh: "尚未到达",
+                  })}</p>
                 )}
                 <p className="text-gray-400 text-xs mt-2">
-                  دوایین نوێکردنەوە: {batch?.updatedAt ? new Date(batch.updatedAt).toLocaleString() : "-"}
+                  {pickLang(language, {
+                    ku: `دوایین نوێکردنەوە: ${batch?.updatedAt ? new Date(batch.updatedAt).toLocaleString() : "-"}`,
+                    en: `Last update: ${batch?.updatedAt ? new Date(batch.updatedAt).toLocaleString() : "-"}`,
+                    ar: `آخر تحديث: ${batch?.updatedAt ? new Date(batch.updatedAt).toLocaleString() : "-"}`,
+                    zh: `最后更新：${batch?.updatedAt ? new Date(batch.updatedAt).toLocaleString() : "-"}`,
+                  })}
                 </p>
               </div>
             </div>
@@ -251,6 +279,7 @@ function SeaBatchDetail({
   packages: any[]; 
   onClose: () => void;
 }) {
+  const { language } = useTranslation();
   return (
     <div className="fixed inset-0 z-50 flex flex-col">
       {/* Header with ship icon */}
@@ -313,25 +342,45 @@ function SeaBatchDetail({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-cyan-100 text-sm">کۆی قەبارەی سیبی (CBM)</p>
+                <p className="text-cyan-100 text-sm">{pickLang(language, {
+                  ku: "کۆی قەبارەی سیبی (CBM)",
+                  en: "Total volume (CBM)",
+                  ar: "إجمالي الحجم (CBM)",
+                  zh: "总体积 (CBM)",
+                })}</p>
                 <p className="text-4xl font-bold">
                   {packages.reduce((sum: number, pkg: any) => sum + (parseFloat(pkg.volumeCbm) || 0), 0).toFixed(4)} m³
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-cyan-100 text-sm">ژمارەی پاکەت</p>
+                <p className="text-cyan-100 text-sm">{pickLang(language, {
+                  ku: "ژمارەی پاکەت",
+                  en: "Package count",
+                  ar: "عدد الطرود",
+                  zh: "包裹数量",
+                })}</p>
                 <p className="text-2xl font-bold">{packages.length}</p>
               </div>
             </div>
             <div className="mt-3 pt-3 border-t border-cyan-400/30 grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-cyan-100">کۆی کێشی</p>
+                <p className="text-cyan-100">{pickLang(language, {
+                  ku: "کۆی کێشی",
+                  en: "Total weight",
+                  ar: "إجمالي الوزن",
+                  zh: "总重量",
+                })}</p>
                 <p className="font-bold">
                   {packages.reduce((sum: number, pkg: any) => sum + (parseFloat(pkg.weightKg) || 0), 0).toFixed(2)} kg
                 </p>
               </div>
               <div>
-                <p className="text-cyan-100">نرخی هەر CBM</p>
+                <p className="text-cyan-100">{pickLang(language, {
+                  ku: "نرخی هەر CBM",
+                  en: "Price per CBM",
+                  ar: "سعر كل CBM",
+                  zh: "每 CBM 价格",
+                })}</p>
                 <p className="font-bold">${batch?.pricePerCbm || "0"}/CBM</p>
               </div>
             </div>
@@ -342,10 +391,10 @@ function SeaBatchDetail({
         <Card className="bg-white rounded-2xl mb-4">
           <CardContent className="p-4">
             <div className="grid grid-cols-4 gap-2 text-center border-b pb-2 mb-2">
-              <span className="text-gray-400 text-sm">کۆد</span>
-              <span className="text-gray-400 text-sm">کێشی</span>
+              <span className="text-gray-400 text-sm">{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编码" })}</span>
+              <span className="text-gray-400 text-sm">{pickLang(language, { ku: "کێشی", en: "Weight", ar: "الوزن", zh: "重量" })}</span>
               <span className="text-gray-400 text-sm">CBM</span>
-              <span className="text-gray-400 text-sm">نرخ</span>
+              <span className="text-gray-400 text-sm">{pickLang(language, { ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })}</span>
             </div>
             {packages.map((pkg: any, idx: number) => {
               const pkgCbm = parseFloat(pkg.volumeCbm) || 0;
@@ -362,7 +411,7 @@ function SeaBatchDetail({
             })}
             {/* Total Row */}
             <div className="grid grid-cols-4 gap-2 text-center py-3 bg-gray-50 rounded-lg mt-2 font-bold">
-              <span>کۆی</span>
+              <span>{pickLang(language, { ku: "کۆی", en: "Total", ar: "الإجمالي", zh: "合计" })}</span>
               <span>{packages.reduce((sum: number, pkg: any) => sum + (parseFloat(pkg.weightKg) || 0), 0).toFixed(2)}kg</span>
               <span className="text-cyan-600">
                 {packages.reduce((sum: number, pkg: any) => sum + (parseFloat(pkg.volumeCbm) || 0), 0).toFixed(4)}
