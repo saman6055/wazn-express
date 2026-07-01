@@ -7,6 +7,7 @@ import { useLocation } from "wouter";
 import HomeClassic from "./HomeClassic";
 import HomeMinimal from "./HomeMinimal";
 import HomeProfessional from "./HomeProfessional";
+import HomeModern from "./HomeModern";
 
 export default function Home() {
   const { data: variant, isLoading: variantLoading } = trpc.public.getLandingPageVariant.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
@@ -51,5 +52,10 @@ export default function Home() {
     return <HomeProfessional />;
   }
 
-  return <HomeClassic />;
+  if (variant === "classic") {
+    return <HomeClassic />;
+  }
+
+  // New premium default landing.
+  return <HomeModern />;
 }
