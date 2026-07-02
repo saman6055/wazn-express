@@ -1087,3 +1087,51 @@ input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+/* Aligned numbers in tables — tabular (fixed-width) figures look professional
+   and line up columns of money/counts. */
+[data-slot="table-cell"],
+[data-slot="table-head"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Clear keyboard-focus outline for links and custom controls (native buttons /
+   inputs already get shadcn's focus ring). Accessibility, no visual noise on
+   mouse users thanks to :focus-visible. */
+a:focus-visible,
+[tabindex]:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Clean print output — drop the app chrome so invoices, reports and any page
+   print as a tidy document. */
+@media print {
+  aside#sidebar,
+  .fixed {
+    display: none !important;
+  }
+  main {
+    margin: 0 !important;
+  }
+  body,
+  main {
+    background: #fff !important;
+  }
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  a[href] {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+  tr,
+  .pro-card,
+  .pro-stat-card,
+  [data-slot="table"] {
+    break-inside: avoid;
+  }
+}

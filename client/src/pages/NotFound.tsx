@@ -1,54 +1,60 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Home } from "lucide-react";
+import { Home, ArrowLeft, Compass } from "lucide-react";
 import { useLocation } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
+import CompanyLogo from "@/components/CompanyLogo";
 
 export default function NotFound() {
-    const { t } = useTranslation();
-const [, setLocation] = useLocation();
-
-  const handleGoHome = () => {
-    setLocation("/");
-  };
+  const { language, isRTL } = useTranslation();
+  const [, setLocation] = useLocation();
+  const L = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-      <Card className="w-full max-w-lg mx-4 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-        <CardContent className="pt-8 pb-8 text-center">
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-red-100 rounded-full animate-pulse" />
-              <AlertCircle className="relative h-16 w-16 text-red-500" />
-            </div>
-          </div>
+    <div
+      dir={isRTL ? "rtl" : "ltr"}
+      className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 px-4"
+    >
+      <div className="pointer-events-none absolute -top-24 end-0 h-96 w-96 rounded-full bg-sky-300/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 start-0 h-96 w-96 rounded-full bg-violet-300/25 blur-3xl" />
 
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">404</h1>
+      <div className="relative text-center">
+        <div className="mb-8 flex justify-center">
+          <CompanyLogo size={48} iconClassName="h-6 w-6 text-white" fallbackBg="bg-gradient-to-br from-sky-500 to-violet-600" />
+        </div>
 
-          <h2 className="text-xl font-semibold text-slate-700 mb-4">
-            Page Not Found
-          </h2>
+        <p className="select-none bg-gradient-to-br from-sky-500 to-violet-600 bg-clip-text text-8xl font-black leading-none text-transparent md:text-9xl">
+          404
+        </p>
 
-          <p className="text-slate-600 mb-8 leading-relaxed">
-            Sorry, the page you are looking for doesn't exist.
-            <br />
-            It may have been moved or deleted.
-          </p>
+        <div className="mx-auto mt-4 mb-6 flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400">
+          <Compass className="h-4 w-4" />
+          <span className="text-sm font-medium">{L({ ku: "پەڕەکە نەدۆزرایەوە", en: "Page not found", ar: "الصفحة غير موجودة", zh: "页面未找到" })}</span>
+        </div>
 
-          <div
-            id="not-found-button-group"
-            className="flex flex-col sm:flex-row gap-3 justify-center"
+        <p className="mx-auto max-w-md text-slate-600 dark:text-slate-300 leading-relaxed">
+          {L({
+            ku: "ببورە، ئەو پەڕەیەی بەدوایدا دەگەڕێیت بوونی نییە — لەوانەیە گواستراوەتەوە یان سڕاوەتەوە.",
+            en: "Sorry, the page you're looking for doesn't exist — it may have been moved or deleted.",
+            ar: "عذراً، الصفحة التي تبحث عنها غير موجودة — ربما تم نقلها أو حذفها.",
+            zh: "抱歉，您要找的页面不存在——它可能已被移动或删除。",
+          })}
+        </p>
+
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Button
+            onClick={() => setLocation("/")}
+            className="gap-2 rounded-full bg-gradient-to-br from-sky-500 to-violet-600 px-6 text-white shadow-lg shadow-sky-500/25 hover:-translate-y-0.5 transition-all"
           >
-            <Button
-              onClick={handleGoHome}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              <Home className="w-4 h-4 me-2" />
-              Go Home
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            <Home className="h-4 w-4" />
+            {L({ ku: "پەڕەی سەرەکی", en: "Go home", ar: "الصفحة الرئيسية", zh: "返回首页" })}
+          </Button>
+          <Button variant="ghost" onClick={() => window.history.back()} className="gap-2 rounded-full text-slate-600 dark:text-slate-300">
+            <ArrowLeft className={"h-4 w-4 " + (isRTL ? "rotate-180" : "")} />
+            {L({ ku: "گەڕانەوە", en: "Go back", ar: "رجوع", zh: "返回" })}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

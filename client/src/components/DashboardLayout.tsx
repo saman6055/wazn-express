@@ -682,7 +682,7 @@ function DashboardLayoutContent({
             dashboard home. Available on every page. Sticks just below the
             mobile header (top-14) or to the viewport on desktop (top-0). */}
         <div className={cn(
-          "sticky z-30 flex items-center gap-1 h-11 px-2 md:px-6 border-b border-gray-200 dark:border-gray-700 bg-white/85 dark:bg-gray-900/85 backdrop-blur",
+          "sticky z-30 flex items-center gap-1 h-11 px-2 md:px-6 border-b border-gray-200 dark:border-gray-700 bg-white/85 dark:bg-gray-900/85 backdrop-blur print:hidden",
           isMobile ? "top-14" : "top-0"
         )}>
           <Button

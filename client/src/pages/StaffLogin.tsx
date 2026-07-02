@@ -47,7 +47,9 @@ export default function StaffLogin() {
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 flex items-center justify-center p-4">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <div className="pointer-events-none absolute -top-24 end-0 h-96 w-96 rounded-full bg-sky-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 start-0 h-96 w-96 rounded-full bg-violet-500/20 blur-3xl" />
       {/* Language switcher — pick your language before signing in */}
       <div className="absolute top-4 end-4 z-10">
         <LanguageSwitcher className="bg-white/10 text-white border-white/20 hover:bg-white/20 hover:text-white" />
@@ -64,7 +66,7 @@ export default function StaffLogin() {
             />
           </div>
           <h1 className="text-3xl font-bold text-white">{company.name}</h1>
-          <p className="text-emerald-200 mt-2">{t("auth.staffSubtitle")}</p>
+          <p className="text-slate-300 mt-2">{t("auth.staffSubtitle")}</p>
         </div>
 
         {/* Login Card */}
@@ -124,7 +126,7 @@ export default function StaffLogin() {
 
               <Button
                 type="submit"
-                className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-lg"
+                className="w-full h-12 bg-gradient-to-br from-sky-500 to-violet-600 hover:opacity-95 text-lg shadow-lg shadow-sky-500/25"
                 disabled={loginMutation.isPending}
               >
                 {loginMutation.isPending ? (
@@ -150,7 +152,7 @@ export default function StaffLogin() {
         </Card>
 
         {/* Footer */}
-        <p className="text-center text-emerald-200 text-sm mt-6">
+        <p className="text-center text-slate-400 text-sm mt-6">
           © {new Date().getFullYear()} {company.name}. {t("home.allRightsReserved")}
         </p>
       </div>
