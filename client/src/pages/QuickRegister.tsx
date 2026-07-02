@@ -11,12 +11,15 @@ import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calcul
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { pickLang } from "@/lib/lang";
 
 import { soundManager } from "@/lib/soundManager";
 
 export default function QuickRegister() {
-  const { t } = useTranslation();
-  
+  const { t, language } = useTranslation();
+  const { user } = useAuth();
+
   // Tracking search state
   const [trackingNumber, setTrackingNumber] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -458,7 +461,7 @@ export default function QuickRegister() {
   };
   
   // State for last registered package
-  const [lastRegistered, setLastRegistered] = useState<{ packageCode: string; trackingNumber: string; customerName: string; time: Date } | null>(null);
+  const [lastRegistered, setLastRegistered] = useState<{ packageCode: string; trackingNumber: string; customerName: string; time: Date; enteredBy?: string; orderDate?: Date | null } | null>(null);
   
   const registerMutation = trpc.packages.register.useMutation({
     meta: { skipGlobalToast: true },
@@ -466,12 +469,17 @@ export default function QuickRegister() {
       // Play success beep sound
       soundManager.playSuccess();
 
-      // Save last registered package info
+      // Save last registered package info (who entered it, and — when this
+      // package came from an existing order — that order's own registration
+      // date, so we can show how long it took to reach quick-register).
+      const orderCreatedAt = (foundOrder as unknown as { orderData?: { order?: { createdAt?: string | Date } } })?.orderData?.order?.createdAt;
       setLastRegistered({
         packageCode: data.packageCode,
         trackingNumber: trackingNumber,
         customerName: customerSearch || t("quickRegister.unclaimed"),
-        time: new Date()
+        time: new Date(),
+        enteredBy: ((user?.name as string) || "").trim() || undefined,
+        orderDate: orderCreatedAt ? new Date(orderCreatedAt) : null,
       });
 
       toast.success(
@@ -729,17 +737,46 @@ export default function QuickRegister() {
               </div>
             </div>
 
-            {/* Last Registered Package */}
+            {/* Last Registered Package — richer, wraps cleanly, never overflows */}
             {lastRegistered && (
-              <div className="mt-3 bg-muted/50 rounded-lg px-4 py-2.5 flex items-center gap-3 text-sm">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <div className="text-foreground">
-                  <span className="font-semibold">{t("quickRegister.lastRegistered")}: </span>
-                  <span className="font-mono">{lastRegistered.packageCode}</span>
-                  <span className="mx-2 text-muted-foreground">•</span>
-                  <span className="text-muted-foreground">{lastRegistered.trackingNumber}</span>
-                  <span className="mx-2 text-muted-foreground">•</span>
-                  <span className="text-muted-foreground">{lastRegistered.customerName}</span>
+              <div className="mt-3 rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 bg-gradient-to-br from-emerald-50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/20 px-4 py-3">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" /> {t("quickRegister.lastRegistered")}
+                  </span>
+                  <span className="font-mono font-bold text-foreground">{lastRegistered.packageCode}</span>
+                  {lastRegistered.trackingNumber && (
+                    <span className="inline-flex min-w-0 items-center gap-1 text-muted-foreground">
+                      <PackageSearch className="h-3.5 w-3.5 shrink-0" />
+                      <span className="font-mono truncate max-w-[14rem]" title={lastRegistered.trackingNumber}>{lastRegistered.trackingNumber}</span>
+                    </span>
+                  )}
+                  <span className="inline-flex min-w-0 items-center gap-1 text-muted-foreground">
+                    <User className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate max-w-[12rem]">{lastRegistered.customerName}</span>
+                  </span>
+                  {lastRegistered.enteredBy && (
+                    <span className="inline-flex items-center gap-1 text-muted-foreground">
+                      <User className="h-3.5 w-3.5 shrink-0" />
+                      {pickLang(language, { ku: "داخڵکرا لەلایەن", en: "By", ar: "بواسطة", zh: "录入" })}: <span className="font-medium text-foreground">{lastRegistered.enteredBy}</span>
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1 text-muted-foreground">
+                    <Calendar className="h-3.5 w-3.5 shrink-0" />
+                    {lastRegistered.time.toLocaleString()}
+                  </span>
+                  {lastRegistered.orderDate && (
+                    <>
+                      <span className="inline-flex items-center gap-1 text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5 shrink-0" />
+                        {pickLang(language, { ku: "بەرواری ئۆردەر", en: "Order date", ar: "تاريخ الطلب", zh: "订单日期" })}: {lastRegistered.orderDate.toLocaleDateString()}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                        <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+                        {pickLang(language, { ku: "ماوەی گەیشتن", en: "Transit", ar: "مدة الوصول", zh: "运达" })}: {Math.max(0, Math.round((lastRegistered.time.getTime() - lastRegistered.orderDate.getTime()) / 86400000))} {pickLang(language, { ku: "ڕۆژ", en: "days", ar: "يوم", zh: "天" })}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -1074,14 +1111,14 @@ export default function QuickRegister() {
                     {/* Batch Selection */}
                     <div className="mt-3">
                       <Select value={batchId} onValueChange={setBatchId}>
-                        <SelectTrigger className="h-10 text-sm">
+                        <SelectTrigger className="h-10 text-sm min-w-0 [&>span]:truncate [&>span]:block">
                           <SelectValue placeholder={t("quickRegister.batchPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">{t("quickRegister.noBatch")}</SelectItem>
                           {filteredBatches.map((batch: any) => (
                             <SelectItem key={batch.id} value={batch.id.toString()}>
-                              {batch.batchCode} {batch.pricePerKg ? `- $${batch.pricePerKg}/kg` : batch.pricePerCbm ? `- $${batch.pricePerCbm}/cbm` : ""}
+                              <span className="truncate">{batch.batchCode} {batch.pricePerKg ? `- $${batch.pricePerKg}/kg` : batch.pricePerCbm ? `- $${batch.pricePerCbm}/cbm` : ""}</span>
                             </SelectItem>
                           ))}
                         </SelectContent>
