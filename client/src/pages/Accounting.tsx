@@ -315,7 +315,7 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
                         const isDebit = txn.transactionType.startsWith('DEBIT');
                         const isCredit = txn.transactionType.startsWith('CREDIT');
                         return (
-                          <TableRow key={txn.id}>
+                          <TableRow key={txn.id} className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50">
                             <TableCell>{new Date(txn.createdAt).toLocaleDateString()}</TableCell>
                             <TableCell>
                               <Badge 
@@ -409,7 +409,7 @@ function CustomerBalanceRow({ customer }: { customer: any }) {
   const { data: balance } = trpc.customers.getBalance.useQuery({ customerId: customer.id });
   
   return (
-    <TableRow>
+    <TableRow className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50">
       <TableCell className="font-mono">{customer.customerCode}</TableCell>
       <TableCell className="font-medium">{customer.fullName}</TableCell>
       <TableCell>{customer.mobileNumber}</TableCell>

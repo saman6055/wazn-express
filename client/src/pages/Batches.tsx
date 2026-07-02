@@ -829,7 +829,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                   <CommandList>
                                     <CommandEmpty>{pickLang(language, { ku: "هیچ کڕیارێک نەدۆزرایەوە", en: "No customer found", ar: "لم يتم العثور على عميل", zh: "未找到客户" })}</CommandEmpty>
                                     <CommandGroup>
-                                      {customers?.filter(c => !customerPricing.find(cp => cp.customerId === c.id)).map(c => (
+                                      {customers?.filter(c => !customerPricing.find(cp => cp.customerId === c.id))
+                                        .slice()
+                                        .sort((a, b) => (a.customerCode || "").localeCompare(b.customerCode || "", undefined, { numeric: true, sensitivity: "base" }))
+                                        .map(c => (
                                         <CommandItem
                                           key={c.id}
                                           value={`${c.customerCode} ${c.fullName} ${(c as any).mobileNumber || ""}`}
