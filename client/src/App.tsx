@@ -13,6 +13,7 @@ import QueryErrorBoundary from "./components/QueryErrorBoundary";
 import { MutationToastHandler } from "./components/MutationToastHandler";
 import { OfflineProvider } from "./contexts/OfflineContext";
 import { StaffTips } from "./components/StaffTips";
+import { FastEntry } from "./components/FastEntry";
 
 // ---------------------------------------------------------------------------
 // Core & Home
@@ -335,6 +336,7 @@ function App() {
                   <Router />
                 </QueryErrorBoundary>
                 <StaffTips />
+                <FastEntry />
                 <PWAInstallPrompt />
               </TooltipProvider>
               </LandingThemeProvider>

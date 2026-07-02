@@ -323,7 +323,7 @@ export default function FullPackageForm() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form data-fast onSubmit={handleSubmit} className="space-y-3">
           {/* Customer Selection */}
           <Section icon={User} title={pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })} hint={pickLang(language, { ku: "کڕیارێک هەڵبژێرە بۆ ئەم ئۆردەرە", en: "Select a customer for this order", ar: "اختر عميلاً لهذا الطلب", zh: "为此订单选择客户" })} accent="emerald">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

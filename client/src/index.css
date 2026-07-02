@@ -979,3 +979,15 @@ html[data-density="compact"] [data-slot="table-cell"] {
 html[data-density="compact"] [data-slot="table-head"] {
   height: 2rem;
 }
+
+/* Faster numeric data entry: drop the fiddly spin buttons on number inputs so
+   staff can just type (paired with select-on-focus in FastEntry). */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
