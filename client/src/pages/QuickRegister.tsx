@@ -699,28 +699,30 @@ export default function QuickRegister() {
         {/* Professional Header with Stats */}
         <div className="mb-4">
           {/* Top Bar with Title and Stats */}
-          <div className="rounded-xl border bg-card p-4 shadow-sm">
-            <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-5 shadow-xl ring-1 ring-white/10 text-white">
+            <div className="pointer-events-none absolute -end-16 -top-20 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/10 to-transparent" />
+            <div className="relative flex items-center justify-between flex-wrap gap-4">
               {/* Title Section */}
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md ring-1 ring-white/25 text-white shadow-lg flex items-center justify-center">
                   <Zap className="h-6 w-6" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">{t("quickRegister.title")}</h1>
-                  <p className="text-muted-foreground text-sm">{t("quickRegister.shortcutsHint")}</p>
+                  <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-sm">{t("quickRegister.title")}</h1>
+                  <p className="text-white/85 text-sm">{t("quickRegister.shortcutsHint")}</p>
                 </div>
               </div>
 
               {/* Today's Counter */}
               <div className="flex items-center gap-3">
-                <div className="bg-muted/50 rounded-lg px-4 py-2 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center">
+                <div className="rounded-xl bg-white/15 backdrop-blur ring-1 ring-white/25 px-4 py-2 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center">
                     <Calendar className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground">{t("quickRegister.todayRegistered")}</div>
-                    <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{packageStats?.todayCount || 0}</div>
+                    <div className="text-xs text-white/80">{t("quickRegister.todayRegistered")}</div>
+                    <div className="text-2xl font-bold text-white">{packageStats?.todayCount || 0}</div>
                   </div>
                 </div>
 
@@ -729,7 +731,7 @@ export default function QuickRegister() {
                   type="button"
                   variant="outline"
                   onClick={clearAllForm}
-                  className="h-12 px-4"
+                  className="h-12 px-4 bg-white/15 text-white border-white/25 hover:bg-white/25 hover:text-white backdrop-blur"
                 >
                   <RotateCcw className="h-5 w-5 ms-2" />
                   {t("quickRegister.clear")}
