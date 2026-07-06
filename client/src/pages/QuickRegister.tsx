@@ -401,23 +401,16 @@ export default function QuickRegister() {
     }
   }, []);
   
-  // Auto-search when tracking number changes
+  // Manual/keyboard-friendly: typing just updates the field (no noisy
+  // partial-search). The search runs when the user presses Enter (or a barcode
+  // scanner sends its trailing Enter) via the input's onKeyDown handler, or when
+  // the Search button is clicked.
   const handleTrackingChange = (value: string) => {
     setTrackingNumber(value);
     setFoundOrder(null);
-    
-    // Clear previous timeout
     if (searchTimeout) {
       clearTimeout(searchTimeout);
-    }
-    
-    // Debounce search to allow user time to type (300ms delay)
-    if (value.trim().length >= 1) {
-      // Use 300ms timeout to give user time to finish typing
-      const timeout = setTimeout(() => {
-        handleTrackingSearch();
-      }, 300);
-      setSearchTimeout(timeout);
+      setSearchTimeout(null);
     }
   };
   
@@ -786,14 +779,16 @@ export default function QuickRegister() {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            {/* Main Form - 3 columns */}
-            <div className="lg:col-span-3 space-y-4">
-              
-              {/* Row 1: Tracking + Customer + Warehouse + Shipping Type */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-stretch [&>*]:h-full">
-                {/* Tracking Number */}
-                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div className="space-y-4">
+            {/* Main Form — full width; the summary sits at the very bottom */}
+            <div className="space-y-4">
+
+              {/* Row 1: Tracking + Customer + Warehouse + Shipping Type —
+                  two per row so each field is a comfortable, wide rectangle */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch [&>*]:h-full">
+                {/* Tracking Number — spans the full row so the field is a
+                    wide, comfortable rectangle (it's the primary input) */}
+                <Card className="md:col-span-2 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center">
@@ -1377,9 +1372,9 @@ export default function QuickRegister() {
               </Card>
             </div>
 
-            {/* Summary Sidebar */}
-            <div className="lg:col-span-1">
-              <Card className="sticky top-4 border bg-card rounded-xl shadow-sm">
+            {/* Summary — full-width bar at the very bottom of the form */}
+            <div>
+              <Card className="border bg-card rounded-2xl shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -1388,72 +1383,69 @@ export default function QuickRegister() {
                     <span className="font-bold text-lg">{t("quickRegister.summary")}</span>
                   </div>
 
-                  <div className="space-y-3 text-sm">
+                  {/* Info tiles flow horizontally and wrap, filling the full width */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 text-sm">
                     {trackingNumber.trim() && (
-                      <div className="flex justify-between items-center gap-2 py-2 px-3 bg-muted/50 rounded-lg">
-                        <span className="text-muted-foreground shrink-0">{pickLang(language, { ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪号" })}</span>
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                        <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪号" })}</span>
                         <span className="font-mono font-medium truncate" title={trackingNumber}>{trackingNumber}</span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-lg">
-                      <span className="text-muted-foreground">{t("quickRegister.summaryCustomer")}</span>
-                      <span className="font-bold text-primary">
+                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                      <span className="text-xs text-muted-foreground">{t("quickRegister.summaryCustomer")}</span>
+                      <span className="font-bold text-primary truncate">
                         {isUnclaimed ? t("quickRegister.unclaimed") : (customerId ? customers?.find(c => c.id === customerId)?.customerCode : "-")}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-lg">
-                      <span className="text-muted-foreground">{t("quickRegister.summaryWarehouse")}</span>
-                      <span className="font-medium">
+                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                      <span className="text-xs text-muted-foreground">{t("quickRegister.summaryWarehouse")}</span>
+                      <span className="font-medium truncate">
                         {selectedWarehouse ? (selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? t("quickRegister.warehouseN", { id: selectedWarehouse.id })) : "-"}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-lg">
-                      <span className="text-muted-foreground">{t("quickRegister.summaryShipping")}</span>
-                      <span className="font-medium">
+                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                      <span className="text-xs text-muted-foreground">{t("quickRegister.summaryShipping")}</span>
+                      <span className="font-medium truncate">
                         {shippingType === "air_regular" ? t("quickRegister.summaryAir") : shippingType === "air_irregular" ? t("quickRegister.summaryIrregular") : t("quickRegister.summarySea")}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 px-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-900/50">
-                      <span className="text-emerald-700 dark:text-emerald-400">{t("quickRegister.summaryWeight")}</span>
+                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-900/50 min-w-0">
+                      <span className="text-xs text-emerald-700 dark:text-emerald-400">{t("quickRegister.summaryWeight")}</span>
                       <span className="font-mono font-bold text-emerald-800 dark:text-emerald-300">{parseFloat(weightKg || "0").toFixed(2)} kg</span>
                     </div>
 
                     {(shippingType === "air_regular" || shippingType === "air_irregular") && chargeableWeight > 0 && (
-                      <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/50">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-amber-700 dark:text-amber-400">{t("quickRegister.chargeableWeight")}</span>
-                          <span className="font-mono font-bold text-amber-900 dark:text-amber-300">{chargeableWeight.toFixed(2)} kg</span>
-                        </div>
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/50 min-w-0">
+                        <span className="text-xs text-amber-700 dark:text-amber-400">{t("quickRegister.chargeableWeight")}</span>
+                        <span className="font-mono font-bold text-amber-900 dark:text-amber-300">{chargeableWeight.toFixed(2)} kg</span>
                       </div>
                     )}
 
                     {shippingType === "sea" && cbm > 0 && (
-                      <div className="p-3 bg-cyan-50 dark:bg-cyan-950/30 rounded-lg border border-cyan-200 dark:border-cyan-900/50">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-cyan-700 dark:text-cyan-400">CBM</span>
-                          <span className="font-mono font-bold text-cyan-900 dark:text-cyan-300">{cbm.toFixed(4)} m³</span>
-                        </div>
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-cyan-50 dark:bg-cyan-950/30 rounded-xl border border-cyan-200 dark:border-cyan-900/50 min-w-0">
+                        <span className="text-xs text-cyan-700 dark:text-cyan-400">CBM</span>
+                        <span className="font-mono font-bold text-cyan-900 dark:text-cyan-300">{cbm.toFixed(4)} m³</span>
                       </div>
                     )}
 
                     {(lengthCm || widthCm || heightCm) && (
-                      <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-lg">
-                        <span className="text-muted-foreground">{pickLang(language, { ku: "قەبارە", en: "Dimensions", ar: "الأبعاد", zh: "尺寸" })}</span>
-                        <span className="font-mono text-xs">{lengthCm || 0}×{widthCm || 0}×{heightCm || 0} cm</span>
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                        <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "قەبارە", en: "Dimensions", ar: "الأبعاد", zh: "尺寸" })}</span>
+                        <span className="font-mono text-xs truncate">{lengthCm || 0}×{widthCm || 0}×{heightCm || 0} cm</span>
                       </div>
                     )}
 
                     {batchId && batchId !== "none" && (
-                      <div className="flex justify-between items-center gap-2 py-2 px-3 bg-muted/50 rounded-lg">
-                        <span className="text-muted-foreground shrink-0">{t("quickRegister.summaryBatch")}</span>
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                        <span className="text-xs text-muted-foreground">{t("quickRegister.summaryBatch")}</span>
                         <span className="font-medium truncate">{batches?.find((b: any) => b.id === parseInt(batchId))?.batchCode}</span>
                       </div>
                     )}
 
                     {estimatedPrice > 0 && (
-                      <div className="p-4 bg-primary/5 rounded-xl mt-3 border border-primary/20">
-                        <div className="text-xs text-muted-foreground mb-1">{t("quickRegister.estimatedPrice")}</div>
-                        <div className="text-3xl font-bold text-primary">${estimatedPrice.toFixed(2)}</div>
+                      <div className="col-span-2 sm:col-span-3 lg:col-span-2 flex flex-col gap-1 p-4 bg-primary/5 rounded-xl border border-primary/20 min-w-0">
+                        <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
+                        <span className="text-3xl font-bold text-primary">${estimatedPrice.toFixed(2)}</span>
                       </div>
                     )}
                   </div>
