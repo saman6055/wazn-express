@@ -1129,13 +1129,17 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
   const db = await getDb();
   if (!db) return null;
 
-  // Check in fullPackageOrders (single tracking field)
+  // Check in fullPackageOrders (single tracking field).
+  // leftJoin users purely to surface the name of the staff member who
+  // created the order (display-only; no effect on any lookup logic).
   let order = await db.select({
     order: fullPackageOrders,
-    customer: customers
+    customer: customers,
+    creatorName: users.name
   })
     .from(fullPackageOrders)
     .leftJoin(customers, eq(fullPackageOrders.customerId, customers.id))
+    .leftJoin(users, eq(fullPackageOrders.createdById, users.id))
     .where(and(eq(fullPackageOrders.trackingNumber, trackingNumber), notDeleted))
     .limit(1);
 
@@ -1149,10 +1153,12 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
     if (trackingRow.length > 0) {
       order = await db.select({
         order: fullPackageOrders,
-        customer: customers
+        customer: customers,
+        creatorName: users.name
       })
         .from(fullPackageOrders)
         .leftJoin(customers, eq(fullPackageOrders.customerId, customers.id))
+        .leftJoin(users, eq(fullPackageOrders.createdById, users.id))
         .where(and(eq(fullPackageOrders.id, trackingRow[0].fullPackageOrderId), notDeleted))
         .limit(1);
     }
@@ -1164,6 +1170,7 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
       source: order[0].order.orderType as "full_package" | "purchase_request" | "commission",
       order: order[0].order,
       customer: order[0].customer,
+      createdByName: order[0].creatorName ?? null,
       package: null
     };
   }

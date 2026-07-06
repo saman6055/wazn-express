@@ -29,6 +29,7 @@ export default function QuickRegister() {
     order: any;
     customer: any;
     package: any;
+    createdByName?: string | null;
   } | null>(null);
   // Expanded lookup result so we can render shared / multi / conflict
   // banners and decide which order IDs to link at submit time.
@@ -1391,6 +1392,31 @@ export default function QuickRegister() {
                         <span className="font-mono font-medium truncate" title={trackingNumber}>{trackingNumber}</span>
                       </div>
                     )}
+
+                    {/* Order provenance — shown only once a linked order is found:
+                        when it was registered, how long it has been waiting, and
+                        which staff member entered it. Display-only. */}
+                    {foundOrder?.found && foundOrder.order?.createdAt && (
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-900/50 min-w-0">
+                        <span className="text-xs text-indigo-700 dark:text-indigo-400">{pickLang(language, { ku: "بەرواری تۆماری ئۆردەر", en: "Order date", ar: "تاريخ تسجيل الطلب", zh: "订单登记日期" })}</span>
+                        <span className="font-medium truncate text-indigo-900 dark:text-indigo-300">{new Date(foundOrder.order.createdAt).toLocaleDateString("en-GB")}</span>
+                      </div>
+                    )}
+                    {foundOrder?.found && foundOrder.order?.createdAt && (
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-900/50 min-w-0">
+                        <span className="text-xs text-indigo-700 dark:text-indigo-400">{pickLang(language, { ku: "ڕۆژی تێپەڕیو", en: "Days elapsed", ar: "الأيام المنقضية", zh: "已过天数" })}</span>
+                        <span className="font-mono font-bold truncate text-indigo-900 dark:text-indigo-300">
+                          {Math.max(0, Math.round((Date.now() - new Date(foundOrder.order.createdAt).getTime()) / 86400000))} {pickLang(language, { ku: "ڕۆژ", en: "days", ar: "يوم", zh: "天" })}
+                        </span>
+                      </div>
+                    )}
+                    {foundOrder?.found && foundOrder.createdByName && (
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-900/50 min-w-0">
+                        <span className="text-xs text-indigo-700 dark:text-indigo-400">{pickLang(language, { ku: "تۆمارکەری ئۆردەر", en: "Order entered by", ar: "أدخل الطلب", zh: "订单录入者" })}</span>
+                        <span className="font-medium truncate text-indigo-900 dark:text-indigo-300" title={foundOrder.createdByName}>{foundOrder.createdByName}</span>
+                      </div>
+                    )}
+
                     <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
                       <span className="text-xs text-muted-foreground">{t("quickRegister.summaryCustomer")}</span>
                       <span className="font-bold text-primary truncate">
