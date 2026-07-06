@@ -780,13 +780,14 @@ export default function QuickRegister() {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Main Form — full width; the summary sits at the very bottom */}
-            <div className="space-y-4">
+            <div className="space-y-3">
 
-              {/* Row 1: Tracking + Customer + Warehouse + Shipping Type —
-                  two per row so each field is a comfortable, wide rectangle */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch [&>*]:h-full">
+              {/* Row 1: Tracking + Customer + Warehouse + Shipping + Weight —
+                  two per row so each field is a comfortable, wide rectangle
+                  and everything stays on one screen */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch [&>*]:h-full">
                 {/* Tracking Number — spans the full row so the field is a
                     wide, comfortable rectangle (it's the primary input) */}
                 <Card className="md:col-span-2 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -1124,28 +1125,29 @@ export default function QuickRegister() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
 
-              {/* Row 2: Weight - Always visible */}
-              <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center">
-                      <Scale className="h-5 w-5" />
+                {/* Weight — placed in the grid so it sits in the empty slot
+                    beside Shipping (keeps all fields on one screen). */}
+                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center">
+                        <Scale className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{t("quickRegister.stepWeight")}</span>
                     </div>
-                    <span className="text-base font-bold text-emerald-700 dark:text-emerald-400">{t("quickRegister.stepWeight")}</span>
-                  </div>
-                  <Input
-                    ref={weightRef}
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={weightKg}
-                    onChange={(e) => setWeightKg(e.target.value)}
-                    className="h-16 text-3xl font-mono font-bold text-center"
-                  />
-                </CardContent>
-              </Card>
+                    <Input
+                      ref={weightRef}
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={weightKg}
+                      onChange={(e) => setWeightKg(e.target.value)}
+                      className="h-14 text-2xl font-mono font-bold text-center"
+                    />
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* Row 2.5: Dimensions - Only for Air shipping */}
               {(shippingType === "air_regular" || shippingType === "air_irregular") && (
