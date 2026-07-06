@@ -789,7 +789,7 @@ export default function QuickRegister() {
             <div className="lg:col-span-3 space-y-4">
               
               {/* Row 1: Tracking + Customer + Warehouse + Shipping Type */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-stretch [&>*]:h-full">
                 {/* Tracking Number */}
                 <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
@@ -1051,7 +1051,7 @@ export default function QuickRegister() {
                       onValueChange={(v) => setOriginWarehouseId(v ? parseInt(v, 10) : null)}
                       disabled={!warehouses?.length}
                     >
-                      <SelectTrigger className="h-12 text-base">
+                      <SelectTrigger className="h-12 text-base min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
                         <SelectValue placeholder={t("quickRegister.warehousePlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -1084,7 +1084,7 @@ export default function QuickRegister() {
                       <span className="text-sm font-bold text-indigo-700 dark:text-indigo-400">{t("quickRegister.stepShipping")}</span>
                     </div>
                     <Select value={shippingType} onValueChange={(v) => { setShippingType(v as any); setBatchId(""); }}>
-                      <SelectTrigger className="h-12 text-base">
+                      <SelectTrigger className="h-12 text-base min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1313,7 +1313,7 @@ export default function QuickRegister() {
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold">{t("quickRegister.productCategory")}</Label>
                         <Select value={categoryId} onValueChange={setCategoryId}>
-                          <SelectTrigger className="h-11">
+                          <SelectTrigger className="h-11 min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
                             <SelectValue placeholder={t("quickRegister.selectCategory")} />
                           </SelectTrigger>
                           <SelectContent>
@@ -1387,6 +1387,12 @@ export default function QuickRegister() {
                   </div>
 
                   <div className="space-y-3 text-sm">
+                    {trackingNumber.trim() && (
+                      <div className="flex justify-between items-center gap-2 py-2 px-3 bg-muted/50 rounded-lg">
+                        <span className="text-muted-foreground shrink-0">{pickLang(language, { ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪号" })}</span>
+                        <span className="font-mono font-medium truncate" title={trackingNumber}>{trackingNumber}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-lg">
                       <span className="text-muted-foreground">{t("quickRegister.summaryCustomer")}</span>
                       <span className="font-bold text-primary">
@@ -1428,10 +1434,17 @@ export default function QuickRegister() {
                       </div>
                     )}
 
-                    {batchId && batchId !== "none" && (
+                    {(lengthCm || widthCm || heightCm) && (
                       <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-lg">
-                        <span className="text-muted-foreground">{t("quickRegister.summaryBatch")}</span>
-                        <span className="font-medium">{batches?.find((b: any) => b.id === parseInt(batchId))?.batchCode}</span>
+                        <span className="text-muted-foreground">{pickLang(language, { ku: "قەبارە", en: "Dimensions", ar: "الأبعاد", zh: "尺寸" })}</span>
+                        <span className="font-mono text-xs">{lengthCm || 0}×{widthCm || 0}×{heightCm || 0} cm</span>
+                      </div>
+                    )}
+
+                    {batchId && batchId !== "none" && (
+                      <div className="flex justify-between items-center gap-2 py-2 px-3 bg-muted/50 rounded-lg">
+                        <span className="text-muted-foreground shrink-0">{t("quickRegister.summaryBatch")}</span>
+                        <span className="font-medium truncate">{batches?.find((b: any) => b.id === parseInt(batchId))?.batchCode}</span>
                       </div>
                     )}
 
