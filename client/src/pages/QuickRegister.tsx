@@ -1038,93 +1038,8 @@ export default function QuickRegister() {
                   </CardContent>
                 </Card>
 
-                {/* Warehouse Selection — compact */}
-                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 flex items-center justify-center shrink-0">
-                        <Warehouse className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{t("quickRegister.stepWarehouse")}</span>
-                      {selectedWarehouse && <CheckCircle2 className="h-4 w-4 text-emerald-500 ms-auto" />}
-                    </div>
-                    <Select
-                      value={originWarehouseId != null ? String(originWarehouseId) : ""}
-                      onValueChange={(v) => setOriginWarehouseId(v ? parseInt(v, 10) : null)}
-                      disabled={!warehouses?.length}
-                    >
-                      <SelectTrigger className="h-10 text-sm min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
-                        <SelectValue placeholder={t("quickRegister.warehousePlaceholder")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {warehouses?.map((w) => (
-                          <SelectItem key={w.id} value={String(w.id)}>
-                            <span className="font-medium">{w.nameEn ?? w.nameKu ?? t("quickRegister.warehouseN", { id: w.id })}</span>
-                            {w.codePrefix && (
-                              <span className="text-muted-foreground me-2">({w.codePrefix})</span>
-                            )}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </CardContent>
-                </Card>
-
-                {/* Shipping Type + Batch — compact */}
-                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                        <Package className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">{t("quickRegister.stepShipping")}</span>
-                    </div>
-                    <Select value={shippingType} onValueChange={(v) => { setShippingType(v as any); setBatchId(""); }}>
-                      <SelectTrigger className="h-10 text-sm min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="air_regular">
-                          <div className="flex items-center gap-2">
-                            <Plane className="h-4 w-4 text-blue-500" />
-                            <span>{t("quickRegister.airRegular")}</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="air_irregular">
-                          <div className="flex items-center gap-2">
-                            <Plane className="h-4 w-4 text-purple-500" />
-                            <span>{t("quickRegister.airIrregular")}</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="sea">
-                          <div className="flex items-center gap-2">
-                            <Ship className="h-4 w-4 text-cyan-500" />
-                            <span>{t("quickRegister.sea")}</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {/* Batch Selection */}
-                    <div className="mt-2">
-                      <Select value={batchId} onValueChange={setBatchId}>
-                        <SelectTrigger className="h-9 text-xs min-w-0 [&>span]:truncate [&>span]:block">
-                          <SelectValue placeholder={t("quickRegister.batchPlaceholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">{t("quickRegister.noBatch")}</SelectItem>
-                          {filteredBatches.map((batch: any) => (
-                            <SelectItem key={batch.id} value={batch.id.toString()}>
-                              <span className="truncate">{batch.batchCode} {batch.pricePerKg ? `- $${batch.pricePerKg}/kg` : batch.pricePerCbm ? `- $${batch.pricePerCbm}/cbm` : ""}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Weight — placed in the grid so it sits in the empty slot
-                    beside Shipping (keeps all fields on one screen). */}
+                {/* Weight — the primary numeric field. Warehouse & Shipping
+                    moved out of the center to the compact side panel. */}
                 <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
@@ -1372,8 +1287,89 @@ export default function QuickRegister() {
               </Card>
             </div>
 
-            {/* Summary — sticky sidebar so it stays visible without scrolling */}
-            <div className="lg:col-span-1">
+            {/* Side panel: compact Warehouse + Shipping + Batch selectors
+                (moved out of the center) followed by the sticky Summary */}
+            <div className="lg:col-span-1 space-y-3">
+              <Card className="border bg-card rounded-2xl shadow-sm">
+                <CardContent className="p-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* Warehouse */}
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
+                        <Warehouse className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{pickLang(language, { ku: "کۆگا", en: "Warehouse", ar: "المستودع", zh: "仓库" })}</span>
+                        {selectedWarehouse && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 ms-auto shrink-0" />}
+                      </div>
+                      <Select
+                        value={originWarehouseId != null ? String(originWarehouseId) : ""}
+                        onValueChange={(v) => setOriginWarehouseId(v ? parseInt(v, 10) : null)}
+                        disabled={!warehouses?.length}
+                      >
+                        <SelectTrigger className="h-9 text-xs min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
+                          <SelectValue placeholder={t("quickRegister.warehousePlaceholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {warehouses?.map((w) => (
+                            <SelectItem key={w.id} value={String(w.id)}>
+                              <span className="font-medium">{w.nameEn ?? w.nameKu ?? t("quickRegister.warehouseN", { id: w.id })}</span>
+                              {w.codePrefix && (
+                                <span className="text-muted-foreground me-2">({w.codePrefix})</span>
+                              )}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {/* Shipping */}
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                        <Package className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{pickLang(language, { ku: "گواستنەوە", en: "Shipping", ar: "الشحن", zh: "运输" })}</span>
+                      </div>
+                      <Select value={shippingType} onValueChange={(v) => { setShippingType(v as any); setBatchId(""); }}>
+                        <SelectTrigger className="h-9 text-xs min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="air_regular">
+                            <div className="flex items-center gap-2">
+                              <Plane className="h-4 w-4 text-blue-500" />
+                              <span>{t("quickRegister.airRegular")}</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="air_irregular">
+                            <div className="flex items-center gap-2">
+                              <Plane className="h-4 w-4 text-purple-500" />
+                              <span>{t("quickRegister.airIrregular")}</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="sea">
+                            <div className="flex items-center gap-2">
+                              <Ship className="h-4 w-4 text-cyan-500" />
+                              <span>{t("quickRegister.sea")}</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  {/* Batch */}
+                  <Select value={batchId} onValueChange={setBatchId}>
+                    <SelectTrigger className="h-9 text-xs min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
+                      <SelectValue placeholder={t("quickRegister.batchPlaceholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t("quickRegister.noBatch")}</SelectItem>
+                      {filteredBatches.map((batch: any) => (
+                        <SelectItem key={batch.id} value={batch.id.toString()}>
+                          <span className="truncate">{batch.batchCode} {batch.pricePerKg ? `- $${batch.pricePerKg}/kg` : batch.pricePerCbm ? `- $${batch.pricePerCbm}/cbm` : ""}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
               <Card className="lg:sticky lg:top-4 border bg-card rounded-2xl shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b">
