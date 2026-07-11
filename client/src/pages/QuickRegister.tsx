@@ -1038,21 +1038,22 @@ export default function QuickRegister() {
                   </CardContent>
                 </Card>
 
-                {/* Warehouse Selection */}
+                {/* Warehouse Selection — compact */}
                 <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 flex items-center justify-center">
-                        <Warehouse className="h-4 w-4" />
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 flex items-center justify-center shrink-0">
+                        <Warehouse className="h-3.5 w-3.5" />
                       </div>
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{t("quickRegister.stepWarehouse")}</span>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{t("quickRegister.stepWarehouse")}</span>
+                      {selectedWarehouse && <CheckCircle2 className="h-4 w-4 text-emerald-500 ms-auto" />}
                     </div>
                     <Select
                       value={originWarehouseId != null ? String(originWarehouseId) : ""}
                       onValueChange={(v) => setOriginWarehouseId(v ? parseInt(v, 10) : null)}
                       disabled={!warehouses?.length}
                     >
-                      <SelectTrigger className="h-12 text-base min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
+                      <SelectTrigger className="h-10 text-sm min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
                         <SelectValue placeholder={t("quickRegister.warehousePlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -1066,26 +1067,20 @@ export default function QuickRegister() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {selectedWarehouse && (
-                      <div className="mt-3 p-2 rounded-lg text-sm bg-muted/50 text-slate-700 dark:text-slate-300 border flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-slate-500" />
-                        <span className="font-medium">{selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? t("quickRegister.warehouseN", { id: selectedWarehouse.id })}</span>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
 
-                {/* Shipping Type - Dropdown */}
+                {/* Shipping Type + Batch — compact */}
                 <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center justify-center">
-                        <Package className="h-4 w-4" />
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                        <Package className="h-3.5 w-3.5" />
                       </div>
-                      <span className="text-sm font-bold text-indigo-700 dark:text-indigo-400">{t("quickRegister.stepShipping")}</span>
+                      <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">{t("quickRegister.stepShipping")}</span>
                     </div>
                     <Select value={shippingType} onValueChange={(v) => { setShippingType(v as any); setBatchId(""); }}>
-                      <SelectTrigger className="h-12 text-base min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
+                      <SelectTrigger className="h-10 text-sm min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1110,9 +1105,9 @@ export default function QuickRegister() {
                       </SelectContent>
                     </Select>
                     {/* Batch Selection */}
-                    <div className="mt-3">
+                    <div className="mt-2">
                       <Select value={batchId} onValueChange={setBatchId}>
-                        <SelectTrigger className="h-10 text-sm min-w-0 [&>span]:truncate [&>span]:block">
+                        <SelectTrigger className="h-9 text-xs min-w-0 [&>span]:truncate [&>span]:block">
                           <SelectValue placeholder={t("quickRegister.batchPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
