@@ -780,13 +780,15 @@ export default function QuickRegister() {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="space-y-3">
-            {/* Main Form — full width; the summary sits at the very bottom */}
-            <div className="space-y-3">
+          {/* Two-column layout: all fields on the left, the summary as a
+              sticky sidebar on the right — keeps the whole form on one
+              screen (no downward scrolling), like before. */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
+            {/* Fields column */}
+            <div className="lg:col-span-2 space-y-3">
 
-              {/* Row 1: Tracking + Customer + Warehouse + Shipping + Weight —
-                  two per row so each field is a comfortable, wide rectangle
-                  and everything stays on one screen */}
+              {/* Tracking + Customer + Warehouse + Shipping + Weight —
+                  two per row so each field is a comfortable, wide rectangle */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch [&>*]:h-full">
                 {/* Tracking Number — spans the full row so the field is a
                     wide, comfortable rectangle (it's the primary input) */}
@@ -1375,9 +1377,9 @@ export default function QuickRegister() {
               </Card>
             </div>
 
-            {/* Summary — full-width bar at the very bottom of the form */}
-            <div>
-              <Card className="border bg-card rounded-2xl shadow-sm">
+            {/* Summary — sticky sidebar so it stays visible without scrolling */}
+            <div className="lg:col-span-1">
+              <Card className="lg:sticky lg:top-4 border bg-card rounded-2xl shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -1386,8 +1388,8 @@ export default function QuickRegister() {
                     <span className="font-bold text-lg">{t("quickRegister.summary")}</span>
                   </div>
 
-                  {/* Info tiles flow horizontally and wrap, filling the full width */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 text-sm">
+                  {/* Info tiles stack in the narrow sidebar (2-up on mid widths) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5 text-sm">
                     {trackingNumber.trim() && (
                       <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
                         <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪号" })}</span>
@@ -1471,7 +1473,7 @@ export default function QuickRegister() {
                     )}
 
                     {estimatedPrice > 0 && (
-                      <div className="col-span-2 sm:col-span-3 lg:col-span-2 flex flex-col gap-1 p-4 bg-primary/5 rounded-xl border border-primary/20 min-w-0">
+                      <div className="sm:col-span-2 lg:col-span-1 flex flex-col gap-1 p-4 bg-primary/5 rounded-xl border border-primary/20 min-w-0">
                         <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
                         <span className="text-3xl font-bold text-primary">${estimatedPrice.toFixed(2)}</span>
                       </div>
