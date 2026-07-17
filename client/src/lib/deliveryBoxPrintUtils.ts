@@ -475,135 +475,140 @@ export function printBoxReceipt(
   <title>${documentTitle}</title>
   <style>
     ${sharedStyles}
-    body { padding: 20px; max-width: 210mm; margin: 0 auto; }
+    body { padding: 10px; max-width: 210mm; margin: 0 auto; }
     @media print {
-      @page { size: A4; margin: 12mm; }
+      @page { size: A4; margin: 7mm; }
       body { padding: 0; }
+      /* Keep rows intact and repeat the header when the table spills to a
+         second page, so a big box still prints cleanly. */
+      thead { display: table-header-group; }
+      tr { page-break-inside: avoid; }
     }
     .receipt-card {
       border: 1px solid #e5e7eb;
       border-radius: 8px;
       overflow: hidden;
     }
+    /* Slim single-row header: company name + tagline on one side, the
+       receipt label + box code on the other. Replaces the old tall
+       centered banner + separate title bar to save vertical space. */
     .company-header {
       background: linear-gradient(135deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR});
       color: white;
-      padding: 24px 30px;
-      text-align: center;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
     .company-name {
-      font-size: 26px;
+      font-size: 18px;
       font-weight: 800;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+      line-height: 1.1;
     }
     .company-subtitle {
-      font-size: 12px;
+      font-size: 10px;
       opacity: 0.9;
     }
-    .receipt-body { padding: 24px 30px; }
-    .receipt-title-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid ${PRIMARY_COLOR};
-      padding-bottom: 12px;
-      margin-bottom: 20px;
-    }
-    .receipt-title {
-      font-size: 18px;
+    .header-receipt-meta { text-align: end; }
+    .header-receipt-title {
+      font-size: 13px;
       font-weight: 700;
-      color: ${PRIMARY_COLOR};
+      opacity: 0.95;
+      margin-bottom: 3px;
     }
     .receipt-code {
       font-family: monospace;
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 700;
-      color: #374151;
+      color: white;
       direction: ltr;
-      background: #f3f4f6;
-      padding: 6px 14px;
-      border-radius: 6px;
+      background: rgba(255,255,255,0.18);
+      padding: 3px 10px;
+      border-radius: 5px;
+      display: inline-block;
     }
+    .receipt-body { padding: 14px 18px; }
     .info-section {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 24px;
+      gap: 10px;
+      margin-bottom: 12px;
     }
     .info-block {
       background: #f9fafb;
-      border-radius: 8px;
-      padding: 14px 18px;
+      border-radius: 6px;
+      padding: 9px 12px;
     }
     .info-block-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       color: ${PRIMARY_COLOR};
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 8px;
-      padding-bottom: 6px;
+      margin-bottom: 5px;
+      padding-bottom: 4px;
       border-bottom: 1px solid #e5e7eb;
     }
     .info-row {
       display: flex;
       justify-content: space-between;
-      padding: 3px 0;
-      font-size: 13px;
+      padding: 1.5px 0;
+      font-size: 12px;
     }
     .info-row-label { color: #6b7280; }
     .info-row-value { font-weight: 600; }
-    .items-table-receipt { margin-bottom: 20px; }
+    .items-table-receipt { margin-bottom: 12px; }
     .items-table-receipt th {
       background: ${PRIMARY_COLOR};
       color: white;
       border: 1px solid ${PRIMARY_COLOR};
-      padding: 10px 12px;
-      font-size: 12px;
+      padding: 6px 8px;
+      font-size: 11px;
       font-weight: 700;
       text-align: center;
     }
     .financial-section {
       background: #f9fafb;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-bottom: 20px;
+      border-radius: 6px;
+      padding: 10px 16px;
+      margin-bottom: 12px;
     }
     .financial-row {
       display: flex;
       justify-content: space-between;
-      padding: 6px 0;
-      font-size: 13px;
+      padding: 3px 0;
+      font-size: 12px;
     }
     .financial-row.total {
       border-top: 2px solid ${PRIMARY_COLOR};
-      margin-top: 8px;
-      padding-top: 10px;
-      font-size: 16px;
+      margin-top: 6px;
+      padding-top: 7px;
+      font-size: 15px;
       font-weight: 800;
       color: ${PRIMARY_COLOR};
     }
     .receipt-footer {
       border-top: 1px dashed #d1d5db;
-      padding-top: 16px;
-      margin-top: 20px;
+      padding-top: 10px;
+      margin-top: 12px;
       text-align: center;
     }
     .thank-you {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       color: ${PRIMARY_COLOR};
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
     .footer-note {
-      font-size: 11px;
+      font-size: 10px;
       color: #9ca3af;
     }
     .signatures {
       display: flex;
       justify-content: space-between;
-      margin-top: 30px;
+      margin-top: 16px;
       padding: 0 20px;
     }
     .signature-block {
@@ -613,30 +618,31 @@ export function printBoxReceipt(
     .signature-line-receipt {
       border-bottom: 1px solid #374151;
       width: 100%;
-      height: 30px;
+      height: 22px;
       margin-bottom: 4px;
     }
     .signature-label {
-      font-size: 11px;
+      font-size: 10px;
       color: #6b7280;
     }
   </style>
 </head>
 <body>
   <div class="receipt-card">
-    <!-- Company Header -->
+    <!-- Slim company + receipt header (company on one side, receipt label
+         and box code on the other) -->
     <div class="company-header">
-      <div class="company-name">Wazn Express</div>
-      <div class="company-subtitle">${t("delivery.companyTagline") || "Shipping & Logistics Services"}</div>
+      <div>
+        <div class="company-name">Wazn Express</div>
+        <div class="company-subtitle">${t("delivery.companyTagline") || "Shipping & Logistics Services"}</div>
+      </div>
+      <div class="header-receipt-meta">
+        <div class="header-receipt-title">${t("delivery.receipt")}</div>
+        <div class="receipt-code">${box.boxCode}</div>
+      </div>
     </div>
 
     <div class="receipt-body">
-      <!-- Receipt Title -->
-      <div class="receipt-title-bar">
-        <div class="receipt-title">${t("delivery.receipt")}</div>
-        <div class="receipt-code">${box.boxCode}</div>
-      </div>
-
       <!-- Customer & Delivery Info -->
       <div class="info-section">
         <div class="info-block">
