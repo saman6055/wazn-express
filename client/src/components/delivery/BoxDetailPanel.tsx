@@ -47,6 +47,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
+import { CopyButton } from "@/components/CopyButton";
 
 // Languages offered for the printable box receipt / PDF. Staff can print
 // any one regardless of the active UI language. Chinese is intentionally
@@ -297,6 +298,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     );
   }
 
+  const copyLabel = pickLang(language, { ku: "کۆپی", en: "Copy", ar: "نسخ", zh: "复制" });
+
   const customer = customers.find((c) => c.id === box.customerId);
   const items = box.items ?? [];
   const status = box.status as BoxStatus;
@@ -417,6 +420,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             <div>
               <div className="flex items-center gap-2">
                 <CardTitle className="font-mono text-lg">{box.boxCode}</CardTitle>
+                <CopyButton value={box.boxCode} label={copyLabel} />
                 <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", statusCfg.className)}>
                   {t(statusCfg.key)}
                 </span>
@@ -499,9 +503,16 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                         {t(ITEM_TYPE_KEYS[item.itemType] || ITEM_TYPE_KEYS.regular)}
                       </span>
                     </TableCell>
-                    {/* Tracking Number */}
+                    {/* Tracking Number + copy */}
                     <TableCell className="font-mono text-xs" dir="ltr">
-                      {item.trackingNumber || "-"}
+                      {item.trackingNumber ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span>{item.trackingNumber}</span>
+                          <CopyButton value={item.trackingNumber} label={copyLabel} />
+                        </span>
+                      ) : (
+                        "-"
+                      )}
                     </TableCell>
                     {/* Details — varies by item type. Commission descriptions
                         are normalized so legacy 3-part breakdowns show in
@@ -523,9 +534,30 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                         <p className="text-muted-foreground">{t("delivery.sellingPrice")}: <span className="font-mono font-semibold text-purple-600">${Number(item.calculatedCostUsd || 0).toFixed(2)}</span></p>
                       )}
                     </TableCell>
-                    {/* Source (batch code / order code) */}
+                    {/* Source (batch code / order code). sourceInfo comes as
+                        "CM-A + CM-B - باچ AIR-2026-028" (or just "باچ …") —
+                        split it so each order code gets its own copy button. */}
                     <TableCell className="text-xs text-muted-foreground font-mono">
-                      {item.sourceInfo || "-"}
+                      {(() => {
+                        const src = String(item.sourceInfo || "");
+                        if (!src) return "-";
+                        const m = src.match(/^(.+?)\s-\s(باچ\s.+)$/);
+                        const orderCodes = m
+                          ? m[1].split(" + ").map((s: string) => s.trim()).filter(Boolean)
+                          : [];
+                        const batchPart = m ? m[2] : src;
+                        return (
+                          <div className="space-y-0.5">
+                            {orderCodes.map((code: string) => (
+                              <div key={code} className="flex items-center gap-1" dir="ltr">
+                                <span className="font-semibold text-foreground">{code}</span>
+                                <CopyButton value={code} label={copyLabel} />
+                              </div>
+                            ))}
+                            <div>{batchPart}</div>
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     {/* Weight */}
                     <TableCell className="text-end font-mono text-xs">
