@@ -67,6 +67,16 @@ export const scanningRouter = router({
       .query(async ({ input }) => {
         return db.searchTrackingInAllOrderTypes(input.trackingNumber);
       }),
+
+    // Display-only: how many of a customer's commission + full_package orders
+    // have fully arrived / been registered vs. how many are still expected.
+    // Used by Quick Register to signal when a customer's whole set is in and
+    // ready for delivery prep. Read-only — mutates nothing.
+    customerOrderProgress: staffProcedure
+      .input(z.object({ customerId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getCustomerOrderRegistrationProgress(input.customerId);
+      }),
     
     // Search package by tracking number or barcode
     searchByTracking: staffProcedure

@@ -1203,3 +1203,86 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
     package: null
   };
 }
+
+/**
+ * Customer-level registration progress across their commission + full_package
+ * orders. DISPLAY-ONLY (Quick Register shows how many of a customer's orders
+ * have fully arrived / been registered vs. how many are still expected). This
+ * function only reads — it never mutates any order or status.
+ *
+ * "Registered" reuses the same definition as getOrderCartonStatus: an order
+ * counts as registered when it owns at least one tracking and EVERY one of
+ * those trackings already has a package row. Orders with no tracking yet count
+ * as remaining. purchase_request / self-order is excluded (we don't know how
+ * many pieces the customer bought), as are terminal orders
+ * (delivered / cancelled / refunded / returned).
+ */
+export async function getCustomerOrderRegistrationProgress(customerId: number): Promise<{
+  total: number;
+  registered: number;
+  remaining: number;
+  allRegistered: boolean;
+}> {
+  const db = await getDb();
+  if (!db) return { total: 0, registered: 0, remaining: 0, allRegistered: false };
+
+  // Active commission + full_package orders owned by this customer.
+  const orders = await db.select({
+    id: fullPackageOrders.id,
+    trackingNumber: fullPackageOrders.trackingNumber,
+  })
+    .from(fullPackageOrders)
+    .where(and(
+      eq(fullPackageOrders.customerId, customerId),
+      inArray(fullPackageOrders.orderType, ["commission", "full_package"]),
+      notInArray(fullPackageOrders.status, ["delivered", "cancelled", "refunded", "returned"]),
+      notDeleted,
+    ));
+
+  if (orders.length === 0) {
+    return { total: 0, registered: 0, remaining: 0, allRegistered: false };
+  }
+
+  const orderIds = orders.map((o) => o.id);
+
+  // Every tracking each order owns: multi-tracking table + legacy field.
+  // Plain arrays/records (not Map/Set for-of) to avoid downlevelIteration.
+  const orderTrackings: Record<number, string[]> = {};
+  for (const o of orders) {
+    orderTrackings[o.id] = o.trackingNumber ? [o.trackingNumber.trim()] : [];
+  }
+  const trackingRows = await db.select({
+    orderId: fullPackageOrderTrackings.fullPackageOrderId,
+    trackingNumber: fullPackageOrderTrackings.trackingNumber,
+  })
+    .from(fullPackageOrderTrackings)
+    .where(inArray(fullPackageOrderTrackings.fullPackageOrderId, orderIds));
+  for (const r of trackingRows) {
+    if (!r.trackingNumber) continue;
+    (orderTrackings[r.orderId] ||= []).push(r.trackingNumber.trim());
+  }
+
+  // Which of all those trackings already have a registered package.
+  const allTrackings = new Set<string>();
+  for (const id of orderIds) for (const t of orderTrackings[id] || []) allTrackings.add(t);
+  const registeredTrackings = new Set<string>();
+  if (allTrackings.size > 0) {
+    const existing = await db.select({ tn: packages.trackingNumber })
+      .from(packages)
+      .where(inArray(packages.trackingNumber, Array.from(allTrackings)));
+    for (const r of existing) if (r.tn) registeredTrackings.add(r.tn.trim());
+  }
+
+  // An order is registered when it has ≥1 tracking and all are registered.
+  let registered = 0;
+  for (const id of orderIds) {
+    const list = orderTrackings[id] || [];
+    if (list.length > 0 && list.every((t) => registeredTrackings.has(t))) {
+      registered++;
+    }
+  }
+
+  const total = orders.length;
+  const remaining = total - registered;
+  return { total, registered, remaining, allRegistered: total > 0 && remaining === 0 };
+}

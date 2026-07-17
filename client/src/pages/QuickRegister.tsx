@@ -89,6 +89,15 @@ export default function QuickRegister() {
   const { data: categories, isError: categoriesError, refetch: refetchCategories } = trpc.productCategories.list.useQuery();
   const { data: packageStats, isError: statsError, refetch: refetchStats } = trpc.packages.stats.useQuery();
 
+  // Customer-level order progress (commission + full_package only) — display
+  // only. Powers the "N of this customer's orders registered / remaining"
+  // readout and the "all registered → ready for delivery" banner. Fetched only
+  // once a customer is set (an order lock or a manual pick).
+  const { data: customerOrderProgress } = trpc.scanning.customerOrderProgress.useQuery(
+    { customerId: customerId ?? 0 },
+    { enabled: !!customerId },
+  );
+
   const hasQueryError = customersError || batchesError || warehousesError || categoriesError || statsError;
   const refetchAll = () => {
     refetchCustomers();
@@ -494,9 +503,11 @@ export default function QuickRegister() {
       
       resetForm();
       
-      // Invalidate stats to update today's count
+      // Invalidate stats to update today's count, and the customer's order
+      // progress so the "registered / remaining" readout reflects this scan.
       trpcUtils.packages.stats.invalidate();
-      
+      trpcUtils.scanning.customerOrderProgress.invalidate();
+
       if (returnToScanner) {
         setLocation(returnToScanner);
       }
@@ -1221,22 +1232,169 @@ export default function QuickRegister() {
                 </Card>
               )}
 
-              {/* Row 3: Optional Fields */}
+              {/* Order info card — the prominent readout shown once a scanned
+                  tracking matches a commission / full-package order. Two
+                  progress meters: THIS order's cartons, and the customer's
+                  overall commission+FP orders (green = registered/arrived,
+                  red = still expected). Display-only — no business logic. */}
+              {foundOrder?.found && foundOrder.order && (
+                <Card className="border-2 border-indigo-200 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-card rounded-2xl shadow-sm overflow-hidden">
+                  <CardContent className="p-5 space-y-4">
+                    {/* Header: product image + type + order code + product name */}
+                    <div className="flex items-center gap-4 min-w-0">
+                      {(foundOrder.order.productImage || foundOrder.order.productImages?.[0]) ? (
+                        <img
+                          src={foundOrder.order.productImage || foundOrder.order.productImages[0]}
+                          alt=""
+                          className="w-20 h-20 rounded-xl object-cover border-2 border-indigo-200 dark:border-indigo-800 shadow-sm shrink-0"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
+                          <Package className="h-8 w-8 text-indigo-400" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-600 text-white">
+                            {foundOrder.order.orderType === "commission"
+                              ? pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission", ar: "شراء بعمولة", zh: "代购" })
+                              : foundOrder.order.orderType === "purchase_request"
+                              ? pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" })
+                              : pickLang(language, { ku: "فوول پاکەج", en: "Full package", ar: "طرد كامل", zh: "整包" })}
+                          </span>
+                          {foundOrder.order.orderCode && (
+                            <span className="text-sm font-mono font-bold text-indigo-900 dark:text-indigo-200" dir="ltr">{foundOrder.order.orderCode}</span>
+                          )}
+                        </div>
+                        {foundOrder.order.productName && (
+                          <p className="text-base font-semibold text-foreground truncate mt-1" title={String(foundOrder.order.productName)}>{foundOrder.order.productName}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Facts: order number, date, waiting days, entered-by */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                      {foundOrder.order.orderNumber && (
+                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
+                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order #", ar: "رقم الطلب", zh: "订单号" })}</p>
+                          <p className="text-xs font-mono font-semibold truncate" dir="ltr" title={String(foundOrder.order.orderNumber)}>{foundOrder.order.orderNumber}</p>
+                        </div>
+                      )}
+                      {foundOrder.order.createdAt && (
+                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
+                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</p>
+                          <p className="text-xs font-semibold truncate">{new Date(foundOrder.order.createdAt).toLocaleDateString("en-GB")}</p>
+                        </div>
+                      )}
+                      {foundOrder.order.createdAt && (
+                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
+                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "ماوەی گەیشتن", en: "Waiting", ar: "الانتظار", zh: "等待" })}</p>
+                          <p className="text-xs font-mono font-semibold">{Math.max(0, Math.round((Date.now() - new Date(foundOrder.order.createdAt).getTime()) / 86400000))} {pickLang(language, { ku: "ڕۆژ", en: "d", ar: "ي", zh: "天" })}</p>
+                        </div>
+                      )}
+                      {foundOrder.createdByName && (
+                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
+                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "تۆمارکەر", en: "By", ar: "بواسطة", zh: "录入" })}</p>
+                          <p className="text-xs font-semibold truncate" title={foundOrder.createdByName}>{foundOrder.createdByName}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* THIS order's carton progress — green = registered,
+                        red track = remaining, dot + completion alert. */}
+                    {expandedLookup?.flags?.cartonsTotal != null && expandedLookup.flags.cartonsTotal > 0 && (() => {
+                      const total = expandedLookup.flags.cartonsTotal;
+                      const done = expandedLookup.flags.cartonsRegistered ?? 0;
+                      const remaining = Math.max(0, total - done);
+                      const pct = Math.min(100, Math.round((done / total) * 100));
+                      const complete = remaining === 0;
+                      return (
+                        <div className="rounded-xl border border-indigo-100 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", complete ? "bg-emerald-500" : "bg-red-500")} />
+                              <span className="text-sm font-semibold truncate">{pickLang(language, { ku: "پارچەکانی ئەم ئۆردەرە", en: "Pieces of this order", ar: "قطع هذا الطلب", zh: "此订单件数" })}</span>
+                            </div>
+                            <span className="shrink-0">
+                              <span className={cn("font-mono font-bold text-base", complete ? "text-emerald-600" : "text-indigo-700 dark:text-indigo-300")}>{done}</span>
+                              <span className="font-mono text-muted-foreground">/{total}</span>
+                            </span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-red-200 dark:bg-red-950/50 overflow-hidden">
+                            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                          {complete ? (
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                              <CheckCircle2 className="h-4 w-4 shrink-0" />
+                              {pickLang(language, { ku: "سەرجەمی پارچەکانی ئەم کۆدە بە سەرکەوتوویی تۆمار کران", en: "All pieces of this order registered", ar: "تم تسجيل جميع قطع هذا الطلب", zh: "此订单所有件已登记" })}
+                            </div>
+                          ) : (
+                            <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                              {pickLang(language, { ku: "ماوە بۆ تۆمارکردن", en: "Remaining to register", ar: "المتبقي للتسجيل", zh: "待登记" })}: {remaining}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Customer's overall commission + full_package orders —
+                        how many have arrived/registered vs. still expected. */}
+                    {customerOrderProgress && customerOrderProgress.total > 0 && (() => {
+                      const { total, registered, remaining, allRegistered } = customerOrderProgress;
+                      const pct = Math.min(100, Math.round((registered / total) * 100));
+                      return (
+                        <div className="rounded-xl border border-indigo-100 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", allRegistered ? "bg-emerald-500" : "bg-red-500")} />
+                              <span className="text-sm font-semibold truncate">{pickLang(language, { ku: "ئۆردەرەکانی ئەم کڕیارە", en: "This customer's orders", ar: "طلبات هذا العميل", zh: "该客户的订单" })}</span>
+                            </div>
+                            <span className="shrink-0">
+                              <span className={cn("font-mono font-bold text-base", allRegistered ? "text-emerald-600" : "text-indigo-700 dark:text-indigo-300")}>{registered}</span>
+                              <span className="font-mono text-muted-foreground">/{total}</span>
+                            </span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-red-200 dark:bg-red-950/50 overflow-hidden">
+                            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                          {remaining > 0 && (
+                            <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                              {pickLang(language, { ku: "ماوە بۆ گەیشتن و تۆمارکردن", en: "Remaining to arrive & register", ar: "المتبقي للوصول والتسجيل", zh: "待到达并登记" })}: {remaining}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* All of this customer's orders are in — delivery-ready. */}
+                    {customerOrderProgress?.allRegistered && customerOrderProgress.total > 0 && (
+                      <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 px-3 py-2.5">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
+                          {pickLang(language, { ku: "سەرجەمی ئۆردەرەکانی ئەم کڕیارە تۆمار کران — ئامادەیە بۆ ئامادەکاری گەیاندن", en: "All of this customer's orders are registered — ready for delivery prep", ar: "تم تسجيل جميع طلبات هذا العميل — جاهز لتحضير التسليم", zh: "该客户所有订单已登记 — 可准备配送" })}
+                        </span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Row 3: Optional Fields — compact, rarely used, sits low */}
               <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   <button
                     type="button"
                     onClick={() => setShowOptional(!showOptional)}
                     className="flex items-center justify-between w-full"
                   >
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center">
-                        <Tags className="h-4 w-4" />
+                      <div className="w-6 h-6 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
+                        <Tags className="h-3.5 w-3.5" />
                       </div>
-                      <span className="text-sm font-bold">{t("quickRegister.additionalInfo")}</span>
-                      <span className="text-xs text-muted-foreground">{t("quickRegister.optional")}</span>
+                      <span className="text-xs font-semibold text-muted-foreground">{t("quickRegister.additionalInfo")}</span>
+                      <span className="text-[10px] text-muted-foreground">{t("quickRegister.optional")}</span>
                     </div>
-                    <ChevronDown className={cn("h-5 w-5 transition-transform", showOptional && "rotate-180")} />
+                    <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", showOptional && "rotate-180")} />
                   </button>
                   
                   {showOptional && (
@@ -1412,97 +1570,6 @@ export default function QuickRegister() {
                       <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
                         <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪号" })}</span>
                         <span className="font-mono font-medium truncate" title={trackingNumber}>{trackingNumber}</span>
-                      </div>
-                    )}
-
-                    {/* Consolidated order card — one compact block (image +
-                        identity + timing + who entered it + carton progress) so
-                        all order info fits on-screen with minimal scrolling.
-                        Shown only once a linked full-package / commission order
-                        is found. Display-only. */}
-                    {foundOrder?.found && foundOrder.order && (
-                      <div className="col-span-full flex flex-col gap-2 py-3 px-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-900/50 min-w-0">
-                        {/* Top: thumbnail + type badge + order code + product */}
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          {(foundOrder.order.productImage || foundOrder.order.productImages?.[0]) && (
-                            <img
-                              src={foundOrder.order.productImage || foundOrder.order.productImages[0]}
-                              alt=""
-                              className="w-12 h-12 rounded-lg object-cover border border-indigo-200 dark:border-indigo-800 shrink-0"
-                            />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
-                                {foundOrder.order.orderType === "commission"
-                                  ? pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission", ar: "شراء بعمولة", zh: "代购" })
-                                  : foundOrder.order.orderType === "purchase_request"
-                                  ? pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" })
-                                  : pickLang(language, { ku: "فوول پاکەج", en: "Full package", ar: "طرد كامل", zh: "整包" })}
-                              </span>
-                              {foundOrder.order.orderCode && (
-                                <span className="text-xs font-mono font-semibold text-indigo-900 dark:text-indigo-300 truncate" dir="ltr">{foundOrder.order.orderCode}</span>
-                              )}
-                            </div>
-                            {foundOrder.order.productName && (
-                              <p className="text-xs text-indigo-800 dark:text-indigo-300 truncate mt-0.5" title={String(foundOrder.order.productName)}>{foundOrder.order.productName}</p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Middle: compact 2-column facts */}
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
-                          {foundOrder.order.orderNumber && (
-                            <div className="flex justify-between gap-1 min-w-0">
-                              <span className="text-indigo-500 dark:text-indigo-400 shrink-0">{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order #", ar: "رقم الطلب", zh: "订单号" })}</span>
-                              <span className="font-mono font-medium text-indigo-900 dark:text-indigo-300 truncate" dir="ltr" title={String(foundOrder.order.orderNumber)}>{foundOrder.order.orderNumber}</span>
-                            </div>
-                          )}
-                          {foundOrder.order.createdAt && (
-                            <div className="flex justify-between gap-1 min-w-0">
-                              <span className="text-indigo-500 dark:text-indigo-400 shrink-0">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</span>
-                              <span className="font-medium text-indigo-900 dark:text-indigo-300 truncate">{new Date(foundOrder.order.createdAt).toLocaleDateString("en-GB")}</span>
-                            </div>
-                          )}
-                          {foundOrder.order.createdAt && (
-                            <div className="flex justify-between gap-1 min-w-0">
-                              <span className="text-indigo-500 dark:text-indigo-400 shrink-0">{pickLang(language, { ku: "ماوەی گەیشتن", en: "Waiting", ar: "مدة الانتظار", zh: "等待" })}</span>
-                              <span className="font-mono font-semibold text-indigo-900 dark:text-indigo-300">{Math.max(0, Math.round((Date.now() - new Date(foundOrder.order.createdAt).getTime()) / 86400000))} {pickLang(language, { ku: "ڕۆژ", en: "d", ar: "ي", zh: "天" })}</span>
-                            </div>
-                          )}
-                          {foundOrder.createdByName && (
-                            <div className="flex justify-between gap-1 min-w-0">
-                              <span className="text-indigo-500 dark:text-indigo-400 shrink-0">{pickLang(language, { ku: "تۆمارکەر", en: "By", ar: "بواسطة", zh: "录入" })}</span>
-                              <span className="font-medium text-indigo-900 dark:text-indigo-300 truncate" title={foundOrder.createdByName}>{foundOrder.createdByName}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Bottom: carton registration progress — how many of
-                            this order's cartons are registered vs. remaining. */}
-                        {expandedLookup?.flags?.cartonsTotal != null && expandedLookup.flags.cartonsTotal > 0 && (() => {
-                          const total = expandedLookup.flags.cartonsTotal;
-                          const done = expandedLookup.flags.cartonsRegistered ?? 0;
-                          const remaining = Math.max(0, total - done);
-                          const pct = Math.min(100, Math.round((done / total) * 100));
-                          return (
-                            <div className="flex flex-col gap-1 pt-1.5 border-t border-indigo-200 dark:border-indigo-900/50">
-                              <div className="flex items-baseline justify-between gap-1.5 text-[11px]">
-                                <span className="text-indigo-600 dark:text-indigo-400">{pickLang(language, { ku: "پاکەتە تۆمارکراوەکان", en: "Registered cartons", ar: "الطرود المسجلة", zh: "已登记箱数" })}</span>
-                                <span>
-                                  <span className="font-mono font-bold text-sm text-indigo-800 dark:text-indigo-300">{done}</span>
-                                  <span className="font-mono text-indigo-500">/{total}</span>
-                                </span>
-                              </div>
-                              <div className="h-1.5 w-full rounded-full bg-indigo-200 dark:bg-indigo-900/60 overflow-hidden">
-                                <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
-                              </div>
-                              <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
-                                {pickLang(language, { ku: "ماوە بۆ تۆمارکردن", en: "Remaining to register", ar: "المتبقي للتسجيل", zh: "待登记" })}: {remaining}
-                              </span>
-                            </div>
-                          );
-                        })()}
                       </div>
                     )}
 
