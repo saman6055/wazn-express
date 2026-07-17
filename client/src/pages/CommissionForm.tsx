@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet, ScanBarcode } from "lucide-react";
+import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, ChevronUp, ChevronDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet, ScanBarcode } from "lucide-react";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -26,6 +26,39 @@ const accentText: Record<string, string> = {
   teal: "text-teal-600",
   slate: "text-slate-600",
 };
+// Step a numeric-string field up/down with a mouse click, clamped at min and
+// rounded to `decimals` so float noise (0.1+0.2…) never lands in the input.
+const stepValue = (raw: string, delta: number, decimals = 2, min = 0) => {
+  const next = Math.max(min, (parseFloat(raw) || 0) + delta);
+  return String(Number(next.toFixed(decimals)));
+};
+
+// Mouse-friendly ▲/▼ stepper rendered inside a numeric input's relative
+// wrapper. The wrapper must be dir="ltr" (numbers are LTR) so `side` maps to a
+// deterministic edge: put it on whichever side the ¥/$/kg suffix doesn't use.
+const StepBtns = ({ onStep, side }: { onStep: (dir: 1 | -1) => void; side: "start" | "end" }) => (
+  <div className={cn("absolute top-1/2 -translate-y-1/2 flex flex-col gap-[2px]", side === "end" ? "end-1" : "start-1")}>
+    <button
+      type="button"
+      tabIndex={-1}
+      aria-label="+"
+      onClick={() => onStep(1)}
+      className="flex h-[17px] w-6 items-center justify-center rounded border bg-muted/60 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+    >
+      <ChevronUp className="h-3 w-3" />
+    </button>
+    <button
+      type="button"
+      tabIndex={-1}
+      aria-label="−"
+      onClick={() => onStep(-1)}
+      className="flex h-[17px] w-6 items-center justify-center rounded border bg-muted/60 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+    >
+      <ChevronDown className="h-3 w-3" />
+    </button>
+  </div>
+);
+
 const Section = ({ icon: Icon, title, hint, accent = "amber", children }: { icon: any; title: string; hint?: string; accent?: string; children: React.ReactNode }) => (
   <section className="rounded-xl border bg-card p-3 sm:p-4">
     <div className="flex items-center gap-2 pb-2 mb-3 border-b">
@@ -664,7 +697,7 @@ export default function CommissionForm() {
                     {/* 2. Per-unit ¥ */}
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold text-amber-700">{pickLang(language, { ku: "نرخی ١ دانە بە یوانی چینی", en: "Price per unit in Chinese yuan", ar: "سعر الوحدة باليوان الصيني", zh: "单件价格（人民币）" })}</Label>
-                      <div className="relative">
+                      <div className="relative" dir="ltr">
                         <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
                         <Input
                           type="number"
@@ -673,16 +706,17 @@ export default function CommissionForm() {
                           value={rmbPerUnit}
                           onChange={(e) => syncFromPerUnit(e.target.value)}
                           placeholder="٠"
-                          className={cn("pe-9 h-10 text-base font-bold border-amber-200 focus:border-orange-400 bg-amber-50/40", filledCls(rmbPerUnit))}
+                          className={cn("ps-9 pe-9 h-10 text-base font-bold border-amber-200 focus:border-orange-400 bg-amber-50/40", filledCls(rmbPerUnit))}
                           dir="ltr"
                         />
+                        <StepBtns side="start" onStep={(d) => syncFromPerUnit(stepValue(rmbPerUnit, d))} />
                       </div>
                     </div>
 
                     {/* 3. Total ¥ */}
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold text-orange-700">{pickLang(language, { ku: `کۆی نرخ بە یوانی چینی (${quantity} دانە)`, en: `Total price in Chinese yuan (${quantity} units)`, ar: `إجمالي السعر باليوان الصيني (${quantity} قطعة)`, zh: `总价（人民币）（${quantity} 件）` })}</Label>
-                      <div className="relative">
+                      <div className="relative" dir="ltr">
                         <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
                         <Input
                           type="number"
@@ -691,9 +725,10 @@ export default function CommissionForm() {
                           value={rmbTotal}
                           onChange={(e) => syncFromTotal(e.target.value)}
                           placeholder="٠"
-                          className={cn("pe-9 h-10 text-base font-bold border-orange-200 focus:border-orange-400 bg-orange-50/40", filledCls(rmbTotal))}
+                          className={cn("ps-9 pe-9 h-10 text-base font-bold border-orange-200 focus:border-orange-400 bg-orange-50/40", filledCls(rmbTotal))}
                           dir="ltr"
                         />
+                        <StepBtns side="start" onStep={(d) => syncFromTotal(stepValue(rmbTotal, d))} />
                       </div>
                     </div>
                   </div>
@@ -722,7 +757,7 @@ export default function CommissionForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-purple-700">{pickLang(language, { ku: "عموڵەی کڕین *", en: "Purchase commission *", ar: "عمولة الشراء *", zh: "采购佣金 *" })}</Label>
-                  <div className="relative">
+                  <div className="relative" dir="ltr">
                     <span className="absolute start-3 top-1/2 -translate-y-1/2 text-purple-600 font-bold">$</span>
                     <Input
                       type="number"
@@ -731,16 +766,17 @@ export default function CommissionForm() {
                       value={formData.commissionFeeUsd}
                       onChange={(e) => setFormData({ ...formData, commissionFeeUsd: e.target.value })}
                       placeholder="0.00"
-                      className={cn("ps-8 text-start text-base font-bold h-10 border-purple-300 bg-white", filledCls(formData.commissionFeeUsd))}
+                      className={cn("ps-8 pe-9 text-start text-base font-bold h-10 border-purple-300 bg-white", filledCls(formData.commissionFeeUsd))}
                       dir="ltr"
                     />
+                    <StepBtns side="end" onStep={(d) => setFormData((p) => ({ ...p, commissionFeeUsd: stepValue(p.commissionFeeUsd, d * 0.25) }))} />
                   </div>
                   <p className="text-[11px] text-purple-600">{pickLang(language, { ku: "قازانجی کۆمپانیا بۆ هەر دانەیەک", en: "Company profit per unit", ar: "ربح الشركة لكل وحدة", zh: "公司每件利润" })}</p>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-amber-700">{pickLang(language, { ku: "نرخی کاڵا (یەک دانە) *", en: "Item price (per unit) *", ar: "سعر المنتج (للوحدة) *", zh: "商品价格（单件）*" })}</Label>
-                  <div className="relative">
+                  <div className="relative" dir="ltr">
                     <span className="absolute start-3 top-1/2 -translate-y-1/2 text-amber-600 font-bold">$</span>
                     <Input
                       type="number"
@@ -749,9 +785,10 @@ export default function CommissionForm() {
                       value={formData.itemPriceUsd}
                       onChange={(e) => syncFromUsd(e.target.value)}
                       placeholder="0.00"
-                      className={cn("ps-8 text-start text-base font-bold h-10 border-amber-300 bg-white", filledCls(formData.itemPriceUsd))}
+                      className={cn("ps-8 pe-9 text-start text-base font-bold h-10 border-amber-300 bg-white", filledCls(formData.itemPriceUsd))}
                       dir="ltr"
                     />
+                    <StepBtns side="end" onStep={(d) => syncFromUsd(stepValue(formData.itemPriceUsd, d, 4))} />
                   </div>
                   {rmbPerUnit && rmbRate > 0 && (
                     <div className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1 border border-orange-200">
@@ -821,7 +858,7 @@ export default function CommissionForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-teal-700">{pickLang(language, { ku: "بڕی پارەی پێشەکی (USD)", en: "Advance amount (USD)", ar: "مبلغ الدفعة المقدمة (USD)", zh: "预付金额 (USD)" })}</Label>
-                  <div className="relative">
+                  <div className="relative" dir="ltr">
                     <span className="absolute start-3 top-1/2 -translate-y-1/2 text-teal-500 font-bold select-none">$</span>
                     <Input
                       type="number"
@@ -831,9 +868,10 @@ export default function CommissionForm() {
                       value={formData.advancePaidUsd}
                       onChange={(e) => setFormData({ ...formData, advancePaidUsd: e.target.value })}
                       placeholder="0.00"
-                      className={cn("ps-8 h-10 text-base font-bold border-teal-200 focus:border-teal-400 bg-teal-50/40", filledCls(formData.advancePaidUsd))}
+                      className={cn("ps-8 pe-9 h-10 text-base font-bold border-teal-200 focus:border-teal-400 bg-teal-50/40", filledCls(formData.advancePaidUsd))}
                       dir="ltr"
                     />
+                    <StepBtns side="end" onStep={(d) => setFormData((p) => ({ ...p, advancePaidUsd: stepValue(p.advancePaidUsd, d) }))} />
                   </div>
                   <p className="text-[11px] text-teal-600">{pickLang(language, { ku: "بۆ بێ پارەدان دابمێنە بە 0", en: "Leave at 0 for no payment", ar: "اتركه 0 لعدم وجود دفعة", zh: "无付款则保留为 0" })}</p>
                 </div>
@@ -902,11 +940,12 @@ export default function CommissionForm() {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label className="text-sm font-medium">{pickLang(language, { ku: "کێشی ڕاستەقینە (کیلۆگرام)", en: "Actual weight (kilograms)", ar: "الوزن الفعلي (كيلوغرام)", zh: "实际重量（千克）" })}</Label>
-                          <div className="relative">
+                          <div className="relative" dir="ltr">
                             <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">kg</span>
                             <Input type="number" step="0.01" min="0" value={formData.weightKg}
                               onChange={e => setFormData(p => ({ ...p, weightKg: e.target.value }))}
-                              placeholder="0.00" className={cn("pe-10 h-10 font-mono", filledCls(formData.weightKg))} dir="ltr" />
+                              placeholder="0.00" className={cn("ps-9 pe-10 h-10 font-mono", filledCls(formData.weightKg))} dir="ltr" />
+                            <StepBtns side="start" onStep={(d) => setFormData((p) => ({ ...p, weightKg: stepValue(p.weightKg, d * 0.1) }))} />
                           </div>
                         </div>
                         {volumetricKg > 0 && (
@@ -928,12 +967,13 @@ export default function CommissionForm() {
                             {[["dimensionLength", pickLang(language, { ku: "درێژی (L)", en: "Length (L)", ar: "الطول (L)", zh: "长度 (L)" })], ["dimensionWidth", pickLang(language, { ku: "پانی (W)", en: "Width (W)", ar: "العرض (W)", zh: "宽度 (W)" })], ["dimensionHeight", pickLang(language, { ku: "بەرزی (H)", en: "Height (H)", ar: "الارتفاع (H)", zh: "高度 (H)" })]].map(([field, label]) => (
                               <div key={field} className="space-y-1">
                                 <Label className="text-xs text-muted-foreground">{label}</Label>
-                                <div className="relative">
+                                <div className="relative" dir="ltr">
                                   <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
                                   <Input type="number" step="0.1" min="0"
                                     value={formData[field as keyof typeof formData] as string}
                                     onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
-                                    placeholder="0" className={cn("pe-8 h-10 font-mono text-sm", filledCls(formData[field as keyof typeof formData]))} dir="ltr" />
+                                    placeholder="0" className={cn("ps-8 pe-8 h-10 font-mono text-sm", filledCls(formData[field as keyof typeof formData]))} dir="ltr" />
+                                  <StepBtns side="start" onStep={(d) => setFormData((p) => ({ ...p, [field]: stepValue(p[field as keyof typeof p] as string, d, 1) }))} />
                                 </div>
                               </div>
                             ))}
@@ -962,11 +1002,12 @@ export default function CommissionForm() {
                         {/* Direct CBM */}
                         <div className="space-y-1.5">
                           <Label className="text-sm font-medium">{pickLang(language, { ku: "CBM ڕاستەوخۆ", en: "Direct CBM", ar: "CBM مباشر", zh: "直接 CBM" })}</Label>
-                          <div className="relative">
+                          <div className="relative" dir="ltr">
                             <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">m³</span>
                             <Input type="number" step="0.0001" min="0" value={formData.volumeCbm}
                               onChange={e => setFormData(p => ({ ...p, volumeCbm: e.target.value }))}
-                              placeholder="0.0000" className={cn("pe-10 h-10 font-mono", filledCls(formData.volumeCbm))} dir="ltr" />
+                              placeholder="0.0000" className={cn("ps-9 pe-10 h-10 font-mono", filledCls(formData.volumeCbm))} dir="ltr" />
+                            <StepBtns side="start" onStep={(d) => setFormData((p) => ({ ...p, volumeCbm: stepValue(p.volumeCbm, d * 0.01, 4) }))} />
                           </div>
                           <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "ئەگەر CBM دەزانیت", en: "If you know the CBM", ar: "إذا كنت تعرف CBM", zh: "如果你知道 CBM" })}</p>
                         </div>
@@ -992,12 +1033,13 @@ export default function CommissionForm() {
                           {[["dimensionLength", pickLang(language, { ku: "درێژی (L)", en: "Length (L)", ar: "الطول (L)", zh: "长度 (L)" })], ["dimensionWidth", pickLang(language, { ku: "پانی (W)", en: "Width (W)", ar: "العرض (W)", zh: "宽度 (W)" })], ["dimensionHeight", pickLang(language, { ku: "بەرزی (H)", en: "Height (H)", ar: "الارتفاع (H)", zh: "高度 (H)" })]].map(([field, label]) => (
                             <div key={field} className="space-y-1">
                               <Label className="text-xs text-muted-foreground">{label}</Label>
-                              <div className="relative">
+                              <div className="relative" dir="ltr">
                                 <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
                                 <Input type="number" step="0.1" min="0"
                                   value={formData[field as keyof typeof formData] as string}
                                   onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
-                                  placeholder="0" className={cn("pe-8 h-10 font-mono text-sm", filledCls(formData[field as keyof typeof formData]))} dir="ltr" />
+                                  placeholder="0" className={cn("ps-8 pe-8 h-10 font-mono text-sm", filledCls(formData[field as keyof typeof formData]))} dir="ltr" />
+                                <StepBtns side="start" onStep={(d) => setFormData((p) => ({ ...p, [field]: stepValue(p[field as keyof typeof p] as string, d, 1) }))} />
                               </div>
                             </div>
                           ))}
