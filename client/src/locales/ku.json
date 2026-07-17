@@ -20,6 +20,7 @@
     "sea": "دەریایی",
     "batchPlaceholder": "باچ هەڵبژێرە",
     "noBatch": "بێ باچ",
+    "noBatchReminder": "باچ هەڵنەبژێردراوە — باچێک دیاری بکە، یان دیسان سەیف بکە بۆ پاشەکەوتکردن بەبێ باچ",
     "stepWeight": "٣. کێش (KG)",
     "stepDimensions": "٤. قەبارە (CM)",
     "forVolumetricWeight": "بۆ کێشی قەبارەیی",

@@ -76,6 +76,10 @@ export default function QuickRegister() {
   const weightRef = useRef<HTMLInputElement>(null);
   const customerInputRef = useRef<HTMLInputElement>(null);
   const searchVersionRef = useRef(0);
+  // Soft batch reminder: first Save with no batch warns and stops; a second
+  // Save (still no batch) goes through, registering the package with no batch.
+  // Reset per package so each new registration gets its own reminder.
+  const confirmNoBatchRef = useRef(false);
 
   // Queries — handle errors so one failed API doesn't block the form
   const { data: customers, isError: customersError, refetch: refetchCustomers } = trpc.customers.list.useQuery();
@@ -534,9 +538,10 @@ export default function QuickRegister() {
     setDescription("");
     setDirectCbm("");
     setPhotos([]);
+    confirmNoBatchRef.current = false;
     trackingRef.current?.focus();
   };
-  
+
   // Clear ALL form fields including sticky ones
   const clearAllForm = () => {
     if (searchTimeout) {
@@ -562,6 +567,7 @@ export default function QuickRegister() {
     setDirectCbm("");
     setPhotos([]);
     setHighlightedCustomerIndex(-1);
+    confirmNoBatchRef.current = false;
     trackingRef.current?.focus();
     toast.info(t("quickRegister.formCleared"));
   };
@@ -601,6 +607,19 @@ export default function QuickRegister() {
     if (!selectedWarehouse) {
       soundManager.playError();
       toast.error(t("quickRegister.pleaseSelectWarehouse"));
+      return;
+    }
+
+    // Soft, non-blocking batch reminder. Batch stays optional: on the FIRST
+    // Save with no batch selected we warn and stop so staff can pick one — but
+    // pressing Save again (still no batch) registers the package without a
+    // batch, exactly as intended. The flag resets per package (see resetForm /
+    // clearAllForm), so every new registration gets its own reminder.
+    const hasBatch = !!batchId && batchId !== "none";
+    if (!hasBatch && !confirmNoBatchRef.current) {
+      soundManager.playError();
+      toast.warning(t("quickRegister.noBatchReminder"));
+      confirmNoBatchRef.current = true;
       return;
     }
 
@@ -1354,7 +1373,15 @@ export default function QuickRegister() {
                     </div>
                   </div>
                   {/* Batch */}
-                  <Select value={batchId} onValueChange={setBatchId}>
+                  <Select
+                    value={batchId}
+                    onValueChange={(v) => {
+                      setBatchId(v);
+                      // Picking a real batch clears any pending "no batch"
+                      // warning, so removing it again later warns afresh.
+                      if (v && v !== "none") confirmNoBatchRef.current = false;
+                    }}
+                  >
                     <SelectTrigger className="h-9 text-xs min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
                       <SelectValue placeholder={t("quickRegister.batchPlaceholder")} />
                     </SelectTrigger>
@@ -1388,27 +1415,94 @@ export default function QuickRegister() {
                       </div>
                     )}
 
-                    {/* Order provenance — shown only once a linked order is found:
-                        when it was registered, how long it has been waiting, and
-                        which staff member entered it. Display-only. */}
-                    {foundOrder?.found && foundOrder.order?.createdAt && (
-                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-900/50 min-w-0">
-                        <span className="text-xs text-indigo-700 dark:text-indigo-400">{pickLang(language, { ku: "بەرواری تۆماری ئۆردەر", en: "Order date", ar: "تاريخ تسجيل الطلب", zh: "订单登记日期" })}</span>
-                        <span className="font-medium truncate text-indigo-900 dark:text-indigo-300">{new Date(foundOrder.order.createdAt).toLocaleDateString("en-GB")}</span>
-                      </div>
-                    )}
-                    {foundOrder?.found && foundOrder.order?.createdAt && (
-                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-900/50 min-w-0">
-                        <span className="text-xs text-indigo-700 dark:text-indigo-400">{pickLang(language, { ku: "ڕۆژی تێپەڕیو", en: "Days elapsed", ar: "الأيام المنقضية", zh: "已过天数" })}</span>
-                        <span className="font-mono font-bold truncate text-indigo-900 dark:text-indigo-300">
-                          {Math.max(0, Math.round((Date.now() - new Date(foundOrder.order.createdAt).getTime()) / 86400000))} {pickLang(language, { ku: "ڕۆژ", en: "days", ar: "يوم", zh: "天" })}
-                        </span>
-                      </div>
-                    )}
-                    {foundOrder?.found && foundOrder.createdByName && (
-                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-900/50 min-w-0">
-                        <span className="text-xs text-indigo-700 dark:text-indigo-400">{pickLang(language, { ku: "تۆمارکەری ئۆردەر", en: "Order entered by", ar: "أدخل الطلب", zh: "订单录入者" })}</span>
-                        <span className="font-medium truncate text-indigo-900 dark:text-indigo-300" title={foundOrder.createdByName}>{foundOrder.createdByName}</span>
+                    {/* Consolidated order card — one compact block (image +
+                        identity + timing + who entered it + carton progress) so
+                        all order info fits on-screen with minimal scrolling.
+                        Shown only once a linked full-package / commission order
+                        is found. Display-only. */}
+                    {foundOrder?.found && foundOrder.order && (
+                      <div className="col-span-full flex flex-col gap-2 py-3 px-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-900/50 min-w-0">
+                        {/* Top: thumbnail + type badge + order code + product */}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {(foundOrder.order.productImage || foundOrder.order.productImages?.[0]) && (
+                            <img
+                              src={foundOrder.order.productImage || foundOrder.order.productImages[0]}
+                              alt=""
+                              className="w-12 h-12 rounded-lg object-cover border border-indigo-200 dark:border-indigo-800 shrink-0"
+                            />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
+                                {foundOrder.order.orderType === "commission"
+                                  ? pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission", ar: "شراء بعمولة", zh: "代购" })
+                                  : foundOrder.order.orderType === "purchase_request"
+                                  ? pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" })
+                                  : pickLang(language, { ku: "فوول پاکەج", en: "Full package", ar: "طرد كامل", zh: "整包" })}
+                              </span>
+                              {foundOrder.order.orderCode && (
+                                <span className="text-xs font-mono font-semibold text-indigo-900 dark:text-indigo-300 truncate" dir="ltr">{foundOrder.order.orderCode}</span>
+                              )}
+                            </div>
+                            {foundOrder.order.productName && (
+                              <p className="text-xs text-indigo-800 dark:text-indigo-300 truncate mt-0.5" title={String(foundOrder.order.productName)}>{foundOrder.order.productName}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Middle: compact 2-column facts */}
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                          {foundOrder.order.orderNumber && (
+                            <div className="flex justify-between gap-1 min-w-0">
+                              <span className="text-indigo-500 dark:text-indigo-400 shrink-0">{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order #", ar: "رقم الطلب", zh: "订单号" })}</span>
+                              <span className="font-mono font-medium text-indigo-900 dark:text-indigo-300 truncate" dir="ltr" title={String(foundOrder.order.orderNumber)}>{foundOrder.order.orderNumber}</span>
+                            </div>
+                          )}
+                          {foundOrder.order.createdAt && (
+                            <div className="flex justify-between gap-1 min-w-0">
+                              <span className="text-indigo-500 dark:text-indigo-400 shrink-0">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</span>
+                              <span className="font-medium text-indigo-900 dark:text-indigo-300 truncate">{new Date(foundOrder.order.createdAt).toLocaleDateString("en-GB")}</span>
+                            </div>
+                          )}
+                          {foundOrder.order.createdAt && (
+                            <div className="flex justify-between gap-1 min-w-0">
+                              <span className="text-indigo-500 dark:text-indigo-400 shrink-0">{pickLang(language, { ku: "ماوەی گەیشتن", en: "Waiting", ar: "مدة الانتظار", zh: "等待" })}</span>
+                              <span className="font-mono font-semibold text-indigo-900 dark:text-indigo-300">{Math.max(0, Math.round((Date.now() - new Date(foundOrder.order.createdAt).getTime()) / 86400000))} {pickLang(language, { ku: "ڕۆژ", en: "d", ar: "ي", zh: "天" })}</span>
+                            </div>
+                          )}
+                          {foundOrder.createdByName && (
+                            <div className="flex justify-between gap-1 min-w-0">
+                              <span className="text-indigo-500 dark:text-indigo-400 shrink-0">{pickLang(language, { ku: "تۆمارکەر", en: "By", ar: "بواسطة", zh: "录入" })}</span>
+                              <span className="font-medium text-indigo-900 dark:text-indigo-300 truncate" title={foundOrder.createdByName}>{foundOrder.createdByName}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bottom: carton registration progress — how many of
+                            this order's cartons are registered vs. remaining. */}
+                        {expandedLookup?.flags?.cartonsTotal != null && expandedLookup.flags.cartonsTotal > 0 && (() => {
+                          const total = expandedLookup.flags.cartonsTotal;
+                          const done = expandedLookup.flags.cartonsRegistered ?? 0;
+                          const remaining = Math.max(0, total - done);
+                          const pct = Math.min(100, Math.round((done / total) * 100));
+                          return (
+                            <div className="flex flex-col gap-1 pt-1.5 border-t border-indigo-200 dark:border-indigo-900/50">
+                              <div className="flex items-baseline justify-between gap-1.5 text-[11px]">
+                                <span className="text-indigo-600 dark:text-indigo-400">{pickLang(language, { ku: "پاکەتە تۆمارکراوەکان", en: "Registered cartons", ar: "الطرود المسجلة", zh: "已登记箱数" })}</span>
+                                <span>
+                                  <span className="font-mono font-bold text-sm text-indigo-800 dark:text-indigo-300">{done}</span>
+                                  <span className="font-mono text-indigo-500">/{total}</span>
+                                </span>
+                              </div>
+                              <div className="h-1.5 w-full rounded-full bg-indigo-200 dark:bg-indigo-900/60 overflow-hidden">
+                                <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
+                              </div>
+                              <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
+                                {pickLang(language, { ku: "ماوە بۆ تۆمارکردن", en: "Remaining to register", ar: "المتبقي للتسجيل", zh: "待登记" })}: {remaining}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 

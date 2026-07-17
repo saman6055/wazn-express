@@ -20,6 +20,7 @@
     "sea": "海运",
     "batchPlaceholder": "选择批次",
     "noBatch": "无批次",
+    "noBatchReminder": "未选择批次 — 请选择批次，或再次点击保存以在无批次的情况下登记",
     "stepWeight": "3. 重量 (KG)",
     "stepDimensions": "4. 尺寸 (CM)",
     "forVolumetricWeight": "用于体积重量",

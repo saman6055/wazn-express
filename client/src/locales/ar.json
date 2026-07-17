@@ -20,6 +20,7 @@
     "sea": "بحري",
     "batchPlaceholder": "اختر الدفعة",
     "noBatch": "بدون دفعة",
+    "noBatchReminder": "لم يتم اختيار دفعة — اختر دفعة، أو اضغط حفظ مرة أخرى للتسجيل بدون دفعة",
     "stepWeight": "٣. الوزن (KG)",
     "stepDimensions": "٤. الأبعاد (CM)",
     "forVolumetricWeight": "للوزن الحجمي",

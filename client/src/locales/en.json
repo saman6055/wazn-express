@@ -20,6 +20,7 @@
     "sea": "Sea",
     "batchPlaceholder": "Select batch",
     "noBatch": "No batch",
+    "noBatchReminder": "No batch selected — pick a batch, or press Save again to register without a batch",
     "stepWeight": "3. Weight (KG)",
     "stepDimensions": "4. Dimensions (CM)",
     "forVolumetricWeight": "for volumetric weight",
