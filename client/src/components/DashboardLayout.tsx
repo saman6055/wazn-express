@@ -686,47 +686,48 @@ function DashboardLayoutContent({
           "sticky z-30 flex items-center gap-1 h-11 px-2 md:px-6 border-b border-gray-200 dark:border-gray-700 bg-white/85 dark:bg-gray-900/85 backdrop-blur print:hidden",
           isMobile ? "top-14" : "top-0"
         )}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            title={t("nav.back") || "گەڕانەوە"}
-            aria-label={t("nav.back") || "گەڕانەوە"}
-            onClick={() => window.history.back()}
-          >
-            {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            title={t("nav.forward") || "بۆ دواتر"}
-            aria-label={t("nav.forward") || "بۆ دواتر"}
-            onClick={() => window.history.forward()}
-          >
-            {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </Button>
-          <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            title={t("nav.home") || "پەڕەی سەرەکی"}
-            aria-label={t("nav.home") || "پەڕەی سەرەکی"}
-            onClick={() => setLocation("/dashboard")}
-          >
-            <Home className="h-4 w-4" />
-          </Button>
+          {/* Nav cluster — Windows 11–style rounded pill group */}
+          <div className="flex items-center gap-0.5 rounded-full bg-muted/50 p-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              title={t("nav.back") || "گەڕانەوە"}
+              aria-label={t("nav.back") || "گەڕانەوە"}
+              onClick={() => window.history.back()}
+            >
+              {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              title={t("nav.forward") || "بۆ دواتر"}
+              aria-label={t("nav.forward") || "بۆ دواتر"}
+              onClick={() => window.history.forward()}
+            >
+              {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              title={t("nav.home") || "پەڕەی سەرەکی"}
+              aria-label={t("nav.home") || "پەڕەی سەرەکی"}
+              onClick={() => setLocation("/dashboard")}
+            >
+              <Home className="h-4 w-4" />
+            </Button>
+          </div>
 
-          {/* Pinned daily shortcuts (hidden on small screens) */}
-          <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block" />
-          <div className="hidden sm:flex items-center gap-1">
+          {/* Pinned daily shortcuts (hidden on small screens) — own pill group */}
+          <div className="hidden sm:flex items-center gap-0.5 rounded-full bg-muted/50 p-0.5 ms-1.5">
             {PINNED.map((p) => (
               <Button
                 key={p.path}
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 rounded-full"
                 title={p.label}
                 aria-label={p.label}
                 onClick={() => setLocation(p.path)}
@@ -743,18 +744,19 @@ function DashboardLayoutContent({
             <TopBarClock className="hidden md:flex" />
           </div>
 
-          {/* Top-left group (RTL): function search + language + user profile */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
+          {/* Controls group (RTL: top-left): search + language + user profile */}
+          <div className="flex items-center gap-1.5">
+            {/* Function search — compact icon that opens the command palette */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
               onClick={() => setCmdOpen(true)}
-              className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-muted/40 px-2.5 h-8 text-sm text-muted-foreground hover:bg-muted transition-colors"
               title={pickLang(language, { ku: "گەڕان بۆ فەنکشن (Ctrl+K)", en: "Search for a function (Ctrl+K)", ar: "البحث عن وظيفة (Ctrl+K)", zh: "搜索功能 (Ctrl+K)" })}
+              aria-label={pickLang(language, { ku: "گەڕان بۆ فەنکشن", en: "Search for a function", ar: "البحث عن وظيفة", zh: "搜索功能" })}
             >
               <Search className="h-4 w-4" />
-              <span className="hidden lg:inline">{pickLang(language, { ku: "گەڕان بۆ فەنکشن…", en: "Search for a function…", ar: "البحث عن وظيفة…", zh: "搜索功能…" })}</span>
-              <kbd className="hidden lg:inline rounded border border-gray-300 dark:border-gray-600 px-1 text-[10px] font-mono">Ctrl K</kbd>
-            </button>
+            </Button>
 
             {/* Recently viewed pages dropdown */}
             <RecentlyViewed className="h-8 w-8" />
@@ -772,7 +774,7 @@ function DashboardLayoutContent({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-full"
               title={theme === "dark" ? (t("lightMode") || "دۆخی ڕووناک") : (t("darkMode") || "دۆخی تاریک")}
               aria-label={theme === "dark" ? (t("lightMode") || "دۆخی ڕووناک") : (t("darkMode") || "دۆخی تاریک")}
               onClick={toggleTheme}

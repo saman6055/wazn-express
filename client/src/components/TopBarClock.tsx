@@ -67,12 +67,6 @@ export function TopBarClock({ className }: { className?: string }) {
     day: "numeric",
     month: "short",
   }).format(now);
-  // Short timezone label (e.g. "GMT+3") makes the "follows your location"
-  // behaviour visible at a glance.
-  const tz =
-    new Intl.DateTimeFormat("en-GB", { timeZoneName: "short" })
-      .formatToParts(now)
-      .find((p) => p.type === "timeZoneName")?.value || "";
 
   return (
     <DropdownMenu>
@@ -101,9 +95,8 @@ export function TopBarClock({ className }: { className?: string }) {
             >
               {time}
             </span>
-            <span className="mt-0.5 text-[10px] text-muted-foreground whitespace-nowrap">
+            <span className="mt-0.5 text-[13px] font-medium text-muted-foreground whitespace-nowrap">
               {date}
-              {tz ? ` · ${tz}` : ""}
             </span>
           </span>
         </button>
