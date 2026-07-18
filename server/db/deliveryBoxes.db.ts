@@ -88,7 +88,23 @@ export async function getAllDeliveryBoxes(filters?: {
   if (filters?.status) conditions.push(eq(deliveryBoxes.status, filters.status as any));
   if (filters?.customerId) conditions.push(eq(deliveryBoxes.customerId, filters.customerId));
   if (filters?.deliveryMethod) conditions.push(eq(deliveryBoxes.deliveryMethod, filters.deliveryMethod as any));
-  if (filters?.search) conditions.push(sql`(${deliveryBoxes.boxCode} LIKE ${`%${filters.search}%`} OR ${deliveryBoxes.destinationCity} LIKE ${`%${filters.search}%`})`);
+  if (filters?.search) {
+    // Match the box itself (code, destination, recipient) OR any package it
+    // contains (tracking / package code). The item match is a correlated
+    // EXISTS subquery so a customer's "I never got this tracking" complaint
+    // resolves straight to the box + its date, in ANY status (incl. delivered).
+    const like = `%${filters.search}%`;
+    conditions.push(sql`(
+      ${deliveryBoxes.boxCode} LIKE ${like}
+      OR ${deliveryBoxes.destinationCity} LIKE ${like}
+      OR ${deliveryBoxes.recipientName} LIKE ${like}
+      OR EXISTS (
+        SELECT 1 FROM ${deliveryBoxItems}
+        WHERE ${deliveryBoxItems.boxId} = ${deliveryBoxes.id}
+          AND (${deliveryBoxItems.trackingNumber} LIKE ${like} OR ${deliveryBoxItems.packageCode} LIKE ${like})
+      )
+    )`);
+  }
   if (filters?.startDate) conditions.push(gte(deliveryBoxes.createdAt, filters.startDate));
   if (filters?.endDate) conditions.push(lte(deliveryBoxes.createdAt, filters.endDate));
   // batchId: explicit null means "manual boxes only"; a number means specific batch; undefined means don't filter
@@ -233,6 +249,10 @@ export async function removeItemFromBox(itemId: number): Promise<void> {
  */
 export type BoxItemWithAdvance = DeliveryBoxItem & {
   advanceAppliedUsd: string;
+  // Product photo resolved from the linked commission/full-package order
+  // (productImage / first of productImages) or, for regular packages, the
+  // first package photo. null when the source order/package has no image.
+  productImage: string | null;
 };
 
 function fpAdvance(fp: typeof fullPackageOrders.$inferSelect): number {
@@ -336,6 +356,33 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     }
   }
 
+  // Regular-package photos, for items scanned as plain packages (no FP order).
+  const packageIds = Array.from(new Set(
+    items.map(i => i.packageId).filter((id): id is number => !!id)
+  ));
+  const pkgById = new Map<number, typeof packages.$inferSelect>();
+  if (packageIds.length > 0) {
+    const pkgs = await db.select().from(packages).where(inArray(packages.id, packageIds));
+    for (const p of pkgs) pkgById.set(p.id, p);
+  }
+
+  // Resolve one product photo per item: FP-order image (commission /
+  // full_package) wins, else the first regular-package photo, else null.
+  const imageFor = (item: typeof items[number]): string | null => {
+    let fp = item.fullPackageOrderId ? fpById.get(item.fullPackageOrderId) : undefined;
+    if (!fp && item.trackingNumber) fp = (fpsByTracking.get(item.trackingNumber) || [])[0];
+    if (fp) {
+      const imgs = (fp as any).productImages;
+      const img = (fp as any).productImage || (Array.isArray(imgs) ? imgs[0] : null);
+      if (img) return img;
+    }
+    if (item.packageId) {
+      const photos = (pkgById.get(item.packageId) as any)?.photos;
+      if (Array.isArray(photos) && photos[0]) return photos[0];
+    }
+    return null;
+  };
+
   // ── Dedup-once-per-box guard ──
   //
   // One full-package or commission order's advance is a SINGLE credit on
@@ -364,10 +411,12 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
   };
 
   return items.map((item): BoxItemWithAdvance => {
+    const productImage = imageFor(item);
+
     // Direct FP-order scan path — single order owns the item, no sibling sum.
     if (item.fullPackageOrderId) {
       const fp = fpById.get(item.fullPackageOrderId);
-      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0' };
+      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage };
     }
 
     // Tracking-based path — sum every linked order's advance, but skip
@@ -375,10 +424,10 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     if (item.trackingNumber) {
       const linked = fpsByTracking.get(item.trackingNumber) || [];
       const total = linked.reduce((s, fp) => s + advanceOnce(fp), 0);
-      return { ...item, advanceAppliedUsd: total.toFixed(2) };
+      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage };
     }
 
-    return { ...item, advanceAppliedUsd: '0' };
+    return { ...item, advanceAppliedUsd: '0', productImage };
   });
 }
 

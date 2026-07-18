@@ -484,6 +484,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[40px]">#</TableHead>
+                  <TableHead className="w-[56px]">{t("delivery.image")}</TableHead>
                   <TableHead>{t("delivery.type")}</TableHead>
                   <TableHead>{t("delivery.tracking")}</TableHead>
                   <TableHead>{t("delivery.details")}</TableHead>
@@ -497,6 +498,23 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                 {items.map((item: any, idx: number) => (
                   <TableRow key={item.id}>
                     <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
+                    {/* Product photo (from the linked order / package). Click to
+                        open full size in a new tab; placeholder when absent. */}
+                    <TableCell>
+                      {item.productImage ? (
+                        <img
+                          src={item.productImage}
+                          alt=""
+                          loading="lazy"
+                          onClick={() => window.open(item.productImage, "_blank", "noopener,noreferrer")}
+                          className="h-11 w-11 rounded-md border object-cover cursor-zoom-in transition-transform hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-11 w-11 items-center justify-center rounded-md border bg-muted/40">
+                          <Package className="h-4 w-4 text-muted-foreground/40" />
+                        </div>
+                      )}
+                    </TableCell>
                     {/* Type Badge */}
                     <TableCell>
                       <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", ITEM_TYPE_STYLES[item.itemType] || ITEM_TYPE_STYLES.regular)}>
