@@ -737,7 +737,7 @@ export default function CommissionForm() {
                       className={cn("ps-8 pe-9 text-start text-base font-bold h-10 border-purple-300 bg-white", filledCls(formData.commissionFeeUsd))}
                       dir="ltr"
                     />
-                    <StepBtns side="end" onStep={(d) => setFormData((p) => ({ ...p, commissionFeeUsd: stepValue(p.commissionFeeUsd, d * 0.25) }))} />
+                    <StepBtns side="end" onStep={(d) => setFormData((p) => ({ ...p, commissionFeeUsd: stepValue(p.commissionFeeUsd, d) }))} />
                   </div>
                   <p className="text-[11px] text-purple-600">{pickLang(language, { ku: "قازانجی کۆمپانیا بۆ هەر دانەیەک", en: "Company profit per unit", ar: "ربح الشركة لكل وحدة", zh: "公司每件利润" })}</p>
                 </div>
