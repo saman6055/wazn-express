@@ -83,6 +83,7 @@ import { ScrollButtons } from "./ScrollButtons";
 import { ThemePicker } from "./ThemePicker";
 import { QuickCreate } from "./QuickCreate";
 import { DensityToggle } from "./DensityToggle";
+import { TopBarClock } from "./TopBarClock";
 import { useLanguage, Language } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -735,8 +736,15 @@ function DashboardLayoutContent({
             ))}
           </div>
 
+          {/* Centered live clock + date. The flex-1 spacer absorbs the gap
+              and centers the clock while pushing the controls group to the
+              far edge (replacing the group's old ms-auto). */}
+          <div className="flex-1 flex items-center justify-center min-w-0">
+            <TopBarClock className="hidden md:flex" />
+          </div>
+
           {/* Top-left group (RTL): function search + language + user profile */}
-          <div className="ms-auto flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setCmdOpen(true)}
