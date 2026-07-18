@@ -60,8 +60,14 @@ export function EditBoxDialog({ open, onOpenChange, box, onSaved }: EditBoxDialo
   const [deliveryCharge, setDeliveryCharge] = useState("0");
   const [notes, setNotes] = useState("");
 
-  // Prefill from the box every time the dialog opens so edits start from the
-  // current values (and discard any unsaved changes from a previous open).
+  // Prefill from the box only when the dialog OPENS (or switches to a
+  // different box) — keyed on `box?.id`, NOT the whole `box` object.
+  //
+  // The detail panel polls getById every 5s, so `box` gets a fresh object
+  // reference on each poll. Depending on the whole object here re-ran this
+  // effect mid-edit and reset the fields back to the saved values, wiping the
+  // staff member's in-progress price change — so on save the OLD price went
+  // back. Keying on the stable id keeps the form seeded once per open.
   useEffect(() => {
     if (open && box) {
       setDeliveryMethod((box.deliveryMethod as DeliveryMethod) || "warehouse_pickup");
@@ -73,7 +79,8 @@ export function EditBoxDialog({ open, onOpenChange, box, onSaved }: EditBoxDialo
       setDeliveryCharge(String(box.deliveryChargeUsd ?? "0"));
       setNotes(box.notes || "");
     }
-  }, [open, box]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, box?.id]);
 
   const updateBox = trpc.deliveryBox.update.useMutation({
     onSuccess: () => {
