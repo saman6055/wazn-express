@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, ChevronUp, ChevronDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet, ScanBarcode } from "lucide-react";
+import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet, ScanBarcode } from "lucide-react";
+import { StepBtns, stepValue } from "@/components/ui/number-stepper";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -26,39 +27,6 @@ const accentText: Record<string, string> = {
   teal: "text-teal-600",
   slate: "text-slate-600",
 };
-// Step a numeric-string field up/down with a mouse click, clamped at min and
-// rounded to `decimals` so float noise (0.1+0.2…) never lands in the input.
-const stepValue = (raw: string, delta: number, decimals = 2, min = 0) => {
-  const next = Math.max(min, (parseFloat(raw) || 0) + delta);
-  return String(Number(next.toFixed(decimals)));
-};
-
-// Mouse-friendly ▲/▼ stepper rendered inside a numeric input's relative
-// wrapper. The wrapper must be dir="ltr" (numbers are LTR) so `side` maps to a
-// deterministic edge: put it on whichever side the ¥/$/kg suffix doesn't use.
-const StepBtns = ({ onStep, side }: { onStep: (dir: 1 | -1) => void; side: "start" | "end" }) => (
-  <div className={cn("absolute top-1/2 -translate-y-1/2 flex flex-col gap-[2px]", side === "end" ? "end-1" : "start-1")}>
-    <button
-      type="button"
-      tabIndex={-1}
-      aria-label="+"
-      onClick={() => onStep(1)}
-      className="flex h-[17px] w-6 items-center justify-center rounded border bg-muted/60 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
-    >
-      <ChevronUp className="h-3 w-3" />
-    </button>
-    <button
-      type="button"
-      tabIndex={-1}
-      aria-label="−"
-      onClick={() => onStep(-1)}
-      className="flex h-[17px] w-6 items-center justify-center rounded border bg-muted/60 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
-    >
-      <ChevronDown className="h-3 w-3" />
-    </button>
-  </div>
-);
-
 const Section = ({ icon: Icon, title, hint, accent = "amber", children }: { icon: any; title: string; hint?: string; accent?: string; children: React.ReactNode }) => (
   <section className="rounded-xl border bg-card p-3 sm:p-4">
     <div className="flex items-center gap-2 pb-2 mb-3 border-b">

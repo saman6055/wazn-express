@@ -2,6 +2,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { StepBtns, stepValue } from "@/components/ui/number-stepper";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -588,15 +589,19 @@ const [, setLocation] = useLocation();
                       <Weight className="h-4 w-4" />
                       Weight (KG)
                     </Label>
-                    <Input
-                      id="weightKg"
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      placeholder="e.g., 2.5"
-                      value={weightKg}
-                      onChange={(e) => setWeightKg(e.target.value)}
-                    />
+                    <div className="relative" dir="ltr">
+                      <Input
+                        id="weightKg"
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        placeholder="e.g., 2.5"
+                        value={weightKg}
+                        onChange={(e) => setWeightKg(e.target.value)}
+                        className="pe-9"
+                      />
+                      <StepBtns side="end" onStep={(d) => setWeightKg(stepValue(weightKg, d * 0.1, 3))} />
+                    </div>
                   </div>
 
                   {/* Dimensions */}
@@ -605,39 +610,51 @@ const [, setLocation] = useLocation();
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="lengthCm" className="text-sm text-muted-foreground">Length</Label>
-                        <Input
-                          id="lengthCm"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="L"
-                          value={lengthCm}
-                          onChange={(e) => setLengthCm(e.target.value)}
-                        />
+                        <div className="relative" dir="ltr">
+                          <Input
+                            id="lengthCm"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="L"
+                            value={lengthCm}
+                            onChange={(e) => setLengthCm(e.target.value)}
+                            className="pe-9"
+                          />
+                          <StepBtns side="end" onStep={(d) => setLengthCm(stepValue(lengthCm, d, 1))} />
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="widthCm" className="text-sm text-muted-foreground">Width</Label>
-                        <Input
-                          id="widthCm"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="W"
-                          value={widthCm}
-                          onChange={(e) => setWidthCm(e.target.value)}
-                        />
+                        <div className="relative" dir="ltr">
+                          <Input
+                            id="widthCm"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="W"
+                            value={widthCm}
+                            onChange={(e) => setWidthCm(e.target.value)}
+                            className="pe-9"
+                          />
+                          <StepBtns side="end" onStep={(d) => setWidthCm(stepValue(widthCm, d, 1))} />
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="heightCm" className="text-sm text-muted-foreground">Height</Label>
-                        <Input
-                          id="heightCm"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="H"
-                          value={heightCm}
-                          onChange={(e) => setHeightCm(e.target.value)}
-                        />
+                        <div className="relative" dir="ltr">
+                          <Input
+                            id="heightCm"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="H"
+                            value={heightCm}
+                            onChange={(e) => setHeightCm(e.target.value)}
+                            className="pe-9"
+                          />
+                          <StepBtns side="end" onStep={(d) => setHeightCm(stepValue(heightCm, d, 1))} />
+                        </div>
                       </div>
                     </div>
                   </div>

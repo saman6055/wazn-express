@@ -13,6 +13,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
+import { StepBtns, stepValue } from "@/components/ui/number-stepper";
 
 import { soundManager } from "@/lib/soundManager";
 
@@ -1078,15 +1079,18 @@ export default function QuickRegister() {
                       </div>
                       <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{t("quickRegister.stepWeight")}</span>
                     </div>
-                    <Input
-                      ref={weightRef}
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={weightKg}
-                      onChange={(e) => setWeightKg(e.target.value)}
-                      className="h-14 text-2xl font-mono font-bold text-center"
-                    />
+                    <div className="relative" dir="ltr">
+                      <Input
+                        ref={weightRef}
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={weightKg}
+                        onChange={(e) => setWeightKg(e.target.value)}
+                        className="h-14 text-2xl font-mono font-bold text-center pe-9"
+                      />
+                      <StepBtns side="end" onStep={(d) => setWeightKg(stepValue(weightKg, d * 0.1))} />
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -1105,36 +1109,45 @@ export default function QuickRegister() {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-1">
                         <Label className="text-sm font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.length")}</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          placeholder="0"
-                          value={lengthCm}
-                          onChange={(e) => setLengthCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center"
-                        />
+                        <div className="relative" dir="ltr">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            placeholder="0"
+                            value={lengthCm}
+                            onChange={(e) => setLengthCm(e.target.value)}
+                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                          />
+                          <StepBtns side="end" onStep={(d) => setLengthCm(stepValue(lengthCm, d, 1))} />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-sm font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.width")}</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          placeholder="0"
-                          value={widthCm}
-                          onChange={(e) => setWidthCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center"
-                        />
+                        <div className="relative" dir="ltr">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            placeholder="0"
+                            value={widthCm}
+                            onChange={(e) => setWidthCm(e.target.value)}
+                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                          />
+                          <StepBtns side="end" onStep={(d) => setWidthCm(stepValue(widthCm, d, 1))} />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-sm font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.height")}</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          placeholder="0"
-                          value={heightCm}
-                          onChange={(e) => setHeightCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center"
-                        />
+                        <div className="relative" dir="ltr">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            placeholder="0"
+                            value={heightCm}
+                            onChange={(e) => setHeightCm(e.target.value)}
+                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                          />
+                          <StepBtns side="end" onStep={(d) => setHeightCm(stepValue(heightCm, d, 1))} />
+                        </div>
                       </div>
                     </div>
                     {/* Volumetric Weight Result */}
@@ -1173,47 +1186,59 @@ export default function QuickRegister() {
                     <div className="grid grid-cols-4 gap-3">
                       <div className="space-y-1">
                         <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.length")}</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          placeholder="0"
-                          value={lengthCm}
-                          onChange={(e) => setLengthCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center"
-                        />
+                        <div className="relative" dir="ltr">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            placeholder="0"
+                            value={lengthCm}
+                            onChange={(e) => setLengthCm(e.target.value)}
+                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                          />
+                          <StepBtns side="end" onStep={(d) => setLengthCm(stepValue(lengthCm, d, 1))} />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.width")}</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          placeholder="0"
-                          value={widthCm}
-                          onChange={(e) => setWidthCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center"
-                        />
+                        <div className="relative" dir="ltr">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            placeholder="0"
+                            value={widthCm}
+                            onChange={(e) => setWidthCm(e.target.value)}
+                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                          />
+                          <StepBtns side="end" onStep={(d) => setWidthCm(stepValue(widthCm, d, 1))} />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.height")}</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          placeholder="0"
-                          value={heightCm}
-                          onChange={(e) => setHeightCm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center"
-                        />
+                        <div className="relative" dir="ltr">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            placeholder="0"
+                            value={heightCm}
+                            onChange={(e) => setHeightCm(e.target.value)}
+                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                          />
+                          <StepBtns side="end" onStep={(d) => setHeightCm(stepValue(heightCm, d, 1))} />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.orCbm")}</Label>
-                        <Input
-                          type="number"
-                          step="0.0001"
-                          placeholder="0.0000"
-                          value={directCbm}
-                          onChange={(e) => setDirectCbm(e.target.value)}
-                          className="h-14 text-xl font-mono font-bold text-center"
-                        />
+                        <div className="relative" dir="ltr">
+                          <Input
+                            type="number"
+                            step="0.0001"
+                            placeholder="0.0000"
+                            value={directCbm}
+                            onChange={(e) => setDirectCbm(e.target.value)}
+                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                          />
+                          <StepBtns side="end" onStep={(d) => setDirectCbm(stepValue(directCbm, d * 0.01, 4))} />
+                        </div>
                       </div>
                     </div>
                     {/* CBM Result */}
@@ -1299,43 +1324,6 @@ export default function QuickRegister() {
                         </div>
                       )}
                     </div>
-
-                    {/* THIS order's carton progress — green = registered,
-                        red track = remaining, dot + completion alert. */}
-                    {expandedLookup?.flags?.cartonsTotal != null && expandedLookup.flags.cartonsTotal > 0 && (() => {
-                      const total = expandedLookup.flags.cartonsTotal;
-                      const done = expandedLookup.flags.cartonsRegistered ?? 0;
-                      const remaining = Math.max(0, total - done);
-                      const pct = Math.min(100, Math.round((done / total) * 100));
-                      const complete = remaining === 0;
-                      return (
-                        <div className="rounded-xl border border-indigo-100 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 p-3 space-y-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", complete ? "bg-emerald-500" : "bg-red-500")} />
-                              <span className="text-sm font-semibold truncate">{pickLang(language, { ku: "پارچەکانی ئەم ئۆردەرە", en: "Pieces of this order", ar: "قطع هذا الطلب", zh: "此订单件数" })}</span>
-                            </div>
-                            <span className="shrink-0">
-                              <span className={cn("font-mono font-bold text-base", complete ? "text-emerald-600" : "text-indigo-700 dark:text-indigo-300")}>{done}</span>
-                              <span className="font-mono text-muted-foreground">/{total}</span>
-                            </span>
-                          </div>
-                          <div className="h-2 w-full rounded-full bg-red-200 dark:bg-red-950/50 overflow-hidden">
-                            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
-                          </div>
-                          {complete ? (
-                            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                              <CheckCircle2 className="h-4 w-4 shrink-0" />
-                              {pickLang(language, { ku: "سەرجەمی پارچەکانی ئەم کۆدە بە سەرکەوتوویی تۆمار کران", en: "All pieces of this order registered", ar: "تم تسجيل جميع قطع هذا الطلب", zh: "此订单所有件已登记" })}
-                            </div>
-                          ) : (
-                            <span className="text-xs font-medium text-red-600 dark:text-red-400">
-                              {pickLang(language, { ku: "ماوە بۆ تۆمارکردن", en: "Remaining to register", ar: "المتبقي للتسجيل", zh: "待登记" })}: {remaining}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
 
                     {/* Customer's overall commission + full_package orders —
                         how many have arrived/registered vs. still expected. */}
