@@ -3,6 +3,7 @@ import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getCustomerById } from './customers.db';
 import { applyCharge } from './finance.db';
+import { getCustomerPriceInBatch } from './batches.db';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -582,6 +583,57 @@ export async function updateFullPackageOrder(id: number, data: Partial<InsertFul
   // Shipping cost is OUR cost, deducted from profit, NOT charged to customer
   // Commission: Customer pays itemPrice + commissionFee, shipping is our cost
   
+  // Derive the shipping cost from the batch whenever an order is (re)assigned
+  // to a batch. Every batch-assignment path (order edit, updateStatus, the
+  // package→order sync in packages.db) funnels through here, so this is the
+  // single place the batch rate reliably lands on the order.
+  //
+  //  • rate    = getCustomerPriceInBatch — the customer's own price in the
+  //              batch first, else the batch's default per-kg/per-cbm rate.
+  //  • unit    = cbm for sea, kg otherwise.
+  //  • weight  = chargeable weight = max(actual, volumetric) for air, where
+  //              volumetric = L×W×H ÷ 6000 (same formula as Quick Register /
+  //              the batch + delivery math); volumeCbm for sea.
+  //
+  // Skipped when the caller set shippingCostUsd explicitly (delivery / split
+  // flows keep control) or the order is already delivered. Removing the batch
+  // (batchId = null) zeroes the shipping cost.
+  if (
+    data.batchId !== undefined &&
+    data.shippingCostUsd === undefined &&
+    existing.status !== 'delivered'
+  ) {
+    if (data.batchId === null) {
+      data.shippingCostUsd = '0';
+    } else {
+      const customerId = data.customerId ?? existing.customerId;
+      if (customerId) {
+        const shippingType = (data.shippingType ?? existing.shippingType) ?? null;
+        const unit: 'kg' | 'cbm' = shippingType === 'sea' ? 'cbm' : 'kg';
+        const rate = await getCustomerPriceInBatch(data.batchId, customerId, unit);
+        if (rate && rate > 0) {
+          let chargeable = 0;
+          if (unit === 'cbm') {
+            chargeable = Number(data.volumeCbm ?? existing.volumeCbm ?? 0) || 0;
+          } else {
+            const actual = Number(data.weightKg ?? existing.weightKg ?? 0) || 0;
+            const L = Number(data.dimensionLength ?? existing.dimensionLength ?? 0) || 0;
+            const W = Number(data.dimensionWidth ?? existing.dimensionWidth ?? 0) || 0;
+            const H = Number(data.dimensionHeight ?? existing.dimensionHeight ?? 0) || 0;
+            const volumetric = (L * W * H) / 6000;
+            chargeable = Math.max(actual, volumetric);
+          }
+          if (chargeable > 0) {
+            data.shippingCostUsd = (rate * chargeable).toFixed(2);
+            appLogger.info('[FullPackage] Derived shipping cost from batch on assignment', {
+              orderId: id, batchId: data.batchId, unit, rate, chargeable, shippingCostUsd: data.shippingCostUsd,
+            });
+          }
+        }
+      }
+    }
+  }
+
   // Recalculate profit if pricing fields changed
   if (data.purchasePriceUsd !== undefined || data.sellingPriceUsd !== undefined || data.itemPriceUsd !== undefined || data.commissionFeeUsd !== undefined || data.quantity !== undefined || data.shippingCostUsd !== undefined || data.orderType !== undefined) {
     const orderType = data.orderType ?? existing.orderType;
