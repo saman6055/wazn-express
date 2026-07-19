@@ -276,11 +276,67 @@ export const customerPortalRouter = router({
     
     // Get customer's claim requests
     getMyClaimRequests: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : 
+      const customerId = ctx.user.isCustomer ? ctx.user.id :
         (await db.getCustomerByUserId(ctx.user.id))?.id;
       if (!customerId) return [];
       return db.getClaimRequestsByCustomer(customerId);
     }),
+
+    // ============ DECLARED (PRE-ALERT) PACKAGES ============
+    // Customer pre-declares an incoming purchase's tracking so staff can
+    // auto-own it at registration. Only the tracking number is required.
+    declareIncomingPackage: protectedProcedure
+      .input(z.object({
+        trackingNumber: z.string().trim().min(1),
+        platform: z.enum(["taobao", "pinduoduo", "alibaba", "1688", "aliexpress", "weixin", "other"]).optional(),
+        productName: z.string().max(255).optional(),
+        productImages: z.array(z.string()).optional(),
+        categoryId: z.number().optional(),
+        notes: z.string().max(2000).optional(),
+        purchaseDate: z.date().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) throw new TRPCError({ code: "BAD_REQUEST", message: "پرۆفایلی کریار نەدۆزرایەوە بۆ ئەم هەژمارە." });
+        return db.createDeclaredPackage({ ...input, customerId });
+      }),
+
+    getMyDeclaredPackages: protectedProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.user.isCustomer ? ctx.user.id :
+        (await db.getCustomerByUserId(ctx.user.id))?.id;
+      if (!customerId) return [];
+      return db.getDeclaredPackagesByCustomer(customerId);
+    }),
+
+    updateDeclaredPackage: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        trackingNumber: z.string().trim().min(1).optional(),
+        platform: z.enum(["taobao", "pinduoduo", "alibaba", "1688", "aliexpress", "weixin", "other"]).nullable().optional(),
+        productName: z.string().max(255).optional(),
+        productImages: z.array(z.string()).optional(),
+        categoryId: z.number().nullable().optional(),
+        notes: z.string().max(2000).optional(),
+        purchaseDate: z.date().nullable().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) throw new TRPCError({ code: "BAD_REQUEST", message: "پرۆفایلی کریار نەدۆزرایەوە." });
+        const { id, ...data } = input;
+        return db.updateDeclaredPackageForCustomer(id, customerId, data as any);
+      }),
+
+    cancelDeclaredPackage: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) throw new TRPCError({ code: "BAD_REQUEST", message: "پرۆفایلی کریار نەدۆزرایەوە." });
+        await db.cancelDeclaredPackageForCustomer(input.id, customerId);
+        return { success: true };
+      }),
     
     // Get single full package order detail
     getMyFullPackageOrderDetail: protectedProcedure

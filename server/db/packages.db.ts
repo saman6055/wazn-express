@@ -8,6 +8,7 @@ import {
   updateFullPackageOrder,
 } from './fullPackage.db';
 import { createCustomerNotification } from './portal.db';
+import { findActiveDeclaredByTracking, markDeclaredMatched } from './declaredPackages.db';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -105,6 +106,19 @@ export async function createPackage(data: InsertPackage): Promise<Package> {
     }
   }
 
+  // Portal pre-declaration: if the package is still unowned, adopt the
+  // customer who pre-declared this tracking from the portal — so a package
+  // they told us about in advance never lands as "unclaimed".
+  if (data.trackingNumber && !data.customerId) {
+    try {
+      const declared = await findActiveDeclaredByTracking(data.trackingNumber);
+      if (declared?.declared?.customerId) {
+        data.customerId = declared.declared.customerId;
+        data.isUnclaimed = false;
+      }
+    } catch { /* best-effort — never block registration */ }
+  }
+
   // ── Root cause of the "Failed query: insert into packages ..." crash ──
   //
   // Drizzle MySQL's buildInsertQuery iterates EVERY column on the schema
@@ -174,6 +188,11 @@ export async function createPackage(data: InsertPackage): Promise<Package> {
     if (!insertId) throw new Error("Failed to insert package");
     const inserted = await db.select().from(packages).where(eq(packages.id, insertId)).limit(1);
     if (!inserted[0]) throw new Error("Failed to retrieve inserted package");
+    // Best-effort: mark any matching portal pre-declaration as fulfilled so
+    // the customer's portal list flips to "arrived".
+    if (cleanData.trackingNumber) {
+      try { await markDeclaredMatched(cleanData.trackingNumber as string, insertId); } catch { /* non-fatal */ }
+    }
     return inserted[0];
   } catch (err: unknown) {
     // Surface the full structured error to logs so we can diagnose the

@@ -4,6 +4,7 @@ import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotN
 import { getCustomerById } from './customers.db';
 import { applyCharge } from './finance.db';
 import { getCustomerPriceInBatch } from './batches.db';
+import { findActiveDeclaredByTracking } from './declaredPackages.db';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -1247,12 +1248,26 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
     };
   }
   
+  // Nothing registered yet — but the customer may have pre-declared this
+  // tracking from the portal. Surface that so Quick Register can auto-own the
+  // package to its rightful customer instead of leaving it unclaimed.
+  const declared = await findActiveDeclaredByTracking(trackingNumber);
   return {
     found: false,
     source: null,
     order: null,
     customer: null,
-    package: null
+    package: null,
+    declaredMatch: declared
+      ? {
+          declaredId: declared.declared.id,
+          customer: declared.customer,
+          platform: declared.declared.platform,
+          productName: declared.declared.productName,
+          productImages: declared.declared.productImages,
+          notes: declared.declared.notes,
+        }
+      : null,
   };
 }
 

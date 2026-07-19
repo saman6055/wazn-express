@@ -181,6 +181,7 @@ const PortalFinancial = lazy(() => import("./pages/portal/PortalFinancial"));
 const PortalProfile = lazy(() => import("./pages/portal/PortalProfile"));
 const PortalSearch = lazy(() => import("./pages/portal/PortalSearch"));
 const PortalUnclaimedPackages = lazy(() => import("./pages/portal/PortalUnclaimedPackages"));
+const PortalDeclarePackage = lazy(() => import("./pages/portal/PortalDeclarePackage"));
 const PortalFullPackage = lazy(() => import("./pages/portal/PortalFullPackage"));
 const PortalMessages = lazy(() => import("./pages/portal/PortalMessages"));
 const PortalNotifications = lazy(() => import("./pages/portal/PortalNotifications"));
@@ -304,6 +305,7 @@ function Router() {
         <Route path="/portal/profile" component={PortalProfile} />
         <Route path="/portal/search" component={PortalSearch} />
         <Route path="/portal/no-mark" component={PortalUnclaimedPackages} />
+        <Route path="/portal/declare" component={PortalDeclarePackage} />
         <Route path="/portal/full-package" component={PortalFullPackage} />
         <Route path="/portal/messages" component={PortalMessages} />
         <Route path="/portal/notifications" component={PortalNotifications} />

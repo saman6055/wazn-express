@@ -10,6 +10,7 @@ import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { Input } from "@/components/ui/input";
 import CompanyLogo from "@/components/CompanyLogo";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
+import { DeclarePackageBanner } from "@/components/portal/DeclarePackageBanner";
 import { usePortalSSE } from "@/hooks/usePortalSSE";
 import { toast } from "sonner";
 
@@ -191,6 +192,8 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       </div>
       {/* Main Content */}
       <main className="max-w-lg mx-auto">
+        {/* Prominent pre-declaration CTA — home only, above every skin */}
+        {location === "/portal" && <DeclarePackageBanner />}
         {children}
       </main>
 

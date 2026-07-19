@@ -59,6 +59,9 @@ export default function QuickRegister() {
   const [batchId, setBatchId] = useState<string>("");
   const [originWarehouseId, setOriginWarehouseId] = useState<number | null>(null);
   const [isUnclaimed, setIsUnclaimed] = useState(false);
+  // Portal pre-declaration match: set when a scanned tracking was pre-declared
+  // by a customer from the portal, so we can auto-own it + show a badge.
+  const [declaredMatch, setDeclaredMatch] = useState<any>(null);
   const [categoryId, setCategoryId] = useState<string>("");
   const [description, setDescription] = useState("");
   const [showOptional, setShowOptional] = useState(false);
@@ -131,6 +134,9 @@ export default function QuickRegister() {
 
       if (result) {
         setFoundOrder(result);
+        // A real order/package match clears any prior pre-declaration badge;
+        // the not-found branch below re-sets it when a declaration matches.
+        setDeclaredMatch(null);
         // Fan out to the expanded procedure so we know if this tracking is
         // shared, multi-tracking, or has any conflict flags. Failures here
         // never block the existing flow — we just leave expandedLookup null.
@@ -208,7 +214,33 @@ export default function QuickRegister() {
             weightRef.current?.focus();
             weightRef.current?.select();
           }, 100);
+        } else if (result.declaredMatch?.customer) {
+          // The customer pre-declared this tracking from the portal — auto-own
+          // the package to them so it never lands as unclaimed.
+          const dm = result.declaredMatch;
+          const dmCustomer = dm.customer!;
+          setDeclaredMatch(dm);
+          if (!customerId && !isUnclaimed) {
+            setCustomerId(dmCustomer.id);
+            setCustomerSearch(dmCustomer.customerCode || dmCustomer.fullName || "");
+            setIsUnclaimed(false);
+          }
+          soundManager.playFound();
+          toast.success(
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              <div>
+                <div className="font-medium">{pickLang(language, { ku: "کڕیار پێشوەخت ئەم تراکەی داخڵ کردووە", en: "Customer pre-declared this tracking", ar: "العميل سجّل هذا التتبع مسبقاً", zh: "客户已预先登记此运单号" })}</div>
+                <div className="text-sm text-muted-foreground">{dmCustomer.customerCode || dmCustomer.fullName}</div>
+              </div>
+            </div>
+          );
+          setTimeout(() => {
+            weightRef.current?.focus();
+            weightRef.current?.select();
+          }, 100);
         } else {
+          setDeclaredMatch(null);
           soundManager.playNotFound();
           toast.info(t("quickRegister.trackingNotFound"));
           setTimeout(() => {
@@ -1253,6 +1285,42 @@ export default function QuickRegister() {
                         </div>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Portal pre-declaration match — the scanned tracking was
+                  declared in advance by a customer, so we surface who owns it
+                  (auto-filled above) with the photo/platform they provided. */}
+              {declaredMatch?.customer && (
+                <Card className="border-2 border-emerald-300 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-card rounded-2xl shadow-sm overflow-hidden">
+                  <CardContent className="p-4 flex items-center gap-4">
+                    {declaredMatch.productImages?.[0] ? (
+                      <img src={declaredMatch.productImages[0]} alt="" className="w-16 h-16 rounded-xl object-cover border-2 border-emerald-200 dark:border-emerald-800 shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                        <Package className="h-7 w-7 text-emerald-500" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-600 text-white">
+                          {pickLang(language, { ku: "پێشوەخت داواکراوە", en: "Pre-declared", ar: "مُسجَّل مسبقاً", zh: "已预登记" })}
+                        </span>
+                        <span className="text-sm font-mono font-bold text-emerald-900 dark:text-emerald-200" dir="ltr">
+                          {declaredMatch.customer.customerCode || declaredMatch.customer.fullName}
+                        </span>
+                      </div>
+                      {declaredMatch.customer.fullName && declaredMatch.customer.customerCode && (
+                        <p className="text-sm font-semibold text-foreground truncate mt-0.5">{declaredMatch.customer.fullName}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {declaredMatch.platform ? `${declaredMatch.platform}` : ""}
+                        {declaredMatch.productName ? `${declaredMatch.platform ? " · " : ""}${declaredMatch.productName}` : ""}
+                        {declaredMatch.notes ? `${(declaredMatch.platform || declaredMatch.productName) ? " · " : ""}${declaredMatch.notes}` : ""}
+                      </p>
+                    </div>
+                    <CheckCircle2 className="h-6 w-6 text-emerald-500 shrink-0" />
                   </CardContent>
                 </Card>
               )}

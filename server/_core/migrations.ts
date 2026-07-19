@@ -873,6 +873,30 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "customerDeclaredPackages",
+    dependencies: ["customers"],
+    sql: `CREATE TABLE IF NOT EXISTS customerDeclaredPackages (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerId INT NOT NULL,
+      trackingNumber VARCHAR(100) NOT NULL,
+      platform ENUM('taobao', 'pinduoduo', 'alibaba', '1688', 'aliexpress', 'weixin', 'other'),
+      productName VARCHAR(255),
+      productImages JSON,
+      categoryId INT,
+      notes TEXT,
+      purchaseDate TIMESTAMP NULL,
+      status ENUM('pending', 'matched', 'received', 'cancelled') NOT NULL DEFAULT 'pending',
+      matchedPackageId INT,
+      matchedAt TIMESTAMP NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_cdp_tracking (trackingNumber),
+      INDEX idx_cdp_customer (customerId),
+      INDEX idx_cdp_status (status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "customerMessages",
     dependencies: ["customers", "users"],
     sql: `CREATE TABLE IF NOT EXISTS customerMessages (

@@ -371,4 +371,35 @@ export type DeliveryBoxItem = typeof deliveryBoxItems.$inferSelect;
 export type InsertDeliveryBoxItem = typeof deliveryBoxItems.$inferInsert;
 
 
+// ============ CUSTOMER DECLARED (PRE-ALERT) PACKAGES ============
+// Customers pre-declare an incoming purchase's tracking number from the
+// portal BEFORE it physically arrives. When staff later register that
+// tracking in Quick Register, the system auto-matches it to this customer —
+// so a package that would otherwise land "unclaimed" is instantly owned.
+// Only trackingNumber is required; everything else is optional context.
+export const customerDeclaredPackages = mysqlTable("customerDeclaredPackages", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(), // FK → customers
+  trackingNumber: varchar("trackingNumber", { length: 100 }).notNull(),
+  platform: mysqlEnum("platform", ["taobao", "pinduoduo", "alibaba", "1688", "aliexpress", "weixin", "other"]),
+  productName: varchar("productName", { length: 255 }),
+  productImages: json("productImages").$type<string[]>(),
+  categoryId: int("categoryId"), // optional FK → productCategories
+  notes: text("notes"),
+  purchaseDate: timestamp("purchaseDate"), // optional — when the customer bought it
+  status: mysqlEnum("status", ["pending", "matched", "received", "cancelled"]).default("pending").notNull(),
+  matchedPackageId: int("matchedPackageId"), // real package that fulfilled this declaration
+  matchedAt: timestamp("matchedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  trackingIdx: index("idx_cdp_tracking").on(table.trackingNumber),
+  customerIdx: index("idx_cdp_customer").on(table.customerId),
+  statusIdx: index("idx_cdp_status").on(table.status),
+}));
+
+export type CustomerDeclaredPackage = typeof customerDeclaredPackages.$inferSelect;
+export type InsertCustomerDeclaredPackage = typeof customerDeclaredPackages.$inferInsert;
+
+
 // Customer Messages - پەیامەکانی کڕیار (Chat System)
