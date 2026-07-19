@@ -124,6 +124,28 @@ export async function findActiveDeclaredByTracking(
   return rows[0] ?? null;
 }
 
+/** This customer's own active declaration for a tracking number (newest). */
+export async function findCustomerDeclaredByTracking(
+  customerId: number,
+  trackingNumber: string,
+): Promise<CustomerDeclaredPackage | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(customerDeclaredPackages)
+    .where(
+      and(
+        eq(customerDeclaredPackages.customerId, customerId),
+        eq(customerDeclaredPackages.trackingNumber, norm(trackingNumber)),
+        ne(customerDeclaredPackages.status, "cancelled"),
+      ),
+    )
+    .orderBy(desc(customerDeclaredPackages.createdAt))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 /**
  * Mark a declaration fulfilled once its physical package is registered.
  * Best-effort: never throws into the registration flow.

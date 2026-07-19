@@ -4,11 +4,13 @@ import { PortalSearchSkeleton } from "@/components/portal/PortalListSkeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
-import { Search, Package, X, CheckCircle, Truck, Clock, AlertCircle, Scale, Ruler, Camera, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { Search, Package, X, CheckCircle, Truck, Clock, AlertCircle, Scale, Ruler, Camera, ChevronLeft, ChevronRight, Calendar, PackagePlus, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { pickLang } from "@/lib/lang";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 function getInitialSearchQuery(): string {
@@ -28,6 +30,13 @@ export default function PortalSearch() {
   const { data: result, isLoading, refetch } = trpc.customerPortal.searchPackage.useQuery(
     { trackingNumber: searchQuery },
     { enabled: hasSearched && !!searchQuery.trim() }
+  );
+
+  // Unified-search fallback: when the tracking isn't one of the customer's own
+  // packages, surface whether it's unclaimed (claimable) or pre-declared.
+  const { data: extra, isLoading: extraLoading } = trpc.customerPortal.searchTrackingExtra.useQuery(
+    { trackingNumber: searchQuery.trim() },
+    { enabled: hasSearched && !!searchQuery.trim() && !result }
   );
 
   const photos = result?.photos as string[] | undefined;
@@ -160,7 +169,7 @@ export default function PortalSearch() {
             </div>
             <p className="text-gray-500">{t("enterTrackingToSearch") || "Enter a tracking number to search"}</p>
           </div>
-        ) : isLoading ? (
+        ) : (isLoading || extraLoading) ? (
           <PortalSearchSkeleton />
         ) : result ? (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden">
@@ -312,6 +321,47 @@ export default function PortalSearch() {
                 )}
               </div>
             </div>
+          </div>
+        ) : extra?.unclaimed ? (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 text-center space-y-3">
+            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-8 h-8 text-orange-500" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-800 dark:text-slate-100">
+                {pickLang(language, { ku: "ئەم پاکەتە بێ‌خاوەنە", en: "This package is unclaimed", ar: "هذا الطرد بلا صاحب", zh: "此包裹无主" })}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                {pickLang(language, { ku: "ئەگەر هی تۆیە، داوای خاوەنداری بکە و بەڵگە بنێرە", en: "If it's yours, submit a claim with proof", ar: "إذا كان لك، قدّم مطالبة مع الإثبات", zh: "如果是您的，请提交认领并附凭证" })}
+              </p>
+              <p className="font-mono text-sm mt-2" dir="ltr">{extra.unclaimed.trackingNumber || extra.unclaimed.packageCode}</p>
+            </div>
+            <Link href="/portal/no-mark">
+              <Button className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
+                <AlertTriangle className="w-4 h-4 me-2" />
+                {pickLang(language, { ku: "داواکاری خاوەنداری", en: "Claim ownership", ar: "المطالبة بالملكية", zh: "认领所有权" })}
+              </Button>
+            </Link>
+          </div>
+        ) : extra?.declared ? (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 text-center space-y-3">
+            <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto">
+              <PackagePlus className="w-8 h-8 text-teal-500" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-800 dark:text-slate-100">
+                {pickLang(language, { ku: "تۆ پێشوەخت ئەم تراکەت داخڵ کردووە", en: "You pre-declared this tracking", ar: "لقد سجّلت هذا التتبع مسبقاً", zh: "您已预先登记此运单号" })}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                {pickLang(language, { ku: "چاوەڕوانی گەیشتنە — کاتێک بگات ئاگادار دەکرێیتەوە", en: "Awaiting arrival — you'll be notified when it arrives", ar: "بانتظار الوصول — سيتم إعلامك عند وصوله", zh: "等待到货 — 到货后将通知您" })}
+              </p>
+              <p className="font-mono text-sm mt-2" dir="ltr">{extra.declared.trackingNumber}</p>
+            </div>
+            <Link href="/portal/declare">
+              <Button variant="outline" className="w-full rounded-xl">
+                {pickLang(language, { ku: "بینینی تۆمارکراوەکانم", en: "View my registrations", ar: "عرض تسجيلاتي", zh: "查看我的登记" })}
+              </Button>
+            </Link>
           </div>
         ) : (
           <div className="text-center py-12">

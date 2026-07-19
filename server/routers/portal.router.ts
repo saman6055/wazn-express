@@ -172,6 +172,21 @@ export const customerPortalRouter = router({
         if (!customerId) return null;
         return db.searchCustomerPackage(customerId, input.trackingNumber);
       }),
+
+    // Unified-search fallback: when a tracking isn't one of the customer's own
+    // registered packages, tell them what else we know — is it sitting
+    // unclaimed (claimable), or did they pre-declare it (awaiting arrival)?
+    searchTrackingExtra: protectedProcedure
+      .input(z.object({ trackingNumber: z.string().trim().min(1) }))
+      .query(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) return { unclaimed: null, declared: null };
+        const pkg = await db.getPackageByTrackingNumber(input.trackingNumber);
+        const unclaimed = pkg && pkg.isUnclaimed ? pkg : null;
+        const declared = await db.findCustomerDeclaredByTracking(customerId, input.trackingNumber);
+        return { unclaimed, declared };
+      }),
     
     // Get notification count
     getNotificationCount: protectedProcedure.query(async ({ ctx }) => {
