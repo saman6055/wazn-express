@@ -5,12 +5,13 @@ import Skin3PortalHome from "./skin3/Skin3PortalHome";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
-import { 
-  Package, Bell, ChevronRight, Truck, CheckCircle, Clock, 
+import {
+  Package, Bell, ChevronRight, Truck, CheckCircle, Clock,
   AlertCircle, Plane, Ship, Megaphone, TrendingUp, Search,
   CreditCard, MessageCircle, FileText, Wallet, DollarSign,
-  Sun, Moon, Sparkles, AlertTriangle
+  Sun, Moon, Sparkles, AlertTriangle, PackagePlus
 } from "lucide-react";
+import { pickLang } from "@/lib/lang";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -356,6 +357,13 @@ const { t, language } = useLanguage();
       shadowColor: "shadow-orange-500/30"
     },
     {
+      icon: PackagePlus,
+      label: pickLang(language, { ku: "تۆماری تراک", en: "Register tracking", ar: "تسجيل التتبع", zh: "登记运单" }),
+      href: "/portal/declare",
+      color: "from-teal-500 to-teal-600",
+      shadowColor: "shadow-teal-500/30"
+    },
+    {
       icon: CreditCard,
       label: t("portal.pay"),
       href: "/portal/financial",
@@ -431,10 +439,10 @@ const { t, language } = useLanguage();
 
           {/* Quick Actions */}
           <div className="mt-6">
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-5 gap-2">
               {quickActions.map((action, index) => (
                 <Link key={index} href={action.href}>
-                  <button className="flex flex-col items-center gap-2 group">
+                  <button className="flex flex-col items-center gap-2 group w-full">
                     <div className={cn(
                       "w-14 h-14 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl",
                       action.color,
