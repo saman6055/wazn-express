@@ -2,9 +2,9 @@ import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
-import { 
-  Package, Search, AlertTriangle, Clock, CheckCircle, XCircle, 
-  ChevronRight, Send, Loader2, PackageSearch, Scale, Calendar
+import {
+  Package, Search, AlertTriangle, Clock, CheckCircle, XCircle,
+  ChevronRight, Send, Loader2, PackageSearch, Scale, Calendar, MessageCircle
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import CompressedImageUpload from "@/components/CompressedImageUpload";
+import { pickLang } from "@/lib/lang";
+
+// Company WhatsApp for extra proof / questions when claiming a package.
+// 07709183535 → international (Iraq +964, drop leading 0) for wa.me.
+const SUPPORT_WHATSAPP = "9647709183535";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function PortalUnclaimedPackages() {
@@ -23,6 +29,7 @@ export default function PortalUnclaimedPackages() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [claimNote, setClaimNote] = useState("");
+  const [proofImages, setProofImages] = useState<string[]>([]);
   const [isClaimDialogOpen, setIsClaimDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("unclaimed");
   
@@ -40,6 +47,7 @@ export default function PortalUnclaimedPackages() {
       setIsClaimDialogOpen(false);
       setSelectedPackage(null);
       setClaimNote("");
+      setProofImages([]);
       refetchUnclaimed();
       refetchClaims();
     },
@@ -50,10 +58,20 @@ export default function PortalUnclaimedPackages() {
 
   const handleClaimSubmit = () => {
     if (!selectedPackage) return;
+    // Proof is mandatory: a written reason AND at least one evidence image.
+    if (!claimNote.trim()) {
+      alert(pickLang(language, { ku: "تکایە هۆکاری خاوەندارییەکە بنووسە", en: "Please write why this package is yours", ar: "يرجى كتابة سبب ملكيتك للطرد", zh: "请说明此包裹归属您的原因" }));
+      return;
+    }
+    if (proofImages.length === 0) {
+      alert(pickLang(language, { ku: "تکایە لانیکەم یەک وێنەی بەڵگە/سکرینشۆتی کڕین دابنێ", en: "Please attach at least one proof/purchase screenshot", ar: "يرجى إرفاق صورة إثبات/لقطة شراء واحدة على الأقل", zh: "请至少附上一张购买凭证/截图" }));
+      return;
+    }
     createClaimMutation.mutate({
       packageId: selectedPackage.id,
       trackingNumber: selectedPackage.trackingNumber || selectedPackage.packageCode,
-      customerNote: claimNote || undefined,
+      customerNote: claimNote.trim(),
+      proofImages,
     });
   };
 
@@ -192,9 +210,18 @@ export default function PortalUnclaimedPackages() {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center">
-                          <Package className="w-6 h-6 text-orange-600" />
-                        </div>
+                        {pkg.photos?.[0] ? (
+                          <img
+                            src={pkg.photos[0]}
+                            alt=""
+                            className="w-12 h-12 rounded-xl object-cover border border-orange-100 shrink-0 cursor-zoom-in"
+                            onClick={() => window.open(pkg.photos![0], "_blank", "noopener,noreferrer")}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center shrink-0">
+                            <Package className="w-6 h-6 text-orange-600" />
+                          </div>
+                        )}
                         <div className="flex-1">
                           {/* Tracking Number - Main Display */}
                           {pkg.trackingNumber && (
@@ -360,9 +387,13 @@ export default function PortalUnclaimedPackages() {
               {/* Package Info */}
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                    <Package className="w-6 h-6 text-slate-600" />
-                  </div>
+                  {selectedPackage.photos?.[0] ? (
+                    <img src={selectedPackage.photos[0]} alt="" className="w-12 h-12 rounded-xl object-cover shadow-sm shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                      <Package className="w-6 h-6 text-slate-600" />
+                    </div>
+                  )}
                   <div>
                     <p className="font-semibold text-slate-800">
                       {selectedPackage.trackingNumber || selectedPackage.packageCode}
@@ -376,18 +407,49 @@ export default function PortalUnclaimedPackages() {
                 </div>
               </div>
               
-              {/* Note Input */}
+              {/* Note Input (required) */}
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("addNote") || "Add a note"} ({t("optional") || "optional"})
+                  {pickLang(language, { ku: "هۆکاری خاوەنداری", en: "Reason for ownership", ar: "سبب الملكية", zh: "归属原因" })}
+                  <span className="text-red-500"> *</span>
                 </label>
                 <Textarea
-                  placeholder={t("claimNotePlaceholder") || "Explain why this package belongs to you..."}
+                  placeholder={pickLang(language, { ku: "بۆ نموونە: لە عەلی بابا کڕیم، لەگەڵ سەپلایەر قسەم کرد...", en: "e.g. I bought it on Alibaba, spoke with the supplier...", ar: "مثال: اشتريته من علي بابا، تحدثت مع المورد...", zh: "例如：我在阿里巴巴购买，与供应商沟通过……" })}
                   value={claimNote}
                   onChange={(e) => setClaimNote(e.target.value)}
-                  className="min-h-[100px] resize-none rounded-xl"
+                  className="min-h-[90px] resize-none rounded-xl"
                 />
               </div>
+
+              {/* Proof images (required) */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  {pickLang(language, { ku: "بەڵگە / سکرینشۆتی کڕین", en: "Proof / purchase screenshot", ar: "الإثبات / لقطة الشراء", zh: "凭证 / 购买截图" })}
+                  <span className="text-red-500"> *</span>
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  {pickLang(language, { ku: "سکرینشۆتی کڕین، وێنەی سەپلایەر، یان وێنەی ویچات دابنێ", en: "Attach a purchase screenshot, supplier photo, or WeChat image", ar: "أرفق لقطة شراء أو صورة المورد أو صورة من WeChat", zh: "附上购买截图、供应商照片或微信图片" })}
+                </p>
+                <CompressedImageUpload images={proofImages} onChange={setProofImages} maxImages={5} />
+              </div>
+
+              {/* WhatsApp — extra proof / questions */}
+              <a
+                href={`https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(
+                  pickLang(language, {
+                    ku: `سڵاو، دەربارەی داواکاری خاوەنداری پاکەتی تراکینگ ${selectedPackage.trackingNumber || selectedPackage.packageCode}`,
+                    en: `Hello, regarding my claim for package tracking ${selectedPackage.trackingNumber || selectedPackage.packageCode}`,
+                    ar: `مرحباً، بخصوص مطالبتي بالطرد رقم التتبع ${selectedPackage.trackingNumber || selectedPackage.packageCode}`,
+                    zh: `您好，关于我认领运单号 ${selectedPackage.trackingNumber || selectedPackage.packageCode} 的包裹`,
+                  })
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl border border-green-500 bg-green-50 px-4 py-2.5 text-sm font-semibold text-green-700 transition-colors hover:bg-green-100"
+              >
+                <MessageCircle className="w-4 h-4" />
+                {pickLang(language, { ku: "بەڵگەی زیاتر بنێرە بە واتساپ", en: "Send more proof via WhatsApp", ar: "أرسل إثباتاً إضافياً عبر واتساب", zh: "通过 WhatsApp 发送更多凭证" })}
+              </a>
             </div>
           )}
           

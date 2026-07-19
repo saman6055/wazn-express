@@ -1,8 +1,8 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
-import { 
-  Package, Clock, CheckCircle, XCircle, User, Calendar, 
-  MessageSquare, Loader2, Search, Filter, ChevronDown
+import {
+  Package, Clock, CheckCircle, XCircle, User, Calendar,
+  MessageSquare, Loader2, Search, Filter, ChevronDown, Image as ImageIcon
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -293,6 +293,27 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                             Customer Note
                           </div>
                           <p className="text-sm text-gray-700">{request.customerNote}</p>
+                        </div>
+                      )}
+
+                      {/* Proof of ownership images */}
+                      {request.proofImages && request.proofImages.length > 0 && (
+                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                            <ImageIcon className="w-4 h-4" />
+                            {t("claimRequests.proofImages") || "Proof of ownership"} ({request.proofImages.length})
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {request.proofImages.map((img: string, i: number) => (
+                              <img
+                                key={i}
+                                src={img}
+                                alt=""
+                                onClick={() => window.open(img, "_blank", "noopener,noreferrer")}
+                                className="w-20 h-20 rounded-lg object-cover border cursor-zoom-in transition-opacity hover:opacity-90"
+                              />
+                            ))}
+                          </div>
                         </div>
                       )}
                       

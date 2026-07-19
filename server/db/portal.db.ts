@@ -448,18 +448,20 @@ export async function createClaimRequest(data: {
   trackingNumber: string;
   customerId: number;
   customerNote?: string;
+  proofImages?: string[];
 }): Promise<PackageClaimRequest> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const requestNumber = await getNextClaimRequestNumber();
-  
+
   const [request] = await db.insert(packageClaimRequests).values({
     requestNumber,
     packageId: data.packageId,
     trackingNumber: data.trackingNumber,
     customerId: data.customerId,
     customerNote: data.customerNote,
+    proofImages: data.proofImages,
     status: "pending",
   }).$returningId();
   

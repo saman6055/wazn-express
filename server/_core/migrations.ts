@@ -2068,6 +2068,11 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // color/badge fields the admin uses to curate what customers see.
   // Each patch is idempotent — runSchemaPatches swallows "duplicate column"
   // errors on reruns, so re-deploys are safe.
+  // Proof-of-ownership images on package claim requests (customer uploads
+  // purchase screenshots / supplier / WeChat photos when claiming an
+  // unclaimed package). Idempotent — reruns swallow "duplicate column".
+  { name: "packageClaimRequests.proofImages", sql: "ALTER TABLE packageClaimRequests ADD COLUMN proofImages JSON" },
+
   { name: "pricingRules.showOnPortal",       sql: "ALTER TABLE pricingRules ADD COLUMN showOnPortal BOOLEAN NOT NULL DEFAULT FALSE" },
   { name: "pricingRules.portalLabelKu",      sql: "ALTER TABLE pricingRules ADD COLUMN portalLabelKu VARCHAR(150)" },
   { name: "pricingRules.portalLabelEn",      sql: "ALTER TABLE pricingRules ADD COLUMN portalLabelEn VARCHAR(150)" },

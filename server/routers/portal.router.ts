@@ -247,30 +247,34 @@ export const customerPortalRouter = router({
       .input(z.object({
         packageId: z.number(),
         trackingNumber: z.string(),
-        customerNote: z.string().optional(),
+        // Proof of ownership is mandatory: a written reason AND at least one
+        // evidence image (purchase screenshot / supplier / WeChat photo).
+        customerNote: z.string().trim().min(1),
+        proofImages: z.array(z.string()).min(1),
       }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
           (await db.getCustomerByUserId(ctx.user.id))?.id;
         if (!customerId) throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
-        
+
         // Check if package exists and is unclaimed
         const pkg = await db.getPackageById(input.packageId);
         if (!pkg || !pkg.isUnclaimed) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Package is not available for claiming" });
         }
-        
+
         // Check if customer already has a pending claim for this package
         const hasExisting = await db.hasExistingClaimRequest(input.packageId, customerId);
         if (hasExisting) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "You already have a pending claim for this package" });
         }
-        
+
         return db.createClaimRequest({
           packageId: input.packageId,
           trackingNumber: input.trackingNumber,
           customerId,
           customerNote: input.customerNote,
+          proofImages: input.proofImages,
         });
       }),
     

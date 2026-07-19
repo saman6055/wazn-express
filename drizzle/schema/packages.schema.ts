@@ -267,9 +267,12 @@ export const packageClaimRequests = mysqlTable("packageClaimRequests", {
   // Request status
   status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
   
-  // Customer's note/reason for claiming
+  // Customer's note/reason for claiming (required at the app layer)
   customerNote: text("customerNote"),
-  
+  // Proof of ownership uploaded by the customer — purchase screenshots,
+  // supplier/WeChat photos, etc. (at least one required at the app layer).
+  proofImages: json("proofImages").$type<string[]>(),
+
   // Admin review
   reviewedById: int("reviewedById"),
   reviewedAt: timestamp("reviewedAt"),
