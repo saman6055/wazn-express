@@ -924,15 +924,17 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       customerId INT NOT NULL,
       title VARCHAR(255) NOT NULL,
       titleKu VARCHAR(255),
+      titleAr VARCHAR(255),
       message TEXT NOT NULL,
       messageKu TEXT,
-      type ENUM('info', 'success', 'warning', 'error') NOT NULL DEFAULT 'info',
-      category ENUM('package', 'payment', 'promotion', 'system', 'other') NOT NULL DEFAULT 'system',
-      relatedEntityType VARCHAR(50),
-      relatedEntityId INT,
-      isRead BOOLEAN NOT NULL DEFAULT FALSE,
-      readAt TIMESTAMP,
+      messageAr TEXT,
+      type ENUM('info', 'success', 'warning', 'error', 'package', 'payment', 'promotion') NOT NULL DEFAULT 'info',
+      relatedType ENUM('package', 'batch', 'payment', 'invoice', 'full_package'),
+      relatedId INT,
       actionUrl VARCHAR(500),
+      actionLabel VARCHAR(100),
+      isRead BOOLEAN NOT NULL DEFAULT FALSE,
+      readAt TIMESTAMP NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
@@ -2072,6 +2074,21 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // purchase screenshots / supplier / WeChat photos when claiming an
   // unclaimed package). Idempotent — reruns swallow "duplicate column".
   { name: "packageClaimRequests.proofImages", sql: "ALTER TABLE packageClaimRequests ADD COLUMN proofImages JSON" },
+
+  // ============ customerNotifications drift repair ============
+  // The live table was created from an older CREATE TABLE whose columns no
+  // longer match the Drizzle schema (missing titleAr/messageAr/relatedType/
+  // relatedId/actionLabel; a narrower `type` enum). The ORM SELECTs the
+  // schema columns, so getCustomerNotifications 500s on the missing ones —
+  // the "network error" the notifications centre showed. These idempotent
+  // ALTERs reconcile existing deployments; runSchemaPatches swallows
+  // duplicate-column errors so re-runs and already-correct DBs are safe.
+  { name: "customerNotifications.titleAr", sql: "ALTER TABLE customerNotifications ADD COLUMN titleAr VARCHAR(255)" },
+  { name: "customerNotifications.messageAr", sql: "ALTER TABLE customerNotifications ADD COLUMN messageAr TEXT" },
+  { name: "customerNotifications.relatedType", sql: "ALTER TABLE customerNotifications ADD COLUMN relatedType ENUM('package','batch','payment','invoice','full_package')" },
+  { name: "customerNotifications.relatedId", sql: "ALTER TABLE customerNotifications ADD COLUMN relatedId INT" },
+  { name: "customerNotifications.actionLabel", sql: "ALTER TABLE customerNotifications ADD COLUMN actionLabel VARCHAR(100)" },
+  { name: "customerNotifications.typeExtended", sql: "ALTER TABLE customerNotifications MODIFY COLUMN type ENUM('info','success','warning','error','package','payment','promotion') NOT NULL DEFAULT 'info'" },
 
   { name: "pricingRules.showOnPortal",       sql: "ALTER TABLE pricingRules ADD COLUMN showOnPortal BOOLEAN NOT NULL DEFAULT FALSE" },
   { name: "pricingRules.portalLabelKu",      sql: "ALTER TABLE pricingRules ADD COLUMN portalLabelKu VARCHAR(150)" },

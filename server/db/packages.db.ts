@@ -193,6 +193,21 @@ export async function createPackage(data: InsertPackage): Promise<Package> {
     if (cleanData.trackingNumber) {
       try { await markDeclaredMatched(cleanData.trackingNumber as string, insertId); } catch { /* non-fatal */ }
     }
+    // Notify the owner their package is now registered (best-effort).
+    if (inserted[0].customerId && !inserted[0].isUnclaimed) {
+      try {
+        const p = inserted[0];
+        const c = p.trackingNumber || p.packageCode || `#${p.id}`;
+        await createCustomerNotification({
+          customerId: p.customerId!, type: "package", relatedType: "package", relatedId: p.id,
+          actionUrl: `/portal/search?q=${encodeURIComponent(c)}`,
+          title: "Package registered", titleKu: "پاکەت تۆمار کرا", titleAr: "تم تسجيل الطرد",
+          message: `Your package ${c} has been registered.`,
+          messageKu: `پاکەتەکەت ${c} تۆمار کرا.`,
+          messageAr: `تم تسجيل طردك ${c}.`,
+        });
+      } catch { /* non-fatal */ }
+    }
     return inserted[0];
   } catch (err: unknown) {
     // Surface the full structured error to logs so we can diagnose the
@@ -572,6 +587,65 @@ export async function updatePackage(id: number, data: Partial<InsertPackage>) {
       }
     } catch (e) {
       appLogger.error('[FullPackage] Failed to sync status to linked orders', { error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+
+  // ── Customer notifications for important package lifecycle events ──
+  // Best-effort, only for owned (non-unclaimed) packages, fired on ACTUAL
+  // changes, so each customer's notification centre gets a clean per-code
+  // feed: batch add/remove + every meaningful movement. Never blocks the
+  // update. `in_batch` status is intentionally left to the batch-add branch
+  // so a single scan doesn't double-notify.
+  if (pkg && pkg.customerId && !pkg.isUnclaimed) {
+    const code = pkg.trackingNumber || pkg.packageCode || `#${pkg.id}`;
+    const trackUrl = `/portal/search?q=${encodeURIComponent(code)}`;
+    try {
+      if (data.batchId !== undefined && (data.batchId ?? null) !== (pkg.batchId ?? null)) {
+        if (data.batchId) {
+          const [b] = await db.select({ code: batches.batchCode }).from(batches).where(eq(batches.id, data.batchId)).limit(1);
+          const bc = b?.code || "";
+          await createCustomerNotification({
+            customerId: pkg.customerId, type: "package", relatedType: "package", relatedId: pkg.id, actionUrl: "/portal/shipments",
+            title: `Added to shipment ${bc}`.trim(), titleKu: `خرایە ناو بارەکەی ${bc}`.trim(), titleAr: `أُضيف إلى الشحنة ${bc}`.trim(),
+            message: `Your package ${code} was added to shipment ${bc}.`,
+            messageKu: `پاکەتەکەت ${code} خرایە ناو بارەکەی ${bc}.`,
+            messageAr: `تمت إضافة طردك ${code} إلى الشحنة ${bc}.`,
+          });
+        } else {
+          await createCustomerNotification({
+            customerId: pkg.customerId, type: "warning", relatedType: "package", relatedId: pkg.id, actionUrl: trackUrl,
+            title: "Removed from shipment", titleKu: "لە بارەکە لابرا", titleAr: "أُزيل من الشحنة",
+            message: `Your package ${code} was removed from its shipment.`,
+            messageKu: `پاکەتەکەت ${code} لە بارەکە لابرا.`,
+            messageAr: `تمت إزالة طردك ${code} من الشحنة.`,
+          });
+        }
+      }
+
+      if (data.status && data.status !== pkg.status) {
+        const L: Record<string, { en: string; ku: string; ar: string; ok?: boolean }> = {
+          received_china:     { en: "Arrived at China warehouse",  ku: "گەیشتە کۆگای چین",     ar: "وصل إلى مستودع الصين" },
+          in_transit:         { en: "In transit",                  ku: "لە ڕێگادایە",          ar: "قيد الشحن" },
+          customs_processing: { en: "In customs",                  ku: "لە گومرگە",            ar: "في الجمارك" },
+          received_local:     { en: "Arrived at local warehouse",  ku: "گەیشتە کۆگای ناوخۆ",    ar: "وصل إلى المستودع المحلي" },
+          ready_for_delivery: { en: "Ready for delivery",          ku: "ئامادەیە بۆ گەیاندن",   ar: "جاهز للتسليم" },
+          out_for_delivery:   { en: "Out for delivery",            ku: "لە ڕێی گەیاندنە",       ar: "خرج للتسليم" },
+          delivered:          { en: "Delivered",                   ku: "گەیێنرا",              ar: "تم التسليم", ok: true },
+          returned:           { en: "Returned",                    ku: "گەڕێندرایەوە",         ar: "تم الإرجاع" },
+        };
+        const m = L[data.status as string];
+        if (m) {
+          await createCustomerNotification({
+            customerId: pkg.customerId, type: m.ok ? "success" : "package", relatedType: "package", relatedId: pkg.id, actionUrl: trackUrl,
+            title: m.en, titleKu: m.ku, titleAr: m.ar,
+            message: `Package ${code}: ${m.en}.`,
+            messageKu: `پاکەتی ${code}: ${m.ku}.`,
+            messageAr: `الطرد ${code}: ${m.ar}.`,
+          });
+        }
+      }
+    } catch (e) {
+      appLogger.error("[Notifications] package-event notify failed", { error: e instanceof Error ? e.message : String(e), packageId: id });
     }
   }
 }
