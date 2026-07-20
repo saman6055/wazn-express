@@ -1,215 +1,142 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useTheme } from "@/contexts/ThemeContext";
-import { 
-  FileText, 
-  Shield, 
-  Clock, 
-  AlertTriangle, 
-  Package, 
-  DollarSign,
-  Truck,
-  Scale,
-  CheckCircle2,
-  XCircle
-} from "lucide-react";
+import { pickLang } from "@/lib/lang";
+import { FileText, MessageCircle, ChevronLeft } from "lucide-react";
+import {
+  termsSections,
+  termsClosing,
+  termsHint,
+  termsHeader,
+  termsGeneralOpener,
+  TERMS_WHATSAPP_NUMBER,
+  type L10n,
+} from "@/constants/portalTerms";
+
+/** WhatsApp brand glyph (lucide has no brand icons). */
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
+    </svg>
+  );
+}
 
 export default function PortalTerms() {
-const { language } = useLanguage();
+  const { language } = useLanguage();
   const isRTL = language === "ku" || language === "ar";
+  const pick = (v: L10n) => pickLang(language, v);
 
-  const sections = [
-    {
-      icon: Package,
-      title: language === "ku" ? "مەرجەکانی بار" : language === "ar" ? "شروط الشحن" : "Shipping Terms",
-      color: "from-blue-500 to-blue-600",
-      items: language === "ku" ? [
-        "هەموو بارەکان دەبێت نیشانەی بار (Shipping Mark) هەبێت",
-        "بارە بێ نیشانەکان بەرپرسیاریەتی کۆمپانیا نییە",
-        "کێشی بار دەبێت لەگەڵ وەسفەکە یەک بگرێتەوە",
-        "بارە قەدەغەکراوەکان وەرناگیرێن (چەک، مادەی کیمیایی، هتد)",
-      ] : language === "ar" ? [
-        "جميع الشحنات يجب أن تحمل علامة الشحن",
-        "الشحنات بدون علامة ليست مسؤولية الشركة",
-        "يجب أن يتطابق الوزن مع الوصف",
-        "لا نقبل البضائع المحظورة (أسلحة، مواد كيميائية، إلخ)",
-      ] : [
-        "All shipments must have a shipping mark",
-        "Packages without marks are not company's responsibility",
-        "Weight must match the description",
-        "Prohibited items are not accepted (weapons, chemicals, etc.)",
-      ],
-    },
-    {
-      icon: DollarSign,
-      title: language === "ku" ? "مەرجەکانی پارەدان" : language === "ar" ? "شروط الدفع" : "Payment Terms",
-      color: "from-green-500 to-green-600",
-      items: language === "ku" ? [
-        "پارەدان پێش گەیاندن یان کاتی گەیاندن",
-        "کرێدیت تەنها بۆ کڕیارە VIP ەکان",
-        "دواکەوتنی پارەدان ڕادەگرێت لە خزمەتگوزاری",
-        "گۆڕینی دراو بە نرخی ڕۆژ",
-      ] : language === "ar" ? [
-        "الدفع قبل أو عند التسليم",
-        "الائتمان متاح فقط لعملاء VIP",
-        "التأخر في الدفع يؤدي إلى تعليق الخدمة",
-        "سعر الصرف حسب سعر اليوم",
-      ] : [
-        "Payment before or upon delivery",
-        "Credit available only for VIP customers",
-        "Late payment results in service suspension",
-        "Exchange rate based on daily rate",
-      ],
-    },
-    {
-      icon: Clock,
-      title: language === "ku" ? "کاتی گەیاندن" : language === "ar" ? "وقت التسليم" : "Delivery Time",
-      color: "from-orange-500 to-orange-600",
-      items: language === "ku" ? [
-        "بارە ئاسمانییەکان: 7-14 ڕۆژ",
-        "بارە دەریاییەکان: 30-45 ڕۆژ",
-        "کاتی گەیاندن گەرەنتی نییە و دەگۆڕێت",
-        "دواکەوتن لەبەر هۆکاری دەرەکی بەرپرسیاریەتی کۆمپانیا نییە",
-      ] : language === "ar" ? [
-        "الشحن الجوي: 7-14 يوم",
-        "الشحن البحري: 30-45 يوم",
-        "وقت التسليم غير مضمون وقابل للتغيير",
-        "التأخير بسبب عوامل خارجية ليس مسؤولية الشركة",
-      ] : [
-        "Air shipping: 7-14 days",
-        "Sea shipping: 30-45 days",
-        "Delivery time is not guaranteed and may vary",
-        "Delays due to external factors are not company's responsibility",
-      ],
-    },
-    {
-      icon: Shield,
-      title: language === "ku" ? "بیمە و قەرەبوو" : language === "ar" ? "التأمين والتعويض" : "Insurance & Compensation",
-      color: "from-purple-500 to-purple-600",
-      items: language === "ku" ? [
-        "بیمەی بار بە داواکاری کڕیار و بە نرخی زیادە",
-        "قەرەبوو تەنها بۆ بارە بیمەکراوەکان",
-        "قەرەبووی بارە بێ بیمە: 3 دۆلار بۆ هەر کیلۆیەک",
-        "داوای قەرەبوو لە ماوەی 48 کاتژمێردا",
-      ] : language === "ar" ? [
-        "التأمين على الشحنة بطلب العميل وبتكلفة إضافية",
-        "التعويض فقط للشحنات المؤمنة",
-        "تعويض الشحنات غير المؤمنة: 3 دولار لكل كيلو",
-        "طلب التعويض خلال 48 ساعة",
-      ] : [
-        "Cargo insurance available upon request at extra cost",
-        "Compensation only for insured shipments",
-        "Uninsured cargo compensation: $3 per kg",
-        "Compensation claims within 48 hours",
-      ],
-    },
-    {
-      icon: AlertTriangle,
-      title: language === "ku" ? "بارە قەدەغەکراوەکان" : language === "ar" ? "البضائع المحظورة" : "Prohibited Items",
-      color: "from-red-500 to-red-600",
-      items: language === "ku" ? [
-        "چەک و تەقەمەنی",
-        "مادەی کیمیایی و تەقینەوە",
-        "مادەی هۆشبەر",
-        "پارەی ساختە",
-        "کەلوپەلی نایاسایی",
-      ] : language === "ar" ? [
-        "الأسلحة والذخيرة",
-        "المواد الكيميائية والمتفجرات",
-        "المخدرات",
-        "العملات المزيفة",
-        "البضائع غير القانونية",
-      ] : [
-        "Weapons and ammunition",
-        "Chemicals and explosives",
-        "Narcotics",
-        "Counterfeit currency",
-        "Illegal goods",
-      ],
-    },
-  ];
+  // Build a wa.me link that drops the tapped point into the chat, followed by
+  // the polite closing line — both in the customer's current language.
+  const waHref = (message: string) =>
+    `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
-  const importantNotes = language === "ku" ? [
-    "کۆمپانیا مافی گۆڕینی نرخ و مەرجەکانی هەیە بەبێ ئاگادارکردنەوەی پێشوەخت",
-    "بەکارهێنانی خزمەتگوزارییەکانمان واتە ڕازیبوون بەم مەرجانە",
-    "بۆ هەر پرسیارێک پەیوەندیمان پێوە بکەن",
-  ] : language === "ar" ? [
-    "تحتفظ الشركة بحق تغيير الأسعار والشروط دون إشعار مسبق",
-    "استخدام خدماتنا يعني الموافقة على هذه الشروط",
-    "للاستفسارات تواصل معنا",
-  ] : [
-    "Company reserves the right to change prices and terms without prior notice",
-    "Using our services means agreeing to these terms",
-    "For any questions, please contact us",
-  ];
+  const pointHref = (point: string) =>
+    waHref(`«${point}»\n\n${pick(termsClosing)}`);
 
   return (
     <CustomerPortalLayout>
-      <div className={`min-h-screen bg-gray-50 ${isRTL ? 'rtl' : 'ltr'}`}>
+      <div
+        className={`min-h-screen bg-gray-50 dark:bg-gray-950 ${isRTL ? "rtl" : "ltr"}`}
+        dir={isRTL ? "rtl" : "ltr"}
+      >
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-4 pt-6 pb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-              <FileText className="w-5 h-5" />
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 text-white px-4 pt-8 pb-10">
+          <div className="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -bottom-12 -start-6 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/15 backdrop-blur rounded-2xl flex items-center justify-center ring-1 ring-white/25">
+              <FileText className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">
-                {language === "ku" ? "مەرج و ڕێساکان" : language === "ar" ? "الشروط والأحكام" : "Terms & Conditions"}
-              </h1>
-              <p className="text-sm text-gray-300">
-                {language === "ku" ? "مەرجەکانی خزمەتگوزاری" : language === "ar" ? "شروط الخدمة" : "Service Terms"}
-              </p>
+              <h1 className="text-2xl font-extrabold leading-tight">{pick(termsHeader.title)}</h1>
+              <p className="text-sm text-white/80">{pick(termsHeader.subtitle)}</p>
             </div>
+          </div>
+
+          {/* WhatsApp tap tip */}
+          <div className="relative mt-5 flex items-center gap-2 rounded-2xl bg-white/12 backdrop-blur px-3.5 py-2.5 ring-1 ring-white/20">
+            <WhatsAppIcon className="w-5 h-5 text-white shrink-0" />
+            <span className="text-sm font-medium">{pick(termsHeader.tapTip)}</span>
           </div>
         </div>
 
         {/* Content */}
-        <div className="px-4 py-6 space-y-4 pb-24">
-          {sections.map((section, index) => (
-            <div key={index} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              {/* Section Header */}
-              <div className={`bg-gradient-to-r ${section.color} p-4 flex items-center gap-3`}>
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+        <div className="px-4 py-6 space-y-4 pb-28 max-w-2xl mx-auto">
+          {termsSections.map((section, index) => (
+            <section
+              key={section.id}
+              className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm ring-1 ring-gray-100 dark:ring-white/5 overflow-hidden"
+            >
+              {/* Section header */}
+              <div className={`bg-gradient-to-r ${section.gradient} px-4 py-3.5 flex items-center gap-3`}>
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center ring-1 ring-white/20 shrink-0">
                   <section.icon className="w-5 h-5 text-white" />
                 </div>
-                <h2 className="text-lg font-bold text-white">{section.title}</h2>
+                <h2 className="text-base font-bold text-white flex-1">{pick(section.title)}</h2>
+                <span className="text-xs font-bold text-white/70 tabular-nums">
+                  {index + 1}/{termsSections.length}
+                </span>
               </div>
-              
-              {/* Section Items */}
-              <div className="p-4 space-y-3">
-                {section.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-gray-700">{item}</p>
-                  </div>
-                ))}
+
+              {/* Section items — each is a WhatsApp deep-link */}
+              <div className="p-2 sm:p-3 divide-y divide-gray-100 dark:divide-white/5">
+                {section.items.map((item, itemIndex) => {
+                  const text = pick(item);
+                  return (
+                    <a
+                      key={itemIndex}
+                      href={pointHref(text)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-start gap-3 rounded-2xl p-3 transition-colors hover:bg-emerald-50 dark:hover:bg-emerald-950/30 active:bg-emerald-100 dark:active:bg-emerald-950/50"
+                    >
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400 text-xs font-bold tabular-nums">
+                        {itemIndex + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] leading-relaxed text-gray-800 dark:text-gray-100 font-medium">
+                          {text}
+                        </p>
+                        <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                          <WhatsAppIcon className="w-3.5 h-3.5" />
+                          <span>{pick(termsHint)}</span>
+                        </span>
+                      </div>
+                      <ChevronLeft
+                        className={`mt-2 h-4 w-4 shrink-0 text-gray-300 dark:text-gray-600 transition-transform group-hover:text-emerald-500 ${
+                          isRTL ? "" : "rotate-180"
+                        }`}
+                      />
+                    </a>
+                  );
+                })}
               </div>
-            </div>
+            </section>
           ))}
 
-          {/* Important Notes */}
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-              <h3 className="font-bold text-amber-800">
-                {language === "ku" ? "تێبینی گرنگ" : language === "ar" ? "ملاحظات مهمة" : "Important Notes"}
-              </h3>
-            </div>
-            <div className="space-y-2">
-              {importantNotes.map((note, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 flex-shrink-0" />
-                  <p className="text-amber-800 text-sm">{note}</p>
-                </div>
-              ))}
-            </div>
+          {/* Consent note */}
+          <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-4 flex items-start gap-2.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+            <p className="text-sm text-amber-800 dark:text-amber-300 font-medium leading-relaxed">
+              {pick(termsHeader.consent)}
+            </p>
           </div>
 
-          {/* Last Updated */}
-          <div className="text-center text-gray-400 text-sm">
-            {language === "ku" ? "دوایین نوێکردنەوە: ٢٠٢٤/١٢/٢٢" : 
-             language === "ar" ? "آخر تحديث: 2024/12/22" : 
-             "Last updated: 2024/12/22"}
+          {/* Contact CTA */}
+          <a
+            href={waHref(pick(termsGeneralOpener))}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3.5 text-white font-bold shadow-lg shadow-emerald-500/25 transition-transform active:scale-[0.98]"
+          >
+            <WhatsAppIcon className="w-5 h-5" />
+            <span>{pick(termsHeader.contactCta)}</span>
+          </a>
+
+          {/* Last updated */}
+          <div className="text-center text-gray-400 dark:text-gray-600 text-xs">
+            {pick(termsHeader.updated)}
           </div>
         </div>
       </div>
