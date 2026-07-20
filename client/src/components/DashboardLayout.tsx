@@ -169,6 +169,9 @@ function DashboardLayoutContent({
   const company = useCompanyInfo();
   useDynamicFavicon();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Desktop icon-rail: collapsed by default (icons only). Opens on click and
+  // auto-collapses when the mouse leaves the sidebar entirely.
+  const [railExpanded, setRailExpanded] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["main"]);
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
   // A group the user explicitly clicked to close while still hovering it — this
@@ -444,6 +447,18 @@ function DashboardLayoutContent({
 
   const isItemActive = (path: string) => location === path || location.startsWith(path + '/');
 
+  // Desktop icon-rail mode: collapsed rail showing only group icons. Mobile
+  // always renders the full menu inside its slide-over drawer.
+  const compact = !isMobile && !railExpanded;
+
+  // Collapse the rail once the mouse fully leaves the sidebar (desktop only).
+  const handleSidebarLeave = () => {
+    if (isMobile) return;
+    setRailExpanded(false);
+    setHoveredGroup(null);
+    setClickClosedGroup(null);
+  };
+
   // Record visited locations for the "recently viewed" dropdown — client-only
   // UI state. Prefer a known menu-item label; otherwise derive a best-effort
   // label from the last path segment.
@@ -543,33 +558,40 @@ function DashboardLayoutContent({
       {/* Sidebar */}
       <aside
         id="sidebar"
+        onClick={() => { if (compact) setRailExpanded(true); }}
+        onMouseLeave={handleSidebarLeave}
         className={cn(
-          "fixed top-0 h-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50 transition-transform duration-300 ease-in-out overflow-hidden flex flex-col",
+          "fixed top-0 h-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50 transition-all duration-300 ease-in-out overflow-hidden flex flex-col",
           isRTL ? "right-0 border-l" : "left-0 border-r",
-          isMobile 
+          isMobile
             ? cn(
                 "w-72",
-                sidebarOpen 
-                  ? "translate-x-0" 
+                sidebarOpen
+                  ? "translate-x-0"
                   : isRTL ? "translate-x-full" : "-translate-x-full"
               )
-            : "w-64 translate-x-0"
+            : cn("translate-x-0", railExpanded ? "w-64 shadow-xl" : "w-20 cursor-pointer")
         )}
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <div className="flex items-center gap-3">
+        <div className={cn(
+          "h-16 flex items-center border-b border-gray-200 dark:border-gray-700 flex-shrink-0",
+          compact ? "justify-center px-2" : "justify-between px-4"
+        )}>
+          <div className={cn("flex items-center", compact ? "" : "gap-3")}>
             <CompanyLogo
               size={40}
               className="shadow-lg shadow-emerald-500/25"
               iconClassName="h-5 w-5 text-white"
               fallbackBg="bg-gradient-to-br from-emerald-500 to-emerald-600"
             />
-            <div>
-              <span className="font-bold text-lg text-gray-900 dark:text-white block leading-tight">
-                {company.name}
-              </span>
-            </div>
+            {!compact && (
+              <div>
+                <span className="font-bold text-lg text-gray-900 dark:text-white block leading-tight">
+                  {company.name}
+                </span>
+              </div>
+            )}
           </div>
           {isMobile && (
             <button
@@ -582,6 +604,33 @@ function DashboardLayoutContent({
         </div>
 
         {/* Sidebar Content - Scrollable */}
+        {compact ? (
+          <div className="flex-1 overflow-y-auto py-3 flex flex-col items-center gap-1.5">
+            {menuGroups.map((group) => {
+              const hasActiveItem = group.items.some(item => isItemActive(item.path));
+              const colorClasses = getColorClasses(group.color, hasActiveItem);
+              return (
+                <button
+                  key={group.id}
+                  title={group.title}
+                  aria-label={group.title}
+                  onClick={() => setRailExpanded(true)}
+                  className={cn(
+                    "w-11 h-11 rounded-xl flex items-center justify-center transition-colors",
+                    hasActiveItem
+                      ? colorClasses.activeBg
+                      : "bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-orange-900/40"
+                  )}
+                >
+                  <group.icon className={cn(
+                    "h-5 w-5 transition-colors",
+                    hasActiveItem ? colorClasses.icon : "text-gray-500 dark:text-gray-400"
+                  )} />
+                </button>
+              );
+            })}
+          </div>
+        ) : (
         <div className="flex-1 overflow-y-auto py-3 px-2">
           {menuGroups.map((group) => {
             const isExpanded =
@@ -669,6 +718,7 @@ function DashboardLayoutContent({
             );
           })}
         </div>
+        )}
 
         {/* Language switcher + user profile moved to the top bar (top-left in
             RTL) to free up the sidebar — see the global navigation bar. */}
@@ -677,7 +727,7 @@ function DashboardLayoutContent({
       {/* Main Content */}
       <main className={cn(
         "min-h-screen transition-all duration-300 bg-gradient-to-b from-background to-muted/20 dark:to-muted/10",
-        isMobile ? "pt-14" : "ms-64"
+        isMobile ? "pt-14" : "ms-20"
       )}>
         {/* Global navigation bar — go one step back / forward, or jump to the
             dashboard home. Available on every page. Sticks just below the
