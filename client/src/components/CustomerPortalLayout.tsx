@@ -1,5 +1,6 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect, useRef } from "react";
 import { useLocation, Link, useSearch } from "wouter";
+import { trpc } from "@/lib/trpc";
 import { Home, Package, Wallet, User, ShoppingBag, Search } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -38,6 +39,18 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     const q = (e.target as HTMLFormElement).querySelector("input")?.value?.trim();
     if (q) setLocation(`/portal/search?q=${encodeURIComponent(q)}`);
   };
+
+  // Portal page-view tracking for the admin Portal Center. Best-effort and
+  // fire-and-forget: fails silently and never blocks navigation. Skips repeat
+  // fires for the same path so a re-render doesn't double-log.
+  const trackActivity = trpc.customerPortal.trackActivity.useMutation();
+  const lastTrackedPath = useRef<string | null>(null);
+  useEffect(() => {
+    if (lastTrackedPath.current === location) return;
+    lastTrackedPath.current = location;
+    trackActivity.mutate({ path: location });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]);
 
   // Real-time notifications via SSE. The backend stream is at
   // GET /api/portal/events (see server/_core/index.ts) and pushes events

@@ -6,6 +6,29 @@ import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { getVapidPublicKey, isPushEnabled, sendPushToCustomer } from "../services/push.service";
 
+// Best-effort portal-activity capture for the admin Customer Portal Center.
+// Fire-and-forget: logging never blocks or fails the customer's real action.
+type PortalCategory = "auth" | "navigation" | "declaration" | "claim" | "message" | "search" | "profile" | "other";
+function logPortal(
+  ctx: any,
+  customerId: number,
+  action: string,
+  category: PortalCategory,
+  extra?: { detail?: string | null; entityType?: string; entityId?: number; path?: string },
+) {
+  void db.logCustomerActivity({
+    customerId,
+    action,
+    category,
+    detail: extra?.detail ? String(extra.detail).slice(0, 500) : null,
+    entityType: extra?.entityType ?? null,
+    entityId: extra?.entityId ?? null,
+    path: extra?.path ? extra.path.slice(0, 255) : null,
+    ipAddress: (ctx.req?.ip || "").slice(0, 64) || null,
+    userAgent: (ctx.req?.headers?.["user-agent"] || "").slice(0, 400) || null,
+  });
+}
+
 export const customerPortalRouter = router({
     getMyAccount: protectedProcedure.query(async ({ ctx }) => {
       // For merged model, the user IS the customer if isCustomer is true
@@ -170,6 +193,7 @@ export const customerPortalRouter = router({
         const customerId = ctx.user.isCustomer ? ctx.user.id : 
           (await db.getCustomerByUserId(ctx.user.id))?.id;
         if (!customerId) return null;
+        logPortal(ctx, customerId, "search", "search", { detail: input.trackingNumber });
         return db.searchCustomerPackage(customerId, input.trackingNumber);
       }),
 
@@ -186,6 +210,23 @@ export const customerPortalRouter = router({
         const unclaimed = pkg && pkg.isUnclaimed ? pkg : null;
         const declared = await db.findCustomerDeclaredByTracking(customerId, input.trackingNumber);
         return { unclaimed, declared };
+      }),
+
+    // Portal navigation tracking — the portal layout calls this on route change
+    // so the admin Portal Center can see which pages each customer visits.
+    // Best-effort observability; returns quickly and never throws.
+    trackActivity: protectedProcedure
+      .input(z.object({
+        path: z.string().max(255),
+        action: z.string().max(60).default("page_view"),
+        detail: z.string().max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) return { ok: false };
+        logPortal(ctx, customerId, input.action, "navigation", { path: input.path, detail: input.detail });
+        return { ok: true };
       }),
     
     // Get notification count
@@ -284,13 +325,19 @@ export const customerPortalRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "You already have a pending claim for this package" });
         }
 
-        return db.createClaimRequest({
+        const claim = await db.createClaimRequest({
           packageId: input.packageId,
           trackingNumber: input.trackingNumber,
           customerId,
           customerNote: input.customerNote,
           proofImages: input.proofImages,
         });
+        logPortal(ctx, customerId, "claim_request", "claim", {
+          detail: input.trackingNumber,
+          entityType: "claim_request",
+          entityId: (claim as any)?.id,
+        });
+        return claim;
       }),
     
     // Get customer's claim requests
@@ -318,7 +365,13 @@ export const customerPortalRouter = router({
         const customerId = ctx.user.isCustomer ? ctx.user.id :
           (await db.getCustomerByUserId(ctx.user.id))?.id;
         if (!customerId) throw new TRPCError({ code: "BAD_REQUEST", message: "پرۆفایلی کریار نەدۆزرایەوە بۆ ئەم هەژمارە." });
-        return db.createDeclaredPackage({ ...input, customerId });
+        const declared = await db.createDeclaredPackage({ ...input, customerId });
+        logPortal(ctx, customerId, "declare_package", "declaration", {
+          detail: input.trackingNumber,
+          entityType: "declared_package",
+          entityId: (declared as any)?.id,
+        });
+        return declared;
       }),
 
     getMyDeclaredPackages: protectedProcedure.query(async ({ ctx }) => {
@@ -389,13 +442,15 @@ export const customerPortalRouter = router({
         // heuristics and bounce the user to login mid-session.
         if (!customerId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'پرۆفایلی کریار نەدۆزرایەوە بۆ ئەم هەژمارە. تکایە لەگەڵ پشتگیرییەوە پەیوەندی بکە.' });
         
-        return db.createCustomerMessage({
+        const created = await db.createCustomerMessage({
           conversationId: `CONV-${customerId}`,
           customerId,
           message: input.message,
           senderType: 'customer',
           senderId: ctx.user.id,
         });
+        logPortal(ctx, customerId, "send_message", "message", { detail: input.message });
+        return created;
       }),
     
     markMessagesAsRead: protectedProcedure.mutation(async ({ ctx }) => {

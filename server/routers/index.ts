@@ -17,6 +17,7 @@ import { fullPackageRouter } from "./fullPackage.router";
 import { scanningRouters } from "./scanning.router";
 import { servicesRouters } from "./services.router";
 import { productAttributesRouter } from "./productAttributes.router";
+import { portalCenterRouter } from "./portalCenter.router";
 
 export const appRouter = router({
   ...adminRouters,
@@ -35,6 +36,7 @@ export const appRouter = router({
   ...scanningRouters,
   ...servicesRouters,
   productAttributes: productAttributesRouter,
+  portalCenter: portalCenterRouter,
 });
 
 export type AppRouter = typeof appRouter;

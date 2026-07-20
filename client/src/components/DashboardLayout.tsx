@@ -253,6 +253,7 @@ function DashboardLayoutContent({
         { icon: LayoutDashboard, label: t("nav.dashboard") || "داشبۆرد", path: "/dashboard" },
         { icon: Users, label: t("nav.customers") || "کڕیارەکان", path: "/customers" },
         { icon: MessageCircle, label: t("nav.customerMessages") || "پەیامەکانی کڕیار", path: "/customer-messages", badge: unreadMsgCount },
+        ...(isAdmin ? [{ icon: Activity, label: pickLang(language, { ku: "سەنتەری پۆرتاڵ", en: "Portal Center", ar: "مركز البوابة", zh: "门户中心" }), path: "/portal-center" }] : []),
       ]
     });
 

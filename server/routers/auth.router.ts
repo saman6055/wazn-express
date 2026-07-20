@@ -51,6 +51,16 @@ export const authRouter = router({
         .sign(secret);
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+      // Observability only (never blocks login): stamp last portal login and
+      // log the sign-in event for the admin Portal Center.
+      void db.updateCustomerLastSignedIn(customer.id);
+      void db.logCustomerActivity({
+        customerId: customer.id,
+        action: "login",
+        category: "auth",
+        ipAddress: (ctx.req.ip || "").slice(0, 64) || null,
+        userAgent: (ctx.req.headers["user-agent"] || "").slice(0, 400) || null,
+      });
       return {
         success: true,
         customer: { id: customer.id, name: customer.fullName, customerCode: customer.customerCode },

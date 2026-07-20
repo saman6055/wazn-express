@@ -1929,6 +1929,29 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+  // Customer Portal Center: durable log of what each customer does in the
+  // portal (observability only — no business logic depends on it).
+  {
+    name: "customerActivityLog",
+    dependencies: ["customers"],
+    sql: `CREATE TABLE IF NOT EXISTS customerActivityLog (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerId INT NOT NULL,
+      action VARCHAR(60) NOT NULL,
+      category ENUM('auth', 'navigation', 'declaration', 'claim', 'message', 'search', 'profile', 'other') NOT NULL DEFAULT 'other',
+      entityType VARCHAR(50),
+      entityId INT,
+      path VARCHAR(255),
+      detail VARCHAR(500),
+      metadata JSON,
+      ipAddress VARCHAR(64),
+      userAgent VARCHAR(400),
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_cal_customer (customerId),
+      INDEX idx_cal_action (action),
+      INDEX idx_cal_created (createdAt)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   }
 ];
 

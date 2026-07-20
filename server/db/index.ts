@@ -14,5 +14,6 @@ export * from './portal.db';
 export * from './services.db';
 export * from './deliveryBoxes.db';
 export * from './declaredPackages.db';
+export * from './portalCenter.db';
 
 export * from './productAttributes.db';

@@ -128,6 +128,7 @@ const IpWhitelistManagement = lazy(() => import("./pages/IpWhitelistManagement")
 const AdvancedSettings = lazy(() => import("./pages/AdvancedSettings"));
 const CustomerCodePrefixSettings = lazy(() => import("./pages/CustomerCodePrefixSettings"));
 const PortalPriceListSettings = lazy(() => import("./pages/PortalPriceListSettings"));
+const PortalCenter = lazy(() => import("./pages/PortalCenter"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 
 // ---------------------------------------------------------------------------
@@ -269,6 +270,7 @@ function Router() {
         <Route path="/settings/advanced" component={AdvancedSettings} />
         <Route path="/settings/code-prefixes" component={CustomerCodePrefixSettings} />
         <Route path="/settings/portal-price-list" component={PortalPriceListSettings} />
+        <Route path="/portal-center" component={PortalCenter} />
         <Route path="/settings/pricing" component={Pricing} />
         <Route path="/label-printing" component={LabelPrinting} />
         <Route path="/vip-customers" component={VipCustomers} />
