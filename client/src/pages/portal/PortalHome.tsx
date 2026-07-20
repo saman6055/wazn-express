@@ -660,19 +660,25 @@ const { t, language } = useLanguage();
 
                   <div className="grid grid-cols-3 gap-2 mt-4">
                     <div className="text-center">
-                      <p className={cn("text-xs font-medium", isDark ? "text-amber-300/80" : "text-amber-700")}>📦 FP</p>
+                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700")}>
+                        📦 {pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "حزمة كاملة", zh: "完整套餐" })}
+                      </p>
                       <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900")}>
                         <AnimatedCounter value={pendingOrders.byType.full_package} />
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className={cn("text-xs font-medium", isDark ? "text-amber-300/80" : "text-amber-700")}>🛍️ CM</p>
+                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700")}>
+                        🛍️ {pickLang(language, { ku: "کڕین بە تێچوو", en: "Markup purchase", ar: "شراء بهامش", zh: "加价采购" })}
+                      </p>
                       <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900")}>
                         <AnimatedCounter value={pendingOrders.byType.commission} />
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className={cn("text-xs font-medium", isDark ? "text-amber-300/80" : "text-amber-700")}>📝 PR</p>
+                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700")}>
+                        📝 {pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" })}
+                      </p>
                       <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900")}>
                         <AnimatedCounter value={pendingOrders.byType.purchase_request} />
                       </p>
