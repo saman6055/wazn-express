@@ -71,7 +71,7 @@ import {
   Search,
   type LucideIcon
 } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
@@ -173,6 +173,7 @@ function DashboardLayoutContent({
   // to the rail. flyoutTop anchors the panel vertically to the clicked icon.
   const [flyoutGroup, setFlyoutGroup] = useState<string | null>(null);
   const [flyoutTop, setFlyoutTop] = useState(0);
+  const flyoutRef = useRef<HTMLDivElement | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["main"]);
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
   // A group the user explicitly clicked to close while still hovering it — this
@@ -458,6 +459,15 @@ function DashboardLayoutContent({
     setFlyoutGroup(null);
   };
 
+  // Keep the flyout inside the viewport: if anchoring it to the clicked icon
+  // would push it past the bottom edge, shift it up so all items stay visible.
+  useLayoutEffect(() => {
+    if (!flyoutGroup || !flyoutRef.current) return;
+    const height = flyoutRef.current.offsetHeight;
+    const maxTop = window.innerHeight - height - 12;
+    setFlyoutTop((current) => Math.max(12, Math.min(current, maxTop)));
+  }, [flyoutGroup]);
+
   // Record visited locations for the "recently viewed" dropdown — client-only
   // UI state. Prefer a known menu-item label; otherwise derive a best-effort
   // label from the last path segment.
@@ -738,7 +748,8 @@ function DashboardLayoutContent({
         const colorClasses = getColorClasses(group.color, hasActiveItem);
         return (
           <div
-            className="fixed z-50 w-60 max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl p-2"
+            ref={flyoutRef}
+            className="fixed z-50 w-60 max-h-[85vh] overflow-y-auto rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl p-2"
             style={{ top: flyoutTop, [isRTL ? "right" : "left"]: "5rem" }}
           >
             <div className="px-2 py-1.5 flex items-center gap-2">
