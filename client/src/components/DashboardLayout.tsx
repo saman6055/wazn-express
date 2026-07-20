@@ -169,9 +169,10 @@ function DashboardLayoutContent({
   const company = useCompanyInfo();
   useDynamicFavicon();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Desktop icon-rail: collapsed by default (icons only). Opens on click and
-  // auto-collapses when the mouse leaves the sidebar entirely.
-  const [railExpanded, setRailExpanded] = useState(false);
+  // Desktop icon-rail: only the clicked group's items pop out in a flyout next
+  // to the rail. flyoutTop anchors the panel vertically to the clicked icon.
+  const [flyoutGroup, setFlyoutGroup] = useState<string | null>(null);
+  const [flyoutTop, setFlyoutTop] = useState(0);
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["main"]);
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
   // A group the user explicitly clicked to close while still hovering it — this
@@ -447,16 +448,14 @@ function DashboardLayoutContent({
 
   const isItemActive = (path: string) => location === path || location.startsWith(path + '/');
 
-  // Desktop icon-rail mode: collapsed rail showing only group icons. Mobile
-  // always renders the full menu inside its slide-over drawer.
-  const compact = !isMobile && !railExpanded;
+  // Desktop icon-rail mode: rail shows only group icons; clicking one pops out
+  // that group's items. Mobile renders the full menu inside its drawer.
+  const compact = !isMobile;
 
-  // Collapse the rail once the mouse fully leaves the sidebar (desktop only).
+  // Close the flyout once the mouse fully leaves the rail + flyout (desktop).
   const handleSidebarLeave = () => {
     if (isMobile) return;
-    setRailExpanded(false);
-    setHoveredGroup(null);
-    setClickClosedGroup(null);
+    setFlyoutGroup(null);
   };
 
   // Record visited locations for the "recently viewed" dropdown — client-only
@@ -556,10 +555,11 @@ function DashboardLayoutContent({
       )}
 
       {/* Sidebar */}
+      {/* Rail + flyout share one mouse-leave boundary so moving from an icon
+          onto its flyout doesn't close it; leaving both closes the flyout. */}
+      <div onMouseLeave={handleSidebarLeave}>
       <aside
         id="sidebar"
-        onClick={() => { if (compact) setRailExpanded(true); }}
-        onMouseLeave={handleSidebarLeave}
         className={cn(
           "fixed top-0 h-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50 transition-all duration-300 ease-in-out overflow-hidden flex flex-col",
           isRTL ? "right-0 border-l" : "left-0 border-r",
@@ -570,7 +570,7 @@ function DashboardLayoutContent({
                   ? "translate-x-0"
                   : isRTL ? "translate-x-full" : "-translate-x-full"
               )
-            : cn("translate-x-0", railExpanded ? "w-64 shadow-xl" : "w-20 cursor-pointer")
+            : "w-20 translate-x-0"
         )}
       >
         {/* Sidebar Header */}
@@ -609,14 +609,20 @@ function DashboardLayoutContent({
             {menuGroups.map((group) => {
               const hasActiveItem = group.items.some(item => isItemActive(item.path));
               const colorClasses = getColorClasses(group.color, hasActiveItem);
+              const isFlyoutOpen = flyoutGroup === group.id;
               return (
                 <button
                   key={group.id}
                   title={group.title}
                   aria-label={group.title}
-                  onClick={() => setRailExpanded(true)}
+                  onClick={(e) => {
+                    const top = e.currentTarget.getBoundingClientRect().top;
+                    setFlyoutTop(top);
+                    setFlyoutGroup((prev) => (prev === group.id ? null : group.id));
+                  }}
                   className={cn(
                     "w-11 h-11 rounded-xl flex items-center justify-center transition-colors",
+                    isFlyoutOpen && "ring-2 ring-orange-400 dark:ring-orange-500",
                     hasActiveItem
                       ? colorClasses.activeBg
                       : "bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-orange-900/40"
@@ -723,6 +729,62 @@ function DashboardLayoutContent({
         {/* Language switcher + user profile moved to the top bar (top-left in
             RTL) to free up the sidebar — see the global navigation bar. */}
       </aside>
+
+      {/* Rail flyout — only the clicked group's items, anchored to its icon. */}
+      {compact && flyoutGroup && (() => {
+        const group = menuGroups.find((g) => g.id === flyoutGroup);
+        if (!group) return null;
+        const hasActiveItem = group.items.some((item) => isItemActive(item.path));
+        const colorClasses = getColorClasses(group.color, hasActiveItem);
+        return (
+          <div
+            className="fixed z-50 w-60 max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl p-2"
+            style={{ top: flyoutTop, [isRTL ? "right" : "left"]: "5rem" }}
+          >
+            <div className="px-2 py-1.5 flex items-center gap-2">
+              <div className={cn(
+                "w-7 h-7 rounded-lg flex items-center justify-center",
+                hasActiveItem ? colorClasses.activeBg : "bg-gray-100 dark:bg-gray-700"
+              )}>
+                <group.icon className={cn(
+                  "h-4 w-4",
+                  hasActiveItem ? colorClasses.icon : "text-gray-500 dark:text-gray-400"
+                )} />
+              </div>
+              <span className="text-sm font-bold text-gray-900 dark:text-white">{group.title}</span>
+            </div>
+            <div className="mt-1 space-y-0.5">
+              {group.items.map((item) => {
+                const isActive = isItemActive(item.path);
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => { setLocation(item.path); setFlyoutGroup(null); }}
+                    className={cn(
+                      "group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
+                      isActive
+                        ? cn(colorClasses.activeBg, colorClasses.text, "font-medium")
+                        : "text-gray-600 dark:text-gray-400 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-950/30 dark:hover:text-orange-400"
+                    )}
+                  >
+                    <item.icon className={cn(
+                      "h-4 w-4 flex-shrink-0 transition-colors",
+                      isActive ? colorClasses.icon : "text-gray-400 dark:text-gray-500 group-hover:text-orange-600 dark:group-hover:text-orange-400"
+                    )} />
+                    <span className="truncate text-[15px] font-bold text-start">{item.label}</span>
+                    {item.badge && item.badge > 0 ? (
+                      <span className="ms-auto min-w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center px-1">
+                        {item.badge > 99 ? "99+" : item.badge}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+      </div>
 
       {/* Main Content */}
       <main className={cn(
