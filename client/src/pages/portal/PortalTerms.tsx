@@ -1,7 +1,7 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
-import { FileText, MessageCircle, ChevronLeft } from "lucide-react";
+import { FileText } from "lucide-react";
 import {
   termsSections,
   termsClosing,
@@ -79,18 +79,13 @@ export default function PortalTerms() {
                 </span>
               </div>
 
-              {/* Section items — each is a WhatsApp deep-link */}
+              {/* Section items — the point is plain, selectable text; only the
+                  green hint below it is the WhatsApp deep-link. */}
               <div className="p-2 sm:p-3 divide-y divide-gray-100 dark:divide-white/5">
                 {section.items.map((item, itemIndex) => {
                   const text = pick(item);
                   return (
-                    <a
-                      key={itemIndex}
-                      href={pointHref(text)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-start gap-3 rounded-2xl p-3 transition-colors hover:bg-emerald-50 dark:hover:bg-emerald-950/30 active:bg-emerald-100 dark:active:bg-emerald-950/50"
-                    >
+                    <div key={itemIndex} className="flex items-start gap-3 p-3">
                       <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400 text-xs font-bold tabular-nums">
                         {itemIndex + 1}
                       </span>
@@ -98,17 +93,19 @@ export default function PortalTerms() {
                         <p className="text-[15px] leading-relaxed text-gray-800 dark:text-gray-100 font-medium">
                           {text}
                         </p>
-                        <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                          <WhatsAppIcon className="w-3.5 h-3.5" />
+                        {/* Only this pill is the link — it carries the point into
+                            the WhatsApp message. */}
+                        <a
+                          href={pointHref(text)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600 transition hover:bg-emerald-100 active:scale-95 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/50"
+                        >
+                          <WhatsAppIcon className="w-3.5 h-3.5 shrink-0" />
                           <span>{pick(termsHint)}</span>
-                        </span>
+                        </a>
                       </div>
-                      <ChevronLeft
-                        className={`mt-2 h-4 w-4 shrink-0 text-gray-300 dark:text-gray-600 transition-transform group-hover:text-emerald-500 ${
-                          isRTL ? "" : "rotate-180"
-                        }`}
-                      />
-                    </a>
+                    </div>
                   );
                 })}
               </div>
