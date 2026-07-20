@@ -253,9 +253,22 @@ function DashboardLayoutContent({
         { icon: LayoutDashboard, label: t("nav.dashboard") || "داشبۆرد", path: "/dashboard" },
         { icon: Users, label: t("nav.customers") || "کڕیارەکان", path: "/customers" },
         { icon: MessageCircle, label: t("nav.customerMessages") || "پەیامەکانی کڕیار", path: "/customer-messages", badge: unreadMsgCount },
-        ...(isAdmin ? [{ icon: Activity, label: pickLang(language, { ku: "سەنتەری پۆرتاڵ", en: "Portal Center", ar: "مركز البوابة", zh: "门户中心" }), path: "/portal-center" }] : []),
       ]
     });
+
+    // Customer Portal Center — its own top-level group so it gets a dedicated
+    // rail icon (admin only). Single item, so the rail icon links straight to it.
+    if (isAdmin) {
+      groups.push({
+        id: "portalCenter",
+        title: pickLang(language, { ku: "سەنتەری پۆرتاڵ", en: "Portal Center", ar: "مركز البوابة", zh: "门户中心" }),
+        icon: Activity,
+        color: "indigo",
+        items: [
+          { icon: Activity, label: pickLang(language, { ku: "سەنتەری پۆرتاڵی موشتەری", en: "Customer Portal Center", ar: "مركز بوابة العملاء", zh: "客户门户中心" }), path: "/portal-center" },
+        ],
+      });
+    }
 
     // 2. Packages (full package / markup / self orders) - Employees — above operations
     if (isEmployee) {
@@ -627,6 +640,12 @@ function DashboardLayoutContent({
                   title={group.title}
                   aria-label={group.title}
                   onClick={(e) => {
+                    // Single-item groups act as a direct link (no flyout needed).
+                    if (group.items.length === 1) {
+                      setFlyoutGroup(null);
+                      setLocation(group.items[0].path);
+                      return;
+                    }
                     const top = e.currentTarget.getBoundingClientRect().top;
                     setFlyoutTop(top);
                     setFlyoutGroup((prev) => (prev === group.id ? null : group.id));
