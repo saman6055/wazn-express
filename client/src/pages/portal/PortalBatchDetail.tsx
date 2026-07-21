@@ -10,6 +10,7 @@ import {
 import { Link, useParams } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -282,33 +283,36 @@ const { t, language } = useLanguage();
             </div>
           </div>
 
-          {/* ETA */}
-          {batch?.estimatedArrival && batch.status !== "delivered" && batch.status !== "closed" && (
-            <div className={cn(
-              "mt-5 pt-4 border-t flex items-center gap-3",
-              isDark ? "border-slate-700" : "border-slate-100"
-            )}>
+          {/* ETA — staff-set date, or a range derived from departure +
+              shipping type (air 7–14d, sea 30–45d) when unset. */}
+          {(() => {
+            if (!batch) return null;
+            const eta = getBatchEta(batch);
+            if (!eta) return null;
+            return (
               <div className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center",
-                isDark ? "bg-blue-900/50" : "bg-blue-50"
+                "mt-5 pt-4 border-t flex items-center gap-3",
+                isDark ? "border-slate-700" : "border-slate-100"
               )}>
-                <Calendar className={cn("w-5 h-5", isDark ? "text-blue-400" : "text-blue-600")} />
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center",
+                  isDark ? "bg-blue-900/50" : "bg-blue-50"
+                )}>
+                  <Calendar className={cn("w-5 h-5", isDark ? "text-blue-400" : "text-blue-600")} />
+                </div>
+                <div>
+                  <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+                    {language === "ku" ? "کاتی گەیشتنی خەمڵێنراو" : language === "ar" ? "الوصول المتوقع" : language === "zh" ? "预计到达" : "Estimated Arrival"}
+                  </p>
+                  <p className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
+                    {eta.kind === "exact"
+                      ? eta.date.toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+                      : formatBatchEta(eta)}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                  {language === "ku" ? "کاتی گەیشتنی خەمڵێنراو" : "Estimated Arrival"}
-                </p>
-                <p className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
-                  {new Date(batch.estimatedArrival).toLocaleDateString(language === "ku" ? "ku" : "en-US", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric"
-                  })}
-                </p>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 

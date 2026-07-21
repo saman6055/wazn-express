@@ -15,6 +15,7 @@ import { PortalListSkeleton } from "@/components/portal/PortalListSkeleton";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
 type StatusFilter = "all" | "in_transit" | "delivered" | "preparing";
 type ShippingFilter = "all" | "air_regular" | "sea" | "air_irregular";
 type SortOption = "newest" | "oldest" | "status";
@@ -550,18 +551,27 @@ function ClassicPortalShipments() {
                         )}
                       </div>
                       
-                      {batch.status === "in_transit" && batch.estimatedArrival ? (
-                        <div className={cn(
-                          "text-xs font-medium px-2 py-1 rounded-full",
-                          isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-50 text-blue-600"
-                        )}>
-                          ETA: {new Date(batch.estimatedArrival).toLocaleDateString()}
-                        </div>
-                      ) : batch.createdAt && (
-                        <div className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
-                          {new Date(batch.createdAt).toLocaleDateString()}
-                        </div>
-                      )}
+                      {(() => {
+                        // Staff-set ETA, or a derived range from departure +
+                        // shipping type (air 7–14d, sea 30–45d) when unset.
+                        const eta = getBatchEta(batch);
+                        if (eta) {
+                          return (
+                            <div className={cn(
+                              "text-xs font-medium px-2 py-1 rounded-full",
+                              isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-50 text-blue-600"
+                            )}>
+                              {language === "ku" ? "گەیشتن: " : language === "ar" ? "الوصول: " : language === "zh" ? "预计: " : "ETA: "}
+                              {formatBatchEta(eta)}
+                            </div>
+                          );
+                        }
+                        return batch.createdAt ? (
+                          <div className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
+                            {new Date(batch.createdAt).toLocaleDateString()}
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                 </Link>
