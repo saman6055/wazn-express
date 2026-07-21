@@ -309,17 +309,25 @@ function ServiceCard({
 //   • Sea: CBM = L×W×H / 1,000,000 (or entered directly). ≥ 0.25 CBM is
 //     charged CBM × rate; below 0.25 CBM the rate carries a +25% surcharge.
 // Estimates only — the disclaimer below the card still applies.
+// All ratios are admin-tunable from Portal Center → Prices (calc settings).
 // ---------------------------------------------------------------------------
-const AIR_VOLUMETRIC_DIVISOR = 6000; // cm³ per kg (IATA standard)
+interface CalcSettings {
+  volumetricDivisor: number;
+  airMinKg: number;
+  seaMinCbm: number;
+  seaSurchargePct: number;
+}
+const DEFAULT_CALC: CalcSettings = { volumetricDivisor: 6000, airMinKg: 1, seaMinCbm: 0.25, seaSurchargePct: 25 };
 
 function PriceCalculator({
-  shipping, lang, isDark, showIqd, iqdRate,
+  shipping, lang, isDark, showIqd, iqdRate, calc = DEFAULT_CALC,
 }: {
   shipping: any[];
   lang: string;
   isDark: boolean;
   showIqd: boolean;
   iqdRate: number | null;
+  calc?: CalcSettings;
 }) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [weight, setWeight] = useState("");   // air: actual kg
@@ -337,17 +345,17 @@ function PriceCalculator({
   const L = num(len), W = num(wid), H = num(hei);
   const volCm3 = L > 0 && W > 0 && H > 0 ? L * W * H : 0;
 
-  // ---- Air: chargeable = max(actual, volumetric), min 1 kg ----
+  // ---- Air: chargeable = max(actual, volumetric), min airMinKg ----
   const actualKg = num(weight);
-  const volumetricKg = volCm3 > 0 ? volCm3 / AIR_VOLUMETRIC_DIVISOR : 0;
+  const volumetricKg = volCm3 > 0 ? volCm3 / calc.volumetricDivisor : 0;
   const airBase = Math.max(actualKg, volumetricKg);
-  const airChargeable = airBase > 0 ? Math.max(airBase, 1) : 0;
+  const airChargeable = airBase > 0 ? Math.max(airBase, calc.airMinKg) : 0;
   const usedVolumetric = volumetricKg > actualKg && volumetricKg > 0;
 
-  // ---- Sea: CBM from dims or direct; <0.25 carries +25% ----
+  // ---- Sea: CBM from dims or direct; below seaMinCbm carries the surcharge ----
   const cbm = num(cbmDirect) > 0 ? num(cbmDirect) : volCm3 > 0 ? volCm3 / 1_000_000 : 0;
-  const seaSurcharge = cbm > 0 && cbm < 0.25;
-  const seaTotal = cbm > 0 ? cbm * price * (seaSurcharge ? 1.25 : 1) : 0;
+  const seaSurcharge = cbm > 0 && cbm < calc.seaMinCbm && calc.seaSurchargePct > 0;
+  const seaTotal = cbm > 0 ? cbm * price * (seaSurcharge ? 1 + calc.seaSurchargePct / 100 : 1) : 0;
 
   const total = isSea ? seaTotal : airChargeable * price;
   const iqdTotal = iqdRate && total > 0 ? total * iqdRate : null;
@@ -444,7 +452,7 @@ function PriceCalculator({
       <p className={cn("mt-1.5 text-[10px]", isDark ? "text-slate-500" : "text-slate-400")}>
         {isSea
           ? pickLang(lang, { ku: "درێژی/پانی/بەرزی بە سانتیمەتر — یان ڕاستەوخۆ m³ بنووسە", en: "L/W/H in centimeters — or enter m³ directly", ar: "الأبعاد بالسنتيمتر — أو أدخل m³ مباشرة", zh: "长/宽/高以厘米为单位——或直接输入 m³" })
-          : pickLang(lang, { ku: "درێژی/پانی/بەرزی بە سانتیمەتر بۆ کێشی قەبارەیی (÷6000)", en: "L/W/H in centimeters for volumetric weight (÷6000)", ar: "الأبعاد بالسنتيمتر للوزن الحجمي (÷6000)", zh: "长/宽/高以厘米为单位计算体积重（÷6000）" })}
+          : pickLang(lang, { ku: `درێژی/پانی/بەرزی بە سانتیمەتر بۆ کێشی قەبارەیی (÷${calc.volumetricDivisor})`, en: `L/W/H in centimeters for volumetric weight (÷${calc.volumetricDivisor})`, ar: `الأبعاد بالسنتيمتر للوزن الحجمي (÷${calc.volumetricDivisor})`, zh: `长/宽/高以厘米为单位计算体积重（÷${calc.volumetricDivisor}）` })}
       </p>
 
       {/* Result */}
@@ -463,7 +471,7 @@ function PriceCalculator({
                   </div>
                   {seaSurcharge && (
                     <div className="text-amber-500 font-semibold">
-                      {pickLang(lang, { ku: "+٢٥٪ بۆ کەمتر لە ٠.٢٥ م³", en: "+25% for below 0.25 m³", ar: "+25٪ لأقل من 0.25 م³", zh: "低于 0.25 m³ 加收 25%" })}
+                      {pickLang(lang, { ku: `+${calc.seaSurchargePct}٪ بۆ کەمتر لە ${calc.seaMinCbm} م³`, en: `+${calc.seaSurchargePct}% for below ${calc.seaMinCbm} m³`, ar: `+${calc.seaSurchargePct}٪ لأقل من ${calc.seaMinCbm} م³`, zh: `低于 ${calc.seaMinCbm} m³ 加收 ${calc.seaSurchargePct}%` })}
                     </div>
                   )}
                 </>
@@ -483,9 +491,9 @@ function PriceCalculator({
                         {pickLang(lang, { ku: "(قەبارەیی)", en: "(volumetric)", ar: "(حجمي)", zh: "（体积重）" })}
                       </span>
                     )}
-                    {airBase > 0 && airBase < 1 && (
+                    {airBase > 0 && airBase < calc.airMinKg && (
                       <span className="text-amber-500 ms-1">
-                        {pickLang(lang, { ku: "(کەمترین ١ کگ)", en: "(min 1 kg)", ar: "(الحد الأدنى 1 كغ)", zh: "（最低 1 公斤）" })}
+                        {pickLang(lang, { ku: `(کەمترین ${calc.airMinKg} کگ)`, en: `(min ${calc.airMinKg} kg)`, ar: `(الحد الأدنى ${calc.airMinKg} كغ)`, zh: `（最低 ${calc.airMinKg} 公斤）` })}
                       </span>
                     )}
                   </div>
@@ -725,6 +733,7 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
           isDark={isDark}
           showIqd={showIqd}
           iqdRate={iqdRate}
+          calc={(data as any).calc ?? DEFAULT_CALC}
         />
       )}
 

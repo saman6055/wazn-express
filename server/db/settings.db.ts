@@ -239,6 +239,55 @@ function pickRuleForType(rules: PricingRule[], type: QuickType): PricingRule | u
   );
 }
 
+// ---- Portal calculator settings --------------------------------------------
+// Admin-tunable ratios used by the customer-portal price calculator. Stored as
+// one JSON blob in the settings KV so no schema change is needed.
+export interface PortalCalcSettings {
+  /** cm³ per volumetric kg for air freight (IATA standard 6000). */
+  volumetricDivisor: number;
+  /** Minimum chargeable kg for air freight. */
+  airMinKg: number;
+  /** CBM threshold below which the sea surcharge applies. */
+  seaMinCbm: number;
+  /** Percent added to sea shipments below the threshold (e.g. 25). */
+  seaSurchargePct: number;
+}
+
+const CALC_SETTINGS_KEY = "portal_calc_settings";
+export const DEFAULT_CALC_SETTINGS: PortalCalcSettings = {
+  volumetricDivisor: 6000,
+  airMinKg: 1,
+  seaMinCbm: 0.25,
+  seaSurchargePct: 25,
+};
+
+export async function getPortalCalcSettings(): Promise<PortalCalcSettings> {
+  try {
+    const raw = await getSetting(CALC_SETTINGS_KEY);
+    if (!raw) return DEFAULT_CALC_SETTINGS;
+    const parsed = JSON.parse(raw);
+    const posNum = (v: unknown, fallback: number) => {
+      const n = Number(v);
+      return Number.isFinite(n) && n > 0 ? n : fallback;
+    };
+    return {
+      volumetricDivisor: posNum(parsed.volumetricDivisor, DEFAULT_CALC_SETTINGS.volumetricDivisor),
+      airMinKg: posNum(parsed.airMinKg, DEFAULT_CALC_SETTINGS.airMinKg),
+      seaMinCbm: posNum(parsed.seaMinCbm, DEFAULT_CALC_SETTINGS.seaMinCbm),
+      // 0 is a valid surcharge (disables it), so allow >= 0 here.
+      seaSurchargePct: Number.isFinite(Number(parsed.seaSurchargePct)) && Number(parsed.seaSurchargePct) >= 0
+        ? Number(parsed.seaSurchargePct)
+        : DEFAULT_CALC_SETTINGS.seaSurchargePct,
+    };
+  } catch {
+    return DEFAULT_CALC_SETTINGS;
+  }
+}
+
+export async function setPortalCalcSettings(values: PortalCalcSettings, updatedById?: number) {
+  await setSetting(CALC_SETTINGS_KEY, JSON.stringify(values), updatedById);
+}
+
 export async function getQuickPortalPrices(): Promise<Record<QuickType, string | null>> {
   const all = (await getAllPricingRules(false)) as PricingRule[];
   const out: Record<QuickType, string | null> = { air_regular: null, air_irregular: null, sea: null };

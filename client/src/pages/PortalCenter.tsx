@@ -805,6 +805,7 @@ function PricesTab({ p }: { p: (v: L) => string }) {
   ];
 
   return (
+    <div className="space-y-4">
     <Card className="rounded-2xl">
       <CardContent className="p-4 space-y-4">
         <div>
@@ -833,6 +834,101 @@ function PricesTab({ p }: { p: (v: L) => string }) {
             </div>
             <div className="flex justify-end">
               <Button onClick={() => save.mutate(form)} disabled={save.isPending || !touched} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                {save.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : null}
+                {p({ ku: "پاشەکەوت", en: "Save", ar: "حفظ", zh: "保存" })}
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+    <CalcSettingsCard p={p} />
+    </div>
+  );
+}
+
+// Calculator ratios card — the tunables behind the portal price calculator:
+// volumetric divisor, air minimum kg, sea CBM threshold, and the surcharge %
+// applied below that threshold.
+function CalcSettingsCard({ p }: { p: (v: L) => string }) {
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.portalPriceList.getCalcSettings.useQuery();
+  const [form, setForm] = useState({ volumetricDivisor: "", airMinKg: "", seaMinCbm: "", seaSurchargePct: "" });
+  const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    if (data && !touched) {
+      setForm({
+        volumetricDivisor: String(data.volumetricDivisor),
+        airMinKg: String(data.airMinKg),
+        seaMinCbm: String(data.seaMinCbm),
+        seaSurchargePct: String(data.seaSurchargePct),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  const save = trpc.portalPriceList.updateCalcSettings.useMutation({
+    onSuccess: () => {
+      toast.success(p({ ku: "ڕێکخستنەکان پاشەکەوت کران", en: "Settings saved", ar: "حُفظت الإعدادات", zh: "设置已保存" }));
+      utils.portalPriceList.getCalcSettings.invalidate();
+      utils.customerPortal.getPriceList.invalidate();
+      setTouched(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleSave = () => {
+    const nums = {
+      volumetricDivisor: parseFloat(form.volumetricDivisor),
+      airMinKg: parseFloat(form.airMinKg),
+      seaMinCbm: parseFloat(form.seaMinCbm),
+      seaSurchargePct: parseFloat(form.seaSurchargePct),
+    };
+    if (Object.values(nums).some((n) => isNaN(n) || n < 0) || nums.volumetricDivisor <= 0 || nums.airMinKg <= 0 || nums.seaMinCbm <= 0) {
+      toast.error(p({ ku: "ژمارە دروستەکان بنووسە", en: "Enter valid numbers", ar: "أدخل أرقامًا صحيحة", zh: "请输入有效数字" }));
+      return;
+    }
+    save.mutate(nums);
+  };
+
+  const fields: { key: keyof typeof form; label: L; hint: L }[] = [
+    { key: "volumetricDivisor", label: { ku: "دابەشکەری قەبارەیی (ئاسمانی)", en: "Volumetric divisor (air)", ar: "قاسم الوزن الحجمي (جوي)", zh: "体积重除数（空运）" }, hint: { ku: "درێژی×پانی×بەرزی ÷ ئەم ژمارە = کیلۆی قەبارەیی", en: "L×W×H ÷ this = volumetric kg", ar: "الطول×العرض×الارتفاع ÷ هذا = كغ حجمي", zh: "长×宽×高 ÷ 此值 = 体积重" } },
+    { key: "airMinKg", label: { ku: "کەمترین کیلۆ (ئاسمانی)", en: "Minimum kg (air)", ar: "الحد الأدنى كغ (جوي)", zh: "最低公斤（空运）" }, hint: { ku: "کەمتر لەمە وەک ئەمە حیساب دەکرێت", en: "Anything below is charged as this", ar: "ما دون ذلك يُحتسب بهذا", zh: "低于此值按此值计费" } },
+    { key: "seaMinCbm", label: { ku: "سنووری m³ (دەریایی)", en: "CBM threshold (sea)", ar: "حد m³ (بحري)", zh: "立方米阈值（海运）" }, hint: { ku: "کەمتر لەمە ڕێژەی زیادە دەگرێت", en: "Below this the surcharge applies", ar: "دون هذا تُطبَّق الزيادة", zh: "低于此值加收附加费" } },
+    { key: "seaSurchargePct", label: { ku: "ڕێژەی زیادە ٪ (دەریایی)", en: "Surcharge % (sea)", ar: "نسبة الزيادة ٪ (بحري)", zh: "附加费 %（海运）" }, hint: { ku: "٠ = ناچالاک", en: "0 = disabled", ar: "0 = معطّل", zh: "0 = 关闭" } },
+  ];
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4 space-y-4">
+        <div>
+          <h3 className="font-bold flex items-center gap-2">
+            <Activity className="h-4 w-4 text-purple-500" />
+            {p({ ku: "ڕێکخستنی حیسابکەری نرخ", en: "Price calculator settings", ar: "إعدادات حاسبة السعر", zh: "价格计算器设置" })}
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            {p({ ku: "ئەم ڕێژانە لە حیسابکەری ناو پۆرتاڵی موشتەری بەکاردێن — دەستبەجێ نوێ دەبنەوە.", en: "These ratios drive the customer-portal calculator — they update immediately.", ar: "تُستخدم هذه النسب في حاسبة بوابة العميل — تُحدَّث فورًا.", zh: "这些比率用于客户门户计算器——立即生效。" })}
+          </p>
+        </div>
+        {isLoading ? <Skeleton className="h-24 w-full rounded-xl" /> : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {fields.map((f) => (
+                <div key={f.key} className="space-y-1.5">
+                  <Label className="text-xs font-semibold">{p(f.label)}</Label>
+                  <Input
+                    type="number" inputMode="decimal" min="0" step="any"
+                    value={form[f.key]}
+                    onChange={(e) => { setForm({ ...form, [f.key]: e.target.value }); setTouched(true); }}
+                    className="font-mono font-bold"
+                  />
+                  <p className="text-[10px] text-muted-foreground">{p(f.hint)}</p>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={save.isPending || !touched} className="bg-purple-600 hover:bg-purple-700 text-white">
                 {save.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : null}
                 {p({ ku: "پاشەکەوت", en: "Save", ar: "حفظ", zh: "保存" })}
               </Button>

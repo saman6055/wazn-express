@@ -747,14 +747,16 @@ export const customerPortalRouter = router({
           shipping: [],
           services: [],
           rates: { rmb: null as string | null, iqd: null as string | null },
+          calc: db.DEFAULT_CALC_SETTINGS,
         };
       }
 
-      const [shipping, services, rmbRate, iqdRate] = await Promise.all([
+      const [shipping, services, rmbRate, iqdRate, calc] = await Promise.all([
         settings.showShippingRates ? db.getPortalShippingRates() : Promise.resolve([]),
         settings.showServices ? db.getPortalServiceTypes() : Promise.resolve([]),
         settings.showRmbEquivalent ? db.getCurrentExchangeRate("RMB") : Promise.resolve(undefined),
         settings.showIqdEquivalent ? db.getCurrentExchangeRate("IQD") : Promise.resolve(undefined),
+        db.getPortalCalcSettings(),
       ]);
 
       return {
@@ -765,6 +767,7 @@ export const customerPortalRouter = router({
           rmb: rmbRate?.rate ?? null,
           iqd: iqdRate?.rate ?? null,
         },
+        calc,
       };
     }),
 });
@@ -845,6 +848,31 @@ export const portalPriceListAdminRouter = router({
         newValues: input,
       });
       return res;
+    }),
+
+  // ---- Calculator settings (ratios used by the portal price calculator) ----
+  getCalcSettings: adminProcedure.query(async () => {
+    return db.getPortalCalcSettings();
+  }),
+
+  updateCalcSettings: adminProcedure
+    .input(z.object({
+      volumetricDivisor: z.number().positive().max(100000),
+      airMinKg: z.number().positive().max(1000),
+      seaMinCbm: z.number().positive().max(100),
+      seaSurchargePct: z.number().min(0).max(500),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await db.setPortalCalcSettings(input, ctx.user.id);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "update_portal_calc_settings",
+        entityType: "settings",
+        entityId: 0,
+        newValues: input,
+      });
+      return { success: true };
     }),
 
   // ---- Shipping rates (pricingRules with portal metadata) ----
