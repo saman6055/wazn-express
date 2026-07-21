@@ -29,14 +29,23 @@ export function PWAInstallPrompt() {
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(iOS);
 
+    // Dismissal is temporary (3 days), not forever: we re-ask on a later
+    // visit so every customer keeps getting nudged to install the app.
+    // Legacy value 'true' (old forever-dismiss) parses as NaN → re-ask.
+    const DISMISS_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+    const isDismissedRecently = () => {
+      const raw = localStorage.getItem('pwa-install-dismissed');
+      if (!raw) return false;
+      const ts = Number(raw);
+      return Number.isFinite(ts) && Date.now() - ts < DISMISS_TTL_MS;
+    };
+
     // Listen for install prompt
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      
-      // Check if user dismissed before
-      const dismissed = localStorage.getItem('pwa-install-dismissed');
-      if (!dismissed) {
+
+      if (!isDismissedRecently()) {
         setTimeout(() => setShowPrompt(true), 3000); // Show after 3 seconds
       }
     };
@@ -45,8 +54,7 @@ export function PWAInstallPrompt() {
 
     // Show iOS prompt after delay
     if (iOS && !standalone) {
-      const dismissed = localStorage.getItem('pwa-install-dismissed');
-      if (!dismissed) {
+      if (!isDismissedRecently()) {
         setTimeout(() => setShowPrompt(true), 5000);
       }
     }
@@ -70,7 +78,8 @@ export function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem('pwa-install-dismissed', 'true');
+    // Timestamp, not a flag — the prompt comes back after the TTL passes.
+    localStorage.setItem('pwa-install-dismissed', String(Date.now()));
   };
 
   // Don't show if already installed
