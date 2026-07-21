@@ -495,14 +495,36 @@ const { t, language } = useLanguage();
               </div>
             </div>
             {hasDebt && (
-              <div className="mt-3 flex items-center gap-2">
-                <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white/60 rounded-full w-3/4 animate-pulse" />
+              <>
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-white/60 rounded-full w-3/4 animate-pulse" />
+                  </div>
+                  <span className="text-xs text-white/80 font-medium">
+                    {t("portal.payNow")} →
+                  </span>
                 </div>
-                <span className="text-xs text-white/80 font-medium">
-                  {t("portal.payNow")} →
-                </span>
-              </div>
+                {/* Direct WhatsApp line for paying: ask for account numbers /
+                    confirm a transfer. Stops propagation so tapping it doesn't
+                    follow the card's link to the financial page. */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const msg = pickLang(language, {
+                      ku: `سڵاو، دەمەوێت باڵانسەکەم بدەم ($${Math.abs(balance).toFixed(2)}). تکایە شێوازەکانی پارەدانم بۆ بنێرن.`,
+                      en: `Hello, I'd like to pay my balance ($${Math.abs(balance).toFixed(2)}). Please send me the payment options.`,
+                      ar: `مرحبًا، أودّ دفع رصيدي ($${Math.abs(balance).toFixed(2)}). الرجاء إرسال طرق الدفع.`,
+                      zh: `您好，我想支付我的余额（$${Math.abs(balance).toFixed(2)}）。请发送付款方式。`,
+                    });
+                    window.open(`https://wa.me/9647709183535?text=${encodeURIComponent(msg)}`, "_blank");
+                  }}
+                  className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-[0.98] transition py-2 text-sm font-bold text-white"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  {pickLang(language, { ku: "پەیوەندی بۆ پارەدان (واتساپ)", en: "Contact us to pay (WhatsApp)", ar: "تواصل معنا للدفع (واتساب)", zh: "联系我们付款（WhatsApp）" })}
+                </button>
+              </>
             )}
           </div>
         </Link>
