@@ -302,10 +302,16 @@ function ServiceCard({
 }
 
 // ---------------------------------------------------------------------------
-// Price calculator — the customer enters a weight (air) or volume (sea) and
-// sees the estimated cost from the same live rates shown above. Estimates
-// only; minimums (1 kg air / 0.25 CBM sea) are applied like the real charge.
+// Price calculator — supports all three shipping types with the real
+// charging rules:
+//   • Air (regular & irregular): chargeable kg = max(actual, volumetric),
+//     volumetric = L×W×H (cm) / 6000 (an 18×18×18 carton ≈ 1 kg), min 1 kg.
+//   • Sea: CBM = L×W×H / 1,000,000 (or entered directly). ≥ 0.25 CBM is
+//     charged CBM × rate; below 0.25 CBM the rate carries a +25% surcharge.
+// Estimates only — the disclaimer below the card still applies.
 // ---------------------------------------------------------------------------
+const AIR_VOLUMETRIC_DIVISOR = 6000; // cm³ per kg (IATA standard)
+
 function PriceCalculator({
   shipping, lang, isDark, showIqd, iqdRate,
 }: {
@@ -316,25 +322,59 @@ function PriceCalculator({
   iqdRate: number | null;
 }) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [qty, setQty] = useState("");
+  const [weight, setWeight] = useState("");   // air: actual kg
+  const [cbmDirect, setCbmDirect] = useState(""); // sea: direct m³
+  const [len, setLen] = useState("");
+  const [wid, setWid] = useState("");
+  const [hei, setHei] = useState("");
 
   if (shipping.length === 0) return null;
   const selected = shipping.find((r) => r.id === selectedId) ?? shipping[0];
-  const isCbm = selected.unit === "cbm";
-  const minQty = isCbm ? 0.25 : 1;
-  const rawQty = parseFloat(qty);
-  const effQty = isNaN(rawQty) || rawQty <= 0 ? 0 : Math.max(rawQty, minQty);
+  const isSea = selected.unit === "cbm" || selected.shippingType === "sea";
   const price = Number(selected.pricePerUnit ?? 0);
-  const total = effQty * price;
-  const iqdTotal = iqdRate ? total * iqdRate : null;
+
+  const num = (v: string) => { const n = parseFloat(v); return isNaN(n) || n < 0 ? 0 : n; };
+  const L = num(len), W = num(wid), H = num(hei);
+  const volCm3 = L > 0 && W > 0 && H > 0 ? L * W * H : 0;
+
+  // ---- Air: chargeable = max(actual, volumetric), min 1 kg ----
+  const actualKg = num(weight);
+  const volumetricKg = volCm3 > 0 ? volCm3 / AIR_VOLUMETRIC_DIVISOR : 0;
+  const airBase = Math.max(actualKg, volumetricKg);
+  const airChargeable = airBase > 0 ? Math.max(airBase, 1) : 0;
+  const usedVolumetric = volumetricKg > actualKg && volumetricKg > 0;
+
+  // ---- Sea: CBM from dims or direct; <0.25 carries +25% ----
+  const cbm = num(cbmDirect) > 0 ? num(cbmDirect) : volCm3 > 0 ? volCm3 / 1_000_000 : 0;
+  const seaSurcharge = cbm > 0 && cbm < 0.25;
+  const seaTotal = cbm > 0 ? cbm * price * (seaSurcharge ? 1.25 : 1) : 0;
+
+  const total = isSea ? seaTotal : airChargeable * price;
+  const iqdTotal = iqdRate && total > 0 ? total * iqdRate : null;
+  const hasInput = isSea ? cbm > 0 : airChargeable > 0;
 
   const typeLabel = (r: any) =>
     pickLocalized({ ku: r.portalLabelKu, en: r.portalLabelEn, ar: r.portalLabelAr, zh: r.portalLabelZh }, lang)
       ?? r.shippingType;
 
+  const dimInput = (value: string, set: (v: string) => void, label: string) => (
+    <div className="relative">
+      <Input
+        type="number" inputMode="decimal" min="0" step="1"
+        value={value}
+        onChange={(e) => set(e.target.value)}
+        placeholder="0"
+        className={cn("pe-9 font-mono font-bold text-center", isDark && "bg-slate-900 border-slate-600")}
+      />
+      <span className={cn("absolute end-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>
+        {label}
+      </span>
+    </div>
+  );
+
   return (
     <div className={cn(
-      "mt-4 rounded-2xl border p-4",
+      "mt-4 rounded-2xl border p-4 sm:p-5",
       isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 shadow-sm",
     )}>
       <div className="flex items-center gap-2 mb-3">
@@ -346,13 +386,13 @@ function PriceCalculator({
             {pickLang(lang, { ku: "حیسابکەری نرخ", en: "Price calculator", ar: "حاسبة السعر", zh: "价格计算器" })}
           </h3>
           <p className={cn("text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
-            {pickLang(lang, { ku: "کێش یان قەبارە بنووسە، نرخی خەمڵێنراو ببینە", en: "Enter weight or volume to estimate the cost", ar: "أدخل الوزن أو الحجم لتقدير التكلفة", zh: "输入重量或体积以估算费用" })}
+            {pickLang(lang, { ku: "کێش یان درێژی×پانی×بەرزی بنووسە، نرخی خەمڵێنراو ببینە", en: "Enter weight or L×W×H to estimate the cost", ar: "أدخل الوزن أو الطول×العرض×الارتفاع لتقدير التكلفة", zh: "输入重量或长×宽×高以估算费用" })}
           </p>
         </div>
       </div>
 
       {/* Shipping type chips */}
-      <div className="flex flex-wrap gap-1.5 mb-3">
+      <div className="flex flex-wrap gap-1.5 mb-4">
         {shipping.map((r) => {
           const active = r.id === selected.id;
           return (
@@ -360,7 +400,7 @@ function PriceCalculator({
               key={r.id}
               onClick={() => setSelectedId(r.id)}
               className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-semibold transition-colors",
+                "px-3.5 py-2 rounded-full text-xs font-bold transition-colors",
                 active
                   ? "bg-emerald-600 text-white shadow-sm"
                   : isDark ? "bg-slate-700 text-slate-300 hover:bg-slate-600" : "bg-slate-100 text-slate-600 hover:bg-slate-200",
@@ -372,41 +412,102 @@ function PriceCalculator({
         })}
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-[180px]">
-          <Input
-            type="number"
-            inputMode="decimal"
-            min="0"
-            step={isCbm ? "0.01" : "0.1"}
-            value={qty}
-            onChange={(e) => setQty(e.target.value)}
-            placeholder={isCbm ? "0.25" : "1.0"}
-            className={cn("pe-12 font-mono font-bold", isDark && "bg-slate-900 border-slate-600")}
-          />
-          <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>
-            {isCbm ? "m³" : "kg"}
-          </span>
-        </div>
-        <div className="flex-1 text-end">
-          {effQty > 0 ? (
-            <>
-              <div className={cn("text-2xl font-black tabular-nums", isDark ? "text-white" : "text-slate-900")}>
+      {/* Inputs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {isSea ? (
+          <div className="relative col-span-2 sm:col-span-1">
+            <Input
+              type="number" inputMode="decimal" min="0" step="0.01"
+              value={cbmDirect}
+              onChange={(e) => setCbmDirect(e.target.value)}
+              placeholder="0.25"
+              className={cn("pe-10 font-mono font-bold", isDark && "bg-slate-900 border-slate-600")}
+            />
+            <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>m³</span>
+          </div>
+        ) : (
+          <div className="relative col-span-2 sm:col-span-1">
+            <Input
+              type="number" inputMode="decimal" min="0" step="0.1"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              placeholder="1.0"
+              className={cn("pe-10 font-mono font-bold", isDark && "bg-slate-900 border-slate-600")}
+            />
+            <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>kg</span>
+          </div>
+        )}
+        {dimInput(len, setLen, pickLang(lang, { ku: "درێژی", en: "L", ar: "طول", zh: "长" }))}
+        {dimInput(wid, setWid, pickLang(lang, { ku: "پانی", en: "W", ar: "عرض", zh: "宽" }))}
+        {dimInput(hei, setHei, pickLang(lang, { ku: "بەرزی", en: "H", ar: "ارتفاع", zh: "高" }))}
+      </div>
+      <p className={cn("mt-1.5 text-[10px]", isDark ? "text-slate-500" : "text-slate-400")}>
+        {isSea
+          ? pickLang(lang, { ku: "درێژی/پانی/بەرزی بە سانتیمەتر — یان ڕاستەوخۆ m³ بنووسە", en: "L/W/H in centimeters — or enter m³ directly", ar: "الأبعاد بالسنتيمتر — أو أدخل m³ مباشرة", zh: "长/宽/高以厘米为单位——或直接输入 m³" })
+          : pickLang(lang, { ku: "درێژی/پانی/بەرزی بە سانتیمەتر بۆ کێشی قەبارەیی (÷6000)", en: "L/W/H in centimeters for volumetric weight (÷6000)", ar: "الأبعاد بالسنتيمتر للوزن الحجمي (÷6000)", zh: "长/宽/高以厘米为单位计算体积重（÷6000）" })}
+      </p>
+
+      {/* Result */}
+      <div className={cn(
+        "mt-3 rounded-xl px-4 py-3 flex items-center justify-between gap-3",
+        isDark ? "bg-slate-900/70" : "bg-slate-50",
+      )}>
+        {hasInput ? (
+          <>
+            <div className="text-xs space-y-0.5 min-w-0">
+              {isSea ? (
+                <>
+                  <div className={cn("font-semibold", isDark ? "text-slate-300" : "text-slate-600")}>
+                    {pickLang(lang, { ku: "قەبارە: ", en: "Volume: ", ar: "الحجم: ", zh: "体积：" })}
+                    <span className="font-mono">{cbm.toFixed(3)} m³</span>
+                  </div>
+                  {seaSurcharge && (
+                    <div className="text-amber-500 font-semibold">
+                      {pickLang(lang, { ku: "+٢٥٪ بۆ کەمتر لە ٠.٢٥ م³", en: "+25% for below 0.25 m³", ar: "+25٪ لأقل من 0.25 م³", zh: "低于 0.25 m³ 加收 25%" })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {volumetricKg > 0 && (
+                    <div className={cn("font-semibold", isDark ? "text-slate-300" : "text-slate-600")}>
+                      {pickLang(lang, { ku: "کێشی قەبارەیی: ", en: "Volumetric: ", ar: "الوزن الحجمي: ", zh: "体积重：" })}
+                      <span className="font-mono">{volumetricKg.toFixed(2)} kg</span>
+                    </div>
+                  )}
+                  <div className={cn("font-semibold", isDark ? "text-slate-300" : "text-slate-600")}>
+                    {pickLang(lang, { ku: "کێشی حیسابکراو: ", en: "Chargeable: ", ar: "الوزن المحتسب: ", zh: "计费重量：" })}
+                    <span className="font-mono">{airChargeable.toFixed(2)} kg</span>
+                    {usedVolumetric && (
+                      <span className="text-amber-500 ms-1">
+                        {pickLang(lang, { ku: "(قەبارەیی)", en: "(volumetric)", ar: "(حجمي)", zh: "（体积重）" })}
+                      </span>
+                    )}
+                    {airBase > 0 && airBase < 1 && (
+                      <span className="text-amber-500 ms-1">
+                        {pickLang(lang, { ku: "(کەمترین ١ کگ)", en: "(min 1 kg)", ar: "(الحد الأدنى 1 كغ)", zh: "（最低 1 公斤）" })}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="text-end shrink-0">
+              <div className={cn("text-3xl font-black tabular-nums", isDark ? "text-white" : "text-slate-900")}>
                 ${total.toFixed(2)}
               </div>
-              <div className={cn("text-[10px]", isDark ? "text-slate-400" : "text-slate-500")}>
-                {showIqd && iqdTotal !== null && <span className="me-2">≈ {Math.round(iqdTotal).toLocaleString("en-US")} د.ع</span>}
-                {rawQty > 0 && rawQty < minQty && (
-                  <span>{pickLang(lang, { ku: `کەمترین ${minQty}`, en: `min ${minQty}`, ar: `الحد الأدنى ${minQty}`, zh: `最低 ${minQty}` })} {isCbm ? "m³" : "kg"}</span>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className={cn("text-sm", isDark ? "text-slate-500" : "text-slate-400")}>
-              {pickLang(lang, { ku: "ژمارە بنووسە", en: "Enter a number", ar: "أدخل رقمًا", zh: "输入数字" })}
+              {showIqd && iqdTotal !== null && (
+                <div className={cn("text-[10px]", isDark ? "text-slate-400" : "text-slate-500")}>
+                  ≈ {Math.round(iqdTotal).toLocaleString("en-US")} د.ع
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className={cn("text-sm w-full text-center py-1", isDark ? "text-slate-500" : "text-slate-400")}>
+            {pickLang(lang, { ku: "کێش یان ڕەهەندەکان بنووسە", en: "Enter a weight or dimensions", ar: "أدخل الوزن أو الأبعاد", zh: "输入重量或尺寸" })}
+          </div>
+        )}
       </div>
     </div>
   );
