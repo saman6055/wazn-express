@@ -750,6 +750,30 @@ export const portalPriceListAdminRouter = router({
       return updated;
     }),
 
+  // ---- Quick price update (the 3 portal shipping prices in one shot) ----
+  getQuickPrices: adminProcedure.query(async () => {
+    return db.getQuickPortalPrices();
+  }),
+
+  quickUpdatePrices: adminProcedure
+    .input(z.object({
+      air_regular: z.string().optional(),
+      air_irregular: z.string().optional(),
+      sea: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const res = await db.quickUpsertPortalPrices(input, ctx.user.id);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "quick_update_portal_prices",
+        entityType: "pricing_rule",
+        entityId: 0,
+        newValues: input,
+      });
+      return res;
+    }),
+
   // ---- Shipping rates (pricingRules with portal metadata) ----
   listShippingRatesWithMeta: adminProcedure.query(async () => {
     return db.getPricingRulesWithPortalMeta();

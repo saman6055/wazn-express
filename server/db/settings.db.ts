@@ -214,6 +214,80 @@ export async function updatePricingRule(id: number, data: Partial<InsertPricingR
   await db.update(pricingRules).set(data).where(eq(pricingRules.id, id));
 }
 
+// ---- Quick portal price update ----------------------------------------------
+// One-shot upsert of the three shipping prices shown on the customer portal
+// (air regular / air irregular / sea). Updates the matching rule's price and
+// forces it visible on the portal; creates the rule (copying origin/destination
+// from an existing one) when it doesn't exist yet — so the third card appears
+// the moment an admin fills its price. Prices change daily, so this is the
+// fast path vs. the full per-rule editor.
+const QUICK_TYPES = ["air_regular", "air_irregular", "sea"] as const;
+type QuickType = (typeof QUICK_TYPES)[number];
+const QUICK_UNIT: Record<QuickType, "kg" | "cbm"> = { air_regular: "kg", air_irregular: "kg", sea: "cbm" };
+const QUICK_PORTAL: Record<QuickType, { icon: string; color: string }> = {
+  air_regular: { icon: "Plane", color: "sky" },
+  air_irregular: { icon: "Zap", color: "amber" },
+  sea: { icon: "Ship", color: "teal" },
+};
+
+// Prefer the portal-visible active rule, else any active, else any.
+function pickRuleForType(rules: PricingRule[], type: QuickType): PricingRule | undefined {
+  return (
+    rules.find((r) => r.shippingType === type && r.isActive && r.showOnPortal) ||
+    rules.find((r) => r.shippingType === type && r.isActive) ||
+    rules.find((r) => r.shippingType === type)
+  );
+}
+
+export async function getQuickPortalPrices(): Promise<Record<QuickType, string | null>> {
+  const all = (await getAllPricingRules(false)) as PricingRule[];
+  const out: Record<QuickType, string | null> = { air_regular: null, air_irregular: null, sea: null };
+  for (const type of QUICK_TYPES) {
+    const rule = pickRuleForType(all, type);
+    out[type] = rule ? rule.pricePerUnit : null;
+  }
+  return out;
+}
+
+export async function quickUpsertPortalPrices(
+  prices: Partial<Record<QuickType, string>>,
+  createdById: number,
+): Promise<{ prices: Record<QuickType, string | null>; missingTemplate: boolean }> {
+  const all = (await getAllPricingRules(false)) as PricingRule[];
+  const template = all[0]; // any existing rule → source of origin/destination country
+  let missingTemplate = false;
+
+  for (const type of QUICK_TYPES) {
+    const raw = prices[type];
+    if (raw === undefined || raw === null || String(raw).trim() === "") continue;
+    const price = String(raw).trim();
+    const existing = pickRuleForType(all, type);
+    if (existing) {
+      await updatePricingRule(existing.id, { pricePerUnit: price, isActive: true, showOnPortal: true });
+    } else if (template) {
+      await createPricingRule({
+        originCountryId: template.originCountryId,
+        originWarehouseId: template.originWarehouseId,
+        destinationCountryId: template.destinationCountryId,
+        shippingType: type,
+        pricePerUnit: price,
+        unit: QUICK_UNIT[type],
+        effectiveFrom: new Date(),
+        isActive: true,
+        showOnPortal: true,
+        portalIcon: QUICK_PORTAL[type].icon,
+        portalColor: QUICK_PORTAL[type].color,
+        createdById,
+      } as InsertPricingRule);
+    } else {
+      missingTemplate = true; // no rule at all → can't infer countries
+    }
+  }
+
+  const updated = await getQuickPortalPrices();
+  return { prices: updated, missingTemplate };
+}
+
 
 // ============ SYSTEM SETTINGS OPERATIONS ============
 

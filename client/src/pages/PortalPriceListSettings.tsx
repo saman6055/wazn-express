@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -351,7 +352,8 @@ export default function PortalPriceListSettings() {
           </TabsContent>
 
           {/* ===== Tab 2: Shipping ===== */}
-          <TabsContent value="shipping">
+          <TabsContent value="shipping" className="space-y-4">
+            <QuickPriceCard />
             <Card>
               <CardHeader>
                 <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -470,6 +472,106 @@ export default function PortalPriceListSettings() {
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
+
+// Quick price update — the three portal shipping prices in three fields plus
+// one Save. Auto-creates the third card (air_irregular) when its price is
+// filled and forces all three visible on the portal. For fast daily edits.
+function QuickPriceCard() {
+  const { t, language } = useTranslation();
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.portalPriceList.getQuickPrices.useQuery();
+
+  const [form, setForm] = useState({ air_regular: "", air_irregular: "", sea: "" });
+  const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    if (data && !touched) {
+      setForm({
+        air_regular: data.air_regular ?? "",
+        air_irregular: data.air_irregular ?? "",
+        sea: data.sea ?? "",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  const save = trpc.portalPriceList.quickUpdatePrices.useMutation({
+    onSuccess: () => {
+      toast.success(t("priceList.admin.saved"));
+      utils.portalPriceList.getQuickPrices.invalidate();
+      utils.portalPriceList.listShippingRatesWithMeta.invalidate();
+      utils.customerPortal.getPriceList.invalidate();
+      setTouched(false);
+    },
+    onError: (err) => toast.error(t("priceList.admin.saveFailed"), { description: err.message }),
+  });
+
+  const fields: { key: "air_regular" | "air_irregular" | "sea"; icon: React.ComponentType<{ className?: string }>; label: string; unit: string }[] = [
+    { key: "air_regular", icon: Plane, label: pickLang(language, { ku: "ئاسمانی ئاسایی", en: "Air (regular)", ar: "جوي عادي", zh: "空运（常规）" }), unit: "kg" },
+    { key: "air_irregular", icon: Zap, label: pickLang(language, { ku: "ئاسمانی نائاسایی", en: "Air (irregular)", ar: "جوي غير عادي", zh: "空运（非常规）" }), unit: "kg" },
+    { key: "sea", icon: Ship, label: pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" }), unit: "m³" },
+  ];
+
+  return (
+    <Card className="border-purple-200 dark:border-purple-900/50 bg-gradient-to-br from-purple-50/60 to-indigo-50/40 dark:from-purple-950/20 dark:to-indigo-950/10">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <DollarSign className="h-5 w-5 text-purple-600" />
+          {pickLang(language, { ku: "نوێکردنەوەی خێرای نرخ", en: "Quick price update", ar: "تحديث سريع للأسعار", zh: "快速更新价格" })}
+        </CardTitle>
+        <CardDescription>
+          {pickLang(language, {
+            ku: "نرخی هەر سێ جۆرەکە لێرە بنووسە و پاشەکەوتی بکە. کارتی سێیەم خۆکارانە زیاد دەبێت و لە پۆرتاڵ دەردەکەوێت.",
+            en: "Set all three prices here and save. The third card is added automatically and shown on the portal.",
+            ar: "أدخل الأسعار الثلاثة هنا واحفظ. تُضاف البطاقة الثالثة تلقائيًا وتظهر في البوابة.",
+            zh: "在此设置三种价格并保存。第三张卡片会自动添加并显示在门户中。",
+          })}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <Skeleton className="h-24 w-full rounded-xl" />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {fields.map((f) => (
+                <div key={f.key} className="space-y-1.5">
+                  <Label className="text-xs font-semibold flex items-center gap-1.5">
+                    <f.icon className="h-3.5 w-3.5" /> {f.label}
+                  </Label>
+                  <div className="relative">
+                    <DollarSign className="absolute start-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      inputMode="decimal"
+                      value={form[f.key]}
+                      onChange={(e) => { setForm({ ...form, [f.key]: e.target.value }); setTouched(true); }}
+                      className="ps-7 pe-10 font-mono font-bold text-lg"
+                      placeholder="0.00"
+                    />
+                    <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">/ {f.unit}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <Button
+                onClick={() => save.mutate(form)}
+                disabled={save.isPending || !touched}
+                className="bg-purple-600 hover:bg-purple-700 text-white shadow-md"
+              >
+                {save.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Save className="h-4 w-4 me-2" />}
+                {save.isPending ? t("priceList.admin.saving") : t("priceList.admin.save")}
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function ToggleRow({
   label, checked, onChange,
