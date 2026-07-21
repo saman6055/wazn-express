@@ -281,6 +281,7 @@ const { t, language } = useLanguage();
   const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
   const { data: financialSummary } = trpc.customerPortal.getMyFinancialSummary.useQuery();
   const { data: pendingOrders } = trpc.customerPortal.getMyPendingOrders.useQuery();
+  const { data: declaredPackages } = trpc.customerPortal.getMyDeclaredPackages.useQuery();
 
   // Get recent batches (last 3)
   const recentBatches = batches?.slice(0, 3) || [];
@@ -703,6 +704,80 @@ const { t, language } = useLanguage();
               </div>
             </div>
           </Link>
+        </div>
+      )}
+
+      {/* My declared packages — tracking numbers + photos the customer entered
+          themselves, with live status. Prominent so they can watch their
+          incoming purchases at a glance. */}
+      {declaredPackages && declaredPackages.length > 0 && (
+        <div className="px-4 mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className={cn("text-lg font-bold flex items-center gap-2", isDark ? "text-white" : "text-slate-800")}>
+              <Package className="w-5 h-5 text-blue-500" />
+              {pickLang(language, { ku: "بارە خۆدەرخستووەکانم", en: "My declared packages", ar: "طرودي المُعلنة", zh: "我申报的包裹" })}
+            </h2>
+            <Link href="/portal/declare">
+              <button className="text-sm text-blue-500 font-medium flex items-center gap-1 hover:text-blue-600 transition-colors">
+                {t("portal.viewAll") || "هەموو ببینە"}
+                <ChevronRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
+              </button>
+            </Link>
+          </div>
+
+          <div className="space-y-2.5">
+            {declaredPackages.slice(0, 5).map((d: any) => {
+              const img = Array.isArray(d.productImages) ? d.productImages[0] : undefined;
+              const status = d.status as "pending" | "matched" | "received" | "cancelled";
+              const statusMeta: Record<string, { label: { ku: string; en: string; ar: string; zh: string }; cls: string }> = {
+                pending:  { label: { ku: "چاوەڕوانی گەیشتن", en: "Awaiting arrival", ar: "بانتظار الوصول", zh: "等待到达" }, cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+                matched:  { label: { ku: "دۆزرایەوە",        en: "Found",           ar: "تم العثور",     zh: "已匹配" }, cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+                received: { label: { ku: "گەیشت",           en: "Received",        ar: "تم الاستلام",   zh: "已收到" }, cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
+                cancelled:{ label: { ku: "هەڵوەشاوە",        en: "Cancelled",       ar: "ملغى",          zh: "已取消" }, cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400" },
+              };
+              const sm = statusMeta[status] ?? statusMeta.pending;
+              return (
+                <Link key={d.id} href="/portal/declare">
+                  <div className={cn(
+                    "flex items-center gap-3 rounded-2xl p-3 shadow-sm cursor-pointer transition-all hover:scale-[1.01]",
+                    isDark ? "bg-slate-800 hover:bg-slate-700/70" : "bg-white hover:bg-slate-50"
+                  )}>
+                    {/* Thumbnail */}
+                    <div className={cn(
+                      "w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center",
+                      isDark ? "bg-slate-700" : "bg-slate-100"
+                    )}>
+                      {img ? (
+                        <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <Package className={cn("w-6 h-6", isDark ? "text-slate-500" : "text-slate-400")} />
+                      )}
+                    </div>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("font-mono text-sm font-bold truncate", isDark ? "text-white" : "text-slate-800")}>
+                        {d.trackingNumber}
+                      </p>
+                      {d.productName && (
+                        <p className={cn("text-xs truncate", isDark ? "text-slate-400" : "text-slate-500")}>{d.productName}</p>
+                      )}
+                      <div className="flex items-center gap-1.5 mt-1">
+                        {d.platform && (
+                          <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md", isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-600")}>
+                            {d.platform}
+                          </span>
+                        )}
+                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", sm.cls)}>
+                          {pickLang(language, sm.label)}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className={cn("w-4 h-4 flex-shrink-0", isDark ? "text-slate-600" : "text-slate-300", isRTL && "rotate-180")} />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       )}
 
