@@ -7,6 +7,43 @@ import * as db from "../db";
 import { notifyPackageStatusChange } from "../services/notification.service";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
+// ---------------------------------------------------------------------------
+// In-app lifecycle-stage notification for the customer (portal notification
+// centre + live SSE, via createCustomerNotification). Keyed on the clean
+// scanType so it fires the right stage regardless of the human-readable status
+// string a scanner stores. Best-effort — never blocks or fails the scan.
+// ---------------------------------------------------------------------------
+const STAGE_NOTIF: Record<string, { en: string; ku: string; ar: string; ok?: boolean }> = {
+  received_china:   { en: "Arrived at China warehouse", ku: "گەیشتە کۆگای چین",     ar: "وصل إلى مستودع الصين" },
+  in_batch:         { en: "Added to shipment",          ku: "خرایە ناو بارەکە",      ar: "أُضيف إلى الشحنة" },
+  received_local:   { en: "Arrived at Erbil warehouse", ku: "گەیشتە کۆگای هەولێر",   ar: "وصل إلى مستودع أربيل" },
+  out_for_delivery: { en: "Out for delivery",           ku: "لە ڕێی گەیاندنە",       ar: "خرج للتسليم" },
+  delivered:        { en: "Delivered",                  ku: "گەیێنرا",              ar: "تم التسليم", ok: true },
+};
+
+async function notifyStageInApp(packageId: number, scanType: string): Promise<void> {
+  const stage = STAGE_NOTIF[scanType];
+  if (!stage) return;
+  try {
+    const pkg = await db.getPackageById(packageId);
+    if (!pkg || !pkg.customerId || pkg.isUnclaimed) return;
+    const code = pkg.trackingNumber || pkg.packageCode || `#${pkg.id}`;
+    await db.createCustomerNotification({
+      customerId: pkg.customerId,
+      type: stage.ok ? "success" : "package",
+      relatedType: "package",
+      relatedId: pkg.id,
+      actionUrl: `/portal/search?q=${encodeURIComponent(code)}`,
+      title: stage.en, titleKu: stage.ku, titleAr: stage.ar,
+      message: `Package ${code}: ${stage.en}.`,
+      messageKu: `پاکەتی ${code}: ${stage.ku}.`,
+      messageAr: `الطرد ${code}: ${stage.ar}.`,
+    });
+  } catch (e) {
+    appLogger.error("[Scan] stage notify failed", { scanType, packageId, error: e instanceof Error ? e.message : String(e) });
+  }
+}
+
 export const qrCodesRouter = router({
     generate: staffProcedure
       .input(z.object({
@@ -162,23 +199,11 @@ export const scanningRouter = router({
               }
             );
             
-            // Send notification to customer if status is significant
-            if (['received_local', 'delivered'].includes(input.scanType)) {
-              const pkg = await db.getPackageById(input.packageId);
-              if (pkg && pkg.customerId) {
-                const customer = await db.getCustomerById(pkg.customerId);
-                if (customer) {
-                  const messages: Record<string, string> = {
-                    'received_local': `پاکەتتان گەیشتە مەخزەنی هەولێر! کۆد: ${pkg.trackingNumber}`,
-                    'delivered': `پاکەتتان گەیاندرا! سوپاس بۆ متمانەتان.`
-                  };
-                  appLogger.info("[SMS] Would send to customer", { mobileNumber: customer.mobileNumber, message: messages[input.scanType] });
-                  // NOTE: Charging is handled at batch delivery (batches.router.ts)
-                  // Scanning should NEVER charge customers to prevent double-charging
-                  appLogger.info(`[Scan] ${input.scanType} scan for ${pkg.packageCode} - no charge (handled at batch delivery)`);
-                }
-              }
-            }
+            // Notify the customer at the meaningful lifecycle stages (in-app
+            // notification centre + live SSE). Keyed on the clean scanType.
+            await notifyStageInApp(input.packageId, input.scanType);
+            // NOTE: Charging is handled at batch delivery (batches.router.ts).
+            // Scanning must NEVER charge customers to prevent double-charging.
           }
         }
         
@@ -445,6 +470,9 @@ export const scanningRouter = router({
               } catch (e) {
                 appLogger.error('[Notification] Failed to send package status notification', { error: e instanceof Error ? e.message : String(e) });
               }
+              // In-app portal notification for the meaningful stages (keyed on
+              // the scanType derived above), alongside the email/push above.
+              await notifyStageInApp(packageId, scanType);
             }
             
             // NOTE: Charging is handled ONLY at batch delivery (batches.router.ts)
@@ -1172,7 +1200,26 @@ export const deliveryBoxRouter = router({
         }
       }
 
-      return db.markBoxInTransit(box.id, ctx.user.id);
+      const dispatched = await db.markBoxInTransit(box.id, ctx.user.id);
+      // Notify the customer their delivery box is on its way (in-app + SSE).
+      try {
+        const boxItems = await db.getBoxItems(box.id);
+        const toCity = box.destinationCity ? ` — ${box.destinationCity}` : "";
+        await db.createCustomerNotification({
+          customerId: box.customerId,
+          type: "package",
+          relatedType: "package",
+          relatedId: box.id,
+          actionUrl: "/portal/shipments",
+          title: "On the way to you", titleKu: "لە ڕێی گەیاندنە بۆ لات", titleAr: "في الطريق إليك",
+          message: `Your delivery box ${box.boxCode} (${boxItems.length} packages) is on its way${toCity}.`,
+          messageKu: `بۆکسی گەیاندنت ${box.boxCode} (${boxItems.length} پاکەت) لە ڕێی گەیاندنە${toCity}.`,
+          messageAr: `صندوق التسليم ${box.boxCode} (${boxItems.length} طرود) في طريقه إليك${toCity}.`,
+        });
+      } catch (e) {
+        appLogger.error("[DeliveryBox] dispatch notify failed", { boxCode: box.boxCode, error: e instanceof Error ? e.message : String(e) });
+      }
+      return dispatched;
     }),
 
   // Mark box as delivered
