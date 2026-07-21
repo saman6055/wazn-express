@@ -124,8 +124,10 @@ export const portalCenterRouter = router({
     .input(z.object({ customerId: z.number().int(), withPush: z.boolean().default(true) }).and(notifTextInput))
     .mutation(async ({ input, ctx }) => {
       // createCustomerNotification auto-pushes; withPush maps to its opt-out.
+      // No actionUrl: a plain text notification has no destination, and a
+      // generic "/portal" link renders a dead "View" button.
       await db.createCustomerNotification(buildNotif(input, {
-        customerId: input.customerId, type: "info", relatedType: "package", actionUrl: "/portal",
+        customerId: input.customerId, type: "info", relatedType: "package",
       }), { push: input.withPush });
       await db.logCustomerActivity({
         customerId: input.customerId, action: "admin_notification", category: "other",
@@ -142,7 +144,7 @@ export const portalCenterRouter = router({
       for (const c of customers as { id: number }[]) {
         try {
           await db.createCustomerNotification(buildNotif(input, {
-            customerId: c.id, type: "info", relatedType: "package", actionUrl: "/portal",
+            customerId: c.id, type: "info", relatedType: "package",
           }), { push: input.withPush });
           sent++;
         } catch { /* skip one, keep going */ }

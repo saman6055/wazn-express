@@ -8,9 +8,16 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+
+// Destinations that aren't worth a "View" link — landing on the portal home
+// from the notifications page reads as "nothing happened".
+const DEAD_ACTION_URLS = new Set(["/portal", "/portal/", "/"]);
 
 export default function PortalNotifications() {
 const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNotifications.useQuery();
+  // Tapping a notification expands it in place to show the full message.
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   
   const markAsReadMutation = trpc.customerPortal.markNotificationAsRead.useMutation({
     onSuccess: () => refetch(),
@@ -152,6 +159,7 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
                     !notification.isRead && "border-l-4 border-blue-500 bg-blue-50/50"
                   )}
                   onClick={() => {
+                    setExpandedId((prev) => (prev === notification.id ? null : notification.id));
                     if (!notification.isRead) {
                       markAsReadMutation.mutate({ notificationId: notification.id });
                     }
@@ -178,17 +186,22 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
                         )}
                       </div>
                       
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                      <p className={cn(
+                        "text-sm text-gray-600 mt-1 whitespace-pre-wrap",
+                        expandedId !== notification.id && "line-clamp-2"
+                      )}>
                         {notification.message}
                       </p>
-                      
+
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-xs text-gray-400">
                           {formatTime(notification.createdAt)}
                         </span>
-                        
-                        {notification.actionUrl && (
-                          <Link href={notification.actionUrl}>
+
+                        {/* Only link out when there's a real destination —
+                            generic "/portal" reads as a dead button. */}
+                        {notification.actionUrl && !DEAD_ACTION_URLS.has(notification.actionUrl) && (
+                          <Link href={notification.actionUrl} onClick={(e) => e.stopPropagation()}>
                             <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 h-auto p-0 text-xs">
                               {notification.actionLabel || "View"}
                               <ChevronRight className="h-3 w-3 ms-1" />
