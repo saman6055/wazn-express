@@ -212,6 +212,43 @@ export const customerPortalRouter = router({
         return { unclaimed, declared };
       }),
 
+    // ============ DELIVERY RATING ============
+    // The most recent delivered package (14 days) the customer hasn't rated.
+    getRatablePackage: protectedProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.user.isCustomer ? ctx.user.id :
+        (await db.getCustomerByUserId(ctx.user.id))?.id;
+      if (!customerId) return null;
+      return db.getRatablePackage(customerId);
+    }),
+
+    submitDeliveryRating: protectedProcedure
+      .input(z.object({
+        packageId: z.number(),
+        rating: z.number().int().min(1).max(5),
+        comment: z.string().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) throw new TRPCError({ code: "BAD_REQUEST", message: "پرۆفایلی کریار نەدۆزرایەوە." });
+        const pkg = await db.getPackageById(input.packageId);
+        if (!pkg || pkg.customerId !== customerId) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Package not found" });
+        }
+        const ok = await db.createDeliveryRating({
+          customerId,
+          packageId: input.packageId,
+          rating: input.rating,
+          comment: input.comment,
+        });
+        logPortal(ctx, customerId, "rate_delivery", "other", {
+          detail: `${input.rating}/5${input.comment ? ` — ${input.comment.slice(0, 100)}` : ""}`,
+          entityType: "package",
+          entityId: input.packageId,
+        });
+        return { success: ok };
+      }),
+
     // Portal navigation tracking — the portal layout calls this on route change
     // so the admin Portal Center can see which pages each customer visits.
     // Best-effort observability; returns quickly and never throws.

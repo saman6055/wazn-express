@@ -7,6 +7,8 @@ import {
   customerMessages,
   customerActivityLog,
   customerAdminNotes,
+  deliveryRatings,
+  packages,
 } from "../../drizzle/schema";
 import type {
   InsertCustomerActivityLog,
@@ -50,6 +52,88 @@ export async function listCustomerAdminNotes(customerId: number) {
     .where(eq(customerAdminNotes.customerId, customerId))
     .orderBy(desc(customerAdminNotes.createdAt))
     .limit(50);
+}
+
+// ---- Delivery ratings -------------------------------------------------------
+
+/** The customer's most recent delivered package (last 14 days) with no rating yet. */
+export async function getRatablePackage(customerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  const rows = await db
+    .select({
+      id: packages.id,
+      trackingNumber: packages.trackingNumber,
+      packageCode: packages.packageCode,
+      deliveredAt: packages.deliveredAt,
+    })
+    .from(packages)
+    .leftJoin(deliveryRatings, eq(deliveryRatings.packageId, packages.id))
+    .where(
+      and(
+        eq(packages.customerId, customerId),
+        // Scanners store "Delivered", updatePackage stores "delivered".
+        sql`LOWER(${packages.status}) = 'delivered'`,
+        sql`${packages.deliveredAt} >= ${cutoff}`,
+        sql`${deliveryRatings.id} IS NULL`,
+      ),
+    )
+    .orderBy(desc(packages.deliveredAt))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Save a rating; ownership must be verified by the caller. Idempotent per package. */
+export async function createDeliveryRating(data: {
+  customerId: number;
+  packageId: number;
+  rating: number;
+  comment?: string | null;
+}): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    await db.insert(deliveryRatings).values({
+      customerId: data.customerId,
+      packageId: data.packageId,
+      rating: Math.min(5, Math.max(1, Math.round(data.rating))),
+      comment: data.comment?.slice(0, 1000) || null,
+    });
+    return true;
+  } catch {
+    return false; // duplicate (already rated) or transient failure
+  }
+}
+
+/** Admin: paginated ratings with customer + package identity, plus the average. */
+export async function listDeliveryRatings(opts: { page: number; pageSize: number }) {
+  const db = await getDb();
+  if (!db) return { data: [], total: 0, average: null as number | null };
+
+  const [{ total, average }] = await db
+    .select({ total: sql<number>`count(*)`, average: sql<number>`avg(${deliveryRatings.rating})` })
+    .from(deliveryRatings);
+
+  const data = await db
+    .select({
+      id: deliveryRatings.id,
+      rating: deliveryRatings.rating,
+      comment: deliveryRatings.comment,
+      createdAt: deliveryRatings.createdAt,
+      customerId: deliveryRatings.customerId,
+      customerCode: customers.customerCode,
+      customerName: customers.fullName,
+      trackingNumber: packages.trackingNumber,
+    })
+    .from(deliveryRatings)
+    .leftJoin(customers, eq(deliveryRatings.customerId, customers.id))
+    .leftJoin(packages, eq(deliveryRatings.packageId, packages.id))
+    .orderBy(desc(deliveryRatings.createdAt))
+    .limit(opts.pageSize)
+    .offset((opts.page - 1) * opts.pageSize);
+
+  return { data, total: num(total), average: average != null ? Number(average) : null };
 }
 
 /** Stamp a customer's last portal login. Best-effort. */

@@ -76,3 +76,26 @@ export const customerAdminNotes = mysqlTable(
 
 export type CustomerAdminNote = typeof customerAdminNotes.$inferSelect;
 export type InsertCustomerAdminNote = typeof customerAdminNotes.$inferInsert;
+
+// ---------------------------------------------------------------------------
+// deliveryRatings — a customer's 1–5 star rating (plus optional comment) for
+// a delivered package. One rating per package; shown in the Portal Center.
+// ---------------------------------------------------------------------------
+export const deliveryRatings = mysqlTable(
+  "deliveryRatings",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    customerId: int("customerId").notNull(),
+    packageId: int("packageId").notNull().unique(),
+    rating: int("rating").notNull(), // 1–5
+    comment: varchar("comment", { length: 1000 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    customerIdx: index("idx_dr_customer").on(table.customerId),
+    ratingIdx: index("idx_dr_rating").on(table.rating),
+  }),
+);
+
+export type DeliveryRating = typeof deliveryRatings.$inferSelect;
+export type InsertDeliveryRating = typeof deliveryRatings.$inferInsert;

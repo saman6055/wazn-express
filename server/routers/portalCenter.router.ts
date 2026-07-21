@@ -58,6 +58,12 @@ export const portalCenterRouter = router({
       return db.getActivityFeed(input);
     }),
 
+  listDeliveryRatings: adminProcedure
+    .input(z.object({ ...pagination }))
+    .query(async ({ input }) => {
+      return db.listDeliveryRatings(input);
+    }),
+
   listDeclaredPackages: adminProcedure
     .input(z.object({
       search: z.string().optional(),

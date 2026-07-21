@@ -1966,6 +1966,21 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_can_customer (customerId)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+  // Portal: customer 1-5 star rating per delivered package.
+  {
+    name: "deliveryRatings",
+    dependencies: ["customers", "packages"],
+    sql: `CREATE TABLE IF NOT EXISTS deliveryRatings (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerId INT NOT NULL,
+      packageId INT NOT NULL UNIQUE,
+      rating INT NOT NULL,
+      comment VARCHAR(1000),
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_dr_customer (customerId),
+      INDEX idx_dr_rating (rating)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   }
 ];
 

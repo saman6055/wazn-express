@@ -27,7 +27,7 @@ import {
   Users, Activity, Package, FileText, LogIn, Search, MessageCircle,
   MousePointerClick, ChevronLeft, ChevronRight, Clock, TrendingUp,
   UserCheck, PackageCheck, Ban, Sparkles, Send, Bell, Megaphone,
-  StickyNote, DollarSign, Plane, Zap, Ship, Loader2,
+  StickyNote, DollarSign, Plane, Zap, Ship, Loader2, Star,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ export default function PortalCenter() {
         <OverviewCards p={p} />
 
         <Tabs defaultValue="customers" className="space-y-4">
-          <TabsList className="grid grid-cols-4 sm:grid-cols-7 w-full max-w-4xl h-auto">
+          <TabsList className="grid grid-cols-4 sm:grid-cols-8 w-full max-w-5xl h-auto">
             <TabsTrigger value="customers" className="gap-1.5"><Users className="h-4 w-4" />{p({ ku: "موشتەرەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TabsTrigger>
             <TabsTrigger value="messages" className="gap-1.5"><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}</TabsTrigger>
             <TabsTrigger value="send" className="gap-1.5"><Send className="h-4 w-4" />{p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}</TabsTrigger>
@@ -124,6 +124,7 @@ export default function PortalCenter() {
             <TabsTrigger value="activity" className="gap-1.5"><Activity className="h-4 w-4" />{p({ ku: "چالاکی", en: "Activity", ar: "النشاط", zh: "活动" })}</TabsTrigger>
             <TabsTrigger value="declared" className="gap-1.5"><Package className="h-4 w-4" />{p({ ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪" })}</TabsTrigger>
             <TabsTrigger value="claims" className="gap-1.5"><FileText className="h-4 w-4" />{p({ ku: "خاوەنداری", en: "Claims", ar: "المطالبات", zh: "认领" })}</TabsTrigger>
+            <TabsTrigger value="ratings" className="gap-1.5"><Star className="h-4 w-4" />{p({ ku: "هەڵسەنگاندن", en: "Ratings", ar: "التقييمات", zh: "评价" })}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="customers"><CustomersTab p={p} onOpen={setOpenCustomer} /></TabsContent>
@@ -133,6 +134,7 @@ export default function PortalCenter() {
           <TabsContent value="activity"><ActivityTab p={p} /></TabsContent>
           <TabsContent value="declared"><DeclaredTab p={p} /></TabsContent>
           <TabsContent value="claims"><ClaimsTab p={p} /></TabsContent>
+          <TabsContent value="ratings"><RatingsTab p={p} /></TabsContent>
         </Tabs>
       </div>
 
@@ -930,5 +932,70 @@ function CustomerTimelineDialog({ p, customer, onClose }: {
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Ratings tab — delivery ratings left by customers, newest first.
+// ---------------------------------------------------------------------------
+function RatingsTab({ p }: { p: (v: L) => string }) {
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
+  const { data, isLoading } = trpc.portalCenter.listDeliveryRatings.useQuery({ page, pageSize });
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4">
+        {data?.average != null && (
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex items-center gap-1" dir="ltr">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Star key={n} className={cn(
+                  "h-5 w-5",
+                  data.average! >= n - 0.5 ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
+                )} />
+              ))}
+            </div>
+            <span className="text-lg font-black tabular-nums">{data.average.toFixed(1)}</span>
+            <span className="text-xs text-muted-foreground">
+              ({data.total} {p({ ku: "هەڵسەنگاندن", en: "ratings", ar: "تقييم", zh: "条评价" })})
+            </span>
+          </div>
+        )}
+
+        {isLoading ? <TableSkeleton /> : !data || data.data.length === 0 ? (
+          <EmptyRow text={p({ ku: "هێشتا هەڵسەنگاندن نییە", en: "No ratings yet", ar: "لا توجد تقييمات بعد", zh: "暂无评价" })} />
+        ) : (
+          <>
+            <div className="space-y-2">
+              {data.data.map((r: any) => (
+                <div key={r.id} className="rounded-xl border p-3 dark:border-white/10">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-0.5" dir="ltr">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star key={n} className={cn(
+                          "h-4 w-4",
+                          r.rating >= n ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
+                        )} />
+                      ))}
+                    </div>
+                    <span className="text-sm font-semibold">{r.customerName || "—"}</span>
+                    <span className="text-[11px] text-muted-foreground font-mono">{r.customerCode}</span>
+                    {r.trackingNumber && (
+                      <span className="text-[11px] text-muted-foreground font-mono">· {r.trackingNumber}</span>
+                    )}
+                    <span className="ms-auto text-[11px] text-muted-foreground">{fmtDateTime(r.createdAt)}</span>
+                  </div>
+                  {r.comment && (
+                    <p className="mt-1.5 text-sm text-muted-foreground">{r.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <Pager page={page} pageSize={pageSize} total={data.total} onPage={setPage} />
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useState, useEffect } from "react";
 import { PriceListSection } from "@/components/portal/PriceListSection";
+import { DeliveryRatingCard } from "@/components/portal/DeliveryRatingCard";
 
 // Animated Counter Component
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
@@ -529,6 +530,9 @@ const { t, language } = useLanguage();
           </div>
         </Link>
       </div>
+
+      {/* Rate your delivery — shows for the latest delivered, unrated package */}
+      <DeliveryRatingCard isDark={isDark} language={language} />
 
       {/* Price List Section — admin-curated shipping rates & services */}
       <PriceListSection />
