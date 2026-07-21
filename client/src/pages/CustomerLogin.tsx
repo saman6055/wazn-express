@@ -9,12 +9,25 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { pickLang } from "@/lib/lang";
+
+// Must mirror the server's phoneSchema so we can fail with a friendly,
+// localized message instead of surfacing a raw zod pattern error.
+const PHONE_RE = /^[+]?[\d\s-]{7,20}$/;
 
 export default function CustomerLogin() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [, setLocation] = useLocation();
   const [mobileNumber, setMobileNumber] = useState("");
   const [password, setPassword] = useState("");
+
+  const invalidPhoneMsg = () =>
+    pickLang(language, {
+      ku: "تکایە ژمارەی مۆبایلی دروست بنووسە (نموونە: 07701234567). ئەگەر ستافیت، بەشی «چوونەژوورەوەی ستاف» بەکاربهێنە.",
+      en: "Please enter a valid mobile number (e.g. 07701234567). If you are staff, use the staff login below.",
+      ar: "يرجى إدخال رقم هاتف صحيح (مثال: 07701234567). إذا كنت من الموظفين فاستخدم دخول الموظفين أدناه.",
+      zh: "请输入有效的手机号（例如 07701234567）。如果您是员工，请使用下方的员工登录。",
+    });
 
   const loginMutation = trpc.auth.customerLogin.useMutation({
     onSuccess: (data) => {
@@ -23,7 +36,14 @@ const [, setLocation] = useLocation();
       window.location.href = "/portal";
     },
     onError: (error) => {
-      toast.error(error.message || t("auth.loginFailed"));
+      // Zod validation errors arrive as raw JSON — translate the mobile-number
+      // one into a human message instead of dumping the pattern on the user.
+      const raw = error.message || "";
+      if (raw.includes("mobileNumber") || raw.includes("invalid_format") || raw.includes("must match pattern")) {
+        toast.error(invalidPhoneMsg());
+        return;
+      }
+      toast.error(raw || t("auth.loginFailed"));
     },
   });
 
@@ -33,7 +53,12 @@ const [, setLocation] = useLocation();
       toast.error(t("messages.fillAllFields"));
       return;
     }
-    loginMutation.mutate({ mobileNumber, password });
+    // Friendly pre-check: catch "admin"-style usernames before the server does.
+    if (!PHONE_RE.test(mobileNumber.trim())) {
+      toast.error(invalidPhoneMsg());
+      return;
+    }
+    loginMutation.mutate({ mobileNumber: mobileNumber.trim(), password });
   };
 
   return (
