@@ -281,8 +281,32 @@ export const customerPortalRouter = router({
         if (!pkg || pkg.customerId !== customerId) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Package not found" });
         }
-        
+
         return pkg;
+      }),
+
+    // Real movement history for one of the customer's own packages: merged
+    // status-history + scan events with timestamps, oldest first. Powers the
+    // portal tracking timeline with actual dates instead of a synthetic bar.
+    getPackageTimeline: protectedProcedure
+      .input(z.object({ packageId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) return [];
+        const pkg = await db.getPackageById(input.packageId);
+        if (!pkg || pkg.customerId !== customerId) return [];
+
+        const [history, scans] = await Promise.all([
+          db.getPackageStatusHistory(input.packageId),
+          db.getPackageScans(input.packageId),
+        ]);
+        const events = [
+          ...history.map((h: any) => ({ kind: "status" as const, status: h.toStatus as string, at: h.changedAt as Date })),
+          ...scans.map((s: any) => ({ kind: "scan" as const, status: s.scanType as string, at: s.scannedAt as Date })),
+        ].filter((e) => e.status && e.at);
+        events.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+        return events;
       }),
     
     // ============ UNCLAIMED PACKAGES & CLAIM REQUESTS ============

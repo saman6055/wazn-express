@@ -39,6 +39,13 @@ export default function PortalSearch() {
     { enabled: hasSearched && !!searchQuery.trim() && !result }
   );
 
+  // Real movement events for the found package — feeds actual dates into the
+  // tracking timeline instead of the synthetic status-only view.
+  const { data: timelineEvents } = trpc.customerPortal.getPackageTimeline.useQuery(
+    { packageId: (result as any)?.id ?? 0 },
+    { enabled: !!(result as any)?.id }
+  );
+
   const photos = result?.photos as string[] | undefined;
 
   const handleSearch = async () => {
@@ -250,6 +257,7 @@ export default function PortalSearch() {
               </p>
               <PackageTrackingTimeline
                 currentStatus={result.status}
+                events={timelineEvents as any}
                 estimatedDelivery={(result as any).estimatedArrival ?? (result as any).batchEstimatedArrival ?? null}
                 language={language}
               />

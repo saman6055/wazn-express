@@ -3,12 +3,15 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
+import { pickLang } from "@/lib/lang";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Plane, Ship, Zap, Package, Truck, Sparkles,
   DollarSign, Wrench, Info, TrendingUp,
   Flame, Star, Rocket, Award, ShoppingBag, Globe, Clock, Layers,
+  Calculator,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -299,6 +302,117 @@ function ServiceCard({
 }
 
 // ---------------------------------------------------------------------------
+// Price calculator — the customer enters a weight (air) or volume (sea) and
+// sees the estimated cost from the same live rates shown above. Estimates
+// only; minimums (1 kg air / 0.25 CBM sea) are applied like the real charge.
+// ---------------------------------------------------------------------------
+function PriceCalculator({
+  shipping, lang, isDark, showIqd, iqdRate,
+}: {
+  shipping: any[];
+  lang: string;
+  isDark: boolean;
+  showIqd: boolean;
+  iqdRate: number | null;
+}) {
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [qty, setQty] = useState("");
+
+  if (shipping.length === 0) return null;
+  const selected = shipping.find((r) => r.id === selectedId) ?? shipping[0];
+  const isCbm = selected.unit === "cbm";
+  const minQty = isCbm ? 0.25 : 1;
+  const rawQty = parseFloat(qty);
+  const effQty = isNaN(rawQty) || rawQty <= 0 ? 0 : Math.max(rawQty, minQty);
+  const price = Number(selected.pricePerUnit ?? 0);
+  const total = effQty * price;
+  const iqdTotal = iqdRate ? total * iqdRate : null;
+
+  const typeLabel = (r: any) =>
+    pickLocalized({ ku: r.portalLabelKu, en: r.portalLabelEn, ar: r.portalLabelAr, zh: r.portalLabelZh }, lang)
+      ?? r.shippingType;
+
+  return (
+    <div className={cn(
+      "mt-4 rounded-2xl border p-4",
+      isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 shadow-sm",
+    )}>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+          <Calculator className="w-4 h-4" />
+        </div>
+        <div>
+          <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-900")}>
+            {pickLang(lang, { ku: "حیسابکەری نرخ", en: "Price calculator", ar: "حاسبة السعر", zh: "价格计算器" })}
+          </h3>
+          <p className={cn("text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
+            {pickLang(lang, { ku: "کێش یان قەبارە بنووسە، نرخی خەمڵێنراو ببینە", en: "Enter weight or volume to estimate the cost", ar: "أدخل الوزن أو الحجم لتقدير التكلفة", zh: "输入重量或体积以估算费用" })}
+          </p>
+        </div>
+      </div>
+
+      {/* Shipping type chips */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {shipping.map((r) => {
+          const active = r.id === selected.id;
+          return (
+            <button
+              key={r.id}
+              onClick={() => setSelectedId(r.id)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-semibold transition-colors",
+                active
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : isDark ? "bg-slate-700 text-slate-300 hover:bg-slate-600" : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+              )}
+            >
+              {typeLabel(r)}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-[180px]">
+          <Input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step={isCbm ? "0.01" : "0.1"}
+            value={qty}
+            onChange={(e) => setQty(e.target.value)}
+            placeholder={isCbm ? "0.25" : "1.0"}
+            className={cn("pe-12 font-mono font-bold", isDark && "bg-slate-900 border-slate-600")}
+          />
+          <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>
+            {isCbm ? "m³" : "kg"}
+          </span>
+        </div>
+        <div className="flex-1 text-end">
+          {effQty > 0 ? (
+            <>
+              <div className={cn("text-2xl font-black tabular-nums", isDark ? "text-white" : "text-slate-900")}>
+                ${total.toFixed(2)}
+              </div>
+              <div className={cn("text-[10px]", isDark ? "text-slate-400" : "text-slate-500")}>
+                {showIqd && iqdTotal !== null && <span className="me-2">≈ {Math.round(iqdTotal).toLocaleString("en-US")} د.ع</span>}
+                {rawQty > 0 && rawQty < minQty && (
+                  <span>{pickLang(lang, { ku: `کەمترین ${minQty}`, en: `min ${minQty}`, ar: `الحد الأدنى ${minQty}`, zh: `最低 ${minQty}` })} {isCbm ? "m³" : "kg"}</span>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className={cn("text-sm", isDark ? "text-slate-500" : "text-slate-400")}>
+              {pickLang(lang, { ku: "ژمارە بنووسە", en: "Enter a number", ar: "أدخل رقمًا", zh: "输入数字" })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main section
 // ---------------------------------------------------------------------------
 interface PriceListSectionProps {
@@ -500,6 +614,17 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
                 showRmb={showRmb} rmbRate={rmbRate} isDark={isDark} />
             ))}
         </div>
+      )}
+
+      {/* Price calculator — powered by the same visible shipping rates */}
+      {data.settings.showShippingRates && hasShipping && (
+        <PriceCalculator
+          shipping={data.shipping}
+          lang={language}
+          isDark={isDark}
+          showIqd={showIqd}
+          iqdRate={iqdRate}
+        />
       )}
 
       {/* Disclaimer */}
