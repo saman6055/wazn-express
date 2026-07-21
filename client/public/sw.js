@@ -1,11 +1,10 @@
 // Wazn Express Service Worker
 // Bump the version when caching behavior changes so the activate handler
-// purges stale caches. v2: /manifest.json + app icons are now generated
-// dynamically from the company logo, so the old precached static manifest
-// must be cleared.
-const CACHE_NAME = 'wazn-express-v2';
-const STATIC_CACHE = 'wazn-static-v2';
-const DYNAMIC_CACHE = 'wazn-dynamic-v2';
+// purges stale caches. v3: push notifications now explicitly non-silent
+// with stronger vibration so phones ring for every notification.
+const CACHE_NAME = 'wazn-express-v3';
+const STATIC_CACHE = 'wazn-static-v3';
+const DYNAMIC_CACHE = 'wazn-dynamic-v3';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
@@ -149,7 +148,13 @@ self.addEventListener('push', (event) => {
     body: data.body,
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-72x72.png',
-    vibrate: [100, 50, 100],
+    // Explicitly audible: silent=false makes the OS play its notification
+    // sound; renotify+tag re-alerts (sound + vibration) on every push
+    // instead of silently replacing the previous notification.
+    silent: false,
+    renotify: true,
+    tag: data.tag || 'wazn-express',
+    vibrate: [200, 100, 200, 100, 300],
     data: {
       url: data.url || '/'
     },

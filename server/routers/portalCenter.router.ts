@@ -2,7 +2,6 @@ import { z } from "zod";
 import { router } from "../_core/trpc";
 import { adminProcedure } from "../middleware/auth";
 import * as db from "../db";
-import { sendPushToCustomer } from "../services/push.service";
 
 const ANNOUNCEMENT_KEY = "portal_announcement";
 
@@ -124,12 +123,10 @@ export const portalCenterRouter = router({
   sendNotificationToCustomer: adminProcedure
     .input(z.object({ customerId: z.number().int(), withPush: z.boolean().default(true) }).and(notifTextInput))
     .mutation(async ({ input, ctx }) => {
+      // createCustomerNotification auto-pushes; withPush maps to its opt-out.
       await db.createCustomerNotification(buildNotif(input, {
         customerId: input.customerId, type: "info", relatedType: "package", actionUrl: "/portal",
-      }));
-      if (input.withPush) {
-        try { await sendPushToCustomer(input.customerId, { title: input.title, body: input.message, url: "/portal" }); } catch { /* best-effort */ }
-      }
+      }), { push: input.withPush });
       await db.logCustomerActivity({
         customerId: input.customerId, action: "admin_notification", category: "other",
         detail: input.title, metadata: { by: ctx.user.id },
@@ -146,10 +143,7 @@ export const portalCenterRouter = router({
         try {
           await db.createCustomerNotification(buildNotif(input, {
             customerId: c.id, type: "info", relatedType: "package", actionUrl: "/portal",
-          }));
-          if (input.withPush) {
-            try { await sendPushToCustomer(c.id, { title: input.title, body: input.message, url: "/portal" }); } catch { /* ignore */ }
-          }
+          }), { push: input.withPush });
           sent++;
         } catch { /* skip one, keep going */ }
       }

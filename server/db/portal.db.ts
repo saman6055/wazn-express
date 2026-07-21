@@ -793,7 +793,10 @@ export async function getCustomerNotifications(customerId: number, options?: { l
     .limit(options?.limit || 50);
 }
 
-export async function createCustomerNotification(data: InsertCustomerNotification): Promise<CustomerNotification | null> {
+export async function createCustomerNotification(
+  data: InsertCustomerNotification,
+  opts?: { push?: boolean },
+): Promise<CustomerNotification | null> {
   const db = await getDb();
   if (!db) return null;
 
@@ -818,6 +821,22 @@ export async function createCustomerNotification(data: InsertCustomerNotificatio
       });
     } catch {
       // Never block notification creation on the live-push side channel.
+    }
+
+    // Also fire-and-forget a web push (default on) so the customer's phone
+    // rings/vibrates for every notification, not just the ones whose caller
+    // remembered to push. Callers can opt out with { push: false }.
+    if (opts?.push !== false) {
+      try {
+        const { sendPushToCustomer } = await import("../services/push.service");
+        void sendPushToCustomer(data.customerId, {
+          title: notification.title || "Wazn Express",
+          body: notification.message || "",
+          url: notification.actionUrl || "/portal",
+        }).catch(() => { /* best-effort */ });
+      } catch {
+        // Push must never block notification storage either.
+      }
     }
   }
 

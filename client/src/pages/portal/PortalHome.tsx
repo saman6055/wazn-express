@@ -419,10 +419,18 @@ const { t, language } = useLanguage();
               )}
             </div>
             
-            {/* Notification Bell */}
+            {/* Notification Bell — rings (shake animation) while unread */}
             <Link href="/portal/notifications">
-              <button className="relative p-3 bg-white/10 backdrop-blur-sm rounded-2xl hover:bg-white/20 transition-all duration-300 group">
-                <Bell className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+              <button className={cn(
+                "relative p-3 backdrop-blur-sm rounded-2xl transition-all duration-300 group",
+                notificationCount && notificationCount > 0
+                  ? "bg-red-500/25 hover:bg-red-500/35 ring-2 ring-red-400/60"
+                  : "bg-white/10 hover:bg-white/20"
+              )}>
+                <Bell className={cn(
+                  "w-5 h-5 text-white group-hover:scale-110 transition-transform",
+                  notificationCount && notificationCount > 0 && "animate-bell-ring"
+                )} />
                 {notificationCount && notificationCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 rounded-full text-xs font-bold flex items-center justify-center text-white px-1 animate-pulse">
                     {notificationCount > 99 ? "99+" : notificationCount}

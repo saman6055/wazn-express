@@ -55,28 +55,40 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   // Real-time notifications via SSE. The backend stream is at
   // GET /api/portal/events (see server/_core/index.ts) and pushes events
   // whenever createCustomerNotification fires for this customer.
+  const utils = trpc.useUtils();
+  // Refresh the unread counters live so the bell starts ringing/flashing the
+  // moment something arrives, without waiting for a page refresh.
+  const refreshBadges = () => {
+    utils.customerPortal.getNotificationCount.invalidate();
+    utils.customerPortal.getUnreadNotificationCount.invalidate();
+    utils.customerPortal.getUnreadMessageCount.invalidate();
+  };
   usePortalSSE({
     enabled: true,
     onPackageStatus: (d) => {
       toast.info(
         t('portal.packageUpdatedNotif', { tracking: d.trackingNumber || d.packageId, status: d.status })
       );
+      refreshBadges();
     },
     onNewInvoice: (d) => {
       toast.info(
         t('portal.newInvoiceNotif', { invoiceNumber: d.invoiceNumber })
       );
+      refreshBadges();
     },
     onPaymentConfirmation: (d) => {
       toast.success(
         t('portal.paymentConfirmedNotif', { amount: d.amount.toFixed(2) })
       );
+      refreshBadges();
     },
     onNotification: (d) => {
       // Generic catch-all for any customerNotifications row inserted
       // server-side — package status, batch updates, refunds, etc. —
       // so the customer doesn't need to refresh to see fresh activity.
       toast.info(d.title || d.body, d.title && d.body ? { description: d.body } : undefined);
+      refreshBadges();
     },
   });
 

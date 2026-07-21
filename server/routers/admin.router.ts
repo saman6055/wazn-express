@@ -658,7 +658,23 @@ export const adminMessagesRouter = router({
           message: input.message,
           isRead: false,
         });
-        
+
+        // Notify the customer (in-app + SSE + auto web-push with sound) so a
+        // reply never sits unseen until they happen to open the chat.
+        try {
+          const preview = input.message.slice(0, 160);
+          await db.createCustomerNotification({
+            customerId: input.customerId,
+            type: "info",
+            relatedType: "package",
+            actionUrl: "/portal/messages",
+            title: "New reply from support", titleKu: "وەڵامی نوێ لە پشتگیری", titleAr: "رد جديد من الدعم",
+            message: preview, messageKu: preview, messageAr: preview,
+          });
+        } catch {
+          // Best-effort — the chat message itself already saved.
+        }
+
         return message;
       }),
     
