@@ -19,6 +19,7 @@ import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useState, useEffect } from "react";
 import { PriceListSection } from "@/components/portal/PriceListSection";
 import { DeliveryRatingCard } from "@/components/portal/DeliveryRatingCard";
+import { ReferralCard } from "@/components/portal/ReferralCard";
 
 // Animated Counter Component
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
@@ -898,6 +899,9 @@ const { t, language } = useLanguage();
           </div>
         )}
       </div>
+
+      {/* Invite a friend — customer's code doubles as a referral code */}
+      <ReferralCard isDark={isDark} language={language} />
 
       {/* Announcements Section */}
       <AnnouncementsSection isDark={isDark} language={language} t={t} />
