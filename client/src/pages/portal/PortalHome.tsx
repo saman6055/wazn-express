@@ -419,21 +419,23 @@ const { t, language } = useLanguage();
               )}
             </div>
             
-            {/* Notification Bell — rings (shake animation) while unread */}
+            {/* Notification Bell — rings (shake animation) while unread.
+                Note: guard with a boolean comparison, not `count && ...` —
+                React renders a literal "0" for the latter when count is 0. */}
             <Link href="/portal/notifications">
               <button className={cn(
                 "relative p-3 backdrop-blur-sm rounded-2xl transition-all duration-300 group",
-                notificationCount && notificationCount > 0
+                (notificationCount ?? 0) > 0
                   ? "bg-red-500/25 hover:bg-red-500/35 ring-2 ring-red-400/60"
                   : "bg-white/10 hover:bg-white/20"
               )}>
                 <Bell className={cn(
                   "w-5 h-5 text-white group-hover:scale-110 transition-transform",
-                  notificationCount && notificationCount > 0 && "animate-bell-ring"
+                  (notificationCount ?? 0) > 0 && "animate-bell-ring"
                 )} />
-                {notificationCount && notificationCount > 0 && (
+                {(notificationCount ?? 0) > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 rounded-full text-xs font-bold flex items-center justify-center text-white px-1 animate-pulse">
-                    {notificationCount > 99 ? "99+" : notificationCount}
+                    {notificationCount! > 99 ? "99+" : notificationCount}
                   </span>
                 )}
               </button>
