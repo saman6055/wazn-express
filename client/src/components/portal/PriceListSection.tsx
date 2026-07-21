@@ -319,6 +319,14 @@ interface CalcSettings {
 }
 const DEFAULT_CALC: CalcSettings = { volumetricDivisor: 6000, airMinKg: 1, seaMinCbm: 0.25, seaSurchargePct: 25 };
 
+// Localized fallback names per shipping type, used when the admin hasn't set
+// a portal label — so chips never show raw enum values like "air_irregular".
+const SHIPPING_TYPE_NAMES: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
+  air_regular: { ku: "ئاسمانی ئاسایی", en: "Air (regular)", ar: "جوي عادي", zh: "空运（常规）" },
+  air_irregular: { ku: "ئاسمانی نائاسایی", en: "Air (irregular)", ar: "جوي غير عادي", zh: "空运（非常规）" },
+  sea: { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" },
+};
+
 function PriceCalculator({
   shipping, lang, isDark, showIqd, iqdRate, calc = DEFAULT_CALC,
 }: {
@@ -363,7 +371,7 @@ function PriceCalculator({
 
   const typeLabel = (r: any) =>
     pickLocalized({ ku: r.portalLabelKu, en: r.portalLabelEn, ar: r.portalLabelAr, zh: r.portalLabelZh }, lang)
-      ?? r.shippingType;
+      ?? (SHIPPING_TYPE_NAMES[r.shippingType] ? pickLang(lang, SHIPPING_TYPE_NAMES[r.shippingType]) : r.shippingType);
 
   const dimInput = (value: string, set: (v: string) => void, label: string) => (
     <div className="relative">
@@ -516,6 +524,154 @@ function PriceCalculator({
             {pickLang(lang, { ku: "کێش یان ڕەهەندەکان بنووسە", en: "Enter a weight or dimensions", ar: "أدخل الوزن أو الأبعاد", zh: "输入重量或尺寸" })}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Shipping methods guide — "more info about the shipping methods". Explains
+// what goes on each route: regular air (dry goods), irregular air (special
+// goods: cosmetics, liquids, magnets, anything with a battery), and sea
+// (suits both). Includes the battery/ink rules customers commonly miss.
+// ---------------------------------------------------------------------------
+function ShippingMethodsGuide({ lang, isDark }: { lang: string; isDark: boolean }) {
+  const methods: {
+    key: string;
+    icon: React.ComponentType<{ className?: string }>;
+    chipBg: string;
+    title: { ku: string; en: string; ar: string; zh: string };
+    desc: { ku: string; en: string; ar: string; zh: string };
+    examples: { emoji: string; label: { ku: string; en: string; ar: string; zh: string } }[];
+    notes?: { ku: string; en: string; ar: string; zh: string }[];
+  }[] = [
+    {
+      key: "air_regular",
+      icon: Plane,
+      chipBg: "from-sky-500 to-blue-600",
+      title: SHIPPING_TYPE_NAMES.air_regular,
+      desc: {
+        ku: "بۆ کەل و پەلی ووشک — بێ پاتری و بێ شلەمەنی.",
+        en: "For dry goods — no batteries, no liquids.",
+        ar: "للبضائع الجافة — بدون بطاريات وبدون سوائل.",
+        zh: "适用于干货——不含电池、不含液体。",
+      },
+      examples: [
+        { emoji: "👕", label: { ku: "جل و بەرگ", en: "Clothes", ar: "ملابس", zh: "服装" } },
+        { emoji: "👟", label: { ku: "پێڵاو", en: "Shoes", ar: "أحذية", zh: "鞋子" } },
+        { emoji: "👜", label: { ku: "جانتا", en: "Bags", ar: "حقائب", zh: "箱包" } },
+        { emoji: "🧵", label: { ku: "قوماش", en: "Fabrics", ar: "أقمشة", zh: "面料" } },
+        { emoji: "🔌", label: { ku: "ئامێری کارەبایی بێ پاتری", en: "Electronics without battery", ar: "أجهزة بدون بطارية", zh: "无电池电器" } },
+      ],
+    },
+    {
+      key: "air_irregular",
+      icon: Zap,
+      chipBg: "from-amber-500 to-orange-600",
+      title: SHIPPING_TYPE_NAMES.air_irregular,
+      desc: {
+        ku: "بۆ کەل و پەلی تایبەت کە پێویستیان بە مامەڵەی جیاوازە.",
+        en: "For special goods that need different handling.",
+        ar: "للبضائع الخاصة التي تحتاج معاملة مختلفة.",
+        zh: "适用于需要特殊处理的货物。",
+      },
+      examples: [
+        { emoji: "💄", label: { ku: "کۆزمۆتیک", en: "Cosmetics", ar: "مستحضرات تجميل", zh: "化妆品" } },
+        { emoji: "🧴", label: { ku: "شلەمەنی", en: "Liquids", ar: "سوائل", zh: "液体" } },
+        { emoji: "🧲", label: { ku: "شتی ماگنێتدار", en: "Items with magnets", ar: "أشياء ممغنطة", zh: "含磁物品" } },
+        { emoji: "🔋", label: { ku: "هەر شتێک پاتری تێدابێت", en: "Anything with a battery", ar: "أي شيء يحتوي بطارية", zh: "任何含电池物品" } },
+      ],
+      notes: [
+        {
+          ku: "قەبارە گرنگ نییە — کاتژمێری پاتریدار بە پاتری حیساب دەکرێت.",
+          en: "Size doesn't matter — a watch with a battery counts as a battery item.",
+          ar: "الحجم غير مهم — الساعة ذات البطارية تُحتسب كبطارية.",
+          zh: "大小无关——含电池的手表也按电池物品计。",
+        },
+        {
+          ku: "قەڵەمی نووسین بەهۆی مەرەکەبەکەیەوە بە شلەمەنی حیساب دەکرێت.",
+          en: "Pens count as liquid because of the ink inside.",
+          ar: "الأقلام تُحتسب سوائل بسبب الحبر بداخلها.",
+          zh: "钢笔因内含墨水按液体计。",
+        },
+      ],
+    },
+    {
+      key: "sea",
+      icon: Ship,
+      chipBg: "from-teal-500 to-emerald-600",
+      title: SHIPPING_TYPE_NAMES.sea,
+      desc: {
+        ku: "بۆ هەردوو جۆر (ووشک و تایبەت) ئاساییە — باشترین هەڵبژاردە بۆ بارە گەورە و قەبارە زۆرەکان.",
+        en: "Fine for both kinds (dry and special) — best for large, bulky shipments.",
+        ar: "مناسب للنوعين (الجاف والخاص) — الأفضل للشحنات الكبيرة والضخمة.",
+        zh: "两类货物（干货和特殊货物）均可——最适合大件、大批量货物。",
+      },
+      examples: [
+        { emoji: "📦", label: { ku: "بارە گەورەکان", en: "Bulk cargo", ar: "شحنات كبيرة", zh: "大宗货物" } },
+        { emoji: "🛋️", label: { ku: "کەلوپەلی ماڵ", en: "Furniture & home goods", ar: "أثاث ومستلزمات منزل", zh: "家具家居" } },
+        { emoji: "🏗️", label: { ku: "ئامێری قورس", en: "Heavy equipment", ar: "معدات ثقيلة", zh: "重型设备" } },
+      ],
+    },
+  ];
+
+  return (
+    <div className={cn(
+      "mt-4 rounded-2xl border p-4 sm:p-5",
+      isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 shadow-sm",
+    )}>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md">
+          <Info className="w-4 h-4" />
+        </div>
+        <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-900")}>
+          {pickLang(lang, { ku: "زانیاری زیاتر لەسەر ڕێگاکانی گواستنەوە", en: "More about the shipping methods", ar: "معلومات أكثر عن طرق الشحن", zh: "关于运输方式的更多信息" })}
+        </h3>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {methods.map((m) => (
+          <div key={m.key} className={cn(
+            "rounded-xl border p-3.5",
+            isDark ? "bg-slate-900/50 border-slate-700" : "bg-slate-50/70 border-slate-100",
+          )}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className={cn("p-1.5 rounded-lg bg-gradient-to-br text-white shadow-sm", m.chipBg)}>
+                <m.icon className="w-4 h-4" />
+              </div>
+              <span className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800")}>
+                {pickLang(lang, m.title)}
+              </span>
+            </div>
+            <p className={cn("text-xs leading-relaxed mb-2.5", isDark ? "text-slate-400" : "text-slate-600")}>
+              {pickLang(lang, m.desc)}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {m.examples.map((ex, i) => (
+                <span key={i} className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium",
+                  isDark ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-white text-slate-600 border border-slate-200",
+                )}>
+                  <span>{ex.emoji}</span>
+                  {pickLang(lang, ex.label)}
+                </span>
+              ))}
+            </div>
+            {m.notes && (
+              <div className="mt-2.5 space-y-1.5">
+                {m.notes.map((n, i) => (
+                  <p key={i} className={cn(
+                    "text-[11px] leading-relaxed flex items-start gap-1.5 rounded-lg px-2 py-1.5",
+                    isDark ? "bg-amber-950/40 text-amber-300" : "bg-amber-50 text-amber-700",
+                  )}>
+                    <span className="mt-px">⚠️</span>
+                    {pickLang(lang, n)}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -735,6 +891,11 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
           iqdRate={iqdRate}
           calc={(data as any).calc ?? DEFAULT_CALC}
         />
+      )}
+
+      {/* What ships on which route — incl. the battery & ink rules */}
+      {data.settings.showShippingRates && hasShipping && (
+        <ShippingMethodsGuide lang={language} isDark={isDark} />
       )}
 
       {/* Disclaimer */}
