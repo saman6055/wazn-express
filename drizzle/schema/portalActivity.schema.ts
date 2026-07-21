@@ -54,3 +54,25 @@ export const customerActivityLog = mysqlTable(
 
 export type CustomerActivityLog = typeof customerActivityLog.$inferSelect;
 export type InsertCustomerActivityLog = typeof customerActivityLog.$inferInsert;
+
+// ---------------------------------------------------------------------------
+// customerAdminNotes — internal, staff-only notes about a customer, shown in
+// the Portal Center. Append-only; never visible to the customer.
+// ---------------------------------------------------------------------------
+export const customerAdminNotes = mysqlTable(
+  "customerAdminNotes",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    customerId: int("customerId").notNull(),
+    note: varchar("note", { length: 2000 }).notNull(),
+    createdById: int("createdById").notNull(),
+    createdByName: varchar("createdByName", { length: 255 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    customerIdx: index("idx_can_customer").on(table.customerId),
+  }),
+);
+
+export type CustomerAdminNote = typeof customerAdminNotes.$inferSelect;
+export type InsertCustomerAdminNote = typeof customerAdminNotes.$inferInsert;

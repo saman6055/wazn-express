@@ -1952,6 +1952,20 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       INDEX idx_cal_action (action),
       INDEX idx_cal_created (createdAt)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+  // Portal Center: internal staff-only notes about a customer.
+  {
+    name: "customerAdminNotes",
+    dependencies: ["customers"],
+    sql: `CREATE TABLE IF NOT EXISTS customerAdminNotes (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerId INT NOT NULL,
+      note VARCHAR(2000) NOT NULL,
+      createdById INT NOT NULL,
+      createdByName VARCHAR(255),
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_can_customer (customerId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   }
 ];
 

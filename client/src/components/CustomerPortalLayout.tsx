@@ -205,6 +205,8 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       </div>
       {/* Main Content */}
       <main className="max-w-lg mx-auto">
+        {/* Admin-set announcement banner — shown on every portal page */}
+        <AnnouncementBanner />
         {/* Prominent pre-declaration CTA — home only, above every skin */}
         {location === "/portal" && <DeclarePackageBanner />}
         {children}
@@ -308,6 +310,43 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
 
       {/* Web Push enable prompt — only renders when supported, server-enabled, and not dismissed */}
       <PushNotificationPrompt enabled={true} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AnnouncementBanner — admin-set portal-wide banner (Portal Center → set
+// announcement). Localized per the active UI language; hidden when disabled.
+// ---------------------------------------------------------------------------
+function AnnouncementBanner() {
+  const { language } = useLanguage();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const { data } = trpc.customerPortal.getAnnouncement.useQuery(undefined, {
+    staleTime: 120_000,
+    retry: false,
+  });
+  if (!data) return null;
+  const text =
+    (language === "ku" && data.ku) ||
+    (language === "ar" && data.ar) ||
+    (language === "zh" && data.zh) ||
+    data.en || data.ku || data.ar || data.zh;
+  if (!text) return null;
+  const styles: Record<string, string> = {
+    info: isDark
+      ? "bg-sky-950/60 border-sky-800 text-sky-200"
+      : "bg-sky-50 border-sky-200 text-sky-800",
+    warning: isDark
+      ? "bg-amber-950/60 border-amber-800 text-amber-200"
+      : "bg-amber-50 border-amber-200 text-amber-800",
+    success: isDark
+      ? "bg-emerald-950/60 border-emerald-800 text-emerald-200"
+      : "bg-emerald-50 border-emerald-200 text-emerald-800",
+  };
+  return (
+    <div className={cn("mx-4 mt-3 rounded-2xl border px-4 py-3 text-sm font-medium leading-relaxed", styles[data.type] ?? styles.info)}>
+      {text}
     </div>
   );
 }

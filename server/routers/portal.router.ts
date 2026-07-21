@@ -666,6 +666,18 @@ export const customerPortalRouter = router({
     // Returns { settings, shipping[], services[], rates: { rmb, iqd } } —
     // the UI picks the right language client-side from the `t()` hook so we
     // ship all four translations in one payload.
+    // Portal announcement banner — set by admins in the Portal Center.
+    getAnnouncement: publicProcedure.query(async () => {
+      const raw = await db.getSetting("portal_announcement");
+      if (!raw) return null;
+      try {
+        const a = JSON.parse(raw);
+        return a?.enabled ? a : null;
+      } catch {
+        return null;
+      }
+    }),
+
     getPriceList: publicProcedure.query(async () => {
       const settings = await db.getPortalPriceListSettings();
       if (!settings || !settings.isEnabled) {

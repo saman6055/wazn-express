@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -19,10 +19,15 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   Users, Activity, Package, FileText, LogIn, Search, MessageCircle,
   MousePointerClick, ChevronLeft, ChevronRight, Clock, TrendingUp,
-  UserCheck, PackageCheck, Ban, Sparkles,
+  UserCheck, PackageCheck, Ban, Sparkles, Send, Bell, Megaphone,
+  StickyNote, DollarSign, Plane, Zap, Ship, Loader2,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -53,6 +58,23 @@ const CATEGORY_META: Record<string, { color: string; icon: React.ComponentType<{
   profile:     { color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",      icon: UserCheck,         label: { ku: "پرۆفایل", en: "Profile", ar: "الملف", zh: "资料" } },
   other:       { color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",             icon: Activity,          label: { ku: "چالاکی", en: "Activity", ar: "نشاط", zh: "活动" } },
 };
+
+// Convert a local Iraqi mobile (07xx…) to wa.me international format.
+function waLink(mobile: string, text?: string): string {
+  let digits = (mobile || "").replace(/\D/g, "");
+  if (digits.startsWith("0")) digits = "964" + digits.slice(1);
+  else if (digits.startsWith("7")) digits = "964" + digits;
+  return `https://wa.me/${digits}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+}
+
+/** WhatsApp brand glyph (lucide has no brand icons). */
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
+    </svg>
+  );
+}
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
@@ -94,14 +116,20 @@ export default function PortalCenter() {
         <OverviewCards p={p} />
 
         <Tabs defaultValue="customers" className="space-y-4">
-          <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-2xl">
+          <TabsList className="grid grid-cols-4 sm:grid-cols-7 w-full max-w-4xl h-auto">
             <TabsTrigger value="customers" className="gap-1.5"><Users className="h-4 w-4" />{p({ ku: "موشتەرەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TabsTrigger>
+            <TabsTrigger value="messages" className="gap-1.5"><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}</TabsTrigger>
+            <TabsTrigger value="send" className="gap-1.5"><Send className="h-4 w-4" />{p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}</TabsTrigger>
+            <TabsTrigger value="prices" className="gap-1.5"><DollarSign className="h-4 w-4" />{p({ ku: "نرخەکان", en: "Prices", ar: "الأسعار", zh: "价格" })}</TabsTrigger>
             <TabsTrigger value="activity" className="gap-1.5"><Activity className="h-4 w-4" />{p({ ku: "چالاکی", en: "Activity", ar: "النشاط", zh: "活动" })}</TabsTrigger>
             <TabsTrigger value="declared" className="gap-1.5"><Package className="h-4 w-4" />{p({ ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪" })}</TabsTrigger>
             <TabsTrigger value="claims" className="gap-1.5"><FileText className="h-4 w-4" />{p({ ku: "خاوەنداری", en: "Claims", ar: "المطالبات", zh: "认领" })}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="customers"><CustomersTab p={p} onOpen={setOpenCustomer} /></TabsContent>
+          <TabsContent value="messages"><MessagesTab p={p} /></TabsContent>
+          <TabsContent value="send"><SendTab p={p} /></TabsContent>
+          <TabsContent value="prices"><PricesTab p={p} /></TabsContent>
           <TabsContent value="activity"><ActivityTab p={p} /></TabsContent>
           <TabsContent value="declared"><DeclaredTab p={p} /></TabsContent>
           <TabsContent value="claims"><ClaimsTab p={p} /></TabsContent>
@@ -434,6 +462,387 @@ function ClaimsTab({ p }: { p: (v: L) => string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Messages tab — customer inbox with reply + WhatsApp
+// ---------------------------------------------------------------------------
+function MessagesTab({ p }: { p: (v: L) => string }) {
+  const [selected, setSelected] = useState<{ customerId: number; name: string; code: string; mobile: string } | null>(null);
+  const utils = trpc.useUtils();
+  const { data: convos, isLoading } = trpc.portalCenter.listConversations.useQuery(undefined, { refetchInterval: 20000 });
+  const { data: thread, isLoading: threadLoading } = trpc.portalCenter.getConversation.useQuery(
+    { customerId: selected?.customerId ?? 0 },
+    { enabled: !!selected, refetchInterval: 10000 },
+  );
+  const markRead = trpc.portalCenter.markConversationRead.useMutation({
+    onSuccess: () => utils.portalCenter.listConversations.invalidate(),
+  });
+  const [reply, setReply] = useState("");
+  const sendReply = trpc.portalCenter.replyToCustomer.useMutation({
+    onSuccess: () => {
+      setReply("");
+      utils.portalCenter.getConversation.invalidate();
+      utils.portalCenter.listConversations.invalidate();
+      toast.success(p({ ku: "نێردرا", en: "Sent", ar: "أُرسلت", zh: "已发送" }));
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4">
+          {/* Conversation list */}
+          <div className="space-y-1.5 md:border-e md:pe-3 max-h-[600px] overflow-y-auto">
+            {isLoading ? <TableSkeleton /> : !convos || convos.length === 0 ? (
+              <EmptyRow text={p({ ku: "هیچ گفتوگۆیەک نییە", en: "No conversations", ar: "لا توجد محادثات", zh: "无对话" })} />
+            ) : convos.map((c) => (
+              <button
+                key={c.customerId}
+                onClick={() => {
+                  setSelected({ customerId: c.customerId, name: c.customerName, code: c.customerCode, mobile: c.mobileNumber });
+                  if (c.unreadCount > 0) markRead.mutate({ customerId: c.customerId });
+                }}
+                className={cn(
+                  "w-full text-start rounded-xl p-2.5 transition-colors",
+                  selected?.customerId === c.customerId ? "bg-indigo-50 dark:bg-indigo-950/40" : "hover:bg-muted/60",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold truncate">{c.customerName}</span>
+                  {c.unreadCount > 0 && (
+                    <span className="min-w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">{c.unreadCount}</span>
+                  )}
+                </div>
+                <div className="text-[11px] text-muted-foreground truncate mt-0.5">{c.lastMessage}</div>
+                <div className="text-[10px] text-muted-foreground/70 mt-0.5">{fmtDateTime(c.lastMessageAt)}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Thread */}
+          <div className="flex flex-col min-h-[400px]">
+            {!selected ? (
+              <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+                {p({ ku: "گفتوگۆیەک هەڵبژێرە", en: "Select a conversation", ar: "اختر محادثة", zh: "选择一个对话" })}
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-2 pb-2 border-b mb-2">
+                  <div>
+                    <div className="text-sm font-bold">{selected.name}</div>
+                    <div className="text-[11px] text-muted-foreground font-mono">{selected.code} · {selected.mobile}</div>
+                  </div>
+                  <a
+                    href={waLink(selected.mobile)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition"
+                  >
+                    <WhatsAppIcon className="w-3.5 h-3.5" />
+                    {p({ ku: "واتساپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" })}
+                  </a>
+                </div>
+                <div className="flex-1 overflow-y-auto max-h-[420px] space-y-2 py-1">
+                  {threadLoading ? <TableSkeleton /> : (thread ?? []).map((m: any) => (
+                    <div key={m.id} className={cn("flex", m.senderType === "admin" ? "justify-end" : "justify-start")}>
+                      <div className={cn(
+                        "max-w-[80%] rounded-2xl px-3 py-2 text-sm",
+                        m.senderType === "admin"
+                          ? "bg-indigo-600 text-white rounded-ee-sm"
+                          : "bg-muted rounded-es-sm",
+                      )}>
+                        <p className="break-words whitespace-pre-wrap">{m.message}</p>
+                        <p className={cn("text-[9px] mt-1", m.senderType === "admin" ? "text-white/70" : "text-muted-foreground")}>{fmtDateTime(m.createdAt)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-end gap-2 pt-2 border-t mt-2">
+                  <Textarea
+                    value={reply}
+                    onChange={(e) => setReply(e.target.value)}
+                    rows={2}
+                    placeholder={p({ ku: "وەڵامەکەت بنووسە...", en: "Write your reply...", ar: "اكتب ردك...", zh: "输入回复..." })}
+                    className="flex-1 resize-none"
+                  />
+                  <Button
+                    onClick={() => selected && reply.trim() && sendReply.mutate({ customerId: selected.customerId, message: reply.trim() })}
+                    disabled={!reply.trim() || sendReply.isPending}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  >
+                    {sendReply.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Send tab — personal notification, broadcast, announcement banner
+// ---------------------------------------------------------------------------
+function SendTab({ p }: { p: (v: L) => string }) {
+  return (
+    <div className="space-y-4">
+      <PersonalNotificationCard p={p} />
+      <BroadcastCard p={p} />
+      <AnnouncementCard p={p} />
+    </div>
+  );
+}
+
+function PersonalNotificationCard({ p }: { p: (v: L) => string }) {
+  const [search, setSearch] = useState("");
+  const [customer, setCustomer] = useState<{ id: number; name: string; code: string; mobile: string } | null>(null);
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const [withPush, setWithPush] = useState(true);
+  const { data: results } = trpc.portalCenter.listCustomers.useQuery(
+    { search, page: 1, pageSize: 6 },
+    { enabled: search.trim().length >= 2 && !customer },
+  );
+  const send = trpc.portalCenter.sendNotificationToCustomer.useMutation({
+    onSuccess: () => {
+      toast.success(p({ ku: "نۆتیفیکەیشن نێردرا", en: "Notification sent", ar: "أُرسل الإشعار", zh: "通知已发送" }));
+      setTitle(""); setMessage("");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4 space-y-3">
+        <h3 className="font-bold flex items-center gap-2"><Bell className="h-4 w-4 text-indigo-500" />
+          {p({ ku: "نۆتیفیکەیشنی شەخسی — بۆ یەک کۆد", en: "Personal notification — one customer", ar: "إشعار شخصي — لعميل واحد", zh: "个人通知 — 单个客户" })}
+        </h3>
+
+        {!customer ? (
+          <div className="relative max-w-sm">
+            <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9"
+              placeholder={p({ ku: "گەڕان بە کۆد/ناو/مۆبایل...", en: "Search code / name / mobile...", ar: "بحث بالرمز/الاسم/الهاتف...", zh: "按编号/姓名/手机搜索..." })} />
+            {results && results.data.length > 0 && search.trim().length >= 2 && (
+              <div className="absolute z-20 mt-1 w-full rounded-xl border bg-popover shadow-lg overflow-hidden">
+                {results.data.map((c) => (
+                  <button key={c.id} onClick={() => setCustomer({ id: c.id, name: c.fullName, code: c.customerCode, mobile: c.mobileNumber })}
+                    className="w-full text-start px-3 py-2 hover:bg-muted/60 transition-colors">
+                    <span className="text-sm font-semibold">{c.fullName}</span>
+                    <span className="text-xs text-muted-foreground font-mono ms-2">{c.customerCode}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="secondary" className="text-sm py-1 px-3">{customer.name} · {customer.code}</Badge>
+            <Button variant="ghost" size="sm" onClick={() => { setCustomer(null); setSearch(""); }}>✕</Button>
+            <a href={waLink(customer.mobile)} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition">
+              <WhatsAppIcon className="w-3.5 h-3.5" /> {p({ ku: "واتساپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" })}
+            </a>
+          </div>
+        )}
+
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200}
+          placeholder={p({ ku: "ناونیشان", en: "Title", ar: "العنوان", zh: "标题" })} />
+        <Textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} maxLength={1000}
+          placeholder={p({ ku: "دەقی پەیام", en: "Message text", ar: "نص الرسالة", zh: "消息内容" })} />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Switch checked={withPush} onCheckedChange={setWithPush} />
+            <Label className="text-xs text-muted-foreground">{p({ ku: "پوشیش بنێرە (مۆبایل)", en: "Also send push", ar: "أرسل push أيضًا", zh: "同时发送推送" })}</Label>
+          </div>
+          <Button
+            onClick={() => customer && send.mutate({ customerId: customer.id, title: title.trim(), message: message.trim(), withPush })}
+            disabled={!customer || !title.trim() || !message.trim() || send.isPending}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            {send.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Send className="h-4 w-4 me-2" />}
+            {p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BroadcastCard({ p }: { p: (v: L) => string }) {
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const [withPush, setWithPush] = useState(false);
+  const send = trpc.portalCenter.broadcastNotification.useMutation({
+    onSuccess: (r) => {
+      toast.success(p({ ku: `نێردرا بۆ ${r.sent} موشتەری`, en: `Sent to ${r.sent} customers`, ar: `أُرسل إلى ${r.sent} عميلًا`, zh: `已发送给 ${r.sent} 位客户` }));
+      setTitle(""); setMessage("");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4 space-y-3">
+        <h3 className="font-bold flex items-center gap-2"><Megaphone className="h-4 w-4 text-amber-500" />
+          {p({ ku: "نۆتیفیکەیشنی گشتی — بۆ هەموو موشتەرە چالاکەکان", en: "Broadcast — all active customers", ar: "بث — لجميع العملاء النشطين", zh: "广播 — 所有活跃客户" })}
+        </h3>
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200}
+          placeholder={p({ ku: "ناونیشان", en: "Title", ar: "العنوان", zh: "标题" })} />
+        <Textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} maxLength={1000}
+          placeholder={p({ ku: "دەقی پەیام", en: "Message text", ar: "نص الرسالة", zh: "消息内容" })} />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Switch checked={withPush} onCheckedChange={setWithPush} />
+            <Label className="text-xs text-muted-foreground">{p({ ku: "پوشیش بنێرە", en: "Also send push", ar: "أرسل push أيضًا", zh: "同时发送推送" })}</Label>
+          </div>
+          <Button
+            onClick={() => {
+              if (!title.trim() || !message.trim()) return;
+              if (window.confirm(p({ ku: "دڵنیایت؟ بۆ هەموو موشتەرە چالاکەکان دەنێردرێت.", en: "Sure? This goes to ALL active customers.", ar: "متأكد؟ سيُرسل لجميع العملاء النشطين.", zh: "确定吗？将发送给所有活跃客户。" }))) {
+                send.mutate({ title: title.trim(), message: message.trim(), withPush });
+              }
+            }}
+            disabled={!title.trim() || !message.trim() || send.isPending}
+            className="bg-amber-600 hover:bg-amber-700 text-white"
+          >
+            {send.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Megaphone className="h-4 w-4 me-2" />}
+            {p({ ku: "بڵاوکردنەوە", en: "Broadcast", ar: "بث", zh: "广播" })}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AnnouncementCard({ p }: { p: (v: L) => string }) {
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.portalCenter.getAnnouncement.useQuery();
+  const [form, setForm] = useState({ enabled: false, type: "info" as "info" | "warning" | "success", ku: "", en: "", ar: "", zh: "" });
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (!loaded && !isLoading) {
+      if (data) setForm({ enabled: !!data.enabled, type: data.type ?? "info", ku: data.ku ?? "", en: data.en ?? "", ar: data.ar ?? "", zh: data.zh ?? "" });
+      setLoaded(true);
+    }
+  }, [data, isLoading, loaded]);
+  const save = trpc.portalCenter.setAnnouncement.useMutation({
+    onSuccess: () => {
+      toast.success(p({ ku: "پاشەکەوتکرا", en: "Saved", ar: "حُفظ", zh: "已保存" }));
+      utils.portalCenter.getAnnouncement.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold flex items-center gap-2"><Megaphone className="h-4 w-4 text-sky-500" />
+            {p({ ku: "بانەری ڕاگەیاندن لە پۆرتاڵ", en: "Portal announcement banner", ar: "لافتة إعلان البوابة", zh: "门户公告横幅" })}
+          </h3>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">{form.enabled ? p({ ku: "چالاکە", en: "On", ar: "مفعّل", zh: "开启" }) : p({ ku: "ناچالاکە", en: "Off", ar: "معطّل", zh: "关闭" })}</Label>
+            <Switch checked={form.enabled} onCheckedChange={(v) => setForm({ ...form, enabled: v })} />
+          </div>
+        </div>
+        <Select value={form.type} onValueChange={(v: any) => setForm({ ...form, type: v })}>
+          <SelectTrigger className="max-w-[200px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="info">🔵 {p({ ku: "زانیاری", en: "Info", ar: "معلومة", zh: "信息" })}</SelectItem>
+            <SelectItem value="warning">🟡 {p({ ku: "ئاگاداری", en: "Warning", ar: "تحذير", zh: "警告" })}</SelectItem>
+            <SelectItem value="success">🟢 {p({ ku: "مژدە", en: "Good news", ar: "بشرى", zh: "好消息" })}</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <Textarea rows={2} dir="rtl" value={form.ku} onChange={(e) => setForm({ ...form, ku: e.target.value })} placeholder="کوردی" />
+          <Textarea rows={2} value={form.en} onChange={(e) => setForm({ ...form, en: e.target.value })} placeholder="English" />
+          <Textarea rows={2} dir="rtl" value={form.ar} onChange={(e) => setForm({ ...form, ar: e.target.value })} placeholder="عربي" />
+          <Textarea rows={2} value={form.zh} onChange={(e) => setForm({ ...form, zh: e.target.value })} placeholder="中文" />
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={() => save.mutate(form)} disabled={save.isPending} className="bg-sky-600 hover:bg-sky-700 text-white">
+            {save.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : null}
+            {p({ ku: "پاشەکەوت", en: "Save", ar: "حفظ", zh: "保存" })}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Prices tab — the 3 portal shipping prices (same backend as Quick update)
+// ---------------------------------------------------------------------------
+function PricesTab({ p }: { p: (v: L) => string }) {
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.portalPriceList.getQuickPrices.useQuery();
+  const [form, setForm] = useState({ air_regular: "", air_irregular: "", sea: "" });
+  const [touched, setTouched] = useState(false);
+  useEffect(() => {
+    if (data && !touched) {
+      setForm({ air_regular: data.air_regular ?? "", air_irregular: data.air_irregular ?? "", sea: data.sea ?? "" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+  const save = trpc.portalPriceList.quickUpdatePrices.useMutation({
+    onSuccess: () => {
+      toast.success(p({ ku: "نرخەکان نوێکرانەوە", en: "Prices updated", ar: "حُدّثت الأسعار", zh: "价格已更新" }));
+      utils.portalPriceList.getQuickPrices.invalidate();
+      utils.customerPortal.getPriceList.invalidate();
+      setTouched(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const fields = [
+    { key: "air_regular" as const, icon: Plane, label: p({ ku: "ئاسمانی ئاسایی", en: "Air (regular)", ar: "جوي عادي", zh: "空运（常规）" }), unit: "kg" },
+    { key: "air_irregular" as const, icon: Zap, label: p({ ku: "ئاسمانی نائاسایی", en: "Air (irregular)", ar: "جوي غير عادي", zh: "空运（非常规）" }), unit: "kg" },
+    { key: "sea" as const, icon: Ship, label: p({ ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" }), unit: "m³" },
+  ];
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4 space-y-4">
+        <div>
+          <h3 className="font-bold flex items-center gap-2"><DollarSign className="h-4 w-4 text-emerald-500" />
+            {p({ ku: "نرخەکانی گواستنەوە لە پۆرتاڵ", en: "Portal shipping prices", ar: "أسعار الشحن في البوابة", zh: "门户运费价格" })}
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            {p({ ku: "نرخەکان لێرە بگۆڕە — دەستبەجێ لە پۆرتاڵی موشتەری نوێ دەبنەوە.", en: "Change prices here — they update on the customer portal immediately.", ar: "غيّر الأسعار هنا — تُحدَّث في بوابة العميل فورًا.", zh: "在此更改价格——将立即在客户门户中更新。" })}
+          </p>
+        </div>
+        {isLoading ? <Skeleton className="h-24 w-full rounded-xl" /> : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {fields.map((f) => (
+                <div key={f.key} className="space-y-1.5">
+                  <Label className="text-xs font-semibold flex items-center gap-1.5"><f.icon className="h-3.5 w-3.5" /> {f.label}</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute start-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <Input type="number" step="0.01" min="0" inputMode="decimal" value={form[f.key]}
+                      onChange={(e) => { setForm({ ...form, [f.key]: e.target.value }); setTouched(true); }}
+                      className="ps-7 pe-10 font-mono font-bold text-lg" placeholder="0.00" />
+                    <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">/ {f.unit}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={() => save.mutate(form)} disabled={save.isPending || !touched} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                {save.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : null}
+                {p({ ku: "پاشەکەوت", en: "Save", ar: "حفظ", zh: "保存" })}
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Per-customer timeline dialog
 // ---------------------------------------------------------------------------
 function CustomerTimelineDialog({ p, customer, onClose }: {
@@ -442,6 +851,17 @@ function CustomerTimelineDialog({ p, customer, onClose }: {
   onClose: () => void;
 }) {
   const { data, isLoading } = trpc.portalCenter.getCustomerTimeline.useQuery({ customerId: customer.id });
+  const utils = trpc.useUtils();
+  const { data: notes } = trpc.portalCenter.listNotes.useQuery({ customerId: customer.id });
+  const [note, setNote] = useState("");
+  const addNote = trpc.portalCenter.addNote.useMutation({
+    onSuccess: () => {
+      setNote("");
+      utils.portalCenter.listNotes.invalidate();
+      toast.success(p({ ku: "تێبینی زیادکرا", en: "Note added", ar: "أُضيفت الملاحظة", zh: "已添加备注" }));
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -453,6 +873,34 @@ function CustomerTimelineDialog({ p, customer, onClose }: {
             <span className="text-xs font-mono text-muted-foreground">{customer.code}</span>
           </DialogTitle>
         </DialogHeader>
+
+        {/* Internal staff notes — never visible to the customer */}
+        <div className="rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400">
+            <StickyNote className="h-3.5 w-3.5" />
+            {p({ ku: "تێبینی ناوخۆیی (تەنها ستاف دەیبینێت)", en: "Internal notes (staff only)", ar: "ملاحظات داخلية (للموظفين فقط)", zh: "内部备注（仅员工可见）" })}
+          </div>
+          {notes && notes.length > 0 && (
+            <div className="space-y-1.5 max-h-32 overflow-y-auto">
+              {notes.map((n: any) => (
+                <div key={n.id} className="text-xs bg-white/70 dark:bg-black/20 rounded-lg px-2.5 py-1.5">
+                  <p className="break-words">{n.note}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{n.createdByName || "—"} · {fmtDateTime(n.createdAt)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex items-end gap-1.5">
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={1} maxLength={2000}
+              placeholder={p({ ku: "تێبینی نوێ...", en: "New note...", ar: "ملاحظة جديدة...", zh: "新备注..." })}
+              className="flex-1 resize-none text-xs min-h-[34px]" />
+            <Button size="sm" variant="outline"
+              onClick={() => note.trim() && addNote.mutate({ customerId: customer.id, note: note.trim() })}
+              disabled={!note.trim() || addNote.isPending}>
+              {addNote.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <StickyNote className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+        </div>
 
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}</div>

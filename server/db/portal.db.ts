@@ -728,19 +728,20 @@ export async function getUnreadMessageCount(customerId: number, forSenderType: '
   return result?.count || 0;
 }
 
-export async function getAllConversations(): Promise<{ customerId: number; customerName: string; customerCode: string; unreadCount: number; lastMessage: string; lastMessageAt: Date }[]> {
+export async function getAllConversations(): Promise<{ customerId: number; customerName: string; customerCode: string; mobileNumber: string; unreadCount: number; lastMessage: string; lastMessageAt: Date }[]> {
   const db = await getDb();
   if (!db) return [];
-  
+
   // Get all unique conversations with customer info and unread count (from customers table)
   const conversations = await db.select({
     customerId: customerMessages.customerId,
     customerName: customers.fullName,
     customerCode: customers.customerCode,
+    mobileNumber: customers.mobileNumber,
   })
     .from(customerMessages)
     .innerJoin(customers, eq(customers.id, customerMessages.customerId))
-    .groupBy(customerMessages.customerId, customers.fullName, customers.customerCode);
+    .groupBy(customerMessages.customerId, customers.fullName, customers.customerCode, customers.mobileNumber);
   
   // Get unread count and last message for each conversation
   const result = await Promise.all(conversations.map(async (conv) => {
@@ -762,6 +763,7 @@ export async function getAllConversations(): Promise<{ customerId: number; custo
       customerId: conv.customerId,
       customerName: conv.customerName || '',
       customerCode: conv.customerCode || '',
+      mobileNumber: conv.mobileNumber || '',
       unreadCount: unreadResult?.count || 0,
       lastMessage: lastMsg?.message || '',
       lastMessageAt: lastMsg?.createdAt || new Date(),

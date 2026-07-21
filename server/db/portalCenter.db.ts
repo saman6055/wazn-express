@@ -6,8 +6,12 @@ import {
   packageClaimRequests,
   customerMessages,
   customerActivityLog,
+  customerAdminNotes,
 } from "../../drizzle/schema";
-import type { InsertCustomerActivityLog } from "../../drizzle/schema/portalActivity.schema";
+import type {
+  InsertCustomerActivityLog,
+  InsertCustomerAdminNote,
+} from "../../drizzle/schema/portalActivity.schema";
 
 // ---------------------------------------------------------------------------
 // Customer Portal Center — read models + activity capture.
@@ -27,6 +31,25 @@ export async function logCustomerActivity(
   } catch {
     // Observability must never block the customer's real action.
   }
+}
+
+/** Add an internal staff note about a customer. */
+export async function addCustomerAdminNote(data: InsertCustomerAdminNote): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(customerAdminNotes).values(data);
+}
+
+/** List internal staff notes for a customer, newest first. */
+export async function listCustomerAdminNotes(customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(customerAdminNotes)
+    .where(eq(customerAdminNotes.customerId, customerId))
+    .orderBy(desc(customerAdminNotes.createdAt))
+    .limit(50);
 }
 
 /** Stamp a customer's last portal login. Best-effort. */
