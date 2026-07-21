@@ -598,14 +598,18 @@ function SendTab({ p }: { p: (v: L) => string }) {
 
 function PersonalNotificationCard({ p }: { p: (v: L) => string }) {
   const [search, setSearch] = useState("");
+  const [focused, setFocused] = useState(false);
   const [customer, setCustomer] = useState<{ id: number; name: string; code: string; mobile: string } | null>(null);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [withPush, setWithPush] = useState(true);
-  const { data: results } = trpc.portalCenter.listCustomers.useQuery(
-    { search, page: 1, pageSize: 6 },
-    { enabled: search.trim().length >= 2 && !customer },
+  // Empty search returns the most recently active customers, so the picker
+  // opens with a browsable list on focus instead of looking dead.
+  const { data: results, isLoading: searching } = trpc.portalCenter.listCustomers.useQuery(
+    { search: search.trim() || undefined, page: 1, pageSize: 6 },
+    { enabled: !customer },
   );
+  const dropdownOpen = !customer && focused;
   const send = trpc.portalCenter.sendNotificationToCustomer.useMutation({
     onSuccess: () => {
       toast.success(p({ ku: "نۆتیفیکەیشن نێردرا", en: "Notification sent", ar: "أُرسل الإشعار", zh: "通知已发送" }));
@@ -625,16 +629,33 @@ function PersonalNotificationCard({ p }: { p: (v: L) => string }) {
           <div className="relative max-w-sm">
             <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9"
+              onFocus={() => setFocused(true)}
+              // Delay so a click on a result registers before the list closes.
+              onBlur={() => setTimeout(() => setFocused(false), 200)}
               placeholder={p({ ku: "گەڕان بە کۆد/ناو/مۆبایل...", en: "Search code / name / mobile...", ar: "بحث بالرمز/الاسم/الهاتف...", zh: "按编号/姓名/手机搜索..." })} />
-            {results && results.data.length > 0 && search.trim().length >= 2 && (
+            {dropdownOpen && (
               <div className="absolute z-20 mt-1 w-full rounded-xl border bg-popover shadow-lg overflow-hidden">
-                {results.data.map((c) => (
-                  <button key={c.id} onClick={() => setCustomer({ id: c.id, name: c.fullName, code: c.customerCode, mobile: c.mobileNumber })}
-                    className="w-full text-start px-3 py-2 hover:bg-muted/60 transition-colors">
-                    <span className="text-sm font-semibold">{c.fullName}</span>
-                    <span className="text-xs text-muted-foreground font-mono ms-2">{c.customerCode}</span>
-                  </button>
-                ))}
+                {searching ? (
+                  <div className="px-3 py-2.5 text-xs text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    {p({ ku: "گەڕان...", en: "Searching...", ar: "جارٍ البحث...", zh: "搜索中..." })}
+                  </div>
+                ) : results && results.data.length > 0 ? (
+                  results.data.map((c) => (
+                    <button key={c.id}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { setCustomer({ id: c.id, name: c.fullName, code: c.customerCode, mobile: c.mobileNumber }); setFocused(false); }}
+                      className="w-full text-start px-3 py-2 hover:bg-muted/60 transition-colors">
+                      <span className="text-sm font-semibold">{c.fullName}</span>
+                      <span className="text-xs text-muted-foreground font-mono ms-2">{c.customerCode}</span>
+                      <span className="text-[11px] text-muted-foreground font-mono ms-2">{c.mobileNumber}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-2.5 text-xs text-muted-foreground">
+                    {p({ ku: "هیچ موشتەرێک نەدۆزرایەوە بەم گەڕانە", en: "No customers match this search", ar: "لا يوجد عملاء مطابقون", zh: "没有匹配的客户" })}
+                  </div>
+                )}
               </div>
             )}
           </div>
