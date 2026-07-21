@@ -11,7 +11,7 @@ import {
   Plane, Ship, Zap, Package, Truck, Sparkles,
   DollarSign, Wrench, Info, TrendingUp,
   Flame, Star, Rocket, Award, ShoppingBag, Globe, Clock, Layers,
-  Calculator,
+  Calculator, ChevronDown,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -536,6 +536,8 @@ function PriceCalculator({
 // (suits both). Includes the battery/ink rules customers commonly miss.
 // ---------------------------------------------------------------------------
 function ShippingMethodsGuide({ lang, isDark }: { lang: string; isDark: boolean }) {
+  // Collapsed by default — tapping the header expands the guide.
+  const [open, setOpen] = useState(false);
   const methods: {
     key: string;
     icon: React.ComponentType<{ className?: string }>;
@@ -620,16 +622,36 @@ function ShippingMethodsGuide({ lang, isDark }: { lang: string; isDark: boolean 
       "mt-4 rounded-2xl border p-4 sm:p-5",
       isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 shadow-sm",
     )}>
-      <div className="flex items-center gap-2 mb-4">
-        <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md">
+      {/* Tap-to-expand header */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2 text-start"
+        aria-expanded={open}
+      >
+        <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md shrink-0">
           <Info className="w-4 h-4" />
         </div>
-        <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-900")}>
-          {pickLang(lang, { ku: "زانیاری زیاتر لەسەر ڕێگاکانی گواستنەوە", en: "More about the shipping methods", ar: "معلومات أكثر عن طرق الشحن", zh: "关于运输方式的更多信息" })}
-        </h3>
-      </div>
+        <div className="flex-1 min-w-0">
+          <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-900")}>
+            {pickLang(lang, { ku: "زانیاری زیاتر لەسەر ڕێگاکانی گواستنەوە", en: "More about the shipping methods", ar: "معلومات أكثر عن طرق الشحن", zh: "关于运输方式的更多信息" })}
+          </h3>
+          {!open && (
+            <p className={cn("text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
+              {pickLang(lang, { ku: "کرتە بکە بۆ بینینی وردەکارییەکان", en: "Tap to see the details", ar: "اضغط لعرض التفاصيل", zh: "点击查看详情" })}
+            </p>
+          )}
+        </div>
+        <ChevronDown className={cn(
+          "w-5 h-5 shrink-0 transition-transform duration-300",
+          open && "rotate-180",
+          isDark ? "text-slate-400" : "text-slate-500",
+        )} />
+      </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className={cn(
+        "grid grid-cols-1 lg:grid-cols-3 gap-3 overflow-hidden transition-all duration-300",
+        open ? "mt-4 max-h-[3000px] opacity-100" : "max-h-0 opacity-0",
+      )}>
         {methods.map((m) => (
           <div key={m.key} className={cn(
             "rounded-xl border p-3.5",
