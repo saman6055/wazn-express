@@ -174,6 +174,57 @@ export async function runMigration(): Promise<{ success: boolean; message: strin
         KEY \`stockMovements_productId_idx\` (\`productId\`),
         KEY \`stockMovements_type_idx\` (\`type\`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
+    },
+    // ---- Customer Portal Center (this list runs at server startup — any
+    // table added to _core/migrations.ts must be mirrored here too) ----
+    {
+      name: "customerActivityLog",
+      sql: `CREATE TABLE IF NOT EXISTS \`customerActivityLog\` (
+        \`id\` INT NOT NULL AUTO_INCREMENT,
+        \`customerId\` INT NOT NULL,
+        \`action\` VARCHAR(60) NOT NULL,
+        \`category\` ENUM('auth', 'navigation', 'declaration', 'claim', 'message', 'search', 'profile', 'other') NOT NULL DEFAULT 'other',
+        \`entityType\` VARCHAR(50),
+        \`entityId\` INT,
+        \`path\` VARCHAR(255),
+        \`detail\` VARCHAR(500),
+        \`metadata\` JSON,
+        \`ipAddress\` VARCHAR(64),
+        \`userAgent\` VARCHAR(400),
+        \`createdAt\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (\`id\`),
+        KEY \`idx_cal_customer\` (\`customerId\`),
+        KEY \`idx_cal_action\` (\`action\`),
+        KEY \`idx_cal_created\` (\`createdAt\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+    },
+    {
+      name: "customerAdminNotes",
+      sql: `CREATE TABLE IF NOT EXISTS \`customerAdminNotes\` (
+        \`id\` INT NOT NULL AUTO_INCREMENT,
+        \`customerId\` INT NOT NULL,
+        \`note\` VARCHAR(2000) NOT NULL,
+        \`createdById\` INT NOT NULL,
+        \`createdByName\` VARCHAR(255),
+        \`createdAt\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (\`id\`),
+        KEY \`idx_can_customer\` (\`customerId\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+    },
+    {
+      name: "deliveryRatings",
+      sql: `CREATE TABLE IF NOT EXISTS \`deliveryRatings\` (
+        \`id\` INT NOT NULL AUTO_INCREMENT,
+        \`customerId\` INT NOT NULL,
+        \`packageId\` INT NOT NULL,
+        \`rating\` INT NOT NULL,
+        \`comment\` VARCHAR(1000),
+        \`createdAt\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (\`id\`),
+        UNIQUE KEY \`uq_dr_package\` (\`packageId\`),
+        KEY \`idx_dr_customer\` (\`customerId\`),
+        KEY \`idx_dr_rating\` (\`rating\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
     }
   ];
 

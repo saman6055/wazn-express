@@ -46,12 +46,14 @@ export async function addCustomerAdminNote(data: InsertCustomerAdminNote): Promi
 export async function listCustomerAdminNotes(customerId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db
-    .select()
-    .from(customerAdminNotes)
-    .where(eq(customerAdminNotes.customerId, customerId))
-    .orderBy(desc(customerAdminNotes.createdAt))
-    .limit(50);
+  return safe(
+    db.select()
+      .from(customerAdminNotes)
+      .where(eq(customerAdminNotes.customerId, customerId))
+      .orderBy(desc(customerAdminNotes.createdAt))
+      .limit(50),
+    [],
+  );
 }
 
 // ---- Delivery ratings -------------------------------------------------------
@@ -61,7 +63,7 @@ export async function getRatablePackage(customerId: number) {
   const db = await getDb();
   if (!db) return null;
   const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-  const rows = await db
+  const rows = await safe(db
     .select({
       id: packages.id,
       trackingNumber: packages.trackingNumber,
@@ -80,7 +82,7 @@ export async function getRatablePackage(customerId: number) {
       ),
     )
     .orderBy(desc(packages.deliveredAt))
-    .limit(1);
+    .limit(1), []);
   return rows[0] ?? null;
 }
 
@@ -111,12 +113,16 @@ export async function listDeliveryRatings(opts: { page: number; pageSize: number
   const db = await getDb();
   if (!db) return { data: [], total: 0, average: null as number | null };
 
-  const [{ total, average }] = await db
-    .select({ total: sql<number>`count(*)`, average: sql<number>`avg(${deliveryRatings.rating})` })
-    .from(deliveryRatings);
+  const [{ total, average }] = await safe(
+    db.select({ total: sql<number>`count(*)`, average: sql<number>`avg(${deliveryRatings.rating})` })
+      .from(deliveryRatings),
+    // avg() is typed number but is NULL on an empty table anyway; the caller
+    // null-checks it, so the fallback mirrors that runtime shape.
+    [{ total: 0, average: null as unknown as number }],
+  );
 
-  const data = await db
-    .select({
+  const data = await safe(
+    db.select({
       id: deliveryRatings.id,
       rating: deliveryRatings.rating,
       comment: deliveryRatings.comment,
@@ -126,12 +132,14 @@ export async function listDeliveryRatings(opts: { page: number; pageSize: number
       customerName: customers.fullName,
       trackingNumber: packages.trackingNumber,
     })
-    .from(deliveryRatings)
-    .leftJoin(customers, eq(deliveryRatings.customerId, customers.id))
-    .leftJoin(packages, eq(deliveryRatings.packageId, packages.id))
-    .orderBy(desc(deliveryRatings.createdAt))
-    .limit(opts.pageSize)
-    .offset((opts.page - 1) * opts.pageSize);
+      .from(deliveryRatings)
+      .leftJoin(customers, eq(deliveryRatings.customerId, customers.id))
+      .leftJoin(packages, eq(deliveryRatings.packageId, packages.id))
+      .orderBy(desc(deliveryRatings.createdAt))
+      .limit(opts.pageSize)
+      .offset((opts.page - 1) * opts.pageSize),
+    [],
+  );
 
   return { data, total: num(total), average: average != null ? Number(average) : null };
 }
@@ -153,6 +161,16 @@ export async function updateCustomerLastSignedIn(
 }
 
 const num = (v: unknown) => Number(v ?? 0);
+
+// Swallow a failing sub-query into a fallback so one missing table (e.g. a
+// migration that hasn't run yet) degrades a panel instead of blanking it.
+async function safe<T>(p: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await p;
+  } catch {
+    return fallback;
+  }
+}
 
 /** Top-of-page KPI counts for the Portal Center overview. */
 export async function getPortalCenterOverview() {
@@ -180,14 +198,14 @@ export async function getPortalCenterOverview() {
     [claimsWeek],
     [messagesWeek],
   ] = await Promise.all([
-    db.select({ c }).from(customers).where(eq(customers.isActive, true)),
-    db.select({ c: distinctCust }).from(customerActivityLog).where(sql`${customerActivityLog.createdAt} >= ${dayAgo}`),
-    db.select({ c: distinctCust }).from(customerActivityLog).where(sql`${customerActivityLog.createdAt} >= ${weekAgo}`),
-    db.select({ c }).from(customerDeclaredPackages).where(eq(customerDeclaredPackages.status, "pending")),
-    db.select({ c }).from(packageClaimRequests).where(eq(packageClaimRequests.status, "pending")),
-    db.select({ c }).from(customerDeclaredPackages).where(sql`${customerDeclaredPackages.createdAt} >= ${weekAgo}`),
-    db.select({ c }).from(packageClaimRequests).where(sql`${packageClaimRequests.createdAt} >= ${weekAgo}`),
-    db.select({ c }).from(customerMessages).where(and(eq(customerMessages.senderType, "customer"), sql`${customerMessages.createdAt} >= ${weekAgo}`)),
+    safe(db.select({ c }).from(customers).where(eq(customers.isActive, true)), [{ c: 0 }]),
+    safe(db.select({ c: distinctCust }).from(customerActivityLog).where(sql`${customerActivityLog.createdAt} >= ${dayAgo}`), [{ c: 0 }]),
+    safe(db.select({ c: distinctCust }).from(customerActivityLog).where(sql`${customerActivityLog.createdAt} >= ${weekAgo}`), [{ c: 0 }]),
+    safe(db.select({ c }).from(customerDeclaredPackages).where(eq(customerDeclaredPackages.status, "pending")), [{ c: 0 }]),
+    safe(db.select({ c }).from(packageClaimRequests).where(eq(packageClaimRequests.status, "pending")), [{ c: 0 }]),
+    safe(db.select({ c }).from(customerDeclaredPackages).where(sql`${customerDeclaredPackages.createdAt} >= ${weekAgo}`), [{ c: 0 }]),
+    safe(db.select({ c }).from(packageClaimRequests).where(sql`${packageClaimRequests.createdAt} >= ${weekAgo}`), [{ c: 0 }]),
+    safe(db.select({ c }).from(customerMessages).where(and(eq(customerMessages.senderType, "customer"), sql`${customerMessages.createdAt} >= ${weekAgo}`)), [{ c: 0 }]),
   ]);
 
   return {
@@ -248,23 +266,25 @@ export async function listPortalCustomers(opts: {
   const ids = rows.map((r) => r.id);
   if (ids.length === 0) return { data: [], total: num(total) };
 
+  // Each aggregate is individually `safe` so one missing table (e.g. the
+  // activity log before its migration ran) can't blank the customer list.
   const [declares, claims, msgs, acts] = await Promise.all([
-    db.select({ customerId: customerDeclaredPackages.customerId, c: sql<number>`count(*)` })
+    safe(db.select({ customerId: customerDeclaredPackages.customerId, c: sql<number>`count(*)` })
       .from(customerDeclaredPackages)
       .where(inArray(customerDeclaredPackages.customerId, ids))
-      .groupBy(customerDeclaredPackages.customerId),
-    db.select({ customerId: packageClaimRequests.customerId, c: sql<number>`count(*)` })
+      .groupBy(customerDeclaredPackages.customerId), []),
+    safe(db.select({ customerId: packageClaimRequests.customerId, c: sql<number>`count(*)` })
       .from(packageClaimRequests)
       .where(inArray(packageClaimRequests.customerId, ids))
-      .groupBy(packageClaimRequests.customerId),
-    db.select({ customerId: customerMessages.customerId, c: sql<number>`count(*)` })
+      .groupBy(packageClaimRequests.customerId), []),
+    safe(db.select({ customerId: customerMessages.customerId, c: sql<number>`count(*)` })
       .from(customerMessages)
       .where(and(inArray(customerMessages.customerId, ids), eq(customerMessages.senderType, "customer")))
-      .groupBy(customerMessages.customerId),
-    db.select({ customerId: customerActivityLog.customerId, c: sql<number>`count(*)`, last: sql<string>`max(${customerActivityLog.createdAt})` })
+      .groupBy(customerMessages.customerId), []),
+    safe(db.select({ customerId: customerActivityLog.customerId, c: sql<number>`count(*)`, last: sql<string>`max(${customerActivityLog.createdAt})` })
       .from(customerActivityLog)
       .where(inArray(customerActivityLog.customerId, ids))
-      .groupBy(customerActivityLog.customerId),
+      .groupBy(customerActivityLog.customerId), []),
   ]);
 
   const byId = <T extends { customerId: number }>(arr: T[]) =>
@@ -312,18 +332,18 @@ export async function getCustomerActivityTimeline(
   if (!db) return [];
 
   const [acts, declares, claims, msgs] = await Promise.all([
-    db.select().from(customerActivityLog)
+    safe(db.select().from(customerActivityLog)
       .where(eq(customerActivityLog.customerId, customerId))
-      .orderBy(desc(customerActivityLog.createdAt)).limit(limit),
-    db.select().from(customerDeclaredPackages)
+      .orderBy(desc(customerActivityLog.createdAt)).limit(limit), []),
+    safe(db.select().from(customerDeclaredPackages)
       .where(eq(customerDeclaredPackages.customerId, customerId))
-      .orderBy(desc(customerDeclaredPackages.createdAt)).limit(limit),
-    db.select().from(packageClaimRequests)
+      .orderBy(desc(customerDeclaredPackages.createdAt)).limit(limit), []),
+    safe(db.select().from(packageClaimRequests)
       .where(eq(packageClaimRequests.customerId, customerId))
-      .orderBy(desc(packageClaimRequests.createdAt)).limit(limit),
-    db.select().from(customerMessages)
+      .orderBy(desc(packageClaimRequests.createdAt)).limit(limit), []),
+    safe(db.select().from(customerMessages)
       .where(and(eq(customerMessages.customerId, customerId), eq(customerMessages.senderType, "customer")))
-      .orderBy(desc(customerMessages.createdAt)).limit(limit),
+      .orderBy(desc(customerMessages.createdAt)).limit(limit), []),
   ]);
 
   const feed: TimelineEntry[] = [
@@ -390,13 +410,15 @@ export async function getActivityFeed(opts: {
   if (opts.category) conds.push(eq(customerActivityLog.category, opts.category as any));
   const where = conds.length ? and(...conds) : undefined;
 
-  const [{ total }] = await db
-    .select({ total: sql<number>`count(*)` })
-    .from(customerActivityLog)
-    .where(where);
+  const [{ total }] = await safe(
+    db.select({ total: sql<number>`count(*)` })
+      .from(customerActivityLog)
+      .where(where),
+    [{ total: 0 }],
+  );
 
-  const data = await db
-    .select({
+  const data = await safe(
+    db.select({
       id: customerActivityLog.id,
       customerId: customerActivityLog.customerId,
       action: customerActivityLog.action,
@@ -410,12 +432,14 @@ export async function getActivityFeed(opts: {
       customerCode: customers.customerCode,
       customerName: customers.fullName,
     })
-    .from(customerActivityLog)
-    .leftJoin(customers, eq(customerActivityLog.customerId, customers.id))
-    .where(where)
-    .orderBy(desc(customerActivityLog.createdAt))
-    .limit(opts.pageSize)
-    .offset((opts.page - 1) * opts.pageSize);
+      .from(customerActivityLog)
+      .leftJoin(customers, eq(customerActivityLog.customerId, customers.id))
+      .where(where)
+      .orderBy(desc(customerActivityLog.createdAt))
+      .limit(opts.pageSize)
+      .offset((opts.page - 1) * opts.pageSize),
+    [],
+  );
 
   return { data, total: num(total) };
 }
