@@ -216,6 +216,7 @@ export default function PortalYuanExchange() {
                         min="0"
                         step="0.01"
                         inputMode="decimal"
+                        stepper={false}
                         value={usd}
                         onChange={(e) => syncFromUsd(e.target.value)}
                         placeholder="100"
@@ -237,6 +238,7 @@ export default function PortalYuanExchange() {
                         min="0"
                         step="0.01"
                         inputMode="decimal"
+                        stepper={false}
                         value={cny}
                         onChange={(e) => syncFromCny(e.target.value)}
                         placeholder="640"

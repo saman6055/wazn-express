@@ -377,12 +377,13 @@ function PriceCalculator({
     <div className="relative">
       <Input
         type="number" inputMode="decimal" min="0" step="1"
+        stepper={false}
         value={value}
         onChange={(e) => set(e.target.value)}
         placeholder="0"
-        className={cn("pl-12 font-mono font-bold text-center", isDark && "bg-slate-900 border-slate-600")}
+        className={cn("pe-9 font-mono font-bold text-center", isDark && "bg-slate-900 border-slate-600")}
       />
-      <span className={cn("absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>
+      <span className={cn("absolute end-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>
         {label}
       </span>
     </div>
@@ -434,23 +435,25 @@ function PriceCalculator({
           <div className="relative col-span-2 sm:col-span-1">
             <Input
               type="number" inputMode="decimal" min="0" step="0.01"
+              stepper={false}
               value={cbmDirect}
               onChange={(e) => setCbmDirect(e.target.value)}
               placeholder="0.25"
-              className={cn("pl-10 font-mono font-bold", isDark && "bg-slate-900 border-slate-600")}
+              className={cn("pe-10 font-mono font-bold", isDark && "bg-slate-900 border-slate-600")}
             />
-            <span className={cn("absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>m³</span>
+            <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>m³</span>
           </div>
         ) : (
           <div className="relative col-span-2 sm:col-span-1">
             <Input
               type="number" inputMode="decimal" min="0" step="0.1"
+              stepper={false}
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="1.0"
-              className={cn("pl-10 font-mono font-bold", isDark && "bg-slate-900 border-slate-600")}
+              className={cn("pe-10 font-mono font-bold", isDark && "bg-slate-900 border-slate-600")}
             />
-            <span className={cn("absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>kg</span>
+            <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>kg</span>
           </div>
         )}
         {dimInput(len, setLen, pickLang(lang, { ku: "درێژی", en: "L", ar: "طول", zh: "长" }))}
