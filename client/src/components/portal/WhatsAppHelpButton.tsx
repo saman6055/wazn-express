@@ -51,18 +51,19 @@ export function WhatsAppHelpButton({
     retry: false,
   });
 
+  // Plain text labels only — emoji render as "?" boxes on some staff devices.
   const message = [
     pick({
-      ku: "سڵاو، پێویستم بە یارمەتییە 🙏",
-      en: "Hello, I need some help 🙏",
-      ar: "مرحباً، أحتاج إلى مساعدة 🙏",
-      zh: "您好，我需要帮助 🙏",
+      ku: "سڵاو، پێویستم بە یارمەتییە",
+      en: "Hello, I need some help",
+      ar: "مرحباً، أحتاج إلى مساعدة",
+      zh: "您好，我需要帮助",
     }),
     account?.fullName || account?.customerCode
-      ? `👤 ${account?.fullName ?? ""}${account?.customerCode ? ` (${account.customerCode})` : ""}`.trim()
+      ? `${pick({ ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}: ${account?.fullName ?? ""}${account?.customerCode ? ` (${account.customerCode})` : ""}`.trim()
       : null,
-    `📍 ${pick({ ku: "بەش", en: "Section", ar: "القسم", zh: "版块" })}: ${section}`,
-    topic ? `🔖 ${topic}` : null,
+    `${pick({ ku: "بەش", en: "Section", ar: "القسم", zh: "版块" })}: ${section}`,
+    topic ? `${pick({ ku: "بابەت", en: "Subject", ar: "الموضوع", zh: "主题" })}: ${topic}` : null,
   ]
     .filter(Boolean)
     .join("\n");

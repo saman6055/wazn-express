@@ -766,7 +766,12 @@ export default function PortalFullPackage() {
                           <WhatsAppHelpButton
                             language={language}
                             section={language === "ku" ? "پاکێجی تەواو / عمولە" : language === "ar" ? "الطرد الكامل / العمولة" : language === "zh" ? "全包裹/佣金" : "Full package / commission"}
-                            topic={`${order.orderCode}${order.status ? ` — ${order.status}` : ""}`}
+                            topic={[
+                              `${order.orderCode}${order.status ? ` — ${order.status}` : ""}`,
+                              order.trackingNumber
+                                ? `${language === "ku" ? "تراک" : language === "ar" ? "التتبع" : language === "zh" ? "运单号" : "Tracking"}: ${order.trackingNumber}`
+                                : null,
+                            ].filter(Boolean).join("\n")}
                           />
                         </div>
                       </div>
