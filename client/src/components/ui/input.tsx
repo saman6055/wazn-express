@@ -85,11 +85,11 @@ function Input({
   });
 
   const hasStepper = type === "number" && stepper;
-  // Fields that declare a whole-number step (quantities, counts) only get the
-  // unit pill; everything else gets both the unit (1) and point (0.1) pills.
+  // One stepper per field: clicks move point-by-point (0.1); fields that
+  // declare a whole-number step (quantities, counts) move by that instead.
   const stepAttrNum = props.step != null ? parseFloat(String(props.step)) : NaN;
   const isIntegerField = Number.isFinite(stepAttrNum) && stepAttrNum >= 1;
-  const unitStep = isIntegerField ? stepAttrNum : 1;
+  const clickStep = isIntegerField ? stepAttrNum : 0.1;
 
   const innerRef = React.useRef<HTMLInputElement | null>(null);
   const delayTimer = React.useRef<number | null>(null);
@@ -158,9 +158,8 @@ function Input({
         "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
         hasStepper ? split?.input : className,
-        // Reserve room on the right for the pills; on narrow fields the unit
-        // pill is hidden (container query), so less padding is needed.
-        hasStepper && (isIntegerField ? "pr-[4.25rem]" : "pr-[5rem] @[16rem]:pr-[8.75rem]")
+        // Reserve room on the right for the single stepper pill.
+        hasStepper && "pr-14"
       )}
       onCompositionStart={handleCompositionStart}
       onCompositionEnd={handleCompositionEnd}
@@ -173,57 +172,37 @@ function Input({
 
   const stepperDisabled = props.disabled || props.readOnly;
   const stepperButton =
-    "inline-flex h-6 w-5 select-none touch-manipulation items-center justify-center bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40";
-
-  // One bordered pill per granularity: [−  label  +]. The label in the middle
-  // says what a click does (1 or 0.1) so the two pills never get confused.
-  const pill = (delta: number, label: string, extraClass?: string) => (
-    <div
-      className={cn(
-        "items-center overflow-hidden rounded-md border border-input bg-background shadow-xs",
-        extraClass ?? "flex"
-      )}
-    >
-      <button
-        type="button"
-        tabIndex={-1}
-        aria-label={`decrease by ${label}`}
-        disabled={stepperDisabled}
-        className={stepperButton}
-        {...pressHandlers(-delta)}
-      >
-        <Minus className="h-3 w-3" />
-      </button>
-      <span className="flex h-6 select-none items-center border-x border-input bg-muted/60 px-1 font-mono text-[10px] leading-none text-muted-foreground">
-        {label}
-      </span>
-      <button
-        type="button"
-        tabIndex={-1}
-        aria-label={`increase by ${label}`}
-        disabled={stepperDisabled}
-        className={stepperButton}
-        {...pressHandlers(delta)}
-      >
-        <Plus className="h-3 w-3" />
-      </button>
-    </div>
-  );
+    "inline-flex h-6 w-6 select-none touch-manipulation items-center justify-center bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40";
 
   return (
-    <div className={cn("@container relative w-full", split?.wrapper)}>
+    <div className={cn("relative w-full", split?.wrapper)}>
       {inputEl}
-      {/* dir=ltr so the pill order is stable in RTL pages too */}
-      <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-2" dir="ltr">
-        {isIntegerField ? (
-          pill(unitStep, String(unitStep))
-        ) : (
-          <>
-            {/* Unit pill only fits on wider fields; point pill always shows */}
-            {pill(1, "1", "hidden @[16rem]:flex")}
-            {pill(0.1, "0.1")}
-          </>
-        )}
+      {/* Single [− +] pill; dir=ltr keeps − left / + right in RTL pages too */}
+      <div
+        className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center overflow-hidden rounded-md border border-input bg-background shadow-xs"
+        dir="ltr"
+      >
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="decrease"
+          disabled={stepperDisabled}
+          className={stepperButton}
+          {...pressHandlers(-clickStep)}
+        >
+          <Minus className="h-3 w-3" />
+        </button>
+        <span className="h-4 w-px bg-input" />
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="increase"
+          disabled={stepperDisabled}
+          className={stepperButton}
+          {...pressHandlers(clickStep)}
+        >
+          <Plus className="h-3 w-3" />
+        </button>
       </div>
     </div>
   );
