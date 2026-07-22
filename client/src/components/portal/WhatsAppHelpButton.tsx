@@ -20,6 +20,16 @@ export function WhatsAppGlyph({ className }: { className?: string }) {
   );
 }
 
+/** Can this browser share files (mobile share sheet)? */
+function canShareFiles(): boolean {
+  try {
+    const probe = new File([""], "probe.png", { type: "image/png" });
+    return !!navigator.canShare && navigator.canShare({ files: [probe] });
+  } catch {
+    return false;
+  }
+}
+
 export function WhatsAppHelpButton({
   language,
   section,
@@ -57,12 +67,68 @@ export function WhatsAppHelpButton({
     .filter(Boolean)
     .join("\n");
 
+  const waHref = `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+
+  // On mobile (share sheet supports files): snapshot the surrounding card and
+  // share image + message together — the customer picks WhatsApp and staff see
+  // exactly what the customer sees. Anywhere else: plain wa.me text link.
+  // Rendered as a <button> (not <a>) because the pill often lives inside a
+  // card that is itself a link — nested anchors are invalid HTML.
+  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!canShareFiles()) {
+      window.open(waHref, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    const el = e.currentTarget as HTMLElement;
+    try {
+      // The nearest rounded card is what the customer is looking at.
+      const card =
+        (el.closest("[data-wa-capture]") as HTMLElement | null) ??
+        (el.closest(".rounded-2xl, .rounded-3xl, .rounded-xl") as HTMLElement | null);
+      if (!card) throw new Error("no capture target");
+
+      const { toBlob } = await import("html-to-image");
+      const isDark = document.documentElement.classList.contains("dark");
+      // Race the capture against a hard 4s budget: a snapshot that isn't
+      // near-instant must never block the customer from reaching support —
+      // on timeout we throw and the catch opens the plain text link.
+      const blob = await Promise.race([
+        toBlob(card, {
+          pixelRatio: 2,
+          backgroundColor: isDark ? "#0f172a" : "#ffffff",
+          // Web-font embedding needs cross-origin CSS access it doesn't have;
+          // system fonts are fine for a support snapshot and skipping keeps
+          // capture fast.
+          skipFonts: true,
+          // Skip the help pill itself in the snapshot.
+          filter: (node) =>
+            !(node instanceof HTMLElement && node.getAttribute?.("data-wa-help") === "true"),
+        }),
+        new Promise<never>((_, reject) =>
+          window.setTimeout(() => reject(new Error("capture timeout")), 4000),
+        ),
+      ]);
+      if (!blob) throw new Error("capture failed");
+
+      const file = new File([blob], "wazn-help.png", { type: "image/png" });
+      await navigator.share({ files: [file], text: message });
+    } catch (err) {
+      // User cancelled the share sheet → do nothing. Anything else → fall
+      // back to the plain text link so help is never blocked.
+      if ((err as Error)?.name !== "AbortError") {
+        window.open(waHref, "_blank", "noopener,noreferrer");
+      }
+    }
+  };
+
   return (
-    <a
-      href={`https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
+    <button
+      type="button"
+      data-wa-help="true"
+      onClick={handleClick}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600 transition hover:bg-emerald-100 active:scale-95 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/50",
         className,
@@ -70,6 +136,6 @@ export function WhatsAppHelpButton({
     >
       <WhatsAppGlyph className="h-3.5 w-3.5 shrink-0" />
       <span>{pick({ ku: "پرسیارت هەیە؟", en: "Need help?", ar: "تحتاج مساعدة؟", zh: "需要帮助？" })}</span>
-    </a>
+    </button>
   );
 }
