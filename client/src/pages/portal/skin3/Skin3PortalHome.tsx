@@ -24,6 +24,14 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PriceListSection } from "@/components/portal/PriceListSection";
 
+// Bold ¥ glyph styled like a lucide icon (lucide has no CNY symbol).
+// Accepts (and ignores) strokeWidth so it can stand in for a lucide icon.
+function YuanGlyphIcon({ className }: { className?: string; strokeWidth?: number }) {
+  return (
+    <span className={cn("flex items-center justify-center text-xl font-black leading-none", className)}>¥</span>
+  );
+}
+
 // Animated Counter Component
 function AnimatedCounter({
   value,
@@ -186,6 +194,12 @@ export default function Skin3PortalHome() {
       icon: Headphones,
       href: "/portal/support",
       bg: isDark ? "bg-emerald-600 hover:bg-emerald-500" : "bg-emerald-500 hover:bg-emerald-600",
+    },
+    {
+      label: language === "ku" ? "کڕینی یوان" : language === "ar" ? "شراء اليوان" : language === "zh" ? "买人民币" : "Buy Yuan",
+      icon: YuanGlyphIcon,
+      href: "/portal/yuan-exchange",
+      bg: isDark ? "bg-red-600 hover:bg-red-500" : "bg-red-500 hover:bg-red-600",
     },
   ];
 

@@ -343,6 +343,11 @@ const { t, language } = useLanguage();
     return <Plane className="w-5 h-5" />;
   };
 
+  // Bold ¥ glyph styled like a lucide icon (lucide has no CNY symbol).
+  const YuanIcon = ({ className }: { className?: string }) => (
+    <span className={cn("flex items-center justify-center text-xl font-black leading-none", className)}>¥</span>
+  );
+
   // Quick Actions
   const quickActions = [
     {
@@ -379,6 +384,13 @@ const { t, language } = useLanguage();
       href: "/portal/full-package",
       color: "from-amber-500 to-amber-600",
       shadowColor: "shadow-amber-500/30"
+    },
+    {
+      icon: YuanIcon,
+      label: pickLang(language, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "购买人民币" }),
+      href: "/portal/yuan-exchange",
+      color: "from-red-500 to-rose-600",
+      shadowColor: "shadow-red-500/30"
     }
   ];
 
@@ -452,16 +464,16 @@ const { t, language } = useLanguage();
 
           {/* Quick Actions */}
           <div className="mt-6">
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-6 gap-1.5">
               {quickActions.map((action, index) => (
                 <Link key={index} href={action.href}>
                   <button className="flex flex-col items-center gap-2 group w-full">
                     <div className={cn(
-                      "w-14 h-14 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl",
+                      "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl",
                       action.color,
                       action.shadowColor
                     )}>
-                      <action.icon className="w-6 h-6 text-white" />
+                      <action.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
                     <span className="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">
                       {action.label}

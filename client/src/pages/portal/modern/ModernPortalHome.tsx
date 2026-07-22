@@ -25,6 +25,13 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PriceListSection } from "@/components/portal/PriceListSection";
 
+// Bold ¥ glyph styled like a lucide icon (lucide has no CNY symbol).
+function YuanGlyphIcon({ className }: { className?: string }) {
+  return (
+    <span className={cn("flex items-center justify-center text-xl font-black leading-none", className)}>¥</span>
+  );
+}
+
 // Animated Counter Component
 function AnimatedCounter({
   value,
@@ -215,6 +222,13 @@ export default function ModernPortalHome() {
       href: "/portal/support",
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-50 dark:bg-amber-950/40",
+    },
+    {
+      label: language === "ku" ? "کڕینی یوان" : language === "ar" ? "شراء اليوان" : language === "zh" ? "买人民币" : "Buy Yuan",
+      icon: YuanGlyphIcon,
+      href: "/portal/yuan-exchange",
+      color: "text-red-600 dark:text-red-400",
+      bg: "bg-red-50 dark:bg-red-950/40",
     },
   ];
 
@@ -414,7 +428,7 @@ export default function ModernPortalHome() {
                 ? "الإجراءات السريعة"
                 : "Quick Actions"}
           </h2>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-5 gap-2">
             {quickActions.map((action) => {
               const Icon = action.icon;
               return (
