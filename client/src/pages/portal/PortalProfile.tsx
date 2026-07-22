@@ -50,6 +50,12 @@ const { t, language, setLanguage } = useLanguage();
       path: "/portal/addresses",
       iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500",
     },
+    {
+      icon: CreditCard,
+      label: language === "ku" ? "کڕینی یوانی چینی" : language === "ar" ? "شراء اليوان الصيني" : language === "zh" ? "购买人民币" : "Buy Chinese Yuan",
+      path: "/portal/yuan-exchange",
+      iconBg: "bg-gradient-to-br from-red-400 to-orange-500",
+    },
   ];
 
   const supportItems = [

@@ -225,6 +225,26 @@ export async function runMigration(): Promise<{ success: boolean; message: strin
         KEY \`idx_dr_customer\` (\`customerId\`),
         KEY \`idx_dr_rating\` (\`rating\`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+    },
+    {
+      name: "yuanExchangeOrders",
+      sql: `CREATE TABLE IF NOT EXISTS \`yuanExchangeOrders\` (
+        \`id\` INT NOT NULL AUTO_INCREMENT,
+        \`customerId\` INT NOT NULL,
+        \`usdAmount\` DECIMAL(12,2) NOT NULL,
+        \`cnyAmount\` DECIMAL(12,2) NOT NULL,
+        \`rate\` DECIMAL(10,4) NOT NULL,
+        \`status\` ENUM('pending', 'processing', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
+        \`customerNote\` VARCHAR(1000),
+        \`adminNote\` VARCHAR(1000),
+        \`handledById\` INT,
+        \`createdAt\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (\`id\`),
+        KEY \`idx_yeo_customer\` (\`customerId\`),
+        KEY \`idx_yeo_status\` (\`status\`),
+        KEY \`idx_yeo_created\` (\`createdAt\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
     }
   ];
 

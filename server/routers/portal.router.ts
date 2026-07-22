@@ -265,7 +265,71 @@ export const customerPortalRouter = router({
         logPortal(ctx, customerId, input.action, "navigation", { path: input.path, detail: input.detail });
         return { ok: true };
       }),
-    
+
+    // ---- Yuan exchange (buy CNY with USD at the company's sell rate) ----
+    getYuanExchangeInfo: protectedProcedure.query(async () => {
+      const s = await db.getYuanExchangeSettings();
+      return {
+        enabled: s.enabled,
+        rate: s.rate,
+        minUsd: s.minUsd,
+        maxUsd: s.maxUsd,
+        noteKu: s.noteKu,
+        noteEn: s.noteEn,
+        noteAr: s.noteAr,
+        noteZh: s.noteZh,
+      };
+    }),
+
+    getMyYuanOrders: protectedProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.user.isCustomer ? ctx.user.id :
+        (await db.getCustomerByUserId(ctx.user.id))?.id;
+      if (!customerId) return [];
+      return db.getYuanOrdersByCustomer(customerId);
+    }),
+
+    createYuanOrder: protectedProcedure
+      .input(z.object({
+        usdAmount: z.number().positive().max(1_000_000),
+        note: z.string().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Customer account required" });
+        }
+        const settings = await db.getYuanExchangeSettings();
+        if (!settings.enabled) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Yuan exchange is currently unavailable" });
+        }
+        if (settings.minUsd != null && input.usdAmount < settings.minUsd) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: `Minimum amount is $${settings.minUsd}` });
+        }
+        if (settings.maxUsd != null && input.usdAmount > settings.maxUsd) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: `Maximum amount is $${settings.maxUsd}` });
+        }
+        // The rate is locked server-side at order time — never trusted from the client.
+        const usd = Math.round(input.usdAmount * 100) / 100;
+        const cny = Math.round(usd * settings.rate * 100) / 100;
+        const order = await db.createYuanExchangeOrder({
+          customerId,
+          usdAmount: usd.toFixed(2),
+          cnyAmount: cny.toFixed(2),
+          rate: String(settings.rate),
+          customerNote: input.note?.trim() ? input.note.trim().slice(0, 1000) : null,
+        });
+        if (!order) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Could not save the order" });
+        }
+        logPortal(ctx, customerId, "yuan_order", "other", {
+          detail: `$${usd} -> ¥${cny} @ ${settings.rate}`,
+          entityType: "yuan_exchange_order",
+          entityId: order.id,
+        });
+        return order;
+      }),
+
     // Get notification count
     getNotificationCount: protectedProcedure.query(async ({ ctx }) => {
       const customerId = ctx.user.isCustomer ? ctx.user.id : 

@@ -15,5 +15,6 @@ export * from './services.db';
 export * from './deliveryBoxes.db';
 export * from './declaredPackages.db';
 export * from './portalCenter.db';
+export * from './yuanExchange.db';
 
 export * from './productAttributes.db';

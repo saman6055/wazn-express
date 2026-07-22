@@ -92,6 +92,12 @@ export default function PortalCenter() {
 
   const [openCustomer, setOpenCustomer] = useState<{ id: number; name: string; code: string } | null>(null);
 
+  // Light poll so new Yuan orders surface as a badge without a refresh.
+  const pendingYuan = trpc.portalCenter.countPendingYuanOrders.useQuery(undefined, {
+    refetchInterval: 30000,
+    retry: false,
+  });
+
   return (
     <DashboardLayout>
       <div className="space-y-5 p-4 md:p-6 max-w-7xl mx-auto" dir={isRTL ? "rtl" : "ltr"}>
@@ -116,7 +122,7 @@ export default function PortalCenter() {
         <OverviewCards p={p} />
 
         <Tabs defaultValue="customers" className="space-y-4">
-          <TabsList className="grid grid-cols-4 sm:grid-cols-8 w-full max-w-5xl h-auto">
+          <TabsList className="grid grid-cols-4 sm:grid-cols-9 w-full max-w-6xl h-auto">
             <TabsTrigger value="customers" className="gap-1.5"><Users className="h-4 w-4" />{p({ ku: "موشتەرەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TabsTrigger>
             <TabsTrigger value="messages" className="gap-1.5"><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}</TabsTrigger>
             <TabsTrigger value="send" className="gap-1.5"><Send className="h-4 w-4" />{p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}</TabsTrigger>
@@ -125,6 +131,15 @@ export default function PortalCenter() {
             <TabsTrigger value="declared" className="gap-1.5"><Package className="h-4 w-4" />{p({ ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪" })}</TabsTrigger>
             <TabsTrigger value="claims" className="gap-1.5"><FileText className="h-4 w-4" />{p({ ku: "خاوەنداری", en: "Claims", ar: "المطالبات", zh: "认领" })}</TabsTrigger>
             <TabsTrigger value="ratings" className="gap-1.5"><Star className="h-4 w-4" />{p({ ku: "هەڵسەنگاندن", en: "Ratings", ar: "التقييمات", zh: "评价" })}</TabsTrigger>
+            <TabsTrigger value="yuan" className="gap-1.5">
+              <span className="font-black text-sm leading-none">¥</span>
+              {p({ ku: "یوان", en: "Yuan", ar: "اليوان", zh: "人民币" })}
+              {(pendingYuan.data ?? 0) > 0 && (
+                <span className="ms-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {pendingYuan.data}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="customers"><CustomersTab p={p} onOpen={setOpenCustomer} /></TabsContent>
@@ -135,6 +150,7 @@ export default function PortalCenter() {
           <TabsContent value="declared"><DeclaredTab p={p} /></TabsContent>
           <TabsContent value="claims"><ClaimsTab p={p} /></TabsContent>
           <TabsContent value="ratings"><RatingsTab p={p} /></TabsContent>
+          <TabsContent value="yuan"><YuanTab p={p} /></TabsContent>
         </Tabs>
       </div>
 
@@ -1114,5 +1130,251 @@ function RatingsTab({ p }: { p: (v: L) => string }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Yuan tab — sell rate settings + customer buy-CNY orders management.
+// ---------------------------------------------------------------------------
+const YUAN_STATUS_COLORS: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  processing: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
+  completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+};
+
+const YUAN_STATUS_LABEL: Record<string, L> = {
+  pending: { ku: "چاوەڕوانە", en: "Pending", ar: "قيد الانتظار", zh: "待处理" },
+  processing: { ku: "جێبەجێدەکرێت", en: "Processing", ar: "قيد التنفيذ", zh: "处理中" },
+  completed: { ku: "تەواوبوو", en: "Completed", ar: "مكتمل", zh: "已完成" },
+  cancelled: { ku: "هەڵوەشایەوە", en: "Cancelled", ar: "ملغى", zh: "已取消" },
+};
+
+function YuanTab({ p }: { p: (v: L) => string }) {
+  return (
+    <div className="space-y-4">
+      <YuanSettingsCard p={p} />
+      <YuanOrdersCard p={p} />
+    </div>
+  );
+}
+
+function YuanSettingsCard({ p }: { p: (v: L) => string }) {
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.portalCenter.getYuanSettings.useQuery();
+  const [form, setForm] = useState({
+    enabled: true, rate: "6.4", minUsd: "", maxUsd: "",
+    noteKu: "", noteEn: "", noteAr: "", noteZh: "",
+  });
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (!loaded && !isLoading && data) {
+      setForm({
+        enabled: data.enabled,
+        rate: String(data.rate),
+        minUsd: data.minUsd != null ? String(data.minUsd) : "",
+        maxUsd: data.maxUsd != null ? String(data.maxUsd) : "",
+        noteKu: data.noteKu, noteEn: data.noteEn, noteAr: data.noteAr, noteZh: data.noteZh,
+      });
+      setLoaded(true);
+    }
+  }, [data, isLoading, loaded]);
+
+  const save = trpc.portalCenter.setYuanSettings.useMutation({
+    onSuccess: () => {
+      toast.success(p({ ku: "پاشەکەوتکرا", en: "Saved", ar: "حُفظ", zh: "已保存" }));
+      utils.portalCenter.getYuanSettings.invalidate();
+      utils.customerPortal.getYuanExchangeInfo.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const submit = () => {
+    const rate = parseFloat(form.rate);
+    if (!Number.isFinite(rate) || rate <= 0) {
+      toast.error(p({ ku: "نرخێکی دروست بنووسە", en: "Enter a valid rate", ar: "أدخل سعراً صحيحاً", zh: "请输入有效汇率" }));
+      return;
+    }
+    const minUsd = parseFloat(form.minUsd);
+    const maxUsd = parseFloat(form.maxUsd);
+    save.mutate({
+      enabled: form.enabled,
+      rate,
+      minUsd: Number.isFinite(minUsd) && minUsd > 0 ? minUsd : null,
+      maxUsd: Number.isFinite(maxUsd) && maxUsd > 0 ? maxUsd : null,
+      noteKu: form.noteKu, noteEn: form.noteEn, noteAr: form.noteAr, noteZh: form.noteZh,
+    });
+  };
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold flex items-center gap-2">
+            <span className="text-red-500 font-black">¥</span>
+            {p({ ku: "ڕێکخستنی فرۆشتنی یوان", en: "Yuan sell settings", ar: "إعدادات بيع اليوان", zh: "人民币出售设置" })}
+          </h3>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">
+              {form.enabled ? p({ ku: "چالاکە", en: "On", ar: "مفعّل", zh: "开启" }) : p({ ku: "ناچالاکە", en: "Off", ar: "معطّل", zh: "关闭" })}
+            </Label>
+            <Switch checked={form.enabled} onCheckedChange={(v) => setForm({ ...form, enabled: v })} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">{p({ ku: "نرخی فرۆشتن (١ دۆلار = چەند یوان)", en: "Sell rate (CNY per 1 USD)", ar: "سعر البيع (يوان لكل دولار)", zh: "出售价（1美元兑人民币）" })}</Label>
+            <Input type="number" min="0" step="0.01" value={form.rate} onChange={(e) => setForm({ ...form, rate: e.target.value })} className="font-mono font-bold" dir="ltr" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">{p({ ku: "کەمترین بڕ ($) — بەتاڵ = بێ سنوور", en: "Min amount ($) — empty = none", ar: "الحد الأدنى ($) — فارغ = بلا حد", zh: "最低金额（$）——留空为不限" })}</Label>
+            <Input type="number" min="0" step="1" value={form.minUsd} onChange={(e) => setForm({ ...form, minUsd: e.target.value })} className="font-mono" dir="ltr" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">{p({ ku: "زۆرترین بڕ ($) — بەتاڵ = بێ سنوور", en: "Max amount ($) — empty = none", ar: "الحد الأقصى ($) — فارغ = بلا حد", zh: "最高金额（$）——留空为不限" })}</Label>
+            <Input type="number" min="0" step="1" value={form.maxUsd} onChange={(e) => setForm({ ...form, maxUsd: e.target.value })} className="font-mono" dir="ltr" />
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs">{p({ ku: "تێبینی بۆ کڕیار (ئیختیاری)", en: "Note shown to customers (optional)", ar: "ملاحظة تظهر للعملاء (اختياري)", zh: "向客户显示的备注（可选）" })}</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <Textarea rows={2} dir="rtl" value={form.noteKu} onChange={(e) => setForm({ ...form, noteKu: e.target.value })} placeholder="کوردی" />
+            <Textarea rows={2} value={form.noteEn} onChange={(e) => setForm({ ...form, noteEn: e.target.value })} placeholder="English" />
+            <Textarea rows={2} dir="rtl" value={form.noteAr} onChange={(e) => setForm({ ...form, noteAr: e.target.value })} placeholder="عربي" />
+            <Textarea rows={2} value={form.noteZh} onChange={(e) => setForm({ ...form, noteZh: e.target.value })} placeholder="中文" />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <p className="text-xs text-muted-foreground tabular-nums" dir="ltr">
+            1$ = {form.rate || "?"}¥ · $100 → ¥{(() => { const r = parseFloat(form.rate); return Number.isFinite(r) ? (100 * r).toFixed(0) : "?"; })()}
+          </p>
+          <Button onClick={submit} disabled={save.isPending} className="bg-red-600 hover:bg-red-700 text-white">
+            {save.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : null}
+            {p({ ku: "پاشەکەوت", en: "Save", ar: "حفظ", zh: "保存" })}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function YuanOrdersCard({ p }: { p: (v: L) => string }) {
+  const [status, setStatus] = useState<string>("all");
+  const { data, isLoading } = trpc.portalCenter.listYuanOrders.useQuery({
+    status: status === "all" ? undefined : (status as any),
+    limit: 100,
+  });
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h3 className="font-bold">
+            {p({ ku: "داواکارییەکانی کڕینی یوان", en: "Yuan buy orders", ar: "طلبات شراء اليوان", zh: "人民币购买订单" })}
+          </h3>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{p({ ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}</SelectItem>
+              {Object.keys(YUAN_STATUS_LABEL).map((s) => (
+                <SelectItem key={s} value={s}>{p(YUAN_STATUS_LABEL[s])}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {isLoading ? <TableSkeleton /> : !data || data.length === 0 ? (
+          <EmptyRow text={p({ ku: "هیچ داواکارییەک نییە", en: "No orders", ar: "لا توجد طلبات", zh: "暂无订单" })} />
+        ) : (
+          <div className="space-y-2">
+            {data.map((row: any) => (
+              <YuanOrderRow key={row.order.id} row={row} p={p} />
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function YuanOrderRow({ row, p }: { row: any; p: (v: L) => string }) {
+  const utils = trpc.useUtils();
+  const o = row.order;
+  const [status, setStatus] = useState<string>(o.status);
+  const [adminNote, setAdminNote] = useState<string>(o.adminNote ?? "");
+  const dirty = status !== o.status || (adminNote.trim() || "") !== (o.adminNote ?? "");
+
+  const update = trpc.portalCenter.updateYuanOrderStatus.useMutation({
+    onSuccess: () => {
+      toast.success(p({ ku: "نوێکرایەوە و کڕیار ئاگادارکرایەوە", en: "Updated — customer notified", ar: "تم التحديث وإشعار العميل", zh: "已更新并通知客户" }));
+      utils.portalCenter.listYuanOrders.invalidate();
+      utils.portalCenter.countPendingYuanOrders.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <div className="rounded-xl border p-3 dark:border-white/10 space-y-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm font-semibold">{row.customerName || "—"}</span>
+        <span className="text-[11px] text-muted-foreground font-mono">{row.customerCode}</span>
+        {row.customerMobile && (
+          <a
+            href={waLink(row.customerMobile)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 hover:text-emerald-700"
+          >
+            <WhatsAppIcon className="h-3.5 w-3.5" />
+            {row.customerMobile}
+          </a>
+        )}
+        <Badge className={cn("border-0", YUAN_STATUS_COLORS[o.status] ?? YUAN_STATUS_COLORS.pending)}>
+          {p(YUAN_STATUS_LABEL[o.status] ?? YUAN_STATUS_LABEL.pending)}
+        </Badge>
+        <span className="ms-auto text-[11px] text-muted-foreground">{fmtDateTime(o.createdAt)}</span>
+      </div>
+
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="font-black tabular-nums text-base" dir="ltr">
+          ${Number(o.usdAmount).toLocaleString()} → ¥{Number(o.cnyAmount).toLocaleString()}
+        </span>
+        <span className="text-xs text-muted-foreground tabular-nums" dir="ltr">1$ = {Number(o.rate)}¥</span>
+      </div>
+
+      {o.customerNote && (
+        <p className="text-xs text-muted-foreground">
+          💬 {o.customerNote}
+        </p>
+      )}
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {Object.keys(YUAN_STATUS_LABEL).map((s) => (
+              <SelectItem key={s} value={s}>{p(YUAN_STATUS_LABEL[s])}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          value={adminNote}
+          onChange={(e) => setAdminNote(e.target.value)}
+          placeholder={p({ ku: "تێبینی بۆ کڕیار...", en: "Note to customer...", ar: "ملاحظة للعميل...", zh: "给客户的备注..." })}
+          className="h-8 text-xs flex-1 min-w-[180px]"
+        />
+        <Button
+          size="sm"
+          className="h-8"
+          disabled={!dirty || update.isPending}
+          onClick={() => update.mutate({ id: o.id, status: status as any, adminNote: adminNote.trim() || undefined })}
+        >
+          {update.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : p({ ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" })}
+        </Button>
+      </div>
+    </div>
   );
 }

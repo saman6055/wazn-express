@@ -1981,6 +1981,29 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       INDEX idx_dr_customer (customerId),
       INDEX idx_dr_rating (rating)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  // Portal: customer requests to buy Chinese Yuan (CNY) with USD at the
+  // company's sell rate; managed by staff from the Portal Center.
+  {
+    name: "yuanExchangeOrders",
+    dependencies: ["customers"],
+    sql: `CREATE TABLE IF NOT EXISTS yuanExchangeOrders (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerId INT NOT NULL,
+      usdAmount DECIMAL(12,2) NOT NULL,
+      cnyAmount DECIMAL(12,2) NOT NULL,
+      rate DECIMAL(10,4) NOT NULL,
+      status ENUM('pending', 'processing', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
+      customerNote VARCHAR(1000),
+      adminNote VARCHAR(1000),
+      handledById INT,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_yeo_customer (customerId),
+      INDEX idx_yeo_status (status),
+      INDEX idx_yeo_created (createdAt)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   }
 ];
 

@@ -15,6 +15,7 @@ import {
   Headphones,
   HelpCircle,
   FileText,
+  Banknote,
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -167,6 +168,18 @@ export default function Skin3PortalProfile() {
           ? "消息"
           : "Messages",
       href: "/portal/messages",
+    },
+    {
+      icon: Banknote,
+      label:
+        language === "ku"
+          ? "کڕینی یوانی چینی"
+          : language === "ar"
+          ? "شراء اليوان الصيني"
+          : language === "zh"
+          ? "购买人民币"
+          : "Buy Chinese Yuan",
+      href: "/portal/yuan-exchange",
     },
   ];
 

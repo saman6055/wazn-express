@@ -6,6 +6,7 @@ import {
   json,
   index,
   mysqlEnum,
+  decimal,
 } from "drizzle-orm/mysql-core";
 
 // ---------------------------------------------------------------------------
@@ -99,3 +100,35 @@ export const deliveryRatings = mysqlTable(
 
 export type DeliveryRating = typeof deliveryRatings.$inferSelect;
 export type InsertDeliveryRating = typeof deliveryRatings.$inferInsert;
+
+// ---------------------------------------------------------------------------
+// yuanExchangeOrders — a customer's request to buy Chinese Yuan (CNY) with
+// USD at the company's sell rate. The rate is locked at order time; status
+// is managed by staff from the Portal Center's Yuan tab.
+// ---------------------------------------------------------------------------
+export const yuanExchangeOrders = mysqlTable(
+  "yuanExchangeOrders",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    customerId: int("customerId").notNull(),
+    usdAmount: decimal("usdAmount", { precision: 12, scale: 2 }).notNull(),
+    cnyAmount: decimal("cnyAmount", { precision: 12, scale: 2 }).notNull(),
+    rate: decimal("rate", { precision: 10, scale: 4 }).notNull(), // CNY per 1 USD at order time
+    status: mysqlEnum("status", ["pending", "processing", "completed", "cancelled"])
+      .default("pending")
+      .notNull(),
+    customerNote: varchar("customerNote", { length: 1000 }),
+    adminNote: varchar("adminNote", { length: 1000 }), // shown to the customer in the portal
+    handledById: int("handledById"), // staff user who last changed the status
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    customerIdx: index("idx_yeo_customer").on(table.customerId),
+    statusIdx: index("idx_yeo_status").on(table.status),
+    createdIdx: index("idx_yeo_created").on(table.createdAt),
+  }),
+);
+
+export type YuanExchangeOrder = typeof yuanExchangeOrders.$inferSelect;
+export type InsertYuanExchangeOrder = typeof yuanExchangeOrders.$inferInsert;

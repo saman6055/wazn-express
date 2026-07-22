@@ -192,6 +192,7 @@ const PortalServices = lazy(() => import("./pages/portal/PortalServices"));
 const PortalBlog = lazy(() => import("./pages/portal/PortalBlog"));
 const PortalBlogDetail = lazy(() => import("./pages/portal/PortalBlogDetail"));
 const PortalInvoiceReports = lazy(() => import("./pages/portal/PortalInvoiceReports"));
+const PortalYuanExchange = lazy(() => import("./pages/portal/PortalYuanExchange"));
 
 function Router() {
   return (
@@ -317,6 +318,7 @@ function Router() {
         <Route path="/portal/blog" component={PortalBlog} />
         <Route path="/portal/blog/:id" component={PortalBlogDetail} />
         <Route path="/portal/invoice-reports" component={PortalInvoiceReports} />
+        <Route path="/portal/yuan-exchange" component={PortalYuanExchange} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

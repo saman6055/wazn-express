@@ -191,4 +191,84 @@ export const portalCenterRouter = router({
       await db.setSetting(ANNOUNCEMENT_KEY, JSON.stringify(input), ctx.user.id);
       return { ok: true };
     }),
+
+  // ---- Yuan exchange (portal "buy CNY" section) ----
+  getYuanSettings: adminProcedure.query(async () => {
+    return db.getYuanExchangeSettings();
+  }),
+
+  setYuanSettings: adminProcedure
+    .input(z.object({
+      enabled: z.boolean(),
+      rate: z.number().positive().max(1000),
+      minUsd: z.number().positive().nullable(),
+      maxUsd: z.number().positive().nullable(),
+      noteKu: z.string().max(500).default(""),
+      noteEn: z.string().max(500).default(""),
+      noteAr: z.string().max(500).default(""),
+      noteZh: z.string().max(500).default(""),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await db.setYuanExchangeSettings(input, ctx.user.id);
+      return { ok: true };
+    }),
+
+  listYuanOrders: adminProcedure
+    .input(z.object({
+      status: z.enum(["pending", "processing", "completed", "cancelled"]).optional(),
+      limit: z.number().int().min(1).max(200).default(100),
+    }))
+    .query(async ({ input }) => {
+      return db.listYuanExchangeOrders(input);
+    }),
+
+  countPendingYuanOrders: adminProcedure.query(async () => {
+    return db.countPendingYuanOrders();
+  }),
+
+  updateYuanOrderStatus: adminProcedure
+    .input(z.object({
+      id: z.number().int(),
+      status: z.enum(["pending", "processing", "completed", "cancelled"]),
+      adminNote: z.string().max(1000).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const order = await db.updateYuanExchangeOrder(input.id, {
+        status: input.status,
+        adminNote: input.adminNote?.trim() ? input.adminNote.trim() : null,
+        handledById: ctx.user.id,
+      });
+      if (!order) return { ok: false };
+
+      // Tell the customer — stored notification + live SSE toast + web push.
+      const statusText: Record<string, { title: string; message: string }> = {
+        pending: {
+          title: "داواکاری یوان — چاوەڕوانە",
+          message: `داواکاری یوانەکەت ($${order.usdAmount} → ¥${order.cnyAmount}) لە لیستی چاوەڕوانیدایە`,
+        },
+        processing: {
+          title: "داواکاری یوان — جێبەجێدەکرێت",
+          message: `داواکاری یوانەکەت ($${order.usdAmount} → ¥${order.cnyAmount}) لە جێبەجێکردندایە`,
+        },
+        completed: {
+          title: "داواکاری یوان — تەواوبوو ✅",
+          message: `داواکاری یوانەکەت ($${order.usdAmount} → ¥${order.cnyAmount}) بە سەرکەوتوویی تەواوبوو`,
+        },
+        cancelled: {
+          title: "داواکاری یوان — هەڵوەشایەوە",
+          message: `داواکاری یوانەکەت ($${order.usdAmount} → ¥${order.cnyAmount}) هەڵوەشایەوە${input.adminNote ? ` — ${input.adminNote}` : ""}`,
+        },
+      };
+      const txt = statusText[input.status];
+      try {
+        await db.createCustomerNotification(buildNotif(txt, {
+          customerId: order.customerId,
+          type: input.status === "completed" ? "success" : input.status === "cancelled" ? "error" : "info",
+          actionUrl: "/portal/yuan-exchange",
+        }));
+      } catch {
+        // Notification is best-effort; the status change itself already saved.
+      }
+      return { ok: true, order };
+    }),
 });

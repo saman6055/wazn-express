@@ -288,6 +288,59 @@ export async function setPortalCalcSettings(values: PortalCalcSettings, updatedB
   await setSetting(CALC_SETTINGS_KEY, JSON.stringify(values), updatedById);
 }
 
+// ---- Yuan exchange (portal "buy CNY" section) ----
+export type YuanExchangeSettings = {
+  enabled: boolean;
+  rate: number; // CNY per 1 USD (company sell rate)
+  minUsd: number | null;
+  maxUsd: number | null;
+  noteKu: string;
+  noteEn: string;
+  noteAr: string;
+  noteZh: string;
+};
+
+const YUAN_SETTINGS_KEY = "yuan_exchange_settings";
+export const DEFAULT_YUAN_SETTINGS: YuanExchangeSettings = {
+  enabled: true,
+  rate: 6.4,
+  minUsd: null,
+  maxUsd: null,
+  noteKu: "",
+  noteEn: "",
+  noteAr: "",
+  noteZh: "",
+};
+
+export async function getYuanExchangeSettings(): Promise<YuanExchangeSettings> {
+  try {
+    const raw = await getSetting(YUAN_SETTINGS_KEY);
+    if (!raw) return DEFAULT_YUAN_SETTINGS;
+    const parsed = JSON.parse(raw);
+    const rate = Number(parsed.rate);
+    const optNum = (v: unknown) => {
+      const n = Number(v);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    return {
+      enabled: parsed.enabled !== false,
+      rate: Number.isFinite(rate) && rate > 0 ? rate : DEFAULT_YUAN_SETTINGS.rate,
+      minUsd: optNum(parsed.minUsd),
+      maxUsd: optNum(parsed.maxUsd),
+      noteKu: typeof parsed.noteKu === "string" ? parsed.noteKu : "",
+      noteEn: typeof parsed.noteEn === "string" ? parsed.noteEn : "",
+      noteAr: typeof parsed.noteAr === "string" ? parsed.noteAr : "",
+      noteZh: typeof parsed.noteZh === "string" ? parsed.noteZh : "",
+    };
+  } catch {
+    return DEFAULT_YUAN_SETTINGS;
+  }
+}
+
+export async function setYuanExchangeSettings(values: YuanExchangeSettings, updatedById?: number) {
+  await setSetting(YUAN_SETTINGS_KEY, JSON.stringify(values), updatedById);
+}
+
 export async function getQuickPortalPrices(): Promise<Record<QuickType, string | null>> {
   const all = (await getAllPricingRules(false)) as PricingRule[];
   const out: Record<QuickType, string | null> = { air_regular: null, air_irregular: null, sea: null };

@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { ModernPortalLayout } from "@/components/ModernPortalLayout";
 import {
   User, Mail, Phone, MapPin, Bell, ChevronRight, LogOut,
-  MessageSquare, Headphones, HelpCircle, FileText
+  MessageSquare, Headphones, HelpCircle, FileText, Banknote
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,6 +104,11 @@ export default function ModernPortalProfile() {
       icon: MessageSquare,
       label: language === "ku" ? "نامەکان" : language === "ar" ? "الرسائل" : language === "zh" ? "消息" : "Messages",
       href: "/portal/messages",
+    },
+    {
+      icon: Banknote,
+      label: language === "ku" ? "کڕینی یوانی چینی" : language === "ar" ? "شراء اليوان الصيني" : language === "zh" ? "购买人民币" : "Buy Chinese Yuan",
+      href: "/portal/yuan-exchange",
     },
   ];
 
