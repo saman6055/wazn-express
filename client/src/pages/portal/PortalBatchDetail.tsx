@@ -1,4 +1,5 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -218,6 +219,15 @@ const { t, language } = useLanguage();
                 <span className="text-slate-400 text-sm">
                   • {packages?.length || 0} {language === "ku" ? "پاکەت" : "packages"}
                 </span>
+              </div>
+            )}
+            {batch && (
+              <div className="mt-3">
+                <WhatsAppHelpButton
+                  language={language}
+                  section={language === "ku" ? "وردەکاری بار" : language === "ar" ? "تفاصيل الشحنة" : language === "zh" ? "货运详情" : "Batch detail"}
+                  topic={`${batch.batchCode} — ${batch.status}`}
+                />
               </div>
             )}
           </div>

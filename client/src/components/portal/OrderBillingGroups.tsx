@@ -2,6 +2,7 @@ import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Package, ShoppingBag, Receipt, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
+import { WhatsAppHelpButton } from "./WhatsAppHelpButton";
 
 // ---------------------------------------------------------------------------
 // OrderBillingGroups — presentation-only fix for "one item, three receipts".
@@ -216,6 +217,13 @@ export function OrderBillingGroups({
                   <span className={cn("text-sm font-black tabular-nums", isDark ? "text-white" : "text-slate-900")} dir="ltr">
                     ${g.total.toFixed(2)}
                   </span>
+                </div>
+                <div className="flex justify-end pb-1 pt-1.5">
+                  <WhatsAppHelpButton
+                    language={language}
+                    section={pick({ ku: "دارایی — حیسابی ئۆردەر", en: "Financial — order billing", ar: "المالية — فواتير الطلب", zh: "财务——订单账单" })}
+                    topic={`${pick(meta.label)} · ${subtitle} · $${g.total.toFixed(2)}`}
+                  />
                 </div>
               </div>
             )}

@@ -13,6 +13,7 @@ import {
 import { Link, useSearch } from "wouter";
 import { PortalListSkeleton } from "@/components/portal/PortalListSkeleton";
 import { BatchJourneyTimeline } from "@/components/portal/BatchJourneyTimeline";
+import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -491,6 +492,13 @@ function ClassicPortalShipments() {
                         language={language}
                         isDark={isDark}
                       />
+                      <div className="mt-2 flex justify-end">
+                        <WhatsAppHelpButton
+                          language={language}
+                          section={language === "ku" ? "بارەکان" : language === "ar" ? "الشحنات" : language === "zh" ? "货运" : "Shipments"}
+                          topic={`${batch.batchCode} — ${getStatusText(batch.status)}`}
+                        />
+                      </div>
                     </div>
 
                     {/* Route Indicator */}

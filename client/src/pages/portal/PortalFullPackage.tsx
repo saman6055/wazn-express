@@ -4,6 +4,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -762,6 +763,11 @@ export default function PortalFullPackage() {
                               </span>
                             </div>
                           )}
+                          <WhatsAppHelpButton
+                            language={language}
+                            section={language === "ku" ? "پاکێجی تەواو / عمولە" : language === "ar" ? "الطرد الكامل / العمولة" : language === "zh" ? "全包裹/佣金" : "Full package / commission"}
+                            topic={`${order.orderCode}${order.status ? ` — ${order.status}` : ""}`}
+                          />
                         </div>
                       </div>
                     </div>

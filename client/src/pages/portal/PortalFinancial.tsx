@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatementPdfButton } from "@/components/portal/StatementPdfButton";
 import { OrderBillingGroups } from "@/components/portal/OrderBillingGroups";
+import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 
 function ClassicPortalFinancial() {
 const { t, language } = useLanguage();
@@ -351,7 +352,12 @@ const { t, language } = useLanguage();
         {activeTab === "overview" && (
           <div className="space-y-6">
             {/* Statement PDF + per-order consolidated billing */}
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-2">
+              <WhatsAppHelpButton
+                language={language}
+                section={language === "ku" ? "دارایی" : language === "ar" ? "المالية" : language === "zh" ? "财务" : "Financial"}
+                topic={`${language === "ku" ? "باڵانس" : language === "ar" ? "الرصيد" : language === "zh" ? "余额" : "Balance"}: $${Math.abs(balance).toFixed(2)}`}
+              />
               <StatementPdfButton language={language} />
             </div>
             <OrderBillingGroups transactions={transactions} language={language} isDark={isDark} />

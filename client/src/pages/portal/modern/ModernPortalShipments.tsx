@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BatchJourneyTimeline } from "@/components/portal/BatchJourneyTimeline";
+import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -514,6 +515,13 @@ export default function ModernPortalShipments() {
                           language={language}
                           isDark={isDark}
                         />
+                        <div className="mt-2 flex justify-end">
+                          <WhatsAppHelpButton
+                            language={language}
+                            section={language === "ku" ? "بارەکان" : language === "ar" ? "الشحنات" : language === "zh" ? "货运" : "Shipments"}
+                            topic={`${batch.batchCode || `B-${batch.id}`} — ${statusConfig.label}`}
+                          />
+                        </div>
                       </div>
 
                       {/* Expanded: Packages inside this batch */}
