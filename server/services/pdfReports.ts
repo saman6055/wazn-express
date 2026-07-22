@@ -60,21 +60,24 @@ export async function getCustomerReportData(customerId: number, startDate?: Date
 
   if (!customer) return null;
 
-  // Get account summary
+  // Get account summary. Ledger/payment rows key on the ACCOUNT id, not the
+  // customer id, so resolve it here and filter with it below.
   const [account] = await db.select({
+    id: customerAccounts.id,
     currentBalance: customerAccounts.currentBalanceUsd,
     creditLimit: customerAccounts.creditLimitUsd
   }).from(customerAccounts).where(eq(customerAccounts.customerId, customerId));
+  const accountId = account?.id ?? -1;
 
   // Get total charges
   const [chargesResult] = await db.select({
     total: sql<string>`COALESCE(SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'DEBIT_%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(12,2)) ELSE 0 END), 0)`
-  }).from(ledgerTransactions).where(eq(ledgerTransactions.accountId, customerId));
+  }).from(ledgerTransactions).where(eq(ledgerTransactions.accountId, accountId));
 
   // Get total payments
   const [paymentsTotal] = await db.select({
     total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
-  }).from(paymentRecords).where(eq(paymentRecords.accountId, customerId));
+  }).from(paymentRecords).where(eq(paymentRecords.accountId, accountId));
 
   // Get packages with optional date filter
   let packagesQuery = db.select({
@@ -126,7 +129,7 @@ export async function getCustomerReportData(customerId: number, startDate?: Date
     method: paymentRecords.paymentMethod,
     reference: paymentRecords.bankReference,
     createdAt: paymentRecords.createdAt
-  }).from(paymentRecords).where(eq(paymentRecords.accountId, customerId));
+  }).from(paymentRecords).where(eq(paymentRecords.accountId, accountId));
 
   if (startDate && endDate) {
     paymentsQuery = db.select({
@@ -135,7 +138,7 @@ export async function getCustomerReportData(customerId: number, startDate?: Date
       reference: paymentRecords.bankReference,
       createdAt: paymentRecords.createdAt
     }).from(paymentRecords).where(and(
-      eq(paymentRecords.accountId, customerId),
+      eq(paymentRecords.accountId, accountId),
       gte(paymentRecords.createdAt, startDate),
       lte(paymentRecords.createdAt, endDate)
     ));
@@ -149,7 +152,7 @@ export async function getCustomerReportData(customerId: number, startDate?: Date
     amount: ledgerTransactions.amountUsd,
     description: ledgerTransactions.description,
     createdAt: ledgerTransactions.createdAt
-  }).from(ledgerTransactions).where(eq(ledgerTransactions.accountId, customerId));
+  }).from(ledgerTransactions).where(eq(ledgerTransactions.accountId, accountId));
 
   if (startDate && endDate) {
     transactionsQuery = db.select({
@@ -158,7 +161,7 @@ export async function getCustomerReportData(customerId: number, startDate?: Date
       description: ledgerTransactions.description,
       createdAt: ledgerTransactions.createdAt
     }).from(ledgerTransactions).where(and(
-      eq(ledgerTransactions.accountId, customerId),
+      eq(ledgerTransactions.accountId, accountId),
       gte(ledgerTransactions.createdAt, startDate),
       lte(ledgerTransactions.createdAt, endDate)
     ));

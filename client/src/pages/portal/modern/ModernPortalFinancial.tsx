@@ -8,6 +8,8 @@ import {
   TrendingUp, AlertCircle, CheckCircle2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatementPdfButton } from "@/components/portal/StatementPdfButton";
+import { OrderBillingGroups } from "@/components/portal/OrderBillingGroups";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -404,6 +406,12 @@ export default function ModernPortalFinancial() {
               </motion.div>
             )}
           </div>
+
+          {/* Statement PDF + per-order consolidated billing */}
+          <div className="flex justify-end">
+            <StatementPdfButton language={language} />
+          </div>
+          <OrderBillingGroups transactions={transactions as any} language={language} isDark={isDark} />
 
           {/* Unpaid Invoices Section */}
           {!invoicesLoading && unpaidInvoices.length > 0 && (

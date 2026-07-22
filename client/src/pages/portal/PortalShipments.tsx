@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { PortalListSkeleton } from "@/components/portal/PortalListSkeleton";
+import { BatchJourneyTimeline } from "@/components/portal/BatchJourneyTimeline";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -435,8 +436,7 @@ function ClassicPortalShipments() {
           <div className="space-y-3">
             {filteredBatches.map((batch) => {
               const statusColors = getStatusColor(batch.status);
-              const progress = getProgressPercentage(batch.status);
-              
+
               return (
                 <Link key={batch.id} href={`/portal/shipments/${batch.id}`}>
                   <div className={cn(
@@ -479,25 +479,18 @@ function ClassicPortalShipments() {
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
+                    {/* Journey timeline — the batch's stages at a glance */}
                     <div className="mt-4">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className={cn("text-xs font-medium", isDark ? "text-slate-400" : "text-slate-500")}>
-                          {language === "ku" ? "پێشکەوتن" : language === "ar" ? "التقدم" : "Progress"}
-                        </span>
-                        <span className={cn("text-xs font-bold", statusColors.text)}>
-                          {progress}%
-                        </span>
-                      </div>
-                      <div className={cn(
-                        "h-2 rounded-full overflow-hidden",
-                        isDark ? "bg-slate-700" : "bg-slate-100"
-                      )}>
-                        <div 
-                          className={cn("h-full rounded-full transition-all duration-500", statusColors.progress)}
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
+                      <BatchJourneyTimeline
+                        status={batch.status}
+                        shippingType={batch.shippingType}
+                        createdAt={batch.createdAt}
+                        departureDate={batch.departureDate}
+                        estimatedArrival={batch.estimatedArrival}
+                        actualArrival={batch.actualArrival}
+                        language={language}
+                        isDark={isDark}
+                      />
                     </div>
 
                     {/* Route Indicator */}

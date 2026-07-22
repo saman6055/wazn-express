@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { ModernPortalLayout } from "@/components/ModernPortalLayout";
 import {
   User, Mail, Phone, MapPin, Bell, ChevronRight, LogOut,
-  MessageSquare, Headphones, HelpCircle, FileText, Banknote
+  MessageSquare, Headphones, HelpCircle, FileText, Banknote, Ban
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -128,6 +128,11 @@ export default function ModernPortalProfile() {
       icon: FileText,
       label: language === "ku" ? "شەرت و مەرج" : language === "ar" ? "الشروط والأحكام" : language === "zh" ? "条款和条件" : "Terms & Conditions",
       href: "/portal/terms",
+    },
+    {
+      icon: Ban,
+      label: language === "ku" ? "کاڵا قەدەغەکراوەکان" : language === "ar" ? "البضائع الممنوعة" : language === "zh" ? "禁运物品" : "Prohibited items",
+      href: "/portal/prohibited-items",
     },
   ];
 

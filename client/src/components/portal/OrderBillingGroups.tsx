@@ -1,0 +1,227 @@
+import { pickLang } from "@/lib/lang";
+import { cn } from "@/lib/utils";
+import { ChevronDown, Package, ShoppingBag, Receipt, Wallet } from "lucide-react";
+import { useMemo, useState } from "react";
+
+// ---------------------------------------------------------------------------
+// OrderBillingGroups — presentation-only fix for "one item, three receipts".
+// Groups the customer's ledger charges by their source order (referenceType +
+// referenceId), so purchase + commission + shipping of the same order show as
+// ONE billing card with a breakdown inside. No backend/logic changes at all.
+// ---------------------------------------------------------------------------
+
+type L10n = { ku: string; en: string; ar: string; zh: string };
+
+export interface LedgerTxLike {
+  id: number;
+  transactionType: string;
+  amountUsd: string | number | null;
+  description: string | null;
+  createdAt: string | Date;
+  referenceType: string | null;
+  referenceId: number | null;
+  invoiceId?: number | null;
+}
+
+const GROUPABLE: Record<string, { label: L10n; icon: typeof Package }> = {
+  commission: {
+    label: { ku: "ئۆردەری عمولە", en: "Commission order", ar: "طلب عمولة", zh: "佣金订单" },
+    icon: ShoppingBag,
+  },
+  full_package: {
+    label: { ku: "پاکێجی تەواو", en: "Full package", ar: "طرد كامل", zh: "全包裹" },
+    icon: ShoppingBag,
+  },
+  purchase_request: {
+    label: { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" },
+    icon: ShoppingBag,
+  },
+  package: {
+    label: { ku: "پاکێجی بار", en: "Shipping package", ar: "طرد شحن", zh: "运输包裹" },
+    icon: Package,
+  },
+};
+
+interface Group {
+  key: string;
+  refType: string;
+  refId: number;
+  total: number;
+  firstAt: Date;
+  lines: LedgerTxLike[];
+}
+
+export function OrderBillingGroups({
+  transactions,
+  language,
+  isDark = false,
+}: {
+  transactions: LedgerTxLike[] | undefined;
+  language: string;
+  isDark?: boolean;
+}) {
+  const pick = (v: L10n) => pickLang(language, v);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+
+  const groups = useMemo<Group[]>(() => {
+    const map = new Map<string, Group>();
+    for (const tx of transactions ?? []) {
+      // Only charges tied to a source order; payments/adjustments stay in the
+      // normal transactions list untouched.
+      if (!tx.referenceType || tx.referenceId == null) continue;
+      if (!GROUPABLE[tx.referenceType]) continue;
+      if (!String(tx.transactionType || "").startsWith("DEBIT")) continue;
+      const key = `${tx.referenceType}:${tx.referenceId}`;
+      const amount = Number(tx.amountUsd) || 0;
+      const at = new Date(tx.createdAt);
+      const existing = map.get(key);
+      if (existing) {
+        existing.total += amount;
+        existing.lines.push(tx);
+        if (at < existing.firstAt) existing.firstAt = at;
+      } else {
+        map.set(key, {
+          key,
+          refType: tx.referenceType,
+          refId: tx.referenceId,
+          total: amount,
+          firstAt: at,
+          lines: [tx],
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.firstAt.getTime() - a.firstAt.getTime());
+  }, [transactions]);
+
+  if (!groups.length) return null;
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center gap-2">
+        <Receipt className={cn("h-4 w-4", isDark ? "text-indigo-400" : "text-indigo-600")} />
+        <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800")}>
+          {pick({
+            ku: "حیسابی هەر ئۆردەرێک بە یەکەوە",
+            en: "Billing grouped per order",
+            ar: "فواتير كل طلب معاً",
+            zh: "按订单汇总的账单",
+          })}
+        </h3>
+      </div>
+      <p className={cn("text-[11px] leading-relaxed", isDark ? "text-slate-400" : "text-slate-500")}>
+        {pick({
+          ku: "هەموو پارەدانەکانی یەک ئۆردەر (کڕین، عمولە، گواستنەوە...) لێرە بە یەک کۆ دەبینیت",
+          en: "All charges of one order (purchase, commission, shipping...) shown as a single total here",
+          ar: "جميع مصاريف الطلب الواحد (شراء، عمولة، شحن...) تظهر هنا كمجموع واحد",
+          zh: "同一订单的所有费用（采购、佣金、运费等）在此合并显示",
+        })}
+      </p>
+
+      {groups.map((g) => {
+        const meta = GROUPABLE[g.refType];
+        const Icon = meta.icon;
+        const open = openKey === g.key;
+        // The first line's description usually carries the order code — use it
+        // as the card subtitle so the customer recognises the order.
+        const subtitle = (g.lines[g.lines.length - 1]?.description || "").split("\n")[0];
+        return (
+          <div
+            key={g.key}
+            className={cn(
+              "rounded-2xl border overflow-hidden transition-colors",
+              isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100 shadow-sm",
+            )}
+          >
+            <button
+              type="button"
+              onClick={() => setOpenKey(open ? null : g.key)}
+              className="w-full p-3.5 text-start"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                    isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-50 text-indigo-600",
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800")}>
+                      {pick(meta.label)}
+                    </span>
+                    <span
+                      className={cn("shrink-0 text-base font-black tabular-nums", isDark ? "text-white" : "text-slate-900")}
+                      dir="ltr"
+                    >
+                      ${g.total.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 flex items-center justify-between gap-2">
+                    <span className={cn("truncate text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
+                      {subtitle}
+                    </span>
+                    <span className={cn("shrink-0 text-[10px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
+                      {g.firstAt.toLocaleDateString("en-GB")}
+                    </span>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 shrink-0 transition-transform",
+                    open && "rotate-180",
+                    isDark ? "text-slate-500" : "text-slate-400",
+                  )}
+                />
+              </div>
+              {g.lines.length > 1 && !open && (
+                <p className={cn("mt-1.5 text-[10px] font-medium", isDark ? "text-indigo-400" : "text-indigo-600")}>
+                  {pick({
+                    ku: `${g.lines.length} بڕگە لەم ئۆردەرەدا — کلیک بکە بۆ وردەکاری`,
+                    en: `${g.lines.length} charges in this order — tap for details`,
+                    ar: `${g.lines.length} بنود في هذا الطلب — اضغط للتفاصيل`,
+                    zh: `此订单包含 ${g.lines.length} 项费用——点击查看明细`,
+                  })}
+                </p>
+              )}
+            </button>
+
+            {open && (
+              <div className={cn("border-t px-3.5 py-2", isDark ? "border-slate-700" : "border-slate-100")}>
+                {g.lines
+                  .slice()
+                  .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                  .map((line) => (
+                    <div key={line.id} className="flex items-start justify-between gap-3 py-1.5">
+                      <div className="min-w-0 flex-1">
+                        <p className={cn("text-xs font-medium leading-snug", isDark ? "text-slate-200" : "text-slate-700")}>
+                          {line.description ||
+                            pick({ ku: "بڕگە", en: "Charge", ar: "بند", zh: "费用" })}
+                        </p>
+                        <p className={cn("text-[10px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
+                          {new Date(line.createdAt).toLocaleDateString("en-GB")}
+                        </p>
+                      </div>
+                      <span className={cn("shrink-0 text-xs font-bold tabular-nums", isDark ? "text-slate-200" : "text-slate-700")} dir="ltr">
+                        ${(Number(line.amountUsd) || 0).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                <div className={cn("mt-1 flex items-center justify-between border-t pt-2", isDark ? "border-slate-700" : "border-slate-100")}>
+                  <span className={cn("flex items-center gap-1 text-xs font-bold", isDark ? "text-white" : "text-slate-800")}>
+                    <Wallet className="h-3.5 w-3.5" />
+                    {pick({ ku: "کۆی گشتی ئەم ئۆردەرە", en: "Order total", ar: "إجمالي الطلب", zh: "订单总计" })}
+                  </span>
+                  <span className={cn("text-sm font-black tabular-nums", isDark ? "text-white" : "text-slate-900")} dir="ltr">
+                    ${g.total.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}

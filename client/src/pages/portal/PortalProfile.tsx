@@ -81,6 +81,13 @@ const { t, language, setLanguage } = useLanguage();
       iconBg: "bg-gradient-to-br from-purple-400 to-violet-500",
     },
     {
+      icon: AlertTriangle,
+      label: language === "ku" ? "کاڵا قەدەغەکراوەکان" : language === "ar" ? "البضائع الممنوعة" : language === "zh" ? "禁运物品" : "Prohibited items",
+      description: language === "ku" ? "پێش ناردن بیزانە" : language === "ar" ? "اعرفها قبل الشحن" : language === "zh" ? "寄送前须知" : "Know before you ship",
+      path: "/portal/prohibited-items",
+      iconBg: "bg-gradient-to-br from-red-400 to-rose-500",
+    },
+    {
       icon: Info,
       label: language === "ku" ? "دەربارەی ئێمە" : "About Us",
       description: language === "ku" ? "زانیاری کۆمپانیا" : "Company info",

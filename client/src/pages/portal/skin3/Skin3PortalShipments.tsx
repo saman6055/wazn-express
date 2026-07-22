@@ -21,6 +21,7 @@ import {
   PackageOpen,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BatchJourneyTimeline } from "@/components/portal/BatchJourneyTimeline";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -551,6 +552,20 @@ export default function Skin3PortalShipments() {
                         </div>
                       </button>
 
+                      {/* Journey timeline — the batch's stages at a glance */}
+                      <div className="px-4 pb-3">
+                        <BatchJourneyTimeline
+                          status={batch.status}
+                          shippingType={batch.shippingType}
+                          createdAt={batch.createdAt}
+                          departureDate={batch.departureDate}
+                          estimatedArrival={batch.estimatedArrival}
+                          actualArrival={batch.actualArrival}
+                          language={language}
+                          isDark={isDark}
+                        />
+                      </div>
+
                       {/* Expanded: Packages */}
                       <AnimatePresence>
                         {isExpanded && (
@@ -604,6 +619,21 @@ export default function Skin3PortalShipments() {
                                             : "bg-amber-50/80 border-black/5"
                                         )}
                                       >
+                                        {/* Warehouse photos taken at registration */}
+                                        {Array.isArray(pkg.photos) && pkg.photos.length > 0 && (
+                                          <div className="flex gap-1.5 mb-2 overflow-x-auto">
+                                            {pkg.photos.slice(0, 4).map((photo: string, pi: number) => (
+                                              <a key={pi} href={photo} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                                                <img
+                                                  src={photo}
+                                                  alt=""
+                                                  loading="lazy"
+                                                  className="h-14 w-14 rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10"
+                                                />
+                                              </a>
+                                            ))}
+                                          </div>
+                                        )}
                                         <div className="flex items-center justify-between mb-1.5">
                                           <span
                                             className={cn(

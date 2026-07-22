@@ -16,6 +16,7 @@ import {
   HelpCircle,
   FileText,
   Banknote,
+  Ban,
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -206,6 +207,18 @@ export default function Skin3PortalProfile() {
           ? "条款和条件"
           : "Terms & Conditions",
       href: "/portal/terms",
+    },
+    {
+      icon: Ban,
+      label:
+        language === "ku"
+          ? "کاڵا قەدەغەکراوەکان"
+          : language === "ar"
+          ? "البضائع الممنوعة"
+          : language === "zh"
+          ? "禁运物品"
+          : "Prohibited items",
+      href: "/portal/prohibited-items",
     },
   ];
 

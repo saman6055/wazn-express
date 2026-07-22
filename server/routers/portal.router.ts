@@ -266,6 +266,27 @@ export const customerPortalRouter = router({
         return { ok: true };
       }),
 
+    // Account statement PDF — the customer's own report, base64-encoded like
+    // the staff exportCustomerPDF. Lazy import keeps pdfkit off the hot path.
+    getMyStatementPdf: protectedProcedure.mutation(async ({ ctx }) => {
+      const customerId = ctx.user.isCustomer ? ctx.user.id :
+        (await db.getCustomerByUserId(ctx.user.id))?.id;
+      if (!customerId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Customer account required" });
+      }
+      const { getCustomerReportData, generateCustomerPDF } = await import("../services/pdf.service");
+      const data = await getCustomerReportData(customerId);
+      if (!data) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "No account data found" });
+      }
+      const pdfBuffer = await generateCustomerPDF(data);
+      logPortal(ctx, customerId, "statement_pdf", "other", { detail: "downloaded account statement" });
+      return {
+        pdf: pdfBuffer.toString("base64"),
+        filename: `statement-${data.customer.customerCode || customerId}.pdf`,
+      };
+    }),
+
     // ---- Yuan exchange (buy CNY with USD at the company's sell rate) ----
     getYuanExchangeInfo: protectedProcedure.query(async () => {
       const s = await db.getYuanExchangeSettings();
