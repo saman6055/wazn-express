@@ -1,4 +1,4 @@
-import DashboardLayout from "@/components/DashboardLayout";
+﻿import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,6 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
-import { StepBtns, stepValue } from "@/components/ui/number-stepper";
 
 import { soundManager } from "@/lib/soundManager";
 
@@ -1119,9 +1118,8 @@ export default function QuickRegister() {
                         placeholder="0.00"
                         value={weightKg}
                         onChange={(e) => setWeightKg(e.target.value)}
-                        className="h-14 text-2xl font-mono font-bold text-center pe-9"
+                        className="h-14 text-2xl font-mono font-bold text-center"
                       />
-                      <StepBtns side="end" onStep={(d) => setWeightKg(stepValue(weightKg, d * 0.1))} />
                     </div>
                   </CardContent>
                 </Card>
@@ -1148,9 +1146,8 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={lengthCm}
                             onChange={(e) => setLengthCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                            className="h-14 text-xl font-mono font-bold text-center"
                           />
-                          <StepBtns side="end" onStep={(d) => setLengthCm(stepValue(lengthCm, d, 1))} />
                         </div>
                       </div>
                       <div className="space-y-1">
@@ -1162,9 +1159,8 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={widthCm}
                             onChange={(e) => setWidthCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                            className="h-14 text-xl font-mono font-bold text-center"
                           />
-                          <StepBtns side="end" onStep={(d) => setWidthCm(stepValue(widthCm, d, 1))} />
                         </div>
                       </div>
                       <div className="space-y-1">
@@ -1176,9 +1172,8 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={heightCm}
                             onChange={(e) => setHeightCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                            className="h-14 text-xl font-mono font-bold text-center"
                           />
-                          <StepBtns side="end" onStep={(d) => setHeightCm(stepValue(heightCm, d, 1))} />
                         </div>
                       </div>
                     </div>
@@ -1225,9 +1220,8 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={lengthCm}
                             onChange={(e) => setLengthCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                            className="h-14 text-xl font-mono font-bold text-center"
                           />
-                          <StepBtns side="end" onStep={(d) => setLengthCm(stepValue(lengthCm, d, 1))} />
                         </div>
                       </div>
                       <div className="space-y-1">
@@ -1239,9 +1233,8 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={widthCm}
                             onChange={(e) => setWidthCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                            className="h-14 text-xl font-mono font-bold text-center"
                           />
-                          <StepBtns side="end" onStep={(d) => setWidthCm(stepValue(widthCm, d, 1))} />
                         </div>
                       </div>
                       <div className="space-y-1">
@@ -1253,9 +1246,8 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={heightCm}
                             onChange={(e) => setHeightCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                            className="h-14 text-xl font-mono font-bold text-center"
                           />
-                          <StepBtns side="end" onStep={(d) => setHeightCm(stepValue(heightCm, d, 1))} />
                         </div>
                       </div>
                       <div className="space-y-1">
@@ -1267,9 +1259,8 @@ export default function QuickRegister() {
                             placeholder="0.0000"
                             value={directCbm}
                             onChange={(e) => setDirectCbm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center pe-9"
+                            className="h-14 text-xl font-mono font-bold text-center"
                           />
-                          <StepBtns side="end" onStep={(d) => setDirectCbm(stepValue(directCbm, d * 0.01, 4))} />
                         </div>
                       </div>
                     </div>

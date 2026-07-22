@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -11,7 +11,6 @@ import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
-import { StepBtns, stepValue } from "@/components/ui/number-stepper";
 import {
   ArrowRight,
   Package,
@@ -660,6 +659,7 @@ export default function FullPackageForm() {
                         <Input
                           type="number"
                           min="1"
+                          stepper={false}
                           value={formData.quantity}
                           onChange={(e) => handleQtyChange(e.target.value)}
                           className={cn("text-center text-base font-bold h-10 px-1", filledCls(formData.quantity))}
@@ -681,7 +681,7 @@ export default function FullPackageForm() {
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold text-amber-700">{pickLang(language, { ku: "نرخی ١ دانە بە یوانی چینی", en: "Price per unit in CNY", ar: "سعر الوحدة باليوان الصيني", zh: "单件价格（人民币）" })}</Label>
                       <div className="relative" dir="ltr">
-                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
+                        <span className="absolute start-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
                         <Input
                           type="number"
                           min="0"
@@ -689,10 +689,9 @@ export default function FullPackageForm() {
                           value={rmbPerUnit}
                           onChange={(e) => syncFromPerUnit(e.target.value)}
                           placeholder="٠"
-                          className={cn("ps-9 pe-9 h-10 text-base font-bold border-amber-200 focus:border-orange-400 bg-amber-50/40", filledCls(rmbPerUnit))}
+                          className={cn("ps-9 h-10 text-base font-bold border-amber-200 focus:border-orange-400 bg-amber-50/40", filledCls(rmbPerUnit))}
                           dir="ltr"
                         />
-                        <StepBtns side="start" onStep={(d) => syncFromPerUnit(stepValue(rmbPerUnit, d))} />
                       </div>
                     </div>
 
@@ -700,7 +699,7 @@ export default function FullPackageForm() {
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold text-orange-700">{pickLang(language, { ku: `کۆی نرخ بە یوانی چینی (${quantity} دانە)`, en: `Total price in CNY (${quantity} units)`, ar: `إجمالي السعر باليوان الصيني (${quantity} وحدة)`, zh: `总价（人民币，${quantity} 件）` })}</Label>
                       <div className="relative" dir="ltr">
-                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
+                        <span className="absolute start-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
                         <Input
                           type="number"
                           min="0"
@@ -708,10 +707,9 @@ export default function FullPackageForm() {
                           value={rmbTotal}
                           onChange={(e) => syncFromTotal(e.target.value)}
                           placeholder="٠"
-                          className={cn("ps-9 pe-9 h-10 text-base font-bold border-orange-200 focus:border-orange-400 bg-orange-50/40", filledCls(rmbTotal))}
+                          className={cn("ps-9 h-10 text-base font-bold border-orange-200 focus:border-orange-400 bg-orange-50/40", filledCls(rmbTotal))}
                           dir="ltr"
                         />
-                        <StepBtns side="start" onStep={(d) => syncFromTotal(stepValue(rmbTotal, d))} />
                       </div>
                     </div>
                   </div>
@@ -749,10 +747,9 @@ export default function FullPackageForm() {
                       value={formData.purchasePriceUsd}
                       onChange={(e) => syncFromUsd(e.target.value)}
                       placeholder="0.00"
-                      className={cn("ps-8 pe-9 text-start text-base font-bold h-10 border-amber-300 bg-white", filledCls(formData.purchasePriceUsd))}
+                      className={cn("ps-8 text-start text-base font-bold h-10 border-amber-300 bg-white", filledCls(formData.purchasePriceUsd))}
                       dir="ltr"
                     />
-                    <StepBtns side="end" onStep={(d) => syncFromUsd(stepValue(formData.purchasePriceUsd, d, 4))} />
                   </div>
                   {rmbPerUnit && rmbRate > 0 ? (
                     <div className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-1 border border-orange-200">
@@ -775,10 +772,9 @@ export default function FullPackageForm() {
                       value={formData.sellingPriceUsd}
                       onChange={(e) => setFormData(prev => ({ ...prev, sellingPriceUsd: e.target.value }))}
                       placeholder="0.00"
-                      className={cn("ps-8 pe-9 text-start text-base font-bold h-10 border-emerald-300 bg-white", filledCls(formData.sellingPriceUsd))}
+                      className={cn("ps-8 text-start text-base font-bold h-10 border-emerald-300 bg-white", filledCls(formData.sellingPriceUsd))}
                       dir="ltr"
                     />
-                    <StepBtns side="end" onStep={(d) => setFormData(prev => ({ ...prev, sellingPriceUsd: stepValue(prev.sellingPriceUsd, d) }))} />
                   </div>
                   <p className="text-[11px] text-emerald-600">{pickLang(language, { ku: "نرخی فرۆشتن بە کڕیار — بە دۆلار", en: "Selling price to the customer — in USD", ar: "سعر البيع للعميل — بالدولار", zh: "对客户的销售价 — 美元" })}</p>
                 </div>
@@ -847,10 +843,9 @@ export default function FullPackageForm() {
                       value={formData.advancePaidUsd}
                       onChange={(e) => setFormData({ ...formData, advancePaidUsd: e.target.value })}
                       placeholder="0.00"
-                      className={cn("ps-8 pe-9 h-10 text-base font-bold border-teal-200 focus:border-teal-400 bg-teal-50/40", filledCls(formData.advancePaidUsd))}
+                      className={cn("ps-8 h-10 text-base font-bold border-teal-200 focus:border-teal-400 bg-teal-50/40", filledCls(formData.advancePaidUsd))}
                       dir="ltr"
                     />
-                    <StepBtns side="end" onStep={(d) => setFormData(p => ({ ...p, advancePaidUsd: stepValue(p.advancePaidUsd, d) }))} />
                   </div>
                   <p className="text-[11px] text-teal-600">{pickLang(language, { ku: "بۆ بێ پارەدان دابمێنە بە 0", en: "Leave at 0 for no payment", ar: "اتركه 0 لعدم وجود دفعة", zh: "无付款则保持为 0" })}</p>
                 </div>
@@ -930,11 +925,10 @@ export default function FullPackageForm() {
                         <div className="space-y-1.5">
                           <Label className="text-sm font-medium">{pickLang(language, { ku: "کێشی ڕاستەقینە (کیلۆگرام)", en: "Actual weight (kg)", ar: "الوزن الفعلي (كغ)", zh: "实际重量（千克）" })}</Label>
                           <div className="relative" dir="ltr">
-                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">kg</span>
+                            <span className="absolute start-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">kg</span>
                             <Input type="number" step="0.01" min="0" value={formData.weightKg}
                               onChange={e => setFormData(p => ({ ...p, weightKg: e.target.value }))}
-                              placeholder="0.00" className={cn("ps-9 pe-10 h-10 font-mono", filledCls(formData.weightKg))} dir="ltr" />
-                            <StepBtns side="start" onStep={(d) => setFormData(p => ({ ...p, weightKg: stepValue(p.weightKg, d * 0.1) }))} />
+                              placeholder="0.00" className={cn("ps-10 h-10 font-mono", filledCls(formData.weightKg))} dir="ltr" />
                           </div>
                         </div>
                         {volumetricKg > 0 && (
@@ -957,12 +951,11 @@ export default function FullPackageForm() {
                               <div key={field} className="space-y-1">
                                 <Label className="text-xs text-muted-foreground">{label}</Label>
                                 <div className="relative" dir="ltr">
-                                  <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
+                                  <span className="absolute start-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
                                   <Input type="number" step="0.1" min="0"
                                     value={formData[field as keyof typeof formData] as string}
                                     onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
-                                    placeholder="0" className={cn("ps-8 pe-8 h-10 font-mono text-sm", filledCls(formData[field as keyof typeof formData]))} dir="ltr" />
-                                  <StepBtns side="start" onStep={(d) => setFormData(p => ({ ...p, [field]: stepValue(p[field as keyof typeof p] as string, d, 1) }))} />
+                                    placeholder="0" className={cn("ps-8 h-10 font-mono text-sm", filledCls(formData[field as keyof typeof formData]))} dir="ltr" />
                                 </div>
                               </div>
                             ))}
@@ -992,11 +985,10 @@ export default function FullPackageForm() {
                         <div className="space-y-1.5">
                           <Label className="text-sm font-medium">{pickLang(language, { ku: "CBM ڕاستەوخۆ", en: "Direct CBM", ar: "CBM مباشر", zh: "直接输入 CBM" })}</Label>
                           <div className="relative" dir="ltr">
-                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">m³</span>
+                            <span className="absolute start-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">m³</span>
                             <Input type="number" step="0.0001" min="0" value={formData.volumeCbm}
                               onChange={e => setFormData(p => ({ ...p, volumeCbm: e.target.value }))}
-                              placeholder="0.0000" className={cn("ps-9 pe-10 h-10 font-mono", filledCls(formData.volumeCbm))} dir="ltr" />
-                            <StepBtns side="start" onStep={(d) => setFormData(p => ({ ...p, volumeCbm: stepValue(p.volumeCbm, d * 0.01, 4) }))} />
+                              placeholder="0.0000" className={cn("ps-10 h-10 font-mono", filledCls(formData.volumeCbm))} dir="ltr" />
                           </div>
                           <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "ئەگەر CBM دەزانیت", en: "If you know the CBM", ar: "إذا كنت تعرف الـ CBM", zh: "如果您知道 CBM" })}</p>
                         </div>
@@ -1023,12 +1015,11 @@ export default function FullPackageForm() {
                             <div key={field} className="space-y-1">
                               <Label className="text-xs text-muted-foreground">{label}</Label>
                               <div className="relative" dir="ltr">
-                                <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
+                                <span className="absolute start-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">cm</span>
                                 <Input type="number" step="0.1" min="0"
                                   value={formData[field as keyof typeof formData] as string}
                                   onChange={e => setFormData(p => ({ ...p, [field]: e.target.value }))}
-                                  placeholder="0" className={cn("ps-8 pe-8 h-10 font-mono text-sm", filledCls(formData[field as keyof typeof formData]))} dir="ltr" />
-                                <StepBtns side="start" onStep={(d) => setFormData(p => ({ ...p, [field]: stepValue(p[field as keyof typeof p] as string, d, 1) }))} />
+                                  placeholder="0" className={cn("ps-8 h-10 font-mono text-sm", filledCls(formData[field as keyof typeof formData]))} dir="ltr" />
                               </div>
                             </div>
                           ))}

@@ -1787,6 +1787,7 @@ const [, setLocation] = useLocation();
                       <Label className="text-xs">{t('packages.divisor')}</Label>
                       <Input
                         type="number"
+                        step="1"
                         className="w-28 h-7 text-xs"
                         value={editVolumetricDivisor}
                         onChange={(e) => setEditVolumetricDivisor(e.target.value)}

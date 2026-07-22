@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Minus, Plus } from "lucide-react";
 import * as React from "react";
 
-// Number inputs render a +/− stepper overlay inside a wrapper div. Layout
+// Number inputs render +/− stepper pills inside a wrapper div. Layout
 // classes (width, margin, flex/grid placement) must move to that wrapper so
 // the overlay tracks the visible box; visual classes stay on the <input>.
 const LAYOUT_CLASS =
@@ -30,6 +30,12 @@ function decimalsOf(n: number) {
 const HOLD_DELAY_MS = 400;
 const HOLD_REPEAT_MS = 80;
 
+type InputProps = React.ComponentProps<"input"> & {
+  /** Set false to hide the built-in +/− stepper pills on a number input
+   *  (e.g. when the field already has its own dedicated buttons). */
+  stepper?: boolean;
+};
+
 function Input({
   className,
   type,
@@ -37,8 +43,9 @@ function Input({
   onCompositionStart,
   onCompositionEnd,
   ref,
+  stepper = true,
   ...props
-}: React.ComponentProps<"input">) {
+}: InputProps) {
   // Get dialog composition context if available (will be no-op if not inside Dialog)
   const dialogComposition = useDialogComposition();
 
@@ -77,7 +84,13 @@ function Input({
     },
   });
 
-  const isNumber = type === "number";
+  const hasStepper = type === "number" && stepper;
+  // Fields that declare a whole-number step (quantities, counts) only get the
+  // unit pill; everything else gets both the unit (1) and point (0.1) pills.
+  const stepAttrNum = props.step != null ? parseFloat(String(props.step)) : NaN;
+  const isIntegerField = Number.isFinite(stepAttrNum) && stepAttrNum >= 1;
+  const unitStep = isIntegerField ? stepAttrNum : 1;
+
   const innerRef = React.useRef<HTMLInputElement | null>(null);
   const delayTimer = React.useRef<number | null>(null);
   const repeatTimer = React.useRef<number | null>(null);
@@ -101,15 +114,13 @@ function Input({
 
   React.useEffect(() => stopRepeat, []);
 
-  const stepBy = (dir: 1 | -1) => {
+  const stepBy = (delta: number) => {
     const el = innerRef.current;
     if (!el || el.disabled || el.readOnly) return;
-    const stepAttr = parseFloat(el.step);
-    const step = Number.isFinite(stepAttr) && stepAttr > 0 ? stepAttr : 0.1;
     const parsed = parseFloat(el.value);
     const base = Number.isFinite(parsed) ? parsed : 0;
-    const decimals = Math.min(Math.max(decimalsOf(step), decimalsOf(base)), 10);
-    let next = Number((base + dir * step).toFixed(decimals));
+    const decimals = Math.min(Math.max(decimalsOf(Math.abs(delta)), decimalsOf(base)), 10);
+    let next = Number((base + delta).toFixed(decimals));
     if (el.min !== "" && Number.isFinite(Number(el.min))) next = Math.max(next, Number(el.min));
     if (el.max !== "" && Number.isFinite(Number(el.max))) next = Math.min(next, Number(el.max));
     // Go through the native setter + input event so controlled React inputs
@@ -119,29 +130,37 @@ function Input({
     el.dispatchEvent(new Event("input", { bubbles: true }));
   };
 
-  const startPress = (dir: 1 | -1) => (e: React.PointerEvent) => {
-    // Keep focus where it is (typically the input) instead of the button.
-    e.preventDefault();
-    stopRepeat();
-    stepBy(dir);
-    delayTimer.current = window.setTimeout(() => {
-      repeatTimer.current = window.setInterval(() => stepBy(dir), HOLD_REPEAT_MS);
-    }, HOLD_DELAY_MS);
-  };
+  // Click steps once; press-and-hold repeats. preventDefault keeps focus
+  // where it is (typically the input) instead of moving it to the button.
+  const pressHandlers = (delta: number) => ({
+    onPointerDown: (e: React.PointerEvent) => {
+      e.preventDefault();
+      stopRepeat();
+      stepBy(delta);
+      delayTimer.current = window.setTimeout(() => {
+        repeatTimer.current = window.setInterval(() => stepBy(delta), HOLD_REPEAT_MS);
+      }, HOLD_DELAY_MS);
+    },
+    onPointerUp: stopRepeat,
+    onPointerLeave: stopRepeat,
+    onPointerCancel: stopRepeat,
+  });
 
-  const split = isNumber ? splitLayoutClasses(className) : undefined;
+  const split = hasStepper ? splitLayoutClasses(className) : undefined;
 
   const inputEl = (
     <input
-      ref={isNumber ? setRefs : ref}
+      ref={hasStepper ? setRefs : ref}
       type={type}
       data-slot="input"
       className={cn(
         "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
         "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-        isNumber ? split?.input : className,
-        isNumber && "pr-14"
+        hasStepper ? split?.input : className,
+        // Reserve room on the right for the pills; on narrow fields the unit
+        // pill is hidden (container query), so less padding is needed.
+        hasStepper && (isIntegerField ? "pr-[4.25rem]" : "pr-[5rem] @[16rem]:pr-[8.75rem]")
       )}
       onCompositionStart={handleCompositionStart}
       onCompositionEnd={handleCompositionEnd}
@@ -150,42 +169,61 @@ function Input({
     />
   );
 
-  if (!isNumber) return inputEl;
+  if (!hasStepper) return inputEl;
 
   const stepperDisabled = props.disabled || props.readOnly;
   const stepperButton =
-    "inline-flex h-6 w-6 select-none touch-manipulation items-center justify-center rounded border border-input bg-background text-muted-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40";
+    "inline-flex h-6 w-5 select-none touch-manipulation items-center justify-center bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40";
+
+  // One bordered pill per granularity: [−  label  +]. The label in the middle
+  // says what a click does (1 or 0.1) so the two pills never get confused.
+  const pill = (delta: number, label: string, extraClass?: string) => (
+    <div
+      className={cn(
+        "items-center overflow-hidden rounded-md border border-input bg-background shadow-xs",
+        extraClass ?? "flex"
+      )}
+    >
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label={`decrease by ${label}`}
+        disabled={stepperDisabled}
+        className={stepperButton}
+        {...pressHandlers(-delta)}
+      >
+        <Minus className="h-3 w-3" />
+      </button>
+      <span className="flex h-6 select-none items-center border-x border-input bg-muted/60 px-1 font-mono text-[10px] leading-none text-muted-foreground">
+        {label}
+      </span>
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label={`increase by ${label}`}
+        disabled={stepperDisabled}
+        className={stepperButton}
+        {...pressHandlers(delta)}
+      >
+        <Plus className="h-3 w-3" />
+      </button>
+    </div>
+  );
 
   return (
-    <div className={cn("relative w-full", split?.wrapper)}>
+    <div className={cn("@container relative w-full", split?.wrapper)}>
       {inputEl}
-      <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
-        <button
-          type="button"
-          tabIndex={-1}
-          aria-label="decrease value"
-          disabled={stepperDisabled}
-          className={stepperButton}
-          onPointerDown={startPress(-1)}
-          onPointerUp={stopRepeat}
-          onPointerLeave={stopRepeat}
-          onPointerCancel={stopRepeat}
-        >
-          <Minus className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          tabIndex={-1}
-          aria-label="increase value"
-          disabled={stepperDisabled}
-          className={stepperButton}
-          onPointerDown={startPress(1)}
-          onPointerUp={stopRepeat}
-          onPointerLeave={stopRepeat}
-          onPointerCancel={stopRepeat}
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
+      {/* dir=ltr so the pill order is stable in RTL pages too */}
+      <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-2" dir="ltr">
+        {isIntegerField ? (
+          pill(unitStep, String(unitStep))
+        ) : (
+          <>
+            {/* Unit pill only fits on wider fields; point pill always shows */}
+            {pill(1, "1", "hidden @[16rem]:flex")}
+            {pill(0.1, "0.1")}
+          </>
+        )}
       </div>
     </div>
   );

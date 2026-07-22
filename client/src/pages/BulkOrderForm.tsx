@@ -733,7 +733,7 @@ export default function BulkOrderForm() {
                         </div>
                         <div className="grid grid-cols-2 gap-3 items-center">
                           <div className="relative">
-                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
                             <Input
                               type="number"
                               min="0"
@@ -742,7 +742,7 @@ export default function BulkOrderForm() {
                               placeholder={pickLang(language, { ku: "نرخی ١ دانە بە یوان", en: "Price per unit in Yuan", ar: "سعر الوحدة باليوان", zh: "单件人民币价格" })}
                               value={item.itemPriceCny}
                               onChange={e => setItemCny(item.id, e.target.value)}
-                              className="h-9 text-sm pe-8"
+                              className="h-9 text-sm pl-8"
                             />
                           </div>
                           <div className="text-sm">
