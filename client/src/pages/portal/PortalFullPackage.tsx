@@ -21,7 +21,7 @@ import {
   ArrowUpRight, Sparkles, TrendingUp, Box, Plane, Home,
   FileText, Wallet, ShoppingCart, Star, Filter, XCircle,
   Loader2, Check, AlertTriangle, Gift, Zap, ThumbsUp, ThumbsDown,
-  Image as ImageIcon, ExternalLink, Hash, SlidersHorizontal, ArrowUpDown, Copy
+  Image as ImageIcon, ExternalLink, Hash, SlidersHorizontal, ArrowUpDown, Copy, HelpCircle
 } from "lucide-react";
 
 // Status configuration with beautiful colors
@@ -303,9 +303,17 @@ export default function PortalFullPackage() {
                 <h1 className="text-2xl font-bold text-white">
                   {pickLang(language, { ku: "ئۆردەرەکانم", en: "My Orders", ar: "طلباتي", zh: "我的订单" })}
                 </h1>
-                <p className="text-white/70 text-sm">
-                  {pickLang(language, { ku: "بەڕێوەبردنی ئۆردەرەکانت", en: "Manage your orders", ar: "إدارة طلباتك", zh: "管理您的订单" })}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-white/70 text-sm">
+                    {pickLang(language, { ku: "بەڕێوەبردنی ئۆردەرەکانت", en: "Manage your orders", ar: "إدارة طلباتك", zh: "管理您的订单" })}
+                  </p>
+                  <Link href="/portal/guide#orders">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-medium text-white/90 hover:bg-white/25 transition cursor-pointer">
+                      <HelpCircle className="w-3 h-3" />
+                      {pickLang(language, { ku: "ئەمە چییە؟", en: "What's this?", ar: "ما هذا؟", zh: "这是什么？" })}
+                    </span>
+                  </Link>
+                </div>
               </div>
             </div>
             <Link href="/portal/create-full-package">

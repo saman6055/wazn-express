@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { 
   Package, ChevronRight, Truck, CheckCircle, Clock, AlertCircle, 
   Plane, Ship, Box, AlertTriangle, Search, Filter, X, Calendar,
-  ArrowUpDown, Download, Share2
+  ArrowUpDown, Download, Share2, HelpCircle
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { PortalListSkeleton } from "@/components/portal/PortalListSkeleton";
@@ -235,9 +235,17 @@ function ClassicPortalShipments() {
               <h1 className="text-2xl font-bold text-white">
                 {language === "ku" ? "بارەکان" : language === "ar" ? "الشحنات" : "Shipments"}
               </h1>
-              <p className="text-slate-400 text-sm mt-1">
-                {language === "ku" ? "شوێنکەوتنی پاکەتەکانت" : language === "ar" ? "تتبع شحناتك" : "Track your packages"}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-slate-400 text-sm">
+                  {language === "ku" ? "شوێنکەوتنی پاکەتەکانت" : language === "ar" ? "تتبع شحناتك" : "Track your packages"}
+                </p>
+                <Link href="/portal/guide#shipments">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white/80 hover:bg-white/20 transition cursor-pointer">
+                    <HelpCircle className="w-3 h-3" />
+                    {language === "ku" ? "ئەمە چییە؟" : language === "ar" ? "ما هذا؟" : language === "zh" ? "这是什么？" : "What's this?"}
+                  </span>
+                </Link>
+              </div>
             </div>
             <button 
               onClick={() => setShowFilters(!showFilters)}
