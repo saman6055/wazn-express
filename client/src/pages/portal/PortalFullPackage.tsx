@@ -21,7 +21,7 @@ import {
   ArrowUpRight, Sparkles, TrendingUp, Box, Plane, Home,
   FileText, Wallet, ShoppingCart, Star, Filter, XCircle,
   Loader2, Check, AlertTriangle, Gift, Zap, ThumbsUp, ThumbsDown,
-  Image as ImageIcon, ExternalLink, Hash, SlidersHorizontal, ArrowUpDown
+  Image as ImageIcon, ExternalLink, Hash, SlidersHorizontal, ArrowUpDown, Copy
 } from "lucide-react";
 
 // Status configuration with beautiful colors
@@ -675,19 +675,28 @@ export default function PortalFullPackage() {
                               {order.productName}
                             </h3>
                             
-                            {/* Order Code */}
-                            <div className="flex items-center gap-1 mb-2">
-                              <Hash className={cn(
-                                "w-3 h-3",
-                                isDark ? "text-slate-500" : "text-slate-400"
-                              )} />
-                              <span className={cn(
-                                "text-xs font-mono",
-                                isDark ? "text-slate-400" : "text-slate-500"
-                              )}>
-                                {order.orderCode}
-                              </span>
-                            </div>
+                            {/* Order Code — prominent and tap-to-copy so the
+                                customer can quote it to staff instantly */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard?.writeText(order.orderCode).then(() =>
+                                  toast.success(pickLang(language, { ku: "ئۆردەر نەمبەر کۆپی کرا", en: "Order number copied", ar: "تم نسخ رقم الطلب", zh: "订单号已复制" }))
+                                );
+                              }}
+                              className={cn(
+                                "mb-2 inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-sm font-mono font-bold transition active:scale-95",
+                                isDark
+                                  ? "border-violet-800 bg-violet-950/40 text-violet-300 hover:bg-violet-900/40"
+                                  : "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
+                              )}
+                              dir="ltr"
+                            >
+                              <Hash className="w-3.5 h-3.5" />
+                              {order.orderCode}
+                              <Copy className="w-3 h-3 opacity-60" />
+                            </button>
                             
                             {/* Price and Quantity */}
                             <div className="flex items-center justify-between">
@@ -845,11 +854,26 @@ export default function PortalFullPackage() {
                   )}>
                     {selectedOrder.productName}
                   </DialogTitle>
-                  <DialogDescription className={cn(
-                    "text-sm",
-                    isDark ? "text-slate-400" : "text-slate-500"
-                  )}>
-                    {selectedOrder.orderCode}
+                  <DialogDescription asChild>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigator.clipboard?.writeText(selectedOrder.orderCode).then(() =>
+                          toast.success(pickLang(language, { ku: "ئۆردەر نەمبەر کۆپی کرا", en: "Order number copied", ar: "تم نسخ رقم الطلب", zh: "订单号已复制" }))
+                        )
+                      }
+                      className={cn(
+                        "inline-flex w-fit items-center gap-1.5 rounded-lg border px-2 py-1 text-sm font-mono font-bold transition active:scale-95",
+                        isDark
+                          ? "border-violet-800 bg-violet-950/40 text-violet-300 hover:bg-violet-900/40"
+                          : "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
+                      )}
+                      dir="ltr"
+                    >
+                      <Hash className="w-3.5 h-3.5" />
+                      {selectedOrder.orderCode}
+                      <Copy className="w-3 h-3 opacity-60" />
+                    </button>
                   </DialogDescription>
                 </DialogHeader>
                 
