@@ -1,5 +1,6 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
+import { PackageThumb, usePackageImages } from "@/components/portal/PackageThumb";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -37,6 +38,7 @@ const { t, language } = useLanguage();
   
   const { data: batches } = trpc.customerPortal.getMyBatches.useQuery();
   const { data: packages, isLoading } = trpc.customerPortal.getMyPackagesInBatch.useQuery({ batchId });
+  const { resolve: resolvePackageImage } = usePackageImages();
   
   const batch = batches?.find(b => b.id === batchId);
   
@@ -364,22 +366,24 @@ const { t, language } = useLanguage();
             {packages?.map((pkg) => {
               const pkgPhotos = pkg.photos as string[] | undefined;
               const hasPhotos = pkgPhotos && pkgPhotos.length > 0;
-              
+              const thumb = resolvePackageImage(pkg);
+
               return (
                 <div key={pkg.id} className={cn(
                   "rounded-2xl p-4 shadow-sm transition-all duration-300 border",
-                  isDark 
-                    ? "bg-slate-800 border-slate-700" 
+                  isDark
+                    ? "bg-slate-800 border-slate-700"
                     : "bg-white border-slate-100"
                 )}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
-                      <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center",
-                        isDark ? "bg-slate-700" : "bg-slate-100"
-                      )}>
-                        <Box className={cn("w-6 h-6", isDark ? "text-slate-400" : "text-slate-600")} />
-                      </div>
+                      <PackageThumb
+                        resolved={thumb}
+                        language={language}
+                        isDark={isDark}
+                        size={48}
+                        onClick={hasPhotos ? () => openPhotoViewer(pkg.id) : undefined}
+                      />
                       <div>
                         <p className={cn("font-bold", isDark ? "text-white" : "text-slate-800")}>
                           {pkg.trackingNumber || pkg.packageCode}
