@@ -18,6 +18,20 @@ function getInitialSearchQuery(): string {
   return new URLSearchParams(window.location.search).get("q") ?? "";
 }
 
+// Recent searches live in localStorage so the customer can re-run them with
+// one tap — survives reloads and app restarts on the same device.
+const RECENT_SEARCHES_KEY = "wazn_portal_recent_searches";
+const RECENT_SEARCHES_MAX = 8;
+
+function loadRecentSearches(): string[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) || "[]");
+    return Array.isArray(raw) ? raw.filter((s) => typeof s === "string").slice(0, RECENT_SEARCHES_MAX) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function PortalSearch() {
   const { t, language } = useLanguage();
   const isRTL = language === "ku" || language === "ar";
@@ -43,7 +57,7 @@ export default function PortalSearch() {
   // full-package/commission orders by order code (FP-...) or tracking.
   const { data: orderResult } = trpc.customerPortal.searchOrder.useQuery(
     { query: searchQuery.trim() },
-    { enabled: hasSearched && !!searchQuery.trim() && !result }
+    { enabled: hasSearched && !!searchQuery.trim() && !result, retry: false }
   );
 
   // Real movement events for the found package — feeds actual dates into the
@@ -55,10 +69,40 @@ export default function PortalSearch() {
 
   const photos = result?.photos as string[] | undefined;
 
+  const [recentSearches, setRecentSearches] = useState<string[]>(loadRecentSearches);
+
+  const rememberSearch = (q: string) => {
+    const next = [q, ...recentSearches.filter((r) => r !== q)].slice(0, RECENT_SEARCHES_MAX);
+    setRecentSearches(next);
+    try {
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+    } catch {
+      // Storage full/blocked — history is a convenience, never an error.
+    }
+  };
+
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+    try {
+      localStorage.removeItem(RECENT_SEARCHES_KEY);
+    } catch {
+      // ignore
+    }
+  };
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
+    rememberSearch(searchQuery.trim());
     setHasSearched(true);
     await refetch();
+  };
+
+  // Tapping a recent chip re-runs that search instantly (the query key change
+  // triggers the fetch on its own).
+  const searchRecent = (q: string) => {
+    setSearchQuery(q);
+    rememberSearch(q);
+    setHasSearched(true);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -177,6 +221,38 @@ export default function PortalSearch() {
         >
           {isLoading ? t("searching") || "Searching..." : t("search") || "Search"}
         </Button>
+
+        {/* Recent searches — one tap re-runs the search */}
+        {recentSearches.length > 0 && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-white/60">
+                {pickLang(language, { ku: "دواین گەڕانەکان", en: "Recent searches", ar: "عمليات البحث الأخيرة", zh: "最近搜索" })}
+              </span>
+              <button
+                type="button"
+                onClick={clearRecentSearches}
+                className="text-[11px] text-white/50 hover:text-white/80 transition"
+              >
+                {pickLang(language, { ku: "سڕینەوە", en: "Clear", ar: "مسح", zh: "清除" })}
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {recentSearches.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => searchRecent(q)}
+                  className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-xs font-mono text-white/85 transition hover:bg-white/20 active:scale-95"
+                  dir="ltr"
+                >
+                  <Clock className="h-3 w-3 opacity-60" />
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Search Results */}
