@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -725,6 +726,13 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
     staleTime: 60_000,
   });
 
+  // Yuan sell rate for the live-rates strip in the header (tappable → the
+  // yuan exchange page). Read-only, shares the cache with the yuan page.
+  const { data: yuanInfo } = trpc.customerPortal.getYuanExchangeInfo.useQuery(undefined, {
+    staleTime: 60_000,
+    retry: false,
+  });
+
   const [activeTab, setActiveTab] = useState<"shipping" | "services">("shipping");
 
   const title = useMemo(() => {
@@ -788,34 +796,60 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
 
   return (
     <section className={cn("px-4 my-5", className)}>
-      {/* Hero header */}
+      {/* Header — compact strip. Not decoration: it carries the live rates
+          (yuan sell rate → tappable, IQD equivalent) so the very first thing
+          the customer sees is real, current numbers. Trust > ornament. */}
       <div className={cn(
-        "relative overflow-hidden rounded-3xl p-6 mb-4 shadow-lg",
+        "relative overflow-hidden rounded-2xl p-4 mb-4 shadow-lg",
         "bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800",
       )}>
-        <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><g fill=%22%23fff%22 fill-opacity=%22.3%22><path d=%22M0 0h1v1H0zM40 40h1v1h-1zM80 80h1v1h-1z%22/></g></svg>')]" />
-        <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-white/10" />
-        <div className="absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-amber-300/10" />
+        <div className="absolute -top-10 -end-10 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
 
-        <div className="relative flex items-start justify-between gap-3">
+        <div className="relative flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 shrink-0">
+            <DollarSign className="w-5 h-5 text-amber-300" />
+          </div>
           <div className="flex-1 min-w-0">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 mb-3">
-              <Sparkles className="w-3 h-3 text-amber-300" />
-              <span className="text-[11px] font-bold text-white tracking-wide">{t("priceList.badge")}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base sm:text-lg font-black text-white leading-tight">
+                {title}
+              </h2>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 border border-white/20 text-[10px] font-bold text-amber-200 tracking-wide">
+                <Sparkles className="w-3 h-3" />
+                {t("priceList.badge")}
+              </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-              {title}
-            </h2>
             {subtitle && (
-              <p className="text-sm text-purple-100/90 mt-1 line-clamp-2">
+              <p className="text-[11px] text-purple-100/80 mt-0.5 line-clamp-1">
                 {subtitle}
               </p>
             )}
           </div>
-          <div className="hidden sm:flex p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-            <DollarSign className="w-6 h-6 text-amber-300" />
-          </div>
         </div>
+
+        {/* Live rates strip */}
+        {((yuanInfo?.enabled && Number(yuanInfo.rate) > 0) || (showIqd && iqdRate)) && (
+          <div className="relative mt-3 flex flex-wrap items-center gap-1.5">
+            {yuanInfo?.enabled && Number(yuanInfo.rate) > 0 && (
+              <Link href="/portal/yuan-exchange">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-300/40 px-3 py-1.5 text-[12px] font-black text-amber-100 transition hover:bg-amber-400/30 active:scale-95 cursor-pointer">
+                  <span className="text-sm leading-none">¥</span>
+                  <span>
+                    {pickLang(language, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "买人民币" })}
+                  </span>
+                  <span className="font-mono" dir="ltr">1$ = {Number(yuanInfo.rate)}¥</span>
+                  <ChevronDown className="w-3.5 h-3.5 -rotate-90 rtl:rotate-90 opacity-80" />
+                </span>
+              </Link>
+            )}
+            {showIqd && iqdRate && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3 py-1.5 text-[12px] font-bold text-white/90">
+                <span className="font-mono" dir="ltr">1$ ≈ {Math.round(iqdRate).toLocaleString("en-US")}</span>
+                <span>د.ع</span>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tabs — shown only when both categories have content and layout is "tabs" */}
