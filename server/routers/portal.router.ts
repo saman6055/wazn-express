@@ -279,24 +279,39 @@ export const customerPortalRouter = router({
 
     // Account statement PDF — the customer's own report, base64-encoded like
     // the staff exportCustomerPDF. Lazy import keeps pdfkit off the hot path.
-    getMyStatementPdf: protectedProcedure.mutation(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id :
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Customer account required" });
-      }
-      const { getCustomerReportData, generateCustomerPDF } = await import("../services/pdf.service");
-      const data = await getCustomerReportData(customerId);
-      if (!data) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "No account data found" });
-      }
-      const pdfBuffer = await generateCustomerPDF(data);
-      logPortal(ctx, customerId, "statement_pdf", "other", { detail: "downloaded account statement" });
-      return {
-        pdf: pdfBuffer.toString("base64"),
-        filename: `statement-${data.customer.customerCode || customerId}.pdf`,
-      };
-    }),
+    // Labels render in the customer's language (ku/ar via embedded font, zh
+    // falls back to en); numbers/codes stay Latin. Optional date range and
+    // charge/payment type filter.
+    getMyStatementPdf: protectedProcedure
+      .input(z.object({
+        language: z.enum(["ku", "en", "ar", "zh"]).default("en"),
+        from: z.date().optional(),
+        to: z.date().optional(),
+        type: z.enum(["all", "charges", "payments"]).default("all"),
+      }).optional())
+      .mutation(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Customer account required" });
+        }
+        const { getCustomerReportData, generateCustomerPDF } = await import("../services/pdf.service");
+        const data = await getCustomerReportData(
+          customerId,
+          input?.from,
+          input?.to,
+          { txType: input?.type ?? "all" },
+        );
+        if (!data) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "No account data found" });
+        }
+        const pdfBuffer = await generateCustomerPDF(data, input?.language ?? "en");
+        logPortal(ctx, customerId, "statement_pdf", "other", { detail: "downloaded account statement" });
+        return {
+          pdf: pdfBuffer.toString("base64"),
+          filename: `statement-${data.customer.customerCode || customerId}.pdf`,
+        };
+      }),
 
     // ---- Yuan exchange (buy CNY with USD at the company's sell rate) ----
     getYuanExchangeInfo: protectedProcedure.query(async () => {

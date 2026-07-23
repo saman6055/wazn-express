@@ -1,7 +1,21 @@
-import PDFDocument from 'pdfkit';
+﻿import PDFDocument from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
 import { getDb } from '../db';
 import { packages, users, customers, ledgerTransactions, customerAccounts, paymentRecords, batches } from '../../drizzle/schema';
-import { sql, count, eq, desc, gte, lte, and, sum } from 'drizzle-orm';
+import { sql, count, eq, desc, asc, gte, lte, and, sum, inArray } from 'drizzle-orm';
+
+// Ledger transaction-type buckets for the statement's "type" filter.
+const CHARGE_TX_TYPES = [
+  'DEBIT_PACKAGE', 'DEBIT_FULL_PACKAGE', 'DEBIT_PURCHASE_REQUEST', 'DEBIT_COMMISSION',
+  'DEBIT_SERVICE', 'DEBIT_PENALTY', 'DEBIT_OTHER', 'ADJUSTMENT_DEBIT',
+] as const;
+const PAYMENT_TX_TYPES = [
+  'CREDIT_PAYMENT', 'CREDIT_DEPOSIT', 'CREDIT_REFUND', 'CREDIT_DISCOUNT',
+  'CREDIT_OTHER', 'ADJUSTMENT_CREDIT',
+] as const;
+
+export type StatementTxFilter = 'all' | 'charges' | 'payments';
 
 // ============ CUSTOMER PDF REPORT ============
 
@@ -39,12 +53,19 @@ interface CustomerReportData {
     amount: number;
     description: string;
     createdAt: Date;
+    /** Account balance after this transaction (USD) — the statement's running column. */
+    balanceAfter: number;
   }>;
   generatedAt: Date;
   dateRange?: { start: Date; end: Date };
 }
 
-export async function getCustomerReportData(customerId: number, startDate?: Date, endDate?: Date): Promise<CustomerReportData | null> {
+export async function getCustomerReportData(
+  customerId: number,
+  startDate?: Date,
+  endDate?: Date,
+  options?: { txType?: StatementTxFilter },
+): Promise<CustomerReportData | null> {
   const db = await getDb();
   if (!db) return null;
 
@@ -104,7 +125,9 @@ export async function getCustomerReportData(customerId: number, startDate?: Date
     ));
   }
 
-  const customerPackages = await packagesQuery.orderBy(desc(packages.createdAt)).limit(50);
+  // High cap only as a runaway guard — the statement must be COMPLETE, the
+  // old limit(50) silently dropped packages and customers noticed.
+  const customerPackages = await packagesQuery.orderBy(desc(packages.createdAt)).limit(1000);
 
   // Get batch codes for packages
   const packagesWithBatch = await Promise.all(customerPackages.map(async (pkg) => {
@@ -144,30 +167,31 @@ export async function getCustomerReportData(customerId: number, startDate?: Date
     ));
   }
 
-  const payments = await paymentsQuery.orderBy(desc(paymentRecords.createdAt)).limit(30);
+  const payments = await paymentsQuery.orderBy(desc(paymentRecords.createdAt)).limit(1000);
 
-  // Get transactions
-  let transactionsQuery = db.select({
+  // Ledger transactions — the heart of the statement. Chronological (oldest
+  // first) so the running-balance column reads like a real bank statement.
+  const txConditions = [eq(ledgerTransactions.accountId, accountId)];
+  if (startDate && endDate) {
+    txConditions.push(gte(ledgerTransactions.createdAt, startDate));
+    txConditions.push(lte(ledgerTransactions.createdAt, endDate));
+  }
+  if (options?.txType === 'charges') {
+    txConditions.push(inArray(ledgerTransactions.transactionType, [...CHARGE_TX_TYPES]));
+  } else if (options?.txType === 'payments') {
+    txConditions.push(inArray(ledgerTransactions.transactionType, [...PAYMENT_TX_TYPES]));
+  }
+
+  const transactions = await db.select({
     type: ledgerTransactions.transactionType,
     amount: ledgerTransactions.amountUsd,
     description: ledgerTransactions.description,
-    createdAt: ledgerTransactions.createdAt
-  }).from(ledgerTransactions).where(eq(ledgerTransactions.accountId, accountId));
-
-  if (startDate && endDate) {
-    transactionsQuery = db.select({
-      type: ledgerTransactions.transactionType,
-      amount: ledgerTransactions.amountUsd,
-      description: ledgerTransactions.description,
-      createdAt: ledgerTransactions.createdAt
-    }).from(ledgerTransactions).where(and(
-      eq(ledgerTransactions.accountId, accountId),
-      gte(ledgerTransactions.createdAt, startDate),
-      lte(ledgerTransactions.createdAt, endDate)
-    ));
-  }
-
-  const transactions = await transactionsQuery.orderBy(desc(ledgerTransactions.createdAt)).limit(50);
+    createdAt: ledgerTransactions.createdAt,
+    balanceAfter: ledgerTransactions.balanceAfterUsd,
+  }).from(ledgerTransactions)
+    .where(and(...txConditions))
+    .orderBy(asc(ledgerTransactions.createdAt))
+    .limit(1000);
 
   return {
     customer: {
@@ -195,14 +219,67 @@ export async function getCustomerReportData(customerId: number, startDate?: Date
       type: t.type,
       amount: Number(t.amount) || 0,
       description: t.description || '',
-      createdAt: t.createdAt
+      createdAt: t.createdAt,
+      balanceAfter: Number(t.balanceAfter) || 0,
     })),
     generatedAt: new Date(),
     dateRange: startDate && endDate ? { start: startDate, end: endDate } : undefined
   };
 }
 
-export async function generateCustomerPDF(data: CustomerReportData): Promise<Buffer> {
+// ---- Localized customer statement -----------------------------------------
+// Labels for the customer statement in the three fonts we can actually render:
+// English (Helvetica) and Kurdish/Arabic (embedded Vazirmatn, shaped by
+// fontkit). Chinese falls back to English — no CJK font is bundled. Numbers,
+// codes and dates stay Latin everywhere by design.
+export type StatementLang = 'ku' | 'en' | 'ar' | 'zh';
+
+const STMT: Record<string, { en: string; ku: string; ar: string }> = {
+  title: { en: 'Account Statement', ku: 'کەشفی حساب', ar: 'كشف الحساب' },
+  period: { en: 'Period', ku: 'ماوە', ar: 'الفترة' },
+  generated: { en: 'Generated', ku: 'بەرواری دەرچوون', ar: 'تاريخ الإصدار' },
+  customerCode: { en: 'Customer Code', ku: 'کۆدی کڕیار', ar: 'رمز العميل' },
+  mobile: { en: 'Mobile', ku: 'مۆبایل', ar: 'الموبايل' },
+  accountSummary: { en: 'Account Summary', ku: 'پوختەی حساب', ar: 'ملخص الحساب' },
+  totalCharges: { en: 'Total Charges', ku: 'کۆی قەرزەکان', ar: 'إجمالي المصاريف' },
+  totalPayments: { en: 'Total Payments', ku: 'کۆی پارەدانەکان', ar: 'إجمالي المدفوعات' },
+  currentBalance: { en: 'Current Balance', ku: 'باڵانسی ئێستا', ar: 'الرصيد الحالي' },
+  totalPackages: { en: 'Total Packages', ku: 'کۆی پاکێجەکان', ar: 'إجمالي الطرود' },
+  balanceDue: { en: 'Balance Due', ku: 'قەرزی ماوە', ar: 'الرصيد المستحق' },
+  ledgerTitle: { en: 'Statement of Transactions', ku: 'کەشفی مامەڵەکان', ar: 'كشف المعاملات' },
+  colDate: { en: 'Date', ku: 'بەروار', ar: 'التاريخ' },
+  colDescription: { en: 'Description', ku: 'وەسف', ar: 'الوصف' },
+  colDebit: { en: 'Charge', ku: 'قەرز', ar: 'مصروف' },
+  colCredit: { en: 'Payment', ku: 'پارەدان', ar: 'دفعة' },
+  colBalance: { en: 'Balance', ku: 'باڵانس', ar: 'الرصيد' },
+  periodTotals: { en: 'Totals for shown rows', ku: 'کۆی ئەم ماوەیە', ar: 'مجموع هذه الفترة' },
+  packagesTitle: { en: 'Package History', ku: 'مێژووی پاکێجەکان', ar: 'سجل الطرود' },
+  colTracking: { en: 'Tracking #', ku: 'تراکینگ', ar: 'رقم التتبع' },
+  colStatus: { en: 'Status', ku: 'دۆخ', ar: 'الحالة' },
+  colWeight: { en: 'Weight', ku: 'کێش', ar: 'الوزن' },
+  colCost: { en: 'Cost', ku: 'نرخ', ar: 'الكلفة' },
+  colBatch: { en: 'Batch', ku: 'بار', ar: 'الشحنة' },
+  paymentsTitle: { en: 'Payment History', ku: 'مێژووی پارەدانەکان', ar: 'سجل المدفوعات' },
+  colAmount: { en: 'Amount', ku: 'بڕ', ar: 'المبلغ' },
+  colMethod: { en: 'Method', ku: 'شێواز', ar: 'الطريقة' },
+  colReference: { en: 'Reference', ku: 'ژمارەی حەواڵە', ar: 'المرجع' },
+  noRecords: { en: 'No records in this period', ku: 'هیچ تۆمارێک نییە لەم ماوەیەدا', ar: 'لا توجد سجلات في هذه الفترة' },
+};
+
+// Package statuses shown in the packages table, localized for ku/ar.
+const STMT_STATUS: Record<string, { ku: string; ar: string }> = {
+  registered: { ku: 'تۆمارکراوە', ar: 'مسجل' },
+  in_batch: { ku: 'لە باردا', ar: 'في الشحنة' },
+  in_transit: { ku: 'لە ڕێگادا', ar: 'في الطريق' },
+  customs_processing: { ku: 'گومرگ', ar: 'الجمارك' },
+  ready_for_delivery: { ku: 'ئامادەیە', ar: 'جاهز' },
+  out_for_delivery: { ku: 'لە گەیاندندا', ar: 'قيد التسليم' },
+  delivered: { ku: 'گەیەندراوە', ar: 'تم التسليم' },
+  returned: { ku: 'گەڕێنراوەتەوە', ar: 'مرتجع' },
+  cancelled: { ku: 'هەڵوەشاوە', ar: 'ملغى' },
+};
+
+export async function generateCustomerPDF(data: CustomerReportData, lang: StatementLang = 'en'): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
@@ -213,170 +290,295 @@ export async function generateCustomerPDF(data: CustomerReportData): Promise<Buf
         // "switchToPage(0) out of bounds".
         bufferPages: true,
         info: {
-          Title: `Wazn Express - Customer Report: ${data.customer.fullName}`,
+          Title: `Wazn Express - Account Statement: ${data.customer.fullName}`,
           Author: 'Wazn Express System',
-          Subject: 'Customer Report',
+          Subject: 'Account Statement',
           CreationDate: new Date()
         }
       });
-      
+
       const chunks: Buffer[] = [];
       doc.on('data', (chunk) => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      // Header with gradient effect
-      doc.rect(0, 0, 595, 100).fill('#1a365d');
-      doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
-         .text('WAZN EXPRESS', 40, 30);
-      doc.fontSize(12).font('Helvetica').fillColor('#a0aec0')
-         .text('Customer Financial Report', 40, 55);
-      
-      // Date range if specified
-      if (data.dateRange) {
-        doc.fontSize(9).fillColor('#a0aec0')
-           .text(`Period: ${data.dateRange.start.toLocaleDateString()} - ${data.dateRange.end.toLocaleDateString()}`, 40, 75);
+      // Embedded Arabic-script font (fontkit shapes the letters). If the file
+      // is ever missing we silently fall back to English/Helvetica — a plain
+      // statement must always beat a crashed one.
+      const fontsDir = path.join(process.cwd(), 'server', 'assets', 'fonts');
+      const vazirReg = path.join(fontsDir, 'Vazirmatn-Regular.ttf');
+      const vazirBold = path.join(fontsDir, 'Vazirmatn-Bold.ttf');
+      const hasVazir = fs.existsSync(vazirReg) && fs.existsSync(vazirBold);
+      const uiLang: 'en' | 'ku' | 'ar' = (lang === 'ku' || lang === 'ar') && hasVazir ? lang : 'en';
+      const rtl = uiLang !== 'en';
+      if (hasVazir) {
+        doc.registerFont('Vazir', vazirReg);
+        doc.registerFont('Vazir-Bold', vazirBold);
       }
-      
-      // Generated date
-      doc.fontSize(9).fillColor('#a0aec0')
-         .text(`Generated: ${data.generatedAt.toLocaleString()}`, 400, 75, { align: 'right' });
+      const FR = rtl ? 'Vazir' : 'Helvetica';
+      const FB = rtl ? 'Vazir-Bold' : 'Helvetica-Bold';
+      const L = (key: keyof typeof STMT) => STMT[key][uiLang];
+      const statusText = (s: string) =>
+        rtl ? (STMT_STATUS[s]?.[uiLang as 'ku' | 'ar'] ?? formatStatus(s)) : formatStatus(s);
+
+      // Mirror an LTR-designed box for RTL layouts (A4 width 595, margins 40).
+      const mx = (x: number, w: number) => (rtl ? 595 - x - w : x);
+      const alignStart = rtl ? 'right' : 'left';
+      const fmtDate = (d: Date) => new Date(d).toLocaleDateString('en-GB');
 
       let y = 120;
+      const ensure = (needed: number, redraw?: () => void) => {
+        if (y + needed > 760) {
+          doc.addPage();
+          y = 50;
+          redraw?.();
+        }
+      };
 
-      // Customer Info Card
-      doc.roundedRect(40, y, 515, 80, 8).fillColor('#f7fafc').fill();
-      doc.roundedRect(40, y, 515, 80, 8).strokeColor('#e2e8f0').stroke();
-      
-      doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a365d')
-         .text(data.customer.fullName, 55, y + 15);
-      doc.fontSize(10).font('Helvetica').fillColor('#4a5568')
-         .text(`Customer Code: ${data.customer.customerCode}`, 55, y + 35);
-      doc.text(`Mobile: ${data.customer.mobileNumber}`, 55, y + 50);
-      if (data.customer.email) {
-        doc.text(`Email: ${data.customer.email}`, 55, y + 65);
+      // ---- Header ----------------------------------------------------------
+      doc.rect(0, 0, 595, 100).fill('#1a365d');
+      doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
+         .text('WAZN EXPRESS', mx(40, 250), 26, { width: 250, align: alignStart });
+      doc.fontSize(13).font(FB).fillColor('#cbd5e0')
+         .text(L('title'), mx(40, 250), 54, { width: 250, align: alignStart });
+
+      doc.fontSize(9).font(FR).fillColor('#a0aec0');
+      if (data.dateRange) {
+        doc.text(L('period'), mx(415, 140), 30, { width: 140, align: rtl ? 'left' : 'right' });
+        doc.font('Helvetica').text(
+          `${fmtDate(data.dateRange.start)} - ${fmtDate(data.dateRange.end)}`,
+          mx(395, 160), 43, { width: 160, align: rtl ? 'left' : 'right' },
+        );
       }
-      
-      // Account Summary on right side
-      doc.fontSize(10).font('Helvetica-Bold').fillColor('#2d3748')
-         .text('Account Summary', 350, y + 15);
-      doc.font('Helvetica').fillColor('#4a5568');
-      doc.text(`Total Charges: $${data.accountSummary.totalCharges.toFixed(2)}`, 350, y + 32);
-      doc.text(`Total Payments: $${data.accountSummary.totalPayments.toFixed(2)}`, 350, y + 47);
-      
-      const balanceColor = data.accountSummary.currentBalance > 0 ? '#e53e3e' : '#38a169';
-      doc.font('Helvetica-Bold').fillColor(balanceColor)
-         .text(`Current Balance: $${data.accountSummary.currentBalance.toFixed(2)}`, 350, y + 62);
+      doc.font(FR).text(L('generated'), mx(415, 140), 60, { width: 140, align: rtl ? 'left' : 'right' });
+      doc.font('Helvetica').text(fmtDate(data.generatedAt), mx(395, 160), 73, { width: 160, align: rtl ? 'left' : 'right' });
 
-      y += 100;
+      // ---- Customer card ---------------------------------------------------
+      doc.roundedRect(40, y, 515, 84, 8).fillColor('#f7fafc').fill();
+      doc.roundedRect(40, y, 515, 84, 8).strokeColor('#e2e8f0').stroke();
 
-      // Financial Summary Cards
+      doc.fontSize(14).font(rtl && /[؀-ۿ]/.test(data.customer.fullName) ? FB : 'Helvetica-Bold')
+         .fillColor('#1a365d')
+         .text(data.customer.fullName, mx(55, 270), y + 14, { width: 270, align: alignStart });
+      doc.fontSize(9).font(FR).fillColor('#4a5568')
+         .text(L('customerCode'), mx(55, 130), y + 38, { width: 130, align: alignStart });
+      doc.font('Helvetica-Bold').text(data.customer.customerCode, mx(55, 270), y + 51, { width: 270, align: alignStart });
+      doc.font(FR).text(L('mobile'), mx(55, 130), y + 66, { width: 130, align: alignStart, continued: false });
+      doc.font('Helvetica').text(data.customer.mobileNumber, mx(130, 195), y + 66, { width: 195, align: alignStart });
+
+      // Account summary — right half of the card (left half in RTL)
+      doc.fontSize(9.5).font(FB).fillColor('#2d3748')
+         .text(L('accountSummary'), mx(350, 190), y + 12, { width: 190, align: alignStart });
+      const sumLine = (label: string, value: string, yy: number, color = '#4a5568', boldVal = false) => {
+        doc.fontSize(8.5).font(FR).fillColor(color)
+           .text(label, mx(350, 120), yy, { width: 120, align: alignStart });
+        doc.font(boldVal ? 'Helvetica-Bold' : 'Helvetica')
+           .text(value, mx(455, 90), yy, { width: 90, align: rtl ? 'left' : 'right' });
+      };
+      sumLine(L('totalCharges'), `$${data.accountSummary.totalCharges.toFixed(2)}`, y + 28);
+      sumLine(L('totalPayments'), `$${data.accountSummary.totalPayments.toFixed(2)}`, y + 44);
+      sumLine(
+        L('currentBalance'),
+        `$${data.accountSummary.currentBalance.toFixed(2)}`,
+        y + 60,
+        data.accountSummary.currentBalance > 0 ? '#e53e3e' : '#38a169',
+        true,
+      );
+
+      y += 104;
+
+      // ---- Summary cards ---------------------------------------------------
       const cardWidth = 160;
       const cardGap = 17;
-      
-      // Card 1: Total Packages
-      drawSummaryCard(doc, 40, y, cardWidth, 'Total Packages', String(data.packages.length), '#3182ce');
-      
-      // Card 2: Total Payments
-      drawSummaryCard(doc, 40 + cardWidth + cardGap, y, cardWidth, 'Total Payments', `$${data.accountSummary.totalPayments.toFixed(0)}`, '#38a169');
-      
-      // Card 3: Balance
-      drawSummaryCard(doc, 40 + (cardWidth + cardGap) * 2, y, cardWidth, 'Balance Due', `$${data.accountSummary.currentBalance.toFixed(0)}`, data.accountSummary.currentBalance > 0 ? '#e53e3e' : '#38a169');
+      const card = (slot: number, label: string, value: string, color: string) => {
+        const cx = mx(40 + slot * (cardWidth + cardGap), cardWidth);
+        doc.roundedRect(cx, y, cardWidth, 58, 8).fillColor('#ffffff').fill();
+        doc.roundedRect(cx, y, cardWidth, 58, 8).strokeColor('#e2e8f0').stroke();
+        doc.rect(cx, y, 4, 58).fill(color);
+        doc.fontSize(8.5).font(FR).fillColor('#718096')
+           .text(label, cx + 10, y + 10, { width: cardWidth - 20, align: alignStart });
+        doc.fontSize(16).font('Helvetica-Bold').fillColor(color)
+           .text(value, cx + 10, y + 28, { width: cardWidth - 20, align: alignStart });
+      };
+      card(0, L('totalPackages'), String(data.packages.length), '#3182ce');
+      card(1, L('totalPayments'), `$${data.accountSummary.totalPayments.toFixed(0)}`, '#38a169');
+      card(2, L('balanceDue'), `$${data.accountSummary.currentBalance.toFixed(0)}`,
+        data.accountSummary.currentBalance > 0 ? '#e53e3e' : '#38a169');
 
-      y += 85;
+      y += 80;
 
-      // Packages Table
-      doc.fontSize(12).font('Helvetica-Bold').fillColor('#1a365d')
-         .text('Package History', 40, y);
-      y += 20;
-
-      // Table header
-      doc.rect(40, y, 515, 22).fill('#edf2f7');
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#4a5568');
-      doc.text('Tracking #', 45, y + 6);
-      doc.text('Status', 170, y + 6);
-      doc.text('Weight', 260, y + 6);
-      doc.text('Cost', 320, y + 6);
-      doc.text('Batch', 390, y + 6);
-      doc.text('Date', 470, y + 6);
-      y += 22;
-
-      // Table rows
-      doc.font('Helvetica').fontSize(8);
-      for (const pkg of data.packages.slice(0, 15)) {
-        if (y > 700) {
-          doc.addPage();
-          y = 50;
-        }
-        
-        const rowColor = data.packages.indexOf(pkg) % 2 === 0 ? '#ffffff' : '#f7fafc';
-        doc.rect(40, y, 515, 18).fill(rowColor);
-        
-        doc.fillColor('#2d3748');
-        doc.text(pkg.trackingNumber.substring(0, 20), 45, y + 5);
-        doc.fillColor(getStatusColor(pkg.status)).text(formatStatus(pkg.status), 170, y + 5);
-        doc.fillColor('#2d3748');
-        doc.text(`${pkg.weightKg.toFixed(1)} kg`, 260, y + 5);
-        doc.text(`$${pkg.costUsd.toFixed(2)}`, 320, y + 5);
-        doc.text(pkg.batchCode || '-', 390, y + 5);
-        doc.text(pkg.createdAt.toLocaleDateString(), 470, y + 5);
-        y += 18;
-      }
-
-      if (data.packages.length > 15) {
-        doc.fontSize(8).fillColor('#718096').text(`... and ${data.packages.length - 15} more packages`, 45, y + 5);
+      const sectionTitle = (label: string) => {
+        ensure(34);
+        doc.fontSize(12).font(FB).fillColor('#1a365d')
+           .text(label, 40, y, { width: 515, align: alignStart });
         y += 20;
-      }
+      };
 
-      y += 20;
+      const emptyNote = () => {
+        doc.fontSize(9).font(FR).fillColor('#718096')
+           .text(L('noRecords'), 40, y + 4, { width: 515, align: alignStart });
+        y += 24;
+      };
 
-      // Payments Table
-      if (y > 600) {
-        doc.addPage();
-        y = 50;
-      }
+      // ---- 1) Full ledger (the actual statement) ---------------------------
+      // Columns (LTR design, auto-mirrored): Date | Description | Charge |
+      // Payment | Balance. All rows, chronological, with running balance.
+      const led = {
+        date: { x: 44, w: 60 },
+        desc: { x: 108, w: 220 },
+        debit: { x: 334, w: 68 },
+        credit: { x: 406, w: 68 },
+        balance: { x: 478, w: 73 },
+      };
+      const ledgerHeader = () => {
+        doc.rect(40, y, 515, 20).fill('#edf2f7');
+        doc.fontSize(8.5).font(FB).fillColor('#4a5568');
+        doc.text(L('colDate'), mx(led.date.x, led.date.w), y + 6, { width: led.date.w, align: alignStart });
+        doc.text(L('colDescription'), mx(led.desc.x, led.desc.w), y + 6, { width: led.desc.w, align: alignStart });
+        doc.text(L('colDebit'), mx(led.debit.x, led.debit.w), y + 6, { width: led.debit.w, align: 'center' });
+        doc.text(L('colCredit'), mx(led.credit.x, led.credit.w), y + 6, { width: led.credit.w, align: 'center' });
+        doc.text(L('colBalance'), mx(led.balance.x, led.balance.w), y + 6, { width: led.balance.w, align: 'center' });
+        y += 20;
+      };
 
-      doc.fontSize(12).font('Helvetica-Bold').fillColor('#1a365d')
-         .text('Payment History', 40, y);
-      y += 20;
+      sectionTitle(L('ledgerTitle'));
+      ledgerHeader();
 
-      // Table header
-      doc.rect(40, y, 515, 22).fill('#edf2f7');
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#4a5568');
-      doc.text('Date', 45, y + 6);
-      doc.text('Amount', 150, y + 6);
-      doc.text('Method', 280, y + 6);
-      doc.text('Reference', 400, y + 6);
-      y += 22;
+      if (data.transactions.length === 0) {
+        emptyNote();
+      } else {
+        let totalDebit = 0;
+        let totalCredit = 0;
+        let rowIndex = 0;
+        for (const tx of data.transactions) {
+          const isCharge = tx.type.startsWith('DEBIT') || tx.type === 'ADJUSTMENT_DEBIT';
+          if (isCharge) totalDebit += tx.amount; else totalCredit += tx.amount;
 
-      // Table rows
-      doc.font('Helvetica').fontSize(8);
-      for (const payment of data.payments.slice(0, 15)) {
-        if (y > 750) {
-          doc.addPage();
-          y = 50;
+          const desc = (tx.description || formatStatus(tx.type)).replace(/\s+/g, ' ').trim();
+          doc.font(rtl && /[؀-ۿ]/.test(desc) ? FR : 'Helvetica').fontSize(7.5);
+          const descH = Math.min(doc.heightOfString(desc, { width: led.desc.w }), 28);
+          const rowH = Math.max(16, descH + 6);
+          ensure(rowH + 2, ledgerHeader);
+
+          if (rowIndex % 2 === 1) doc.rect(40, y, 515, rowH).fill('#f7fafc');
+          doc.fontSize(7.5).font('Helvetica').fillColor('#2d3748')
+             .text(fmtDate(tx.createdAt), mx(led.date.x, led.date.w), y + 4, { width: led.date.w, align: alignStart });
+          doc.font(rtl && /[؀-ۿ]/.test(desc) ? FR : 'Helvetica')
+             .text(desc, mx(led.desc.x, led.desc.w), y + 4, { width: led.desc.w, height: 28, ellipsis: true, align: alignStart });
+          doc.font('Helvetica');
+          if (isCharge) {
+            doc.fillColor('#e53e3e').text(`$${tx.amount.toFixed(2)}`, mx(led.debit.x, led.debit.w), y + 4, { width: led.debit.w, align: 'center' });
+          } else {
+            doc.fillColor('#38a169').text(`$${tx.amount.toFixed(2)}`, mx(led.credit.x, led.credit.w), y + 4, { width: led.credit.w, align: 'center' });
+          }
+          doc.fillColor(tx.balanceAfter > 0 ? '#e53e3e' : '#38a169').font('Helvetica-Bold')
+             .text(`$${tx.balanceAfter.toFixed(2)}`, mx(led.balance.x, led.balance.w), y + 4, { width: led.balance.w, align: 'center' });
+          y += rowH;
+          rowIndex++;
         }
-        
-        const rowColor = data.payments.indexOf(payment) % 2 === 0 ? '#ffffff' : '#f7fafc';
-        doc.rect(40, y, 515, 18).fill(rowColor);
-        
-        doc.fillColor('#2d3748');
-        doc.text(payment.createdAt.toLocaleDateString(), 45, y + 5);
-        doc.fillColor('#38a169').text(`$${payment.amount.toFixed(2)}`, 150, y + 5);
-        doc.fillColor('#2d3748');
-        doc.text(formatPaymentMethod(payment.method), 280, y + 5);
-        doc.text(payment.reference || '-', 400, y + 5);
-        y += 18;
+
+        // Totals band for the shown rows
+        ensure(24);
+        doc.rect(40, y, 515, 20).fill('#e2e8f0');
+        doc.fontSize(8).font(FB).fillColor('#2d3748')
+           .text(L('periodTotals'), mx(led.date.x, led.date.w + led.desc.w), y + 6, { width: led.date.w + led.desc.w, align: alignStart });
+        doc.font('Helvetica-Bold').fillColor('#e53e3e')
+           .text(`$${totalDebit.toFixed(2)}`, mx(led.debit.x, led.debit.w), y + 6, { width: led.debit.w, align: 'center' });
+        doc.fillColor('#38a169')
+           .text(`$${totalCredit.toFixed(2)}`, mx(led.credit.x, led.credit.w), y + 6, { width: led.credit.w, align: 'center' });
+        y += 28;
       }
 
-      // Footer — iterate the actual buffered range (start may be non-zero)
+      y += 10;
+
+      // ---- 2) Packages (complete, no cap) ----------------------------------
+      const pk = {
+        tracking: { x: 44, w: 128 },
+        status: { x: 176, w: 74 },
+        weight: { x: 254, w: 50 },
+        cost: { x: 308, w: 58 },
+        batch: { x: 370, w: 112 },
+        date: { x: 486, w: 65 },
+      };
+      const pkgHeader = () => {
+        doc.rect(40, y, 515, 20).fill('#edf2f7');
+        doc.fontSize(8.5).font(FB).fillColor('#4a5568');
+        doc.text(L('colTracking'), mx(pk.tracking.x, pk.tracking.w), y + 6, { width: pk.tracking.w, align: alignStart });
+        doc.text(L('colStatus'), mx(pk.status.x, pk.status.w), y + 6, { width: pk.status.w, align: alignStart });
+        doc.text(L('colWeight'), mx(pk.weight.x, pk.weight.w), y + 6, { width: pk.weight.w, align: 'center' });
+        doc.text(L('colCost'), mx(pk.cost.x, pk.cost.w), y + 6, { width: pk.cost.w, align: 'center' });
+        doc.text(L('colBatch'), mx(pk.batch.x, pk.batch.w), y + 6, { width: pk.batch.w, align: alignStart });
+        doc.text(L('colDate'), mx(pk.date.x, pk.date.w), y + 6, { width: pk.date.w, align: alignStart });
+        y += 20;
+      };
+
+      sectionTitle(L('packagesTitle'));
+      pkgHeader();
+      if (data.packages.length === 0) {
+        emptyNote();
+      } else {
+        data.packages.forEach((pkg, i) => {
+          ensure(18, pkgHeader);
+          if (i % 2 === 1) doc.rect(40, y, 515, 16).fill('#f7fafc');
+          doc.fontSize(7.5).font('Helvetica').fillColor('#2d3748')
+             .text(pkg.trackingNumber.substring(0, 24), mx(pk.tracking.x, pk.tracking.w), y + 4, { width: pk.tracking.w, align: alignStart });
+          doc.font(rtl ? FR : 'Helvetica').fillColor(getStatusColor(pkg.status))
+             .text(statusText(pkg.status), mx(pk.status.x, pk.status.w), y + 4, { width: pk.status.w, align: alignStart });
+          doc.font('Helvetica').fillColor('#2d3748');
+          doc.text(`${pkg.weightKg.toFixed(1)} kg`, mx(pk.weight.x, pk.weight.w), y + 4, { width: pk.weight.w, align: 'center' });
+          doc.text(`$${pkg.costUsd.toFixed(2)}`, mx(pk.cost.x, pk.cost.w), y + 4, { width: pk.cost.w, align: 'center' });
+          doc.text(pkg.batchCode || '-', mx(pk.batch.x, pk.batch.w), y + 4, { width: pk.batch.w, align: alignStart });
+          doc.text(fmtDate(pkg.createdAt), mx(pk.date.x, pk.date.w), y + 4, { width: pk.date.w, align: alignStart });
+          y += 16;
+        });
+        y += 8;
+      }
+
+      y += 10;
+
+      // ---- 3) Payments (complete, no cap) ----------------------------------
+      const pay = {
+        date: { x: 44, w: 80 },
+        amount: { x: 128, w: 80 },
+        method: { x: 212, w: 120 },
+        reference: { x: 336, w: 215 },
+      };
+      const payHeader = () => {
+        doc.rect(40, y, 515, 20).fill('#edf2f7');
+        doc.fontSize(8.5).font(FB).fillColor('#4a5568');
+        doc.text(L('colDate'), mx(pay.date.x, pay.date.w), y + 6, { width: pay.date.w, align: alignStart });
+        doc.text(L('colAmount'), mx(pay.amount.x, pay.amount.w), y + 6, { width: pay.amount.w, align: 'center' });
+        doc.text(L('colMethod'), mx(pay.method.x, pay.method.w), y + 6, { width: pay.method.w, align: alignStart });
+        doc.text(L('colReference'), mx(pay.reference.x, pay.reference.w), y + 6, { width: pay.reference.w, align: alignStart });
+        y += 20;
+      };
+
+      sectionTitle(L('paymentsTitle'));
+      payHeader();
+      if (data.payments.length === 0) {
+        emptyNote();
+      } else {
+        data.payments.forEach((payment, i) => {
+          ensure(18, payHeader);
+          if (i % 2 === 1) doc.rect(40, y, 515, 16).fill('#f7fafc');
+          doc.fontSize(7.5).font('Helvetica').fillColor('#2d3748')
+             .text(fmtDate(payment.createdAt), mx(pay.date.x, pay.date.w), y + 4, { width: pay.date.w, align: alignStart });
+          doc.fillColor('#38a169').text(`$${payment.amount.toFixed(2)}`, mx(pay.amount.x, pay.amount.w), y + 4, { width: pay.amount.w, align: 'center' });
+          doc.fillColor('#2d3748');
+          doc.text(formatPaymentMethod(payment.method), mx(pay.method.x, pay.method.w), y + 4, { width: pay.method.w, align: alignStart });
+          doc.text(payment.reference || '-', mx(pay.reference.x, pay.reference.w), y + 4, { width: pay.reference.w, align: alignStart });
+          y += 16;
+        });
+      }
+
+      // ---- Footer (Latin on purpose — tiny print, avoids bidi mixing) ------
       const range = doc.bufferedPageRange();
       const pageCount = range.start + range.count;
       for (let i = range.start; i < pageCount; i++) {
         doc.switchToPage(i);
-        doc.fontSize(8).fillColor('#a0aec0')
+        doc.fontSize(8).font('Helvetica').fillColor('#a0aec0')
            .text(
-             `Page ${i + 1} of ${pageCount} | Wazn Express Customer Report | ${data.customer.customerCode}`,
+             `Page ${i + 1} of ${pageCount} | Wazn Express Account Statement | ${data.customer.customerCode}`,
              40, 780, { align: 'center', width: 515 }
            );
       }
