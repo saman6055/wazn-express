@@ -28,6 +28,10 @@ export function MutationToastHandler() {
 
       if (status === "success") {
         if (!mounted.current) return;
+        // Customer portal: no generic success toast. Every route change fires
+        // background mutations (activity tracking), so this toasted on every
+        // move; portal flows that matter show their own specific toasts.
+        if (window.location.pathname.startsWith("/portal")) return;
         toast.success(t("errors.operationSuccess"));
       } else if (status === "error") {
         if (!mounted.current) return;
