@@ -1,37 +1,54 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { pickLang } from "@/lib/lang";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
-import { CalendarRange, FileDown, Loader2, SlidersHorizontal } from "lucide-react";
-import { useState } from "react";
+import { CalendarRange, FileDown, Loader2, Share2, SlidersHorizontal } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
-// StatementPdfButton — downloads the customer's account statement as PDF.
-// Opens a small filter dialog first: period (all / this month / last month /
-// this year) and type (all / charges / payments). Labels inside the PDF come
-// out in the customer's language; numbers stay Latin.
+// StatementPdfButton — downloads or shares the customer's account statement.
+// Filter dialog: period presets (today / 7 / 14 / 21 days / this month / last
+// month / this year / custom from–to dates) and type (all / charges only /
+// payments only). On mobile a Share button hands the PDF straight to the
+// share sheet (WhatsApp etc.); labels inside the PDF follow the customer's
+// language, numbers stay Latin.
 // ---------------------------------------------------------------------------
 
-type Period = "all" | "this_month" | "last_month" | "this_year";
+type Period =
+  | "all"
+  | "today"
+  | "last_7"
+  | "last_14"
+  | "last_21"
+  | "this_month"
+  | "last_month"
+  | "this_year"
+  | "custom";
 type TxType = "all" | "charges" | "payments";
 
-function periodRange(period: Period): { from?: Date; to?: Date } {
-  const now = new Date();
-  switch (period) {
-    case "this_month":
-      return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: now };
-    case "last_month":
-      return {
-        from: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-        to: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59),
-      };
-    case "this_year":
-      return { from: new Date(now.getFullYear(), 0, 1), to: now };
-    default:
-      return {};
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function endOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+}
+function daysAgo(n: number): Date {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return startOfDay(d);
+}
+
+/** Can this browser share files (mobile share sheet)? */
+function canShareFiles(): boolean {
+  try {
+    const probe = new File([""], "probe.pdf", { type: "application/pdf" });
+    return !!navigator.canShare && navigator.canShare({ files: [probe] });
+  } catch {
+    return false;
   }
 }
 
@@ -48,14 +65,29 @@ export function StatementPdfButton({
   const [open, setOpen] = useState(false);
   const [period, setPeriod] = useState<Period>("all");
   const [txType, setTxType] = useState<TxType>("all");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  // Whether the in-flight request should end in the share sheet or a download.
+  const shareIntent = useRef(false);
 
   const exportPdf = trpc.customerPortal.getMyStatementPdf.useMutation({
-    onSuccess: (data) => {
-      // base64 → Blob → anchor download (same pattern as the staff dashboard)
+    onSuccess: async (data) => {
       const bytes = atob(data.pdf);
       const arr = new Uint8Array(bytes.length);
       for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
       const blob = new Blob([arr], { type: "application/pdf" });
+
+      if (shareIntent.current && canShareFiles()) {
+        try {
+          await navigator.share({ files: [new File([blob], data.filename, { type: "application/pdf" })] });
+          setOpen(false);
+          return;
+        } catch (err) {
+          if ((err as Error)?.name === "AbortError") return; // user closed the sheet
+          // fall through to a normal download on any real failure
+        }
+      }
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -68,21 +100,66 @@ export function StatementPdfButton({
     onError: (e) => toast.error(e.message),
   });
 
-  const download = () => {
-    const { from, to } = periodRange(period);
+  const resolveRange = (): { from?: Date; to?: Date } | null => {
+    const now = new Date();
+    switch (period) {
+      case "today":
+        return { from: startOfDay(now), to: now };
+      case "last_7":
+        return { from: daysAgo(7), to: now };
+      case "last_14":
+        return { from: daysAgo(14), to: now };
+      case "last_21":
+        return { from: daysAgo(21), to: now };
+      case "this_month":
+        return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: now };
+      case "last_month":
+        return {
+          from: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+          to: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59),
+        };
+      case "this_year":
+        return { from: new Date(now.getFullYear(), 0, 1), to: now };
+      case "custom": {
+        if (!customFrom || !customTo) {
+          toast.error(pick({ ku: "هەردوو بەروارەکە هەڵبژێرە", en: "Pick both dates", ar: "اختر التاريخين", zh: "请选择两个日期" }));
+          return null;
+        }
+        const from = startOfDay(new Date(customFrom));
+        const to = endOfDay(new Date(customTo));
+        if (isNaN(from.getTime()) || isNaN(to.getTime()) || from > to) {
+          toast.error(pick({ ku: "مەودای بەروارەکە هەڵەیە", en: "Invalid date range", ar: "مدى التاريخ غير صحيح", zh: "日期范围无效" }));
+          return null;
+        }
+        return { from, to };
+      }
+      default:
+        return {};
+    }
+  };
+
+  const run = (share: boolean) => {
+    const range = resolveRange();
+    if (!range) return;
+    shareIntent.current = share;
     exportPdf.mutate({
       language: (["ku", "en", "ar", "zh"].includes(language) ? language : "en") as "ku" | "en" | "ar" | "zh",
-      from,
-      to,
+      from: range.from,
+      to: range.to,
       type: txType,
     });
   };
 
   const PERIODS: { value: Period; label: { ku: string; en: string; ar: string; zh: string } }[] = [
     { value: "all", label: { ku: "هەموو کات", en: "All time", ar: "كل الفترات", zh: "全部时间" } },
+    { value: "today", label: { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" } },
+    { value: "last_7", label: { ku: "ئەم هەفتەیە (٧ ڕۆژ)", en: "Last 7 days", ar: "آخر ٧ أيام", zh: "最近7天" } },
+    { value: "last_14", label: { ku: "دوو هەفتە (١٤ ڕۆژ)", en: "Last 14 days", ar: "آخر ١٤ يوماً", zh: "最近14天" } },
+    { value: "last_21", label: { ku: "سێ هەفتە (٢١ ڕۆژ)", en: "Last 21 days", ar: "آخر ٢١ يوماً", zh: "最近21天" } },
     { value: "this_month", label: { ku: "ئەم مانگە", en: "This month", ar: "هذا الشهر", zh: "本月" } },
     { value: "last_month", label: { ku: "مانگی ڕابردوو", en: "Last month", ar: "الشهر الماضي", zh: "上个月" } },
     { value: "this_year", label: { ku: "ئەم ساڵە", en: "This year", ar: "هذه السنة", zh: "今年" } },
+    { value: "custom", label: { ku: "مەودای دڵخواز (لە... بۆ...)", en: "Custom range (from–to)", ar: "مدى مخصص (من–إلى)", zh: "自定义范围（从–到）" } },
   ];
 
   const TYPES: { value: TxType; label: { ku: string; en: string; ar: string; zh: string } }[] = [
@@ -130,6 +207,23 @@ export function StatementPdfButton({
               </Select>
             </div>
 
+            {period === "custom" && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground">
+                    {pick({ ku: "لە بەرواری", en: "From", ar: "من", zh: "从" })}
+                  </label>
+                  <Input type="date" dir="ltr" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground">
+                    {pick({ ku: "بۆ بەرواری", en: "To", ar: "إلى", zh: "到" })}
+                  </label>
+                  <Input type="date" dir="ltr" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground">
                 {pick({ ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}
@@ -144,18 +238,35 @@ export function StatementPdfButton({
               </Select>
             </div>
 
-            <Button
-              onClick={download}
-              disabled={exportPdf.isPending}
-              className="h-11 w-full rounded-xl bg-indigo-600 text-sm font-bold hover:bg-indigo-700"
-            >
-              {exportPdf.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <FileDown className="h-4 w-4" />
+            <div className="flex gap-2 pt-1">
+              <Button
+                onClick={() => run(false)}
+                disabled={exportPdf.isPending}
+                className="h-11 flex-1 rounded-xl bg-indigo-600 text-sm font-bold hover:bg-indigo-700"
+              >
+                {exportPdf.isPending && !shareIntent.current ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileDown className="h-4 w-4" />
+                )}
+                {pick({ ku: "داگرتن", en: "Download", ar: "تنزيل", zh: "下载" })}
+              </Button>
+              {canShareFiles() && (
+                <Button
+                  onClick={() => run(true)}
+                  disabled={exportPdf.isPending}
+                  variant="outline"
+                  className="h-11 flex-1 rounded-xl border-emerald-300 text-sm font-bold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                >
+                  {exportPdf.isPending && shareIntent.current ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Share2 className="h-4 w-4" />
+                  )}
+                  {pick({ ku: "هاوبەشکردن", en: "Share", ar: "مشاركة", zh: "分享" })}
+                </Button>
               )}
-              {pick({ ku: "داگرتن", en: "Download", ar: "تنزيل", zh: "下载" })}
-            </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
