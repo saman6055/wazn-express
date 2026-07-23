@@ -1,4 +1,4 @@
-{
+﻿{
   "quickRegister": {
     "title": "التسجيل السريع",
     "shortcutsHint": "Enter للتسجيل | Tab للانتقال | Esc للمسح | ↑↓ للقائمة",
@@ -5900,7 +5900,7 @@
     "empty": "لا توجد عناصر حديثة"
   },
   "new": "جديد",
-  "welcomeToWazn": "مرحبًا بك في ${company.name}!",
+  "welcomeToWazn": "مرحبًا بك في {{name}}!",
   "trackPackagesEasily": "تتبّع طرودك بسهولة من خلال هذه البوابة. احصل على تحديثات فورية حول شحناتك.",
   "preparing": "قيد التحضير",
   "inTransit": "قيد النقل",

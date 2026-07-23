@@ -1,4 +1,4 @@
-{
+﻿{
   "quickRegister": {
     "title": "Quick Register",
     "shortcutsHint": "Enter to register | Tab to move | Esc to clear | ↑↓ for list",
@@ -5825,7 +5825,7 @@
     "empty": "No recent items"
   },
   "new": "New",
-  "welcomeToWazn": "Welcome to ${company.name}!",
+  "welcomeToWazn": "Welcome to {{name}}!",
   "trackPackagesEasily": "Track your packages easily through this portal. Get real-time updates on your shipments.",
   "preparing": "Preparing",
   "inTransit": "In Transit",

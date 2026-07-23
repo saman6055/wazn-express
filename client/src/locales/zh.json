@@ -1,4 +1,4 @@
-{
+﻿{
   "quickRegister": {
     "title": "快速登记",
     "shortcutsHint": "Enter 登记 | Tab 切换 | Esc 清除 | ↑↓ 列表",
@@ -5887,7 +5887,7 @@
     "empty": "暂无最近项目"
   },
   "new": "新",
-  "welcomeToWazn": "欢迎来到 ${company.name}！",
+  "welcomeToWazn": "欢迎来到 {{name}}！",
   "trackPackagesEasily": "通过此门户轻松追踪您的包裹。获取货件的实时更新。",
   "preparing": "准备中",
   "inTransit": "运输中",

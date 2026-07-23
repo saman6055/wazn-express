@@ -82,7 +82,7 @@ function GreetingIcon() {
 }
 
 // Announcements Section Component
-function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; language: string; t: (key: string) => string }) {
+function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; language: string; t: (key: string, params?: Record<string, string | number>) => string }) {
   const company = useCompanyInfo();
   const { data: blogPosts, isLoading } = trpc.blog.featured.useQuery();
   
@@ -177,7 +177,7 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
                 {t("new") || "New"}
               </span>
             </div>
-            <p className="font-bold text-lg mb-2">{t("welcomeToWazn") || `Welcome to ${company.name}!`}</p>
+            <p className="font-bold text-lg mb-2">{t("welcomeToWazn", { name: company?.name || "Wazn Express" })}</p>
             <p className="text-sm text-blue-100 leading-relaxed">
               {t("trackPackagesEasily") || "Track your packages easily through this portal. Get real-time updates on your shipments."}
             </p>

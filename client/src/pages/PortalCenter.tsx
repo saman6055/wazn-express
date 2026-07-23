@@ -122,7 +122,7 @@ export default function PortalCenter() {
         <OverviewCards p={p} />
 
         <Tabs defaultValue="customers" className="space-y-4">
-          <TabsList className="grid grid-cols-4 sm:grid-cols-9 w-full max-w-6xl h-auto">
+          <TabsList className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-10 w-full max-w-6xl h-auto">
             <TabsTrigger value="customers" className="gap-1.5"><Users className="h-4 w-4" />{p({ ku: "موشتەرەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TabsTrigger>
             <TabsTrigger value="messages" className="gap-1.5"><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}</TabsTrigger>
             <TabsTrigger value="send" className="gap-1.5"><Send className="h-4 w-4" />{p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}</TabsTrigger>
@@ -131,6 +131,7 @@ export default function PortalCenter() {
             <TabsTrigger value="declared" className="gap-1.5"><Package className="h-4 w-4" />{p({ ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪" })}</TabsTrigger>
             <TabsTrigger value="claims" className="gap-1.5"><FileText className="h-4 w-4" />{p({ ku: "خاوەنداری", en: "Claims", ar: "المطالبات", zh: "认领" })}</TabsTrigger>
             <TabsTrigger value="ratings" className="gap-1.5"><Star className="h-4 w-4" />{p({ ku: "هەڵسەنگاندن", en: "Ratings", ar: "التقييمات", zh: "评价" })}</TabsTrigger>
+            <TabsTrigger value="announcements" className="gap-1.5"><Megaphone className="h-4 w-4" />{p({ ku: "ڕاگەیاندن", en: "Announce", ar: "إعلانات", zh: "公告" })}</TabsTrigger>
             <TabsTrigger value="yuan" className="gap-1.5">
               <span className="font-black text-sm leading-none">¥</span>
               {p({ ku: "یوان", en: "Yuan", ar: "اليوان", zh: "人民币" })}
@@ -151,6 +152,7 @@ export default function PortalCenter() {
           <TabsContent value="claims"><ClaimsTab p={p} /></TabsContent>
           <TabsContent value="ratings"><RatingsTab p={p} /></TabsContent>
           <TabsContent value="yuan"><YuanTab p={p} /></TabsContent>
+          <TabsContent value="announcements"><AnnouncementsTab p={p} /></TabsContent>
         </Tabs>
       </div>
 
@@ -600,15 +602,233 @@ function MessagesTab({ p }: { p: (v: L) => string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Send tab — personal notification, broadcast, announcement banner
+// Send tab — personal notification + broadcast (the announcement banner and
+// the home-page announcements live in the dedicated Announcements tab).
 // ---------------------------------------------------------------------------
 function SendTab({ p }: { p: (v: L) => string }) {
   return (
     <div className="space-y-4">
       <PersonalNotificationCard p={p} />
       <BroadcastCard p={p} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Announcements tab — everything the customer sees as "ڕاگەیاندنەکان":
+//   1) the slim announcement banner (portal_announcement setting), and
+//   2) the announcement CARDS on the portal home, which are FEATURED blog
+//      posts (trpc.blog.*) — managed here with quick create/publish/delete.
+// ---------------------------------------------------------------------------
+function AnnouncementsTab({ p }: { p: (v: L) => string }) {
+  return (
+    <div className="space-y-4">
+      <HomeAnnouncementsCard p={p} />
       <AnnouncementCard p={p} />
     </div>
+  );
+}
+
+const BLOG_CATEGORY_LABEL: Record<string, L> = {
+  announcement: { ku: "ڕاگەیاندن", en: "Announcement", ar: "إعلان", zh: "公告" },
+  news: { ku: "هەواڵ", en: "News", ar: "خبر", zh: "新闻" },
+  promotion: { ku: "داشکاندن", en: "Promotion", ar: "عرض", zh: "促销" },
+  update: { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" },
+  guide: { ku: "ڕێنمایی", en: "Guide", ar: "دليل", zh: "指南" },
+};
+
+function HomeAnnouncementsCard({ p }: { p: (v: L) => string }) {
+  const utils = trpc.useUtils();
+  const { data: posts, isLoading } = trpc.blog.list.useQuery();
+
+  const [form, setForm] = useState({
+    category: "announcement" as "announcement" | "news" | "promotion" | "update" | "guide",
+    titleKu: "", titleEn: "", titleAr: "",
+    bodyKu: "", bodyEn: "", bodyAr: "",
+  });
+
+  const invalidateBlog = () => {
+    utils.blog.list.invalidate();
+    utils.blog.featured.invalidate();
+    utils.blog.published.invalidate();
+  };
+
+  const create = trpc.blog.create.useMutation({
+    onSuccess: () => {
+      toast.success(p({ ku: "بڵاوکرایەوە — لە پۆرتاڵ دەردەکەوێت", en: "Published — now visible on the portal", ar: "نُشر — ظاهر الآن في البوابة", zh: "已发布——已在门户显示" }));
+      setForm({ category: "announcement", titleKu: "", titleEn: "", titleAr: "", bodyKu: "", bodyEn: "", bodyAr: "" });
+      invalidateBlog();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const update = trpc.blog.update.useMutation({
+    onSuccess: invalidateBlog,
+    onError: (e) => toast.error(e.message),
+  });
+
+  const remove = trpc.blog.delete.useMutation({
+    onSuccess: () => {
+      toast.success(p({ ku: "سڕایەوە", en: "Deleted", ar: "حُذف", zh: "已删除" }));
+      invalidateBlog();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const submit = () => {
+    const hasTitle = form.titleKu.trim() || form.titleEn.trim() || form.titleAr.trim();
+    const hasBody = form.bodyKu.trim() || form.bodyEn.trim() || form.bodyAr.trim();
+    if (!hasTitle || !hasBody) {
+      toast.error(p({ ku: "بەلایەنی کەمەوە بە زمانێک ناونیشان و دەق بنووسە", en: "Write a title and body in at least one language", ar: "اكتب عنواناً ونصاً بلغة واحدة على الأقل", zh: "至少用一种语言填写标题和正文" }));
+      return;
+    }
+    // Featured + published so it shows in the portal home "Announcements"
+    // section immediately (the home shows featured posts only).
+    create.mutate({
+      category: form.category,
+      titleKu: form.titleKu.trim() || undefined,
+      titleEn: form.titleEn.trim() || undefined,
+      titleAr: form.titleAr.trim() || undefined,
+      contentKu: form.bodyKu.trim() || undefined,
+      contentEn: form.bodyEn.trim() || undefined,
+      contentAr: form.bodyAr.trim() || undefined,
+      summaryKu: form.bodyKu.trim() || undefined,
+      summaryEn: form.bodyEn.trim() || undefined,
+      summaryAr: form.bodyAr.trim() || undefined,
+      status: "published",
+      isFeatured: true,
+      publishedAt: new Date(),
+    });
+  };
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4 space-y-4">
+        <div>
+          <h3 className="font-bold flex items-center gap-2">
+            <Megaphone className="h-4 w-4 text-blue-500" />
+            {p({ ku: "ڕاگەیاندنەکانی پەڕەی سەرەکی پۆرتاڵ", en: "Portal home announcements", ar: "إعلانات الصفحة الرئيسية للبوابة", zh: "门户首页公告" })}
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {p({
+              ku: "ئەم کارتانە لە بەشی «ڕاگەیاندنەکان»ی پەڕەی سەرەکی کڕیار دەردەکەون — دەستبەجێ دوای بڵاوکردنەوە",
+              en: "These cards show in the customer home 'Announcements' section — instantly after publishing",
+              ar: "تظهر هذه البطاقات في قسم «الإعلانات» في الصفحة الرئيسية للعميل — فور النشر",
+              zh: "这些卡片会显示在客户首页的\"公告\"版块——发布后立即生效",
+            })}
+          </p>
+        </div>
+
+        {/* Quick create */}
+        <div className="rounded-xl border p-3 dark:border-white/10 space-y-2.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={form.category} onValueChange={(v: any) => setForm({ ...form, category: v })}>
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.keys(BLOG_CATEGORY_LABEL).map((c) => (
+                  <SelectItem key={c} value={c}>{p(BLOG_CATEGORY_LABEL[c])}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-[11px] text-muted-foreground">
+              {p({ ku: "بۆ وێنە و نووسینی درێژ، بەشی بەڕێوەبردنی بلۆگ بەکاربهێنە", en: "For images and long posts use Blog Management", ar: "للصور والمنشورات الطويلة استخدم إدارة المدونة", zh: "如需图片和长文请使用博客管理" })}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <Input dir="rtl" placeholder={p({ ku: "ناونیشان — کوردی", en: "Title — Kurdish", ar: "العنوان — كردي", zh: "标题——库尔德语" })} value={form.titleKu} onChange={(e) => setForm({ ...form, titleKu: e.target.value })} />
+            <Input placeholder="Title — English" value={form.titleEn} onChange={(e) => setForm({ ...form, titleEn: e.target.value })} />
+            <Input dir="rtl" placeholder={p({ ku: "ناونیشان — عەرەبی", en: "Title — Arabic", ar: "العنوان — عربي", zh: "标题——阿拉伯语" })} value={form.titleAr} onChange={(e) => setForm({ ...form, titleAr: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <Textarea rows={2} dir="rtl" placeholder={p({ ku: "دەق — کوردی", en: "Body — Kurdish", ar: "النص — كردي", zh: "正文——库尔德语" })} value={form.bodyKu} onChange={(e) => setForm({ ...form, bodyKu: e.target.value })} />
+            <Textarea rows={2} placeholder="Body — English" value={form.bodyEn} onChange={(e) => setForm({ ...form, bodyEn: e.target.value })} />
+            <Textarea rows={2} dir="rtl" placeholder={p({ ku: "دەق — عەرەبی", en: "Body — Arabic", ar: "النص — عربي", zh: "正文——阿拉伯语" })} value={form.bodyAr} onChange={(e) => setForm({ ...form, bodyAr: e.target.value })} />
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={submit} disabled={create.isPending} className="bg-blue-600 hover:bg-blue-700 text-white">
+              {create.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Megaphone className="h-4 w-4 me-2" />}
+              {p({ ku: "بڵاوکردنەوە", en: "Publish", ar: "نشر", zh: "发布" })}
+            </Button>
+          </div>
+        </div>
+
+        {/* Existing posts */}
+        {isLoading ? (
+          <TableSkeleton />
+        ) : !posts || posts.length === 0 ? (
+          <EmptyRow text={p({ ku: "هێشتا هیچ ڕاگەیاندنێک نییە — یەکەمیان لە سەرەوە بنووسە", en: "No announcements yet — write the first one above", ar: "لا توجد إعلانات بعد — اكتب الأول أعلاه", zh: "暂无公告——请在上方发布第一条" })} />
+        ) : (
+          <div className="space-y-2">
+            {posts.map((post: any) => {
+              const isPublished = post.status === "published";
+              return (
+                <div key={post.id} className="rounded-xl border p-3 dark:border-white/10 flex items-center gap-3 flex-wrap">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold truncate">
+                        {post.titleKu || post.titleEn || post.titleAr || "—"}
+                      </span>
+                      <Badge className="border-0 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[10px]">
+                        {p(BLOG_CATEGORY_LABEL[post.category] ?? BLOG_CATEGORY_LABEL.announcement)}
+                      </Badge>
+                      <Badge className={cn(
+                        "border-0 text-[10px]",
+                        isPublished
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+                      )}>
+                        {isPublished
+                          ? p({ ku: "بڵاوکراوە", en: "Published", ar: "منشور", zh: "已发布" })
+                          : p({ ku: "ڕەشنووس", en: "Draft", ar: "مسودة", zh: "草稿" })}
+                      </Badge>
+                      {post.isFeatured && (
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                      )}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground">{fmtDateTime(post.publishedAt || post.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Button
+                      size="sm" variant="outline" className="h-8 text-xs"
+                      disabled={update.isPending}
+                      onClick={() => update.mutate({ id: post.id, isFeatured: !post.isFeatured })}
+                      title={p({ ku: "دەرکەوتن لە پەڕەی سەرەکی", en: "Show on home page", ar: "الظهور في الرئيسية", zh: "在首页显示" })}
+                    >
+                      <Star className={cn("h-3.5 w-3.5", post.isFeatured && "fill-amber-400 text-amber-400")} />
+                    </Button>
+                    <Button
+                      size="sm" variant="outline" className="h-8 text-xs"
+                      disabled={update.isPending}
+                      onClick={() => update.mutate({
+                        id: post.id,
+                        status: isPublished ? "draft" : "published",
+                        ...(isPublished ? {} : { publishedAt: new Date() }),
+                      })}
+                    >
+                      {isPublished
+                        ? p({ ku: "شاردنەوە", en: "Unpublish", ar: "إخفاء", zh: "隐藏" })
+                        : p({ ku: "بڵاوکردنەوە", en: "Publish", ar: "نشر", zh: "发布" })}
+                    </Button>
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-8 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                      disabled={remove.isPending}
+                      onClick={() => {
+                        if (window.confirm(p({ ku: "دڵنیایت لە سڕینەوە؟", en: "Delete this announcement?", ar: "هل تريد الحذف؟", zh: "确定删除吗？" }))) {
+                          remove.mutate({ id: post.id });
+                        }
+                      }}
+                    >
+                      {p({ ku: "سڕینەوە", en: "Delete", ar: "حذف", zh: "删除" })}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
