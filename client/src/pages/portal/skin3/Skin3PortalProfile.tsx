@@ -17,6 +17,7 @@ import {
   FileText,
   Banknote,
   Ban,
+  BookOpen,
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -185,6 +186,18 @@ export default function Skin3PortalProfile() {
   ];
 
   const supportMenuItems = [
+    {
+      icon: BookOpen,
+      label:
+        language === "ku"
+          ? "ڕێبەری پۆرتاڵ"
+          : language === "ar"
+          ? "دليل البوابة"
+          : language === "zh"
+          ? "门户指南"
+          : "Portal guide",
+      href: "/portal/guide",
+    },
     {
       icon: Headphones,
       label: t("portal.support"),

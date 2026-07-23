@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { ModernPortalLayout } from "@/components/ModernPortalLayout";
 import {
   User, Mail, Phone, MapPin, Bell, ChevronRight, LogOut,
-  MessageSquare, Headphones, HelpCircle, FileText, Banknote, Ban
+  MessageSquare, Headphones, HelpCircle, FileText, Banknote, Ban, BookOpen
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -113,6 +113,11 @@ export default function ModernPortalProfile() {
   ];
 
   const supportMenuItems = [
+    {
+      icon: BookOpen,
+      label: language === "ku" ? "ڕێبەری پۆرتاڵ" : language === "ar" ? "دليل البوابة" : language === "zh" ? "门户指南" : "Portal guide",
+      href: "/portal/guide",
+    },
     {
       icon: Headphones,
       label: t("portal.support"),

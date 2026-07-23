@@ -9,7 +9,7 @@ import {
   User, MessageSquare, Bell, MapPin, FileText, HelpCircle, 
   AlertTriangle, ChevronRight, LogOut, Settings, Shield, Phone, Mail,
   Package, CreditCard, Star, Moon, Sun, Headphones, MessageCircle,
-  Globe, Languages, Info, Heart, Share2, ExternalLink
+  Globe, Languages, Info, Heart, Share2, ExternalLink, BookOpen
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,6 +59,13 @@ const { t, language, setLanguage } = useLanguage();
   ];
 
   const supportItems = [
+    {
+      icon: BookOpen,
+      label: language === "ku" ? "ڕێبەری پۆرتاڵ" : language === "ar" ? "دليل البوابة" : language === "zh" ? "门户指南" : "Portal guide",
+      description: language === "ku" ? "هەموو بەشەکان بە نموونەوە" : language === "ar" ? "كل الأقسام بأمثلة" : language === "zh" ? "所有版块及示例" : "Every section, with examples",
+      path: "/portal/guide",
+      iconBg: "bg-gradient-to-br from-indigo-400 to-fuchsia-500",
+    },
     {
       icon: Headphones,
       label: language === "ku" ? "پشتگیری" : "Support",
