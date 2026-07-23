@@ -39,6 +39,13 @@ export default function PortalSearch() {
     { enabled: hasSearched && !!searchQuery.trim() && !result }
   );
 
+  // Order-number search: the same box also finds the customer's own
+  // full-package/commission orders by order code (FP-...) or tracking.
+  const { data: orderResult } = trpc.customerPortal.searchOrder.useQuery(
+    { query: searchQuery.trim() },
+    { enabled: hasSearched && !!searchQuery.trim() && !result }
+  );
+
   // Real movement events for the found package — feeds actual dates into the
   // tracking timeline instead of the synthetic status-only view.
   const { data: timelineEvents } = trpc.customerPortal.getPackageTimeline.useQuery(
@@ -138,7 +145,12 @@ export default function PortalSearch() {
         <div className="relative">
           <Input
             type="text"
-            placeholder={t("enterTrackingNumber") || "Enter tracking number..."}
+            placeholder={pickLang(language, {
+              ku: "تراکینگ یان ئۆردەر نەمبەر بنووسە...",
+              en: "Enter tracking or order number...",
+              ar: "أدخل رقم التتبع أو رقم الطلب...",
+              zh: "输入运单号或订单号...",
+            })}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -174,7 +186,14 @@ export default function PortalSearch() {
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-10 h-10 text-gray-300" />
             </div>
-            <p className="text-gray-500">{t("enterTrackingToSearch") || "Enter a tracking number to search"}</p>
+            <p className="text-gray-500">
+              {pickLang(language, {
+                ku: "تراکینگ نەمبەر یان ئۆردەر نەمبەر (FP-...) بنووسە بۆ گەڕان",
+                en: "Enter a tracking number or order number (FP-...) to search",
+                ar: "أدخل رقم التتبع أو رقم الطلب (FP-...) للبحث",
+                zh: "输入运单号或订单号（FP-...）进行搜索",
+              })}
+            </p>
           </div>
         ) : (isLoading || extraLoading) ? (
           <PortalSearchSkeleton />
@@ -330,6 +349,47 @@ export default function PortalSearch() {
               </div>
             </div>
           </div>
+        ) : orderResult ? (
+          /* Order-number match: a full-package/commission order (FP-...) */
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 space-y-3">
+            <div className="flex items-center gap-3">
+              {orderResult.productImage ? (
+                <img src={orderResult.productImage} alt="" className="w-14 h-14 rounded-xl object-cover" />
+              ) : (
+                <div className="w-14 h-14 bg-violet-100 dark:bg-violet-950/40 rounded-xl flex items-center justify-center">
+                  <Package className="w-7 h-7 text-violet-500" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="font-bold text-slate-800 dark:text-slate-100 truncate">
+                  {orderResult.productName}
+                </p>
+                <p className="font-mono text-sm text-violet-600 dark:text-violet-400" dir="ltr">
+                  {orderResult.orderCode}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-bold text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">
+                {pickLang(language, { ku: "ئۆردەر", en: "Order", ar: "طلب", zh: "订单" })}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <p className="text-xs text-gray-500">{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100">{orderResult.status}</p>
+              </div>
+              {orderResult.trackingNumber && (
+                <div>
+                  <p className="text-xs text-gray-500">{pickLang(language, { ku: "تراک", en: "Tracking", ar: "التتبع", zh: "运单号" })}</p>
+                  <p className="font-mono font-semibold text-slate-800 dark:text-slate-100" dir="ltr">{orderResult.trackingNumber}</p>
+                </div>
+              )}
+            </div>
+            <Link href="/portal/full-package">
+              <Button className="w-full rounded-xl bg-violet-600 hover:bg-violet-700 text-white">
+                {pickLang(language, { ku: "بینینی وردەکاری لە ئۆردەرەکانم", en: "View details in My Orders", ar: "عرض التفاصيل في طلباتي", zh: "在我的订单中查看详情" })}
+              </Button>
+            </Link>
+          </div>
         ) : extra?.unclaimed ? (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 text-center space-y-3">
             <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
@@ -376,9 +436,16 @@ export default function PortalSearch() {
             <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <Package className="w-10 h-10 text-red-300" />
             </div>
-            <p className="text-gray-800 font-medium">{t("packageNotFound") || "Package not found"}</p>
+            <p className="text-gray-800 font-medium">
+              {pickLang(language, { ku: "هیچ نەدۆزرایەوە", en: "Nothing found", ar: "لم يتم العثور على شيء", zh: "未找到任何结果" })}
+            </p>
             <p className="text-sm text-gray-500 mt-1">
-              {t("checkTrackingNumber") || "Please check the tracking number and try again"}
+              {pickLang(language, {
+                ku: "تراکینگ یان ئۆردەر نەمبەرەکە بپشکنە و دووبارە هەوڵبدەرەوە",
+                en: "Check the tracking or order number and try again",
+                ar: "تحقق من رقم التتبع أو رقم الطلب وحاول مجدداً",
+                zh: "请检查运单号或订单号后重试",
+              })}
             </p>
           </div>
         )}

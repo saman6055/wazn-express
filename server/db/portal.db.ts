@@ -388,7 +388,26 @@ export async function searchCustomerPackage(customerId: number, trackingNumber: 
       )
     ))
     .limit(1);
-  
+
+  return result[0] || null;
+}
+
+// Search the customer's full-package/commission orders by order number
+// (FP-...) or by the order's tracking number — same search box as packages.
+export async function searchCustomerOrder(customerId: number, query: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(fullPackageOrders)
+    .where(and(
+      eq(fullPackageOrders.customerId, customerId),
+      or(
+        eq(fullPackageOrders.orderCode, query),
+        eq(fullPackageOrders.trackingNumber, query)
+      )
+    ))
+    .limit(1);
+
   return result[0] || null;
 }
 

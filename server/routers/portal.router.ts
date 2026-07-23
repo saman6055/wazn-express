@@ -197,6 +197,17 @@ export const customerPortalRouter = router({
         return db.searchCustomerPackage(customerId, input.trackingNumber);
       }),
 
+    // Same search box, but for full-package/commission orders: matches the
+    // order number (FP-...) or the order's tracking number.
+    searchOrder: protectedProcedure
+      .input(z.object({ query: z.string().trim().min(1).max(100) }))
+      .query(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) return null;
+        return db.searchCustomerOrder(customerId, input.query);
+      }),
+
     // Unified-search fallback: when a tracking isn't one of the customer's own
     // registered packages, tell them what else we know — is it sitting
     // unclaimed (claimable), or did they pre-declare it (awaiting arrival)?
