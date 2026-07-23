@@ -1,6 +1,7 @@
 import { pickLang } from "@/lib/lang";
+import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Package, ShoppingBag, Receipt, Wallet } from "lucide-react";
+import { ChevronDown, Hash, Package, ShoppingBag, Receipt, Truck, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { WhatsAppHelpButton } from "./WhatsAppHelpButton";
 
@@ -64,6 +65,26 @@ export function OrderBillingGroups({
   const pick = (v: L10n) => pickLang(language, v);
   const [openKey, setOpenKey] = useState<string | null>(null);
 
+  // Read-only enrichment: join each billing group to the order/package it
+  // charges (photo, order code, tracking, quantity) purely on the client from
+  // queries the portal already exposes — no backend or billing-logic changes.
+  const { data: fpOrders } = trpc.customerPortal.getMyFullPackageOrders.useQuery(
+    {},
+    { staleTime: 60_000, retry: false },
+  );
+  const { data: myPackages } = trpc.customerPortal.getMyPackages.useQuery(undefined, {
+    staleTime: 60_000,
+    retry: false,
+  });
+  const orderById = useMemo(
+    () => new Map((fpOrders ?? []).map((o: any) => [o.id as number, o])),
+    [fpOrders],
+  );
+  const pkgById = useMemo(
+    () => new Map((myPackages ?? []).map((p: any) => [p.id as number, p])),
+    [myPackages],
+  );
+
   const groups = useMemo<Group[]>(() => {
     const map = new Map<string, Group>();
     for (const tx of transactions ?? []) {
@@ -125,6 +146,14 @@ export function OrderBillingGroups({
         // The first line's description usually carries the order code — use it
         // as the card subtitle so the customer recognises the order.
         const subtitle = (g.lines[g.lines.length - 1]?.description || "").split("\n")[0];
+        // Client-side join to the source order/package for identity info.
+        const fp = g.refType !== "package" ? orderById.get(g.refId) : undefined;
+        const pkg = g.refType === "package" ? pkgById.get(g.refId) : undefined;
+        const image = fp?.productImage || (Array.isArray(pkg?.photos) ? pkg.photos[0] : undefined);
+        const code = fp?.orderCode || pkg?.packageCode || null;
+        const tracking = fp?.trackingNumber || pkg?.trackingNumber || null;
+        const quantity = fp?.quantity != null && Number(fp.quantity) > 0 ? Number(fp.quantity) : null;
+        const title = fp?.productName || pick(meta.label);
         return (
           <div
             key={g.key}
@@ -139,18 +168,32 @@ export function OrderBillingGroups({
               className="w-full p-3.5 text-start"
             >
               <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-                    isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-50 text-indigo-600",
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                </div>
+                {image ? (
+                  <img
+                    src={image}
+                    alt=""
+                    loading="lazy"
+                    className="h-12 w-12 shrink-0 rounded-xl object-cover ring-1 ring-black/5 dark:ring-white/10"
+                  />
+                ) : (
+                  <div
+                    className={cn(
+                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+                      isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-50 text-indigo-600",
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800")}>
-                      {pick(meta.label)}
+                    <span className={cn("truncate text-sm font-bold", isDark ? "text-white" : "text-slate-800")}>
+                      {title}
+                      {quantity != null && quantity > 1 && (
+                        <span className={cn("ms-1.5 font-black", isDark ? "text-amber-400" : "text-amber-600")} dir="ltr">
+                          ×{quantity}
+                        </span>
+                      )}
                     </span>
                     <span
                       className={cn("shrink-0 text-base font-black tabular-nums", isDark ? "text-white" : "text-slate-900")}
@@ -159,14 +202,46 @@ export function OrderBillingGroups({
                       ${g.total.toFixed(2)}
                     </span>
                   </div>
-                  <div className="mt-0.5 flex items-center justify-between gap-2">
-                    <span className={cn("truncate text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
-                      {subtitle}
-                    </span>
-                    <span className={cn("shrink-0 text-[10px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    {code && (
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-mono font-bold",
+                          isDark
+                            ? "border-violet-800 bg-violet-950/40 text-violet-300"
+                            : "border-violet-200 bg-violet-50 text-violet-700",
+                        )}
+                        dir="ltr"
+                      >
+                        <Hash className="h-3 w-3" />
+                        {code}
+                      </span>
+                    )}
+                    {tracking && (
+                      <span
+                        className={cn("inline-flex items-center gap-1 text-[11px] font-mono", isDark ? "text-slate-400" : "text-slate-500")}
+                        dir="ltr"
+                      >
+                        <Truck className="h-3 w-3" />
+                        {tracking}
+                      </span>
+                    )}
+                    {quantity != null && (
+                      <span className={cn("text-[11px] font-medium", isDark ? "text-slate-400" : "text-slate-500")}>
+                        {pick({ ku: "عەدەد", en: "Qty", ar: "الكمية", zh: "数量" })}: <b dir="ltr">{quantity}</b>
+                      </span>
+                    )}
+                    <span className={cn("ms-auto shrink-0 text-[10px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
                       {g.firstAt.toLocaleDateString("en-GB")}
                     </span>
                   </div>
+                  {!code && (
+                    <div className="mt-0.5">
+                      <span className={cn("truncate text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
+                        {subtitle}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <ChevronDown
                   className={cn(
@@ -222,7 +297,12 @@ export function OrderBillingGroups({
                   <WhatsAppHelpButton
                     language={language}
                     section={pick({ ku: "دارایی — حیسابی ئۆردەر", en: "Financial — order billing", ar: "المالية — فواتير الطلب", zh: "财务——订单账单" })}
-                    topic={`${pick(meta.label)} · ${subtitle} · $${g.total.toFixed(2)}`}
+                    topic={[
+                      code ? `${code}` : subtitle,
+                      quantity != null ? `${pick({ ku: "عەدەد", en: "Qty", ar: "الكمية", zh: "数量" })}: ${quantity}` : null,
+                      tracking ? `${pick({ ku: "تراک", en: "Tracking", ar: "التتبع", zh: "运单号" })}: ${tracking}` : null,
+                      `$${g.total.toFixed(2)}`,
+                    ].filter(Boolean).join(" · ")}
                   />
                 </div>
               </div>
