@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -638,7 +638,7 @@ export default function PortalFullPackage() {
                             isDark ? "bg-slate-700" : "bg-slate-100"
                           )}>
                             {order.productImage ? (
-                              <img 
+                              <img loading="lazy" decoding="async" 
                                 src={order.productImage} 
                                 alt={order.productName}
                                 className="w-full h-full object-cover"
@@ -836,7 +836,7 @@ export default function PortalFullPackage() {
                     isDark ? "border-slate-900 bg-slate-800" : "border-white bg-slate-100"
                   )}>
                     {selectedOrder.productImage ? (
-                      <img 
+                      <img loading="lazy" decoding="async" 
                         src={selectedOrder.productImage} 
                         alt={selectedOrder.productName}
                         className="w-full h-full object-cover"

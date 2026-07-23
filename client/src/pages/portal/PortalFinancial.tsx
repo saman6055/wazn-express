@@ -1,8 +1,10 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import { Link } from "wouter";
-import ModernPortalFinancial from "./modern/ModernPortalFinancial";
-import Skin3PortalFinancial from "./skin3/Skin3PortalFinancial";
+import { lazy } from "react";
+// Lazy: only the active skin's chunk is downloaded (global admin setting).
+const ModernPortalFinancial = lazy(() => import("./modern/ModernPortalFinancial"));
+const Skin3PortalFinancial = lazy(() => import("./skin3/Skin3PortalFinancial"));
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";

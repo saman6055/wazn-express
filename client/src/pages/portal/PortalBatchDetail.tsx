@@ -1,4 +1,4 @@
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { PackageThumb, usePackageImages } from "@/components/portal/PackageThumb";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -465,7 +465,7 @@ const { t, language } = useLanguage();
                                 isDark ? "border-slate-700 bg-slate-700" : "border-white bg-slate-100"
                               )}
                             >
-                              <img 
+                              <img loading="lazy" decoding="async" 
                                 src={photo} 
                                 alt={`Package photo ${idx + 1}`}
                                 className="w-full h-full object-cover"
@@ -541,7 +541,7 @@ const { t, language } = useLanguage();
 
               {/* Main Image */}
               <div className="relative aspect-square bg-black flex items-center justify-center">
-                <img
+                <img loading="lazy" decoding="async"
                   src={photos[currentPhotoIndex]}
                   alt={`Package photo ${currentPhotoIndex + 1}`}
                   className="max-w-full max-h-full object-contain"
@@ -592,7 +592,7 @@ const { t, language } = useLanguage();
                             : "border-transparent opacity-60 hover:opacity-100"
                         )}
                       >
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={photo}
                           alt={`Thumbnail ${idx + 1}`}
                           className="w-full h-full object-cover"

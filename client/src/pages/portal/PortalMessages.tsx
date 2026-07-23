@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { Button } from "@/components/ui/button";
@@ -515,7 +515,7 @@ export default function PortalMessages() {
                             {/* Image attachment */}
                             {message.messageType === "image" && message.attachmentUrl && (
                               <div className="mb-1">
-                                <img
+                                <img loading="lazy" decoding="async"
                                   src={message.attachmentUrl}
                                   alt={message.attachmentName || "image"}
                                   className="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition"
@@ -611,7 +611,7 @@ export default function PortalMessages() {
                   isDark ? "bg-slate-800" : "bg-gray-100"
                 )}>
                   {attachmentPreview ? (
-                    <img src={attachmentPreview} alt="" className="w-14 h-14 rounded object-cover" />
+                    <img loading="lazy" decoding="async" src={attachmentPreview} alt="" className="w-14 h-14 rounded object-cover" />
                   ) : (
                     <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", isDark ? "bg-purple-500/20" : "bg-purple-100")}>
                       <FileText className={cn("w-5 h-5", isDark ? "text-purple-400" : "text-purple-600")} />

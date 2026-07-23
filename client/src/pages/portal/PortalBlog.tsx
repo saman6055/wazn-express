@@ -1,4 +1,4 @@
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -146,7 +146,7 @@ const { t, language } = useLanguage();
                   {/* Cover Image */}
                   {post.coverImageUrl ? (
                     <div className="relative h-40 overflow-hidden">
-                      <img 
+                      <img loading="lazy" decoding="async" 
                         src={post.coverImageUrl} 
                         alt={getTitle(post)}
                         className="w-full h-full object-cover"

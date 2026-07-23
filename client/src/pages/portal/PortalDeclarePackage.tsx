@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -226,7 +226,7 @@ export default function PortalDeclarePackage() {
               return (
                 <div key={d.id} className={cn("flex items-center gap-3 rounded-2xl border p-3", isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-200")}>
                   {d.productImages?.[0] ? (
-                    <img src={d.productImages[0]} alt="" className="h-14 w-14 shrink-0 rounded-xl border object-cover" />
+                    <img loading="lazy" decoding="async" src={d.productImages[0]} alt="" className="h-14 w-14 shrink-0 rounded-xl border object-cover" />
                   ) : (
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-muted/50">
                       <Package className="h-6 w-6 text-muted-foreground/50" />

@@ -1,7 +1,11 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
-import ModernPortalShipments from "./modern/ModernPortalShipments";
-import Skin3PortalShipments from "./skin3/Skin3PortalShipments";
+import { lazy } from "react";
+// Lazy: only the active skin's chunk is downloaded — the skin is a global
+// admin setting, so shipping all three variants to every customer tripled
+// the route bundle for nothing.
+const ModernPortalShipments = lazy(() => import("./modern/ModernPortalShipments"));
+const Skin3PortalShipments = lazy(() => import("./skin3/Skin3PortalShipments"));
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";

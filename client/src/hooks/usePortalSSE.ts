@@ -29,39 +29,45 @@ export function usePortalSSE(options: {
   const eventSourceRef = useRef<EventSource | null>(null);
   const consecutiveErrorsRef = useRef(0);
 
-  const handleMessage = useCallback(
-    (e: MessageEvent) => {
-      try {
-        const data = JSON.parse(e.data) as PortalSSEEvent;
-        onEvent?.(data);
-        switch (data.type) {
-          case "package_status":
-            onPackageStatus?.({
-              packageId: data.packageId,
-              status: data.status,
-              trackingNumber: data.trackingNumber,
-            });
-            break;
-          case "new_invoice":
-            onNewInvoice?.({ invoiceId: data.invoiceId, invoiceNumber: data.invoiceNumber });
-            break;
-          case "payment_confirmation":
-            onPaymentConfirmation?.({ transactionId: data.transactionId, amount: data.amount });
-            break;
-          case "notification":
-            onNotification?.({
-              notificationId: data.notificationId,
-              title: data.title,
-              body: data.body,
-            });
-            break;
-        }
-      } catch {
-        // ignore parse errors
+  // Keep the latest callbacks in a ref so the connection effect below can stay
+  // stable (deps: [enabled] only). Callers pass inline arrow functions that are
+  // recreated every render; without this the EventSource would tear down and
+  // reopen on EVERY re-render (e.g. every keystroke in the header search),
+  // churning connections and starving the browser's ~6-per-domain pool.
+  const callbacksRef = useRef({ onEvent, onPackageStatus, onNewInvoice, onPaymentConfirmation, onNotification });
+  callbacksRef.current = { onEvent, onPackageStatus, onNewInvoice, onPaymentConfirmation, onNotification };
+
+  const handleMessage = useCallback((e: MessageEvent) => {
+    try {
+      const data = JSON.parse(e.data) as PortalSSEEvent;
+      const cb = callbacksRef.current;
+      cb.onEvent?.(data);
+      switch (data.type) {
+        case "package_status":
+          cb.onPackageStatus?.({
+            packageId: data.packageId,
+            status: data.status,
+            trackingNumber: data.trackingNumber,
+          });
+          break;
+        case "new_invoice":
+          cb.onNewInvoice?.({ invoiceId: data.invoiceId, invoiceNumber: data.invoiceNumber });
+          break;
+        case "payment_confirmation":
+          cb.onPaymentConfirmation?.({ transactionId: data.transactionId, amount: data.amount });
+          break;
+        case "notification":
+          cb.onNotification?.({
+            notificationId: data.notificationId,
+            title: data.title,
+            body: data.body,
+          });
+          break;
       }
-    },
-    [onEvent, onPackageStatus, onNewInvoice, onPaymentConfirmation, onNotification]
-  );
+    } catch {
+      // ignore parse errors
+    }
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;

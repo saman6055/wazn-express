@@ -1,7 +1,9 @@
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
-import ModernPortalHome from "./modern/ModernPortalHome";
-import Skin3PortalHome from "./skin3/Skin3PortalHome";
+import { lazy } from "react";
+// Lazy: only the active skin's chunk is downloaded (global admin setting).
+const ModernPortalHome = lazy(() => import("./modern/ModernPortalHome"));
+const Skin3PortalHome = lazy(() => import("./skin3/Skin3PortalHome"));
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -217,7 +219,7 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
               {/* Cover Image Background */}
               {post.coverImageUrl && (
                 <div className="absolute inset-0">
-                  <img 
+                  <img loading="lazy" decoding="async" 
                     src={post.coverImageUrl} 
                     alt="" 
                     className="w-full h-full object-cover opacity-20"

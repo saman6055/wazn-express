@@ -1,4 +1,4 @@
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { PackageTrackingTimeline } from "@/components/portal/PackageTrackingTimeline";
 import { PortalSearchSkeleton } from "@/components/portal/PortalListSkeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -320,7 +320,7 @@ export default function PortalSearch() {
                         key={idx}
                         className="w-12 h-12 rounded-lg border-2 border-white shadow-sm overflow-hidden bg-gray-100"
                       >
-                        <img 
+                        <img loading="lazy" decoding="async" 
                           src={photo} 
                           alt={`Package photo ${idx + 1}`}
                           className="w-full h-full object-cover"
@@ -430,7 +430,7 @@ export default function PortalSearch() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 space-y-3">
             <div className="flex items-center gap-3">
               {orderResult.productImage ? (
-                <img src={orderResult.productImage} alt="" className="w-14 h-14 rounded-xl object-cover" />
+                <img loading="lazy" decoding="async" src={orderResult.productImage} alt="" className="w-14 h-14 rounded-xl object-cover" />
               ) : (
                 <div className="w-14 h-14 bg-violet-100 dark:bg-violet-950/40 rounded-xl flex items-center justify-center">
                   <Package className="w-7 h-7 text-violet-500" />
@@ -556,7 +556,7 @@ export default function PortalSearch() {
 
               {/* Main Image */}
               <div className="relative aspect-square bg-black flex items-center justify-center">
-                <img
+                <img loading="lazy" decoding="async"
                   src={photos[currentPhotoIndex]}
                   alt={`Package photo ${currentPhotoIndex + 1}`}
                   className="max-w-full max-h-full object-contain"
@@ -607,7 +607,7 @@ export default function PortalSearch() {
                             : "border-transparent opacity-60 hover:opacity-100"
                         )}
                       >
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={photo}
                           alt={`Thumbnail ${idx + 1}`}
                           className="w-full h-full object-cover"

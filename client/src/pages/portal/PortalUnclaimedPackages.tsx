@@ -1,4 +1,4 @@
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -211,7 +211,7 @@ export default function PortalUnclaimedPackages() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
                         {pkg.photos?.[0] ? (
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={pkg.photos[0]}
                             alt=""
                             className="w-12 h-12 rounded-xl object-cover border border-orange-100 shrink-0 cursor-zoom-in"
@@ -388,7 +388,7 @@ export default function PortalUnclaimedPackages() {
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="flex items-center gap-3">
                   {selectedPackage.photos?.[0] ? (
-                    <img src={selectedPackage.photos[0]} alt="" className="w-12 h-12 rounded-xl object-cover shadow-sm shrink-0" />
+                    <img loading="lazy" decoding="async" src={selectedPackage.photos[0]} alt="" className="w-12 h-12 rounded-xl object-cover shadow-sm shrink-0" />
                   ) : (
                     <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
                       <Package className="w-6 h-6 text-slate-600" />

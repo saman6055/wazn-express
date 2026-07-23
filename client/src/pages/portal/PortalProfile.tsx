@@ -1,7 +1,9 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
-import ModernPortalProfile from "./modern/ModernPortalProfile";
-import Skin3PortalProfile from "./skin3/Skin3PortalProfile";
+import { lazy } from "react";
+// Lazy: only the active skin's chunk is downloaded (global admin setting).
+const ModernPortalProfile = lazy(() => import("./modern/ModernPortalProfile"));
+const Skin3PortalProfile = lazy(() => import("./skin3/Skin3PortalProfile"));
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
