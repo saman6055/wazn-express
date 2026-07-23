@@ -205,9 +205,13 @@ export async function getCustomerReportData(customerId: number, startDate?: Date
 export async function generateCustomerPDF(data: CustomerReportData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ 
-        size: 'A4', 
+      const doc = new PDFDocument({
+        size: 'A4',
         margin: 40,
+        // Keep every page in the buffer so the footer loop can switchToPage
+        // over all of them — without this, multi-page reports crash with
+        // "switchToPage(0) out of bounds".
+        bufferPages: true,
         info: {
           Title: `Wazn Express - Customer Report: ${data.customer.fullName}`,
           Author: 'Wazn Express System',
@@ -365,9 +369,10 @@ export async function generateCustomerPDF(data: CustomerReportData): Promise<Buf
         y += 18;
       }
 
-      // Footer
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
+      // Footer — iterate the actual buffered range (start may be non-zero)
+      const range = doc.bufferedPageRange();
+      const pageCount = range.start + range.count;
+      for (let i = range.start; i < pageCount; i++) {
         doc.switchToPage(i);
         doc.fontSize(8).fillColor('#a0aec0')
            .text(
@@ -517,9 +522,10 @@ export async function getBatchReportData(batchId: number): Promise<BatchReportDa
 export async function generateBatchPDF(data: BatchReportData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ 
-        size: 'A4', 
+      const doc = new PDFDocument({
+        size: 'A4',
         margin: 40,
+        bufferPages: true,
         info: {
           Title: `Wazn Express - Batch Report: ${data.batch.batchCode}`,
           Author: 'Wazn Express System',
@@ -665,9 +671,10 @@ export async function generateBatchPDF(data: BatchReportData): Promise<Buffer> {
         doc.fontSize(8).fillColor('#718096').text(`... and ${data.packages.length - 20} more packages`, 45, y + 5);
       }
 
-      // Footer
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
+      // Footer — iterate the actual buffered range (start may be non-zero)
+      const range = doc.bufferedPageRange();
+      const pageCount = range.start + range.count;
+      for (let i = range.start; i < pageCount; i++) {
         doc.switchToPage(i);
         doc.fontSize(8).fillColor('#a0aec0')
            .text(
@@ -836,9 +843,10 @@ export async function getDateFilteredDashboardData(
 export async function generateDateFilteredDashboardPDF(data: DateFilteredDashboardData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ 
-        size: 'A4', 
+      const doc = new PDFDocument({
+        size: 'A4',
         margin: 40,
+        bufferPages: true,
         info: {
           Title: `Wazn Express - Dashboard Report (${data.periodLabel})`,
           Author: 'Wazn Express System',
@@ -936,9 +944,10 @@ export async function generateDateFilteredDashboardPDF(data: DateFilteredDashboa
         y += 20;
       });
 
-      // Footer
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
+      // Footer — iterate the actual buffered range (start may be non-zero)
+      const range = doc.bufferedPageRange();
+      const pageCount = range.start + range.count;
+      for (let i = range.start; i < pageCount; i++) {
         doc.switchToPage(i);
         doc.fontSize(8).fillColor('#a0aec0')
            .text(
