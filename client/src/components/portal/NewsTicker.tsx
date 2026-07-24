@@ -28,7 +28,7 @@ export function NewsTicker({ language, isInstalled }: { language: string; isInst
   // it — character-count estimates overshoot badly for Arabic-script text
   // (connected, narrow glyphs), which made the ticker crawl. The track holds
   // the headlines twice, so one full loop travels scrollWidth / 2 pixels;
-  // at ~150px/s the glide matches a TV news chyron on any screen size.
+  // at ~110px/s the glide reads at a calm TV news chyron pace on any screen.
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [durationSec, setDurationSec] = useState(20);
   // How many times the headline set repeats inside ONE run. On wide screens a
@@ -55,7 +55,7 @@ export function NewsTicker({ language, isInstalled }: { language: string; isInst
         setRepeats(needed);
         return; // duration recomputes on the next pass with the final width
       }
-      setDurationSec(Math.max(6, Math.round(oneRunPx / 150)));
+      setDurationSec(Math.max(8, Math.round(oneRunPx / 110)));
     };
     measure();
     // Fonts loading late change the width — re-measure once they're ready.
