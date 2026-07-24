@@ -36,6 +36,12 @@ export function NewsTicker({ language, isInstalled }: { language: string; isInst
   // Duplicate the run so the -50% → 0 loop is seamless.
   const run = [...headlines, ...headlines];
 
+  // Speed scales with how much text there is, so the on-screen glide reads at
+  // a natural news-ticker pace (~90px/s) no matter how many headlines exist.
+  // ~14px per character is a rough width estimate for the strip's font.
+  const contentPx = headlines.reduce((sum, h) => sum + h.length * 14 + 48, 0);
+  const durationSec = Math.max(12, Math.round(contentPx / 90));
+
   return (
     <Link href="/portal/news">
       <div
@@ -53,7 +59,7 @@ export function NewsTicker({ language, isInstalled }: { language: string; isInst
           </span>
           {/* Scrolling track — two identical runs so the loop is seamless. */}
           <div className="relative flex-1 overflow-hidden h-full">
-            <div className="wazn-ticker-track h-full">
+            <div className="wazn-ticker-track h-full" style={{ animationDuration: `${durationSec}s` }}>
               {run.map((h, i) => (
                 <span key={i} className="inline-flex items-center h-full text-[13px] font-semibold px-4 whitespace-nowrap">
                   <span className="opacity-60 mx-2">•</span>

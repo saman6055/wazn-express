@@ -1169,7 +1169,8 @@ a:focus-visible,
   width: max-content;
   white-space: nowrap;
   will-change: transform;
-  animation: wazn-ticker 40s linear infinite;
+  /* Duration is set inline per headline count; this is only a fallback. */
+  animation: wazn-ticker 20s linear infinite;
 }
 .wazn-ticker-track:hover,
 .wazn-ticker-track:active {
