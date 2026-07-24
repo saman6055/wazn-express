@@ -12,7 +12,7 @@ import { Link } from "wouter";
 // Tapping anywhere on it opens the full /portal/news section.
 // ---------------------------------------------------------------------------
 
-export function NewsTicker({ language, isInstalled }: { language: string; isInstalled?: boolean }) {
+export function NewsTicker({ language }: { language: string }) {
   const pick = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
 
   const { data: channels } = trpc.customerPortal.getNewsChannels.useQuery(undefined, {
@@ -28,7 +28,7 @@ export function NewsTicker({ language, isInstalled }: { language: string; isInst
   // it — character-count estimates overshoot badly for Arabic-script text
   // (connected, narrow glyphs), which made the ticker crawl. The track holds
   // the headlines twice, so one full loop travels scrollWidth / 2 pixels;
-  // at ~110px/s the glide reads at a calm TV news chyron pace on any screen.
+  // at ~80px/s the glide reads at a calm, unhurried pace on any screen.
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [durationSec, setDurationSec] = useState(20);
   // How many times the headline set repeats inside ONE run. On wide screens a
@@ -55,7 +55,7 @@ export function NewsTicker({ language, isInstalled }: { language: string; isInst
         setRepeats(needed);
         return; // duration recomputes on the next pass with the final width
       }
-      setDurationSec(Math.max(8, Math.round(oneRunPx / 110)));
+      setDurationSec(Math.max(10, Math.round(oneRunPx / 80)));
     };
     measure();
     // Fonts loading late change the width — re-measure once they're ready.
@@ -76,8 +76,10 @@ export function NewsTicker({ language, isInstalled }: { language: string; isInst
     <Link href="/portal/news">
       <div
         className={cn(
-          "fixed inset-x-0 z-30 h-9 overflow-hidden bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-md cursor-pointer",
-          isInstalled ? "bottom-[76px]" : "bottom-[68px]",
+          // In-flow (not fixed): the strip lives at the very bottom of the page
+          // content, so it only comes into view when the reader scrolls to the
+          // end — never a permanently-moving band competing for attention.
+          "relative w-full h-9 overflow-hidden bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-md cursor-pointer",
         )}
         dir="ltr"
       >

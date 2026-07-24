@@ -192,8 +192,9 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         "min-h-screen transition-colors duration-300",
         isDark ? "bg-slate-900" : "bg-slate-50",
         isRTL && "rtl",
-        // Extra bottom room for the news ticker strip that sits above the nav.
-        isInstalled ? "pb-36" : "pb-32"
+        // Bottom room so content (incl. the in-flow news ticker) clears the
+        // fixed bottom nav when scrolled to the end.
+        isInstalled ? "pb-28" : "pb-24"
       )}
     >
       {/* PWA Status Bar Spacer for iOS */}
@@ -235,6 +236,9 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         {/* Prominent pre-declaration CTA — home only, above every skin */}
         {location === "/portal" && <DeclarePackageBanner />}
         {children}
+        {/* Wazn News ticker — in-flow at the very bottom of the content, so it
+            only appears when the reader scrolls to the end (not a fixed band). */}
+        <NewsTicker language={language} />
       </main>
 
       {/* Bottom Navigation - fixed with smooth transitions */}
@@ -323,9 +327,6 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
           </div>
         </div>
       </nav>
-
-      {/* Wazn News ticker — scrolling headlines pinned above the bottom nav */}
-      <NewsTicker language={language} isInstalled={isInstalled} />
 
       {/* Live Chat Support */}
       {!isChatOpen && (
