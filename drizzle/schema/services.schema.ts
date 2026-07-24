@@ -587,6 +587,9 @@ export const blogPosts = mysqlTable("blogPosts", {
   
   // Featured flag (show prominently)
   isFeatured: boolean("isFeatured").default(false).notNull(),
+
+  // Pinned flag — pinned posts sort to the very top of Wazn News.
+  isPinned: boolean("isPinned").default(false).notNull(),
   
   // Scheduling
   publishedAt: timestamp("publishedAt"),

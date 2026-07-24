@@ -2197,6 +2197,12 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // "check that column/key exists" errors are swallowed in runSchemaPatches.
   { name: "fpot.drop_unique_trackingNumber", sql: "ALTER TABLE fullPackageOrderTrackings DROP INDEX fullPackageOrderTrackings_trackingNumber_unique" },
   { name: "fpot.idx_tracking_number",        sql: "CREATE INDEX idx_fpot_tracking_number ON fullPackageOrderTrackings (trackingNumber)" },
+
+  // Wazn News: pin-to-top flag. isFeatured added defensively too in case an
+  // older blogPosts CREATE predates it. Idempotent — duplicate-column errors
+  // are swallowed by runSchemaPatches.
+  { name: "blogPosts.isFeatured", sql: "ALTER TABLE blogPosts ADD COLUMN isFeatured BOOLEAN NOT NULL DEFAULT FALSE" },
+  { name: "blogPosts.isPinned",   sql: "ALTER TABLE blogPosts ADD COLUMN isPinned BOOLEAN NOT NULL DEFAULT FALSE" },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {

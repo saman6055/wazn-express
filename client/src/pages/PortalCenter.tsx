@@ -27,7 +27,7 @@ import {
   Users, Activity, Package, FileText, LogIn, Search, MessageCircle,
   MousePointerClick, ChevronLeft, ChevronRight, Clock, TrendingUp,
   UserCheck, PackageCheck, Ban, Sparkles, Send, Bell, Megaphone,
-  StickyNote, DollarSign, Plane, Zap, Ship, Loader2, Star, Newspaper,
+  StickyNote, DollarSign, Plane, Zap, Ship, Loader2, Star, Newspaper, Pin, Eye,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -860,13 +860,27 @@ function HomeAnnouncementsCard({ p }: { p: (v: L) => string }) {
                           ? p({ ku: "بڵاوکراوە", en: "Published", ar: "منشور", zh: "已发布" })
                           : p({ ku: "ڕەشنووس", en: "Draft", ar: "مسودة", zh: "草稿" })}
                       </Badge>
+                      {post.isPinned && (
+                        <Pin className="h-3.5 w-3.5 fill-orange-500 text-orange-500" />
+                      )}
                       {post.isFeatured && (
                         <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                       )}
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                        <Eye className="h-3 w-3" />{post.viewCount ?? 0}
+                      </span>
                     </div>
                     <span className="text-[11px] text-muted-foreground">{fmtDateTime(post.publishedAt || post.createdAt)}</span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    <Button
+                      size="sm" variant="outline" className="h-8 text-xs"
+                      disabled={update.isPending}
+                      onClick={() => update.mutate({ id: post.id, isPinned: !post.isPinned })}
+                      title={p({ ku: "چەسپاندن لە سەرەوە", en: "Pin to top", ar: "تثبيت في الأعلى", zh: "置顶" })}
+                    >
+                      <Pin className={cn("h-3.5 w-3.5", post.isPinned && "fill-orange-500 text-orange-500")} />
+                    </Button>
                     <Button
                       size="sm" variant="outline" className="h-8 text-xs"
                       disabled={update.isPending}

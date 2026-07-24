@@ -4,7 +4,8 @@ export type PortalSSEEvent =
   | { type: "package_status"; packageId: number; status: string; trackingNumber?: string }
   | { type: "new_invoice"; invoiceId: number; invoiceNumber: string }
   | { type: "payment_confirmation"; transactionId: number; amount: number }
-  | { type: "notification"; notificationId: number; title: string; body: string };
+  | { type: "notification"; notificationId: number; title: string; body: string }
+  | { type: "news"; postId: number; title: string };
 
 /**
  * Subscribe to the portal's real-time event stream over SSE.
@@ -23,9 +24,10 @@ export function usePortalSSE(options: {
   onNewInvoice?: (data: { invoiceId: number; invoiceNumber: string }) => void;
   onPaymentConfirmation?: (data: { transactionId: number; amount: number }) => void;
   onNotification?: (data: { notificationId: number; title: string; body: string }) => void;
+  onNews?: (data: { postId: number; title: string }) => void;
   enabled?: boolean;
 }) {
-  const { onEvent, onPackageStatus, onNewInvoice, onPaymentConfirmation, onNotification, enabled = true } = options;
+  const { onEvent, onPackageStatus, onNewInvoice, onPaymentConfirmation, onNotification, onNews, enabled = true } = options;
   const eventSourceRef = useRef<EventSource | null>(null);
   const consecutiveErrorsRef = useRef(0);
 
@@ -34,8 +36,8 @@ export function usePortalSSE(options: {
   // recreated every render; without this the EventSource would tear down and
   // reopen on EVERY re-render (e.g. every keystroke in the header search),
   // churning connections and starving the browser's ~6-per-domain pool.
-  const callbacksRef = useRef({ onEvent, onPackageStatus, onNewInvoice, onPaymentConfirmation, onNotification });
-  callbacksRef.current = { onEvent, onPackageStatus, onNewInvoice, onPaymentConfirmation, onNotification };
+  const callbacksRef = useRef({ onEvent, onPackageStatus, onNewInvoice, onPaymentConfirmation, onNotification, onNews });
+  callbacksRef.current = { onEvent, onPackageStatus, onNewInvoice, onPaymentConfirmation, onNotification, onNews };
 
   const handleMessage = useCallback((e: MessageEvent) => {
     try {
@@ -62,6 +64,9 @@ export function usePortalSSE(options: {
             title: data.title,
             body: data.body,
           });
+          break;
+        case "news":
+          cb.onNews?.({ postId: data.postId, title: data.title });
           break;
       }
     } catch {

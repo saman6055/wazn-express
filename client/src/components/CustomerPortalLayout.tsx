@@ -91,6 +91,17 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       toast.info(d.title || d.body, d.title && d.body ? { description: d.body } : undefined);
       refreshBadges();
     },
+    onNews: (d) => {
+      // Company-wide Wazn News broadcast — live toast + refresh the news feeds
+      // so the carousel/ticker/news page pick up the new post without a reload.
+      const heading =
+        language === 'ku' ? 'وەزن نیوز: بابەتی نوێ' :
+        language === 'ar' ? 'وزن نيوز: منشور جديد' :
+        language === 'zh' ? 'Wazn 新闻：新帖子' : 'Wazn News: new post';
+      toast.info(heading, { description: d.title || undefined });
+      utils.blog.published.invalidate();
+      utils.blog.featured.invalidate();
+    },
   });
 
   // Left side items

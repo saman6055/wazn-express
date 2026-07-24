@@ -4,7 +4,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { 
   Megaphone, ChevronRight, Calendar, Eye, Star,
-  Newspaper, Gift, RefreshCw, BookOpen, ArrowLeft, PlayCircle
+  Newspaper, Gift, RefreshCw, BookOpen, ArrowLeft, PlayCircle, Pin
 } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
@@ -206,6 +206,12 @@ const { t, language } = useLanguage();
                           {getCategoryIcon(post.category)}
                           {getCategoryLabel(post.category)}
                         </span>
+                        {post.isPinned && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-500 rounded-full text-xs font-bold text-white">
+                            <Pin className="w-3 h-3" />
+                            {language === "ku" ? "چەسپاو" : language === "ar" ? "مثبّت" : "Pinned"}
+                          </span>
+                        )}
                         {isNew(post.publishedAt || post.createdAt) && (
                           <span className="px-2 py-1 bg-red-500 rounded-full text-xs font-medium text-white">
                             {language === "ku" ? "نوێ" : "New"}
@@ -224,12 +230,25 @@ const { t, language } = useLanguage();
                     </div>
                   ) : (
                     <div className={cn(
-                      "h-24 flex items-center justify-center",
+                      "relative h-24 flex items-center justify-center",
                       `bg-gradient-to-br ${getCategoryGradient(post.category)}`
                     )}>
                       <div className="flex items-center gap-2 text-white">
                         {getCategoryIcon(post.category)}
                         <span className="font-medium">{getCategoryLabel(post.category)}</span>
+                      </div>
+                      <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                        {post.isPinned && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-500 rounded-full text-[11px] font-bold text-white">
+                            <Pin className="w-3 h-3" />
+                            {language === "ku" ? "چەسپاو" : language === "ar" ? "مثبّت" : "Pinned"}
+                          </span>
+                        )}
+                        {isNew(post.publishedAt || post.createdAt) && (
+                          <span className="px-2 py-0.5 bg-red-500 rounded-full text-[11px] font-bold text-white">
+                            {language === "ku" ? "نوێ" : "New"}
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}

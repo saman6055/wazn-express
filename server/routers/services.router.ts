@@ -583,6 +583,7 @@ export const blogRouter = router({
         category: z.enum(['announcement', 'news', 'promotion', 'update', 'guide']).optional(),
         status: z.enum(['draft', 'published', 'archived']).optional(),
         isFeatured: z.boolean().optional(),
+        isPinned: z.boolean().optional(),
         publishedAt: z.date().optional(),
         expiresAt: z.date().optional(),
         slug: z.string().optional(),
@@ -594,7 +595,7 @@ export const blogRouter = router({
         if (!hasTitle || !hasContent) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'At least one language must have title and content' });
         }
-        return db.createBlogPost({
+        const created = await db.createBlogPost({
           titleEn: input.titleEn || '',
           contentEn: input.contentEn || '',
           titleKu: input.titleKu,
@@ -608,11 +609,25 @@ export const blogRouter = router({
           category: input.category,
           status: input.status,
           isFeatured: input.isFeatured,
+          isPinned: input.isPinned,
           expiresAt: input.expiresAt,
           slug: input.slug,
           authorId: ctx.user.id,
           publishedAt: input.status === 'published' ? (input.publishedAt || new Date()) : undefined,
         });
+        // Live-broadcast a "new news" event to all connected portal customers
+        // when the post is published straight away.
+        if (created && input.status === 'published') {
+          try {
+            const { publishPortalBroadcast } = await import("../services/portalEvents.service");
+            publishPortalBroadcast({
+              type: "news",
+              postId: (created as any).id,
+              title: (created as any).titleKu || (created as any).titleEn || (created as any).titleAr || "",
+            });
+          } catch { /* broadcast is best-effort */ }
+        }
+        return created;
       }),
     
     // Update blog post
@@ -632,20 +647,35 @@ export const blogRouter = router({
         category: z.enum(['announcement', 'news', 'promotion', 'update', 'guide']).optional(),
         status: z.enum(['draft', 'published', 'archived']).optional(),
         isFeatured: z.boolean().optional(),
+        isPinned: z.boolean().optional(),
         publishedAt: z.date().optional(),
         expiresAt: z.date().optional(),
         slug: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        // If publishing for first time, set publishedAt
+        // If publishing for first time, set publishedAt — and remember so we
+        // only broadcast on the draft→published transition (not re-saves).
+        let justPublished = false;
         if (data.status === 'published') {
           const existing = await db.getBlogPostById(id);
-          if (existing && existing.status !== 'published' && !data.publishedAt) {
-            data.publishedAt = new Date();
+          if (existing && existing.status !== 'published') {
+            justPublished = true;
+            if (!data.publishedAt) data.publishedAt = new Date();
           }
         }
-        return db.updateBlogPost(id, data);
+        const updated = await db.updateBlogPost(id, data);
+        if (updated && justPublished) {
+          try {
+            const { publishPortalBroadcast } = await import("../services/portalEvents.service");
+            publishPortalBroadcast({
+              type: "news",
+              postId: id,
+              title: (updated as any).titleKu || (updated as any).titleEn || (updated as any).titleAr || "",
+            });
+          } catch { /* best-effort */ }
+        }
+        return updated;
       }),
     
     // Delete blog post

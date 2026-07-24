@@ -28,7 +28,8 @@ export type PortalEvent =
   | { type: "package_status"; packageId: number; status: string; trackingNumber?: string }
   | { type: "new_invoice"; invoiceId: number; invoiceNumber: string }
   | { type: "payment_confirmation"; transactionId: number; amount: number }
-  | { type: "notification"; notificationId: number; title: string; body: string };
+  | { type: "notification"; notificationId: number; title: string; body: string }
+  | { type: "news"; postId: number; title: string };
 
 const emitter = new EventEmitter();
 // Node's default of 10 is way too low for a portal with many concurrent
@@ -36,6 +37,10 @@ const emitter = new EventEmitter();
 emitter.setMaxListeners(1000);
 
 const channelFor = (customerId: number) => `portal:${customerId}`;
+// One shared channel every connected customer also listens on — used for
+// company-wide announcements (e.g. a new Wazn News post) that shouldn't
+// require inserting a row per customer.
+const BROADCAST_CHANNEL = "portal:broadcast";
 
 /**
  * Publish an event to a specific customer. Safe to call from any server
@@ -63,5 +68,24 @@ export function subscribePortalEvents(
 ): () => void {
   const channel = channelFor(customerId);
   emitter.on(channel, handler);
-  return () => emitter.off(channel, handler);
+  // Every connection also listens on the broadcast channel so company-wide
+  // events reach all connected customers without a per-customer emit.
+  emitter.on(BROADCAST_CHANNEL, handler);
+  return () => {
+    emitter.off(channel, handler);
+    emitter.off(BROADCAST_CHANNEL, handler);
+  };
+}
+
+/**
+ * Broadcast an event to EVERY connected portal customer at once (no DB row).
+ * Used for announcements like a freshly published Wazn News post.
+ */
+export function publishPortalBroadcast(event: PortalEvent): void {
+  if (!event) return;
+  try {
+    emitter.emit(BROADCAST_CHANNEL, event);
+  } catch {
+    // A bad handler must not break the publish caller.
+  }
 }

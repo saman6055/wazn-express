@@ -1069,7 +1069,8 @@ export async function getPublishedBlogPosts(): Promise<BlogPost[]> {
         gt(blogPosts.expiresAt, now)
       )
     ))
-    .orderBy(desc(blogPosts.publishedAt));
+    // Pinned posts float to the very top, then newest first.
+    .orderBy(desc(blogPosts.isPinned), desc(blogPosts.publishedAt));
 }
 
 export async function getFeaturedBlogPosts(): Promise<BlogPost[]> {
@@ -1085,7 +1086,7 @@ export async function getFeaturedBlogPosts(): Promise<BlogPost[]> {
         gt(blogPosts.expiresAt, now)
       )
     ))
-    .orderBy(desc(blogPosts.publishedAt))
+    .orderBy(desc(blogPosts.isPinned), desc(blogPosts.publishedAt))
     .limit(5);
 }
 
