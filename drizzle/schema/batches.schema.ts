@@ -72,7 +72,10 @@ export const batchPricingTiers = mysqlTable("batchPricingTiers", {
   // Metadata
   sortOrder: int("sortOrder").default(0).notNull(), // Display order
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Live-pricing recompute fetches tiers per batch on portal batch views.
+  batchIdIdx: index("idx_batch_pricing_tiers_batch_id").on(table.batchId),
+}));
 export type BatchPricingTier = typeof batchPricingTiers.$inferSelect;
 export type InsertBatchPricingTier = typeof batchPricingTiers.$inferInsert;
 
@@ -98,7 +101,9 @@ export const batchCustomerPricing = mysqlTable("batchCustomerPricing", {
   createdById: int("createdById").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  batchCustomerIdx: index("idx_batch_customer_pricing").on(table.batchId, table.customerId),
+}));
 export type BatchCustomerPricing = typeof batchCustomerPricing.$inferSelect;
 export type InsertBatchCustomerPricing = typeof batchCustomerPricing.$inferInsert;
 

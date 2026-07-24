@@ -60,7 +60,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 
@@ -356,7 +355,7 @@ export default function FullPackageDashboard() {
   };
 
   // Export to Excel
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     const orderNumberCol = pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order Number", ar: "رقم الطلب", zh: "订单号" });
     const data = filteredOrders.map(order => ({
       [t("fullPackage.orderCode")]: order.orderCode,
@@ -391,6 +390,8 @@ export default function FullPackageDashboard() {
       [t("fullPackage.dateColumn")]: "",
     });
 
+    // Loaded on demand so the heavy xlsx bundle stays out of the page chunk.
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, t("fullPackage.sheetName"));

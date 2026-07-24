@@ -12,8 +12,10 @@ import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import QueryErrorBoundary from "./components/QueryErrorBoundary";
 import { MutationToastHandler } from "./components/MutationToastHandler";
 import { OfflineProvider } from "./contexts/OfflineContext";
-import { StaffTips } from "./components/StaffTips";
 import { FastEntry } from "./components/FastEntry";
+
+// Lazy: StaffTips drags a large tips-content module; keep it out of the entry chunk.
+const StaffTips = lazy(() => import("./components/StaffTips").then((m) => ({ default: m.StaffTips })));
 
 // ---------------------------------------------------------------------------
 // Core & Home
@@ -346,7 +348,9 @@ function App() {
                 <QueryErrorBoundary>
                   <Router />
                 </QueryErrorBoundary>
-                <StaffTips />
+                <Suspense fallback={null}>
+                  <StaffTips />
+                </Suspense>
                 <FastEntry />
                 <PWAInstallPrompt />
               </TooltipProvider>

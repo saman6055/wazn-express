@@ -51,7 +51,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import QRCode from "qrcode";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import CompanyLogo from "@/components/CompanyLogo";
@@ -203,6 +202,8 @@ const [editingTemplate, setEditingTemplate] = useState<any>(null);
   // Generate QR code data URL
   const generateQRCode = async (data: string): Promise<string> => {
     try {
+      // Loaded on demand so the qrcode bundle stays out of the page chunk.
+      const QRCode = (await import("qrcode")).default;
       return await QRCode.toDataURL(data, { width: 200, margin: 1 });
     } catch {
       return "";

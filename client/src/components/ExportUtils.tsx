@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, FileText, Download } from "lucide-react";
 
@@ -10,7 +9,9 @@ interface ExportData {
 }
 
 // Export to Excel
-export function exportToExcel(data: ExportData, filename: string) {
+export async function exportToExcel(data: ExportData, filename: string) {
+  // Loaded on demand so the heavy xlsx bundle stays out of the main chunk.
+  const XLSX = await import('xlsx');
   const ws = XLSX.utils.aoa_to_sheet([
     data.title ? [data.title] : [],
     data.subtitle ? [data.subtitle] : [],

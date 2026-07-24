@@ -45,7 +45,6 @@ import {
   Layers,
 } from "lucide-react";
 import { toast } from "sonner";
-import QRCode from "qrcode";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -1269,6 +1268,8 @@ export default function BatchFinancialReport() {
               onClick={async () => {
                 if (!batch || !financial?.customerBreakdown?.length) return;
                 const breakdown = financial.customerBreakdown!;
+                // Loaded on demand so the qrcode bundle stays out of the page chunk.
+                const QRCode = (await import("qrcode")).default;
                 const qrCodesMap: Record<string, string> = {};
                 for (const item of breakdown) {
                   const code = getCustomerCode(item.customerId);
@@ -1588,6 +1589,7 @@ export default function BatchFinancialReport() {
                           return;
                         }
                         const fullCustomer = customers?.find(c => c.id === selectedCustomer?.id);
+                        const QRCode = (await import("qrcode")).default;
                         const qrCodesMap: Record<string, string> = {};
                         for (const p of regularAndCommission) {
                           if (p.trackingNumber) {
@@ -1640,6 +1642,7 @@ export default function BatchFinancialReport() {
                           return;
                         }
                         const fullCustomer = customers?.find(c => c.id === selectedCustomer?.id);
+                        const QRCode = (await import("qrcode")).default;
                         const qrCodesMap: Record<string, string> = {};
                         for (const p of fullPackages) {
                           if (p.trackingNumber) {

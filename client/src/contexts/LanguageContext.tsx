@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 
 // Import language files
 import kuTranslations from '../locales/ku.json';
@@ -115,7 +115,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     return 'ku';
   });
 
-  const languageInfo = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
+  const languageInfo = useMemo(
+    () => LANGUAGES.find(l => l.code === language) || LANGUAGES[0],
+    [language]
+  );
   const direction = languageInfo.direction;
   const isRTL = direction === 'rtl';
 
@@ -130,8 +133,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const currentTranslations = translations[language];
     const value = getNestedValue(currentTranslations, key);
     
-    // Debug: log missing translations
-    if (!value && key !== 'undefined') {
+    // Debug: log missing translations (dev only)
+    if (import.meta.env.DEV && !value && key !== 'undefined') {
       console.log(`[i18n] Missing translation for key: "${key}" in language: ${language}`);
     }
     
@@ -165,8 +168,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = language;
   }, [language, direction]);
 
+  const value = useMemo(
+    () => ({ language, languageInfo, setLanguage, t, direction, isRTL }),
+    [language, languageInfo, setLanguage, t, direction, isRTL]
+  );
+
   return (
-    <LanguageContext.Provider value={{ language, languageInfo, setLanguage, t, direction, isRTL }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );

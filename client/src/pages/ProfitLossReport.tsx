@@ -18,7 +18,6 @@ import {
   Trophy, AlertTriangle, ClipboardList, Activity,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -111,7 +110,7 @@ export default function ProfitLossReport() {
   }, [pnl, t]);
 
   // Excel export
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!pnl) { toast.error(t("toast.noDataToExport")); return; }
     const rows: Record<string, string | number>[] = [];
     rows.push({ [t("profitLoss.category")]: t("profitLoss.revenue"), [t("profitLoss.amount")]: "" });
@@ -139,6 +138,8 @@ export default function ProfitLossReport() {
     rows.push({ [t("profitLoss.category")]: t("profitLoss.netProfit"), [t("profitLoss.amount")]: pnl.netProfit });
     rows.push({ [t("profitLoss.category")]: t("profitLoss.profitMargin"), [t("profitLoss.amount")]: `${pnl.profitMargin}%` });
 
+    // Loaded on demand so the heavy xlsx bundle stays out of the page chunk.
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "P&L Report");

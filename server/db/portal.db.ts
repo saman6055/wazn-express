@@ -121,27 +121,25 @@ export async function getCustomerBatches(customerId: number) {
   
   const batchIds = customerPackages.map(p => p.batchId).filter((id): id is number => id !== null);
   
-  // Get batch details with customer's package count
-  const batchesWithCounts = await Promise.all(
-    batchIds.map(async (batchId) => {
-      const batch = await db.select().from(batches).where(eq(batches.id, batchId)).limit(1);
-      const customerPackageCount = await db.select({ count: sql<number>`COUNT(*)` })
-        .from(packages)
-        .where(and(
-          eq(packages.batchId, batchId),
-          eq(packages.customerId, customerId)
-        ));
-      
-      if (!batch[0]) return null;
-      
-      return {
-        ...batch[0],
-        customerPackageCount: customerPackageCount[0]?.count || 0
-      };
-    })
-  );
-  
-  return batchesWithCounts.filter((b): b is NonNullable<typeof b> => b !== null)
+  // Get batch details with customer's package count — batched into two
+  // queries (was 2 per batch) so the portal dashboard doesn't fan out.
+  const [batchRows, countRows] = await Promise.all([
+    db.select().from(batches).where(inArray(batches.id, batchIds)),
+    db.select({ batchId: packages.batchId, count: sql<number>`COUNT(*)` })
+      .from(packages)
+      .where(and(
+        eq(packages.customerId, customerId),
+        inArray(packages.batchId, batchIds)
+      ))
+      .groupBy(packages.batchId),
+  ]);
+  const countByBatch = new Map(countRows.map(r => [r.batchId, r.count]));
+
+  return batchRows
+    .map(batch => ({
+      ...batch,
+      customerPackageCount: countByBatch.get(batch.id) || 0,
+    }))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
@@ -224,25 +222,35 @@ export async function getCustomerPackagesInBatch(customerId: number, batchId: nu
     }
   }
 
-  // Check if each package is linked to a Full Package order
+  // Check if each package is linked to a Full Package order — one batched
+  // query for the whole batch (was one query per package).
+  const trackingNumbers = customerPackages
+    .map(p => p.trackingNumber)
+    .filter((tn): tn is string => !!tn);
+  const fpOrderByTracking = new Map<string, typeof fullPackageOrders.$inferSelect>();
+  if (trackingNumbers.length > 0) {
+    const fpOrders = await db.select()
+      .from(fullPackageOrders)
+      .where(inArray(fullPackageOrders.trackingNumber, trackingNumbers))
+      .orderBy(fullPackageOrders.id);
+    for (const o of fpOrders) {
+      if (o.trackingNumber && !fpOrderByTracking.has(o.trackingNumber)) {
+        fpOrderByTracking.set(o.trackingNumber, o);
+      }
+    }
+  }
+
   const result = [];
   for (const pkg of customerPackages) {
     let isFullPackage = false;
     let fullPackageOrderId = null;
     let fullPackageOrderType: 'full_package' | 'commission' | null = null;
 
-    if (pkg.trackingNumber) {
-      // Check if this tracking number is linked to a Full Package order
-      const fpOrder = await db.select()
-        .from(fullPackageOrders)
-        .where(eq(fullPackageOrders.trackingNumber, pkg.trackingNumber))
-        .limit(1);
-
-      if (fpOrder[0]) {
-        isFullPackage = true;
-        fullPackageOrderId = fpOrder[0].id;
-        fullPackageOrderType = fpOrder[0].orderType as 'full_package' | 'commission';
-      }
+    const fpOrder = pkg.trackingNumber ? fpOrderByTracking.get(pkg.trackingNumber) : undefined;
+    if (fpOrder) {
+      isFullPackage = true;
+      fullPackageOrderId = fpOrder.id;
+      fullPackageOrderType = fpOrder.orderType as 'full_package' | 'commission';
     }
 
     // Live-computed cost for in-flight batches; stored value otherwise.
@@ -762,33 +770,48 @@ export async function getAllConversations(): Promise<{ customerId: number; custo
     .innerJoin(customers, eq(customers.id, customerMessages.customerId))
     .groupBy(customerMessages.customerId, customers.fullName, customers.customerCode, customers.mobileNumber);
   
-  // Get unread count and last message for each conversation
-  const result = await Promise.all(conversations.map(async (conv) => {
-    const [unreadResult] = await db.select({ count: count() })
+  // Unread counts and last messages for ALL conversations in two grouped
+  // queries (was 2 queries per conversation).
+  const customerIds = conversations.map(c => c.customerId);
+  if (customerIds.length === 0) return [];
+
+  const [unreadRows, lastMsgRows] = await Promise.all([
+    db.select({ customerId: customerMessages.customerId, count: count() })
       .from(customerMessages)
       .where(and(
-        eq(customerMessages.customerId, conv.customerId),
+        inArray(customerMessages.customerId, customerIds),
         eq(customerMessages.senderType, 'customer'),
         eq(customerMessages.isRead, false)
-      ));
-    
-    const [lastMsg] = await db.select()
+      ))
+      .groupBy(customerMessages.customerId),
+    // Latest message id per conversation (ids are monotonic with createdAt),
+    // then fetch just those rows — same result as the per-customer LIMIT 1.
+    db.select({ customerId: customerMessages.customerId, maxId: sql<number>`MAX(${customerMessages.id})` })
       .from(customerMessages)
-      .where(eq(customerMessages.customerId, conv.customerId))
-      .orderBy(desc(customerMessages.createdAt))
-      .limit(1);
-    
+      .where(inArray(customerMessages.customerId, customerIds))
+      .groupBy(customerMessages.customerId),
+  ]);
+  const unreadByCustomer = new Map(unreadRows.map(r => [r.customerId, r.count]));
+
+  const lastIds = lastMsgRows.map(r => r.maxId);
+  const lastMsgs = lastIds.length > 0
+    ? await db.select().from(customerMessages).where(inArray(customerMessages.id, lastIds))
+    : [];
+  const lastMsgByCustomer = new Map(lastMsgs.map(m => [m.customerId, m]));
+
+  const result = conversations.map((conv) => {
+    const lastMsg = lastMsgByCustomer.get(conv.customerId);
     return {
       customerId: conv.customerId,
       customerName: conv.customerName || '',
       customerCode: conv.customerCode || '',
       mobileNumber: conv.mobileNumber || '',
-      unreadCount: unreadResult?.count || 0,
+      unreadCount: unreadByCustomer.get(conv.customerId) || 0,
       lastMessage: lastMsg?.message || '',
       lastMessageAt: lastMsg?.createdAt || new Date(),
     };
-  }));
-  
+  });
+
   return result.sort((a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime());
 }
 

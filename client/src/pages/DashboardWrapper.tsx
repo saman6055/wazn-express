@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { DashboardLayoutSkeleton } from "@/components/DashboardLayoutSkeleton";
-import Dashboard from "./Dashboard";
-import StaffDashboard from "./StaffDashboard";
-import AccountantDashboard from "./AccountantDashboard";
+
+// Lazy: only one dashboard renders per role, so keep the others out of this chunk.
+const Dashboard = lazy(() => import("./Dashboard"));
+const StaffDashboard = lazy(() => import("./StaffDashboard"));
+const AccountantDashboard = lazy(() => import("./AccountantDashboard"));
 
 /**
  * Renders the appropriate dashboard based on current user role:
@@ -29,12 +31,17 @@ export default function DashboardWrapper() {
 
   const role = (user as { role?: string }).role ?? "user";
 
-  if (role === "employee") {
-    return <StaffDashboard />;
-  }
-  if (role === "accountant") {
-    return <AccountantDashboard />;
-  }
   // admin, super_admin, or any other → Admin/Owner dashboard
-  return <Dashboard />;
+  let RoleDashboard = Dashboard;
+  if (role === "employee") {
+    RoleDashboard = StaffDashboard;
+  } else if (role === "accountant") {
+    RoleDashboard = AccountantDashboard;
+  }
+
+  return (
+    <Suspense fallback={<DashboardLayoutSkeleton />}>
+      <RoleDashboard />
+    </Suspense>
+  );
 }

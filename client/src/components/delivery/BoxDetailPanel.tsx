@@ -128,7 +128,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // Fetch box data
   const { data: box, refetch: refetchBox } = trpc.deliveryBox.getById.useQuery(
     { id: boxId },
-    { refetchInterval: 5000 }
+    { refetchInterval: 15000 }
   );
 
   // Mutations

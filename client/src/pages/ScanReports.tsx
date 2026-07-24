@@ -18,7 +18,6 @@ import {
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
-import * as XLSX from 'xlsx';
 import { SCANNER_MODULES, getModuleByType } from "@/constants/scannerModules";
 
 // Locale code for date/number formatting based on active UI language
@@ -116,7 +115,7 @@ export default function ScanReports() {
   const todayTotal = todayStats?.reduce((sum: number, s: any) => sum + s.count, 0) || 0;
   
   // Export to Excel
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     const moduleLabels: Record<string, string> = {
       registered: pickLang(language, { ku: 'تۆماری خێرا', en: 'Quick Register', ar: 'تسجيل سريع', zh: '快速登记' }),
       in_batch: pickLang(language, { ku: 'خستنە ناو باچ', en: 'Batch Assignment', ar: 'إسناد إلى دفعة', zh: '批次分配' }),
@@ -132,6 +131,8 @@ export default function ScanReports() {
       [pickLang(language, { ku: 'کات', en: 'Time', ar: 'الوقت', zh: '时间' })]: new Date(scan.scannedAt).toLocaleTimeString(),
     }));
 
+    // Loaded on demand so the heavy xlsx bundle stays out of the page chunk.
+    const XLSX = await import('xlsx');
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, pickLang(language, { ku: 'ڕاپۆرتی سکان', en: 'Scan Report', ar: 'تقرير المسح', zh: '扫描报告' }));

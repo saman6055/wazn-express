@@ -57,7 +57,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import QRCode from "qrcode";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { generateLabelsHtml, openLabelPrintWindow } from "@/lib/labelPrintUtils";
 
@@ -121,6 +120,8 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
 
     setIsPrinting(true);
 
+    // Loaded on demand so the qrcode bundle stays out of the page chunk.
+    const QRCode = (await import("qrcode")).default;
     const selectedPkgs = packages?.filter((p) => selectedPackages.includes(p.id)) || [];
     const qrCodesMap: Record<string, string> = {};
     for (const pkg of selectedPkgs) {
@@ -176,7 +177,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
     
     useEffect(() => {
       if (pkg?.trackingNumber) {
-        QRCode.toDataURL(pkg.trackingNumber, { width: 200, margin: 1 }).then(setQrDataUrl);
+        import("qrcode").then((m) => m.default.toDataURL(pkg.trackingNumber, { width: 200, margin: 1 })).then(setQrDataUrl);
       }
     }, [pkg?.trackingNumber]);
 

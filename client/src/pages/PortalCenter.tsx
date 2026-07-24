@@ -94,7 +94,7 @@ export default function PortalCenter() {
 
   // Light poll so new Yuan orders surface as a badge without a refresh.
   const pendingYuan = trpc.portalCenter.countPendingYuanOrders.useQuery(undefined, {
-    refetchInterval: 30000,
+    refetchInterval: 60000,
     retry: false,
   });
 
@@ -487,7 +487,7 @@ function ClaimsTab({ p }: { p: (v: L) => string }) {
 function MessagesTab({ p }: { p: (v: L) => string }) {
   const [selected, setSelected] = useState<{ customerId: number; name: string; code: string; mobile: string } | null>(null);
   const utils = trpc.useUtils();
-  const { data: convos, isLoading } = trpc.portalCenter.listConversations.useQuery(undefined, { refetchInterval: 20000 });
+  const { data: convos, isLoading } = trpc.portalCenter.listConversations.useQuery(undefined, { refetchInterval: 30000 });
   const { data: thread, isLoading: threadLoading } = trpc.portalCenter.getConversation.useQuery(
     { customerId: selected?.customerId ?? 0 },
     { enabled: !!selected, refetchInterval: 10000 },

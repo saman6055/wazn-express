@@ -566,7 +566,7 @@ export function ChatFloatingButton({ onClick, unreadCount = 0 }: ChatFloatingBut
   
   // Get unread count from backend
   const unreadQuery = trpc.supportChat.getUnreadCount.useQuery(undefined, {
-    refetchInterval: 30000, // Poll every 30 seconds
+    refetchInterval: 60000, // Poll every 60 seconds
   });
   
   const totalUnread = unreadQuery.data || unreadCount;

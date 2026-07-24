@@ -2203,6 +2203,28 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // are swallowed by runSchemaPatches.
   { name: "blogPosts.isFeatured", sql: "ALTER TABLE blogPosts ADD COLUMN isFeatured BOOLEAN NOT NULL DEFAULT FALSE" },
   { name: "blogPosts.isPinned",   sql: "ALTER TABLE blogPosts ADD COLUMN isPinned BOOLEAN NOT NULL DEFAULT FALSE" },
+
+  // ============ Performance indexes (2026-07 audit) ============
+  // Hot-path WHERE/JOIN/ORDER BY columns that previously forced full-table
+  // scans. Pure additions — identical query results, just faster. All
+  // idempotent: "duplicate key name" errors are swallowed by runSchemaPatches.
+  { name: "idx.fpo_customer_id",           sql: "CREATE INDEX idx_fpo_customer_id ON fullPackageOrders (customerId)" },
+  { name: "idx.fpo_tracking_number",       sql: "CREATE INDEX idx_fpo_tracking_number ON fullPackageOrders (trackingNumber)" },
+  { name: "idx.fpo_batch_id",              sql: "CREATE INDEX idx_fpo_batch_id ON fullPackageOrders (batchId)" },
+  { name: "idx.fpo_status",                sql: "CREATE INDEX idx_fpo_status ON fullPackageOrders (status)" },
+  { name: "idx.cust_notif_customer_created", sql: "CREATE INDEX idx_cust_notif_customer_created ON customerNotifications (customerId, createdAt)" },
+  { name: "idx.cust_msg_customer_created", sql: "CREATE INDEX idx_cust_msg_customer_created ON customerMessages (customerId, createdAt)" },
+  { name: "idx.payment_records_account_id", sql: "CREATE INDEX idx_payment_records_account_id ON paymentRecords (accountId)" },
+  { name: "idx.invoices_status",           sql: "CREATE INDEX idx_invoices_status ON invoices (status)" },
+  { name: "idx.revenue_records_record_date", sql: "CREATE INDEX idx_revenue_records_record_date ON revenueRecords (recordDate)" },
+  { name: "idx.revenue_records_customer_id", sql: "CREATE INDEX idx_revenue_records_customer_id ON revenueRecords (customerId)" },
+  { name: "idx.expenses_expense_date",     sql: "CREATE INDEX idx_expenses_expense_date ON expenses (expenseDate)" },
+  { name: "idx.expenses_category_id",      sql: "CREATE INDEX idx_expenses_category_id ON expenses (categoryId)" },
+  { name: "idx.cash_txn_account_id",       sql: "CREATE INDEX idx_cash_txn_account_id ON cashTransactions (accountId)" },
+  { name: "idx.batch_pricing_tiers_batch_id", sql: "CREATE INDEX idx_batch_pricing_tiers_batch_id ON batchPricingTiers (batchId)" },
+  { name: "idx.batch_customer_pricing",    sql: "CREATE INDEX idx_batch_customer_pricing ON batchCustomerPricing (batchId, customerId)" },
+  { name: "idx.delivery_boxes_batch_id",   sql: "CREATE INDEX idx_delivery_boxes_batch_id ON deliveryBoxes (batchId)" },
+  { name: "idx.delivery_boxes_customer_id", sql: "CREATE INDEX idx_delivery_boxes_customer_id ON deliveryBoxes (customerId)" },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {

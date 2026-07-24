@@ -55,7 +55,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import * as XLSX from "xlsx";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -320,7 +319,7 @@ export default function CommissionDashboard() {
   };
 
   // Export to Excel
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     const data = filteredOrders.map(order => ({
       [t("commission.orderCode")]: order.orderCode,
       [pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order Number", ar: "رقم الطلب", zh: "订单号" })]: (order as any).orderNumber || "",
@@ -356,6 +355,8 @@ export default function CommissionDashboard() {
       [t("commission.dateColumn")]: "",
     });
 
+    // Loaded on demand so the heavy xlsx bundle stays out of the page chunk.
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, t("commission.sheetName"));

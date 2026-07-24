@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -131,14 +131,18 @@ export default function CommissionOrders() {
     ? batches
     : ((batches as any)?.data ?? []);
 
-  const filteredCustomers = (customers ?? []).filter((customer: any) => {
-    if (!customerSearch) return true;
-    const q = customerSearch.toLowerCase();
-    const name = (customer.fullName || customer.fullNameKurdish || "").toLowerCase();
-    const code = (customer.customerCode || "").toLowerCase();
-    const phone = (customer.mobileNumber || "").toLowerCase();
-    return name.includes(q) || code.includes(q) || phone.includes(q);
-  });
+  const filteredCustomers = useMemo(
+    () =>
+      (customers ?? []).filter((customer: any) => {
+        if (!customerSearch) return true;
+        const q = customerSearch.toLowerCase();
+        const name = (customer.fullName || customer.fullNameKurdish || "").toLowerCase();
+        const code = (customer.customerCode || "").toLowerCase();
+        const phone = (customer.mobileNumber || "").toLowerCase();
+        return name.includes(q) || code.includes(q) || phone.includes(q);
+      }),
+    [customers, customerSearch],
+  );
   const selectedCustomer = (customers ?? []).find(
     (c: any) => String(c.id) === customerFilter,
   );
@@ -194,44 +198,54 @@ export default function CommissionOrders() {
   const dateToMs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
 
   // Calculate stats for commission orders only
-  const fullPackageOrders = (orders?.filter(o => o.orderType === "commission") || [])
-    .filter(o => shippingFilter === "all" || (o as any).shippingType === shippingFilter)
-    // Customer filter
-    .filter(o => customerFilter === "" || String((o as any).customerId) === customerFilter)
-    // Tracking filter
-    .filter(o => {
-      if (trackingFilter === "all") return true;
-      const tn = (o as any).trackingNumber;
-      const hasTracking = typeof tn === "string" && tn.trim() !== "";
-      return trackingFilter === "with" ? hasTracking : !hasTracking;
-    })
-    // Batch filter
-    .filter(o => {
-      if (batchFilter === "all") return true;
-      const bid = (o as any).batchId;
-      if (batchFilter === "none") return bid == null;
-      return String(bid) === batchFilter;
-    })
-    // Date range filter
-    .filter(o => {
-      if (dateFromMs === null && dateToMs === null) return true;
-      const t = getOrderDate(o);
-      if (t === 0) return false;
-      if (dateFromMs !== null && t < dateFromMs) return false;
-      if (dateToMs !== null && t > dateToMs) return false;
-      return true;
-    })
-    // Sort
-    .slice()
-    .sort((a, b) => {
-      if (sortBy === "value") return getOrderValue(b) - getOrderValue(a);
-      const da = getOrderDate(a);
-      const db = getOrderDate(b);
-      return sortBy === "oldest" ? da - db : db - da;
-    });
-  const totalOrders = fullPackageOrders.length;
-  const pendingOrders = fullPackageOrders.filter(o => ["pending", "ordered", "tracking_added"].includes(o.status)).length;
-  const inTransitOrders = fullPackageOrders.filter(o => ["in_batch", "in_transit"].includes(o.status)).length;
+  const fullPackageOrders = useMemo(
+    () =>
+      (orders?.filter(o => o.orderType === "commission") || [])
+        .filter(o => shippingFilter === "all" || (o as any).shippingType === shippingFilter)
+        // Customer filter
+        .filter(o => customerFilter === "" || String((o as any).customerId) === customerFilter)
+        // Tracking filter
+        .filter(o => {
+          if (trackingFilter === "all") return true;
+          const tn = (o as any).trackingNumber;
+          const hasTracking = typeof tn === "string" && tn.trim() !== "";
+          return trackingFilter === "with" ? hasTracking : !hasTracking;
+        })
+        // Batch filter
+        .filter(o => {
+          if (batchFilter === "all") return true;
+          const bid = (o as any).batchId;
+          if (batchFilter === "none") return bid == null;
+          return String(bid) === batchFilter;
+        })
+        // Date range filter
+        .filter(o => {
+          if (dateFromMs === null && dateToMs === null) return true;
+          const t = getOrderDate(o);
+          if (t === 0) return false;
+          if (dateFromMs !== null && t < dateFromMs) return false;
+          if (dateToMs !== null && t > dateToMs) return false;
+          return true;
+        })
+        // Sort
+        .slice()
+        .sort((a, b) => {
+          if (sortBy === "value") return getOrderValue(b) - getOrderValue(a);
+          const da = getOrderDate(a);
+          const db = getOrderDate(b);
+          return sortBy === "oldest" ? da - db : db - da;
+        }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orders, shippingFilter, customerFilter, trackingFilter, batchFilter, dateFromMs, dateToMs, sortBy],
+  );
+  const { totalOrders, pendingOrders, inTransitOrders } = useMemo(
+    () => ({
+      totalOrders: fullPackageOrders.length,
+      pendingOrders: fullPackageOrders.filter(o => ["pending", "ordered", "tracking_added"].includes(o.status)).length,
+      inTransitOrders: fullPackageOrders.filter(o => ["in_batch", "in_transit"].includes(o.status)).length,
+    }),
+    [fullPackageOrders],
+  );
   
   const totalGrossProfit = fullPackageOrders.reduce((sum, o) => {
     const profit = parseFloat(o.profitUsd || "0");

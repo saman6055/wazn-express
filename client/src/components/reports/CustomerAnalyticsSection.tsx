@@ -7,7 +7,6 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { Crown, AlertTriangle, CheckCircle, Download } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
 
 export function CustomerAnalyticsSection() {
   const { t } = useTranslation();
@@ -21,7 +20,7 @@ export function CustomerAnalyticsSection() {
     return { name: c?.fullName || `#${id}`, code: c?.customerCode || "" };
   };
 
-  const handleExportDebt = () => {
+  const handleExportDebt = async () => {
     if (!customersWithDebt || customersWithDebt.length === 0) {
       toast.error(t("toast.noDataToExport"));
       return;
@@ -31,6 +30,8 @@ export function CustomerAnalyticsSection() {
       [t("reports.customerCode")]: getCustName(c.customerId).code,
       [t("reports.outstandingDebt")]: Math.abs(Number(c.latestBalance || 0)),
     }));
+    // Loaded on demand so the heavy xlsx bundle stays out of the page chunk.
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Debt Report");

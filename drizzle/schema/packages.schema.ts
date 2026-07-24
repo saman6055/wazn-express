@@ -342,7 +342,10 @@ export const deliveryBoxes = mysqlTable("deliveryBoxes", {
   deliveredAt: timestamp("deliveredAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  batchIdIdx: index("idx_delivery_boxes_batch_id").on(table.batchId),
+  customerIdIdx: index("idx_delivery_boxes_customer_id").on(table.customerId),
+}));
 
 export type DeliveryBox = typeof deliveryBoxes.$inferSelect;
 export type InsertDeliveryBox = typeof deliveryBoxes.$inferInsert;

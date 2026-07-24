@@ -105,7 +105,12 @@ export const customerMessages = mysqlTable("customerMessages", {
   
   // Timestamps
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Conversation list, unread counts, and thread fetches all filter by
+  // customerId and sort by createdAt — indexed to avoid full scans on
+  // the admin-inbox/portal-chat polling paths.
+  customerCreatedIdx: index("idx_cust_msg_customer_created").on(table.customerId, table.createdAt),
+}));
 export type CustomerMessage = typeof customerMessages.$inferSelect;
 export type InsertCustomerMessage = typeof customerMessages.$inferInsert;
 
@@ -145,7 +150,10 @@ export const customerNotifications = mysqlTable("customerNotifications", {
   
   // Timestamps
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  // The portal fetches "my notifications, newest first" on every load/poll.
+  customerCreatedIdx: index("idx_cust_notif_customer_created").on(table.customerId, table.createdAt),
+}));
 export type CustomerNotification = typeof customerNotifications.$inferSelect;
 export type InsertCustomerNotification = typeof customerNotifications.$inferInsert;
 

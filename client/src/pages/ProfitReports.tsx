@@ -40,7 +40,6 @@ import {
   Wallet,
   AlertTriangle,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import {
@@ -107,7 +106,7 @@ export default function ProfitReports() {
     ].filter((d) => d.value > 0);
   }, [profitByType, t]);
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     if (!monthlyReport?.months?.length) return;
     const data = monthlyReport.months.map((m) => ({
       [t("profitReport.month")]: monthNames[m.month - 1],
@@ -116,6 +115,8 @@ export default function ProfitReports() {
       [t("profitReport.package")]: m.packages.revenue,
       [t("profitReport.totalProfit")]: m.total.profit,
     }));
+    // Loaded on demand so the heavy xlsx bundle stays out of the page chunk.
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, t("profitReport.title"));

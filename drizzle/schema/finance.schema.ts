@@ -206,7 +206,10 @@ export const paymentRecords = mysqlTable("paymentRecords", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   confirmedAt: timestamp("confirmedAt"),
   cancelledAt: timestamp("cancelledAt"),
-});
+}, (table) => ({
+  // Customer financial summaries sum payments per account on portal loads.
+  accountIdIdx: index("idx_payment_records_account_id").on(table.accountId),
+}));
 
 export type PaymentRecord = typeof paymentRecords.$inferSelect;
 export type InsertPaymentRecord = typeof paymentRecords.$inferInsert;
@@ -333,7 +336,11 @@ export const expenses = mysqlTable("expenses", {
   createdById: int("createdById").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  // Expense dashboards filter by date range and category.
+  expenseDateIdx: index("idx_expenses_expense_date").on(table.expenseDate),
+  categoryIdIdx: index("idx_expenses_category_id").on(table.categoryId),
+}));
 
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = typeof expenses.$inferInsert;
@@ -509,7 +516,10 @@ export const cashTransactions = mysqlTable("cashTransactions", {
   notes: text("notes"),
   createdById: int("createdById").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Cash-account statements filter by account and sort by date.
+  accountIdIdx: index("idx_cash_txn_account_id").on(table.accountId),
+}));
 
 export type CashTransaction = typeof cashTransactions.$inferSelect;
 export type InsertCashTransaction = typeof cashTransactions.$inferInsert;
@@ -605,7 +615,11 @@ export const revenueRecords = mysqlTable("revenueRecords", {
   
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  // Revenue reports filter by date and customer on a growing ledger table.
+  recordDateIdx: index("idx_revenue_records_record_date").on(table.recordDate),
+  customerIdIdx: index("idx_revenue_records_customer_id").on(table.customerId),
+}));
 
 export type RevenueRecord = typeof revenueRecords.$inferSelect;
 export type InsertRevenueRecord = typeof revenueRecords.$inferInsert;

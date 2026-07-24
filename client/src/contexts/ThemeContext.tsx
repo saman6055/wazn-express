@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 type Theme = "light" | "dark";
 export type Accent = "default" | "rose" | "violet" | "ocean" | "amber";
@@ -62,14 +62,18 @@ export function ThemeProvider({
     localStorage.setItem("theme-accent", accent);
   }, [accent]);
 
-  const toggleTheme = switchable
-    ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
-      }
-    : undefined;
+  const doToggleTheme = useCallback(() => {
+    setTheme(prev => (prev === "light" ? "dark" : "light"));
+  }, []);
+  const toggleTheme = switchable ? doToggleTheme : undefined;
+
+  const value = useMemo(
+    () => ({ theme, toggleTheme, switchable, accent, setAccent }),
+    [theme, toggleTheme, switchable, accent]
+  );
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, switchable, accent, setAccent }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

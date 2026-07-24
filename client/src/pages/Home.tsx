@@ -2,13 +2,16 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import CompanyLogo from "@/components/CompanyLogo";
 import { useLandingTheme } from "@/contexts/LandingThemeContext";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useLocation } from "wouter";
-import HomeClassic from "./HomeClassic";
-import HomeMinimal from "./HomeMinimal";
-import HomeProfessional from "./HomeProfessional";
-import HomeModern from "./HomeModern";
-import HomeLogistick from "./HomeLogistick";
+
+// Lazy: only one landing variant ever renders, so keep the others out of the
+// initial chunk.
+const HomeClassic = lazy(() => import("./HomeClassic"));
+const HomeMinimal = lazy(() => import("./HomeMinimal"));
+const HomeProfessional = lazy(() => import("./HomeProfessional"));
+const HomeModern = lazy(() => import("./HomeModern"));
+const HomeLogistick = lazy(() => import("./HomeLogistick"));
 
 export default function Home() {
   const { data: variant, isLoading: variantLoading } = trpc.public.getLandingPageVariant.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
@@ -34,39 +37,40 @@ export default function Home() {
     }
   }, [user, authLoading, setLocation]);
 
-  if (authLoading || variantLoading) {
-    return (
-      <div className="landing-page min-h-screen flex items-center justify-center bg-[var(--landing-bg)]" data-theme={landingTheme}>
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <CompanyLogo size={48} iconClassName="h-8 w-8 text-[var(--landing-text)]" fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500" />
-          <p className="text-[var(--landing-text-muted)]">Loading...</p>
-        </div>
+  const loadingScreen = (
+    <div className="landing-page min-h-screen flex items-center justify-center bg-[var(--landing-bg)]" data-theme={landingTheme}>
+      <div className="animate-pulse flex flex-col items-center gap-4">
+        <CompanyLogo size={48} iconClassName="h-8 w-8 text-[var(--landing-text)]" fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500" />
+        <p className="text-[var(--landing-text-muted)]">Loading...</p>
       </div>
-    );
+    </div>
+  );
+
+  if (authLoading || variantLoading) {
+    return loadingScreen;
   }
 
   // Stored variant is a free-form setting; compare as a string so newer values
   // ("modern", "editorial") type-check against the narrower backend union.
   const v = variant as string | undefined;
 
+  let Variant = HomeLogistick;
   if (v === "minimal") {
-    return <HomeMinimal />;
+    Variant = HomeMinimal;
+  } else if (v === "classic") {
+    Variant = HomeClassic;
+  } else if (v === "modern") {
+    Variant = HomeModern;
+  } else if (v === "editorial") {
+    // The old oversized-typography "professional" design is kept under a new
+    // "editorial" value; the previous "professional" value (and undefined) now
+    // fall through to the new premium Logistick-style default landing.
+    Variant = HomeProfessional;
   }
 
-  if (v === "classic") {
-    return <HomeClassic />;
-  }
-
-  if (v === "modern") {
-    return <HomeModern />;
-  }
-
-  // The old oversized-typography "professional" design is kept under a new
-  // "editorial" value; the previous "professional" value (and undefined) now
-  // fall through to the new premium Logistick-style default landing.
-  if (v === "editorial") {
-    return <HomeProfessional />;
-  }
-
-  return <HomeLogistick />;
+  return (
+    <Suspense fallback={loadingScreen}>
+      <Variant />
+    </Suspense>
+  );
 }

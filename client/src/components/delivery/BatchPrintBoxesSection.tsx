@@ -29,7 +29,6 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { printBoxLabel } from "@/lib/deliveryBoxPrintUtils";
 import { generateLabelsHtml, openLabelPrintWindow } from "@/lib/labelPrintUtils";
-import QRCode from "qrcode";
 
 const PAGE_SIZE = 20;
 
@@ -208,6 +207,8 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
             weightKg: it.weightKg ? Number(it.weightKg) : null,
             calculatedCostUsd: it.calculatedCostUsd ? Number(it.calculatedCostUsd) : null,
           }));
+          // Loaded on demand so the qrcode bundle stays out of the page chunk.
+          const QRCode = (await import("qrcode")).default;
           const qrMap: Record<string, string> = {};
           for (const it of items) {
             const key = it.trackingNumber || `item-${it.id}`;

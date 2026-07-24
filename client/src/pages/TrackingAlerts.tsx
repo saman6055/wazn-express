@@ -18,7 +18,6 @@ import {
   Calendar, ChevronRight, Eye, ExternalLink, ShoppingBag, Percent,
   Box, ArrowUpRight, ArrowDownRight, Sparkles, Download
 } from "lucide-react";
-import * as XLSX from 'xlsx';
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -350,7 +349,7 @@ export default function TrackingAlerts() {
   }, [pendingOrders]);
 
   // Excel export function
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     if (!filteredOrders.length) return;
     
     const data = filteredOrders.map((order: OrderForTracking) => ({
@@ -362,6 +361,8 @@ export default function TrackingAlerts() {
       'ئاستی ئاگاداری': order.daysWaiting >= 7 ? 'فریاکەوتن' : order.daysWaiting >= 5 ? 'گرنگ' : order.daysWaiting >= 3 ? 'ئاگاداری' : 'نوێ',
     }));
     
+    // Loaded on demand so the heavy xlsx bundle stays out of the page chunk.
+    const XLSX = await import('xlsx');
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'ئاگادارکردنەوەی تراکینگ');

@@ -215,6 +215,13 @@ export const fullPackageOrders = mysqlTable("fullPackageOrders", {
 }, (table) => ({
   deletedAtIdx: index("idx_fpo_deleted_at").on(table.deletedAt),
   chargeTxnIdx: index("idx_fpo_charge_txn_id").on(table.chargeTransactionId),
+  // Hot-path filters: portal/staff lookups by tracking number, customer,
+  // batch, and status all hit this table constantly — without these every
+  // lookup is a full-table scan.
+  customerIdIdx: index("idx_fpo_customer_id").on(table.customerId),
+  trackingNumberIdx: index("idx_fpo_tracking_number").on(table.trackingNumber),
+  batchIdIdx: index("idx_fpo_batch_id").on(table.batchId),
+  statusIdx: index("idx_fpo_status").on(table.status),
 }));
 
 export type FullPackageOrder = typeof fullPackageOrders.$inferSelect;
@@ -248,6 +255,7 @@ export const fullPackageOrderTrackings = mysqlTable("fullPackageOrderTrackings",
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   orderIdIdx: index("idx_fpot_order_id").on(table.fullPackageOrderId),
+  trackingNumberIdx: index("idx_fpot_tracking_number").on(table.trackingNumber),
 }));
 
 export type FullPackageOrderTracking = typeof fullPackageOrderTrackings.$inferSelect;

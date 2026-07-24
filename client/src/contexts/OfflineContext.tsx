@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -85,12 +86,15 @@ export function OfflineProvider({ children }: { children: ReactNode }) {
     return unsub;
   }, [queryClient]);
 
-  const value: OfflineContextValue = {
-    isOnline,
-    pendingCount,
-    addPending,
-    clearPending,
-  };
+  const value: OfflineContextValue = useMemo(
+    () => ({
+      isOnline,
+      pendingCount,
+      addPending,
+      clearPending,
+    }),
+    [isOnline, pendingCount, addPending, clearPending],
+  );
 
   return (
     <OfflineContext.Provider value={value}>

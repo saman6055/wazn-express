@@ -71,7 +71,7 @@ import {
   Search,
   type LucideIcon
 } from "lucide-react";
-import { useEffect, useLayoutEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
@@ -195,7 +195,7 @@ function DashboardLayoutContent({
 
   // Unread messages count for sidebar badge — guarded against non-number values
   const unreadQuery = trpc.supportChat.getUnreadCount.useQuery(undefined, {
-    refetchInterval: 15000,
+    refetchInterval: 60000,
     retry: false,
   });
   const unreadMsgCount: number = typeof unreadQuery.data === "number" ? unreadQuery.data : 0;
@@ -456,10 +456,16 @@ function DashboardLayoutContent({
   };
 
   // Filter menu groups based on user permissions
-  const menuGroups = getMenuGroups().map(group => ({
-    ...group,
-    items: group.items.filter(item => canViewPath(item.path)),
-  })).filter(group => group.items.length > 0);
+  const menuGroups = useMemo(
+    () =>
+      getMenuGroups().map(group => ({
+        ...group,
+        items: group.items.filter(item => canViewPath(item.path)),
+      })).filter(group => group.items.length > 0),
+    // getMenuGroups reads userRole, t/language, and unreadMsgCount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userRole, language, t, unreadMsgCount, canViewPath],
+  );
 
   const isItemActive = (path: string) => location === path || location.startsWith(path + '/');
 
