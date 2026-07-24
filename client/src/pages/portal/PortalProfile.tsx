@@ -132,8 +132,8 @@ const { t, language, setLanguage } = useLanguage();
     {
       icon: Bell,
       label: language === "ku" ? "ئاگادارکردنەوەکان" : "Notifications",
-      description: language === "ku" ? "ڕێکخستنی ئاگادارکردنەوە" : "Manage alerts",
-      path: "/portal/notification-settings",
+      description: language === "ku" ? "بینینی ئاگادارکردنەوەکان" : "View alerts",
+      path: "/portal/notifications",
       iconBg: "bg-gradient-to-br from-red-400 to-rose-500",
     },
     {

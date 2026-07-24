@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import * as bcrypt from "bcryptjs";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
@@ -49,6 +50,38 @@ export const customerPortalRouter = router({
       const customer = await db.getCustomerByUserId(ctx.user.id);
       return customer;
     }),
+
+    // ============ SECURITY ============
+    // Customer changes their own portal password. Verifies the current
+    // password against the stored bcrypt hash, then stores a fresh hash.
+    changeMyPassword: protectedProcedure
+      .input(z.object({
+        currentPassword: z.string().min(1),
+        newPassword: z.string().min(6).max(100),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'پرۆفایلی کڕیار نەدۆزرایەوە بۆ ئەم هەژمارە.' });
+        }
+
+        const customer = await db.getCustomerById(customerId);
+        if (!customer || !customer.passwordHash) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'ناتوانرێت وشەی نهێنی بگۆڕدرێت بۆ ئەم هەژمارە.' });
+        }
+
+        const isValid = await bcrypt.compare(input.currentPassword, customer.passwordHash);
+        if (!isValid) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'وشەی نهێنی ئێستا هەڵەیە.' });
+        }
+
+        const newHash = await bcrypt.hash(input.newPassword, 12);
+        await db.updateCustomerPassword(customerId, newHash);
+        logPortal(ctx, customerId, "change_password", "profile");
+        return { success: true };
+      }),
+
     getMyPackages: protectedProcedure.query(async ({ ctx }) => {
       // For merged model, use user.id directly as customerId
       if (ctx.user.isCustomer) {
