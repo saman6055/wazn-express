@@ -192,6 +192,25 @@ export const portalCenterRouter = router({
       return { ok: true };
     }),
 
+  // ---- Wazn News (social channels + ticker) ----
+  getNewsSettings: adminProcedure.query(async () => {
+    return db.getWaznNewsSettings();
+  }),
+
+  setNewsSettings: adminProcedure
+    .input(z.object({
+      tickerEnabled: z.boolean(),
+      youtube: z.string().max(300).default(""),
+      telegram: z.string().max(300).default(""),
+      tiktok: z.string().max(300).default(""),
+      instagram: z.string().max(300).default(""),
+      facebook: z.string().max(300).default(""),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await db.setWaznNewsSettings(input, ctx.user.id);
+      return { ok: true };
+    }),
+
   // ---- Yuan exchange (portal "buy CNY" section) ----
   getYuanSettings: adminProcedure.query(async () => {
     return db.getYuanExchangeSettings();

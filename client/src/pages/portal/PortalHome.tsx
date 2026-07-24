@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useState, useEffect } from "react";
 import { PriceListSection } from "@/components/portal/PriceListSection";
+import { WaznNewsCarousel } from "@/components/portal/WaznNewsCarousel";
 import { DeliveryRatingCard } from "@/components/portal/DeliveryRatingCard";
 import { ReferralCard } from "@/components/portal/ReferralCard";
 
@@ -187,81 +188,8 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
     );
   }
   
-  return (
-    <div className="px-4 mt-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Megaphone className={cn("w-5 h-5", isDark ? "text-slate-300" : "text-slate-700")} />
-          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800")}>
-            {t("portal.announcements") || "ڕاگەیاندنەکان"}
-          </h2>
-        </div>
-        <Link href="/portal/blog">
-          <span className={cn(
-            "text-sm font-medium flex items-center gap-1 transition-colors",
-            isDark ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-700"
-          )}>
-            {language === "ku" ? "هەموو" : "View All"}
-            <ChevronRight className="w-4 h-4" />
-          </span>
-        </Link>
-      </div>
-      
-      {/* Blog Posts Carousel */}
-      <div className="space-y-3">
-        {blogPosts.slice(0, 3).map((post) => (
-          <Link key={post.id} href={`/portal/blog/${post.id}`}>
-            <div className={cn(
-              "relative overflow-hidden rounded-2xl p-5 text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer",
-              `bg-gradient-to-br ${getCategoryGradient(post.category)}`,
-              getCategoryShadow(post.category)
-            )}>
-              {/* Cover Image Background */}
-              {post.coverImageUrl && (
-                <div className="absolute inset-0">
-                  <img loading="lazy" decoding="async" 
-                    src={post.coverImageUrl} 
-                    alt="" 
-                    className="w-full h-full object-cover opacity-20"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
-                </div>
-              )}
-              
-              {/* Decorative Elements */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-              
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  {isNew(post.publishedAt || post.createdAt) && (
-                    <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs font-medium backdrop-blur-sm">
-                      {t("new") || "New"}
-                    </span>
-                  )}
-                  <span className="px-2 py-0.5 bg-white/10 rounded-full text-xs font-medium backdrop-blur-sm">
-                    {getCategoryLabel(post.category)}
-                  </span>
-                </div>
-                <p className="font-bold text-lg mb-2 line-clamp-2" dir={language === "ku" || language === "ar" ? "rtl" : "ltr"}>
-                  {getTitle(post)}
-                </p>
-                <p className="text-sm text-white/80 leading-relaxed line-clamp-2" dir={language === "ku" || language === "ar" ? "rtl" : "ltr"}>
-                  {getSummary(post)}
-                </p>
-                
-                {/* Read More */}
-                <div className="flex items-center gap-1 mt-3 text-sm font-medium text-white/90">
-                  <span>{t("portal.readMore")}</span>
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
+  // Featured posts → the Wazn News auto-rotating carousel (5 slides, 5s each).
+  return <WaznNewsCarousel language={language} isDark={isDark} />;
 }
 
 export default function PortalHome() {

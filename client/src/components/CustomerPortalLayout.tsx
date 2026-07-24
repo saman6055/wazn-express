@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import CompanyLogo from "@/components/CompanyLogo";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 import { DeclarePackageBanner } from "@/components/portal/DeclarePackageBanner";
+import { NewsTicker } from "@/components/portal/NewsTicker";
 import { usePortalSSE } from "@/hooks/usePortalSSE";
 import { toast } from "sonner";
 
@@ -180,7 +181,8 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         "min-h-screen transition-colors duration-300",
         isDark ? "bg-slate-900" : "bg-slate-50",
         isRTL && "rtl",
-        isInstalled ? "pb-28" : "pb-24"
+        // Extra bottom room for the news ticker strip that sits above the nav.
+        isInstalled ? "pb-36" : "pb-32"
       )}
     >
       {/* PWA Status Bar Spacer for iOS */}
@@ -310,6 +312,9 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
           </div>
         </div>
       </nav>
+
+      {/* Wazn News ticker — scrolling headlines pinned above the bottom nav */}
+      <NewsTicker language={language} isInstalled={isInstalled} />
 
       {/* Live Chat Support */}
       {!isChatOpen && (

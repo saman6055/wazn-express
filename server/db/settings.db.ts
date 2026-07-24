@@ -341,6 +341,50 @@ export async function setYuanExchangeSettings(values: YuanExchangeSettings, upda
   await setSetting(YUAN_SETTINGS_KEY, JSON.stringify(values), updatedById);
 }
 
+// ---- Wazn News (social channels + home news ticker) ----
+export type WaznNewsSettings = {
+  /** Show the scrolling headline ticker above the portal bottom nav. */
+  tickerEnabled: boolean;
+  youtube: string;
+  telegram: string;
+  tiktok: string;
+  instagram: string;
+  facebook: string;
+};
+
+const NEWS_SETTINGS_KEY = "wazn_news_settings";
+export const DEFAULT_NEWS_SETTINGS: WaznNewsSettings = {
+  tickerEnabled: true,
+  youtube: "",
+  telegram: "",
+  tiktok: "",
+  instagram: "",
+  facebook: "",
+};
+
+export async function getWaznNewsSettings(): Promise<WaznNewsSettings> {
+  try {
+    const raw = await getSetting(NEWS_SETTINGS_KEY);
+    if (!raw) return DEFAULT_NEWS_SETTINGS;
+    const p = JSON.parse(raw);
+    const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+    return {
+      tickerEnabled: p.tickerEnabled !== false,
+      youtube: str(p.youtube),
+      telegram: str(p.telegram),
+      tiktok: str(p.tiktok),
+      instagram: str(p.instagram),
+      facebook: str(p.facebook),
+    };
+  } catch {
+    return DEFAULT_NEWS_SETTINGS;
+  }
+}
+
+export async function setWaznNewsSettings(values: WaznNewsSettings, updatedById?: number) {
+  await setSetting(NEWS_SETTINGS_KEY, JSON.stringify(values), updatedById);
+}
+
 export async function getQuickPortalPrices(): Promise<Record<QuickType, string | null>> {
   const all = (await getAllPricingRules(false)) as PricingRule[];
   const out: Record<QuickType, string | null> = { air_regular: null, air_irregular: null, sea: null };

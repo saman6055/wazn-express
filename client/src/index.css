@@ -1153,3 +1153,26 @@ a:focus-visible,
   animation: bell-ring 1.6s ease-in-out infinite;
   transform-origin: top center;
 }
+
+/* Wazn News ticker — a horizontally scrolling headline strip pinned above the
+   portal bottom nav (TV-news style). The track holds the headlines twice so
+   the loop is seamless; it moves toward the right so RTL readers see each
+   item slide in from the left, matching a Kurdish news chyron. Pauses on
+   hover/press so a headline can be read. */
+@keyframes wazn-ticker {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+.wazn-ticker-track {
+  display: inline-flex;
+  white-space: nowrap;
+  will-change: transform;
+  animation: wazn-ticker 40s linear infinite;
+}
+.wazn-ticker-track:hover,
+.wazn-ticker-track:active {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wazn-ticker-track { animation: none; }
+}

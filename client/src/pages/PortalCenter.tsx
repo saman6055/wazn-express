@@ -27,7 +27,7 @@ import {
   Users, Activity, Package, FileText, LogIn, Search, MessageCircle,
   MousePointerClick, ChevronLeft, ChevronRight, Clock, TrendingUp,
   UserCheck, PackageCheck, Ban, Sparkles, Send, Bell, Megaphone,
-  StickyNote, DollarSign, Plane, Zap, Ship, Loader2, Star,
+  StickyNote, DollarSign, Plane, Zap, Ship, Loader2, Star, Newspaper,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -624,8 +624,87 @@ function AnnouncementsTab({ p }: { p: (v: L) => string }) {
   return (
     <div className="space-y-4">
       <HomeAnnouncementsCard p={p} />
+      <NewsChannelsCard p={p} />
       <AnnouncementCard p={p} />
     </div>
+  );
+}
+
+// Wazn News — social channel links + the home news ticker toggle.
+function NewsChannelsCard({ p }: { p: (v: L) => string }) {
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.portalCenter.getNewsSettings.useQuery();
+  const [form, setForm] = useState({
+    tickerEnabled: true, youtube: "", telegram: "", tiktok: "", instagram: "", facebook: "",
+  });
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (!loaded && !isLoading && data) {
+      setForm({
+        tickerEnabled: data.tickerEnabled,
+        youtube: data.youtube, telegram: data.telegram, tiktok: data.tiktok,
+        instagram: data.instagram, facebook: data.facebook,
+      });
+      setLoaded(true);
+    }
+  }, [data, isLoading, loaded]);
+
+  const save = trpc.portalCenter.setNewsSettings.useMutation({
+    onSuccess: () => {
+      toast.success(p({ ku: "پاشەکەوتکرا", en: "Saved", ar: "حُفظ", zh: "已保存" }));
+      utils.portalCenter.getNewsSettings.invalidate();
+      utils.customerPortal.getNewsChannels.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const channels: { key: "youtube" | "telegram" | "tiktok" | "instagram" | "facebook"; label: string; placeholder: string }[] = [
+    { key: "youtube", label: "YouTube", placeholder: "https://youtube.com/@wazn" },
+    { key: "telegram", label: "Telegram", placeholder: "https://t.me/wazn" },
+    { key: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@wazn" },
+    { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/wazn" },
+    { key: "facebook", label: "Facebook", placeholder: "https://facebook.com/wazn" },
+  ];
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold flex items-center gap-2">
+            <Newspaper className="h-4 w-4 text-orange-500" />
+            {p({ ku: "وەزن نیوز — کەناڵەکان و تیکەر", en: "Wazn News — channels & ticker", ar: "وزن نيوز — القنوات والشريط", zh: "Wazn 新闻——频道与滚动条" })}
+          </h3>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">
+              {p({ ku: "تیکەری هەواڵ", en: "News ticker", ar: "شريط الأخبار", zh: "新闻滚动条" })}
+            </Label>
+            <Switch checked={form.tickerEnabled} onCheckedChange={(v) => setForm({ ...form, tickerEnabled: v })} />
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {p({
+            ku: "لینکی کەناڵەکانت دابنێ — تەنها ئەوانەی پڕکراونەتەوە لە پۆرتاڵ دەردەکەون. تیکەرەکە سەردێری هەواڵەکان لە خوارەوەی ئەپ نیشان دەدات",
+            en: "Set your channel links — only filled ones show in the portal. The ticker scrolls news headlines at the bottom of the app",
+            ar: "أدخل روابط قنواتك — تظهر المملوءة فقط في البوابة. الشريط يعرض عناوين الأخبار أسفل التطبيق",
+            zh: "填写频道链接——仅显示已填写的。滚动条在应用底部显示新闻标题",
+          })}
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {channels.map((c) => (
+            <div key={c.key} className="space-y-1">
+              <Label className="text-xs">{c.label}</Label>
+              <Input dir="ltr" placeholder={c.placeholder} value={form[c.key]} onChange={(e) => setForm({ ...form, [c.key]: e.target.value })} />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={() => save.mutate(form)} disabled={save.isPending} className="bg-orange-600 hover:bg-orange-700 text-white">
+            {save.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : null}
+            {p({ ku: "پاشەکەوت", en: "Save", ar: "حفظ", zh: "保存" })}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

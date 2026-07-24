@@ -318,6 +318,7 @@ function Router() {
         <Route path="/portal/terms" component={PortalTerms} />
         <Route path="/portal/services" component={PortalServices} />
         <Route path="/portal/blog" component={PortalBlog} />
+        <Route path="/portal/news" component={PortalBlog} />
         <Route path="/portal/blog/:id" component={PortalBlogDetail} />
         <Route path="/portal/invoice-reports" component={PortalInvoiceReports} />
         <Route path="/portal/yuan-exchange" component={PortalYuanExchange} />

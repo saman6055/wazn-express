@@ -4,11 +4,13 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { 
   Megaphone, ChevronRight, Calendar, Eye, Star,
-  Newspaper, Gift, RefreshCw, BookOpen, ArrowLeft
+  Newspaper, Gift, RefreshCw, BookOpen, ArrowLeft, PlayCircle
 } from "lucide-react";
 import { Link } from "wouter";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { SocialChannels, firstYouTubeId } from "@/components/portal/SocialChannels";
 
 export default function PortalBlog() {
 const { t, language } = useLanguage();
@@ -16,7 +18,9 @@ const { t, language } = useLanguage();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
   
-  const { data: blogPosts, isLoading } = trpc.blog.published.useQuery();
+  const { data: allPosts, isLoading } = trpc.blog.published.useQuery();
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "news" | "promotion" | "announcement" | "update" | "guide">("all");
+  const blogPosts = (allPosts ?? []).filter((p: any) => categoryFilter === "all" || p.category === categoryFilter);
   
   // Get title based on language
   const getTitle = (post: any) => {
@@ -100,17 +104,49 @@ const { t, language } = useLanguage();
               <ArrowLeft className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800")} />
             </button>
           </Link>
-          <div>
-            <h1 className={cn("text-xl font-bold", isDark ? "text-white" : "text-slate-800")}>
-              {language === "ku" ? "هەواڵ و ڕاگەیاندنەکان" : "News & Announcements"}
-            </h1>
-            <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
-              {language === "ku" ? "نوێترین هەواڵەکان" : "Latest updates"}
-            </p>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-sm shrink-0">
+              <Newspaper className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h1 className={cn("text-xl font-black", isDark ? "text-white" : "text-slate-800")}>
+                {language === "ku" ? "وەزن نیوز" : language === "ar" ? "وزن نيوز" : "Wazn News"}
+              </h1>
+              <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+                {language === "ku" ? "هەواڵ، ڕیکلام و ڤیدیۆ" : language === "ar" ? "أخبار وإعلانات وفيديو" : "News, promos & videos"}
+              </p>
+            </div>
           </div>
+          {/* Follow-us channels */}
+          <SocialChannels className="shrink-0 [&>a]:h-9 [&>a]:w-9" />
         </div>
       </div>
-      
+
+      {/* Category filter chips */}
+      {!isLoading && blogPosts && blogPosts.length > 0 && (
+        <div className="px-4 pt-3 -mb-2 flex gap-1.5 overflow-x-auto">
+          {(["all", "news", "promotion", "announcement", "update", "guide"] as const).map((cat) => {
+            const active = categoryFilter === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setCategoryFilter(cat)}
+                className={cn(
+                  "shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors",
+                  active
+                    ? "bg-orange-600 text-white shadow-sm"
+                    : isDark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                )}
+              >
+                {cat === "all"
+                  ? (language === "ku" ? "هەموو" : language === "ar" ? "الكل" : "All")
+                  : getCategoryLabel(cat)}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Content */}
       <div className="px-4 py-6 pb-24">
         {isLoading ? (
@@ -146,12 +182,20 @@ const { t, language } = useLanguage();
                   {/* Cover Image */}
                   {post.coverImageUrl ? (
                     <div className="relative h-40 overflow-hidden">
-                      <img loading="lazy" decoding="async" 
-                        src={post.coverImageUrl} 
+                      <img loading="lazy" decoding="async"
+                        src={post.coverImageUrl}
                         alt={getTitle(post)}
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      {/* Video play overlay when the post embeds a YouTube link */}
+                      {firstYouTubeId(`${post.contentEn || ""} ${post.contentKu || ""} ${post.contentAr || ""}`) && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600/90 text-white shadow-lg">
+                            <PlayCircle className="h-7 w-7" />
+                          </span>
+                        </div>
+                      )}
                       
                       {/* Category Badge */}
                       <div className="absolute top-3 left-3 flex items-center gap-2">

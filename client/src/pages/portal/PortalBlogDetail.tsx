@@ -10,6 +10,7 @@ import { Link, useParams } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { SocialChannels, firstYouTubeId, YouTubeEmbed } from "@/components/portal/SocialChannels";
 
 export default function PortalBlogDetail() {
 const { id } = useParams<{ id: string }>();
@@ -254,8 +255,19 @@ const { id } = useParams<{ id: string }>();
             </div>
           )}
           
+          {/* Video embed — if the post body contains a YouTube link, show the
+              player at the top of the article. */}
+          {(() => {
+            const vid = firstYouTubeId(getContent(post));
+            return vid ? (
+              <div className="mb-6">
+                <YouTubeEmbed id={vid} title={getTitle(post)} />
+              </div>
+            ) : null;
+          })()}
+
           {/* Article Body */}
-          <article 
+          <article
             className={cn(
               "prose prose-lg max-w-none",
               isDark ? "prose-invert" : "",
@@ -263,18 +275,30 @@ const { id } = useParams<{ id: string }>();
             )}
             dir={isRTL ? "rtl" : "ltr"}
           >
-            {/* Render content with proper line breaks */}
-            {getContent(post).split('\n').map((paragraph: string, index: number) => (
-              paragraph.trim() && (
+            {/* Render content with proper line breaks. Bare YouTube URLs are
+                dropped from the text since they're shown as the player above. */}
+            {getContent(post).split('\n').map((paragraph: string, index: number) => {
+              const line = paragraph.trim();
+              if (!line) return null;
+              if (firstYouTubeId(line) && /^https?:\S+$/.test(line)) return null;
+              return (
                 <p key={index} className={cn(
                   "mb-4 leading-relaxed",
                   isDark ? "text-slate-300" : "text-slate-700"
                 )}>
                   {paragraph}
                 </p>
-              )
-            ))}
+              );
+            })}
           </article>
+
+          {/* Follow-us channels */}
+          <div className={cn("mt-8 pt-6 border-t", isDark ? "border-slate-700" : "border-gray-200")}>
+            <p className={cn("text-sm font-semibold mb-3", isDark ? "text-slate-300" : "text-slate-600")}>
+              {language === "ku" ? "لە کەناڵەکانمان بمانبینە" : language === "ar" ? "تابعنا على قنواتنا" : "Follow us on our channels"}
+            </p>
+            <SocialChannels />
+          </div>
           
           {/* Share Section */}
           <div className={cn(

@@ -313,6 +313,19 @@ export const customerPortalRouter = router({
         };
       }),
 
+    // ---- Wazn News: social channels + ticker toggle (read-only) ----
+    getNewsChannels: protectedProcedure.query(async () => {
+      const s = await db.getWaznNewsSettings();
+      return {
+        tickerEnabled: s.tickerEnabled,
+        youtube: s.youtube,
+        telegram: s.telegram,
+        tiktok: s.tiktok,
+        instagram: s.instagram,
+        facebook: s.facebook,
+      };
+    }),
+
     // ---- Yuan exchange (buy CNY with USD at the company's sell rate) ----
     getYuanExchangeInfo: protectedProcedure.query(async () => {
       const s = await db.getYuanExchangeSettings();
