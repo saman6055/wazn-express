@@ -1164,7 +1164,9 @@ a:focus-visible,
   to   { transform: translateX(0); }
 }
 .wazn-ticker-track {
-  display: inline-flex;
+  display: flex;
+  align-items: center;
+  width: max-content;
   white-space: nowrap;
   will-change: transform;
   animation: wazn-ticker 40s linear infinite;

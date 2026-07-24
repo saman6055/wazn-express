@@ -51,12 +51,12 @@ export function NewsTicker({ language, isInstalled }: { language: string; isInst
             <Radio className="w-3.5 h-3.5 animate-pulse" />
             {pick({ ku: "وەزن نیوز", en: "WAZN NEWS", ar: "وزن نيوز", zh: "WAZN 新闻" })}
           </span>
-          {/* Scrolling track */}
+          {/* Scrolling track — two identical runs so the loop is seamless. */}
           <div className="relative flex-1 overflow-hidden h-full">
-            <div className="wazn-ticker-track absolute top-0 h-full items-center">
+            <div className="wazn-ticker-track h-full">
               {run.map((h, i) => (
-                <span key={i} className="inline-flex items-center text-[13px] font-semibold px-4">
-                  <span className="opacity-60 me-2">•</span>
+                <span key={i} className="inline-flex items-center h-full text-[13px] font-semibold px-4 whitespace-nowrap">
+                  <span className="opacity-60 mx-2">•</span>
                   {h}
                 </span>
               ))}
