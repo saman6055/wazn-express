@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
@@ -23,24 +24,53 @@ export function NewsTicker({ language, isInstalled }: { language: string; isInst
     retry: false,
   });
 
-  if (channels && channels.tickerEnabled === false) return null;
-
+  // Measure the REAL rendered track width and derive the loop duration from
+  // it — character-count estimates overshoot badly for Arabic-script text
+  // (connected, narrow glyphs), which made the ticker crawl. The track holds
+  // the headlines twice, so one full loop travels scrollWidth / 2 pixels;
+  // at ~150px/s the glide matches a TV news chyron on any screen size.
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [durationSec, setDurationSec] = useState(20);
+  // How many times the headline set repeats inside ONE run. On wide screens a
+  // single short set is narrower than the viewport, which would leave a blank
+  // gap in the loop — so the set repeats until one run covers the screen.
+  const [repeats, setRepeats] = useState(1);
   const headlines = (posts ?? [])
     .map((p: any) =>
       (language === "ku" && p.titleKu) || (language === "ar" && p.titleAr) || p.titleEn || p.titleKu || p.titleAr,
     )
     .filter(Boolean) as string[];
+  const headlinesKey = headlines.join("|");
 
+  useLayoutEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const measure = () => {
+      const oneRunPx = el.scrollWidth / 2;
+      if (oneRunPx <= 0) return;
+      const containerPx = el.parentElement?.clientWidth || window.innerWidth;
+      const oneSetPx = oneRunPx / repeats;
+      const needed = Math.max(1, Math.ceil(containerPx / oneSetPx));
+      if (needed !== repeats) {
+        setRepeats(needed);
+        return; // duration recomputes on the next pass with the final width
+      }
+      setDurationSec(Math.max(6, Math.round(oneRunPx / 150)));
+    };
+    measure();
+    // Fonts loading late change the width — re-measure once they're ready.
+    if (typeof document !== "undefined" && (document as any).fonts?.ready) {
+      (document as any).fonts.ready.then(measure).catch(() => {});
+    }
+  }, [headlinesKey, repeats]);
+
+  if (channels && channels.tickerEnabled === false) return null;
   if (headlines.length === 0) return null;
 
-  // Duplicate the run so the -50% → 0 loop is seamless.
-  const run = [...headlines, ...headlines];
-
-  // Speed scales with how much text there is, so the on-screen glide reads at
-  // a natural news-ticker pace (~90px/s) no matter how many headlines exist.
-  // ~14px per character is a rough width estimate for the strip's font.
-  const contentPx = headlines.reduce((sum, h) => sum + h.length * 14 + 48, 0);
-  const durationSec = Math.max(12, Math.round(contentPx / 90));
+  // One run = the headline set repeated enough to cover the screen; the track
+  // holds that run twice so the -50% → 0 loop is seamless.
+  const oneRun = Array.from({ length: repeats }, () => headlines).flat();
+  const run = [...oneRun, ...oneRun];
 
   return (
     <Link href="/portal/news">
@@ -59,7 +89,7 @@ export function NewsTicker({ language, isInstalled }: { language: string; isInst
           </span>
           {/* Scrolling track — two identical runs so the loop is seamless. */}
           <div className="relative flex-1 overflow-hidden h-full">
-            <div className="wazn-ticker-track h-full" style={{ animationDuration: `${durationSec}s` }}>
+            <div ref={trackRef} className="wazn-ticker-track h-full" style={{ animationDuration: `${durationSec}s` }}>
               {run.map((h, i) => (
                 <span key={i} className="inline-flex items-center h-full text-[13px] font-semibold px-4 whitespace-nowrap">
                   <span className="opacity-60 mx-2">•</span>
