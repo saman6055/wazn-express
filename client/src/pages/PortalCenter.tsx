@@ -28,6 +28,7 @@ import {
   MousePointerClick, ChevronLeft, ChevronRight, Clock, TrendingUp,
   UserCheck, PackageCheck, Ban, Sparkles, Send, Bell, Megaphone,
   StickyNote, DollarSign, Plane, Zap, Ship, Loader2, Star, Newspaper, Pin, Eye,
+  EyeOff, KeyRound, ShieldCheck, Copy, Check, RefreshCw, Phone, Power,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -1293,6 +1294,179 @@ function CalcSettingsCard({ p }: { p: (v: L) => string }) {
 // ---------------------------------------------------------------------------
 // Per-customer timeline dialog
 // ---------------------------------------------------------------------------
+// Admin security & access controls for one customer. Passwords are one-way
+// hashed and can't be read back — control works by RESETTING to a new value
+// the admin sets and sees here (copy / WhatsApp to the customer).
+function genPassword(): string {
+  // Readable, no ambiguous chars (0/O, 1/l), always mixes letters + digits.
+  const letters = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
+  const digits = "23456789";
+  const pool = letters + digits;
+  let out = "";
+  for (let i = 0; i < 8; i++) out += pool[Math.floor(Math.random() * pool.length)];
+  // Guarantee at least one digit for a decent strength.
+  return out.slice(0, 7) + digits[Math.floor(Math.random() * digits.length)];
+}
+
+function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customerId: number }) {
+  const utils = trpc.useUtils();
+  const { data: sec, isLoading } = trpc.portalCenter.getCustomerSecurity.useQuery({ customerId });
+
+  const [newPw, setNewPw] = useState("");
+  const [showPw, setShowPw] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [mobile, setMobile] = useState("");
+  const [editingMobile, setEditingMobile] = useState(false);
+
+  const resetPw = trpc.portalCenter.resetCustomerPassword.useMutation({
+    onSuccess: () => {
+      toast.success(p({ ku: "وشەی نهێنی نوێ دانرا", en: "New password set", ar: "تم تعيين كلمة مرور جديدة", zh: "已设置新密码" }));
+      utils.portalCenter.getCustomerSecurity.invalidate({ customerId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const updateMobile = trpc.portalCenter.updateCustomerMobile.useMutation({
+    onSuccess: () => {
+      toast.success(p({ ku: "ژمارە نوێکرایەوە", en: "Mobile updated", ar: "تم تحديث الرقم", zh: "手机号已更新" }));
+      setEditingMobile(false);
+      utils.portalCenter.getCustomerSecurity.invalidate({ customerId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const setActive = trpc.portalCenter.setCustomerActive.useMutation({
+    onSuccess: () => {
+      utils.portalCenter.getCustomerSecurity.invalidate({ customerId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const copyPw = () => {
+    if (!newPw) return;
+    navigator.clipboard?.writeText(newPw);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  const waSend = () => {
+    if (!newPw || !sec?.mobileNumber) return;
+    const msg = p({
+      ku: `سڵاو ${sec.fullName}، وشەی نهێنی نوێی هەژمارەکەت: ${newPw}`,
+      en: `Hello ${sec.fullName}, your new account password: ${newPw}`,
+      ar: `مرحبا ${sec.fullName}، كلمة مرور حسابك الجديدة: ${newPw}`,
+      zh: `你好 ${sec.fullName}，你的新账户密码：${newPw}`,
+    });
+    const num = sec.mobileNumber.replace(/[^\d]/g, "");
+    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
+  if (isLoading) return <Skeleton className="h-40 rounded-2xl" />;
+  if (!sec) return null;
+
+  return (
+    <div className="rounded-2xl border border-cyan-200 dark:border-cyan-900/50 bg-cyan-50/50 dark:bg-cyan-950/20 p-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-700 dark:text-cyan-400">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          {p({ ku: "پاراستن و دەستگەیشتن", en: "Security & access", ar: "الأمان والوصول", zh: "安全与访问" })}
+        </div>
+        <Badge className={cn("text-[9px] border-0", sec.isActive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")}>
+          {sec.isActive
+            ? p({ ku: "چالاک", en: "Active", ar: "نشط", zh: "启用" })
+            : p({ ku: "ناچالاک", en: "Disabled", ar: "معطل", zh: "停用" })}
+        </Badge>
+      </div>
+
+      {/* Reset password */}
+      <div className="space-y-2">
+        <div className="text-[11px] font-semibold text-muted-foreground">
+          {p({ ku: "دانانی وشەی نهێنی نوێ", en: "Set a new password", ar: "تعيين كلمة مرور جديدة", zh: "设置新密码" })}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="relative flex-1">
+            <Input
+              type={showPw ? "text" : "password"}
+              value={newPw}
+              onChange={(e) => setNewPw(e.target.value)}
+              placeholder="••••••••"
+              className="h-9 text-sm pe-9 font-mono"
+            />
+            <button type="button" onClick={() => setShowPw((v) => !v)} tabIndex={-1}
+              className="absolute top-1/2 -translate-y-1/2 end-2 text-muted-foreground">
+              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          <Button size="sm" variant="outline" className="h-9 px-2 shrink-0"
+            title={p({ ku: "دروستکردنی خۆکار", en: "Generate", ar: "توليد", zh: "生成" })}
+            onClick={() => { setNewPw(genPassword()); setShowPw(true); }}>
+            <RefreshCw className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="sm" variant="outline" className="h-9 px-2 shrink-0" disabled={!newPw}
+            title={p({ ku: "کۆپی", en: "Copy", ar: "نسخ", zh: "复制" })} onClick={copyPw}>
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button size="sm" className="h-9 flex-1 gap-1.5" disabled={newPw.length < 6 || resetPw.isPending}
+            onClick={() => resetPw.mutate({ customerId, newPassword: newPw })}>
+            {resetPw.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
+            {p({ ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" })}
+          </Button>
+          <Button size="sm" variant="outline" className="h-9 gap-1.5 shrink-0"
+            disabled={!newPw || !sec.mobileNumber} onClick={waSend}>
+            <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+            {p({ ku: "واتساپ", en: "WhatsApp", ar: "واتساب", zh: "微信" })}
+          </Button>
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-snug">
+          {p({
+            ku: "وشە نهێنییەکان بە شێوەی پارێزراو (hash) هەڵدەگیرێن و ناخوێنرێنەوە. کۆنترۆڵ بەمەیە: وشەیەکی نوێ دابنێ و بۆ کڕیار بینێرە.",
+            en: "Passwords are stored hashed and can't be read back. Control is via setting a new one and sending it to the customer.",
+            ar: "كلمات المرور مخزّنة مشفّرة ولا يمكن قراءتها. التحكم يكون بتعيين كلمة جديدة وإرسالها للعميل.",
+            zh: "密码经哈希存储，无法读取。通过设置新密码并发送给客户来控制。",
+          })}
+        </p>
+      </div>
+
+      {/* Login mobile */}
+      <div className="space-y-1.5">
+        <div className="text-[11px] font-semibold text-muted-foreground">
+          {p({ ku: "ژمارەی چوونەژوورەوە", en: "Login mobile", ar: "رقم الدخول", zh: "登录手机号" })}
+        </div>
+        {editingMobile ? (
+          <div className="flex items-center gap-1.5">
+            <Input value={mobile} onChange={(e) => setMobile(e.target.value)} className="h-9 text-sm flex-1" dir="ltr" placeholder="07XXXXXXXXX" />
+            <Button size="sm" className="h-9 px-2 shrink-0" disabled={mobile.length < 7 || updateMobile.isPending}
+              onClick={() => updateMobile.mutate({ customerId, mobileNumber: mobile.trim() })}>
+              {updateMobile.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+            </Button>
+            <Button size="sm" variant="ghost" className="h-9 px-2 shrink-0" onClick={() => setEditingMobile(false)}>✕</Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="font-mono text-sm flex-1" dir="ltr">{sec.mobileNumber}</span>
+            <Button size="sm" variant="outline" className="h-8 text-xs"
+              onClick={() => { setMobile(sec.mobileNumber); setEditingMobile(true); }}>
+              {p({ ku: "گۆڕین", en: "Change", ar: "تغيير", zh: "更改" })}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Last sign-in + enable/disable */}
+      <div className="flex items-center justify-between pt-1 border-t border-cyan-200/60 dark:border-cyan-900/40">
+        <div className="text-[10px] text-muted-foreground">
+          {p({ ku: "دواین چوونەژوورەوە", en: "Last sign-in", ar: "آخر دخول", zh: "上次登录" })}: {fmtDateTime(sec.lastSignedIn)}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Power className={cn("h-3.5 w-3.5", sec.isActive ? "text-emerald-500" : "text-red-500")} />
+          <Switch checked={sec.isActive} disabled={setActive.isPending}
+            onCheckedChange={(v) => setActive.mutate({ customerId, isActive: v })} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CustomerTimelineDialog({ p, customer, onClose }: {
   p: (v: L) => string;
   customer: { id: number; name: string; code: string };
@@ -1349,6 +1523,9 @@ function CustomerTimelineDialog({ p, customer, onClose }: {
             </Button>
           </div>
         </div>
+
+        {/* Security & access — reset password, change login mobile, enable/disable */}
+        <CustomerSecurityCard p={p} customerId={customer.id} />
 
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}</div>

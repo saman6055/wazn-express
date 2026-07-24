@@ -1,6 +1,9 @@
 import { z } from "zod";
+import * as bcrypt from "bcryptjs";
+import { TRPCError } from "@trpc/server";
 import { router } from "../_core/trpc";
 import { adminProcedure } from "../middleware/auth";
+import { phoneSchema } from "./schemas";
 import * as db from "../db";
 
 const ANNOUNCEMENT_KEY = "portal_announcement";
@@ -169,6 +172,109 @@ export const portalCenterRouter = router({
         createdByName: (ctx.user as any).name ?? null,
       });
       return { ok: true };
+    }),
+
+  // ---- Security & access (admin control over customer login) ----
+  // NOTE: passwords are stored as one-way bcrypt hashes and can never be read
+  // back — not here, not anywhere. Admin control works by RESETTING to a new
+  // value the admin chooses (and sees at that moment), which gives full
+  // control without ever storing a recoverable/plaintext password.
+  getCustomerSecurity: adminProcedure
+    .input(z.object({ customerId: z.number().int() }))
+    .query(async ({ input }) => {
+      const c = await db.getCustomerById(input.customerId);
+      if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+      return {
+        id: c.id,
+        customerCode: c.customerCode,
+        fullName: c.fullName,
+        mobileNumber: c.mobileNumber,
+        isActive: c.isActive,
+        lastSignedIn: c.lastSignedIn ?? null,
+        hasPassword: !!c.passwordHash,
+      };
+    }),
+
+  // Set a NEW password for the customer. The admin supplies (or generates) the
+  // value client-side, sees it there, and can copy/WhatsApp it to the customer.
+  resetCustomerPassword: adminProcedure
+    .input(z.object({
+      customerId: z.number().int(),
+      newPassword: z.string().min(6).max(100),
+      notifyCustomer: z.boolean().default(true),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const customer = await db.getCustomerById(input.customerId);
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+
+      const passwordHash = await bcrypt.hash(input.newPassword, 12);
+      await db.updateCustomerPassword(input.customerId, passwordHash);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "reset_customer_password",
+        entityType: "customer",
+        entityId: input.customerId,
+      });
+      await db.logCustomerActivity({
+        customerId: input.customerId,
+        action: "admin_reset_password",
+        category: "auth",
+        metadata: { by: ctx.user.id },
+      });
+      // Transparency: tell the customer their password was changed by support.
+      if (input.notifyCustomer) {
+        try {
+          await db.createCustomerNotification(buildNotif({
+            title: "وشەی نهێنی گۆڕدرا",
+            message: "وشەی نهێنیت لەلایەن پشتگیرییەوە نوێکرایەوە. ئەگەر خۆت داوات نەکردبوو، پەیوەندیمان پێوە بکە.",
+          }, { customerId: input.customerId, type: "warning", relatedType: "package" }), { push: true });
+        } catch { /* notification is best-effort */ }
+      }
+      return { success: true };
+    }),
+
+  // Change the customer's login mobile number (their username). Enforces the
+  // same uniqueness the customers table requires.
+  updateCustomerMobile: adminProcedure
+    .input(z.object({ customerId: z.number().int(), mobileNumber: phoneSchema }))
+    .mutation(async ({ input, ctx }) => {
+      const customer = await db.getCustomerById(input.customerId);
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+
+      const existing = await db.getCustomerByMobile(input.mobileNumber);
+      if (existing && existing.id !== input.customerId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم ژمارەیە پێشتر بۆ کڕیارێکی تر تۆمارکراوە" });
+      }
+
+      await db.updateCustomer(input.customerId, { mobileNumber: input.mobileNumber });
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "update_customer_mobile",
+        entityType: "customer",
+        entityId: input.customerId,
+        newValues: { mobileNumber: input.mobileNumber },
+      });
+      return { success: true };
+    }),
+
+  // Enable / disable portal access for a customer.
+  setCustomerActive: adminProcedure
+    .input(z.object({ customerId: z.number().int(), isActive: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const customer = await db.getCustomerById(input.customerId);
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+
+      await db.updateCustomer(input.customerId, { isActive: input.isActive });
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: input.isActive ? "activate_customer" : "deactivate_customer",
+        entityType: "customer",
+        entityId: input.customerId,
+      });
+      return { success: true };
     }),
 
   // ---- Portal announcement banner ----
