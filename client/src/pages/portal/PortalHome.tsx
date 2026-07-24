@@ -330,15 +330,16 @@ const { t, language } = useLanguage();
       <div className="relative overflow-hidden">
         <div className={cn(
           "absolute inset-0",
-          isDark 
-            ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" 
-            : "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
+          isDark
+            ? "bg-[#07070f]"
+            : "bg-gradient-to-br from-indigo-600 via-violet-600 to-blue-700"
         )} />
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
         
-        {/* Decorative circles */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full translate-y-1/2 -translate-x-1/2" />
+        {/* Aurora glow orbs */}
+        <div className="absolute -top-16 -right-10 w-64 h-64 rounded-full" style={{ background: "radial-gradient(circle, rgba(124,58,237,0.55) 0%, transparent 68%)" }} />
+        <div className="absolute top-16 -left-20 w-60 h-60 rounded-full" style={{ background: "radial-gradient(circle, rgba(37,99,235,0.45) 0%, transparent 70%)" }} />
+        <div className="absolute -bottom-10 right-0 w-56 h-56 rounded-full" style={{ background: "radial-gradient(circle, rgba(219,39,119,0.40) 0%, transparent 70%)" }} />
         
         <div className="relative px-5 pt-14 pb-12">
           {/* Top Row */}
@@ -347,16 +348,18 @@ const { t, language } = useLanguage();
               {/* Time-based greeting */}
               <div className="flex items-center gap-2 mb-2">
                 <GreetingIcon />
-                <p className="text-slate-400 text-sm font-medium">
+                <p className="text-white/70 text-sm font-medium">
                   {getGreeting(language)}
                 </p>
               </div>
               {accountLoading ? (
-                <Skeleton className="h-8 w-40 bg-slate-700" />
+                <Skeleton className="h-8 w-40 bg-white/20" />
               ) : (
-                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                  {account?.fullName || account?.customerCode}
-                  <Sparkles className="w-5 h-5 text-amber-400" />
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                  <span className="bg-gradient-to-l from-white via-violet-100 to-fuchsia-200 bg-clip-text text-transparent">
+                    {account?.fullName || account?.customerCode}
+                  </span>
+                  <Sparkles className="w-5 h-5 text-amber-300" />
                 </h1>
               )}
             </div>
@@ -392,26 +395,24 @@ const { t, language } = useLanguage();
             </div>
           )}
 
-          {/* Quick Actions */}
-          <div className="mt-6">
-            <div className="grid grid-cols-6 gap-1.5">
-              {quickActions.map((action, index) => (
-                <Link key={index} href={action.href}>
-                  <button className="flex flex-col items-center gap-2 group w-full">
-                    <div className={cn(
-                      "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl",
-                      action.color,
-                      action.shadowColor
-                    )}>
-                      <action.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                    </div>
-                    <span className="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">
-                      {action.label}
-                    </span>
-                  </button>
-                </Link>
-              ))}
-            </div>
+          {/* Quick Actions — bento glass tiles */}
+          <div className="mt-6 grid grid-cols-3 gap-2.5">
+            {quickActions.map((action, index) => (
+              <Link key={index} href={action.href}>
+                <button className="w-full h-full flex flex-col items-start gap-2.5 rounded-2xl p-3 bg-white/10 border border-white/15 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-0.5 active:scale-[0.98]">
+                  <div className={cn(
+                    "w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg",
+                    action.color,
+                    action.shadowColor
+                  )}>
+                    <action.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-xs font-medium text-white/90 text-start leading-tight">
+                    {action.label}
+                  </span>
+                </button>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
@@ -423,7 +424,7 @@ const { t, language } = useLanguage();
             "rounded-2xl p-5 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer",
             hasDebt 
               ? "bg-gradient-to-br from-red-500 to-rose-600 shadow-red-500/30" 
-              : "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/30"
+              : "bg-gradient-to-br from-violet-600 to-indigo-600 shadow-violet-500/30"
           )}>
             <div className="flex items-center justify-between">
               <div>
@@ -491,7 +492,14 @@ const { t, language } = useLanguage();
       <PriceListSection />
 
       {/* Stats Cards */}
-      <div className="px-4 mt-4">
+      <div className="px-4 mt-6">
+        {/* Section heading — accent bar */}
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="w-1.5 h-6 rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-500" />
+          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800")}>
+            {pickLang(language, { ku: "بارەکانم", en: "My shipments", ar: "شحناتي", zh: "我的货件" })}
+          </h2>
+        </div>
         <div className={cn(
           "rounded-2xl shadow-lg p-5 transition-colors duration-300",
           isDark ? "bg-slate-800 shadow-slate-900/50" : "bg-white shadow-slate-200/50"

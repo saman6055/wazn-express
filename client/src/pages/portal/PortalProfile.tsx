@@ -1,6 +1,6 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
-import { lazy } from "react";
+import { lazy, useState } from "react";
 // Lazy: only the active skin's chunk is downloaded (global admin setting).
 const ModernPortalProfile = lazy(() => import("./modern/ModernPortalProfile"));
 const Skin3PortalProfile = lazy(() => import("./skin3/Skin3PortalProfile"));
@@ -11,13 +11,30 @@ import {
   User, MessageSquare, Bell, MapPin, FileText, HelpCircle, 
   AlertTriangle, ChevronRight, LogOut, Settings, Shield, Phone, Mail,
   Package, CreditCard, Star, Moon, Sun, Headphones, MessageCircle,
-  Globe, Languages, Info, Heart, Share2, ExternalLink, BookOpen
+  Globe, Languages, Info, Heart, Share2, ExternalLink, BookOpen, Check
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { pickLang } from "@/lib/lang";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { toast } from "sonner";
+
+// Language options for the picker — each labelled in its own script (native) so
+// a customer always recognises their language regardless of the current UI
+// locale, plus a Latin `roman` subtitle for quick scanning. No flags: languages
+// don't map cleanly to countries (Kurdish has no flag emoji; Arabic/English span
+// many nations), and a wrong flag reads worse than none.
+const LANG_OPTIONS: { code: "ku" | "en" | "ar" | "zh"; native: string; roman: string }[] = [
+  { code: "ku", native: "کوردی", roman: "Kurdî" },
+  { code: "en", native: "English", roman: "English" },
+  { code: "ar", native: "العربية", roman: "Arabic" },
+  { code: "zh", native: "中文", roman: "Chinese" },
+];
+const LANG_NATIVE_NAMES = Object.fromEntries(LANG_OPTIONS.map((l) => [l.code, l.native])) as Record<"ku" | "en" | "ar" | "zh", string>;
 
 function ClassicPortalProfile() {
 const { t, language, setLanguage } = useLanguage();
@@ -27,6 +44,8 @@ const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
   
+  const [showLangPicker, setShowLangPicker] = useState(false);
+
   const { data: account, isLoading } = trpc.customerPortal.getMyAccount.useQuery();
   const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
   const { data: summary } = trpc.customerPortal.getMyFinancialSummary.useQuery();
@@ -120,14 +139,9 @@ const { t, language, setLanguage } = useLanguage();
     {
       icon: Languages,
       label: language === "ku" ? "زمان" : language === "ar" ? "اللغة" : language === "zh" ? "语言" : "Language",
-      description: language === "ku" ? "کوردی" : language === "ar" ? "العربية" : language === "zh" ? "中文" : "English",
+      description: LANG_NATIVE_NAMES[language as keyof typeof LANG_NATIVE_NAMES] ?? "English",
       iconBg: "bg-gradient-to-br from-green-400 to-emerald-500",
-      onClick: () => {
-        const langs: ("ku" | "en" | "ar" | "zh")[] = ["ku", "en", "ar", "zh"];
-        const currentIndex = langs.indexOf(language as "ku" | "en" | "ar" | "zh");
-        const nextIndex = (currentIndex + 1) % langs.length;
-        setLanguage(langs[nextIndex]);
-      },
+      onClick: () => setShowLangPicker(true),
     },
     {
       icon: Bell,
@@ -152,6 +166,67 @@ const { t, language, setLanguage } = useLanguage();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+  };
+
+  // Feedback → WhatsApp with a pre-filled message that says who is writing.
+  const handleFeedback = () => {
+    const who = account?.fullName || account?.customerCode
+      ? `${pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}: ${account?.fullName ?? ""}${account?.customerCode ? ` (${account.customerCode})` : ""}`.trim()
+      : null;
+    const message = [
+      pickLang(language, {
+        ku: "سڵاو، ڕەخنە/پێشنیارێکم هەیە دەربارەی ئەپەکە",
+        en: "Hello, I have some feedback about the app",
+        ar: "مرحباً، لديّ ملاحظات حول التطبيق",
+        zh: "您好，我对应用有一些反馈",
+      }),
+      who,
+    ].filter(Boolean).join("\n");
+    window.open(
+      `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
+  // Share App → native share sheet where available, else copy the link.
+  const handleShareApp = async () => {
+    const url = window.location.origin;
+    const shareData = {
+      title: company.name,
+      text: pickLang(language, {
+        ku: `${company.name} — بارهێنانی ئاسان لە چینەوە`,
+        en: `${company.name} — easy shipping from China`,
+        ar: `${company.name} — شحن سهل من الصين`,
+        zh: `${company.name} — 从中国轻松发货`,
+      }),
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      throw new Error("no share");
+    } catch (err) {
+      if ((err as Error)?.name === "AbortError") return; // user cancelled
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success(pickLang(language, {
+          ku: "لینک کۆپی کرا",
+          en: "Link copied",
+          ar: "تم نسخ الرابط",
+          zh: "链接已复制",
+        }));
+      } catch {
+        toast.error(pickLang(language, {
+          ku: "نەتوانرا هاوبەش بکرێت",
+          en: "Couldn't share",
+          ar: "تعذّرت المشاركة",
+          zh: "无法分享",
+        }));
+      }
+    }
   };
 
   return (
@@ -486,21 +561,68 @@ const { t, language, setLanguage } = useLanguage();
         {/* App Info */}
         <div className="mt-8 mb-24 text-center">
           <div className="flex items-center justify-center gap-4 mb-3">
-            <a href="#" className={cn("text-xs flex items-center gap-1", isDark ? "text-slate-500 hover:text-slate-400" : "text-slate-400 hover:text-slate-600")}>
+            <button type="button" onClick={handleFeedback} className={cn("text-xs flex items-center gap-1 transition", isDark ? "text-slate-500 hover:text-slate-400" : "text-slate-400 hover:text-slate-600")}>
               <Heart className="w-3 h-3" />
-              {language === "ku" ? "ڕەخنە و پێشنیار" : "Feedback"}
-            </a>
+              {pickLang(language, { ku: "ڕەخنە و پێشنیار", en: "Feedback", ar: "ملاحظات", zh: "反馈" })}
+            </button>
             <span className={isDark ? "text-slate-700" : "text-slate-300"}>•</span>
-            <a href="#" className={cn("text-xs flex items-center gap-1", isDark ? "text-slate-500 hover:text-slate-400" : "text-slate-400 hover:text-slate-600")}>
+            <button type="button" onClick={handleShareApp} className={cn("text-xs flex items-center gap-1 transition", isDark ? "text-slate-500 hover:text-slate-400" : "text-slate-400 hover:text-slate-600")}>
               <Share2 className="w-3 h-3" />
-              {language === "ku" ? "هاوبەشکردن" : "Share App"}
-            </a>
+              {pickLang(language, { ku: "هاوبەشکردن", en: "Share App", ar: "مشاركة التطبيق", zh: "分享应用" })}
+            </button>
           </div>
           <p className={cn("text-xs", isDark ? "text-slate-600" : "text-slate-400")}>
             {company.name} v1.0.0
           </p>
         </div>
       </div>
+
+      {/* Language picker — pick a specific language, not a blind cycle. */}
+      <Dialog open={showLangPicker} onOpenChange={setShowLangPicker}>
+        <DialogContent className={cn(
+          "max-w-xs rounded-3xl p-0 overflow-hidden",
+          isDark ? "bg-slate-900 border-slate-800" : "bg-white"
+        )}>
+          <DialogHeader className="px-5 pt-5 pb-2">
+            <DialogTitle className={cn("text-center", isDark ? "text-white" : "text-slate-900")}>
+              {pickLang(language, { ku: "زمان هەڵبژێرە", en: "Choose language", ar: "اختر اللغة", zh: "选择语言" })}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-3 pt-0">
+            {LANG_OPTIONS.map((opt) => {
+              const active = language === opt.code;
+              return (
+                <button
+                  key={opt.code}
+                  type="button"
+                  onClick={() => { setLanguage(opt.code); setShowLangPicker(false); }}
+                  dir={opt.code === "ku" || opt.code === "ar" ? "rtl" : "ltr"}
+                  className={cn(
+                    "w-full flex items-center justify-between gap-3 rounded-2xl px-4 py-3 my-1 transition-all",
+                    active
+                      ? "bg-gradient-to-br from-green-400/15 to-emerald-500/15 ring-1 ring-emerald-500/40"
+                      : isDark ? "hover:bg-slate-800" : "hover:bg-slate-50"
+                  )}
+                >
+                  <span className="flex flex-col items-start">
+                    <span className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
+                      {opt.native}
+                    </span>
+                    <span className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
+                      {opt.roman}
+                    </span>
+                  </span>
+                  {active && (
+                    <span className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shrink-0">
+                      <Check className="w-4 h-4 text-white" />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </CustomerPortalLayout>
   );
 }

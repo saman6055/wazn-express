@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { pickLang } from "@/lib/lang";
+import { postText, isPostInLanguage } from "@/lib/blogLang";
 import { cn } from "@/lib/utils";
 import { Radio } from "lucide-react";
 import { Link } from "wouter";
@@ -35,10 +36,10 @@ export function NewsTicker({ language }: { language: string }) {
   // single short set is narrower than the viewport, which would leave a blank
   // gap in the loop — so the set repeats until one run covers the screen.
   const [repeats, setRepeats] = useState(1);
+  // Only posts written in the reader's language — no cross-language leakage.
   const headlines = (posts ?? [])
-    .map((p: any) =>
-      (language === "ku" && p.titleKu) || (language === "ar" && p.titleAr) || p.titleEn || p.titleKu || p.titleAr,
-    )
+    .filter((p: any) => isPostInLanguage(p, language))
+    .map((p: any) => postText(p, "title", language))
     .filter(Boolean) as string[];
   const headlinesKey = headlines.join("|");
 

@@ -5,6 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -202,6 +203,33 @@ export default function PortalFullPackage() {
   const { data: fullPackageOrders, isLoading } = trpc.customerPortal.getMyFullPackageOrders.useQuery({
     orderType: activeTab === "all" ? undefined : activeTab as "full_package" | "commission",
   });
+
+  // Full-package orders can't be self-created in the portal — staff place them
+  // on the customer's behalf. So "New Order" opens WhatsApp with a pre-filled
+  // request that already says WHO is asking (name + code) and WHAT for.
+  const { data: account } = trpc.customerPortal.getMyAccount.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  const requestNewOrder = () => {
+    const who = account?.fullName || account?.customerCode
+      ? `${pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}: ${account?.fullName ?? ""}${account?.customerCode ? ` (${account.customerCode})` : ""}`.trim()
+      : null;
+    const message = [
+      pickLang(language, {
+        ku: "سڵاو، دەمەوێت داواکاری نوێی پاکێجی تەواو تۆمار بکەم",
+        en: "Hello, I'd like to place a new full-package order",
+        ar: "مرحباً، أود تقديم طلب طرد كامل جديد",
+        zh: "您好，我想下一个新的全包裹订单",
+      }),
+      who,
+    ].filter(Boolean).join("\n");
+    window.open(
+      `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
   
   // Combine and filter orders
   const allOrders = [
@@ -316,15 +344,14 @@ export default function PortalFullPackage() {
                 </div>
               </div>
             </div>
-            <Link href="/portal/create-full-package">
-              <Button 
-                size="sm"
-                className="bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm rounded-xl shadow-lg transition-all hover:scale-105"
-              >
-                <Plus className="w-4 h-4 ms-1" />
+            <Button
+              size="sm"
+              onClick={requestNewOrder}
+              className="bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm rounded-xl shadow-lg transition-all hover:scale-105"
+            >
+              <Plus className="w-4 h-4 ms-1" />
 {pickLang(language, { ku: "داواکاری نوێ", en: "New Order", ar: "طلب جديد", zh: "新订单" })}
-              </Button>
-            </Link>
+            </Button>
           </div>
           
           {/* Stats Cards */}
@@ -597,12 +624,13 @@ export default function PortalFullPackage() {
             )}>
 {pickLang(language, { ku: "دەستپێبکە بە داواکاری نوێ", en: "Start by creating a new request", ar: "ابدأ بإنشاء طلب جديد", zh: "从创建新订单开始" })}
             </p>
-            <Link href="/portal/create-full-package">
-              <Button className="bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl px-6 py-3 shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                <Plus className="w-5 h-5 ms-2" />
+            <Button
+              onClick={requestNewOrder}
+              className="bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl px-6 py-3 shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            >
+              <Plus className="w-5 h-5 ms-2" />
 {pickLang(language, { ku: "داواکاری نوێ", en: "New Order", ar: "طلب جديد", zh: "新订单" })}
-              </Button>
-            </Link>
+            </Button>
           </div>
         ) : (
           /* Orders Grid */
@@ -800,12 +828,15 @@ export default function PortalFullPackage() {
           </div>
         )}
         
-        {/* Floating Action Button */}
-        <Link href="/portal/create-full-package">
-          <button className="fixed bottom-24 left-6 w-14 h-14 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-all hover:scale-110 z-50">
-            <MessageCircle className="w-6 h-6" />
-          </button>
-        </Link>
+        {/* Floating Action Button — request a new order via WhatsApp */}
+        <button
+          type="button"
+          onClick={requestNewOrder}
+          aria-label={pickLang(language, { ku: "داواکاری نوێ", en: "New Order", ar: "طلب جديد", zh: "新订单" })}
+          className="fixed bottom-24 left-6 w-14 h-14 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-all hover:scale-110 z-50"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
       </div>
       
       {/* Order Detail Dialog */}

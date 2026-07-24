@@ -11,6 +11,7 @@ import { Link, useParams } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { postText, anyPostText } from "@/lib/blogLang";
 import { SocialChannels, firstYouTubeId, YouTubeEmbed } from "@/components/portal/SocialChannels";
 
 export default function PortalBlogDetail() {
@@ -25,19 +26,12 @@ const { id } = useParams<{ id: string }>();
     { enabled: !!id }
   );
   
-  // Get title based on language
-  const getTitle = (post: any) => {
-    if (language === "ku" && post.titleKu) return post.titleKu;
-    if (language === "ar" && post.titleAr) return post.titleAr;
-    return post.titleEn;
-  };
-  
-  // Get content based on language
-  const getContent = (post: any) => {
-    if (language === "ku" && post.contentKu) return post.contentKu;
-    if (language === "ar" && post.contentAr) return post.contentAr;
-    return post.contentEn;
-  };
+  // Reader's language first. Unlike the feeds, a detail page can be opened via a
+  // direct/shared link to a post not written in the reader's language — so here
+  // (and only here) we fall back to any authored language rather than render a
+  // blank page.
+  const getTitle = (post: any) => postText(post, "title", language) || anyPostText(post, "title");
+  const getContent = (post: any) => postText(post, "content", language) || anyPostText(post, "content");
   
   // Get category icon
   const getCategoryIcon = (category: string) => {

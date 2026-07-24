@@ -10,6 +10,7 @@ import { Link } from "wouter";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { postText, filterPostsByLanguage } from "@/lib/blogLang";
 import { SocialChannels, firstYouTubeId } from "@/components/portal/SocialChannels";
 
 export default function PortalBlog() {
@@ -20,21 +21,15 @@ const { t, language } = useLanguage();
   
   const { data: allPosts, isLoading } = trpc.blog.published.useQuery();
   const [categoryFilter, setCategoryFilter] = useState<"all" | "news" | "promotion" | "announcement" | "update" | "guide">("all");
-  const blogPosts = (allPosts ?? []).filter((p: any) => categoryFilter === "all" || p.category === categoryFilter);
-  
-  // Get title based on language
-  const getTitle = (post: any) => {
-    if (language === "ku" && post.titleKu) return post.titleKu;
-    if (language === "ar" && post.titleAr) return post.titleAr;
-    return post.titleEn;
-  };
-  
-  // Get summary based on language
-  const getSummary = (post: any) => {
-    if (language === "ku" && post.summaryKu) return post.summaryKu;
-    if (language === "ar" && post.summaryAr) return post.summaryAr;
-    return post.summaryEn || post.contentEn?.substring(0, 150) + "...";
-  };
+  // Only posts written in the reader's language, then filter by category — a
+  // Kurdish-only post never appears in the Arabic/English feed and vice-versa.
+  const blogPosts = filterPostsByLanguage(allPosts as any[], language)
+    .filter((p: any) => categoryFilter === "all" || p.category === categoryFilter);
+
+  // Title/summary in the reader's language only (no cross-language fallback).
+  const getTitle = (post: any) => postText(post, "title", language);
+  const getSummary = (post: any) =>
+    postText(post, "summary", language) || (postText(post, "content", language).substring(0, 150) + "...");
   
   // Get category icon
   const getCategoryIcon = (category: string) => {

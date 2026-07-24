@@ -1,4 +1,5 @@
 import { pickLang } from "@/lib/lang";
+import { postText, filterPostsByLanguage } from "@/lib/blogLang";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { BookOpen, ChevronRight, Gift, Megaphone, Newspaper, PlayCircle, RefreshCw } from "lucide-react";
@@ -33,7 +34,8 @@ export function WaznNewsCarousel({ language, isDark }: { language: string; isDar
   const isRTL = language === "ku" || language === "ar";
 
   const { data: posts, isLoading } = trpc.blog.featured.useQuery();
-  const slides = (posts ?? []).slice(0, MAX_SLIDES);
+  // Only posts written in the reader's language, then cap to MAX_SLIDES.
+  const slides = filterPostsByLanguage(posts as any[], language).slice(0, MAX_SLIDES);
 
   const [idx, setIdx] = useState(0);
   const timer = useRef<number | null>(null);
@@ -54,11 +56,8 @@ export function WaznNewsCarousel({ language, isDark }: { language: string; isDar
     if (idx >= slides.length && slides.length > 0) setIdx(0);
   }, [slides.length, idx]);
 
-  const title = (p: any) => (language === "ku" && p.titleKu) || (language === "ar" && p.titleAr) || p.titleEn || p.titleKu || p.titleAr;
-  const summary = (p: any) =>
-    (language === "ku" && (p.summaryKu || p.contentKu)) ||
-    (language === "ar" && (p.summaryAr || p.contentAr)) ||
-    p.summaryEn || (p.contentEn || "").slice(0, 140);
+  const title = (p: any) => postText(p, "title", language);
+  const summary = (p: any) => postText(p, "summary", language) || postText(p, "content", language).slice(0, 140);
 
   if (isLoading) {
     return (
