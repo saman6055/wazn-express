@@ -199,6 +199,7 @@ const PortalProhibitedItems = lazy(() => import("./pages/portal/PortalProhibited
 const PortalGuide = lazy(() => import("./pages/portal/PortalGuide"));
 const PortalSecurity = lazy(() => import("./pages/portal/PortalSecurity"));
 const PortalFAQ = lazy(() => import("./pages/portal/PortalFAQ"));
+const PortalAbout = lazy(() => import("./pages/portal/PortalAbout"));
 
 function Router() {
   return (
@@ -330,6 +331,7 @@ function Router() {
         <Route path="/portal/guide" component={PortalGuide} />
         <Route path="/portal/security" component={PortalSecurity} />
         <Route path="/portal/faq" component={PortalFAQ} />
+        <Route path="/portal/about" component={PortalAbout} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
