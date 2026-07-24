@@ -192,7 +192,7 @@ export default function Skin3PortalHome() {
     {
       label: language === "ku" ? "پشتگیری" : "Support",
       icon: Headphones,
-      href: "/portal/support",
+      href: "/portal/messages",
       bg: isDark ? "bg-emerald-600 hover:bg-emerald-500" : "bg-emerald-500 hover:bg-emerald-600",
     },
     {

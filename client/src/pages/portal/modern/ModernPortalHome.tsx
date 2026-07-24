@@ -219,7 +219,7 @@ export default function ModernPortalHome() {
     {
       label: language === "ku" ? "پشتگیری" : "Support",
       icon: Headphones,
-      href: "/portal/support",
+      href: "/portal/faq",
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-50 dark:bg-amber-950/40",
     },
