@@ -311,7 +311,6 @@ function DashboardLayoutContent({
         color: "blue",
         items: [
           { icon: Truck, label: t("nav.quickRegister") || "تۆمارکردنی خێرا", path: "/packages/quick-register" },
-          { icon: Ban, label: pickLang(language, { ku: "کەل و پەلی قەدەغە", en: "Prohibited items", ar: "البضائع الممنوعة", zh: "违禁物品" }), path: "/packages/prohibited-register" },
           { icon: Package, label: t("nav.allPackages") || "هەموو پاکەتەکان", path: "/packages/all" },
           { icon: ClipboardList, label: t("nav.bulkRegister") || "تۆماری کۆمەڵە", path: "/packages/bulk-register" },
           { icon: Layers, label: t("nav.batches") || "باچەکان", path: "/batches" },
@@ -330,6 +329,7 @@ function DashboardLayoutContent({
         color: "cyan",
         items: [
           { icon: QrCode, label: t("nav.quickRegister") || "تۆماری خێرا", path: "/quick-register" },
+          { icon: Ban, label: pickLang(language, { ku: "تۆماری کەلوپەلی قەدەغە", en: "Register prohibited items", ar: "تسجيل البضائع الممنوعة", zh: "登记违禁物品" }), path: "/packages/prohibited-register" },
           { icon: Boxes, label: t("nav.batchAssignment") || "خستنە ناو باچ", path: "/batch-assignment-scanner" },
           { icon: Truck, label: t("nav.arrivalVerification") || "پشکنینی گەیشتن", path: "/arrival-verification-scanner" },
           { icon: CreditCard, label: t("nav.customerDelivery") || "گەیاندن بە کڕیار", path: "/customer-delivery-scanner" },
