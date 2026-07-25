@@ -29,7 +29,7 @@ import {
   MousePointerClick, ChevronLeft, ChevronRight, Clock, TrendingUp,
   UserCheck, PackageCheck, Ban, Sparkles, Send, Bell, Megaphone,
   StickyNote, DollarSign, Plane, Zap, Ship, Loader2, Star, Newspaper, Pin, Eye,
-  EyeOff, KeyRound, ShieldCheck, Copy, Check, RefreshCw, Phone, Power,
+  EyeOff, KeyRound, ShieldCheck, Copy, Check, RefreshCw, Phone, Power, Undo2,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -87,6 +87,16 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
 };
 
+// Shared styling for the portal-center nav tabs: muted by default, a soft
+// indigo hover, and a bold indigo→purple gradient pill (with a lifted icon)
+// when active — matching the page header for a cohesive, professional look.
+const TAB_TRIGGER_CLS =
+  "gap-1.5 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 " +
+  "transition-all duration-200 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-white/70 dark:hover:bg-slate-800/70 " +
+  "data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 " +
+  "data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-indigo-500/30 " +
+  "[&_svg]:size-4 [&_svg]:transition-transform data-[state=active]:[&_svg]:scale-110";
+
 export default function PortalCenter() {
   const { language } = useLanguage();
   const isRTL = language === "ku" || language === "ar";
@@ -124,18 +134,18 @@ export default function PortalCenter() {
         <OverviewCards p={p} />
 
         <Tabs defaultValue="customers" className="space-y-4">
-          <TabsList className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-11 w-full max-w-6xl h-auto">
-            <TabsTrigger value="customers" className="gap-1.5"><Users className="h-4 w-4" />{p({ ku: "موشتەرەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TabsTrigger>
-            <TabsTrigger value="messages" className="gap-1.5"><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}</TabsTrigger>
-            <TabsTrigger value="send" className="gap-1.5"><Send className="h-4 w-4" />{p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}</TabsTrigger>
-            <TabsTrigger value="prices" className="gap-1.5"><DollarSign className="h-4 w-4" />{p({ ku: "نرخەکان", en: "Prices", ar: "الأسعار", zh: "价格" })}</TabsTrigger>
-            <TabsTrigger value="activity" className="gap-1.5"><Activity className="h-4 w-4" />{p({ ku: "چالاکی", en: "Activity", ar: "النشاط", zh: "活动" })}</TabsTrigger>
-            <TabsTrigger value="declared" className="gap-1.5"><Package className="h-4 w-4" />{p({ ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪" })}</TabsTrigger>
-            <TabsTrigger value="claims" className="gap-1.5"><FileText className="h-4 w-4" />{p({ ku: "خاوەنداری", en: "Claims", ar: "المطالبات", zh: "认领" })}</TabsTrigger>
-            <TabsTrigger value="prohibited" className="gap-1.5"><Ban className="h-4 w-4" />{p({ ku: "قەدەغە", en: "Prohibited", ar: "ممنوعة", zh: "违禁" })}</TabsTrigger>
-            <TabsTrigger value="ratings" className="gap-1.5"><Star className="h-4 w-4" />{p({ ku: "هەڵسەنگاندن", en: "Ratings", ar: "التقييمات", zh: "评价" })}</TabsTrigger>
-            <TabsTrigger value="announcements" className="gap-1.5"><Megaphone className="h-4 w-4" />{p({ ku: "ڕاگەیاندن", en: "Announce", ar: "إعلانات", zh: "公告" })}</TabsTrigger>
-            <TabsTrigger value="yuan" className="gap-1.5">
+          <TabsList className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-11 w-full max-w-6xl h-auto gap-1 rounded-2xl p-2 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 shadow-sm">
+            <TabsTrigger value="customers" className={TAB_TRIGGER_CLS}><Users className="h-4 w-4" />{p({ ku: "موشتەرەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TabsTrigger>
+            <TabsTrigger value="messages" className={TAB_TRIGGER_CLS}><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}</TabsTrigger>
+            <TabsTrigger value="send" className={TAB_TRIGGER_CLS}><Send className="h-4 w-4" />{p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}</TabsTrigger>
+            <TabsTrigger value="prices" className={TAB_TRIGGER_CLS}><DollarSign className="h-4 w-4" />{p({ ku: "نرخەکان", en: "Prices", ar: "الأسعار", zh: "价格" })}</TabsTrigger>
+            <TabsTrigger value="activity" className={TAB_TRIGGER_CLS}><Activity className="h-4 w-4" />{p({ ku: "چالاکی", en: "Activity", ar: "النشاط", zh: "活动" })}</TabsTrigger>
+            <TabsTrigger value="declared" className={TAB_TRIGGER_CLS}><Package className="h-4 w-4" />{p({ ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪" })}</TabsTrigger>
+            <TabsTrigger value="claims" className={TAB_TRIGGER_CLS}><FileText className="h-4 w-4" />{p({ ku: "خاوەنداری", en: "Claims", ar: "المطالبات", zh: "认领" })}</TabsTrigger>
+            <TabsTrigger value="prohibited" className={TAB_TRIGGER_CLS}><Ban className="h-4 w-4" />{p({ ku: "قەدەغە", en: "Prohibited", ar: "ممنوعة", zh: "违禁" })}</TabsTrigger>
+            <TabsTrigger value="ratings" className={TAB_TRIGGER_CLS}><Star className="h-4 w-4" />{p({ ku: "هەڵسەنگاندن", en: "Ratings", ar: "التقييمات", zh: "评价" })}</TabsTrigger>
+            <TabsTrigger value="announcements" className={TAB_TRIGGER_CLS}><Megaphone className="h-4 w-4" />{p({ ku: "ڕاگەیاندن", en: "Announce", ar: "إعلانات", zh: "公告" })}</TabsTrigger>
+            <TabsTrigger value="yuan" className={TAB_TRIGGER_CLS}>
               <span className="font-black text-sm leading-none">¥</span>
               {p({ ku: "یوان", en: "Yuan", ar: "اليوان", zh: "人民币" })}
               {(pendingYuan.data ?? 0) > 0 && (
@@ -499,9 +509,10 @@ function ProhibitedTab({ p }: { p: (v: L) => string }) {
                         {d.chargedAt ? (
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-semibold text-amber-600">${Number(d.feeUsd).toFixed(2)}</span>
-                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px] text-red-600 hover:text-red-700" disabled={reverseFeeMut.isPending}
+                            <Button size="sm" variant="outline" className="h-7 gap-1 border-red-200 bg-red-50 px-2 text-[11px] font-medium text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-900 dark:bg-red-950/40" disabled={reverseFeeMut.isPending}
                               onClick={() => { if (confirm(p({ ku: "کولفە بگەڕێندرێتەوە و لەسەر باڵانس لابردرێت؟", en: "Reverse the fee and remove it from the balance?", ar: "إلغاء الرسوم وإزالتها من الرصيد؟", zh: "撤销费用并从余额中移除？" }))) reverseFeeMut.mutate({ id: d.id }); }}>
-                              {p({ ku: "گەڕاندنەوە", en: "Reverse", ar: "إلغاء", zh: "撤销" })}
+                              {reverseFeeMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Undo2 className="h-3.5 w-3.5" />}
+                              {p({ ku: "گەڕاندنەوەی کولفە", en: "Reverse fee", ar: "إلغاء الرسوم", zh: "撤销费用" })}
                             </Button>
                           </div>
                         ) : d.resolutionChoice ? (
