@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+﻿import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -300,6 +300,18 @@ export default function PortalFullPackage() {
     setSelectedOrder(order);
     setShowDetailDialog(true);
   };
+
+  // Deep-link support: /portal/full-package?order=<id> auto-opens that order's
+  // detail dialog (used when tapping a fee in the financial/transactions page).
+  const searchString = useSearch();
+  const deepLinkOrderId = new URLSearchParams(searchString).get("order");
+  useEffect(() => {
+    if (!deepLinkOrderId || !fullPackageOrders?.length) return;
+    const match = fullPackageOrders.find((o: any) => String(o.id) === deepLinkOrderId);
+    if (match) openOrderDetail(match);
+    // Only react to the initial deep-link + data arrival, not to later re-opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkOrderId, fullPackageOrders]);
   
   const formatPrice = (price: string | number | null | undefined) => {
     if (!price) return "$0";

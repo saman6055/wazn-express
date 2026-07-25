@@ -1,6 +1,6 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { lazy } from "react";
 // Lazy: only the active skin's chunk is downloaded (global admin setting).
 const ModernPortalFinancial = lazy(() => import("./modern/ModernPortalFinancial"));
@@ -28,12 +28,13 @@ import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 // Deep-link a ledger transaction to the section it was raised for, so tapping a
 // row jumps straight to the relevant package/order/prohibited item.
 function txHref(tx: any): string | null {
+  const rid = tx?.referenceId ? String(tx.referenceId) : null;
   switch (tx?.referenceType) {
-    case "service": return "/portal/prohibited-packages";
+    case "service": return rid ? `/portal/prohibited-packages?focus=${rid}` : "/portal/prohibited-packages";
     case "full_package":
     case "purchase_request":
-    case "commission": return "/portal/full-package";
-    case "package": return "/portal/shipments";
+    case "commission": return rid ? `/portal/full-package?order=${rid}` : "/portal/full-package";
+    case "package": return rid ? `/portal/shipments?focus=${rid}` : "/portal/shipments";
     default: return null;
   }
 }
@@ -46,7 +47,21 @@ const { t, language } = useLanguage();
   const isRTL = language === "ku" || language === "ar";
   const [dateRange, setDateRange] = useState<"all" | "month" | "year">("all");
   const [selectedTransaction, setSelectedTransaction] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "transactions" | "invoices">("overview");
+  const searchString = useSearch();
+  const urlTab = new URLSearchParams(searchString).get("tab");
+  const [activeTab, setActiveTab] = useState<"overview" | "transactions" | "invoices">(
+    urlTab === "transactions" || urlTab === "invoices" ? urlTab : "overview"
+  );
+  // Keep the active tab in the URL so navigating to an order and pressing Back
+  // returns the customer to the same tab (e.g. "transactions") they came from.
+  const changeTab = (tab: "overview" | "transactions" | "invoices") => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchString);
+    if (tab === "overview") params.delete("tab");
+    else params.set("tab", tab);
+    const qs = params.toString();
+    setLocation(`/portal/financial${qs ? `?${qs}` : ""}`, { replace: true });
+  };
   const [animatedBalance, setAnimatedBalance] = useState(0);
   
   const { data: summary, isLoading: summaryLoading } = trpc.customerPortal.getMyFinancialSummary.useQuery();
@@ -343,7 +358,7 @@ const { t, language } = useLanguage();
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => changeTab(tab.id as any)}
               className={cn(
                 "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all",
                 activeTab === tab.id
@@ -478,7 +493,7 @@ const { t, language } = useLanguage();
                   {language === "ku" ? "دوایین مامەڵەکان" : "Recent Transactions"}
                 </h3>
                 <button 
-                  onClick={() => setActiveTab("transactions")}
+                  onClick={() => changeTab("transactions")}
                   className="text-sm text-indigo-500 font-medium flex items-center gap-1"
                 >
                   {language === "ku" ? "هەموو" : "View All"}

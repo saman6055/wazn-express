@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearch } from "wouter";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -35,6 +36,20 @@ export default function PortalProhibitedPackages() {
 
   const [reshipFor, setReshipFor] = useState<number | null>(null);
   const [reshipAddress, setReshipAddress] = useState("");
+
+  // Deep-link support: /portal/prohibited-packages?focus=<id> scrolls to and
+  // briefly highlights that item (used when tapping its fee in the financials).
+  const searchString = useSearch();
+  const focusId = new URLSearchParams(searchString).get("focus");
+  const [highlightId, setHighlightId] = useState<number | null>(focusId ? Number(focusId) : null);
+  const focusRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (highlightId == null || !items?.length) return;
+    focusRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const t = setTimeout(() => setHighlightId(null), 2600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightId, items]);
 
   // Mark unseen items as viewed once, so Portal Center reflects "customer saw it".
   const markedRef = useRef<Set<number>>(new Set());
@@ -108,8 +123,9 @@ export default function PortalProhibitedPackages() {
               const pending = it.status === "pending";
               const photos: string[] = Array.isArray(it.photos) ? it.photos : [];
               return (
-                <div key={it.id} className={cn(
-                  "rounded-2xl border overflow-hidden",
+                <div key={it.id} ref={highlightId === it.id ? focusRef : undefined} className={cn(
+                  "rounded-2xl border overflow-hidden transition-all",
+                  highlightId === it.id && "ring-2 ring-offset-2 ring-amber-400 dark:ring-offset-slate-900",
                   pending ? "wazn-prohibited-flash border-red-400" : (isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"),
                 )}>
                   <div className={cn("p-4", pending && (isDark ? "bg-slate-800" : "bg-white"))}>
