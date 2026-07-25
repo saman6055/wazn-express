@@ -214,6 +214,8 @@ const { t, language } = useLanguage();
   const { data: financialSummary } = trpc.customerPortal.getMyFinancialSummary.useQuery();
   const { data: pendingOrders } = trpc.customerPortal.getMyPendingOrders.useQuery();
   const { data: declaredPackages } = trpc.customerPortal.getMyDeclaredPackages.useQuery();
+  const { data: prohibitedPackages } = trpc.prohibited.getMine.useQuery();
+  const prohibitedPending = (prohibitedPackages || []).filter((p: any) => p.status === "pending").length;
 
   // Get recent batches (last 3)
   const recentBatches = batches?.slice(0, 3) || [];
@@ -484,6 +486,35 @@ const { t, language } = useLanguage();
           </div>
         </Link>
       </div>
+
+      {/* Prohibited packages — flashes while any item awaits the customer's decision */}
+      {prohibitedPackages && prohibitedPackages.length > 0 && (
+        <div className="px-4 mt-4">
+          <Link href="/portal/prohibited-packages">
+            <div className={cn(
+              "rounded-2xl border p-4 cursor-pointer flex items-center gap-3 transition-all hover:scale-[1.01]",
+              prohibitedPending > 0
+                ? "wazn-prohibited-flash border-red-400"
+                : isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200",
+            )}>
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white shrink-0 shadow-lg">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={cn("font-bold", isDark ? "text-white" : "text-slate-900")}>
+                  {pickLang(language, { ku: "کەل و پەلی قەدەغە", en: "Prohibited packages", ar: "طرود ممنوعة", zh: "违禁包裹" })}
+                </p>
+                <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+                  {prohibitedPending > 0
+                    ? pickLang(language, { ku: `${prohibitedPending} پاکێج پێویستی بە بڕیارتە`, en: `${prohibitedPending} need your decision`, ar: `${prohibitedPending} بحاجة لقرارك`, zh: `${prohibitedPending} 项需要您处理` })
+                    : pickLang(language, { ku: "بینینی وردەکاری", en: "View details", ar: "عرض التفاصيل", zh: "查看详情" })}
+                </p>
+              </div>
+              <ChevronRight className={cn("w-5 h-5 shrink-0", isDark ? "text-slate-500" : "text-slate-400", isRTL && "rotate-180")} />
+            </div>
+          </Link>
+        </div>
+      )}
 
       {/* Rate your delivery — shows for the latest delivered, unrated package */}
       <DeliveryRatingCard isDark={isDark} language={language} />

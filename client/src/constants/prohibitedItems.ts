@@ -17,7 +17,9 @@ export interface ProhibitedSection {
   gradient: string;
   title: L10n;
   subtitle: L10n;
-  items: L10n[];
+  /** Each item carries a stable `id` so staff can reference it as a prohibited
+   *  reason (e.g. "banned-weapons") without depending on array order. */
+  items: (L10n & { id: string })[];
 }
 
 export const prohibitedHeader = {
@@ -75,14 +77,14 @@ export const prohibitedSections: ProhibitedSection[] = [
       zh: "任何方式都不能运输——无论空运还是海运",
     },
     items: [
-      { ku: "چەک و فیشەک و پارچەکانیان — هەر جۆرە چەکێکی ئاگرین یان سارد (شمشێر، خەنجەری شەڕ)", en: "Weapons, ammunition and their parts — any firearm or combat blade (swords, combat knives)", ar: "الأسلحة والذخيرة وقطعها — أي سلاح ناري أو أبيض قتالي (سيوف، خناجر قتالية)", zh: "武器、弹药及其零件——任何枪支或格斗刀具（刀剑、格斗匕首）" },
-      { ku: "ماددە هۆشبەرەکان و هەر شتێکی پەیوەست بە ماددە بێهۆشکەرەکان", en: "Narcotics and anything related to illegal drugs", ar: "المخدرات وكل ما يتعلق بالمواد المخدرة", zh: "毒品及任何与非法药物相关的物品" },
-      { ku: "تەقەمەنی، فیشەکی ئاسمانی (یاری ئاگرین) و ماددە تەقێنەرەوەکان", en: "Explosives, fireworks and blasting materials", ar: "المتفجرات والألعاب النارية والمواد المتفجرة", zh: "爆炸物、烟花爆竹及起爆材料" },
-      { ku: "ماددە تیشکدەرەکان (ڕادیۆئاکتیڤ) و کیمیاوییە مەترسیدارەکان", en: "Radioactive materials and dangerous chemicals", ar: "المواد المشعة والمواد الكيميائية الخطرة", zh: "放射性材料和危险化学品" },
-      { ku: "پارەی درۆینە، بەڵگەنامەی ساختە و کارتی بانکی ساختە", en: "Counterfeit money, forged documents and fake bank cards", ar: "العملات المزيفة والوثائق المزورة والبطاقات المصرفية المزيفة", zh: "假币、伪造证件和假银行卡" },
-      { ku: "ئاژەڵ و ڕووەکی زیندوو", en: "Live animals and plants", ar: "الحيوانات والنباتات الحية", zh: "活体动物和植物" },
-      { ku: "ئامێری بەربەست کردنی ئیشارە (Jammer) و ئامێری چاودێری نهێنی", en: "Signal jammers and covert surveillance devices", ar: "أجهزة التشويش وأجهزة المراقبة السرية", zh: "信号干扰器和隐蔽监控设备" },
-      { ku: "هەر کاڵایەک کە پێچەوانەی یاسا و ئادابی گشتی عێراق بێت", en: "Any goods against Iraqi law or public morals", ar: "أي بضاعة مخالفة للقانون العراقي أو الآداب العامة", zh: "任何违反伊拉克法律或公序良俗的物品" },
+      { id: "banned-weapons", ku: "چەک و فیشەک و پارچەکانیان — هەر جۆرە چەکێکی ئاگرین یان سارد (شمشێر، خەنجەری شەڕ)", en: "Weapons, ammunition and their parts — any firearm or combat blade (swords, combat knives)", ar: "الأسلحة والذخيرة وقطعها — أي سلاح ناري أو أبيض قتالي (سيوف، خناجر قتالية)", zh: "武器、弹药及其零件——任何枪支或格斗刀具（刀剑、格斗匕首）" },
+      { id: "banned-narcotics", ku: "ماددە هۆشبەرەکان و هەر شتێکی پەیوەست بە ماددە بێهۆشکەرەکان", en: "Narcotics and anything related to illegal drugs", ar: "المخدرات وكل ما يتعلق بالمواد المخدرة", zh: "毒品及任何与非法药物相关的物品" },
+      { id: "banned-explosives", ku: "تەقەمەنی، فیشەکی ئاسمانی (یاری ئاگرین) و ماددە تەقێنەرەوەکان", en: "Explosives, fireworks and blasting materials", ar: "المتفجرات والألعاب النارية والمواد المتفجرة", zh: "爆炸物、烟花爆竹及起爆材料" },
+      { id: "banned-radioactive", ku: "ماددە تیشکدەرەکان (ڕادیۆئاکتیڤ) و کیمیاوییە مەترسیدارەکان", en: "Radioactive materials and dangerous chemicals", ar: "المواد المشعة والمواد الكيميائية الخطرة", zh: "放射性材料和危险化学品" },
+      { id: "banned-counterfeit", ku: "پارەی درۆینە، بەڵگەنامەی ساختە و کارتی بانکی ساختە", en: "Counterfeit money, forged documents and fake bank cards", ar: "العملات المزيفة والوثائق المزورة والبطاقات المصرفية المزيفة", zh: "假币、伪造证件和假银行卡" },
+      { id: "banned-live", ku: "ئاژەڵ و ڕووەکی زیندوو", en: "Live animals and plants", ar: "الحيوانات والنباتات الحية", zh: "活体动物和植物" },
+      { id: "banned-jammer", ku: "ئامێری بەربەست کردنی ئیشارە (Jammer) و ئامێری چاودێری نهێنی", en: "Signal jammers and covert surveillance devices", ar: "أجهزة التشويش وأجهزة المراقبة السرية", zh: "信号干扰器和隐蔽监控设备" },
+      { id: "banned-illegal", ku: "هەر کاڵایەک کە پێچەوانەی یاسا و ئادابی گشتی عێراق بێت", en: "Any goods against Iraqi law or public morals", ar: "أي بضاعة مخالفة للقانون العراقي أو الآداب العامة", zh: "任何违反伊拉克法律或公序良俗的物品" },
     ],
   },
   {
@@ -97,13 +99,13 @@ export const prohibitedSections: ProhibitedSection[] = [
       zh: "有些可海运但不可空运，或有特殊条件",
     },
     items: [
-      { ku: "پاتری لیتیۆم و پاوەربانک — بە ئاسمانی زۆر سنووردارە، پێویستە پێشتر ئاگادارمان بکەیتەوە", en: "Lithium batteries and power banks — heavily restricted by air; tell us beforehand", ar: "بطاريات الليثيوم وباور بانك — مقيّدة جداً جواً؛ أخبرنا مسبقاً", zh: "锂电池和充电宝——空运严格受限，请提前告知我们" },
-      { ku: "شل و بۆن و سپرەی (عەترەکان) — بە ئاسمانی سنووردارە، بە دەریایی باشترە", en: "Liquids, perfumes and sprays — restricted by air; sea is better", ar: "السوائل والعطور والبخاخات — مقيّدة جواً؛ البحري أفضل", zh: "液体、香水和喷雾——空运受限，海运更合适" },
-      { ku: "موگناتیسی بەهێز — بە ئاسمانی قەدەغەیە", en: "Strong magnets — prohibited by air", ar: "المغناطيسات القوية — ممنوعة جواً", zh: "强磁铁——空运禁止" },
-      { ku: "درۆن و هەندێک ئامێری فڕۆکەیی — پێویستی بە ڕەزامەندی پێشوەختە هەیە", en: "Drones and some aerial devices — need prior approval", ar: "الدرونات وبعض الأجهزة الطائرة — تحتاج موافقة مسبقة", zh: "无人机及某些飞行设备——需要事先批准" },
-      { ku: "چەقۆ و ئامێرە تیژەکانی ئاشپەزخانە/کار — تەنها بە دەریایی و بە بڕی ئاسایی", en: "Kitchen/work knives and sharp tools — sea only, in normal quantities", ar: "سكاكين المطبخ/العمل والأدوات الحادة — بحراً فقط وبكميات عادية", zh: "厨房/工作刀具及利器——仅限海运，数量正常" },
-      { ku: "جگەرەی ئەلیکترۆنی (ڤەیپ) و کەرەستەکانی — سنووردارە، پێشتر بپرسە", en: "E-cigarettes (vapes) and accessories — restricted; ask first", ar: "السجائر الإلكترونية (فيب) ولوازمها — مقيّدة؛ اسأل أولاً", zh: "电子烟及配件——受限，请先询问" },
-      { ku: "کاڵای براندی ناسراو (کۆپی) — مەترسی دەستبەسەرداگرتنی گومرگی هەیە", en: "Branded replica goods — risk of customs seizure", ar: "بضائع الماركات المقلدة — خطر المصادرة الجمركية", zh: "名牌仿品——有被海关查扣的风险" },
+      { id: "restricted-lithium", ku: "پاتری لیتیۆم و پاوەربانک — بە ئاسمانی زۆر سنووردارە، پێویستە پێشتر ئاگادارمان بکەیتەوە", en: "Lithium batteries and power banks — heavily restricted by air; tell us beforehand", ar: "بطاريات الليثيوم وباور بانك — مقيّدة جداً جواً؛ أخبرنا مسبقاً", zh: "锂电池和充电宝——空运严格受限，请提前告知我们" },
+      { id: "restricted-liquids", ku: "شل و بۆن و سپرەی (عەترەکان) — بە ئاسمانی سنووردارە، بە دەریایی باشترە", en: "Liquids, perfumes and sprays — restricted by air; sea is better", ar: "السوائل والعطور والبخاخات — مقيّدة جواً؛ البحري أفضل", zh: "液体、香水和喷雾——空运受限，海运更合适" },
+      { id: "restricted-magnets", ku: "موگناتیسی بەهێز — بە ئاسمانی قەدەغەیە", en: "Strong magnets — prohibited by air", ar: "المغناطيسات القوية — ممنوعة جواً", zh: "强磁铁——空运禁止" },
+      { id: "restricted-drones", ku: "درۆن و هەندێک ئامێری فڕۆکەیی — پێویستی بە ڕەزامەندی پێشوەختە هەیە", en: "Drones and some aerial devices — need prior approval", ar: "الدرونات وبعض الأجهزة الطائرة — تحتاج موافقة مسبقة", zh: "无人机及某些飞行设备——需要事先批准" },
+      { id: "restricted-knives", ku: "چەقۆ و ئامێرە تیژەکانی ئاشپەزخانە/کار — تەنها بە دەریایی و بە بڕی ئاسایی", en: "Kitchen/work knives and sharp tools — sea only, in normal quantities", ar: "سكاكين المطبخ/العمل والأدوات الحادة — بحراً فقط وبكميات عادية", zh: "厨房/工作刀具及利器——仅限海运，数量正常" },
+      { id: "restricted-vape", ku: "جگەرەی ئەلیکترۆنی (ڤەیپ) و کەرەستەکانی — سنووردارە، پێشتر بپرسە", en: "E-cigarettes (vapes) and accessories — restricted; ask first", ar: "السجائر الإلكترونية (فيب) ولوازمها — مقيّدة؛ اسأل أولاً", zh: "电子烟及配件——受限，请先询问" },
+      { id: "restricted-replica", ku: "کاڵای براندی ناسراو (کۆپی) — مەترسی دەستبەسەرداگرتنی گومرگی هەیە", en: "Branded replica goods — risk of customs seizure", ar: "بضائع الماركات المقلدة — خطر المصادرة الجمركية", zh: "名牌仿品——有被海关查扣的风险" },
     ],
   },
   {
@@ -118,11 +120,28 @@ export const prohibitedSections: ProhibitedSection[] = [
       zh: "可以运输，但需要进口许可或特殊文件",
     },
     items: [
-      { ku: "دەرمان و کەرەستەی پزیشکی — مۆڵەتی وەزارەتی تەندروستی دەوێت", en: "Medicines and medical supplies — need Ministry of Health permits", ar: "الأدوية والمستلزمات الطبية — تحتاج إجازة وزارة الصحة", zh: "药品和医疗用品——需要卫生部许可" },
-      { ku: "خواردەمەنی و پێداویستی خواردن — پێویستی بە پشکنین و مۆڵەتی تایبەتە", en: "Food items — need inspection and special permits", ar: "المواد الغذائية — تحتاج فحصاً وإجازات خاصة", zh: "食品——需要检验和特殊许可" },
-      { ku: "جوانکاری و کریمەکان بە بڕی بازرگانی — مۆڵەتی هاوردەی دەوێت", en: "Cosmetics in commercial quantities — need an import permit", ar: "مستحضرات التجميل بكميات تجارية — تحتاج إجازة استيراد", zh: "商业数量的化妆品——需要进口许可" },
-      { ku: "ئامێری پەیوەندی و ئینتەرنێت (ڕاوتەر، واکی تۆکی...) — ڕەزامەندی وەزارەتی گەیاندن", en: "Telecom devices (routers, walkie-talkies...) — Ministry of Communications approval", ar: "أجهزة الاتصالات (راوترات، لاسلكي...) — موافقة وزارة الاتصالات", zh: "通信设备（路由器、对讲机等）——需通信部批准" },
-      { ku: "کیمیاوی پیشەسازی و بۆیاخ — بەڵگەنامەی MSDS و مۆڵەت دەوێت", en: "Industrial chemicals and paints — need MSDS documents and permits", ar: "الكيماويات الصناعية والأصباغ — تحتاج مستندات MSDS وإجازات", zh: "工业化学品和涂料——需要 MSDS 文件和许可" },
+      { id: "permit-medicine", ku: "دەرمان و کەرەستەی پزیشکی — مۆڵەتی وەزارەتی تەندروستی دەوێت", en: "Medicines and medical supplies — need Ministry of Health permits", ar: "الأدوية والمستلزمات الطبية — تحتاج إجازة وزارة الصحة", zh: "药品和医疗用品——需要卫生部许可" },
+      { id: "permit-food", ku: "خواردەمەنی و پێداویستی خواردن — پێویستی بە پشکنین و مۆڵەتی تایبەتە", en: "Food items — need inspection and special permits", ar: "المواد الغذائية — تحتاج فحصاً وإجازات خاصة", zh: "食品——需要检验和特殊许可" },
+      { id: "permit-cosmetics", ku: "جوانکاری و کریمەکان بە بڕی بازرگانی — مۆڵەتی هاوردەی دەوێت", en: "Cosmetics in commercial quantities — need an import permit", ar: "مستحضرات التجميل بكميات تجارية — تحتاج إجازة استيراد", zh: "商业数量的化妆品——需要进口许可" },
+      { id: "permit-telecom", ku: "ئامێری پەیوەندی و ئینتەرنێت (ڕاوتەر، واکی تۆکی...) — ڕەزامەندی وەزارەتی گەیاندن", en: "Telecom devices (routers, walkie-talkies...) — Ministry of Communications approval", ar: "أجهزة الاتصالات (راوترات، لاسلكي...) — موافقة وزارة الاتصالات", zh: "通信设备（路由器、对讲机等）——需通信部批准" },
+      { id: "permit-chemicals", ku: "کیمیاوی پیشەسازی و بۆیاخ — بەڵگەنامەی MSDS و مۆڵەت دەوێت", en: "Industrial chemicals and paints — need MSDS documents and permits", ar: "الكيماويات الصناعية والأصباغ — تحتاج مستندات MSDS وإجازات", zh: "工业化学品和涂料——需要 MSDS 文件和许可" },
     ],
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Reason lookup — used by the prohibited-packages feature. Staff pick a reason
+// id from this flat list when flagging a package; the customer portal resolves
+// the id back to a localized label. Falls back gracefully for unknown/legacy ids.
+// ---------------------------------------------------------------------------
+
+export const prohibitedItemOptions: { id: string; sectionId: string; label: L10n }[] =
+  prohibitedSections.flatMap((s) =>
+    s.items.map((it) => ({ id: it.id, sectionId: s.id, label: { ku: it.ku, en: it.en, ar: it.ar, zh: it.zh } })),
+  );
+
+/** Localized label for a prohibited-reason id, or null if the id is unknown. */
+export function getProhibitedItemLabel(id: string | null | undefined): L10n | null {
+  if (!id) return null;
+  return prohibitedItemOptions.find((o) => o.id === id)?.label ?? null;
+}

@@ -9,8 +9,8 @@ describe("Migration System", () => {
   
   describe("TABLE_DEFINITIONS", () => {
     
-    it("should have 80 table definitions", () => {
-      expect(TABLE_DEFINITIONS.length).toBe(80);
+    it("should have 87 table definitions", () => {
+      expect(TABLE_DEFINITIONS.length).toBe(87);
     });
     
     it("should have unique table names", () => {

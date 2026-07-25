@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { getProhibitedItemLabel } from "@/constants/prohibitedItems";
 import {
   Users, Activity, Package, FileText, LogIn, Search, MessageCircle,
   MousePointerClick, ChevronLeft, ChevronRight, Clock, TrendingUp,
@@ -123,7 +124,7 @@ export default function PortalCenter() {
         <OverviewCards p={p} />
 
         <Tabs defaultValue="customers" className="space-y-4">
-          <TabsList className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-10 w-full max-w-6xl h-auto">
+          <TabsList className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-11 w-full max-w-6xl h-auto">
             <TabsTrigger value="customers" className="gap-1.5"><Users className="h-4 w-4" />{p({ ku: "موشتەرەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TabsTrigger>
             <TabsTrigger value="messages" className="gap-1.5"><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}</TabsTrigger>
             <TabsTrigger value="send" className="gap-1.5"><Send className="h-4 w-4" />{p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}</TabsTrigger>
@@ -131,6 +132,7 @@ export default function PortalCenter() {
             <TabsTrigger value="activity" className="gap-1.5"><Activity className="h-4 w-4" />{p({ ku: "چالاکی", en: "Activity", ar: "النشاط", zh: "活动" })}</TabsTrigger>
             <TabsTrigger value="declared" className="gap-1.5"><Package className="h-4 w-4" />{p({ ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪" })}</TabsTrigger>
             <TabsTrigger value="claims" className="gap-1.5"><FileText className="h-4 w-4" />{p({ ku: "خاوەنداری", en: "Claims", ar: "المطالبات", zh: "认领" })}</TabsTrigger>
+            <TabsTrigger value="prohibited" className="gap-1.5"><Ban className="h-4 w-4" />{p({ ku: "قەدەغە", en: "Prohibited", ar: "ممنوعة", zh: "违禁" })}</TabsTrigger>
             <TabsTrigger value="ratings" className="gap-1.5"><Star className="h-4 w-4" />{p({ ku: "هەڵسەنگاندن", en: "Ratings", ar: "التقييمات", zh: "评价" })}</TabsTrigger>
             <TabsTrigger value="announcements" className="gap-1.5"><Megaphone className="h-4 w-4" />{p({ ku: "ڕاگەیاندن", en: "Announce", ar: "إعلانات", zh: "公告" })}</TabsTrigger>
             <TabsTrigger value="yuan" className="gap-1.5">
@@ -151,6 +153,7 @@ export default function PortalCenter() {
           <TabsContent value="activity"><ActivityTab p={p} /></TabsContent>
           <TabsContent value="declared"><DeclaredTab p={p} /></TabsContent>
           <TabsContent value="claims"><ClaimsTab p={p} /></TabsContent>
+          <TabsContent value="prohibited"><ProhibitedTab p={p} /></TabsContent>
           <TabsContent value="ratings"><RatingsTab p={p} /></TabsContent>
           <TabsContent value="yuan"><YuanTab p={p} /></TabsContent>
           <TabsContent value="announcements"><AnnouncementsTab p={p} /></TabsContent>
@@ -406,6 +409,115 @@ function DeclaredTab({ p }: { p: (v: L) => string }) {
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtDateTime(d.createdAt)}</TableCell>
                   </TableRow>
                 ))}
+              </TableBody>
+            </Table>
+            <Pager page={page} pageSize={pageSize} total={data.total} onPage={setPage} />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Prohibited packages tab — customer, tracking, seen?, decision, fee
+// ---------------------------------------------------------------------------
+function ProhibitedTab({ p }: { p: (v: L) => string }) {
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [fees, setFees] = useState<Record<number, string>>({});
+  const pageSize = 25;
+  const { data, isLoading, refetch } = trpc.prohibited.listAdmin.useQuery({
+    search: search || undefined, status: status === "all" ? undefined : status, page, pageSize,
+  });
+  const chargeMut = trpc.prohibited.chargeFee.useMutation({
+    onSuccess: () => { toast.success(p({ ku: "کولفە خرایە سەر باڵانس", en: "Fee charged to balance", ar: "تمت إضافة الرسوم", zh: "已计入余额" })); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const statusMut = trpc.prohibited.setStatus.useMutation({ onSuccess: () => refetch(), onError: (e) => toast.error(e.message) });
+
+  const choiceLabel = (c: string | null) => c ? p(
+    c === "return" ? { ku: "گەڕاندنەوە", en: "Return", ar: "إرجاع", zh: "退回" } :
+    c === "reship" ? { ku: "ناردن بۆ ئەدرێس", en: "Reship", ar: "إرسال", zh: "转寄" } :
+    { ku: "لەناوبردن", en: "Destroy", ar: "إتلاف", zh: "销毁" }) : "—";
+
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4">
+        <div className="flex gap-2 mb-3 flex-wrap">
+          <div className="relative flex-1 min-w-[180px] max-w-sm">
+            <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="ps-9"
+              placeholder={p({ ku: "گەڕان بە تراک/موشتەری", en: "Search tracking / customer", ar: "بحث بالتتبع/العميل", zh: "按追踪号/客户搜索" })} />
+          </div>
+          <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
+            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{p({ ku: "هەموو دۆخەکان", en: "All statuses", ar: "كل الحالات", zh: "所有状态" })}</SelectItem>
+              <SelectItem value="pending">{p({ ku: "چاوەڕوان", en: "Pending", ar: "معلق", zh: "待处理" })}</SelectItem>
+              <SelectItem value="chosen">{p({ ku: "هەڵبژێردراو", en: "Chosen", ar: "تم الاختيار", zh: "已选择" })}</SelectItem>
+              <SelectItem value="resolved">{p({ ku: "چارەسەرکراو", en: "Resolved", ar: "تم الحل", zh: "已解决" })}</SelectItem>
+              <SelectItem value="cancelled">{p({ ku: "هەڵوەشاوە", en: "Cancelled", ar: "ملغى", zh: "已取消" })}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {isLoading ? <TableSkeleton /> : !data || data.data.length === 0 ? (
+          <EmptyRow text={p({ ku: "هیچ کاڵایەکی قەدەغە نییە", en: "No prohibited items", ar: "لا توجد بضائع ممنوعة", zh: "无违禁物品" })} />
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{p({ ku: "تراک", en: "Tracking", ar: "التتبع", zh: "追踪号" })}</TableHead>
+                  <TableHead>{p({ ku: "موشتەری", en: "Customer", ar: "العميل", zh: "客户" })}</TableHead>
+                  <TableHead>{p({ ku: "هۆکار", en: "Reason", ar: "السبب", zh: "原因" })}</TableHead>
+                  <TableHead>{p({ ku: "بینراوە؟", en: "Seen?", ar: "شوهد؟", zh: "已看?" })}</TableHead>
+                  <TableHead>{p({ ku: "بڕیار", en: "Decision", ar: "القرار", zh: "决定" })}</TableHead>
+                  <TableHead>{p({ ku: "کولفە", en: "Fee", ar: "الرسوم", zh: "费用" })}</TableHead>
+                  <TableHead>{p({ ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.data.map((d: any) => {
+                  const reason = getProhibitedItemLabel(d.reasonId);
+                  return (
+                    <TableRow key={d.id}>
+                      <TableCell className="font-mono text-sm font-semibold">{d.trackingNumber}</TableCell>
+                      <TableCell className="text-xs"><div className="font-medium">{d.customerName}</div><div className="text-muted-foreground font-mono">{d.customerCode}</div></TableCell>
+                      <TableCell className="text-xs max-w-[200px] truncate">{reason ? p(reason) : (d.reasonNote || "—")}</TableCell>
+                      <TableCell>{d.viewedByCustomerAt
+                        ? <Badge className="text-[10px] border-0 bg-emerald-100 text-emerald-700">{p({ ku: "بینیویەتی", en: "Seen", ar: "شوهد", zh: "已看" })}</Badge>
+                        : <Badge className="text-[10px] border-0 bg-slate-100 text-slate-500">{p({ ku: "نەیبینیوە", en: "Not yet", ar: "لا", zh: "未看" })}</Badge>}</TableCell>
+                      <TableCell className="text-xs font-medium">{choiceLabel(d.resolutionChoice)}</TableCell>
+                      <TableCell>
+                        {d.chargedAt ? (
+                          <span className="text-xs font-semibold text-amber-600">${Number(d.feeUsd).toFixed(2)}</span>
+                        ) : d.resolutionChoice ? (
+                          <div className="flex items-center gap-1">
+                            <Input value={fees[d.id] ?? ""} onChange={(e) => setFees((f) => ({ ...f, [d.id]: e.target.value }))} className="h-7 w-16 text-xs" placeholder="$" />
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={chargeMut.isPending}
+                              onClick={() => { const v = parseFloat(fees[d.id] || ""); if (!v || v <= 0) { toast.error(p({ ku: "بڕی کولفە بنووسە", en: "Enter a fee", ar: "أدخل الرسوم", zh: "输入费用" })); return; } chargeMut.mutate({ id: d.id, feeUsd: v }); }}>
+                              {p({ ku: "خستنە قەرز", en: "Charge", ar: "احتساب", zh: "计费" })}
+                            </Button>
+                          </div>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Select value={d.status} onValueChange={(v) => statusMut.mutate({ id: d.id, status: v as any })}>
+                          <SelectTrigger className="h-7 w-[120px] text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">{p({ ku: "چاوەڕوان", en: "Pending", ar: "معلق", zh: "待处理" })}</SelectItem>
+                            <SelectItem value="chosen">{p({ ku: "هەڵبژێردراو", en: "Chosen", ar: "تم الاختيار", zh: "已选择" })}</SelectItem>
+                            <SelectItem value="resolved">{p({ ku: "چارەسەرکراو", en: "Resolved", ar: "تم الحل", zh: "已解决" })}</SelectItem>
+                            <SelectItem value="cancelled">{p({ ku: "هەڵوەشاوە", en: "Cancelled", ar: "ملغى", zh: "已取消" })}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
             <Pager page={page} pageSize={pageSize} total={data.total} onPage={setPage} />

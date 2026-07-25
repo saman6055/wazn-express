@@ -1916,6 +1916,93 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
+
+  // Wazn Store — public storefront products
+  {
+    name: "storeProducts",
+    dependencies: ["users"],
+    sql: `CREATE TABLE IF NOT EXISTS storeProducts (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      nameEn VARCHAR(300) NOT NULL,
+      nameKu VARCHAR(300),
+      nameAr VARCHAR(300),
+      descriptionEn TEXT,
+      descriptionKu TEXT,
+      descriptionAr TEXT,
+      price DECIMAL(10,2) NOT NULL,
+      compareAtPrice DECIMAL(10,2),
+      currency VARCHAR(10) NOT NULL DEFAULT 'USD',
+      coverImageUrl VARCHAR(500),
+      images JSON,
+      category VARCHAR(100),
+      status ENUM('active', 'hidden', 'out_of_stock') NOT NULL DEFAULT 'active',
+      stock INT,
+      slug VARCHAR(255) UNIQUE,
+      isFeatured BOOLEAN NOT NULL DEFAULT false,
+      sortOrder INT NOT NULL DEFAULT 0,
+      viewCount INT NOT NULL DEFAULT 0,
+      orderCount INT NOT NULL DEFAULT 0,
+      createdById INT,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX storeProducts_status_idx (status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  // Wazn Store — public orders (guest checkout, saved + sent to WhatsApp)
+  {
+    name: "storeOrders",
+    dependencies: ["storeProducts"],
+    sql: `CREATE TABLE IF NOT EXISTS storeOrders (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      orderCode VARCHAR(50) NOT NULL UNIQUE,
+      productId INT,
+      productName VARCHAR(300) NOT NULL,
+      productImageUrl VARCHAR(500),
+      unitPrice DECIMAL(10,2) NOT NULL,
+      quantity INT NOT NULL DEFAULT 1,
+      totalPrice DECIMAL(10,2) NOT NULL,
+      currency VARCHAR(10) NOT NULL DEFAULT 'USD',
+      customerName VARCHAR(200) NOT NULL,
+      customerPhone VARCHAR(50) NOT NULL,
+      customerCity VARCHAR(100),
+      customerAddress TEXT,
+      note TEXT,
+      status ENUM('new', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'new',
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX storeOrders_status_idx (status),
+      INDEX storeOrders_product_idx (productId),
+      INDEX storeOrders_created_idx (createdAt)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  // Prohibited packages — items that arrived at China warehouse but can't ship
+  {
+    name: "prohibitedPackages",
+    dependencies: ["customers"],
+    sql: `CREATE TABLE IF NOT EXISTS prohibitedPackages (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerId INT NOT NULL,
+      trackingNumber VARCHAR(100) NOT NULL,
+      photos JSON,
+      reasonId VARCHAR(120),
+      reasonNote TEXT,
+      resolutionChoice ENUM('return', 'reship', 'destroy'),
+      reshipAddress TEXT,
+      resolutionChosenAt TIMESTAMP NULL,
+      viewedByCustomerAt TIMESTAMP NULL,
+      feeUsd DECIMAL(10,2),
+      chargedAt TIMESTAMP NULL,
+      ledgerTransactionId INT,
+      status ENUM('pending', 'chosen', 'resolved', 'cancelled') NOT NULL DEFAULT 'pending',
+      createdById INT,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX prohibitedPackages_customer_idx (customerId),
+      INDEX prohibitedPackages_status_idx (status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
   // Product Attributes: colors, sizes, product types managed from settings
   {
     name: "productAttributes",

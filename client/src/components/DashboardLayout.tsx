@@ -45,6 +45,7 @@ import {
   Scale,
   Activity,
   AlertTriangle,
+  Ban,
   MessageCircle,
   QrCode,
   Bell,
@@ -270,6 +271,19 @@ function DashboardLayoutContent({
       });
     }
 
+    // Wazn Store — public storefront management (admin only)
+    if (isAdmin) {
+      groups.push({
+        id: "store",
+        title: pickLang(language, { ku: "وەزن ستۆر", en: "Wazn Store", ar: "متجر وزن", zh: "Wazn 商店" }),
+        icon: ShoppingBag,
+        color: "violet",
+        items: [
+          { icon: ShoppingBag, label: pickLang(language, { ku: "وەزن ستۆر", en: "Wazn Store", ar: "متجر وزن", zh: "Wazn 商店" }), path: "/store-management" },
+        ],
+      });
+    }
+
     // 2. Packages (full package / markup / self orders) - Employees — above operations
     if (isEmployee) {
       groups.push({
@@ -297,6 +311,7 @@ function DashboardLayoutContent({
         color: "blue",
         items: [
           { icon: Truck, label: t("nav.quickRegister") || "تۆمارکردنی خێرا", path: "/packages/quick-register" },
+          { icon: Ban, label: pickLang(language, { ku: "کەل و پەلی قەدەغە", en: "Prohibited items", ar: "البضائع الممنوعة", zh: "违禁物品" }), path: "/packages/prohibited-register" },
           { icon: Package, label: t("nav.allPackages") || "هەموو پاکەتەکان", path: "/packages/all" },
           { icon: ClipboardList, label: t("nav.bulkRegister") || "تۆماری کۆمەڵە", path: "/packages/bulk-register" },
           { icon: Layers, label: t("nav.batches") || "باچەکان", path: "/batches" },

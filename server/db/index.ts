@@ -12,6 +12,8 @@ export * from './reports.db';
 export * from './settings.db';
 export * from './portal.db';
 export * from './services.db';
+export * from './store.db';
+export * from './prohibited.db';
 export * from './deliveryBoxes.db';
 export * from './declaredPackages.db';
 export * from './portalCenter.db';

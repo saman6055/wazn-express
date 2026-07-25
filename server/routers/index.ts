@@ -18,6 +18,8 @@ import { scanningRouters } from "./scanning.router";
 import { servicesRouters } from "./services.router";
 import { productAttributesRouter } from "./productAttributes.router";
 import { portalCenterRouter } from "./portalCenter.router";
+import { storeRouter } from "./store.router";
+import { prohibitedRouter } from "./prohibited.router";
 
 export const appRouter = router({
   ...adminRouters,
@@ -37,6 +39,8 @@ export const appRouter = router({
   ...servicesRouters,
   productAttributes: productAttributesRouter,
   portalCenter: portalCenterRouter,
+  store: storeRouter,
+  prohibited: prohibitedRouter,
 });
 
 export type AppRouter = typeof appRouter;

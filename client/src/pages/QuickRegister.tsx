@@ -752,6 +752,19 @@ export default function QuickRegister() {
           </div>
         )}
 
+        {/* Quick access: register a prohibited item (goes to its own fast flow) */}
+        <button
+          type="button"
+          onClick={() => setLocation("/packages/prohibited-register")}
+          className="mb-3 w-full flex items-center justify-between gap-3 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+        >
+          <span className="flex items-center gap-2.5 text-sm font-medium text-red-700 dark:text-red-300">
+            <AlertTriangle className="h-4 w-4" />
+            {pickLang(language, { ku: "کەلوپەلی قەدەغە؟ لێرەوە تۆماری بکە", en: "Prohibited item? Register it here", ar: "بضاعة ممنوعة؟ سجّلها من هنا", zh: "违禁物品？在此登记" })}
+          </span>
+          <ChevronDown className="h-4 w-4 -rotate-90 rtl:rotate-90 text-red-400" />
+        </button>
+
         {/* Professional Header with Stats */}
         <div className="mb-4">
           {/* Top Bar with Title and Stats */}

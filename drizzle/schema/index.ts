@@ -6,6 +6,8 @@ export * from "./invoices.schema";
 export * from "./fullPackage.schema";
 export * from "./settings.schema";
 export * from "./services.schema";
+export * from "./store.schema";
+export * from "./prohibited.schema";
 export * from "./notifications.schema";
 export * from "./admin.schema";
 export * from "./portalActivity.schema";

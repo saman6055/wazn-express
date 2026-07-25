@@ -200,12 +200,21 @@ const PortalGuide = lazy(() => import("./pages/portal/PortalGuide"));
 const PortalSecurity = lazy(() => import("./pages/portal/PortalSecurity"));
 const PortalFAQ = lazy(() => import("./pages/portal/PortalFAQ"));
 const PortalAbout = lazy(() => import("./pages/portal/PortalAbout"));
+const StoreHome = lazy(() => import("./pages/store/StoreHome"));
+const StoreProduct = lazy(() => import("./pages/store/StoreProduct"));
+const StoreManagement = lazy(() => import("./pages/StoreManagement"));
+const PortalProhibitedPackages = lazy(() => import("./pages/portal/PortalProhibitedPackages"));
+const ProhibitedRegister = lazy(() => import("./pages/ProhibitedRegister"));
 
 function Router() {
   return (
     <Suspense fallback={<LoadingSkeleton />}>
       <Switch>
         <Route path="/" component={Home} />
+        {/* Wazn Store — public storefront (no auth) + admin management */}
+        <Route path="/store" component={StoreHome} />
+        <Route path="/store/:slug" component={StoreProduct} />
+        <Route path="/store-management" component={StoreManagement} />
         <Route path="/dashboard" component={DashboardWrapper} />
         <Route path="/customers" component={Customers} />
         <Route path="/customers/:id" component={CustomerDetail} />
@@ -216,6 +225,7 @@ function Router() {
         <Route path="/self-orders" component={SelfOrders} />
         <Route path="/packages/quick-register" component={QuickRegister} />
         <Route path="/quick-register" component={QuickRegister} />
+        <Route path="/packages/prohibited-register" component={ProhibitedRegister} />
         <Route path="/packages/bulk-register" component={BulkRegister} />
         <Route path="/packages/unclaimed" component={UnclaimedPackages} />
         <Route path="/packages/claim-requests" component={ClaimRequests} />
@@ -328,6 +338,7 @@ function Router() {
         <Route path="/portal/invoice-reports" component={PortalInvoiceReports} />
         <Route path="/portal/yuan-exchange" component={PortalYuanExchange} />
         <Route path="/portal/prohibited-items" component={PortalProhibitedItems} />
+        <Route path="/portal/prohibited-packages" component={PortalProhibitedPackages} />
         <Route path="/portal/guide" component={PortalGuide} />
         <Route path="/portal/security" component={PortalSecurity} />
         <Route path="/portal/faq" component={PortalFAQ} />
