@@ -436,6 +436,10 @@ function ProhibitedTab({ p }: { p: (v: L) => string }) {
     onError: (e) => toast.error(e.message),
   });
   const statusMut = trpc.prohibited.setStatus.useMutation({ onSuccess: () => refetch(), onError: (e) => toast.error(e.message) });
+  const reverseFeeMut = trpc.prohibited.reverseFee.useMutation({
+    onSuccess: () => { toast.success(p({ ku: "کولفە گەڕێندرایەوە و لەسەر باڵانس لابرا", en: "Fee reversed and removed from balance", ar: "تم إلغاء الرسوم من الرصيد", zh: "费用已从余额中撤销" })); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
 
   const choiceLabel = (c: string | null) => c ? p(
     c === "return" ? { ku: "گەڕاندنەوە", en: "Return", ar: "إرجاع", zh: "退回" } :
@@ -493,7 +497,13 @@ function ProhibitedTab({ p }: { p: (v: L) => string }) {
                       <TableCell className="text-xs font-medium">{choiceLabel(d.resolutionChoice)}</TableCell>
                       <TableCell>
                         {d.chargedAt ? (
-                          <span className="text-xs font-semibold text-amber-600">${Number(d.feeUsd).toFixed(2)}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-semibold text-amber-600">${Number(d.feeUsd).toFixed(2)}</span>
+                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px] text-red-600 hover:text-red-700" disabled={reverseFeeMut.isPending}
+                              onClick={() => { if (confirm(p({ ku: "کولفە بگەڕێندرێتەوە و لەسەر باڵانس لابردرێت؟", en: "Reverse the fee and remove it from the balance?", ar: "إلغاء الرسوم وإزالتها من الرصيد؟", zh: "撤销费用并从余额中移除？" }))) reverseFeeMut.mutate({ id: d.id }); }}>
+                              {p({ ku: "گەڕاندنەوە", en: "Reverse", ar: "إلغاء", zh: "撤销" })}
+                            </Button>
+                          </div>
                         ) : d.resolutionChoice ? (
                           <div className="flex items-center gap-1">
                             <Input value={fees[d.id] ?? ""} onChange={(e) => setFees((f) => ({ ...f, [d.id]: e.target.value }))} className="h-7 w-16 text-xs" placeholder="$" />

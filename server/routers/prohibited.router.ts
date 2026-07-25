@@ -19,6 +19,33 @@ async function currentCustomerId(ctx: any): Promise<number | null> {
   return c?.id ?? null;
 }
 
+/** Reverse a charged prohibited fee: credit the balance back + void the fee
+ *  invoice (reverseCharge), clear the fee on the record, notify the customer.
+ *  Idempotent and safe to call whatever the current status is. */
+async function reverseProhibitedFee(record: any, staffId: number): Promise<number> {
+  if (!record.chargedAt || !record.ledgerTransactionId) return 0;
+  const amount = Number(record.feeUsd || 0);
+  await db.reverseCharge(
+    record.ledgerTransactionId,
+    `گەڕاندنەوەی کرێی کەل و پەلی قەدەغە - ${record.trackingNumber}`,
+    staffId,
+  );
+  await db.clearProhibitedFee(record.id);
+  await db.createCustomerNotification({
+    customerId: record.customerId,
+    type: "success",
+    title: "Fee reversed",
+    titleKu: "کولفە گەڕێندرایەوە",
+    titleAr: "تم إلغاء الرسوم",
+    message: `The $${amount.toFixed(2)} fee for ${record.trackingNumber} was removed from your balance.`,
+    messageKu: `کولفەی $${amount.toFixed(2)} بۆ ${record.trackingNumber} لەسەر باڵانسەکەت لابرا.`,
+    messageAr: `تمت إزالة رسوم $${amount.toFixed(2)} الخاصة بـ ${record.trackingNumber} من رصيدك.`,
+    relatedType: "payment",
+    actionUrl: "/portal/financial",
+  } as any).catch(() => null);
+  return amount;
+}
+
 export const prohibitedRouter = router({
   // ---- Staff: quick register ---------------------------------------------
   register: staffProcedure
@@ -112,6 +139,19 @@ export const prohibitedRouter = router({
       return updated;
     }),
 
+  // ---- Staff: reverse a charged fee directly -----------------------------
+  reverseFee: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const record = await db.getProhibitedPackageById(input.id);
+      if (!record) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
+      if (!record.chargedAt || !record.ledgerTransactionId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No fee to reverse" });
+      }
+      await reverseProhibitedFee(record, ctx.user.id);
+      return db.getProhibitedPackageById(input.id);
+    }),
+
   // ---- Staff: progress status --------------------------------------------
   setStatus: staffProcedure
     .input(z.object({ id: z.number(), status: z.enum(["pending", "chosen", "resolved", "cancelled"]) }))
@@ -119,32 +159,12 @@ export const prohibitedRouter = router({
       const record = await db.getProhibitedPackageById(input.id);
       if (!record) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
 
-      // Cancelling a charged item reverses the fee: reverseCharge credits the
-      // balance back AND cancels (voids) the fee invoice, keeping a reversing
-      // entry for the audit trail. Idempotent, so a repeat cancel is safe.
-      if (input.status === "cancelled" && record.chargedAt && record.ledgerTransactionId) {
+      // Cancelling a charged item reverses the fee automatically.
+      if (input.status === "cancelled") {
         try {
-          const amount = Number(record.feeUsd || 0);
-          await db.reverseCharge(
-            record.ledgerTransactionId,
-            `گەڕاندنەوەی کرێی کەل و پەلی قەدەغە - ${record.trackingNumber}`,
-            ctx.user.id,
-          );
-          await db.clearProhibitedFee(record.id);
-          await db.createCustomerNotification({
-            customerId: record.customerId,
-            type: "success",
-            title: "Fee reversed",
-            titleKu: "کولفە گەڕێندرایەوە",
-            titleAr: "تم إلغاء الرسوم",
-            message: `The $${amount.toFixed(2)} fee for ${record.trackingNumber} was removed from your balance.`,
-            messageKu: `کولفەی $${amount.toFixed(2)} بۆ ${record.trackingNumber} لەسەر باڵانسەکەت لابرا.`,
-            messageAr: `تمت إزالة رسوم $${amount.toFixed(2)} الخاصة بـ ${record.trackingNumber} من رصيدك.`,
-            relatedType: "payment",
-            actionUrl: "/portal/financial",
-          } as any).catch(() => null);
+          await reverseProhibitedFee(record, ctx.user.id);
         } catch (e) {
-          appLogger.error("[Prohibited] reverse charge failed", { id: record.id, err: String(e) });
+          appLogger.error("[Prohibited] reverse on cancel failed", { id: record.id, err: String(e) });
         }
       }
 
