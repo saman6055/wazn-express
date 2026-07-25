@@ -119,23 +119,20 @@ export const prohibitedRouter = router({
       const record = await db.getProhibitedPackageById(input.id);
       if (!record) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
 
-      // Cancelling a charged item reverses the fee — credit it back so the
-      // debt comes off the customer's balance.
-      if (input.status === "cancelled" && record.chargedAt && record.feeUsd && Number(record.feeUsd) > 0) {
-        const customer = await db.getCustomerById(record.customerId);
-        if (customer) {
-          const amount = Number(record.feeUsd);
-          await db.adjustCustomerBalance(
-            customer.id,
-            customer.customerCode,
-            amount,
-            "credit",
+      // Cancelling a charged item reverses the fee: reverseCharge credits the
+      // balance back AND cancels (voids) the fee invoice, keeping a reversing
+      // entry for the audit trail. Idempotent, so a repeat cancel is safe.
+      if (input.status === "cancelled" && record.chargedAt && record.ledgerTransactionId) {
+        try {
+          const amount = Number(record.feeUsd || 0);
+          await db.reverseCharge(
+            record.ledgerTransactionId,
             `گەڕاندنەوەی کرێی کەل و پەلی قەدەغە - ${record.trackingNumber}`,
             ctx.user.id,
           );
           await db.clearProhibitedFee(record.id);
           await db.createCustomerNotification({
-            customerId: customer.id,
+            customerId: record.customerId,
             type: "success",
             title: "Fee reversed",
             titleKu: "کولفە گەڕێندرایەوە",
@@ -146,6 +143,8 @@ export const prohibitedRouter = router({
             relatedType: "payment",
             actionUrl: "/portal/financial",
           } as any).catch(() => null);
+        } catch (e) {
+          appLogger.error("[Prohibited] reverse charge failed", { id: record.id, err: String(e) });
         }
       }
 
