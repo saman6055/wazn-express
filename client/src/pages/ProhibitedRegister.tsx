@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,19 @@ export default function ProhibitedRegister() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [lastCode, setLastCode] = useState<string | null>(null);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+
+  // Customer autocomplete — same live suggestions as Quick Register.
+  const { data: customers } = trpc.customers.list.useQuery();
+  const filteredCustomers = useMemo(() => {
+    if (!customers || !customerCode.trim()) return [];
+    const s = customerCode.toLowerCase();
+    return (customers as any[]).filter((c) =>
+      c.customerCode?.toLowerCase().includes(s) ||
+      c.fullName?.toLowerCase().includes(s) ||
+      c.mobileNumber?.includes(customerCode),
+    ).slice(0, 10);
+  }, [customers, customerCode]);
 
   const uploadMutation = trpc.storage.upload.useMutation();
   const registerMutation = trpc.prohibited.register.useMutation({
@@ -102,7 +115,33 @@ export default function ProhibitedRegister() {
 
             <div>
               <Label>{label({ ku: "کۆدی موشتەری", en: "Customer code", ar: "رمز العميل", zh: "客户代码" })} *</Label>
-              <Input value={customerCode} onChange={(e) => setCustomerCode(e.target.value)} className="mt-1.5 font-mono" placeholder="WZ-1024" />
+              <div className="relative mt-1.5">
+                <Input
+                  value={customerCode}
+                  onChange={(e) => { setCustomerCode(e.target.value); setShowCustomerDropdown(true); }}
+                  onFocus={() => setShowCustomerDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 150)}
+                  className="font-mono"
+                  placeholder="AZ002"
+                  autoComplete="off"
+                />
+                {showCustomerDropdown && filteredCustomers.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-popover border rounded-xl shadow-lg max-h-52 overflow-auto">
+                    {filteredCustomers.map((c: any) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="w-full px-4 py-2.5 text-sm text-start hover:bg-muted transition-colors"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => { setCustomerCode(c.customerCode || ""); setShowCustomerDropdown(false); }}
+                      >
+                        <span className="font-bold font-mono text-primary">{c.customerCode}</span>
+                        <span className="text-muted-foreground ms-2">— {c.fullName}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
