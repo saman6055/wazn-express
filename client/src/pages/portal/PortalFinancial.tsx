@@ -1,6 +1,6 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { lazy } from "react";
 // Lazy: only the active skin's chunk is downloaded (global admin setting).
 const ModernPortalFinancial = lazy(() => import("./modern/ModernPortalFinancial"));
@@ -25,8 +25,22 @@ import { StatementPdfButton } from "@/components/portal/StatementPdfButton";
 import { OrderBillingGroups } from "@/components/portal/OrderBillingGroups";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 
+// Deep-link a ledger transaction to the section it was raised for, so tapping a
+// row jumps straight to the relevant package/order/prohibited item.
+function txHref(tx: any): string | null {
+  switch (tx?.referenceType) {
+    case "service": return "/portal/prohibited-packages";
+    case "full_package":
+    case "purchase_request":
+    case "commission": return "/portal/full-package";
+    case "package": return "/portal/shipments";
+    default: return null;
+  }
+}
+
 function ClassicPortalFinancial() {
 const { t, language } = useLanguage();
+  const [, setLocation] = useLocation();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
@@ -556,13 +570,16 @@ const { t, language } = useLanguage();
               <div className="space-y-3">
                 {transactions.map((tx) => {
                   const colors = getTransactionColor(tx.transactionType, isDark);
+                  const href = txHref(tx);
                   return (
-                    <div 
-                      key={tx.id} 
+                    <div
+                      key={tx.id}
+                      onClick={() => { if (href) setLocation(href); }}
                       className={cn(
                         "rounded-2xl p-4 transition-all duration-300 hover:-translate-y-0.5",
-                        isDark 
-                          ? "bg-slate-800 hover:bg-slate-750" 
+                        href && "cursor-pointer",
+                        isDark
+                          ? "bg-slate-800 hover:bg-slate-750"
                           : "bg-white shadow-sm hover:shadow-lg"
                       )}
                     >
@@ -603,11 +620,11 @@ const { t, language } = useLanguage();
                             </button>
                           )}
                           <button
-                            onClick={() => setSelectedTransaction(tx.id)}
+                            onClick={(e) => { e.stopPropagation(); setSelectedTransaction(tx.id); }}
                             className={cn(
                               "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-                              isDark 
-                                ? "bg-slate-700 hover:bg-slate-600" 
+                              isDark
+                                ? "bg-slate-700 hover:bg-slate-600"
                                 : "bg-slate-100 hover:bg-slate-200"
                             )}
                             title={language === "ku" ? "داگرتنی وەسڵ" : "Download Receipt"}

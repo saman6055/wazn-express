@@ -83,7 +83,7 @@ export const prohibitedRouter = router({
       const customer = await db.getCustomerById(record.customerId);
       if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
 
-      const desc = `Prohibited package fee - ${record.trackingNumber}${record.resolutionChoice ? ` (${record.resolutionChoice})` : ""}`;
+      const desc = `کرێی خزمەتگوزاری کەل و پەلی قەدەغە - ${record.trackingNumber}${record.resolutionChoice ? ` (${record.resolutionChoice})` : ""}`;
       const { transaction } = await db.applyCharge(
         customer.id,
         customer.customerCode,
@@ -115,7 +115,40 @@ export const prohibitedRouter = router({
   // ---- Staff: progress status --------------------------------------------
   setStatus: staffProcedure
     .input(z.object({ id: z.number(), status: z.enum(["pending", "chosen", "resolved", "cancelled"]) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const record = await db.getProhibitedPackageById(input.id);
+      if (!record) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
+
+      // Cancelling a charged item reverses the fee — credit it back so the
+      // debt comes off the customer's balance.
+      if (input.status === "cancelled" && record.chargedAt && record.feeUsd && Number(record.feeUsd) > 0) {
+        const customer = await db.getCustomerById(record.customerId);
+        if (customer) {
+          const amount = Number(record.feeUsd);
+          await db.adjustCustomerBalance(
+            customer.id,
+            customer.customerCode,
+            amount,
+            "credit",
+            `گەڕاندنەوەی کرێی کەل و پەلی قەدەغە - ${record.trackingNumber}`,
+            ctx.user.id,
+          );
+          await db.clearProhibitedFee(record.id);
+          await db.createCustomerNotification({
+            customerId: customer.id,
+            type: "success",
+            title: "Fee reversed",
+            titleKu: "کولفە گەڕێندرایەوە",
+            titleAr: "تم إلغاء الرسوم",
+            message: `The $${amount.toFixed(2)} fee for ${record.trackingNumber} was removed from your balance.`,
+            messageKu: `کولفەی $${amount.toFixed(2)} بۆ ${record.trackingNumber} لەسەر باڵانسەکەت لابرا.`,
+            messageAr: `تمت إزالة رسوم $${amount.toFixed(2)} الخاصة بـ ${record.trackingNumber} من رصيدك.`,
+            relatedType: "payment",
+            actionUrl: "/portal/financial",
+          } as any).catch(() => null);
+        }
+      }
+
       const updated = await db.updateProhibitedStatus(input.id, input.status);
       if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
       return updated;

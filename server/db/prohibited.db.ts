@@ -86,6 +86,16 @@ export async function setProhibitedFee(id: number, feeUsd: string, ledgerTransac
   return getProhibitedPackageById(id);
 }
 
+/** Clear the fee after it has been reversed/credited back to the customer. */
+export async function clearProhibitedFee(id: number): Promise<ProhibitedPackage | null> {
+  const db = await getDb();
+  if (!db) return null;
+  await db.update(prohibitedPackages)
+    .set({ feeUsd: null, ledgerTransactionId: null, chargedAt: null })
+    .where(eq(prohibitedPackages.id, id));
+  return getProhibitedPackageById(id);
+}
+
 /** Admin listing with customer name/code, paginated + searchable. */
 export async function listProhibitedWithCustomer(input: {
   search?: string;
