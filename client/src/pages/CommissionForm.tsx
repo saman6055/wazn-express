@@ -472,7 +472,7 @@ export default function CommissionForm() {
           {/* Product Info — compact multi-column grid */}
           <Section icon={Package} title={pickLang(language, { ku: "زانیاری کاڵا", en: "Product info", ar: "معلومات المنتج", zh: "商品信息" })} hint={pickLang(language, { ku: "زانیاری کاڵاکە داخڵ بکە", en: "Enter the product details", ar: "أدخل تفاصيل المنتج", zh: "输入商品详情" })} accent="amber">
             <div className="space-y-3">
-              {/* Row 1: type / order# / tracking / link */}
+              {/* Row 1: type / order# / link / tracking — tracking sits directly under order# (2-col grid) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">{pickLang(language, { ku: "جۆری کاڵا *", en: "Product type *", ar: "نوع المنتج *", zh: "商品类型 *" })}</Label>
@@ -503,19 +503,6 @@ export default function CommissionForm() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center gap-1.5">
-                    <ScanBarcode className="h-3.5 w-3.5" />
-                    {pickLang(language, { ku: "تراکینگ نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "运单号" })} <span className="text-muted-foreground font-normal">{pickLang(language, { ku: "(ئیختیاری)", en: "(optional)", ar: "(اختياري)", zh: "（可选）" })}</span>
-                  </Label>
-                  <Input
-                    value={formData.trackingNumber}
-                    onChange={(e) => setFormData({ ...formData, trackingNumber: e.target.value })}
-                    placeholder={pickLang(language, { ku: "ئەگەر ئێستا بەردەستە، داخڵی بکە", en: "Enter it if available now", ar: "أدخله إن كان متاحاً الآن", zh: "如已有请输入" })}
-                    className={cn("h-10", filledCls(formData.trackingNumber))}
-                    dir="ltr"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs flex items-center gap-1.5">
                     <LinkIcon className="h-3.5 w-3.5" />
                     {pickLang(language, { ku: "لینکی کاڵا", en: "Product link", ar: "رابط المنتج", zh: "商品链接" })}
                   </Label>
@@ -524,6 +511,19 @@ export default function CommissionForm() {
                     onChange={(e) => setFormData({ ...formData, productLink: e.target.value })}
                     placeholder="https://..."
                     className={cn("h-10", filledCls(formData.productLink))}
+                    dir="ltr"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs flex items-center gap-1.5">
+                    <ScanBarcode className="h-3.5 w-3.5" />
+                    {pickLang(language, { ku: "تراکینگ نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "运单号" })} <span className="text-muted-foreground font-normal">{pickLang(language, { ku: "(ئیختیاری)", en: "(optional)", ar: "(اختياري)", zh: "（可选）" })}</span>
+                  </Label>
+                  <Input
+                    value={formData.trackingNumber}
+                    onChange={(e) => setFormData({ ...formData, trackingNumber: e.target.value })}
+                    placeholder={pickLang(language, { ku: "ئەگەر ئێستا بەردەستە، داخڵی بکە", en: "Enter it if available now", ar: "أدخله إن كان متاحاً الآن", zh: "如已有请输入" })}
+                    className={cn("h-10", filledCls(formData.trackingNumber))}
                     dir="ltr"
                   />
                 </div>
