@@ -12,6 +12,7 @@ import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import QueryErrorBoundary from "./components/QueryErrorBoundary";
 import { MutationToastHandler } from "./components/MutationToastHandler";
 import { OfflineProvider } from "./contexts/OfflineContext";
+import { PortalHistoryProvider } from "./contexts/PortalHistoryContext";
 import { FastEntry } from "./components/FastEntry";
 
 // Lazy: StaffTips drags a large tips-content module; keep it out of the entry chunk.
@@ -363,7 +364,9 @@ function App() {
                 <MutationToastHandler />
                 <OfflineIndicator />
                 <QueryErrorBoundary>
-                  <Router />
+                  <PortalHistoryProvider>
+                    <Router />
+                  </PortalHistoryProvider>
                 </QueryErrorBoundary>
                 <Suspense fallback={null}>
                   <StaffTips />

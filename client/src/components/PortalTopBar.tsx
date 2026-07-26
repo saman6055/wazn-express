@@ -2,6 +2,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import CompanyLogo from "@/components/CompanyLogo";
+import { PortalNavButtons } from "@/components/PortalNavButtons";
 import { cn } from "@/lib/utils";
 
 /**
@@ -42,6 +43,7 @@ export function PortalTopBar() {
         >
           {name}
         </span>
+        <PortalNavButtons className="ms-auto" />
       </div>
     </div>
   );

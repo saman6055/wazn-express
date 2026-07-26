@@ -10,6 +10,7 @@ import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSuppor
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { Input } from "@/components/ui/input";
 import CompanyLogo from "@/components/CompanyLogo";
+import { PortalNavButtons } from "@/components/PortalNavButtons";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 import { DeclarePackageBanner } from "@/components/portal/DeclarePackageBanner";
 import { NewsTicker } from "@/components/portal/NewsTicker";
@@ -209,6 +210,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         <div className="max-w-lg mx-auto px-3 py-2 flex items-center gap-2">
           {/* Company logo (uploaded in Settings) at the leading edge */}
           <CompanyLogo size={36} className="shrink-0" />
+          <PortalNavButtons />
           <form onSubmit={handleSearchSubmit} className="flex-1">
             <div className="relative">
               <Search className={cn(
