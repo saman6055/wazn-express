@@ -60,7 +60,7 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
   return (
     <div
       className={cn(
-        "min-h-screen transition-colors duration-300",
+        "portal-theme min-h-screen transition-colors duration-300",
         isDark ? "bg-zinc-950" : "bg-amber-50/50",
         isRTL && "rtl",
         isInstalled ? "pb-32" : "pb-28"

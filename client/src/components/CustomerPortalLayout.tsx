@@ -190,7 +190,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     <div
       dir={isRTL ? "rtl" : "ltr"}
       className={cn(
-        "min-h-screen transition-colors duration-300",
+        "portal-theme min-h-screen transition-colors duration-300",
         isDark ? "bg-slate-900" : "bg-slate-50",
         isRTL && "rtl",
         // Bottom room so content (incl. the in-flow news ticker) clears the

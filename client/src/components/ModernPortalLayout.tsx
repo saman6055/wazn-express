@@ -60,7 +60,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
   return (
     <div
       className={cn(
-        "min-h-screen transition-colors duration-300",
+        "portal-theme min-h-screen transition-colors duration-300",
         isDark ? "bg-zinc-950" : "bg-gray-50",
         isRTL && "rtl",
         isInstalled ? "pb-28" : "pb-24"

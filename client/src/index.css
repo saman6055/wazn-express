@@ -58,6 +58,37 @@
   --font-sans: "Rudaw", "Inter", system-ui, sans-serif;
 }
 
+/* Portal navy theme — remap the whole indigo/violet/purple/fuchsia family to a
+   single cohesive navy→blue→ice scale, scoped to `.portal-theme` (the portal
+   layouts) so only the customer portal recolours, not the staff/admin UI.
+   Palette anchors: #BDE8F5 (ice) · #4988C4 (light) · #1C4D8D (blue) · #0F2854
+   (navy). Works because Tailwind v4 emits `var(--color-*)` for these utilities. */
+.portal-theme {
+  --navy-50: #EFF6FB;  --navy-100: #D6EAF6; --navy-200: #BDE8F5; --navy-300: #93CCE8;
+  --navy-400: #6BA6D2; --navy-500: #4988C4; --navy-600: #2E6BA8; --navy-700: #1C4D8D;
+  --navy-800: #143C6E; --navy-900: #0F2854; --navy-950: #0A1B3A;
+
+  --color-indigo-50: var(--navy-50);   --color-indigo-100: var(--navy-100); --color-indigo-200: var(--navy-200);
+  --color-indigo-300: var(--navy-300); --color-indigo-400: var(--navy-400); --color-indigo-500: var(--navy-500);
+  --color-indigo-600: var(--navy-600); --color-indigo-700: var(--navy-700); --color-indigo-800: var(--navy-800);
+  --color-indigo-900: var(--navy-900); --color-indigo-950: var(--navy-950);
+
+  --color-violet-50: var(--navy-50);   --color-violet-100: var(--navy-100); --color-violet-200: var(--navy-200);
+  --color-violet-300: var(--navy-300); --color-violet-400: var(--navy-400); --color-violet-500: var(--navy-500);
+  --color-violet-600: var(--navy-600); --color-violet-700: var(--navy-700); --color-violet-800: var(--navy-800);
+  --color-violet-900: var(--navy-900); --color-violet-950: var(--navy-950);
+
+  --color-purple-50: var(--navy-50);   --color-purple-100: var(--navy-100); --color-purple-200: var(--navy-200);
+  --color-purple-300: var(--navy-300); --color-purple-400: var(--navy-400); --color-purple-500: var(--navy-500);
+  --color-purple-600: var(--navy-600); --color-purple-700: var(--navy-700); --color-purple-800: var(--navy-800);
+  --color-purple-900: var(--navy-900); --color-purple-950: var(--navy-950);
+
+  --color-fuchsia-50: var(--navy-50);   --color-fuchsia-100: var(--navy-100); --color-fuchsia-200: var(--navy-200);
+  --color-fuchsia-300: var(--navy-300); --color-fuchsia-400: var(--navy-400); --color-fuchsia-500: var(--navy-500);
+  --color-fuchsia-600: var(--navy-600); --color-fuchsia-700: var(--navy-700); --color-fuchsia-800: var(--navy-800);
+  --color-fuchsia-900: var(--navy-900); --color-fuchsia-950: var(--navy-950);
+}
+
 :root {
   /* Deep teal/navy for logistics professionalism */
   --primary: oklch(0.45 0.12 220);
