@@ -69,6 +69,8 @@ export async function getRatablePackage(customerId: number) {
       trackingNumber: packages.trackingNumber,
       packageCode: packages.packageCode,
       deliveredAt: packages.deliveredAt,
+      description: packages.description,
+      photos: packages.photos,
     })
     .from(packages)
     .leftJoin(deliveryRatings, eq(deliveryRatings.packageId, packages.id))
