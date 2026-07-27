@@ -202,6 +202,12 @@ function ServiceCard({
     ar: service.nameAr, zh: service.nameZh,
   }, lang) ?? service.nameEn;
 
+  // The Yuan service is covered by the dedicated Yuan exchange page, so its
+  // card becomes a shortcut there instead of a static (redundant) service.
+  const nm = [service.nameKu, service.nameEn, service.nameAr, service.nameZh]
+    .filter(Boolean).join(" ").toLowerCase();
+  const isYuan = nm.includes("یوان") || nm.includes("يوان") || nm.includes("yuan") || nm.includes("rmb") || nm.includes("人民币");
+
   const description = pickLocalized({
     ku: service.portalDescriptionKu, en: service.portalDescriptionEn,
     ar: service.portalDescriptionAr, zh: service.portalDescriptionZh,
@@ -215,12 +221,13 @@ function ServiceCard({
   const price = Number(service.defaultPrice ?? 0);
   const rmbValue = rmbRate ? (price * rmbRate) : null;
 
-  return (
+  const card = (
     <div className={cn(
       "relative overflow-hidden rounded-2xl p-5 border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group",
       isDark
         ? "bg-slate-800 border-slate-700 hover:border-slate-600"
         : "bg-white border-slate-200 hover:border-slate-300 shadow-sm",
+      isYuan && "cursor-pointer",
     )}>
       {service.portalBadge && (
         <div className="absolute top-3 end-3">
@@ -269,7 +276,12 @@ function ServiceCard({
         "flex items-baseline gap-1.5 pt-3 mt-3 border-t",
         isDark ? "border-slate-700" : "border-slate-100",
       )}>
-        {price > 0 ? (
+        {isYuan ? (
+          <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-500">
+            {pickLang(lang, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "买人民币" })}
+            <ChevronDown className="w-4 h-4 -rotate-90 rtl:rotate-90" />
+          </span>
+        ) : price > 0 ? (
           <>
             <span className={cn(
               "text-2xl font-black tracking-tight",
@@ -300,6 +312,10 @@ function ServiceCard({
       </div>
     </div>
   );
+
+  return isYuan
+    ? <Link href="/portal/yuan-exchange" className="block">{card}</Link>
+    : card;
 }
 
 // ---------------------------------------------------------------------------
