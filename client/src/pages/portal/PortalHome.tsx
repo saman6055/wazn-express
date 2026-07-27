@@ -281,49 +281,53 @@ const { t, language } = useLanguage();
   );
 
   // Quick Actions
+  // One cohesive navy→blue palette for every tile so the grid reads as a set,
+  // not a clashing rainbow. (#4988C4 → #1C4D8D from the portal palette.)
+  const tileColor = "from-[#4988C4] to-[#1C4D8D]";
+  const tileShadow = "shadow-[#1C4D8D]/40";
   const quickActions = [
     {
       icon: Search,
       label: t("portal.track"),
       href: "/portal/search",
-      color: "from-blue-500 to-blue-600",
-      shadowColor: "shadow-blue-500/30"
+      color: tileColor,
+      shadowColor: tileShadow,
     },
     {
       icon: AlertTriangle,
       label: language === "ku" ? "بێ خاوەن" : "Unclaimed",
       href: "/portal/no-mark",
-      color: "from-orange-500 to-orange-600",
-      shadowColor: "shadow-orange-500/30"
+      color: tileColor,
+      shadowColor: tileShadow,
     },
     {
       icon: PackagePlus,
       label: pickLang(language, { ku: "تۆماری تراک", en: "Register tracking", ar: "تسجيل التتبع", zh: "登记运单" }),
       href: "/portal/declare",
-      color: "from-teal-500 to-teal-600",
-      shadowColor: "shadow-teal-500/30"
+      color: tileColor,
+      shadowColor: tileShadow,
     },
     {
       icon: CreditCard,
       label: t("portal.pay"),
       href: "/portal/financial",
-      color: "from-emerald-500 to-emerald-600",
-      shadowColor: "shadow-emerald-500/30"
+      color: tileColor,
+      shadowColor: tileShadow,
     },
     {
       icon: FileText,
       label: t("portal.request"),
       href: "/portal/full-package",
-      color: "from-amber-500 to-amber-600",
-      shadowColor: "shadow-amber-500/30"
+      color: tileColor,
+      shadowColor: tileShadow,
     },
     {
       icon: YuanIcon,
       label: pickLang(language, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "购买人民币" }),
       href: "/portal/yuan-exchange",
-      color: "from-red-500 to-rose-600",
-      shadowColor: "shadow-red-500/30"
-    }
+      color: tileColor,
+      shadowColor: tileShadow,
+    },
   ];
 
   return (
@@ -334,14 +338,14 @@ const { t, language } = useLanguage();
           "absolute inset-0",
           isDark
             ? "bg-[#07070f]"
-            : "bg-gradient-to-br from-indigo-600 via-violet-600 to-blue-700"
+            : "bg-gradient-to-br from-[#0F2854] via-[#1C4D8D] to-[#4988C4]"
         )} />
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
         
         {/* Aurora glow orbs */}
-        <div className="absolute -top-16 -right-10 w-64 h-64 rounded-full" style={{ background: "radial-gradient(circle, rgba(124,58,237,0.55) 0%, transparent 68%)" }} />
-        <div className="absolute top-16 -left-20 w-60 h-60 rounded-full" style={{ background: "radial-gradient(circle, rgba(37,99,235,0.45) 0%, transparent 70%)" }} />
-        <div className="absolute -bottom-10 right-0 w-56 h-56 rounded-full" style={{ background: "radial-gradient(circle, rgba(219,39,119,0.40) 0%, transparent 70%)" }} />
+        <div className="absolute -top-16 -right-10 w-64 h-64 rounded-full" style={{ background: "radial-gradient(circle, rgba(73,136,196,0.55) 0%, transparent 68%)" }} />
+        <div className="absolute top-16 -left-20 w-60 h-60 rounded-full" style={{ background: "radial-gradient(circle, rgba(28,77,141,0.50) 0%, transparent 70%)" }} />
+        <div className="absolute -bottom-10 right-0 w-56 h-56 rounded-full" style={{ background: "radial-gradient(circle, rgba(189,232,245,0.30) 0%, transparent 70%)" }} />
         
         <div className="relative px-5 pt-14 pb-12">
           {/* Top Row */}
@@ -358,10 +362,10 @@ const { t, language } = useLanguage();
                 <Skeleton className="h-8 w-40 bg-white/20" />
               ) : (
                 <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <span className="bg-gradient-to-l from-white via-violet-100 to-fuchsia-200 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-l from-white via-[#BDE8F5] to-[#4988C4] bg-clip-text text-transparent">
                     {account?.fullName || account?.customerCode}
                   </span>
-                  <Sparkles className="w-5 h-5 text-amber-300" />
+                  <Sparkles className="w-5 h-5 text-[#BDE8F5]" />
                 </h1>
               )}
             </div>
@@ -391,9 +395,9 @@ const { t, language } = useLanguage();
 
           {/* Customer Code Badge */}
           {account?.customerCode && (
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
-              <Package className="w-4 h-4 text-amber-400" />
-              <span className="text-sm font-semibold text-amber-300">{account.customerCode}</span>
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#BDE8F5]/15 to-[#4988C4]/20 border border-[#BDE8F5]/30 px-4 py-2 rounded-full backdrop-blur-sm">
+              <Package className="w-4 h-4 text-[#BDE8F5]" />
+              <span className="text-sm font-semibold text-[#BDE8F5]">{account.customerCode}</span>
             </div>
           )}
 
@@ -401,7 +405,7 @@ const { t, language } = useLanguage();
           <div className="mt-6 grid grid-cols-3 gap-2.5">
             {quickActions.map((action, index) => (
               <Link key={index} href={action.href}>
-                <button className="w-full h-full flex flex-col items-start gap-2.5 rounded-2xl p-3 bg-white/10 border border-white/15 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-0.5 active:scale-[0.98]">
+                <button className="w-full h-full flex flex-col items-start gap-2.5 rounded-2xl p-3 bg-white/10 border border-[#BDE8F5]/20 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-0.5 active:scale-[0.98]">
                   <div className={cn(
                     "w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg",
                     action.color,
@@ -424,9 +428,9 @@ const { t, language } = useLanguage();
         <Link href="/portal/financial">
           <div className={cn(
             "rounded-2xl p-5 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer",
-            hasDebt 
-              ? "bg-gradient-to-br from-red-500 to-rose-600 shadow-red-500/30" 
-              : "bg-gradient-to-br from-violet-600 to-indigo-600 shadow-violet-500/30"
+            hasDebt
+              ? "bg-gradient-to-br from-red-500 to-rose-600 shadow-red-500/30"
+              : "bg-gradient-to-br from-[#1C4D8D] to-[#4988C4] shadow-[#1C4D8D]/40"
           )}>
             <div className="flex items-center justify-between">
               <div>
