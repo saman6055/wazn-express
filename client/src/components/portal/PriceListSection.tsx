@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -755,12 +755,6 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
 
   type TabKey = "shipping" | "services" | "calculator" | "guide";
   const [activeTab, setActiveTab] = useState<TabKey>("shipping");
-  // Tabs the customer has opened — an unvisited tab keeps a gentle "explore me"
-  // pulse until it's opened once, so they discover the calculator/guide tabs.
-  const [visited, setVisited] = useState<Set<TabKey>>(() => new Set());
-  useEffect(() => {
-    setVisited((v) => (v.has(activeTab) ? v : new Set(v).add(activeTab)));
-  }, [activeTab]);
 
   const title = useMemo(() => {
     if (!data?.settings) return t("priceList.defaultTitle");
@@ -823,15 +817,14 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
   const canShipping = !!data.settings.showShippingRates && hasShipping;
   const canServices = !!data.settings.showServices && hasServices;
 
-  // Unified tab set for the "tabs" layout. The calculator + methods guide ride
-  // alongside shipping (they describe the shipping options), each with its own
-  // colour so the bar is lively and clearly "there's more here".
+  // Unified tab set for the "tabs" layout — short labels so all four fit one
+  // row with no horizontal scroll. Neutral Chrome-style styling (see the bar).
   const tabDefs = ([
-    canShipping && { key: "shipping" as TabKey, label: t("priceList.shipping"), Icon: Plane, grad: "from-blue-600 to-indigo-700", dot: "bg-blue-500", text: "text-blue-600 dark:text-blue-400" },
-    canServices && { key: "services" as TabKey, label: t("priceList.services"), Icon: Wrench, grad: "from-teal-500 to-emerald-600", dot: "bg-teal-500", text: "text-teal-600 dark:text-teal-400" },
-    canShipping && { key: "calculator" as TabKey, label: pickLang(language, { ku: "حیسابکەری نرخ", en: "Calculator", ar: "الحاسبة", zh: "计算器" }), Icon: Calculator, grad: "from-violet-600 to-purple-700", dot: "bg-violet-500", text: "text-violet-600 dark:text-violet-400" },
-    canShipping && { key: "guide" as TabKey, label: pickLang(language, { ku: "ڕێگاکانی گواستنەوە", en: "Methods", ar: "طرق الشحن", zh: "运输方式" }), Icon: Info, grad: "from-sky-500 to-cyan-600", dot: "bg-sky-500", text: "text-sky-600 dark:text-sky-400" },
-  ].filter(Boolean)) as { key: TabKey; label: string; Icon: typeof Plane; grad: string; dot: string; text: string }[];
+    canShipping && { key: "shipping" as TabKey, label: pickLang(language, { ku: "تێچووەکان", en: "Costs", ar: "التكاليف", zh: "费用" }), Icon: Plane },
+    canServices && { key: "services" as TabKey, label: t("priceList.services"), Icon: Wrench },
+    canShipping && { key: "calculator" as TabKey, label: pickLang(language, { ku: "نرخاندن", en: "Pricing", ar: "التسعير", zh: "定价" }), Icon: Calculator },
+    canShipping && { key: "guide" as TabKey, label: pickLang(language, { ku: "گواستنەوە", en: "Shipping", ar: "الشحن", zh: "运输" }), Icon: Info },
+  ].filter(Boolean)) as { key: TabKey; label: string; Icon: typeof Plane }[];
   const activeTabKey: TabKey = tabDefs.some((d) => d.key === activeTab) ? activeTab : (tabDefs[0]?.key ?? "shipping");
 
   return (
@@ -893,73 +886,63 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
       </div>
 
       {layoutVariant === "tabs" ? (
-        // Tabs variant: one colourful bar with every section (shipping, services,
-        // calculator, methods guide). Unvisited tabs pulse until opened.
+        // Tabs variant — Chrome-style bar: neutral tabs that fill the width (no
+        // scroll), the active one sharing the content panel's surface so they
+        // merge like a browser tab into its page.
         <>
           {tabDefs.length > 1 && (
             <div className={cn(
-              "flex gap-1 overflow-x-auto mb-4 border-b",
-              isDark ? "border-slate-700" : "border-slate-200",
+              "flex gap-1 px-1.5 pt-1.5 rounded-t-xl overflow-hidden",
+              isDark ? "bg-slate-800" : "bg-slate-200",
             )}>
               {tabDefs.map((d) => {
                 const isActive = d.key === activeTabKey;
-                const flash = !isActive && !visited.has(d.key);
                 return (
                   <button
                     key={d.key}
                     onClick={() => setActiveTab(d.key)}
                     className={cn(
-                      // Chrome-style tab: rounded top, active surface merges into
-                      // the content by covering the strip's bottom border (-mb-px).
-                      "relative -mb-px flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl text-[13px] font-semibold whitespace-nowrap transition-colors shrink-0 border border-b-0",
+                      "flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-t-lg text-[13px] font-medium transition-colors",
                       isActive
-                        ? (isDark ? "bg-slate-900 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900")
-                        : (isDark ? "border-transparent text-slate-400 hover:bg-slate-800/50" : "border-transparent text-slate-500 hover:bg-slate-100"),
+                        ? (isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900")
+                        : (isDark ? "text-slate-400 hover:bg-slate-700/50" : "text-slate-600 hover:bg-slate-100/70"),
                     )}
                   >
-                    {/* Coloured accent along the top edge of the active tab */}
-                    {isActive && (
-                      <span className={cn("absolute top-0 inset-x-3 h-[3px] rounded-full bg-gradient-to-r", d.grad)} />
-                    )}
-                    <d.Icon className={cn("w-4 h-4", isActive && d.text)} />
-                    {d.label}
-                    {flash && (
-                      <span className="absolute top-1.5 end-2 flex h-2 w-2">
-                        <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping", d.dot)} />
-                        <span className={cn("relative inline-flex h-2 w-2 rounded-full", d.dot)} />
-                      </span>
-                    )}
+                    <d.Icon className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{d.label}</span>
                   </button>
                 );
               })}
             </div>
           )}
 
-          {activeTabKey === "shipping" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {data.shipping.map((rate: any) => (
-                <ShippingRateCard key={rate.id} rate={rate} lang={language} t={t}
-                  showRmb={showRmb} showIqd={showIqd} rmbRate={rmbRate} iqdRate={iqdRate} isDark={isDark} />
-              ))}
-            </div>
-          )}
-          {activeTabKey === "services" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {data.services.map((service: any) => (
-                <ServiceCard key={service.id} service={service} lang={language} t={t}
-                  showRmb={showRmb} rmbRate={rmbRate} isDark={isDark} />
-              ))}
-            </div>
-          )}
-          {activeTabKey === "calculator" && (
-            <PriceCalculator
-              shipping={data.shipping} lang={language} isDark={isDark}
-              showIqd={showIqd} iqdRate={iqdRate} calc={(data as any).calc ?? DEFAULT_CALC} violet
-            />
-          )}
-          {activeTabKey === "guide" && (
-            <ShippingMethodsGuide lang={language} isDark={isDark} embedded />
-          )}
+          <div className={tabDefs.length > 1 ? cn("p-3.5 mb-4 rounded-b-xl", isDark ? "bg-slate-900" : "bg-white") : undefined}>
+            {activeTabKey === "shipping" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {data.shipping.map((rate: any) => (
+                  <ShippingRateCard key={rate.id} rate={rate} lang={language} t={t}
+                    showRmb={showRmb} showIqd={showIqd} rmbRate={rmbRate} iqdRate={iqdRate} isDark={isDark} />
+                ))}
+              </div>
+            )}
+            {activeTabKey === "services" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {data.services.map((service: any) => (
+                  <ServiceCard key={service.id} service={service} lang={language} t={t}
+                    showRmb={showRmb} rmbRate={rmbRate} isDark={isDark} />
+                ))}
+              </div>
+            )}
+            {activeTabKey === "calculator" && (
+              <PriceCalculator
+                shipping={data.shipping} lang={language} isDark={isDark}
+                showIqd={showIqd} iqdRate={iqdRate} calc={(data as any).calc ?? DEFAULT_CALC} violet
+              />
+            )}
+            {activeTabKey === "guide" && (
+              <ShippingMethodsGuide lang={language} isDark={isDark} embedded />
+            )}
+          </div>
         </>
       ) : (
         // Stacked / compact variants keep the previous behaviour.
