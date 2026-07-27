@@ -10,7 +10,7 @@ import { trpc } from "@/lib/trpc";
 import {
   Package, Bell, ChevronRight, Truck, CheckCircle, Clock,
   AlertCircle, Plane, Ship, Megaphone, TrendingUp, Search,
-  CreditCard, MessageCircle, FileText, Wallet, DollarSign,
+  CreditCard, MessageCircle, FileText, DollarSign,
   Sun, Moon, Sparkles, AlertTriangle, PackagePlus
 } from "lucide-react";
 import { pickLang } from "@/lib/lang";
@@ -429,7 +429,7 @@ const { t, language } = useLanguage();
           <div className={cn(
             "rounded-2xl p-5 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer",
             hasDebt
-              ? "bg-gradient-to-br from-red-500 to-rose-600 shadow-red-500/30"
+              ? "bg-gradient-to-br from-[#d97706] to-[#b45309] shadow-[#b45309]/40"
               : "bg-gradient-to-br from-[#1C4D8D] to-[#4988C4] shadow-[#1C4D8D]/40"
           )}>
             <div className="flex items-center justify-between">
@@ -444,15 +444,12 @@ const { t, language } = useLanguage();
                   ${Math.abs(balance).toFixed(2)}
                 </p>
               </div>
-              <div className={cn(
-                "w-14 h-14 rounded-2xl flex items-center justify-center",
-                hasDebt ? "bg-white/20" : "bg-white/20"
-              )}>
-                {hasDebt ? (
-                  <DollarSign className="w-7 h-7 text-white" />
-                ) : (
-                  <Wallet className="w-7 h-7 text-white" />
-                )}
+              {/* Dollar sign flashes red when in debt, green when clear/credit. */}
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white shadow-md">
+                <DollarSign className={cn(
+                  "w-7 h-7 animate-pulse",
+                  hasDebt ? "text-red-600" : "text-emerald-600",
+                )} />
               </div>
             </div>
             {hasDebt && (
