@@ -80,7 +80,7 @@ export function NewsTicker({ language }: { language: string }) {
           // In-flow (not fixed): the strip lives at the very bottom of the page
           // content, so it only comes into view when the reader scrolls to the
           // end — never a permanently-moving band competing for attention.
-          "relative w-full h-9 overflow-hidden bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-md cursor-pointer",
+          "relative w-full h-9 overflow-hidden bg-gradient-to-r from-[#1C4D8D] to-[#4988C4] text-white shadow-md cursor-pointer",
         )}
         dir="ltr"
       >
