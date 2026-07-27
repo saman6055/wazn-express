@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -329,7 +329,7 @@ const SHIPPING_TYPE_NAMES: Record<string, { ku: string; en: string; ar: string; 
 };
 
 function PriceCalculator({
-  shipping, lang, isDark, showIqd, iqdRate, calc = DEFAULT_CALC,
+  shipping, lang, isDark, showIqd, iqdRate, calc = DEFAULT_CALC, violet = false,
 }: {
   shipping: any[];
   lang: string;
@@ -337,6 +337,8 @@ function PriceCalculator({
   showIqd: boolean;
   iqdRate: number | null;
   calc?: CalcSettings;
+  /** Violet gradient card used when embedded as a tab (see PriceListSection). */
+  violet?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [weight, setWeight] = useState("");   // air: actual kg
@@ -374,6 +376,12 @@ function PriceCalculator({
     pickLocalized({ ku: r.portalLabelKu, en: r.portalLabelEn, ar: r.portalLabelAr, zh: r.portalLabelZh }, lang)
       ?? (SHIPPING_TYPE_NAMES[r.shippingType] ? pickLang(lang, SHIPPING_TYPE_NAMES[r.shippingType]) : r.shippingType);
 
+  // Muted label color — flips for the violet (embedded) card so text stays legible.
+  const muted = violet ? "text-purple-100/80" : isDark ? "text-slate-400" : "text-slate-500";
+  const strong = violet ? "text-purple-50" : isDark ? "text-slate-300" : "text-slate-600";
+  const accent = violet ? "text-amber-200" : "text-amber-500";
+  const inputCls = violet ? "bg-white/15 border-white/25 text-white placeholder:text-white/50" : (isDark ? "bg-slate-900 border-slate-600" : "");
+
   const dimInput = (value: string, set: (v: string) => void, label: string) => (
     <div className="relative">
       <Input
@@ -382,9 +390,9 @@ function PriceCalculator({
         value={value}
         onChange={(e) => set(e.target.value)}
         placeholder="0"
-        className={cn("pe-9 font-mono font-bold text-center", isDark && "bg-slate-900 border-slate-600")}
+        className={cn("pe-9 font-mono font-bold text-center", inputCls)}
       />
-      <span className={cn("absolute end-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>
+      <span className={cn("absolute end-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>
         {label}
       </span>
     </div>
@@ -392,18 +400,20 @@ function PriceCalculator({
 
   return (
     <div className={cn(
-      "mt-4 rounded-2xl border p-4 sm:p-5",
-      isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 shadow-sm",
+      "rounded-2xl p-4 sm:p-5",
+      violet
+        ? "bg-gradient-to-br from-violet-600 via-purple-700 to-fuchsia-700 text-white shadow-lg"
+        : cn("mt-4 border", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 shadow-sm"),
     )}>
       <div className="flex items-center gap-2 mb-3">
-        <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+        <div className={cn("p-2 rounded-xl text-white shadow-md", violet ? "bg-white/20 backdrop-blur-sm" : "bg-gradient-to-br from-emerald-500 to-teal-600")}>
           <Calculator className="w-4 h-4" />
         </div>
         <div>
-          <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-900")}>
+          <h3 className={cn("text-sm font-bold", violet ? "text-white" : isDark ? "text-white" : "text-slate-900")}>
             {pickLang(lang, { ku: "حیسابکەری نرخ", en: "Price calculator", ar: "حاسبة السعر", zh: "价格计算器" })}
           </h3>
-          <p className={cn("text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
+          <p className={cn("text-[11px]", muted)}>
             {pickLang(lang, { ku: "کێش یان درێژی×پانی×بەرزی بنووسە، نرخی خەمڵێنراو ببینە", en: "Enter weight or L×W×H to estimate the cost", ar: "أدخل الوزن أو الطول×العرض×الارتفاع لتقدير التكلفة", zh: "输入重量或长×宽×高以估算费用" })}
           </p>
         </div>
@@ -419,9 +429,11 @@ function PriceCalculator({
               onClick={() => setSelectedId(r.id)}
               className={cn(
                 "px-3.5 py-2 rounded-full text-xs font-bold transition-colors",
-                active
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : isDark ? "bg-slate-700 text-slate-300 hover:bg-slate-600" : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                violet
+                  ? (active ? "bg-white text-purple-700 shadow-sm" : "bg-white/15 text-white hover:bg-white/25")
+                  : active
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : isDark ? "bg-slate-700 text-slate-300 hover:bg-slate-600" : "bg-slate-100 text-slate-600 hover:bg-slate-200",
               )}
             >
               {typeLabel(r)}
@@ -440,9 +452,9 @@ function PriceCalculator({
               value={cbmDirect}
               onChange={(e) => setCbmDirect(e.target.value)}
               placeholder="0.25"
-              className={cn("pe-10 font-mono font-bold", isDark && "bg-slate-900 border-slate-600")}
+              className={cn("pe-10 font-mono font-bold", inputCls)}
             />
-            <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>m³</span>
+            <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>m³</span>
           </div>
         ) : (
           <div className="relative col-span-2 sm:col-span-1">
@@ -452,16 +464,16 @@ function PriceCalculator({
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="1.0"
-              className={cn("pe-10 font-mono font-bold", isDark && "bg-slate-900 border-slate-600")}
+              className={cn("pe-10 font-mono font-bold", inputCls)}
             />
-            <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", isDark ? "text-slate-400" : "text-slate-500")}>kg</span>
+            <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>kg</span>
           </div>
         )}
         {dimInput(len, setLen, pickLang(lang, { ku: "درێژی", en: "L", ar: "طول", zh: "长" }))}
         {dimInput(wid, setWid, pickLang(lang, { ku: "پانی", en: "W", ar: "عرض", zh: "宽" }))}
         {dimInput(hei, setHei, pickLang(lang, { ku: "بەرزی", en: "H", ar: "ارتفاع", zh: "高" }))}
       </div>
-      <p className={cn("mt-1.5 text-[10px]", isDark ? "text-slate-500" : "text-slate-400")}>
+      <p className={cn("mt-1.5 text-[10px]", violet ? "text-purple-100/70" : isDark ? "text-slate-500" : "text-slate-400")}>
         {isSea
           ? pickLang(lang, { ku: "درێژی/پانی/بەرزی بە سانتیمەتر — یان ڕاستەوخۆ m³ بنووسە", en: "L/W/H in centimeters — or enter m³ directly", ar: "الأبعاد بالسنتيمتر — أو أدخل m³ مباشرة", zh: "长/宽/高以厘米为单位——或直接输入 m³" })
           : pickLang(lang, { ku: `درێژی/پانی/بەرزی بە سانتیمەتر بۆ کێشی قەبارەیی (÷${calc.volumetricDivisor})`, en: `L/W/H in centimeters for volumetric weight (÷${calc.volumetricDivisor})`, ar: `الأبعاد بالسنتيمتر للوزن الحجمي (÷${calc.volumetricDivisor})`, zh: `长/宽/高以厘米为单位计算体积重（÷${calc.volumetricDivisor}）` })}
@@ -470,19 +482,19 @@ function PriceCalculator({
       {/* Result */}
       <div className={cn(
         "mt-3 rounded-xl px-4 py-3 flex items-center justify-between gap-3",
-        isDark ? "bg-slate-900/70" : "bg-slate-50",
+        violet ? "bg-white/15 backdrop-blur-sm" : isDark ? "bg-slate-900/70" : "bg-slate-50",
       )}>
         {hasInput ? (
           <>
             <div className="text-xs space-y-0.5 min-w-0">
               {isSea ? (
                 <>
-                  <div className={cn("font-semibold", isDark ? "text-slate-300" : "text-slate-600")}>
+                  <div className={cn("font-semibold", strong)}>
                     {pickLang(lang, { ku: "قەبارە: ", en: "Volume: ", ar: "الحجم: ", zh: "体积：" })}
                     <span className="font-mono">{cbm.toFixed(3)} m³</span>
                   </div>
                   {seaSurcharge && (
-                    <div className="text-amber-500 font-semibold">
+                    <div className={cn("font-semibold", accent)}>
                       {pickLang(lang, { ku: `+${calc.seaSurchargePct}٪ بۆ کەمتر لە ${calc.seaMinCbm} م³`, en: `+${calc.seaSurchargePct}% for below ${calc.seaMinCbm} m³`, ar: `+${calc.seaSurchargePct}٪ لأقل من ${calc.seaMinCbm} م³`, zh: `低于 ${calc.seaMinCbm} m³ 加收 ${calc.seaSurchargePct}%` })}
                     </div>
                   )}
@@ -490,21 +502,21 @@ function PriceCalculator({
               ) : (
                 <>
                   {volumetricKg > 0 && (
-                    <div className={cn("font-semibold", isDark ? "text-slate-300" : "text-slate-600")}>
+                    <div className={cn("font-semibold", strong)}>
                       {pickLang(lang, { ku: "کێشی قەبارەیی: ", en: "Volumetric: ", ar: "الوزن الحجمي: ", zh: "体积重：" })}
                       <span className="font-mono">{volumetricKg.toFixed(2)} kg</span>
                     </div>
                   )}
-                  <div className={cn("font-semibold", isDark ? "text-slate-300" : "text-slate-600")}>
+                  <div className={cn("font-semibold", strong)}>
                     {pickLang(lang, { ku: "کێشی حیسابکراو: ", en: "Chargeable: ", ar: "الوزن المحتسب: ", zh: "计费重量：" })}
                     <span className="font-mono">{airChargeable.toFixed(2)} kg</span>
                     {usedVolumetric && (
-                      <span className="text-amber-500 ms-1">
+                      <span className={cn("ms-1", accent)}>
                         {pickLang(lang, { ku: "(قەبارەیی)", en: "(volumetric)", ar: "(حجمي)", zh: "（体积重）" })}
                       </span>
                     )}
                     {airBase > 0 && airBase < calc.airMinKg && (
-                      <span className="text-amber-500 ms-1">
+                      <span className={cn("ms-1", accent)}>
                         {pickLang(lang, { ku: `(کەمترین ${calc.airMinKg} کگ)`, en: `(min ${calc.airMinKg} kg)`, ar: `(الحد الأدنى ${calc.airMinKg} كغ)`, zh: `（最低 ${calc.airMinKg} 公斤）` })}
                       </span>
                     )}
@@ -513,18 +525,18 @@ function PriceCalculator({
               )}
             </div>
             <div className="text-end shrink-0">
-              <div className={cn("text-3xl font-black tabular-nums", isDark ? "text-white" : "text-slate-900")}>
+              <div className={cn("text-3xl font-black tabular-nums", violet ? "text-white" : isDark ? "text-white" : "text-slate-900")}>
                 ${total.toFixed(2)}
               </div>
               {showIqd && iqdTotal !== null && (
-                <div className={cn("text-[10px]", isDark ? "text-slate-400" : "text-slate-500")}>
+                <div className={cn("text-[10px]", muted)}>
                   ≈ {Math.round(iqdTotal).toLocaleString("en-US")} د.ع
                 </div>
               )}
             </div>
           </>
         ) : (
-          <div className={cn("text-sm w-full text-center py-1", isDark ? "text-slate-500" : "text-slate-400")}>
+          <div className={cn("text-sm w-full text-center py-1", muted)}>
             {pickLang(lang, { ku: "کێش یان ڕەهەندەکان بنووسە", en: "Enter a weight or dimensions", ar: "أدخل الوزن أو الأبعاد", zh: "输入重量或尺寸" })}
           </div>
         )}
@@ -539,8 +551,9 @@ function PriceCalculator({
 // goods: cosmetics, liquids, magnets, anything with a battery), and sea
 // (suits both). Includes the battery/ink rules customers commonly miss.
 // ---------------------------------------------------------------------------
-function ShippingMethodsGuide({ lang, isDark }: { lang: string; isDark: boolean }) {
-  // Collapsed by default — tapping the header expands the guide.
+function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string; isDark: boolean; embedded?: boolean }) {
+  // Collapsed by default — tapping the header expands the guide. When embedded
+  // as a tab (see PriceListSection) the cards are shown directly, always open.
   const [open, setOpen] = useState(false);
   const methods: {
     key: string;
@@ -621,6 +634,54 @@ function ShippingMethodsGuide({ lang, isDark }: { lang: string; isDark: boolean 
     },
   ];
 
+  const methodCards = methods.map((m) => (
+    <div key={m.key} className={cn(
+      "rounded-xl border p-3.5",
+      isDark ? "bg-slate-900/50 border-slate-700" : "bg-slate-50/70 border-slate-100",
+    )}>
+      <div className="flex items-center gap-2 mb-1.5">
+        <div className={cn("p-1.5 rounded-lg bg-gradient-to-br text-white shadow-sm", m.chipBg)}>
+          <m.icon className="w-4 h-4" />
+        </div>
+        <span className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800")}>
+          {pickLang(lang, m.title)}
+        </span>
+      </div>
+      <p className={cn("text-xs leading-relaxed mb-2.5", isDark ? "text-slate-400" : "text-slate-600")}>
+        {pickLang(lang, m.desc)}
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {m.examples.map((ex, i) => (
+          <span key={i} className={cn(
+            "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium",
+            isDark ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-white text-slate-600 border border-slate-200",
+          )}>
+            <span>{ex.emoji}</span>
+            {pickLang(lang, ex.label)}
+          </span>
+        ))}
+      </div>
+      {m.notes && (
+        <div className="mt-2.5 space-y-1.5">
+          {m.notes.map((n, i) => (
+            <p key={i} className={cn(
+              "text-[11px] leading-relaxed flex items-start gap-1.5 rounded-lg px-2 py-1.5",
+              isDark ? "bg-amber-950/40 text-amber-300" : "bg-amber-50 text-amber-700",
+            )}>
+              <span className="mt-px">⚠️</span>
+              {pickLang(lang, n)}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  ));
+
+  // Embedded (tab) mode: cards shown directly, always open — no collapse.
+  if (embedded) {
+    return <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">{methodCards}</div>;
+  }
+
   return (
     <div className={cn(
       "mt-4 rounded-2xl border p-4 sm:p-5",
@@ -656,48 +717,7 @@ function ShippingMethodsGuide({ lang, isDark }: { lang: string; isDark: boolean 
         "grid grid-cols-1 lg:grid-cols-3 gap-3 overflow-hidden transition-all duration-300",
         open ? "mt-4 max-h-[3000px] opacity-100" : "max-h-0 opacity-0",
       )}>
-        {methods.map((m) => (
-          <div key={m.key} className={cn(
-            "rounded-xl border p-3.5",
-            isDark ? "bg-slate-900/50 border-slate-700" : "bg-slate-50/70 border-slate-100",
-          )}>
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className={cn("p-1.5 rounded-lg bg-gradient-to-br text-white shadow-sm", m.chipBg)}>
-                <m.icon className="w-4 h-4" />
-              </div>
-              <span className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800")}>
-                {pickLang(lang, m.title)}
-              </span>
-            </div>
-            <p className={cn("text-xs leading-relaxed mb-2.5", isDark ? "text-slate-400" : "text-slate-600")}>
-              {pickLang(lang, m.desc)}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {m.examples.map((ex, i) => (
-                <span key={i} className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium",
-                  isDark ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-white text-slate-600 border border-slate-200",
-                )}>
-                  <span>{ex.emoji}</span>
-                  {pickLang(lang, ex.label)}
-                </span>
-              ))}
-            </div>
-            {m.notes && (
-              <div className="mt-2.5 space-y-1.5">
-                {m.notes.map((n, i) => (
-                  <p key={i} className={cn(
-                    "text-[11px] leading-relaxed flex items-start gap-1.5 rounded-lg px-2 py-1.5",
-                    isDark ? "bg-amber-950/40 text-amber-300" : "bg-amber-50 text-amber-700",
-                  )}>
-                    <span className="mt-px">⚠️</span>
-                    {pickLang(lang, n)}
-                  </p>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+        {methodCards}
       </div>
     </div>
   );
@@ -733,7 +753,14 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
     retry: false,
   });
 
-  const [activeTab, setActiveTab] = useState<"shipping" | "services">("shipping");
+  type TabKey = "shipping" | "services" | "calculator" | "guide";
+  const [activeTab, setActiveTab] = useState<TabKey>("shipping");
+  // Tabs the customer has opened — an unvisited tab keeps a gentle "explore me"
+  // pulse until it's opened once, so they discover the calculator/guide tabs.
+  const [visited, setVisited] = useState<Set<TabKey>>(() => new Set());
+  useEffect(() => {
+    setVisited((v) => (v.has(activeTab) ? v : new Set(v).add(activeTab)));
+  }, [activeTab]);
 
   const title = useMemo(() => {
     if (!data?.settings) return t("priceList.defaultTitle");
@@ -793,6 +820,19 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
     : activeTab;
 
   const layoutVariant = data.settings.layoutVariant;
+  const canShipping = !!data.settings.showShippingRates && hasShipping;
+  const canServices = !!data.settings.showServices && hasServices;
+
+  // Unified tab set for the "tabs" layout. The calculator + methods guide ride
+  // alongside shipping (they describe the shipping options), each with its own
+  // colour so the bar is lively and clearly "there's more here".
+  const tabDefs = ([
+    canShipping && { key: "shipping" as TabKey, label: t("priceList.shipping"), Icon: Plane, grad: "from-blue-600 to-indigo-700", dot: "bg-blue-500" },
+    canServices && { key: "services" as TabKey, label: t("priceList.services"), Icon: Wrench, grad: "from-teal-500 to-emerald-600", dot: "bg-teal-500" },
+    canShipping && { key: "calculator" as TabKey, label: pickLang(language, { ku: "حیسابکەری نرخ", en: "Calculator", ar: "الحاسبة", zh: "计算器" }), Icon: Calculator, grad: "from-violet-600 to-purple-700", dot: "bg-violet-500" },
+    canShipping && { key: "guide" as TabKey, label: pickLang(language, { ku: "ڕێگاکانی گواستنەوە", en: "Methods", ar: "طرق الشحن", zh: "运输方式" }), Icon: Info, grad: "from-sky-500 to-cyan-600", dot: "bg-sky-500" },
+  ].filter(Boolean)) as { key: TabKey; label: string; Icon: typeof Plane; grad: string; dot: string }[];
+  const activeTabKey: TabKey = tabDefs.some((d) => d.key === activeTab) ? activeTab : (tabDefs[0]?.key ?? "shipping");
 
   return (
     <section className={cn("px-4 my-5", className)}>
@@ -852,109 +892,128 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
         )}
       </div>
 
-      {/* Tabs — shown only when both categories have content and layout is "tabs" */}
-      {showBothTabs && layoutVariant === "tabs" && (
-        <div className={cn(
-          "inline-flex p-1 rounded-xl mb-4",
-          isDark ? "bg-slate-800 border border-slate-700" : "bg-slate-100",
-        )}>
-          <button
-            onClick={() => setActiveTab("shipping")}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 inline-flex items-center gap-2",
-              currentTab === "shipping"
-                ? (isDark ? "bg-slate-700 text-white shadow-sm" : "bg-white text-slate-900 shadow-sm")
-                : (isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-600 hover:text-slate-900"),
-            )}
-          >
-            <Plane className="w-4 h-4" />
-            {t("priceList.shipping")}
-          </button>
-          <button
-            onClick={() => setActiveTab("services")}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 inline-flex items-center gap-2",
-              currentTab === "services"
-                ? (isDark ? "bg-slate-700 text-white shadow-sm" : "bg-white text-slate-900 shadow-sm")
-                : (isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-600 hover:text-slate-900"),
-            )}
-          >
-            <Wrench className="w-4 h-4" />
-            {t("priceList.services")}
-          </button>
-        </div>
-      )}
+      {layoutVariant === "tabs" ? (
+        // Tabs variant: one colourful bar with every section (shipping, services,
+        // calculator, methods guide). Unvisited tabs pulse until opened.
+        <>
+          {tabDefs.length > 1 && (
+            <div className={cn(
+              "flex gap-1.5 overflow-x-auto p-1.5 rounded-2xl mb-4 border shadow-sm",
+              isDark ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-200",
+            )}>
+              {tabDefs.map((d) => {
+                const isActive = d.key === activeTabKey;
+                const flash = !isActive && !visited.has(d.key);
+                return (
+                  <button
+                    key={d.key}
+                    onClick={() => setActiveTab(d.key)}
+                    className={cn(
+                      "relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap transition-all shrink-0",
+                      isActive
+                        ? cn("bg-gradient-to-br text-white shadow-md", d.grad)
+                        : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-500 hover:text-slate-800",
+                    )}
+                  >
+                    <d.Icon className="w-4 h-4" />
+                    {d.label}
+                    {flash && (
+                      <span className="absolute -top-0.5 -end-0.5 flex h-2.5 w-2.5">
+                        <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping", d.dot)} />
+                        <span className={cn("relative inline-flex h-2.5 w-2.5 rounded-full", d.dot)} />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-      {/* Content */}
-      {layoutVariant === "stacked" ? (
-        // Stacked variant: show both categories one after the other with headers.
-        <div className="space-y-6">
-          {data.settings.showShippingRates && hasShipping && (
-            <div>
-              <div className={cn(
-                "flex items-center gap-2 mb-3 px-1",
-                isDark ? "text-slate-300" : "text-slate-700",
-              )}>
-                <Plane className="w-4 h-4" />
-                <h3 className="text-sm font-bold uppercase tracking-wider">{t("priceList.shipping")}</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {data.shipping.map((rate: any) => (
+          {activeTabKey === "shipping" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {data.shipping.map((rate: any) => (
+                <ShippingRateCard key={rate.id} rate={rate} lang={language} t={t}
+                  showRmb={showRmb} showIqd={showIqd} rmbRate={rmbRate} iqdRate={iqdRate} isDark={isDark} />
+              ))}
+            </div>
+          )}
+          {activeTabKey === "services" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {data.services.map((service: any) => (
+                <ServiceCard key={service.id} service={service} lang={language} t={t}
+                  showRmb={showRmb} rmbRate={rmbRate} isDark={isDark} />
+              ))}
+            </div>
+          )}
+          {activeTabKey === "calculator" && (
+            <PriceCalculator
+              shipping={data.shipping} lang={language} isDark={isDark}
+              showIqd={showIqd} iqdRate={iqdRate} calc={(data as any).calc ?? DEFAULT_CALC} violet
+            />
+          )}
+          {activeTabKey === "guide" && (
+            <ShippingMethodsGuide lang={language} isDark={isDark} embedded />
+          )}
+        </>
+      ) : (
+        // Stacked / compact variants keep the previous behaviour.
+        <>
+          {layoutVariant === "stacked" ? (
+            <div className="space-y-6">
+              {canShipping && (
+                <div>
+                  <div className={cn("flex items-center gap-2 mb-3 px-1", isDark ? "text-slate-300" : "text-slate-700")}>
+                    <Plane className="w-4 h-4" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider">{t("priceList.shipping")}</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {data.shipping.map((rate: any) => (
+                      <ShippingRateCard key={rate.id} rate={rate} lang={language} t={t}
+                        showRmb={showRmb} showIqd={showIqd} rmbRate={rmbRate} iqdRate={iqdRate} isDark={isDark} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {canServices && (
+                <div>
+                  <div className={cn("flex items-center gap-2 mb-3 px-1", isDark ? "text-slate-300" : "text-slate-700")}>
+                    <Wrench className="w-4 h-4" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider">{t("priceList.services")}</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {data.services.map((service: any) => (
+                      <ServiceCard key={service.id} service={service} lang={language} t={t}
+                        showRmb={showRmb} rmbRate={rmbRate} isDark={isDark} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {currentTab === "shipping" && canShipping &&
+                data.shipping.map((rate: any) => (
                   <ShippingRateCard key={rate.id} rate={rate} lang={language} t={t}
                     showRmb={showRmb} showIqd={showIqd} rmbRate={rmbRate} iqdRate={iqdRate} isDark={isDark} />
                 ))}
-              </div>
-            </div>
-          )}
-          {data.settings.showServices && hasServices && (
-            <div>
-              <div className={cn(
-                "flex items-center gap-2 mb-3 px-1",
-                isDark ? "text-slate-300" : "text-slate-700",
-              )}>
-                <Wrench className="w-4 h-4" />
-                <h3 className="text-sm font-bold uppercase tracking-wider">{t("priceList.services")}</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {data.services.map((service: any) => (
+              {currentTab === "services" && canServices &&
+                data.services.map((service: any) => (
                   <ServiceCard key={service.id} service={service} lang={language} t={t}
                     showRmb={showRmb} rmbRate={rmbRate} isDark={isDark} />
                 ))}
-              </div>
             </div>
           )}
-        </div>
-      ) : (
-        // Tabs or compact — show the active category as a responsive grid.
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {currentTab === "shipping" && data.settings.showShippingRates &&
-            data.shipping.map((rate: any) => (
-              <ShippingRateCard key={rate.id} rate={rate} lang={language} t={t}
-                showRmb={showRmb} showIqd={showIqd} rmbRate={rmbRate} iqdRate={iqdRate} isDark={isDark} />
-            ))}
-          {currentTab === "services" && data.settings.showServices &&
-            data.services.map((service: any) => (
-              <ServiceCard key={service.id} service={service} lang={language} t={t}
-                showRmb={showRmb} rmbRate={rmbRate} isDark={isDark} />
-            ))}
-        </div>
-      )}
 
-      {/* Price calculator — powered by the same visible shipping rates */}
-      {data.settings.showShippingRates && hasShipping && (
-        <PriceCalculator
-          shipping={data.shipping}
-          lang={language}
-          isDark={isDark}
-          showIqd={showIqd}
-          iqdRate={iqdRate}
-          calc={(data as any).calc ?? DEFAULT_CALC}
-        />
-      )}
-
-      {/* What ships on which route — incl. the battery & ink rules */}
-      {data.settings.showShippingRates && hasShipping && (
-        <ShippingMethodsGuide lang={language} isDark={isDark} />
+          {canShipping && (
+            <PriceCalculator
+              shipping={data.shipping} lang={language} isDark={isDark}
+              showIqd={showIqd} iqdRate={iqdRate} calc={(data as any).calc ?? DEFAULT_CALC}
+            />
+          )}
+          {canShipping && (
+            <ShippingMethodsGuide lang={language} isDark={isDark} />
+          )}
+        </>
       )}
 
       {/* Disclaimer */}
