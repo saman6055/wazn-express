@@ -516,9 +516,6 @@ const { t, language } = useLanguage();
         </div>
       )}
 
-      {/* Rate your delivery — shows for the latest delivered, unrated package */}
-      <DeliveryRatingCard isDark={isDark} language={language} />
-
       {/* Price List Section — admin-curated shipping rates & services */}
       <PriceListSection />
 
@@ -896,6 +893,10 @@ const { t, language } = useLanguage();
 
       {/* Announcements Section */}
       <AnnouncementsSection isDark={isDark} language={language} t={t} />
+
+      {/* Rate your delivery — a gentle inline card at the very bottom, never a
+          blocking popup. Shows for the latest delivered, unrated package. */}
+      <DeliveryRatingCard isDark={isDark} language={language} />
     </CustomerPortalLayout>
   );
 }
