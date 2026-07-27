@@ -827,11 +827,11 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
   // alongside shipping (they describe the shipping options), each with its own
   // colour so the bar is lively and clearly "there's more here".
   const tabDefs = ([
-    canShipping && { key: "shipping" as TabKey, label: t("priceList.shipping"), Icon: Plane, grad: "from-blue-600 to-indigo-700", dot: "bg-blue-500" },
-    canServices && { key: "services" as TabKey, label: t("priceList.services"), Icon: Wrench, grad: "from-teal-500 to-emerald-600", dot: "bg-teal-500" },
-    canShipping && { key: "calculator" as TabKey, label: pickLang(language, { ku: "حیسابکەری نرخ", en: "Calculator", ar: "الحاسبة", zh: "计算器" }), Icon: Calculator, grad: "from-violet-600 to-purple-700", dot: "bg-violet-500" },
-    canShipping && { key: "guide" as TabKey, label: pickLang(language, { ku: "ڕێگاکانی گواستنەوە", en: "Methods", ar: "طرق الشحن", zh: "运输方式" }), Icon: Info, grad: "from-sky-500 to-cyan-600", dot: "bg-sky-500" },
-  ].filter(Boolean)) as { key: TabKey; label: string; Icon: typeof Plane; grad: string; dot: string }[];
+    canShipping && { key: "shipping" as TabKey, label: t("priceList.shipping"), Icon: Plane, grad: "from-blue-600 to-indigo-700", dot: "bg-blue-500", text: "text-blue-600 dark:text-blue-400" },
+    canServices && { key: "services" as TabKey, label: t("priceList.services"), Icon: Wrench, grad: "from-teal-500 to-emerald-600", dot: "bg-teal-500", text: "text-teal-600 dark:text-teal-400" },
+    canShipping && { key: "calculator" as TabKey, label: pickLang(language, { ku: "حیسابکەری نرخ", en: "Calculator", ar: "الحاسبة", zh: "计算器" }), Icon: Calculator, grad: "from-violet-600 to-purple-700", dot: "bg-violet-500", text: "text-violet-600 dark:text-violet-400" },
+    canShipping && { key: "guide" as TabKey, label: pickLang(language, { ku: "ڕێگاکانی گواستنەوە", en: "Methods", ar: "طرق الشحن", zh: "运输方式" }), Icon: Info, grad: "from-sky-500 to-cyan-600", dot: "bg-sky-500", text: "text-sky-600 dark:text-sky-400" },
+  ].filter(Boolean)) as { key: TabKey; label: string; Icon: typeof Plane; grad: string; dot: string; text: string }[];
   const activeTabKey: TabKey = tabDefs.some((d) => d.key === activeTab) ? activeTab : (tabDefs[0]?.key ?? "shipping");
 
   return (
@@ -898,8 +898,8 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
         <>
           {tabDefs.length > 1 && (
             <div className={cn(
-              "flex gap-1.5 overflow-x-auto p-1.5 rounded-2xl mb-4 border shadow-sm",
-              isDark ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-200",
+              "flex gap-1 overflow-x-auto mb-4 border-b",
+              isDark ? "border-slate-700" : "border-slate-200",
             )}>
               {tabDefs.map((d) => {
                 const isActive = d.key === activeTabKey;
@@ -909,18 +909,24 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
                     key={d.key}
                     onClick={() => setActiveTab(d.key)}
                     className={cn(
-                      "relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap transition-all shrink-0",
+                      // Chrome-style tab: rounded top, active surface merges into
+                      // the content by covering the strip's bottom border (-mb-px).
+                      "relative -mb-px flex items-center gap-1.5 px-4 py-2.5 rounded-t-xl text-[13px] font-semibold whitespace-nowrap transition-colors shrink-0 border border-b-0",
                       isActive
-                        ? cn("bg-gradient-to-br text-white shadow-md", d.grad)
-                        : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-500 hover:text-slate-800",
+                        ? (isDark ? "bg-slate-900 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900")
+                        : (isDark ? "border-transparent text-slate-400 hover:bg-slate-800/50" : "border-transparent text-slate-500 hover:bg-slate-100"),
                     )}
                   >
-                    <d.Icon className="w-4 h-4" />
+                    {/* Coloured accent along the top edge of the active tab */}
+                    {isActive && (
+                      <span className={cn("absolute top-0 inset-x-3 h-[3px] rounded-full bg-gradient-to-r", d.grad)} />
+                    )}
+                    <d.Icon className={cn("w-4 h-4", isActive && d.text)} />
                     {d.label}
                     {flash && (
-                      <span className="absolute -top-0.5 -end-0.5 flex h-2.5 w-2.5">
+                      <span className="absolute top-1.5 end-2 flex h-2 w-2">
                         <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping", d.dot)} />
-                        <span className={cn("relative inline-flex h-2.5 w-2.5 rounded-full", d.dot)} />
+                        <span className={cn("relative inline-flex h-2 w-2 rounded-full", d.dot)} />
                       </span>
                     )}
                   </button>
