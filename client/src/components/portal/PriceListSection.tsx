@@ -12,7 +12,7 @@ import {
   Plane, Ship, Zap, Package, Truck, Sparkles,
   DollarSign, Wrench, Info, TrendingUp,
   Flame, Star, Rocket, Award, ShoppingBag, Globe, Clock, Layers,
-  Calculator, ChevronDown,
+  Calculator, ChevronDown, X,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -771,6 +771,9 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
 
   type TabKey = "shipping" | "services" | "calculator" | "guide";
   const [activeTab, setActiveTab] = useState<TabKey>("shipping");
+  // Per-section "what is this?" helper — hidden until the ⓘ on the active tab
+  // is tapped (never auto-shown).
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const title = useMemo(() => {
     if (!data?.settings) return t("priceList.defaultTitle");
@@ -842,6 +845,30 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
     canShipping && { key: "guide" as TabKey, label: pickLang(language, { ku: "گواستنەوە", en: "Shipping", ar: "الشحن", zh: "运输" }), Icon: Info },
   ].filter(Boolean)) as { key: TabKey; label: string; Icon: typeof Plane }[];
   const activeTabKey: TabKey = tabDefs.some((d) => d.key === activeTab) ? activeTab : (tabDefs[0]?.key ?? "shipping");
+
+  // "What is this section?" copy — shown only when the ⓘ is tapped.
+  const tabInfo: Record<TabKey, { title: string; desc: string; example: string }> = {
+    shipping: {
+      title: pickLang(language, { ku: "تێچووەکان", en: "Costs", ar: "التكاليف", zh: "费用" }),
+      desc: pickLang(language, { ku: "نرخی گواستنەوە بۆ هەر ڕێگایەک، بەپێی کیلۆ یان قەبارە.", en: "Shipping price for each method, per kg or volume.", ar: "سعر الشحن لكل طريقة، حسب الكيلو أو الحجم.", zh: "每种运输方式的价格（按公斤或体积）。" }),
+      example: pickLang(language, { ku: "نموونە: ئاسمانی ئاسایی = $12 بۆ هەر کیلۆ", en: "e.g. Air regular = $12/kg", ar: "مثال: جوي عادي = 12$/كغ", zh: "例如：普通空运 = $12/公斤" }),
+    },
+    services: {
+      title: pickLang(language, { ku: "خزمەتگوزاری", en: "Services", ar: "الخدمات", zh: "服务" }),
+      desc: pickLang(language, { ku: "خزمەتگوزارییە زیادەکان وەک کڕینی یوان و زیاتر.", en: "Extra services such as buying Yuan and more.", ar: "خدمات إضافية مثل شراء اليوان وغيرها.", zh: "额外服务，如购买人民币等。" }),
+      example: pickLang(language, { ku: "نموونە: کڕینی یوان بۆ کڕینەکانت لە چین", en: "e.g. Buy Yuan for your China purchases", ar: "مثال: شراء اليوان لمشترياتك من الصين", zh: "例如：为您的中国采购购买人民币" }),
+    },
+    calculator: {
+      title: pickLang(language, { ku: "حیسابکەری نرخ", en: "Price calculator", ar: "حاسبة السعر", zh: "价格计算器" }),
+      desc: pickLang(language, { ku: "کێش یان قەبارەی کاڵاکەت بنووسە، نرخی گواستنەوە پێش‌بینی بکە پێش ناردن.", en: "Enter your item's weight or size to estimate the shipping cost.", ar: "أدخل وزن أو حجم بضاعتك لتقدير تكلفة الشحن.", zh: "输入货物的重量或尺寸以估算运费。" }),
+      example: pickLang(language, { ku: "نموونە: ٢ کگ بە ئاسمانی ≈ $24", en: "e.g. 2 kg by air ≈ $24", ar: "مثال: 2 كغ جواً ≈ 24$", zh: "例如：2 公斤空运 ≈ $24" }),
+    },
+    guide: {
+      title: pickLang(language, { ku: "ڕێگاکانی گواستنەوە", en: "Shipping methods", ar: "طرق الشحن", zh: "运输方式" }),
+      desc: pickLang(language, { ku: "کام کاڵا بە کام ڕێگا دەگوازرێتەوە (ئاسمانی ئاسایی/نائاسایی/دەریایی).", en: "Which goods go by which route (regular / irregular air, sea).", ar: "أي بضائع تُشحن بأي طريقة (جوي عادي/غير عادي، بحري).", zh: "哪些货物走哪种方式（普通/非常规空运、海运）。" }),
+      example: pickLang(language, { ku: "نموونە: شتی پاتریدار → ئاسمانی نائاسایی", en: "e.g. items with batteries → irregular air", ar: "مثال: أشياء ببطارية → جوي غير عادي", zh: "例如：含电池物品 → 非常规空运" }),
+    },
+  };
 
   return (
     <section className={cn("px-4 my-5", className)}>
@@ -926,6 +953,17 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
                   >
                     <d.Icon className="w-4 h-4 shrink-0" />
                     <span className="truncate">{d.label}</span>
+                    {isActive && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label="info"
+                        onClick={(e) => { e.stopPropagation(); setInfoOpen((o) => !o); }}
+                        className={cn("shrink-0 ms-0.5 transition-colors", infoOpen ? "text-[#1C4D8D]" : "text-[#4988C4] hover:text-[#1C4D8D]")}
+                      >
+                        <Info className="w-3.5 h-3.5" />
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -933,6 +971,28 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
           )}
 
           <div className={tabDefs.length > 1 ? cn("p-3.5 mb-4 rounded-b-xl", isDark ? "bg-slate-900" : "bg-white") : undefined}>
+            {/* "What is this section?" — only after the ⓘ on the active tab is tapped. */}
+            {infoOpen && (
+              <div className={cn(
+                "relative mb-3.5 flex gap-3 rounded-xl p-3.5 border",
+                isDark ? "bg-slate-800/60 border-slate-700" : "bg-[#EFF6FB] border-[#BDE8F5]",
+              )}>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1C4D8D] to-[#4988C4] flex items-center justify-center shrink-0">
+                  <Info className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0 pe-5">
+                  <h4 className={cn("text-sm font-bold", isDark ? "text-white" : "text-[#0F2854]")}>{tabInfo[activeTabKey].title}</h4>
+                  <p className={cn("text-xs mt-0.5 leading-relaxed", isDark ? "text-slate-300" : "text-slate-600")}>{tabInfo[activeTabKey].desc}</p>
+                  <span className={cn("inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium", isDark ? "bg-slate-700 text-[#BDE8F5]" : "bg-[#1C4D8D]/10 text-[#1C4D8D]")}>
+                    {tabInfo[activeTabKey].example}
+                  </span>
+                </div>
+                <button onClick={() => setInfoOpen(false)} aria-label="close"
+                  className={cn("absolute top-2 end-2 p-1 rounded-full transition-colors", isDark ? "text-slate-500 hover:bg-slate-700" : "text-slate-400 hover:bg-black/5")}>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
             {activeTabKey === "shipping" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {data.shipping.map((rate: any) => (
