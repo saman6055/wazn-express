@@ -11,7 +11,7 @@ import {
   Package, Bell, ChevronRight, Truck, CheckCircle, Clock,
   AlertCircle, Plane, Ship, Megaphone, TrendingUp, Search,
   CreditCard, MessageCircle, FileText, DollarSign,
-  Sun, Moon, Sparkles, AlertTriangle, PackagePlus
+  Sun, Moon, Sparkles, AlertTriangle, PackagePlus, Info, X
 } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { Link } from "wouter";
@@ -207,7 +207,10 @@ const { t, language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
-  
+  // Which quick-action's "what is this?" card is open (index), or null — the
+  // info stays hidden until the tile's ⓘ is tapped, never auto-shown.
+  const [openTileInfo, setOpenTileInfo] = useState<number | null>(null);
+
   const { data: account, isLoading: accountLoading } = trpc.customerPortal.getMyAccount.useQuery();
   const { data: batches, isLoading: batchesLoading } = trpc.customerPortal.getMyBatches.useQuery();
   const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
@@ -292,6 +295,11 @@ const { t, language } = useLanguage();
       href: "/portal/search",
       color: tileColor,
       shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "شوێنکەوتنی بار", en: "Track shipment", ar: "تتبع الشحنة", zh: "追踪货物" }),
+        desc: pickLang(language, { ku: "دۆخی پاکێج یان بارەکەت بەدواداچوون بکە بە ژمارەی تراک.", en: "Follow your package/shipment status by its tracking number.", ar: "تابع حالة طردك/شحنتك برقم التتبع.", zh: "通过运单号跟踪您的包裹/货物状态。" }),
+        example: pickLang(language, { ku: "نموونە: ژمارەی تراک بنووسە → دۆخ ببینە", en: "e.g. enter a tracking number → see its status", ar: "مثال: أدخل رقم التتبع → شاهد الحالة", zh: "例如：输入运单号 → 查看状态" }),
+      },
     },
     {
       icon: AlertTriangle,
@@ -299,6 +307,11 @@ const { t, language } = useLanguage();
       href: "/portal/no-mark",
       color: tileColor,
       shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "پاکێجی بێ‌خاوەن", en: "Unclaimed packages", ar: "طرود بلا مالك", zh: "无主包裹" }),
+        desc: pickLang(language, { ku: "پاکێجە گەیشتووەکان کە کۆدی تۆیان پێوە نییە — لێرە داوایان بکە.", en: "Arrived packages with no customer code — claim yours here.", ar: "طرود وصلت بدون كود العميل — طالب بها هنا.", zh: "已到达但没有客户代码的包裹——在此认领。" }),
+        example: pickLang(language, { ku: "نموونە: پاکێجێک بێ کۆد گەیشتووە → داوای بکە", en: "e.g. a package arrived without a code → claim it", ar: "مثال: وصل طرد بلا كود → طالب به", zh: "例如：包裹无代码到达 → 认领" }),
+      },
     },
     {
       icon: PackagePlus,
@@ -306,6 +319,11 @@ const { t, language } = useLanguage();
       href: "/portal/declare",
       color: tileColor,
       shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "تۆمارکردنی تراک", en: "Register tracking", ar: "تسجيل التتبع", zh: "登记运单" }),
+        desc: pickLang(language, { ku: "ژمارەی تراکی کاڵاکەت لە چین پێش‌وەخت تۆمار بکە بۆ بەدواداچوونی خۆکار.", en: "Pre-register your item's China tracking number for automatic follow-up.", ar: "سجّل رقم تتبع بضاعتك من الصين مسبقًا للمتابعة التلقائية.", zh: "提前登记您在中国的运单号以便自动跟进。" }),
+        example: pickLang(language, { ku: "نموونە: دوای کڕین، تراکەکە لێرە بنووسە", en: "e.g. after buying, enter the tracking here", ar: "مثال: بعد الشراء، أدخل التتبع هنا", zh: "例如：购买后在此输入运单号" }),
+      },
     },
     {
       icon: CreditCard,
@@ -313,6 +331,11 @@ const { t, language } = useLanguage();
       href: "/portal/financial",
       color: tileColor,
       shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "دارایی و پارەدان", en: "Finance & payment", ar: "المالية والدفع", zh: "财务与付款" }),
+        desc: pickLang(language, { ku: "باڵانس و مامەڵەکانت ببینە و قەرزەکەت بدە.", en: "See your balance and transactions, and settle what you owe.", ar: "شاهد رصيدك ومعاملاتك وسدّد ما عليك.", zh: "查看余额和交易并结清欠款。" }),
+        example: pickLang(language, { ku: "نموونە: قەرزەکەت ببینە → بە واتساپ پارە بدە", en: "e.g. see your balance → pay via WhatsApp", ar: "مثال: شاهد رصيدك → ادفع عبر واتساب", zh: "例如：查看余额 → 通过 WhatsApp 付款" }),
+      },
     },
     {
       icon: FileText,
@@ -320,6 +343,11 @@ const { t, language } = useLanguage();
       href: "/portal/full-package",
       color: tileColor,
       shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" }),
+        desc: pickLang(language, { ku: "داوای کڕینی کاڵا بکە (فوڵ-پاکێج/کۆمیشن) و ئێمە بۆت دەیکڕین.", en: "Ask us to buy an item for you (full-package / commission).", ar: "اطلب منا شراء منتج لك (باقة كاملة/عمولة).", zh: "让我们为您购买商品（全包/代购）。" }),
+        example: pickLang(language, { ku: "نموونە: لینکی کاڵا بنێرە → بۆت دەکڕدرێت", en: "e.g. send a product link → we buy it for you", ar: "مثال: أرسل رابط المنتج → نشتريه لك", zh: "例如：发送商品链接 → 我们为您购买" }),
+      },
     },
     {
       icon: YuanIcon,
@@ -327,6 +355,11 @@ const { t, language } = useLanguage();
       href: "/portal/yuan-exchange",
       color: tileColor,
       shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "购买人民币" }),
+        desc: pickLang(language, { ku: "یوان بکڕە بۆ کڕینەکانت لە چین بە نرخی ئەمڕۆ.", en: "Buy Yuan for your China purchases at today's rate.", ar: "اشترِ اليوان لمشترياتك من الصين بسعر اليوم.", zh: "以今日汇率购买人民币用于中国采购。" }),
+        example: pickLang(language, { ku: "نموونە: $100 → یوان بەپێی نرخی ئەمڕۆ", en: "e.g. $100 → Yuan at today's rate", ar: "مثال: 100$ → يوان بسعر اليوم", zh: "例如：$100 → 按今日汇率兑换人民币" }),
+      },
     },
   ];
 
@@ -405,7 +438,17 @@ const { t, language } = useLanguage();
           <div className="mt-6 grid grid-cols-3 gap-2.5">
             {quickActions.map((action, index) => (
               <Link key={index} href={action.href}>
-                <button className="w-full h-full flex flex-col items-start gap-2.5 rounded-2xl p-3 bg-white/10 border border-[#BDE8F5]/20 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-0.5 active:scale-[0.98]">
+                <button className="relative w-full h-full flex flex-col items-start gap-2.5 rounded-2xl p-3 bg-white/10 border border-[#BDE8F5]/20 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-0.5 active:scale-[0.98]">
+                  {/* ⓘ — reveals "what is this?" without navigating; hidden until tapped. */}
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label="info"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenTileInfo(openTileInfo === index ? null : index); }}
+                    className="absolute top-2 end-2 text-[#BDE8F5]/70 hover:text-white transition-colors"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
                   <div className={cn(
                     "w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg",
                     action.color,
@@ -420,6 +463,26 @@ const { t, language } = useLanguage();
               </Link>
             ))}
           </div>
+
+          {/* "What is this?" card — shown only after a tile's ⓘ is tapped. */}
+          {openTileInfo !== null && (
+            <div className="mt-3 relative flex gap-3 rounded-2xl p-3.5 bg-white/12 border border-[#BDE8F5]/25 backdrop-blur-sm">
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
+                <Info className="w-5 h-5 text-[#1C4D8D]" />
+              </div>
+              <div className="flex-1 min-w-0 pe-5">
+                <h4 className="text-sm font-bold text-white">{quickActions[openTileInfo].info.title}</h4>
+                <p className="text-xs mt-0.5 leading-relaxed text-white/80">{quickActions[openTileInfo].info.desc}</p>
+                <span className="inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium bg-[#BDE8F5]/20 text-[#BDE8F5]">
+                  {quickActions[openTileInfo].info.example}
+                </span>
+              </div>
+              <button onClick={() => setOpenTileInfo(null)} aria-label="close"
+                className="absolute top-2 end-2 p-1 rounded-full text-white/60 hover:bg-white/10 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
