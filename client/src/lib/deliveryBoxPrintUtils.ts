@@ -33,6 +33,9 @@ export interface BoxItemForPrint {
   /** Volume in CBM for sea items (null for air). Shown in place of weight on
    *  sea-batch receipts/labels. */
   volumeCbm?: string | number | null;
+  /** This package's own shipping type. Lets a single row print CBM even when
+   *  it sits in a mixed box. Falls back to the box unit when absent. */
+  shippingType?: string | null;
   calculatedCostUsd?: string | number | null;
   description?: string | null;
   sourceInfo?: string | null;
@@ -106,8 +109,13 @@ function isSeaBox(box: BoxForPrint): boolean {
   return box.shippingType === "sea";
 }
 
+// Each row is measured in ITS OWN package's unit. A sea package priced per
+// CBM records no weight, so billing its row in kg printed a meaningless
+// "kg 0.00". The item's own shippingType wins when it is known; otherwise we
+// fall back to the box-level unit.
 function itemMeasure(box: BoxForPrint, item: BoxItemForPrint): string {
-  return isSeaBox(box)
+  const sea = item.shippingType ? item.shippingType === "sea" : isSeaBox(box);
+  return sea
     ? `${formatNum(item.volumeCbm, 3)} CBM`
     : `${formatNum(item.weightKg)} kg`;
 }

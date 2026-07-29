@@ -121,8 +121,9 @@ export async function getAllDeliveryBoxes(filters?: {
     .limit(filters?.limit || 50)
     .offset(filters?.offset || 0);
 
-  // Attach the batch shipping type so the list/table can show CBM vs kg
-  // without a per-row query. Manual boxes (no batch) get null → kg.
+  // Attach the shipping type so the list/table can show CBM vs kg without a
+  // per-row query. Batch first; for hand-made boxes (no batchId) derive it
+  // from the packages they contain, so those print CBM for sea goods too.
   const batchIds = Array.from(new Set(boxes.map(b => b.batchId).filter((id): id is number => !!id)));
   const shippingTypeByBatch = new Map<number, string | null>();
   if (batchIds.length > 0) {
@@ -130,9 +131,31 @@ export async function getAllDeliveryBoxes(filters?: {
       .from(batches).where(inArray(batches.id, batchIds));
     for (const b of batchRows) shippingTypeByBatch.set(b.id, b.shippingType ?? null);
   }
+
+  // One grouped lookup for the batch-less boxes: package shipping types per box.
+  const batchlessIds = boxes.filter(b => !b.batchId).map(b => b.id);
+  const itemTypesByBox = new Map<number, (string | null)[]>();
+  if (batchlessIds.length > 0) {
+    const rows = await db.select({
+      boxId: deliveryBoxItems.boxId,
+      shippingType: packages.shippingType,
+    })
+      .from(deliveryBoxItems)
+      .leftJoin(packages, eq(deliveryBoxItems.packageId, packages.id))
+      .where(inArray(deliveryBoxItems.boxId, batchlessIds));
+    for (const r of rows) {
+      const list = itemTypesByBox.get(r.boxId) || [];
+      list.push(r.shippingType ?? null);
+      itemTypesByBox.set(r.boxId, list);
+    }
+  }
+
   const boxesWithType = boxes.map(b => ({
     ...b,
-    shippingType: b.batchId ? (shippingTypeByBatch.get(b.batchId) ?? null) : null,
+    shippingType: resolveBoxShippingType(
+      b.batchId ? (shippingTypeByBatch.get(b.batchId) ?? null) : null,
+      (itemTypesByBox.get(b.id) || []).map(t => ({ shippingType: t })),
+    ),
   }));
 
   return { boxes: boxesWithType, total };
@@ -310,6 +333,29 @@ function fpAdvance(fp: typeof fullPackageOrders.$inferSelect): number {
     return Math.max(a, p);
   }
   return 0;
+}
+
+/**
+ * Which unit should this box's receipt/label be billed in — kg or CBM?
+ *
+ * A box built from a batch inherits the batch's shipping type. But boxes
+ * created by hand have no batch at all (`scanning.deliveryBox.create` takes
+ * no batchId, so `box.batchId` stays null), and those were still printing kg
+ * for sea goods. So fall back to the packages themselves: every box item
+ * carries the shippingType of its source package / order. If each item that
+ * knows its type says "sea", the box is sea.
+ *
+ * Mixed boxes (some air, some sea) deliberately stay on kg — there is no one
+ * honest unit for a combined total, and weight is the safer default.
+ */
+export function resolveBoxShippingType(
+  batchShippingType: string | null | undefined,
+  items: { shippingType?: string | null }[],
+): string | null {
+  if (batchShippingType) return batchShippingType;
+  const known = items.map(i => i.shippingType).filter((t): t is string => !!t);
+  if (known.length === 0) return null;
+  return known.every(t => t === 'sea') ? 'sea' : null;
 }
 
 export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> {

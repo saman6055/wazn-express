@@ -864,11 +864,12 @@ export const deliveryBoxRouter = router({
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) return null;
       const items = await db.getBoxItems(input.id);
-      // Batch shipping type drives the receipt/label unit: a sea (دەریایی)
-      // batch is billed by CBM, an air batch by weight (kg). Manual boxes
-      // (no batch) stay null → default kg.
+      // Shipping type drives the receipt/label unit: sea (دەریایی) is billed
+      // by CBM, air by weight (kg). Prefer the batch, but fall back to the
+      // packages themselves so hand-made boxes (which carry no batchId) still
+      // print CBM for sea goods.
       const batch = box.batchId ? await db.getBatchById(box.batchId) : null;
-      const shippingType = batch?.shippingType ?? null;
+      const shippingType = db.resolveBoxShippingType(batch?.shippingType, items);
       return { ...box, items, shippingType };
     }),
 
