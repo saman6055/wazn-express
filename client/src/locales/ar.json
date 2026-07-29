@@ -5743,6 +5743,7 @@
     "remove": "إزالة",
     "packageCount": "طرود",
     "totalWeight": "الوزن الإجمالي",
+    "totalVolume": "إجمالي CBM",
     "packageValue": "قيمة الطرود",
     "deliveryCharge": "رسوم التوصيل",
     "grandTotal": "المجموع الكلي",

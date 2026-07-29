@@ -17,6 +17,9 @@ export interface BoxForPrint {
   totalPackages?: number | null;
   totalWeightKg?: string | number | null;
   totalValueUsd?: string | number | null;
+  /** Batch shipping type. "sea" → the box is billed by volume (CBM) and the
+   *  receipt/label show CBM instead of kg. Anything else (or null) → kg. */
+  shippingType?: string | null;
   notes?: string | null;
   createdAt?: string | Date | null;
   sealedAt?: string | Date | null;
@@ -27,6 +30,9 @@ export interface BoxItemForPrint {
   trackingNumber?: string | null;
   itemType: string;
   weightKg?: string | number | null;
+  /** Volume in CBM for sea items (null for air). Shown in place of weight on
+   *  sea-batch receipts/labels. */
+  volumeCbm?: string | number | null;
   calculatedCostUsd?: string | number | null;
   description?: string | null;
   sourceInfo?: string | null;
@@ -90,6 +96,28 @@ function formatNum(v: string | number | null | undefined, decimals = 2): string 
 function formatDate(d: string | Date | null | undefined): string {
   if (!d) return new Date().toLocaleDateString("en-GB");
   return new Date(d).toLocaleDateString("en-GB");
+}
+
+// Sea (دەریایی) batches are billed by volume, so the measurement column shows
+// CBM; every other batch shows weight in kg. "CBM" is kept as a literal unit
+// (international, identical across ku/ar/en/zh); only the total-row label is
+// translated (delivery.totalVolume / delivery.totalWeight).
+function isSeaBox(box: BoxForPrint): boolean {
+  return box.shippingType === "sea";
+}
+
+function itemMeasure(box: BoxForPrint, item: BoxItemForPrint): string {
+  return isSeaBox(box)
+    ? `${formatNum(item.volumeCbm, 3)} CBM`
+    : `${formatNum(item.weightKg)} kg`;
+}
+
+function totalMeasure(box: BoxForPrint, items: BoxItemForPrint[]): string {
+  if (isSeaBox(box)) {
+    const totalCbm = items.reduce((s, i) => s + Number(i.volumeCbm || 0), 0);
+    return `${totalCbm.toFixed(3)} CBM`;
+  }
+  return `${formatNum(box.totalWeightKg)} kg`;
 }
 
 function deliveryMethodLabel(method: string, t: TFunc): string {
@@ -186,7 +214,6 @@ export function printBoxLabel(
   customer: CustomerForPrint | null,
   t: TFunc,
 ): void {
-  const totalWeight = formatNum(box.totalWeightKg);
   const totalValue = formatNum(box.totalValueUsd);
   const deliveryCharge = formatNum(box.deliveryChargeUsd);
   const grandTotal = (Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0)).toFixed(2);
@@ -196,7 +223,7 @@ export function printBoxLabel(
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">${idx + 1}</td>
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; font-family:monospace; direction:ltr; text-align:left;">${item.trackingNumber || "-"}</td>
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">${itemTypeLabel(item.itemType, t)}</td>
-      <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">${formatNum(item.weightKg)} kg</td>
+      <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">${itemMeasure(box, item)}</td>
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">$${formatNum(item.calculatedCostUsd)}</td>
     </tr>
   `).join("");
@@ -358,7 +385,7 @@ export function printBoxLabel(
           <th>#</th>
           <th>${t("delivery.tracking")}</th>
           <th>${t("delivery.type")}</th>
-          <th>${t("delivery.weight")}</th>
+          <th>${isSeaBox(box) ? "CBM" : t("delivery.weight")}</th>
           <th>${t("delivery.price")}</th>
         </tr>
       </thead>
@@ -375,8 +402,8 @@ export function printBoxLabel(
         <div style="font-weight:700;">${box.totalPackages || 0}</div>
       </div>
       <div class="total-cell">
-        <div style="font-size:9px; color:#6b7280;">${t("delivery.totalWeight")}</div>
-        <div style="font-weight:700;">${totalWeight} kg</div>
+        <div style="font-size:9px; color:#6b7280;">${isSeaBox(box) ? t("delivery.totalVolume") : t("delivery.totalWeight")}</div>
+        <div style="font-weight:700;">${totalMeasure(box, items)}</div>
       </div>
       <div class="total-cell">
         <div style="font-size:9px; color:#6b7280;">${t("delivery.packageValue")}</div>
@@ -431,7 +458,6 @@ export function printBoxReceipt(
   // Direction follows the chosen receipt language (rtl for ku/ar, ltr for
   // en/zh). Defaults to rtl for back-compat with callers that don't pass it.
   const direction = options?.direction || 'rtl';
-  const totalWeight = formatNum(box.totalWeightKg);
   const totalValue = formatNum(box.totalValueUsd);
   const deliveryCharge = formatNum(box.deliveryChargeUsd);
   const grandTotalNum = Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0);
@@ -457,7 +483,7 @@ export function printBoxReceipt(
       <td style="border:1px solid #e5e7eb; padding:8px 12px; font-size:12px; font-family:monospace; direction:ltr; text-align:left;">${item.trackingNumber || "-"}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">${itemTypeLabel(item.itemType, t)}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; font-size:12px;">${description}</td>
-      <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">${formatNum(item.weightKg)} kg</td>
+      <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">${itemMeasure(box, item)}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">$${formatNum(item.calculatedCostUsd)}</td>
     </tr>
   `;
@@ -701,7 +727,7 @@ export function printBoxReceipt(
             <th>${t("delivery.tracking")}</th>
             <th>${t("delivery.type")}</th>
             <th>${t("delivery.description")}</th>
-            <th>${t("delivery.weight")}</th>
+            <th>${isSeaBox(box) ? "CBM" : t("delivery.weight")}</th>
             <th>${t("delivery.price")}</th>
           </tr>
         </thead>
@@ -722,8 +748,8 @@ export function printBoxReceipt(
           <span style="font-weight:600;">${box.totalPackages || 0}</span>
         </div>
         <div class="financial-row">
-          <span>${t("delivery.totalWeight")}:</span>
-          <span style="font-weight:600;">${totalWeight} kg</span>
+          <span>${isSeaBox(box) ? t("delivery.totalVolume") : t("delivery.totalWeight")}:</span>
+          <span style="font-weight:600;">${totalMeasure(box, items)}</span>
         </div>
         <div class="financial-row">
           <span>${t("delivery.packageValue")}:</span>

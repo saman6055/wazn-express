@@ -864,7 +864,12 @@ export const deliveryBoxRouter = router({
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) return null;
       const items = await db.getBoxItems(input.id);
-      return { ...box, items };
+      // Batch shipping type drives the receipt/label unit: a sea (دەریایی)
+      // batch is billed by CBM, an air batch by weight (kg). Manual boxes
+      // (no batch) stay null → default kg.
+      const batch = box.batchId ? await db.getBatchById(box.batchId) : null;
+      const shippingType = batch?.shippingType ?? null;
+      return { ...box, items, shippingType };
     }),
 
   // Get open boxes (for current user or all)

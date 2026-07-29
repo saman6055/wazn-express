@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet, ScanBarcode } from "lucide-react";
+import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet, ScanBarcode, AlertTriangle } from "lucide-react";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -67,6 +67,9 @@ export default function CommissionForm() {
     productType: "",
     // Commission pricing
     itemPriceUsd: "",
+    // Sale price per unit (فرۆشتن). UI-only helper: commission = sell − buy.
+    // Not persisted — derivable as itemPriceUsd + commissionFeeUsd.
+    sellPriceUsd: "",
     commissionFeeUsd: "",
     // Advance payment (partial/full prepayment at order creation)
     advancePaidUsd: "",
@@ -152,6 +155,7 @@ export default function CommissionForm() {
         size: "",
         productType: "",
         itemPriceUsd: "",
+        sellPriceUsd: "",
         commissionFeeUsd: "",
         advancePaidUsd: "",
         advancePaymentMethod: "CASH",
@@ -176,22 +180,42 @@ export default function CommissionForm() {
   // 3-way sync: rmbPerUnit ↔ rmbTotal ↔ itemPriceUsd
   const qty = parseInt(formData.quantity) || 1;
 
+  // When the buy price (itemPriceUsd) changes, keep the sell/commission pair
+  // consistent. Sell is the "sticky" target: if the user has entered a sell
+  // price, recompute commission = sell − buy. Otherwise, if only a commission
+  // was entered, recompute sell = buy + commission. Commission may go negative
+  // (a loss) — allowed, just surfaced with a warning in the UI.
+  const reconcileFromBuy = (prev: typeof formData, buyStr: string): typeof formData => {
+    const buy = parseFloat(buyStr) || 0;
+    if (prev.sellPriceUsd.trim() !== "") {
+      const sell = parseFloat(prev.sellPriceUsd) || 0;
+      return { ...prev, itemPriceUsd: buyStr, commissionFeeUsd: (sell - buy).toFixed(2) };
+    }
+    if (prev.commissionFeeUsd.trim() !== "") {
+      const comm = parseFloat(prev.commissionFeeUsd) || 0;
+      return { ...prev, itemPriceUsd: buyStr, sellPriceUsd: (buy + comm).toFixed(2) };
+    }
+    return { ...prev, itemPriceUsd: buyStr };
+  };
+
   const syncFromPerUnit = (perUnit: string, q = qty) => {
     const v = parseFloat(perUnit) || 0;
     setIqdPerUnit(perUnit);
     setIqdTotal(v > 0 ? (v * q).toFixed(2) : "");
-    setFormData(prev => ({ ...prev, itemPriceUsd: v > 0 && rmbRate > 0 ? (v / rmbRate).toFixed(4) : "" }));
+    const usd = v > 0 && rmbRate > 0 ? (v / rmbRate).toFixed(4) : "";
+    setFormData(prev => reconcileFromBuy(prev, usd));
   };
 
   const syncFromTotal = (total: string, q = qty) => {
     const v = parseFloat(total) || 0;
     setIqdTotal(total);
     setIqdPerUnit(v > 0 && q > 0 ? (v / q).toFixed(2) : "");
-    setFormData(prev => ({ ...prev, itemPriceUsd: v > 0 && q > 0 && rmbRate > 0 ? (v / q / rmbRate).toFixed(4) : "" }));
+    const usd = v > 0 && q > 0 && rmbRate > 0 ? (v / q / rmbRate).toFixed(4) : "";
+    setFormData(prev => reconcileFromBuy(prev, usd));
   };
 
   const syncFromUsd = (usd: string, q = qty) => {
-    setFormData(prev => ({ ...prev, itemPriceUsd: usd }));
+    setFormData(prev => reconcileFromBuy(prev, usd));
     const v = parseFloat(usd) || 0;
     if (v > 0 && rmbRate > 0) {
       const perUnit = v * rmbRate;
@@ -200,6 +224,27 @@ export default function CommissionForm() {
     } else {
       setIqdPerUnit(""); setIqdTotal("");
     }
+  };
+
+  // Two-way link between sell price (فرۆشتن) and commission (عمولە), anchored
+  // on the buy price. Editing one recomputes the other:
+  //   sell − buy = commission   ·   buy + commission = sell
+  const syncFromSell = (sellStr: string) => {
+    setFormData(prev => {
+      if (sellStr.trim() === "") return { ...prev, sellPriceUsd: "", commissionFeeUsd: "" };
+      const buy = parseFloat(prev.itemPriceUsd) || 0;
+      const sell = parseFloat(sellStr) || 0;
+      return { ...prev, sellPriceUsd: sellStr, commissionFeeUsd: (sell - buy).toFixed(2) };
+    });
+  };
+
+  const syncFromCommission = (commStr: string) => {
+    setFormData(prev => {
+      if (commStr.trim() === "") return { ...prev, commissionFeeUsd: "", sellPriceUsd: "" };
+      const buy = parseFloat(prev.itemPriceUsd) || 0;
+      const comm = parseFloat(commStr) || 0;
+      return { ...prev, commissionFeeUsd: commStr, sellPriceUsd: (buy + comm).toFixed(2) };
+    });
   };
 
   const handleQuantityChange = (val: string) => {
@@ -226,9 +271,14 @@ export default function CommissionForm() {
 
   // Calculate totals
   const itemPrice = parseFloat(formData.itemPriceUsd) || 0;
+  const sellPrice = parseFloat(formData.sellPriceUsd) || 0;
   const commissionFee = parseFloat(formData.commissionFeeUsd) || 0;
   const quantity = parseInt(formData.quantity) || 1;
   const totalPrepaid = (itemPrice + commissionFee) * quantity;
+  // Loss = sell below buy → negative commission. Allowed (no hard block) but
+  // flagged in red with a flashing $ so a likely typo can't slip through
+  // unnoticed.
+  const isLoss = formData.commissionFeeUsd.trim() !== "" && commissionFee < 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,9 +298,16 @@ export default function CommissionForm() {
       return;
     }
 
-    if (!formData.commissionFeeUsd || commissionFee <= 0) {
-      toast.error(pickLang(language, { ku: "تکایە عمولەی کڕین داخڵ بکە", en: "Please enter the purchase commission", ar: "يرجى إدخال عمولة الشراء", zh: "请输入采购佣金" }));
+    // Commission must be entered (auto-fills from the sell price), but a
+    // negative value (sell below buy = loss) is NOT blocked — it's only
+    // warned about in the UI, so an intentional loss can still be saved.
+    if (!formData.commissionFeeUsd || formData.commissionFeeUsd.trim() === "") {
+      toast.error(pickLang(language, { ku: "تکایە عمولەی کڕین یان نرخی فرۆشتن داخڵ بکە", en: "Please enter the purchase commission or sale price", ar: "يرجى إدخال عمولة الشراء أو سعر البيع", zh: "请输入采购佣金或销售价格" }));
       return;
+    }
+    // Non-blocking heads-up when saving a loss, so it's a conscious choice.
+    if (isLoss) {
+      toast.warning(pickLang(language, { ku: "ئاگاداری: عمولە بە ناقسە (فرۆشتن لە کرین کەمترە) — بە زەرەر تۆمار دەکرێت", en: "Warning: commission is negative (sale below cost) — saving at a loss", ar: "تحذير: العمولة سالبة (البيع أقل من التكلفة) — يُحفظ بخسارة", zh: "警告：佣金为负（售价低于成本）——将以亏损保存" }));
     }
 
     if (!formData.shippingType) {
@@ -719,28 +776,12 @@ export default function CommissionForm() {
                 </div>
               </div>
 
-              {/* 4. Commission Fee + 5. Item Price ($) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Buy price → Sale price → Commission (two-way auto calc:
+                  sell − buy = commission · buy + commission = sell). */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Buy price (کڕین) */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-purple-700">{pickLang(language, { ku: "عموڵەی کڕین *", en: "Purchase commission *", ar: "عمولة الشراء *", zh: "采购佣金 *" })}</Label>
-                  <div className="relative" dir="ltr">
-                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-purple-600 font-bold">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.commissionFeeUsd}
-                      onChange={(e) => setFormData({ ...formData, commissionFeeUsd: e.target.value })}
-                      placeholder="0.00"
-                      className={cn("ps-8 text-start text-base font-bold h-10 border-purple-300 bg-white", filledCls(formData.commissionFeeUsd))}
-                      dir="ltr"
-                    />
-                  </div>
-                  <p className="text-[11px] text-purple-600">{pickLang(language, { ku: "قازانجی کۆمپانیا بۆ هەر دانەیەک", en: "Company profit per unit", ar: "ربح الشركة لكل وحدة", zh: "公司每件利润" })}</p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-amber-700">{pickLang(language, { ku: "نرخی کاڵا (یەک دانە) *", en: "Item price (per unit) *", ar: "سعر المنتج (للوحدة) *", zh: "商品价格（单件）*" })}</Label>
+                  <Label className="text-xs font-semibold text-amber-700">{pickLang(language, { ku: "نرخی کڕین (یەک دانە) *", en: "Buy price (per unit) *", ar: "سعر الشراء (للوحدة) *", zh: "采购价（单件）*" })}</Label>
                   <div className="relative" dir="ltr">
                     <span className="absolute start-3 top-1/2 -translate-y-1/2 text-amber-600 font-bold">$</span>
                     <Input
@@ -759,6 +800,51 @@ export default function CommissionForm() {
                       <span className="text-[11px] text-orange-600">{pickLang(language, { ku: "١ دانە بە یوانی چینی", en: "1 unit in Chinese yuan", ar: "وحدة واحدة باليوان الصيني", zh: "单件人民币" })}</span>
                       <span className="text-sm font-bold text-orange-700 font-mono">{Number(rmbPerUnit).toLocaleString("en-US")} ¥</span>
                     </div>
+                  )}
+                </div>
+
+                {/* Sale price (فرۆشتن) — new; typing here auto-computes commission */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-cyan-700">{pickLang(language, { ku: "نرخی فرۆشتن (یەک دانە)", en: "Sale price (per unit)", ar: "سعر البيع (للوحدة)", zh: "销售价（单件）" })}</Label>
+                  <div className="relative" dir="ltr">
+                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-cyan-600 font-bold">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.sellPriceUsd}
+                      onChange={(e) => syncFromSell(e.target.value)}
+                      placeholder="0.00"
+                      className={cn("ps-8 text-start text-base font-bold h-10 border-cyan-300 bg-white", filledCls(formData.sellPriceUsd))}
+                      dir="ltr"
+                    />
+                  </div>
+                  <p className="text-[11px] text-cyan-600">{pickLang(language, { ku: "عمولە خۆکار = فرۆشتن − کڕین", en: "Commission auto = sale − buy", ar: "العمولة تلقائيًا = البيع − الشراء", zh: "佣金自动 = 售价 − 采购价" })}</p>
+                </div>
+
+                {/* Commission (عمولە/قازانج) — auto from sale, still editable;
+                    flashes red on a loss (sell < buy) but does not block save. */}
+                <div className="space-y-1.5">
+                  <Label className={cn("text-xs font-semibold", isLoss ? "text-red-600" : "text-purple-700")}>{pickLang(language, { ku: "عموڵەی کڕین *", en: "Purchase commission *", ar: "عمولة الشراء *", zh: "采购佣金 *" })}</Label>
+                  <div className="relative" dir="ltr">
+                    <span className={cn("absolute start-3 top-1/2 -translate-y-1/2 font-bold", isLoss ? "text-red-600 animate-pulse" : "text-purple-600")}>$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.commissionFeeUsd}
+                      onChange={(e) => syncFromCommission(e.target.value)}
+                      placeholder="0.00"
+                      className={cn("ps-8 text-start text-base font-bold h-10 bg-white", isLoss ? "border-red-400 ring-1 ring-red-300 text-red-600" : cn("border-purple-300", filledCls(formData.commissionFeeUsd)))}
+                      dir="ltr"
+                    />
+                  </div>
+                  {isLoss ? (
+                    <p className="text-[11px] font-bold text-red-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3 animate-pulse" />
+                      {pickLang(language, { ku: "فرۆشتن لە کڕین کەمترە — زەرەر", en: "Sale below cost — loss", ar: "البيع أقل من التكلفة — خسارة", zh: "售价低于成本 — 亏损" })}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-purple-600">{pickLang(language, { ku: "قازانجی کۆمپانیا بۆ هەر دانەیەک", en: "Company profit per unit", ar: "ربح الشركة لكل وحدة", zh: "公司每件利润" })}</p>
                   )}
                 </div>
               </div>
@@ -785,11 +871,11 @@ export default function CommissionForm() {
                     </div>
                     <div className="bg-white rounded-lg p-2 text-center shadow-sm">
                       <p className="text-[10px] text-slate-500 mb-0.5">{pickLang(language, { ku: "عمولە (١ دانە)", en: "Commission (1 unit)", ar: "العمولة (وحدة واحدة)", zh: "佣金（单件）" })}</p>
-                      <p className="text-base font-bold text-purple-600">${commissionFee.toFixed(2)}</p>
+                      <p className={cn("text-base font-bold", isLoss ? "text-red-600" : "text-purple-600")}>${commissionFee.toFixed(2)}</p>
                     </div>
-                    <div className="bg-purple-100 rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-purple-700 mb-0.5">{pickLang(language, { ku: `کۆی عمولە (${formData.quantity || 1} دانە)`, en: `Total commission (${formData.quantity || 1} units)`, ar: `إجمالي العمولة (${formData.quantity || 1} قطعة)`, zh: `总佣金（${formData.quantity || 1} 件）` })}</p>
-                      <p className="text-base font-bold text-purple-700">${(commissionFee * quantity).toFixed(2)}</p>
+                    <div className={cn("rounded-lg p-2 text-center shadow-sm", isLoss ? "bg-red-100" : "bg-purple-100")}>
+                      <p className={cn("text-[10px] mb-0.5", isLoss ? "text-red-700" : "text-purple-700")}>{pickLang(language, { ku: `کۆی عمولە (${formData.quantity || 1} دانە)`, en: `Total commission (${formData.quantity || 1} units)`, ar: `إجمالي العمولة (${formData.quantity || 1} قطعة)`, zh: `总佣金（${formData.quantity || 1} 件）` })}</p>
+                      <p className={cn("text-base font-bold", isLoss ? "text-red-700" : "text-purple-700")}>${(commissionFee * quantity).toFixed(2)}</p>
                     </div>
                   </div>
 
@@ -808,8 +894,11 @@ export default function CommissionForm() {
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-center text-amber-600 mt-2 bg-white/50 rounded-lg py-1">
-                    💡 {pickLang(language, { ku: `قازانجی کۆمپانیا = $${(commissionFee * quantity).toFixed(2)} (عمولەی ${formData.quantity || 1} دانە)`, en: `Company profit = $${(commissionFee * quantity).toFixed(2)} (commission for ${formData.quantity || 1} units)`, ar: `ربح الشركة = $${(commissionFee * quantity).toFixed(2)} (عمولة ${formData.quantity || 1} قطعة)`, zh: `公司利润 = $${(commissionFee * quantity).toFixed(2)}（${formData.quantity || 1} 件的佣金）` })}
+                  <p className={cn("text-[11px] text-center mt-2 rounded-lg py-1 flex items-center justify-center gap-1", isLoss ? "text-red-600 font-bold bg-red-50" : "text-amber-600 bg-white/50")}>
+                    {isLoss && <AlertTriangle className="h-3 w-3 animate-pulse" />}
+                    {isLoss
+                      ? pickLang(language, { ku: `زەرەر = $${Math.abs(commissionFee * quantity).toFixed(2)} (فرۆشتن لە کڕین کەمترە)`, en: `Loss = $${Math.abs(commissionFee * quantity).toFixed(2)} (sale below cost)`, ar: `خسارة = $${Math.abs(commissionFee * quantity).toFixed(2)} (البيع أقل من التكلفة)`, zh: `亏损 = $${Math.abs(commissionFee * quantity).toFixed(2)}（售价低于成本）` })
+                      : `💡 ${pickLang(language, { ku: `قازانجی کۆمپانیا = $${(commissionFee * quantity).toFixed(2)} (عمولەی ${formData.quantity || 1} دانە)`, en: `Company profit = $${(commissionFee * quantity).toFixed(2)} (commission for ${formData.quantity || 1} units)`, ar: `ربح الشركة = $${(commissionFee * quantity).toFixed(2)} (عمولة ${formData.quantity || 1} قطعة)`, zh: `公司利润 = $${(commissionFee * quantity).toFixed(2)}（${formData.quantity || 1} 件的佣金）` })}`}
                   </p>
                 </div>
               )}

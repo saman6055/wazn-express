@@ -5668,6 +5668,7 @@
     "remove": "Remove",
     "packageCount": "Packages",
     "totalWeight": "Total Weight",
+    "totalVolume": "Total CBM",
     "packageValue": "Package Value",
     "deliveryCharge": "Delivery Charge",
     "grandTotal": "Grand Total",

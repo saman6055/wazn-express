@@ -120,3 +120,6 @@ temp/
 temp_*.txt
 *.xlsx
 _theme/
+
+# Local machine setup notes (contains local-only dev credentials)
+LOCAL-SETUP.md

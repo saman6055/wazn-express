@@ -56,7 +56,11 @@
       "Bash(ls -1 /c/Users/saman/OneDrive/Desktop/wazn-express/drizzle/schema/*.schema.ts)",
       "Bash(xargs -I {} basename {} .schema.ts)",
       "Bash(git commit -m 'fix: use FileReader.readAsDataURL for reliable image compression:*)",
-      "WebSearch"
+      "WebSearch",
+      "PowerShell(Get-Service MySQLWazn)",
+      "Bash(curl -s -o /dev/null -w \"health: %{http_code}\\\\n\" http://localhost:3500/api/health)",
+      "Bash(curl -s -o /dev/null -w \"root: %{http_code}\\\\n\" http://localhost:3500/)",
+      "Bash(curl -s -o /dev/null -w \"staff-login: %{http_code}\\\\n\" http://localhost:3500/staff-login)"
     ]
   }
 }

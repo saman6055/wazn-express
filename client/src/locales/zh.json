@@ -5747,6 +5747,7 @@
     "remove": "移除",
     "packageCount": "包裹",
     "totalWeight": "总重量",
+    "totalVolume": "总CBM",
     "packageValue": "包裹价值",
     "deliveryCharge": "配送费",
     "grandTotal": "总计",

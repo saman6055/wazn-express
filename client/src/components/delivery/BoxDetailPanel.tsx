@@ -308,7 +308,11 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const isInTransit = status === "in_transit";
   const statusCfg = STATUS_CONFIG[status] || STATUS_CONFIG.open;
 
+  // Sea (دەریایی) batches are billed by CBM, not weight — the measurement
+  // column/total switch to CBM to match the printed invoice.
+  const isSea = (box as any).shippingType === "sea";
   const totalWeight = items.reduce((sum: number, i: any) => sum + Number(i.weightKg || 0), 0);
+  const totalCbm = items.reduce((sum: number, i: any) => sum + Number(i.volumeCbm || 0), 0);
   const totalItemValue = items.reduce((sum: number, i: any) => sum + Number(i.calculatedCostUsd || 0), 0);
   const deliveryCharge = Number(box.deliveryChargeUsd || 0);
   const grandTotal = totalItemValue + deliveryCharge;
@@ -334,6 +338,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         totalPackages: box.totalPackages,
         totalWeightKg: box.totalWeightKg,
         totalValueUsd: box.totalValueUsd,
+        shippingType: (box as any).shippingType,
         notes: box.notes,
         createdAt: box.createdAt,
       },
@@ -341,6 +346,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         trackingNumber: i.trackingNumber,
         itemType: i.itemType,
         weightKg: i.weightKg,
+        volumeCbm: i.volumeCbm,
         calculatedCostUsd: i.calculatedCostUsd,
         description: i.description,
         sourceInfo: i.sourceInfo,
@@ -375,6 +381,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         totalPackages: box.totalPackages,
         totalWeightKg: box.totalWeightKg,
         totalValueUsd: box.totalValueUsd,
+        shippingType: (box as any).shippingType,
         notes: box.notes,
         createdAt: box.createdAt,
       },
@@ -382,6 +389,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         trackingNumber: i.trackingNumber,
         itemType: i.itemType,
         weightKg: i.weightKg,
+        volumeCbm: i.volumeCbm,
         calculatedCostUsd: i.calculatedCostUsd,
         description: i.description,
         sourceInfo: i.sourceInfo,
@@ -489,7 +497,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                   <TableHead>{t("delivery.tracking")}</TableHead>
                   <TableHead>{t("delivery.details")}</TableHead>
                   <TableHead>{t("delivery.source")}</TableHead>
-                  <TableHead className="text-end">{t("delivery.weight")}</TableHead>
+                  <TableHead className="text-end">{isSea ? "CBM" : t("delivery.weight")}</TableHead>
                   <TableHead className="text-end">{t("delivery.price")}</TableHead>
                   {isOpen && <TableHead className="w-[50px]" />}
                 </TableRow>
@@ -577,9 +585,11 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                         );
                       })()}
                     </TableCell>
-                    {/* Weight */}
+                    {/* Weight (kg) or volume (CBM) for sea batches */}
                     <TableCell className="text-end font-mono text-xs">
-                      {Number(item.weightKg || 0).toFixed(2)} kg
+                      {isSea
+                        ? `${Number(item.volumeCbm || 0).toFixed(3)} CBM`
+                        : `${Number(item.weightKg || 0).toFixed(2)} kg`}
                     </TableCell>
                     {/* Price */}
                     <TableCell className="text-end font-mono text-sm font-semibold">
@@ -622,9 +632,9 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           <div className="rounded-lg bg-muted/50 p-3 text-center">
             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
               <Weight className="h-3 w-3" />
-              {t("delivery.totalWeight")}
+              {isSea ? t("delivery.totalVolume") : t("delivery.totalWeight")}
             </p>
-            <p className="text-lg font-bold">{totalWeight.toFixed(2)} kg</p>
+            <p className="text-lg font-bold">{isSea ? `${totalCbm.toFixed(3)} CBM` : `${totalWeight.toFixed(2)} kg`}</p>
           </div>
           <div className="rounded-lg bg-muted/50 p-3 text-center">
             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">

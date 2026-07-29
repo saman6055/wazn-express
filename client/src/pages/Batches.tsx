@@ -304,18 +304,12 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       toast.error(t("batches.selectType") || "Please select shipping type");
       return;
     }
+    // Batch code is optional and free-form: any code the user types is kept
+    // as-is (no forced SEA/AIR format); leaving it blank lets the server
+    // auto-generate one. Empty string → undefined so the server mints a code.
     const rawBatchCode = (formData.get("batchCode") as string)?.trim() || "";
-    const batchCodeRe = /^(SEA|AIR)-\d+(-\d+)*$/;
-    if (!rawBatchCode) {
-      toast.error(t("batches.batchCodeRequired") || "Batch code is required");
-      return;
-    }
-    if (!batchCodeRe.test(rawBatchCode)) {
-      toast.error(t("batches.batchCodeFormat") || "Batch code must be like SEA-123 or AIR-2024-001");
-      return;
-    }
     createMutation.mutate({
-      batchCode: rawBatchCode,
+      batchCode: rawBatchCode || undefined,
       originWarehouseId,
       destinationCountryId,
       shippingType: shippingType as "air_regular" | "air_irregular" | "sea",
@@ -460,8 +454,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   {/* Tab 1: Basic Info */}
                   <TabsContent value="basic" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="batchCode">{t("batches.batchCode")} *</Label>
-                      <Input id="batchCode" name="batchCode" required placeholder="e.g., AIR-2024-001" />
+                      <Label htmlFor="batchCode">{t("batches.batchCode")}</Label>
+                      <Input id="batchCode" name="batchCode" placeholder={pickLang(language, { ku: "ئارەزوومەندانە — بەتاڵی جێبهێڵە بۆ دروستبوونی خۆکار", en: "Optional — leave blank to auto-generate", ar: "اختياري — اتركه فارغًا للتوليد التلقائي", zh: "可选 — 留空则自动生成" })} />
+                      <p className="text-[11px] text-muted-foreground">{pickLang(language, { ku: "دەتوانیت کۆدی خۆت بنووسیت (بە هەر شێوەیەک) یان بەتاڵی بهێڵیت", en: "Enter your own code (any format) or leave it blank", ar: "أدخل رمزك الخاص (بأي تنسيق) أو اتركه فارغًا", zh: "可输入自己的代码（任意格式）或留空" })}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">

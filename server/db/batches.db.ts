@@ -75,15 +75,70 @@ import {
 
 // ============ BATCH OPERATIONS ============
 
+/**
+ * Auto-generate a batch code when the user leaves it blank. Batch codes are
+ * now optional (free-form) — if the user types their own we keep it verbatim;
+ * otherwise we mint one in the familiar "{SEA|AIR}-{YYYY}-{NNN}" shape, where
+ * NNN is the next sequence for that prefix + year. Mirrors generateBoxCode.
+ */
+export async function generateBatchCode(shippingType: string): Promise<string> {
+  const db = await getDb();
+  const prefix = shippingType === "sea" ? "SEA" : "AIR";
+  const year = new Date().getFullYear();
+  const base = `${prefix}-${year}-`;
+
+  if (db) {
+    try {
+      const [result] = await db.select({ count: sql<number>`COUNT(*)` })
+        .from(batches)
+        .where(sql`batchCode LIKE ${base + '%'}`);
+      let seq = (result?.count || 0) + 1;
+      // Walk forward until the candidate is actually free — a manually-typed
+      // code can occupy a slot the plain count would otherwise reuse, so the
+      // count alone is not enough to guarantee uniqueness.
+      for (let i = 0; i < 1000; i++) {
+        const candidate = `${base}${String(seq).padStart(3, '0')}`;
+        const exists = await db.select({ id: batches.id }).from(batches)
+          .where(eq(batches.batchCode, candidate)).limit(1);
+        if (exists.length === 0) return candidate;
+        seq++;
+      }
+      return `${base}${Date.now().toString(36).slice(-4).toUpperCase()}`;
+    } catch {
+      return `${base}${Date.now().toString(36).slice(-3).toUpperCase()}`;
+    }
+  }
+  return `${base}001`;
+}
+
 export async function createBatch(data: InsertBatch): Promise<Batch> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  // Batch code is optional: fill a generated one when the caller sent nothing.
+  const batchCode = data.batchCode?.trim() ? data.batchCode.trim() : await generateBatchCode(data.shippingType);
+  // Codes must stay unique. A manually-typed duplicate gets a clear message
+  // instead of a raw DB constraint error. (Generated codes are already free.)
+  const existing = await db.select({ id: batches.id }).from(batches)
+    .where(eq(batches.batchCode, batchCode)).limit(1);
+  if (existing.length > 0) {
+    throw new Error(`کۆدی باچ «${batchCode}» پێشتر بەکارهاتووە — تکایە کۆدێکی جیاواز بنووسە`);
+  }
+  data = { ...data, batchCode };
   const result = await db.insert(batches).values(data);
   const insertId = Number(result[0].insertId);
   if (!insertId) throw new Error("Failed to insert batch");
   const inserted = await db.select().from(batches).where(eq(batches.id, insertId)).limit(1);
   if (!inserted[0]) throw new Error("Failed to retrieve inserted batch");
   return inserted[0];
+}
+
+/** Look up a batch by its (unique) code. Used to reject duplicate codes with
+ *  a friendly message before insert. */
+export async function getBatchByCode(batchCode: string): Promise<Batch | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [batch] = await db.select().from(batches).where(eq(batches.batchCode, batchCode)).limit(1);
+  return batch || null;
 }
 
 const BATCH_LIST_DEFAULT_LIMIT = 50;

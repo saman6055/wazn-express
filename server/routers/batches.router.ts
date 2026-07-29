@@ -5,7 +5,7 @@ import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { notifyBatchStatusChange } from "../services/notification.service";
-import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
+import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema } from "./schemas";
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Consolidated Batch Delivery Invoice Helpers
@@ -818,7 +818,10 @@ export const batchesRouter = router({
       }),
     create: staffProcedure
       .input(z.object({
-        batchCode: batchCodeSchema,
+        // Batch code is optional and free-form now: keep whatever the user
+        // types (any non-empty string, must be unique), or leave blank and the
+        // server auto-generates one. No SEA/AIR format is enforced anymore.
+        batchCode: z.string().max(50).optional(),
         originWarehouseId: idSchema,
         destinationCountryId: idSchema,
         shippingType: z.enum(["air_regular", "air_irregular", "sea"]),
@@ -862,8 +865,19 @@ export const batchesRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { pricingTiers, customerPricing, ...batchData } = input;
+        // A manually-typed code must be unique — reject a duplicate up front
+        // with a clear CONFLICT (a blank code auto-generates a free one).
+        const typedCode = input.batchCode?.trim();
+        if (typedCode && await db.getBatchByCode(typedCode)) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: `کۆدی باچ «${typedCode}» پێشتر بەکارهاتووە — تکایە کۆدێکی جیاواز بنووسە`,
+          });
+        }
         const batch = await db.createBatch({
           ...batchData,
+          // "" (or undefined) → createBatch mints a code for us.
+          batchCode: input.batchCode ?? "",
           createdById: ctx.user.id,
         });
         

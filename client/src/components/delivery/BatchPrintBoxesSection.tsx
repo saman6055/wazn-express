@@ -194,6 +194,7 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
               totalPackages: box.totalPackages,
               totalWeightKg: box.totalWeightKg,
               totalValueUsd: box.totalValueUsd,
+              shippingType: fullBox?.shippingType,
               createdAt: box.createdAt,
             },
             items,

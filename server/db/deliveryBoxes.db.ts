@@ -80,7 +80,7 @@ export async function getAllDeliveryBoxes(filters?: {
   limit?: number;
   offset?: number;
   batchId?: number | null;
-}): Promise<{ boxes: DeliveryBox[]; total: number }> {
+}): Promise<{ boxes: (DeliveryBox & { shippingType: string | null })[]; total: number }> {
   const db = await getDb();
   if (!db) return { boxes: [], total: 0 };
 
@@ -121,7 +121,21 @@ export async function getAllDeliveryBoxes(filters?: {
     .limit(filters?.limit || 50)
     .offset(filters?.offset || 0);
 
-  return { boxes, total };
+  // Attach the batch shipping type so the list/table can show CBM vs kg
+  // without a per-row query. Manual boxes (no batch) get null → kg.
+  const batchIds = Array.from(new Set(boxes.map(b => b.batchId).filter((id): id is number => !!id)));
+  const shippingTypeByBatch = new Map<number, string | null>();
+  if (batchIds.length > 0) {
+    const batchRows = await db.select({ id: batches.id, shippingType: batches.shippingType })
+      .from(batches).where(inArray(batches.id, batchIds));
+    for (const b of batchRows) shippingTypeByBatch.set(b.id, b.shippingType ?? null);
+  }
+  const boxesWithType = boxes.map(b => ({
+    ...b,
+    shippingType: b.batchId ? (shippingTypeByBatch.get(b.batchId) ?? null) : null,
+  }));
+
+  return { boxes: boxesWithType, total };
 }
 
 export async function updateDeliveryBox(id: number, data: Partial<InsertDeliveryBox>): Promise<DeliveryBox | null> {
@@ -253,6 +267,13 @@ export type BoxItemWithAdvance = DeliveryBoxItem & {
   // (productImage / first of productImages) or, for regular packages, the
   // first package photo. null when the source order/package has no image.
   productImage: string | null;
+  // Sea (دەریایی) shipments are billed by volume (CBM), not weight — the
+  // `weightKg` snapshot on the box item is 0/null for them. These two are
+  // resolved live from the linked package / full-package order so the
+  // receipt, label, and box panel can show CBM instead of kg. null when the
+  // source has no measurement.
+  volumeCbm: string | null;
+  shippingType: string | null;
 };
 
 function fpAdvance(fp: typeof fullPackageOrders.$inferSelect): number {
@@ -410,13 +431,30 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     return fpAdvance(fp);
   };
 
+  // Resolve the sea/CBM measurement for an item from its linked source.
+  // Priority mirrors the advance/photo lookups: explicit package → explicit
+  // FP order → first FP order sharing the tracking. Sea packages carry the
+  // meaningful number in `volumeCbm`; air packages leave it null and fall
+  // back to `weightKg` on the receipt.
+  const measureFor = (item: typeof items[number]): { volumeCbm: string | null; shippingType: string | null } => {
+    if (item.packageId) {
+      const p = pkgById.get(item.packageId);
+      if (p) return { volumeCbm: (p as any).volumeCbm ?? null, shippingType: (p as any).shippingType ?? null };
+    }
+    let fp = item.fullPackageOrderId ? fpById.get(item.fullPackageOrderId) : undefined;
+    if (!fp && item.trackingNumber) fp = (fpsByTracking.get(item.trackingNumber) || [])[0];
+    if (fp) return { volumeCbm: (fp as any).volumeCbm ?? null, shippingType: (fp as any).shippingType ?? null };
+    return { volumeCbm: null, shippingType: null };
+  };
+
   return items.map((item): BoxItemWithAdvance => {
     const productImage = imageFor(item);
+    const { volumeCbm, shippingType } = measureFor(item);
 
     // Direct FP-order scan path — single order owns the item, no sibling sum.
     if (item.fullPackageOrderId) {
       const fp = fpById.get(item.fullPackageOrderId);
-      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage };
+      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage, volumeCbm, shippingType };
     }
 
     // Tracking-based path — sum every linked order's advance, but skip
@@ -424,10 +462,10 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     if (item.trackingNumber) {
       const linked = fpsByTracking.get(item.trackingNumber) || [];
       const total = linked.reduce((s, fp) => s + advanceOnce(fp), 0);
-      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage };
+      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage, volumeCbm, shippingType };
     }
 
-    return { ...item, advanceAppliedUsd: '0', productImage };
+    return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType };
   });
 }
 
