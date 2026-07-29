@@ -15,6 +15,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
+import { readableError, editableSnapshot } from "@/lib/commissionEditUtils";
 import { toast } from "sonner";
 
 // Lightweight section wrapper — small bold title + thin divider. Defined at
@@ -155,6 +156,9 @@ export default function CommissionForm() {
   // Runs ONCE (ref-guarded): getById returns a fresh object on every refetch,
   // and re-running would wipe whatever the operator has typed so far.
   const didHydrate = useRef(false);
+  // Snapshot of the order as it was loaded — the baseline for "did anything
+  // actually change?" on save.
+  const originalSnapshot = useRef<string | null>(null);
   useEffect(() => {
     if (!isEditMode || didHydrate.current || !existingOrder) return;
     didHydrate.current = true;
@@ -169,8 +173,7 @@ export default function CommissionForm() {
         ? ((parseFloat(buy) || 0) + (parseFloat(commission) || 0)).toFixed(2)
         : "";
 
-    setFormData((prev) => ({
-      ...prev,
+    const hydrated = {
       customerId: o.customerId?.toString() || "",
       supplierId: o.supplierId?.toString() || "none",
       orderNumber: o.orderNumber || "",
@@ -193,7 +196,8 @@ export default function CommissionForm() {
       volumeCbm: o.volumeCbm?.toString() || "",
       // Advance payment is deliberately NOT hydrated — see the submit handler:
       // we never send it on edit, so the recorded advance can't be disturbed.
-    }));
+    };
+    setFormData((prev) => ({ ...prev, ...hydrated }));
 
     const imgs: string[] = Array.isArray(o.productImages) && o.productImages.length
       ? o.productImages
@@ -201,6 +205,10 @@ export default function CommissionForm() {
         ? [o.productImage]
         : [];
     setProductImages(imgs);
+
+    // Remember exactly what was loaded, so Save can tell an untouched form
+    // from a real edit and skip the round-trip entirely.
+    originalSnapshot.current = editableSnapshot(hydrated, imgs);
   }, [isEditMode, existingOrder]);
 
   // Mirror the ¥ helper boxes off the hydrated USD price once the rate is known.
@@ -222,17 +230,25 @@ export default function CommissionForm() {
   // screen used, so all pricing/ledger behaviour is unchanged.
   const updateMutation = trpc.fullPackage.update.useMutation({
     onSuccess: () => {
-      toast.success(pickLang(language, { ku: "ئۆردەر نوێکرایەوە", en: "Order updated", ar: "تم تحديث الطلب", zh: "订单已更新" }));
+      toast.success(pickLang(language, { ku: "گۆڕانکارییەکان خەزن کران ✓", en: "Changes saved ✓", ar: "تم حفظ التعديلات ✓", zh: "更改已保存 ✓" }));
       utils.fullPackage.list.invalidate();
       utils.fullPackage.getById.invalidate({ id: orderId as number });
       setLocation(`/commission/${orderId}`);
     },
     onError: (error) => {
-      // Some validation errors ship without a message body; never show a blank toast.
-      toast.error(
-        error.message ||
-          pickLang(language, { ku: "نوێکردنەوەی ئۆردەر سەرکەوتوو نەبوو", en: "Failed to update order", ar: "فشل تحديث الطلب", zh: "更新订单失败" }),
-      );
+      // Prefer the first field-level validation message; otherwise fall back to
+      // the top-level message only if it reads like one. readableError() keeps
+      // serialized payloads (base64 images and the like) off the screen.
+      const fallback = pickLang(language, { ku: "نوێکردنەوەی ئۆردەر سەرکەوتوو نەبوو", en: "Failed to update order", ar: "فشل تحديث الطلب", zh: "更新订单失败" });
+      const err = error as unknown as {
+        message?: string;
+        data?: { zodError?: { errors?: { message: string }[] } };
+      };
+      const zodFirst = err.data?.zodError?.errors?.[0]?.message;
+      toast.error(readableError(zodFirst, readableError(err.message, fallback)));
+      // Keep the full error in the console for diagnosis — just not in the UI.
+      // eslint-disable-next-line no-console
+      console.error("[CommissionForm] update failed:", error);
     },
   });
 
@@ -444,6 +460,22 @@ export default function CommissionForm() {
     // server treats a present `advancePaidUsd` as intent and would move money
     // on the customer ledger.
     if (isEditMode) {
+      // Nothing actually edited — say so and go back rather than writing a
+      // no-op update, which would bump the order's version and log a change
+      // that never happened.
+      if (
+        originalSnapshot.current !== null &&
+        editableSnapshot(formData, productImages) === originalSnapshot.current
+      ) {
+        toast.info(pickLang(language, {
+          ku: "هیچ گۆڕانکارییەک نەکرا — ئۆردەرەکە وەک خۆی مایەوە",
+          en: "Nothing changed — the order was left as it was",
+          ar: "لم يتغيّر شيء — بقي الطلب كما هو",
+          zh: "没有任何更改 — 订单保持原样",
+        }));
+        setLocation(`/commission/${orderId}`);
+        return;
+      }
       if (moneyChangeDetected && editReason.trim().length < 3) {
         toast.error(pickLang(language, {
           ku: "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت)",
