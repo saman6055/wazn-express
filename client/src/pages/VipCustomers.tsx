@@ -6,12 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { trpc } from "@/lib/trpc";
-import { Crown, Plus, Edit, Trash2, Users, Percent, DollarSign, CreditCard, Sparkles } from "lucide-react";
+import { Crown, Plus, Edit, Trash2, Users, Percent, DollarSign, CreditCard, Sparkles, Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { cn } from "@/lib/utils";
 
 export default function VipCustomers() {
     const { t, language } = useTranslation();
@@ -19,7 +22,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedVip, setSelectedVip] = useState<any>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
-  
+  // Searchable customer picker — the plain dropdown was unusable once the
+  // customer list grew; staff look people up by customer code.
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
+
   const { data: vipCustomers, refetch } = trpc.vip.list.useQuery();
   const { data: customers } = trpc.customers.list.useQuery();
   
@@ -28,6 +35,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       toast.success(t("toast.vipCustomerCreated"));
       setIsCreateOpen(false);
       setSelectedCustomerId("");
+      setCustomerSearch("");
       refetch();
     },
     onError: (error) => {
@@ -58,8 +66,24 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   });
 
   // Get customers who are not already VIP
-  const availableCustomers = customers?.filter(c => 
+  const availableCustomers = customers?.filter(c =>
     !vipCustomers?.some(v => v.customerId === c.id)
+  );
+
+  // Narrow by customer code, name, or mobile. Matching happens here rather
+  // than in <Command>'s own filter so a code search hits the code field
+  // exactly instead of fuzzy-matching the rendered label.
+  const filteredCustomers = (availableCustomers || []).filter((c: any) => {
+    if (!customerSearch.trim()) return true;
+    const q = customerSearch.toLowerCase();
+    const name = (c.fullName || c.fullNameKurdish || "").toLowerCase();
+    const code = (c.customerCode || "").toLowerCase();
+    const phone = (c.mobileNumber || "").toLowerCase();
+    return name.includes(q) || code.includes(q) || phone.includes(q);
+  });
+
+  const selectedCustomer = availableCustomers?.find(
+    (c: any) => c.id.toString() === selectedCustomerId,
   );
 
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
@@ -149,18 +173,60 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
                       <Label>{pickLang(language, { ku: "کڕیار هەڵبژێرە *", en: "Select Customer *", ar: "اختر العميل *", zh: "选择客户 *" })}</Label>
-                      <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                        <SelectTrigger className="h-11">
-                          <SelectValue placeholder={pickLang(language, { ku: "کڕیارێک هەڵبژێرە", en: "Choose a customer", ar: "اختر عميلاً", zh: "选择一个客户" })} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableCustomers?.map((customer) => (
-                            <SelectItem key={customer.id} value={customer.id.toString()}>
-                              {customer.fullName} ({customer.customerCode})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={customerOpen}
+                            className="w-full justify-between h-11 font-normal"
+                          >
+                            {selectedCustomer
+                              ? `${(selectedCustomer as any).fullName || (selectedCustomer as any).fullNameKurdish} (${(selectedCustomer as any).customerCode})`
+                              : pickLang(language, { ku: "کڕیارێک هەڵبژێرە", en: "Choose a customer", ar: "اختر عميلاً", zh: "选择一个客户" })}
+                            <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent variant="panel" className="w-[--radix-popover-trigger-width] p-0" align="start">
+                          {/* shouldFilter={false} — we filter above so a code
+                              search matches the code field, not the label. */}
+                          <Command shouldFilter={false}>
+                            <CommandInput
+                              placeholder={pickLang(language, { ku: "گەڕان بە کۆد، ناو یان مۆبایل...", en: "Search by code, name, or mobile...", ar: "البحث بالرمز أو الاسم أو الجوال...", zh: "按编号、姓名或手机搜索..." })}
+                              value={customerSearch}
+                              onValueChange={setCustomerSearch}
+                            />
+                            <CommandList>
+                              <CommandEmpty>{pickLang(language, { ku: "کڕیار نەدۆزرایەوە", en: "No customer found", ar: "لم يُعثر على عميل", zh: "未找到客户" })}</CommandEmpty>
+                              <CommandGroup>
+                                {filteredCustomers.map((customer: any) => (
+                                  <CommandItem
+                                    key={customer.id}
+                                    value={customer.id.toString()}
+                                    onSelect={() => {
+                                      setSelectedCustomerId(customer.id.toString());
+                                      setCustomerOpen(false);
+                                      setCustomerSearch("");
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "me-2 h-4 w-4",
+                                        selectedCustomerId === customer.id.toString() ? "opacity-100" : "opacity-0",
+                                      )}
+                                    />
+                                    <div className="flex flex-col">
+                                      <span>{customer.fullName || customer.fullNameKurdish}</span>
+                                      <span className="text-xs text-muted-foreground font-mono" dir="ltr">{customer.customerCode}</span>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="tier">{pickLang(language, { ku: "ئاستی VIP *", en: "VIP Tier *", ar: "فئة VIP *", zh: "VIP 等级 *" })}</Label>
