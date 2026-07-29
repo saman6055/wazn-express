@@ -40,9 +40,9 @@ export interface BoxItemForPrint {
   description?: string | null;
   sourceInfo?: string | null;
   /** Prepayment applied to this item (commission `totalPrepaidUsd` or
-   *  full-package `advancePaidUsd`). Summed across items and shown as a
-   *  negative line on the receipt; subtracted from grand total to
-   *  produce the balance still owed at delivery. */
+   *  full-package `advancePaidUsd`). NOT printed — the customer receipt is a
+   *  plain goods document. Kept on the type because callers pass it through
+   *  and the in-app box panel shows it to staff. */
   advanceAppliedUsd?: string | number | null;
 }
 
@@ -470,16 +470,11 @@ export function printBoxReceipt(
   const deliveryCharge = formatNum(box.deliveryChargeUsd);
   const grandTotalNum = Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0);
   const grandTotal = grandTotalNum.toFixed(2);
-  // Sum of advance / prepaid amounts already paid by the customer for
-  // commission and full-package items in this box. When > 0, the receipt
-  // shows it as a negative line and a separate "remaining due" total.
-  const advanceTotalNum = items.reduce(
-    (sum, item) => sum + (Number(item.advanceAppliedUsd || 0) || 0),
-    0,
-  );
-  const hasAdvance = advanceTotalNum > 0;
-  const advanceTotal = advanceTotalNum.toFixed(2);
-  const remainingDue = Math.max(0, grandTotalNum - advanceTotalNum).toFixed(2);
+  // The customer receipt deliberately stays a plain goods document:
+  // packages / measure / value / delivery / grand total. Advance payments
+  // are NOT credited here — they live on the customer's account, and showing
+  // them on the delivery slip is not wanted. (`advanceAppliedUsd` is still
+  // supplied per item and is shown to staff inside the app.)
 
   const itemsRows = items.map((item, idx) => {
     const description = item.itemType === "commission"
@@ -767,25 +762,10 @@ export function printBoxReceipt(
           <span>${t("delivery.deliveryCharge")}:</span>
           <span style="font-weight:600; color:${PRIMARY_COLOR};">$${deliveryCharge}</span>
         </div>` : ""}
-        ${hasAdvance ? `
-        <div class="financial-row" style="border-top:1px solid #e5e7eb; padding-top:8px; margin-top:4px;">
-          <span>${t("delivery.grandTotal")}:</span>
-          <span style="font-weight:700;">$${grandTotal}</span>
-        </div>
-        <div class="financial-row" style="color:#059669;">
-          <span>💰 ${t("delivery.advancePaid")}:</span>
-          <span style="font-weight:600;">−$${advanceTotal}</span>
-        </div>
-        <div class="financial-row total">
-          <span>${t("delivery.remainingDue")}:</span>
-          <span>$${remainingDue}</span>
-        </div>
-        ` : `
         <div class="financial-row total">
           <span>${t("delivery.grandTotal")}:</span>
           <span>$${grandTotal}</span>
         </div>
-        `}
       </div>
 
       ${box.notes ? `
