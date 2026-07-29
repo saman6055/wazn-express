@@ -36,6 +36,18 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // We run behind a reverse proxy (Coolify). Without this, req.ip is the
+  // PROXY's address for every request, so the rate limiters below bucket all
+  // users together — a handful of tabs tripped the global limit and everyone
+  // got 429s until the window expired.
+  //
+  // Set to the NUMBER OF PROXY HOPS, never `true`: `true` trusts the whole
+  // X-Forwarded-For chain, which a client can forge to dodge rate limits.
+  // Default 1 = Coolify only. Add another hop for a CDN in front (e.g.
+  // Cloudflare → TRUST_PROXY_HOPS=2).
+  const trustProxyHops = parseInt(process.env.TRUST_PROXY_HOPS ?? "1", 10);
+  app.set("trust proxy", Number.isFinite(trustProxyHops) ? trustProxyHops : 1);
+
   // Security headers (CSP disabled in dev - Vite HMR and React Refresh need inline scripts)
   app.use(
     helmet({
