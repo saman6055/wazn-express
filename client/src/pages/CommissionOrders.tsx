@@ -737,14 +737,18 @@ export default function CommissionOrders() {
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            onClick={() => setLocation(`/full-package/${order.id}`)}
+                            onClick={() => setLocation(`/commission/${order.id}`)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="icon"
-                            onClick={() => setLocation(`/full-package/${order.id}/edit`)}
+                            /* This table lists commission orders only (see the
+                               orderType filter above), so both actions must open
+                               the commission screens — the full-package edit form
+                               is the wrong shape for these orders. */
+                            onClick={() => setLocation(`/commission/${order.id}/edit`)}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>

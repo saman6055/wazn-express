@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,24 @@ export default function CommissionForm() {
   const [, setLocation] = useLocation();
   const { t, language } = useTranslation();
   const utils = trpc.useUtils();
+
+  // ── Edit mode ──
+  // The SAME form serves /commission/new and /commission/:id/edit, so a
+  // correction is made in exactly the layout the order was registered in.
+  // Only the UI is shared: editing still goes through fullPackage.update,
+  // which owns all pricing/ledger logic. We change no money formula here.
+  const { id: routeId } = useParams<{ id?: string }>();
+  const orderId = routeId ? Number(routeId) : null;
+  const isEditMode = !!orderId && Number.isFinite(orderId);
+
+  const { data: existingOrder, isLoading: orderLoading } = trpc.fullPackage.getById.useQuery(
+    { id: orderId as number },
+    { enabled: isEditMode, refetchOnWindowFocus: false },
+  );
+
+  // Reason for the change — the server demands one (min 3 chars) when the
+  // amounts move on an order that was already charged.
+  const [editReason, setEditReason] = useState("");
 
   // Customer search state
   const [customerOpen, setCustomerOpen] = useState(false);
@@ -111,9 +129,12 @@ export default function CommissionForm() {
   // Get selected customer name
   const selectedCustomer = customers?.find((c) => c.id.toString() === formData.customerId);
 
-  // Default to the last-used customer once, after customers load (never overwrite a manual choice)
+  // Default to the last-used customer once, after customers load (never overwrite a manual choice).
+  // Skipped entirely while editing — the order already has its own customer and
+  // this would race the hydration below and silently reassign the order.
   const didApplyLastCustomer = useRef(false);
   useEffect(() => {
+    if (isEditMode) return;
     if (didApplyLastCustomer.current) return;
     if (!customers || customers.length === 0) return;
     if (formData.customerId) {
@@ -128,7 +149,92 @@ export default function CommissionForm() {
       setFormData((prev) => ({ ...prev, customerId: lastId }));
       setCustomerSearch(match.customerCode || match.fullName || "");
     }
-  }, [customers, formData.customerId]);
+  }, [customers, formData.customerId, isEditMode]);
+
+  // ── Hydrate the form from the order being edited ──
+  // Runs ONCE (ref-guarded): getById returns a fresh object on every refetch,
+  // and re-running would wipe whatever the operator has typed so far.
+  const didHydrate = useRef(false);
+  useEffect(() => {
+    if (!isEditMode || didHydrate.current || !existingOrder) return;
+    didHydrate.current = true;
+    const o = existingOrder as any;
+
+    const buy = o.itemPriceUsd?.toString() || "";
+    const commission = o.commissionFeeUsd?.toString() || "";
+    // Sale price isn't stored — it's the same identity the create form uses:
+    // sell = buy + commission. Derived only when both sides are present.
+    const sell =
+      buy !== "" && commission !== ""
+        ? ((parseFloat(buy) || 0) + (parseFloat(commission) || 0)).toFixed(2)
+        : "";
+
+    setFormData((prev) => ({
+      ...prev,
+      customerId: o.customerId?.toString() || "",
+      supplierId: o.supplierId?.toString() || "none",
+      orderNumber: o.orderNumber || "",
+      trackingNumber: o.trackingNumber || "",
+      productLink: o.productLink || "",
+      productDescription: o.productDescription || "",
+      quantity: o.quantity?.toString() || "1",
+      color: o.color || "",
+      size: o.size || "",
+      productType: o.productType || o.productName || "",
+      itemPriceUsd: buy,
+      sellPriceUsd: sell,
+      commissionFeeUsd: commission,
+      notes: o.notes || "",
+      shippingType: o.shippingType || "",
+      weightKg: o.weightKg?.toString() || "",
+      dimensionLength: o.dimensionLength?.toString() || "",
+      dimensionWidth: o.dimensionWidth?.toString() || "",
+      dimensionHeight: o.dimensionHeight?.toString() || "",
+      volumeCbm: o.volumeCbm?.toString() || "",
+      // Advance payment is deliberately NOT hydrated — see the submit handler:
+      // we never send it on edit, so the recorded advance can't be disturbed.
+    }));
+
+    const imgs: string[] = Array.isArray(o.productImages) && o.productImages.length
+      ? o.productImages
+      : o.productImage
+        ? [o.productImage]
+        : [];
+    setProductImages(imgs);
+  }, [isEditMode, existingOrder]);
+
+  // Mirror the ¥ helper boxes off the hydrated USD price once the rate is known.
+  // Display only — the stored price stays exactly as it was unless the operator
+  // edits a field.
+  const didHydrateRmb = useRef(false);
+  useEffect(() => {
+    if (!isEditMode || didHydrateRmb.current) return;
+    if (!didHydrate.current || rmbRate <= 0) return;
+    const usd = parseFloat(formData.itemPriceUsd) || 0;
+    if (usd <= 0) return;
+    didHydrateRmb.current = true;
+    const perUnit = usd * rmbRate;
+    setIqdPerUnit(perUnit.toFixed(2));
+    setIqdTotal((perUnit * (parseInt(formData.quantity) || 1)).toFixed(2));
+  }, [isEditMode, rmbRate, formData.itemPriceUsd, formData.quantity]);
+
+  // Update mutation — used only in edit mode. Same endpoint the old edit
+  // screen used, so all pricing/ledger behaviour is unchanged.
+  const updateMutation = trpc.fullPackage.update.useMutation({
+    onSuccess: () => {
+      toast.success(pickLang(language, { ku: "ئۆردەر نوێکرایەوە", en: "Order updated", ar: "تم تحديث الطلب", zh: "订单已更新" }));
+      utils.fullPackage.list.invalidate();
+      utils.fullPackage.getById.invalidate({ id: orderId as number });
+      setLocation(`/commission/${orderId}`);
+    },
+    onError: (error) => {
+      // Some validation errors ship without a message body; never show a blank toast.
+      toast.error(
+        error.message ||
+          pickLang(language, { ku: "نوێکردنەوەی ئۆردەر سەرکەوتوو نەبوو", en: "Failed to update order", ar: "فشل تحديث الطلب", zh: "更新订单失败" }),
+      );
+    },
+  });
 
   // Create mutation
   const createMutation = trpc.fullPackage.create.useMutation({
@@ -280,6 +386,23 @@ export default function CommissionForm() {
   // unnoticed.
   const isLoss = formData.commissionFeeUsd.trim() !== "" && commissionFee < 0;
 
+  // ── Edit mode: does this change move money? ──
+  // Only orders that were already charged need a reason; pending ones can be
+  // corrected freely. Mirrors the server's own gate so we fail fast in the UI
+  // instead of bouncing off a BAD_REQUEST.
+  const isPendingCharge =
+    !(existingOrder as any)?.isCharged && !(existingOrder as any)?.chargeTransactionId;
+  const moneyChangeDetected = (() => {
+    if (!isEditMode || !existingOrder || isPendingCharge) return false;
+    const o = existingOrder as any;
+    const num = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
+    return (
+      (o.quantity ?? 1) !== quantity ||
+      num(o.itemPriceUsd) !== num(formData.itemPriceUsd) ||
+      num(o.commissionFeeUsd) !== num(formData.commissionFeeUsd)
+    );
+  })();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -312,6 +435,56 @@ export default function CommissionForm() {
 
     if (!formData.shippingType) {
       toast.error(pickLang(language, { ku: "تکایە شێوازی گواستنەوە دیاری بکە", en: "Please choose a shipping method", ar: "يرجى تحديد طريقة الشحن", zh: "请选择运输方式" }));
+      return;
+    }
+
+    // ── Edit mode ──
+    // Sends the same fields the previous edit screen sent (plus the shipping
+    // details this form shows). Advance payment is intentionally omitted: the
+    // server treats a present `advancePaidUsd` as intent and would move money
+    // on the customer ledger.
+    if (isEditMode) {
+      if (moneyChangeDetected && editReason.trim().length < 3) {
+        toast.error(pickLang(language, {
+          ku: "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت)",
+          en: "Reason is required when prices change (min 3 chars)",
+          ar: "السبب مطلوب عند تغيير الأسعار (٣ أحرف على الأقل)",
+          zh: "更改价格时需填写原因（至少3个字符）",
+        }));
+        return;
+      }
+      updateMutation.mutate({
+        id: orderId as number,
+        expectedVersion: (existingOrder as any)?.version,
+        reason: moneyChangeDetected ? editReason.trim() : undefined,
+        customerId: parseInt(formData.customerId),
+        // `null` (not undefined) is what clears a supplier — undefined means
+        // "leave unchanged" on the server.
+        supplierId:
+          formData.supplierId && formData.supplierId !== "none"
+            ? parseInt(formData.supplierId)
+            : null,
+        productName: formData.productType,
+        productType: formData.productType || undefined,
+        productLink: formData.productLink,
+        productImage: productImages[0] || undefined,
+        productImages: productImages,
+        orderNumber: formData.orderNumber,
+        trackingNumber: formData.trackingNumber.trim(),
+        productDescription: formData.productDescription,
+        quantity,
+        color: formData.color,
+        size: formData.size,
+        itemPriceUsd: formData.itemPriceUsd,
+        commissionFeeUsd: formData.commissionFeeUsd,
+        notes: formData.notes,
+        shippingType: formData.shippingType || undefined,
+        weightKg: formData.weightKg,
+        dimensionLength: formData.dimensionLength,
+        dimensionWidth: formData.dimensionWidth,
+        dimensionHeight: formData.dimensionHeight,
+        volumeCbm: formData.volumeCbm,
+      });
       return;
     }
 
@@ -351,21 +524,49 @@ export default function CommissionForm() {
       <div className="max-w-4xl mx-auto space-y-3">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setLocation("/commission")}>
+          <Button variant="ghost" size="icon" onClick={() => setLocation(isEditMode ? `/commission/${orderId}` : "/commission")}>
             <ArrowRight className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-100 rounded-lg">
-              <Percent className="h-5 w-5 text-amber-600" />
+            <div className={cn("p-2 rounded-lg", isEditMode ? "bg-purple-100" : "bg-amber-100")}>
+              <Percent className={cn("h-5 w-5", isEditMode ? "text-purple-600" : "text-amber-600")} />
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-tight">{pickLang(language, { ku: "ئۆردەری کڕین بە تێچووی نوێ", en: "New commission purchase order", ar: "طلب شراء بالعمولة جديد", zh: "新建代购订单" })}</h1>
-              <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کڕیار نرخ دەزانێت، کۆمپانیا تەنها عمولە وەردەگرێت", en: "The customer knows the price; the company only takes a commission", ar: "العميل يعرف السعر، والشركة تأخذ العمولة فقط", zh: "客户知道价格，公司仅收取佣金" })}</p>
+              <h1 className="text-xl font-bold leading-tight">
+                {isEditMode
+                  ? pickLang(language, { ku: "دەستکاری ئۆردەری کڕین بە تێچوو", en: "Edit commission purchase order", ar: "تعديل طلب الشراء بالعمولة", zh: "编辑代购订单" })
+                  : pickLang(language, { ku: "ئۆردەری کڕین بە تێچووی نوێ", en: "New commission purchase order", ar: "طلب شراء بالعمولة جديد", zh: "新建代购订单" })}
+              </h1>
+              {/* On edit, say WHICH order and WHOSE it is — the old screen left
+                  this blank, so operators couldn't tell what they were fixing. */}
+              {isEditMode ? (
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                  <span className="font-mono font-semibold text-purple-700" dir="ltr">{(existingOrder as any)?.orderCode || "…"}</span>
+                  {selectedCustomer && (
+                    <>
+                      <span>·</span>
+                      <span className="font-semibold text-foreground">{selectedCustomer.fullName || selectedCustomer.fullNameKurdish}</span>
+                      <span className="font-mono text-xs" dir="ltr">({selectedCustomer.customerCode})</span>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کڕیار نرخ دەزانێت، کۆمپانیا تەنها عمولە وەردەگرێت", en: "The customer knows the price; the company only takes a commission", ar: "العميل يعرف السعر، والشركة تأخذ العمولة فقط", zh: "客户知道价格，公司仅收取佣金" })}</p>
+              )}
             </div>
           </div>
         </div>
 
-        <form data-fast onSubmit={handleSubmit} className="space-y-3">
+        {/* Wait for the order before showing a form full of empty fields —
+            the old screen rendered blank selects while the query was in flight. */}
+        {isEditMode && orderLoading && (
+          <div className="flex items-center justify-center gap-2 rounded-xl border bg-card p-8 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="text-sm">{pickLang(language, { ku: "زانیاری ئۆردەر دەهێنرێت...", en: "Loading order...", ar: "جارٍ تحميل الطلب...", zh: "正在加载订单..." })}</span>
+          </div>
+        )}
+
+        <form data-fast onSubmit={handleSubmit} className={cn("space-y-3", isEditMode && orderLoading && "hidden")}>
           {/* Customer Selection */}
           <Section icon={User} title={pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })} hint={pickLang(language, { ku: "کڕیارێک هەڵبژێرە بۆ ئەم ئۆردەرە", en: "Select a customer for this order", ar: "اختر عميلاً لهذا الطلب", zh: "为此订单选择客户" })} accent="amber">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -905,7 +1106,11 @@ export default function CommissionForm() {
             </div>
           </Section>
 
-          {/* ── Advance Payment ── */}
+          {/* ── Advance Payment ──
+              Creation only. On edit this section is hidden: the advance is a
+              real ledger movement and is corrected from the order's payment
+              screen, not by re-saving the form. */}
+          {!isEditMode && (
           <Section icon={Wallet} title={pickLang(language, { ku: "پارەدانی پێشەکی (ئاختیاری)", en: "Advance payment (optional)", ar: "دفعة مقدمة (اختياري)", zh: "预付款（可选）" })} hint={pickLang(language, { ku: "ڕاستەوخۆ لە حسابی کڕیار کەم دەبێتەوە", en: "Deducted directly from the customer's account", ar: "يُخصم مباشرة من حساب العميل", zh: "直接从客户账户扣除" })} accent="teal">
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -974,6 +1179,7 @@ export default function CommissionForm() {
               )}
             </div>
           </Section>
+          )}
 
           {/* ── Weight & Size (moved to second-to-last; only when a shipping type is chosen) ── */}
           {formData.shippingType && (
@@ -1111,22 +1317,38 @@ export default function CommissionForm() {
             />
           </Section>
 
+          {/* Reason — only when the edit shifts an already-charged order's
+              amounts. The server rejects those without one. */}
+          {isEditMode && moneyChangeDetected && (
+            <Section icon={AlertTriangle} title={pickLang(language, { ku: "هۆکاری گۆڕانکاری *", en: "Reason for the change *", ar: "سبب التعديل *", zh: "更改原因 *" })} hint={pickLang(language, { ku: "نرخ گۆڕاوە — هۆکارەکە تۆمار دەکرێت", en: "Prices changed — the reason is recorded", ar: "تغيّرت الأسعار — يُسجَّل السبب", zh: "价格已更改 — 原因将被记录" })} accent="amber">
+              <Textarea
+                value={editReason}
+                onChange={(e) => setEditReason(e.target.value)}
+                placeholder={pickLang(language, { ku: "بۆچی نرخەکە دەگۆڕدرێت؟", en: "Why is the price being changed?", ar: "لماذا يتم تغيير السعر؟", zh: "为什么更改价格？" })}
+                rows={2}
+                className={cn(filledCls(editReason))}
+              />
+            </Section>
+          )}
+
           {/* Submit */}
           <StickyFormBar>
-            <Button type="button" variant="outline" onClick={() => setLocation("/commission")}>
+            <Button type="button" variant="outline" onClick={() => setLocation(isEditMode ? `/commission/${orderId}` : "/commission")}>
               {t("common.cancel") || pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending}
-              className="bg-amber-600 hover:bg-amber-700"
+              disabled={createMutation.isPending || updateMutation.isPending}
+              className={isEditMode ? "bg-purple-600 hover:bg-purple-700" : "bg-amber-600 hover:bg-amber-700"}
             >
-              {createMutation.isPending ? (
+              {createMutation.isPending || updateMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin ms-2" />
               ) : (
                 <Save className="h-4 w-4 ms-2" />
               )}
-              {t("common.save") || pickLang(language, { ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" })}
+              {isEditMode
+                ? pickLang(language, { ku: "پاشەکەوتکردنی گۆڕانکاری", en: "Save changes", ar: "حفظ التعديلات", zh: "保存更改" })
+                : (t("common.save") || pickLang(language, { ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" }))}
             </Button>
           </StickyFormBar>
         </form>

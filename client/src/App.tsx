@@ -310,6 +310,11 @@ function Router() {
         <Route path="/commission/new" component={CommissionForm} />
         <Route path="/commission/bulk-create" component={BulkOrderForm} />
         <Route path="/commission/:id" component={CommissionDetail} />
+        {/* Editing a commission order reuses the SAME form it was registered
+            in (CommissionForm), so a correction happens in a familiar layout.
+            Must be declared BEFORE the generic `:mode` route below — wouter
+            matches in order and `:mode` would otherwise swallow "edit". */}
+        <Route path="/commission/:id/edit" component={CommissionForm} />
         {/* `:mode` must be a wouter named param (not the literal word "edit"),
             otherwise useParams({mode}) is always undefined and isEditMode
             stays false — the URL flips to /edit but the page still renders
