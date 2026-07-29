@@ -258,8 +258,8 @@ export default function CommissionDetail() {
   // Uncharged/pending orders can be edited freely without a reason.
   const isPendingCharge = !(order as any)?.isCharged && !(order as any)?.chargeTransactionId;
 
-  // Mirrors server-side computeOrderChargeAmount for commission orders:
-  //   charge = itemPrice * qty + commission
+  // Mirrors server-side commissionGoodsTotal for commission orders:
+  //   charge = (itemPrice + commission) × qty
   // If this says "money changes", the server will require a non-empty reason
   // and will bump the OCC version.
   // NOTE: Only applies to already-charged orders — pending orders skip this check.
@@ -336,10 +336,10 @@ export default function CommissionDetail() {
   const quantity = Number(formData.quantity) || 1;
   const commissionFeeUsd = Number(formData.commissionFeeUsd) || 0;
   const itemSubtotal = itemPriceUsd * quantity;
-  // Commission is FLAT (once per order), not per-unit. This matches the
-  // server-side formula in server/db/fullPackage.db.ts
-  // computeOrderChargeAmount: `itemPrice * qty + commission`.
-  const totalCommission = commissionFeeUsd;
+  // Item price AND commission are both PER-UNIT. Matches the server-side
+  // formula in server/db/fullPackage.db.ts `commissionGoodsTotal`:
+  // `(itemPrice + commission) × qty`.
+  const totalCommission = commissionFeeUsd * quantity;
   const totalCost = itemSubtotal + totalCommission;
 
   // Filter batches to show only preparing status
@@ -1030,12 +1030,10 @@ export default function CommissionDetail() {
                   {/* Divider */}
                   <div className="border-t border-dashed my-3"></div>
 
-                  {/* Cost Breakdown — commission is FLAT (once per order), NOT per-unit.
-                      This mirrors server/db/fullPackage.db.ts computeOrderChargeAmount:
-                        charge = (itemPrice * qty) + commissionFee
-                      Showing it per-unit here (which the page used to do) caused the
-                      displayed "total" to exceed the actual customer debit by
-                      commission × (qty − 1), confusing operators on multi-unit orders. */}
+                  {/* Cost Breakdown. Both the item price and the commission are
+                      PER-UNIT, so each is multiplied by quantity. Mirrors
+                      server/db/fullPackage.db.ts commissionGoodsTotal:
+                        charge = (itemPrice + commissionFee) × qty */}
                   <div className="bg-gray-100 rounded-xl p-4 space-y-2">
                     <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{t("fullPackage.costBreakdown")}</p>
                     <div className="flex justify-between text-sm">
@@ -1043,25 +1041,25 @@ export default function CommissionDetail() {
                       <span className="font-mono">${((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">+ {t("commission.commission") || "عمولە"}</span>
-                      <span className="font-mono text-purple-600">${(Number(order.commissionFeeUsd) || 0).toFixed(2)}</span>
+                      <span className="text-muted-foreground">+ {t("commission.commission") || "عمولە"} × {order.quantity || 1}</span>
+                      <span className="font-mono text-purple-600">${((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1)).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm font-semibold border-t border-gray-200 pt-2 mt-2">
                       <span>{t("commission.totalCost") || "کۆی گشتی"}</span>
-                      <span className="font-mono">${(((Number(order.itemPriceUsd) || 0) * (order.quantity || 1)) + (Number(order.commissionFeeUsd) || 0)).toFixed(2)}</span>
+                      <span className="font-mono">${(((Number(order.itemPriceUsd) || 0) + (Number(order.commissionFeeUsd) || 0)) * (order.quantity || 1)).toFixed(2)}</span>
                     </div>
                   </div>
 
-                  {/* Commission Income (Profit equivalent) — flat per order */}
+                  {/* Commission Income (Profit equivalent) — per unit */}
                   <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-l from-purple-100 to-purple-50 border border-purple-200">
                     <div>
                       <span className="font-semibold block">{t("commission.commissionIncome") || "داهاتی عمولە"}</span>
                       <span className="text-xs text-muted-foreground">
-                        {pickLang(language, { ku: "فلاتە بۆ هەر ئۆردەرێک", en: "flat per order", ar: "ثابتة لكل طلب", zh: "每单固定" })}
+                        {pickLang(language, { ku: `عمولەی ${order.quantity || 1} دانە`, en: `commission for ${order.quantity || 1} units`, ar: `عمولة ${order.quantity || 1} قطعة`, zh: `${order.quantity || 1} 件的佣金` })}
                       </span>
                     </div>
                     <span className="font-mono font-bold text-2xl text-purple-700">
-                      ${(Number(order.commissionFeeUsd) || 0).toFixed(2)}
+                      ${((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1)).toFixed(2)}
                     </span>
                   </div>
 

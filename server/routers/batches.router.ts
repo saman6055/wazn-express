@@ -216,7 +216,7 @@ async function emitFpInvoices(
  * Emit ONE consolidated invoice per customer for Commission orders.
  *
  * Per-order line items follow the user's spec:
- *   • Line 1 ("نرخی کاڵا"): combined `(itemPrice × qty) + commissionFee`
+ *   • Line 1 ("نرخی کاڵا"): combined `(itemPrice + commissionFee) × qty`
  *   • Line 2 ("شیپینگ"): the order's split shipping share
  *
  * Customer pays for shipping on commission orders (unlike FP).
@@ -305,8 +305,8 @@ async function emitCmInvoices(
         const itemPrice = parseFloat(((order as any).itemPriceUsd || '0').toString()) || 0;
         const commissionFee = parseFloat(((order as any).commissionFeeUsd || '0').toString()) || 0;
         const qty = order.quantity || 1;
-        const itemSubtotal = itemPrice * qty;
-        const goodsLine = itemSubtotal + commissionFee; // combined "نرخی کاڵا"
+        // (itemPrice + commission) × qty — both are per-unit.
+        const goodsLine = db.commissionGoodsTotal(itemPrice, commissionFee, qty); // combined "نرخی کاڵا"
 
         // Line 1: combined goods + commission rolled into a single
         // "item price" total. No qty × unit + commission breakdown — the

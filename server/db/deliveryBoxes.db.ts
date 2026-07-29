@@ -3,6 +3,7 @@ import { getDb } from "./connection";
 import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, fullPackageOrderTrackings, batches, customers } from "../../drizzle/schema";
 import type { DeliveryBox, InsertDeliveryBox, DeliveryBoxItem, InsertDeliveryBoxItem } from "../../drizzle/schema/packages.schema";
 import { appLogger } from "../utils/logger";
+import { commissionGoodsTotal } from "./fullPackage.db";
 
 // ============ BOX CODE GENERATION ============
 
@@ -828,7 +829,8 @@ async function buildBoxItemValuesFromPackage(
         if (o.orderType === 'commission') {
           const itemPrice = Number(o.itemPriceUsd || 0);
           const commFee = Number(o.commissionFeeUsd || o.commissionAmount || 0);
-          goodsTotal += (itemPrice * qty) + commFee;
+          // (itemPrice + commission) × qty — both are per-unit.
+          goodsTotal += commissionGoodsTotal(itemPrice, commFee, qty);
         } else {
           const sellingPrice = Number(o.sellingPriceUsd || 0);
           goodsTotal += sellingPrice * qty;

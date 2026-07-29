@@ -58,10 +58,10 @@ export interface SafeDeleteOrderDialogProps {
 
 /**
  * Compute the same chargeable amount the server will reverse. Mirrors
- * server/db/fullPackage.db.ts `computeOrderChargeAmount`. Kept in sync
- * manually; if the formula changes there, change it here too. A mismatch
- * is cosmetic only — the server is still the source of truth, the preview
- * would just look slightly off.
+ * server/db/fullPackage.db.ts `computeOrderChargeAmount` /
+ * `commissionGoodsTotal`. Kept in sync manually; if the formula changes
+ * there, change it here too. A mismatch is cosmetic only — the server is
+ * still the source of truth, the preview would just look slightly off.
  */
 function previewChargeAmount(order: SafeDeleteOrderDialogProps["order"]): number {
   const qty = order.quantity ?? 1;
@@ -70,9 +70,10 @@ function previewChargeAmount(order: SafeDeleteOrderDialogProps["order"]): number
     return selling * qty;
   }
   if (order.orderType === "commission") {
+    // Item price and commission are both PER-UNIT.
     const item = parseFloat(String(order.itemPriceUsd ?? "0")) || 0;
     const commission = parseFloat(String(order.commissionFeeUsd ?? "0")) || 0;
-    return item * qty + commission;
+    return (item + commission) * qty;
   }
   return 0;
 }

@@ -271,13 +271,13 @@ export const fullPackageRouter = router({
         if (input.orderType === 'commission') {
           itemPrice = parseFloat(input.itemPriceUsd || '0');
           commissionFee = parseFloat(input.commissionFeeUsd || '0');
+          const qty = input.quantity || 1;
           if (!totalPrepaid && input.itemPriceUsd) {
-            // itemPriceUsd is PER-UNIT — multiply by quantity for total
-            const qty = input.quantity || 1;
-            totalPrepaid = ((itemPrice * qty) + commissionFee).toFixed(2);
+            // Both figures are PER-UNIT — see db.commissionGoodsTotal.
+            totalPrepaid = db.commissionGoodsTotal(itemPrice, commissionFee, qty).toFixed(2);
           }
-          // Commission is our profit
-          grossProfitUsd = commissionFee.toFixed(2);
+          // Commission is our profit — per unit, so it scales with quantity.
+          grossProfitUsd = db.commissionProfit(commissionFee, qty).toFixed(2);
         }
         
         const order = await db.createFullPackageOrder({
@@ -422,10 +422,13 @@ export const fullPackageRouter = router({
             if (input.orderType === 'commission') {
               itemPrice = parseFloat(item.itemPriceUsd || '0');
               commissionFee = parseFloat(item.commissionFeeUsd || '0');
+              // Quantity was missing here entirely, so a bulk-created order of
+              // N units stored the price of ONE.
+              const qty = item.quantity || 1;
               if (!totalPrepaid && item.itemPriceUsd) {
-                totalPrepaid = (itemPrice + commissionFee).toFixed(2);
+                totalPrepaid = db.commissionGoodsTotal(itemPrice, commissionFee, qty).toFixed(2);
               }
-              grossProfitUsd = commissionFee.toFixed(2);
+              grossProfitUsd = db.commissionProfit(commissionFee, qty).toFixed(2);
             }
             
             const order = await db.createFullPackageOrder({
@@ -1531,12 +1534,11 @@ export const fullPackageRouter = router({
       .mutation(async ({ input, ctx }) => {
         const orderCode = `CM-${Date.now().toString(36).toUpperCase()}`;
         
-        // itemPriceUsd is PER-UNIT — multiply by quantity for total
+        // Both figures are PER-UNIT — see db.commissionGoodsTotal.
         const itemPricePerUnit = parseFloat(input.itemPriceUsd);
         const commission = parseFloat(input.commissionFeeUsd);
         const quantity = input.quantity || 1;
-        const itemTotal = itemPricePerUnit * quantity;
-        const totalPrepaid = itemTotal + commission;
+        const totalPrepaid = db.commissionGoodsTotal(itemPricePerUnit, commission, quantity);
         
         // Charge customer account using unified applyCharge function
         const customerForCommission = await db.getCustomerById(input.customerId);
@@ -1557,7 +1559,8 @@ export const fullPackageRouter = router({
           prepaidAt: new Date(),
           isPaid: true,
           paidFromBalanceUsd: totalPrepaid.toFixed(2),
-          grossProfitUsd: commission.toFixed(2), // Commission is our profit from the order itself
+          // Commission is our profit — per unit, so it scales with quantity.
+          grossProfitUsd: db.commissionProfit(commission, quantity).toFixed(2),
           createdById: ctx.user.id,
         });
 

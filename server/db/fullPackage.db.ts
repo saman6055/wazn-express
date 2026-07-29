@@ -675,12 +675,13 @@ export async function updateFullPackageOrder(id: number, data: Partial<InsertFul
         const qty = data.quantity ?? existing.quantity ?? 1;
         chargeAmount = sellingPricePerUnit * qty;
       } else if (orderType === 'commission') {
-        // Commission: Customer pays (itemPrice × quantity) + commissionFee (prepaid)
-        // itemPriceUsd is PER-UNIT
-        const itemPricePerUnit = parseFloat(data.itemPriceUsd as string ?? existing.itemPriceUsd ?? '0');
-        const commissionFee = parseFloat(data.commissionFeeUsd as string ?? existing.commissionFeeUsd ?? '0');
-        const qty = data.quantity ?? existing.quantity ?? 1;
-        chargeAmount = (itemPricePerUnit * qty) + commissionFee;
+        // Commission: customer pays (itemPrice + commissionFee) × quantity.
+        // Both are PER-UNIT — see commissionGoodsTotal for why.
+        chargeAmount = commissionGoodsTotal(
+          data.itemPriceUsd as string ?? existing.itemPriceUsd,
+          data.commissionFeeUsd as string ?? existing.commissionFeeUsd,
+          data.quantity ?? existing.quantity,
+        );
       }
       
       if (chargeAmount > 0) {
@@ -818,11 +819,40 @@ export function computeOrderChargeAmount(order: {
     return selling * qty;
   }
   if (order.orderType === 'commission') {
-    const itemPrice = parseFloat(String(order.itemPriceUsd ?? '0')) || 0;
-    const commission = parseFloat(String(order.commissionFeeUsd ?? '0')) || 0;
-    return (itemPrice * qty) + commission;
+    return commissionGoodsTotal(order.itemPriceUsd, order.commissionFeeUsd, qty);
   }
   return 0;
+}
+
+const num = (v: string | number | null | undefined): number =>
+  parseFloat(String(v ?? '0')) || 0;
+
+/**
+ * Goods total a commission customer owes: **(buy price + commission) × qty**.
+ *
+ * Both figures are PER UNIT. Buying a bag at $20 and selling it at $25 earns
+ * $5 on one bag and $10 on two — so the commission scales with quantity just
+ * like the item price does.
+ *
+ * This used to be computed as `(itemPrice × qty) + commission`, charging the
+ * commission only ONCE per order however many units were bought. For qty > 1
+ * the customer was billed short by `commission × (qty - 1)`. Every call site
+ * now routes through here so the formula cannot drift again.
+ */
+export function commissionGoodsTotal(
+  itemPriceUsd: string | number | null | undefined,
+  commissionFeeUsd: string | number | null | undefined,
+  quantity: number | null | undefined,
+): number {
+  return (num(itemPriceUsd) + num(commissionFeeUsd)) * (quantity ?? 1);
+}
+
+/** Company profit on a commission order: the commission, per unit. */
+export function commissionProfit(
+  commissionFeeUsd: string | number | null | undefined,
+  quantity: number | null | undefined,
+): number {
+  return num(commissionFeeUsd) * (quantity ?? 1);
 }
 
 // Get full package orders by customer (for customer portal)
@@ -914,7 +944,9 @@ export async function getFullPackageProfitSummaryByType(startDate?: Date, endDat
     orderType: fullPackageOrders.orderType,
     totalProfit: sql<number>`COALESCE(SUM(profitUsd), 0)`,
     totalOrders: sql<number>`COUNT(*)`,
-    totalRevenue: sql<number>`COALESCE(SUM(CASE WHEN orderType = 'full_package' THEN sellingPriceUsd * quantity WHEN orderType = 'commission' THEN commissionFeeUsd ELSE itemPriceUsd * quantity END), 0)`,
+    // Commission revenue is the commission PER UNIT — it scales with quantity
+    // exactly like the item price does (see commissionGoodsTotal).
+    totalRevenue: sql<number>`COALESCE(SUM(CASE WHEN orderType = 'full_package' THEN sellingPriceUsd * quantity WHEN orderType = 'commission' THEN commissionFeeUsd * quantity ELSE itemPriceUsd * quantity END), 0)`,
     totalCost: sql<number>`COALESCE(SUM(CASE WHEN orderType = 'full_package' THEN purchasePriceUsd * quantity ELSE itemPriceUsd * quantity END + COALESCE(shippingCostUsd, 0)), 0)`,
     avgProfit: sql<number>`COALESCE(AVG(profitUsd), 0)`,
   }).from(fullPackageOrders)

@@ -1758,8 +1758,10 @@ export async function getMonthlyProfitReport(year: number, month?: number): Prom
     // Commission orders
     const commOrders = await db.select({
       count: sql<number>`COUNT(*)`,
-      revenue: sql<number>`COALESCE(SUM(itemPriceUsd + commissionFeeUsd), 0)`,
-      cost: sql<number>`COALESCE(SUM(itemPriceUsd), 0)`,
+      // Item price and commission are both PER UNIT — multiply by quantity,
+      // matching commissionGoodsTotal in fullPackage.db.ts.
+      revenue: sql<number>`COALESCE(SUM((itemPriceUsd + commissionFeeUsd) * quantity), 0)`,
+      cost: sql<number>`COALESCE(SUM(itemPriceUsd * quantity), 0)`,
       shipping: sql<number>`COALESCE(SUM(shippingCostUsd), 0)`,
       profit: sql<number>`COALESCE(SUM(profitUsd), 0)`,
     }).from(fullPackageOrders)

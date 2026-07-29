@@ -1039,7 +1039,8 @@ export const deliveryBoxRouter = router({
               if (o.orderType === 'commission') {
                 const itemPrice = Number(o.itemPriceUsd || 0);
                 const commFee = Number(o.commissionFeeUsd || o.commissionAmount || 0);
-                goodsTotal += (itemPrice * qty) + commFee;
+                // (itemPrice + commission) × qty — both are per-unit.
+                goodsTotal += db.commissionGoodsTotal(itemPrice, commFee, qty);
               } else {
                 const sellingPrice = Number(o.sellingPriceUsd || 0);
                 goodsTotal += sellingPrice * qty;
@@ -1074,7 +1075,8 @@ export const deliveryBoxRouter = router({
           const itemPrice = Number(fpOrder.itemPriceUsd || 0);
           const commFee = Number(fpOrder.commissionFeeUsd || fpOrder.commissionAmount || 0);
           const qty = fpOrder.quantity || 1;
-          const goodsTotal = (itemPrice * qty) + commFee;
+          // (itemPrice + commission) × qty — both are per-unit.
+          const goodsTotal = db.commissionGoodsTotal(itemPrice, commFee, qty);
           calculatedCostUsd = goodsTotal.toFixed(2);
           description = `${fpOrder.productName || ''} | ${t_itemPrice}: $${goodsTotal.toFixed(2)}`;
         } else {
