@@ -98,24 +98,35 @@ const notDeleted = isNull(fullPackageOrders.deletedAt);
  * So the column is also ensured on first write, self-healing that case.
  * Mirrors ensureServiceTypeColumns in services.db.ts.
  */
+const FP_PATCHED_COLUMNS: { name: string; ddl: string }[] = [
+  { name: "platform", ddl: "ALTER TABLE fullPackageOrders ADD COLUMN platform VARCHAR(100) NULL" },
+  { name: "productType", ddl: "ALTER TABLE fullPackageOrders ADD COLUMN productType VARCHAR(200)" },
+  { name: "advancePaidUsd", ddl: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaidUsd DECIMAL(10,2) NOT NULL DEFAULT 0" },
+  { name: "advancePaidAt", ddl: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaidAt TIMESTAMP NULL" },
+  { name: "advancePaymentTransactionId", ddl: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaymentTransactionId INT NULL" },
+];
+
 let _fpColumnsEnsured = false;
 async function ensureFullPackageColumns(
   db: NonNullable<Awaited<ReturnType<typeof getDb>>>,
 ): Promise<void> {
   if (_fpColumnsEnsured) return;
   _fpColumnsEnsured = true;
-  try {
-    await db.execute(sql`SELECT platform FROM fullPackageOrders LIMIT 0`);
-  } catch {
+  for (const col of FP_PATCHED_COLUMNS) {
     try {
-      await db.execute(sql.raw("ALTER TABLE fullPackageOrders ADD COLUMN platform VARCHAR(100) NULL"));
-      appLogger.info("[FullPackage] added missing platform column");
-    } catch (err) {
-      // Already added by a concurrent boot, or we lack DDL rights — either way
-      // don't let this block the write.
-      appLogger.warn("[FullPackage] could not ensure platform column", {
-        error: err instanceof Error ? err.message : String(err),
-      });
+      await db.execute(sql.raw(`SELECT ${col.name} FROM fullPackageOrders LIMIT 0`));
+    } catch {
+      try {
+        await db.execute(sql.raw(col.ddl));
+        appLogger.info("[FullPackage] added missing column", { column: col.name });
+      } catch (err) {
+        // Already added by a concurrent boot, or we lack DDL rights — either
+        // way don't let this block the write; the caller reports a clean error.
+        appLogger.warn("[FullPackage] could not ensure column", {
+          column: col.name,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
   }
 }
