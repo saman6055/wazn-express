@@ -11,7 +11,8 @@ import {
   Package, Bell, ChevronRight, Truck, CheckCircle, Clock,
   AlertCircle, Plane, Ship, Megaphone, TrendingUp, Search,
   CreditCard, MessageCircle, FileText, DollarSign,
-  Sun, Moon, Sparkles, AlertTriangle, PackagePlus, Info, X
+  Sun, Moon, Sparkles, AlertTriangle, PackagePlus, Info, X,
+  Scale, Ban, ShoppingBag, Wallet, User, BookOpen
 } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { Link } from "wouter";
@@ -288,7 +289,57 @@ const { t, language } = useLanguage();
   // not a clashing rainbow. (#4988C4 → #1C4D8D from the portal palette.)
   const tileColor = "from-[#4988C4] to-[#1C4D8D]";
   const tileShadow = "shadow-[#1C4D8D]/40";
+  // Order is deliberate — set by the owner. Every destination already exists;
+  // these tiles are shortcuts, not new pages.
   const quickActions = [
+    {
+      icon: Scale,
+      label: pickLang(language, { ku: "مەرج و ڕێسا", en: "Terms & rules", ar: "الشروط والأحكام", zh: "条款与规则" }),
+      href: "/portal/terms",
+      color: tileColor,
+      shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "مەرج و ڕێساکان", en: "Terms & rules", ar: "الشروط والأحكام", zh: "条款与规则" }),
+        desc: pickLang(language, { ku: "مەرجەکانی گواستنەوە و بەرپرسیارێتی — پێش ناردن بیانخوێنەوە.", en: "Shipping terms and responsibilities — read them before sending.", ar: "شروط الشحن والمسؤوليات — اقرأها قبل الإرسال.", zh: "运输条款与责任 — 发货前请阅读。" }),
+        example: pickLang(language, { ku: "نموونە: بەرپرسیارێتی لە کاتی زیانی کاڵا", en: "e.g. liability if an item is damaged", ar: "مثال: المسؤولية عند تلف البضاعة", zh: "例如：货物损坏时的责任" }),
+      },
+    },
+    {
+      icon: Ban,
+      label: pickLang(language, { ku: "کاڵای قەدەغە", en: "Prohibited items", ar: "المواد الممنوعة", zh: "违禁物品" }),
+      href: "/portal/prohibited-packages",
+      color: tileColor,
+      shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "کاڵا قەدەغەکان", en: "Prohibited items", ar: "المواد الممنوعة", zh: "违禁物品" }),
+        desc: pickLang(language, { ku: "ئەو کاڵایانەی ناگوازرێنەوە — پێش کڕین دڵنیابەرەوە.", en: "Items we can't ship — check before you buy.", ar: "المواد التي لا يمكن شحنها — تحقق قبل الشراء.", zh: "我们无法运输的物品 — 购买前请查看。" }),
+        example: pickLang(language, { ku: "نموونە: باتری، شلە، ماددەی هەڵگیرسێنەر", en: "e.g. batteries, liquids, flammables", ar: "مثال: البطاريات، السوائل، المواد القابلة للاشتعال", zh: "例如：电池、液体、易燃品" }),
+      },
+    },
+    {
+      icon: ShoppingBag,
+      label: t("portal.fullPack"),
+      href: "/portal/full-package",
+      color: tileColor,
+      shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "کاڵاکانم", en: "My items", ar: "بضائعي", zh: "我的商品" }),
+        desc: pickLang(language, { ku: "ئەو کاڵایانەی بۆت کڕدراون یان داوات کردوون — دۆخیان ببینە.", en: "The items bought for you or requested — see their status.", ar: "البضائع المشتراة لك أو المطلوبة — شاهد حالتها.", zh: "为您购买或您请求的商品 — 查看状态。" }),
+        example: pickLang(language, { ku: "نموونە: دۆخی ئۆردەرەکانت ببینە", en: "e.g. see the status of your orders", ar: "مثال: شاهد حالة طلباتك", zh: "例如：查看订单状态" }),
+      },
+    },
+    {
+      icon: Truck,
+      label: t("portal.shipments"),
+      href: "/portal/shipments",
+      color: tileColor,
+      shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "گواستنەوە", en: "Transport", ar: "النقل", zh: "运输" }),
+        desc: pickLang(language, { ku: "بارەکانت لە ڕێگادان — بزانە لە کوێن و کەی دەگەن.", en: "Your shipments on the way — where they are and when they arrive.", ar: "شحناتك في الطريق — أين هي ومتى تصل.", zh: "在途货物 — 位置与预计到达时间。" }),
+        example: pickLang(language, { ku: "نموونە: بارەکە لە ڕێگای ئاسمانییە → بەرواری گەیشتن", en: "e.g. shipment is in the air → arrival date", ar: "مثال: الشحنة جوًا → تاريخ الوصول", zh: "例如：空运中 → 到达日期" }),
+      },
+    },
     {
       icon: Search,
       label: t("portal.track"),
@@ -326,8 +377,8 @@ const { t, language } = useLanguage();
       },
     },
     {
-      icon: CreditCard,
-      label: t("portal.pay"),
+      icon: Wallet,
+      label: t("portal.financial"),
       href: "/portal/financial",
       color: tileColor,
       shadowColor: tileShadow,
@@ -359,6 +410,30 @@ const { t, language } = useLanguage();
         title: pickLang(language, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "购买人民币" }),
         desc: pickLang(language, { ku: "یوان بکڕە بۆ کڕینەکانت لە چین بە نرخی ئەمڕۆ.", en: "Buy Yuan for your China purchases at today's rate.", ar: "اشترِ اليوان لمشترياتك من الصين بسعر اليوم.", zh: "以今日汇率购买人民币用于中国采购。" }),
         example: pickLang(language, { ku: "نموونە: $100 → یوان بەپێی نرخی ئەمڕۆ", en: "e.g. $100 → Yuan at today's rate", ar: "مثال: 100$ → يوان بسعر اليوم", zh: "例如：$100 → 按今日汇率兑换人民币" }),
+      },
+    },
+    {
+      icon: BookOpen,
+      label: pickLang(language, { ku: "ڕێبەری پۆرتاڵ", en: "Portal guide", ar: "دليل البوابة", zh: "门户指南" }),
+      href: "/portal/guide",
+      color: tileColor,
+      shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "ڕێبەری پۆرتاڵ", en: "Portal guide", ar: "دليل البوابة", zh: "门户指南" }),
+        desc: pickLang(language, { ku: "چۆنیەتی بەکارهێنانی پۆرتاڵ — هەنگاو بە هەنگاو.", en: "How to use the portal — step by step.", ar: "كيفية استخدام البوابة — خطوة بخطوة.", zh: "如何使用门户 — 分步说明。" }),
+        example: pickLang(language, { ku: "نموونە: چۆن تراک تۆمار بکەم؟", en: "e.g. how do I register a tracking number?", ar: "مثال: كيف أسجّل رقم التتبع؟", zh: "例如：如何登记运单号？" }),
+      },
+    },
+    {
+      icon: User,
+      label: t("portal.me"),
+      href: "/portal/profile",
+      color: tileColor,
+      shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "پرۆفایلی من", en: "My profile", ar: "ملفي الشخصي", zh: "我的资料" }),
+        desc: pickLang(language, { ku: "زانیاری خۆت، کۆدی کڕیار و ناونیشانەکانت ببینە و بگۆڕە.", en: "See and edit your details, customer code and addresses.", ar: "شاهد وعدّل بياناتك وكود العميل وعناوينك.", zh: "查看和修改您的资料、客户代码和地址。" }),
+        example: pickLang(language, { ku: "نموونە: ژمارەی مۆبایل یان ناونیشان بگۆڕە", en: "e.g. change your mobile number or address", ar: "مثال: غيّر رقم جوالك أو عنوانك", zh: "例如：修改手机号或地址" }),
       },
     },
   ];
