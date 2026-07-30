@@ -947,6 +947,166 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "On the new-order form, \"Customer *\" and \"Product type *\" are empty → fill them; otherwise it won't save and warns you.",
       ar: "في نموذج الطلب الجديد، «العميل *» و«نوع المنتج *» فارغان → املأهما؛ وإلّا لن يُحفَظ ويُنبّهك.",
       zh: "在新订单表单中，「客户 *」和「商品类型 *」为空 → 请填写；否则无法保存并会提示你。" } },
+  { id: "tip-59",
+    short: {
+      ku: "کاتێک موشتەری داوای بابەتێکی نوێ دەکات کە زانیاریمان لەسەری نییە، پێش وەڵامدانەوە چێکی بکەرەوە کە دێت یان نا.",
+      en: "When a customer asks about an item we have no information on, check whether it can ship before you answer.",
+      ar: "عندما يسأل العميل عن صنف لا معلومات لدينا عنه، تحقّق من إمكانية شحنه قبل أن تجيب.",
+      zh: "当客户询问我们没有资料的物品时，先确认能否运输再回复。" },
+    detail: {
+      ku: "وەڵامێکی خێرا بەبێ دڵنیایی زیانی زۆرترە لە وەڵامێکی دواکەوتوو. ئەگەر بڵێیت «دێت» و پاشان دەرکەوێت قەدەغەیە، موشتەری کاڵاکەی کڕیوە و پارەی خەرج کردووە — کێشەکە دەکەوێتە ئەستۆی ئێمە. سەرەتا لە لیستی کاڵا قەدەغەکان و لەگەڵ بەڕێوەبەر چێک بکەرەوە، پاشان وەڵام بدەرەوە.",
+      en: "A fast answer given without certainty costs more than a slow one. If you say it ships and it later turns out to be prohibited, the customer has already bought and paid — and the problem lands on us. Check the prohibited list and with a manager first, then answer.",
+      ar: "الإجابة السريعة بلا يقين أكلف من إجابة متأخرة. إذا قلت إنه يُشحن ثم تبيّن أنه ممنوع، يكون العميل قد اشترى ودفع — وتقع المشكلة علينا. تحقّق أولاً من قائمة الممنوعات ومع المدير، ثم أجب.",
+      zh: "没有把握的快速答复，代价比迟一点的答复更大。若你说可以运而后发现属违禁品，客户已经下单付款，问题就落到我们头上。先查违禁清单并与主管确认，再回复。" },
+    example: {
+      ku: "موشتەری دەپرسێت «باتری لاپتۆپ دێت؟» → یەکسەر مەڵێ بەڵێ؛ سەرەتا چێک بکەوە، پاشان وەڵامی بدەرەوە.",
+      en: "A customer asks about shipping a laptop battery → don't say yes right away; check first, then answer.",
+      ar: "يسأل العميل عن شحن بطارية لابتوب → لا تقل نعم فوراً؛ تحقّق أولاً ثم أجب.",
+      zh: "客户问笔记本电池能否运输 → 不要立刻答应；先核实，再回复。" } },
+  { id: "tip-60",
+    short: {
+      ku: "لەگەڵ موشتەری نرخ مەبڕەوە — بە تایبەتی لە دەریایی، لەبەر گۆڕانی نرخ و دواکەوتن.",
+      en: "Don't commit to a fixed price with the customer — especially for sea freight, where rates and timing shift.",
+      ar: "لا تقطع سعراً نهائياً مع العميل — خاصة في الشحن البحري، حيث تتغيّر الأسعار والمواعيد.",
+      zh: "不要与客户敲定固定价格——尤其是海运，费率和时效都会变动。" },
+    detail: {
+      ku: "نرخی دەریایی و کاتی گەیشتن بە هۆی جەنگ، قەیرانی کەشتی، و گۆڕانی نرخی سووتەمەنی هەڵدەسێت و دادەکشێت. ئەگەر نرخێکی جێگیر بە موشتەری بڵێیت و پاشان بگۆڕێت، یان ئێمە زەرەر دەکەین یان موشتەری بێمتمانە دەبێت. هەمیشە بڵێ نرخی ئێستا ئەمەیە بەڵام دەگۆڕێت.",
+      en: "Sea rates and transit times swing with war, shipping crises and fuel prices. If you quote a fixed price and it then changes, either we take the loss or the customer loses trust. Always say this is today's rate but it can change.",
+      ar: "أسعار البحر ومدد العبور تتقلّب بسبب الحرب وأزمات الشحن وأسعار الوقود. إذا قدّمت سعراً ثابتاً ثم تغيّر، فإمّا نتحمّل الخسارة أو يفقد العميل ثقته. قل دائماً إن هذا سعر اليوم وقد يتغيّر.",
+      zh: "海运费率和时效会因战争、航运危机和燃油价格而波动。若你报了固定价而后变动，不是我们亏损，就是客户失去信任。请始终说明这是今天的价格，可能会变。" },
+    example: {
+      ku: "موشتەری دەڵێت «دەریایی چەندە؟» → بڵێ ئێستا نزیکەی ئەم بڕەیە بۆ هەر CBM، بەڵام تا کاتی ناردن دەگۆڕێت.",
+      en: "Customer asks the sea-freight price → say it's about this much per CBM today, but it can change by shipping time.",
+      ar: "يسأل العميل عن سعر الشحن البحري → قل إنه نحو هذا المبلغ لكل CBM اليوم، لكنه قد يتغيّر حتى موعد الشحن.",
+      zh: "客户询问海运价格 → 回答今天每 CBM 大约这个价，但到发货时可能变化。" } },
+  { id: "tip-61",
+    short: {
+      ku: "موشتەری فێری ئەوە مەکە کە بەبێ پارەی پێشەکی بۆی دەکڕدرێت — پێشەکی سیستەمە و دەبێت بدرێت.",
+      en: "Don't teach customers that we'll buy without a deposit — the advance is policy and must be paid.",
+      ar: "لا تعوّد العميل على الشراء بلا دفعة مقدمة — الدفعة سياسة النظام ويجب دفعها.",
+      zh: "不要让客户以为不付订金也能代购——预付款是制度，必须支付。" },
+    detail: {
+      ku: "پارەی پێشەکی ئێمە دەپارێزێت لەوەی کاڵا بکڕین و پاشان موشتەری پاشگەز بێتەوە. ئەگەر جارێک بەبێ پێشەکی بۆ کەسێک بکڕیت، جاری داهاتوو چاوەڕوانی هەمان شت دەکات و ڕەتکردنەوەی قورس دەبێت. یەک ئیستیسنا دەبێتە ڕێسا — بۆیە لە یەکەم جارەوە ڕوون بە.",
+      en: "The deposit protects us from buying goods a customer then walks away from. If you buy once without it, they'll expect the same next time and refusing becomes hard. One exception becomes the rule — so be clear from the first time.",
+      ar: "الدفعة المقدمة تحمينا من شراء بضاعة يتراجع عنها العميل لاحقاً. إذا اشتريت مرة بدونها، سيتوقّع المثل في المرة القادمة ويصعب الرفض. الاستثناء الواحد يصير قاعدة — فكن واضحاً من أول مرة.",
+      zh: "订金能防止我们买了货客户又反悔。若你破例一次，下次他就会期待同样待遇，届时很难拒绝。一次例外会变成惯例——所以第一次就要讲清楚。" },
+    example: {
+      ku: "موشتەری دەڵێت «ئەم جارە بەبێ پێشەکی بۆم بکڕە» → بە ڕێزەوە بڵێ پێشەکی مەرجی سیستەمە بۆ هەموو کەس.",
+      en: "Customer asks you to buy without a deposit just this once → politely say the advance is required for everyone.",
+      ar: "يطلب العميل الشراء بلا دفعة هذه المرة فقط → قل بلطف إن الدفعة مطلوبة من الجميع.",
+      zh: "客户请求这次先不收订金 → 礼貌说明预付款对所有人都是必需的。" } },
+  { id: "tip-62",
+    short: {
+      ku: "فوول پاکێج و کڕین بە تێچوو بۆ ئەدرێسی ئاکۆ بنێرە.",
+      en: "Send full-package and commission orders to Ako's address.",
+      ar: "أرسِل طلبات الحزمة الكاملة والشراء بالعمولة إلى عنوان «أكو».",
+      zh: "全包和代购订单请寄送至 Ako 的地址。" },
+    detail: {
+      ku: "هەر جۆرە ئۆردەرێک ئەدرێسی وەرگرتنی دیاریکراوی خۆی هەیە لە چین. ئەگەر فوول پاکێج یان کڕین بە تێچوو بۆ ئەدرێسێکی تر بنێردرێت، لە کۆگا لێک جیا ناکرێنەوە و لە کاتی وەرگرتندا تێکەڵ دەبن — ئەوەش دواکەوتن و ون بوونی پاکەت دروست دەکات.",
+      en: "Each order type has its own receiving address in China. If a full-package or commission order goes to a different address, it can't be told apart at the warehouse and gets mixed in on arrival — which causes delays and lost packages.",
+      ar: "لكل نوع طلب عنوان استلام خاص في الصين. إذا أُرسل طلب حزمة كاملة أو عمولة إلى عنوان آخر، لا يمكن تمييزه في المستودع ويختلط عند الاستلام — ما يسبّب التأخير وضياع الطرود.",
+      zh: "每种订单类型在中国都有专属收货地址。若全包或代购订单寄到别的地址，仓库无法区分，到货时会混在一起——导致延误和包裹丢失。" },
+    example: {
+      ku: "ئۆردەری فوول پاکێج تۆمار دەکەیت → لە کاتی کڕین ئەدرێسی ئاکۆ بەکاربهێنە، نەک ئەدرێسی گشتی.",
+      en: "You register a full-package order → use Ako's address at purchase time, not the general address.",
+      ar: "تسجّل طلب حزمة كاملة → استخدم عنوان «أكو» عند الشراء، لا العنوان العام.",
+      zh: "登记全包订单时 → 下单请使用 Ako 的地址，而非通用地址。" } },
+  { id: "tip-63",
+    short: {
+      ku: "باشترین شێواز ئەوەیە ئۆردەر هەر لەگەڵ کڕین داخڵی سیستەم بکرێت، نەک کەڵەکە بێت.",
+      en: "The best habit is entering an order into the system as you buy it, not letting them pile up.",
+      ar: "أفضل عادة هي إدخال الطلب في النظام لحظة الشراء، لا تركه يتراكم.",
+      zh: "最好的习惯是下单时即录入系统，不要堆积。" },
+    detail: {
+      ku: "ئەگەر چەند ئۆردەرێک کەڵەکە بن و پاشان پێکەوە داخڵ بکرێن، وردەکارییەکان تێکەڵ دەبن: کام تراکینگ بۆ کام موشتەرییە، کام نرخ بۆ کام کاڵایە. تۆمارکردن لە هەمان ساتی کڕیندا هەموو زانیارییەکە تازەیە و هەڵە ڕوو نادات.",
+      en: "If several orders pile up and get entered together, the details blur: which tracking belongs to which customer, which price to which item. Logging at the moment of purchase keeps every detail fresh and error-free.",
+      ar: "إذا تراكمت عدة طلبات ثم أُدخلت دفعة واحدة، تختلط التفاصيل: أي تتبّع لأي عميل، وأي سعر لأي صنف. التسجيل لحظة الشراء يُبقي كل التفاصيل طازجة وبلا أخطاء.",
+      zh: "若多个订单堆积后一起录入，细节会混淆：哪个运单属于哪位客户、哪个价格对应哪件商品。购买当下即录入，信息新鲜且不易出错。" },
+    example: {
+      ku: "پێنج ئۆردەر بۆ پێنج موشتەر دەکڕیت → دوای هەر کڕینێک یەکسەر تۆماری بکە، نەک هەموویان لە کۆتایی ڕۆژدا.",
+      en: "You buy five orders for five customers → log each one right after buying, not all at the end of the day.",
+      ar: "تشتري خمسة طلبات لخمسة عملاء → سجّل كل واحد فور شرائه، لا كلها في آخر اليوم.",
+      zh: "你为五位客户下了五单 → 每单买完立即录入，而不是当天结束时一起录。" } },
+  { id: "tip-64",
+    short: {
+      ku: "ڕۆژانە هەموو پرس و کار و کێشەکان لەلای خۆت بنووسە بۆ ئەوەی لەبیریان نەکەیت.",
+      en: "Write down every question, task and problem each day so nothing is forgotten.",
+      ar: "دوّن كل سؤال ومهمة ومشكلة يومياً كي لا تُنسى.",
+      zh: "每天记录所有问题、任务和事项，以免遗忘。" },
+    detail: {
+      ku: "لە ڕۆژێکی قەرەباڵغدا دەیان شت ڕوودەدەن و مێشک ناتوانێت هەمووی بپارێزێت. ئەو کێشەیەی ئەمڕۆ لەبیرت دەچێت، سبەینێ دەبێتە گلەیی موشتەری. نووسینەکە دوو خولەک دەخایەنێت و کێشەیەکی گەورەت لێ دەبڕێت.",
+      en: "On a busy day dozens of things happen and memory can't hold them all. The issue you forget today becomes a customer complaint tomorrow. Writing it down takes two minutes and saves you a much bigger problem.",
+      ar: "في يوم مزدحم تحدث عشرات الأمور ولا تستطيع الذاكرة حفظها كلها. المشكلة التي تنساها اليوم تصبح شكوى عميل غداً. التدوين يستغرق دقيقتين ويوفّر عليك مشكلة أكبر بكثير.",
+      zh: "忙碌的一天会发生几十件事，记忆无法全部留住。你今天忘掉的问题，明天就会变成客户投诉。写下来只需两分钟，却能省去大麻烦。" },
+    example: {
+      ku: "موشتەرییەک دەڵێت «پاکەتەکەم نەگەیشتووە» → یەکسەر بینووسە لەگەڵ کۆدەکەی، نەک پشت بە بیرەوەری ببەستە.",
+      en: "A customer reports a package hasn't arrived → note it with their code immediately, don't rely on memory.",
+      ar: "يبلّغ عميل أن طرده لم يصل → دوّنها فوراً مع رمزه، ولا تعتمد على الذاكرة.",
+      zh: "客户反映包裹未送达 → 立即连同其客户编号记下，不要依赖记忆。" } },
+  { id: "tip-65",
+    short: {
+      ku: "موشتەری ڕابهێنە کە بەردەوام سەردانی پۆرتاڵی خۆی بکات و پرسیارەکانی لەوێ ئاراستە بکات.",
+      en: "Train customers to check their own portal regularly and ask their questions there.",
+      ar: "عوّد العميل على زيارة بوابته باستمرار وطرح أسئلته هناك.",
+      zh: "引导客户经常查看自己的门户，并在那里提问。" },
+    detail: {
+      ku: "پۆرتاڵ هەموو زانیارییەکی — دۆخی پاکەت، باڵانس، و پسووڵەکان — بە شێوەی زیندوو پیشان دەدات. ئەگەر موشتەری فێری ئەوە بێت، بارگرانی پرسیارە دووبارەکان لەسەر کارمەندان کەم دەبێتەوە و موشتەریش خێراتر وەڵام وەردەگرێت.",
+      en: "The portal shows everything live — package status, balance and invoices. Once customers get used to it, the load of repeated questions on staff drops and the customer gets answers faster.",
+      ar: "تعرض البوابة كل شيء مباشرة — حالة الطرد والرصيد والفواتير. متى اعتاد العملاء عليها، خفّ عبء الأسئلة المتكرّرة عن الموظفين وحصل العميل على إجابته أسرع.",
+      zh: "门户实时显示一切——包裹状态、余额和发票。客户一旦养成习惯，员工重复答疑的负担就会减少，客户也能更快得到答案。" },
+    example: {
+      ku: "موشتەری دەپرسێت «پاکەتەکەم لە کوێیە؟» → وەڵامی بدەرەوە و بڵێ لە پۆرتاڵەکەت هەموو کاتێک دەیبینیت.",
+      en: "Customer asks where their package is → answer, then add that they can see this any time in their portal.",
+      ar: "يسأل العميل عن مكان طرده → أجبه ثم أضف أنه يمكنه رؤية ذلك في بوابته في أي وقت.",
+      zh: "客户询问包裹位置 → 回答后补充：随时可在自己的门户查看。" } },
+  { id: "tip-66",
+    short: {
+      ku: "بەریدەکانی ناوخۆ لەگەڵ کۆمپانیاکانی ناوخۆ چێک بکەرەوە و لە گەیشتن و نەگەیشتنیان ئاگادار بە.",
+      en: "Follow up local deliveries with the local companies and stay on top of what did and didn't arrive.",
+      ar: "تابِع التوصيل المحلي مع الشركات المحلية وابقَ على اطلاع بما وصل وما لم يصل.",
+      zh: "与本地公司跟进本地配送，随时掌握哪些已送达、哪些未送达。" },
+    detail: {
+      ku: "دوای ئەوەی پاکەت دەدەینە کۆمپانیای ناوخۆ، بەرپرسیارێتی ئێمە کۆتایی نایەت — موشتەری هێشتا لە ئێمە دەپرسێت. ئەگەر چێک نەکەیتەوە، دواکەوتن یان ون بوون دەرناکەوێت تا موشتەری گلەیی بکات. چالاکانە بەدوایاندا بگەڕێ و کێشەکان زوو چارەسەر بکە.",
+      en: "Once a package goes to a local company, our responsibility doesn't end — the customer still asks us. If you don't follow up, a delay or loss only surfaces when the customer complains. Chase them actively and resolve issues early.",
+      ar: "بعد تسليم الطرد لشركة محلية لا تنتهي مسؤوليتنا — العميل ما زال يسألنا. إن لم تتابع، لن يظهر التأخير أو الضياع إلا حين يشتكي العميل. تابِعهم بفاعلية وحلّ المشكلات مبكراً.",
+      zh: "包裹交给本地公司后，我们的责任并未结束——客户仍会问我们。若不跟进，延误或丢失只会在客户投诉时才暴露。请主动跟进，尽早解决。" },
+    example: {
+      ku: "پێنج پاکەت بۆ سلێمانی نێردراون → دوای ڕۆژێک لە کۆمپانیاکە بپرسە کامەیان گەیشتووە.",
+      en: "Five packages went to Sulaymaniyah → ask the company a day later which ones were delivered.",
+      ar: "أُرسلت خمسة طرود إلى السليمانية → اسأل الشركة بعد يوم أيّها سُلّم.",
+      zh: "五个包裹发往苏莱曼尼亚 → 一天后询问该公司哪些已送达。" } },
+  { id: "tip-67",
+    short: {
+      ku: "هەمیشە بە موشتەری بڵێ کێش و CBM دوای گەیشتن بە مەخزەنی ئێمە دیاری دەکرێت.",
+      en: "Always tell the customer that weight and CBM are set once the goods reach our warehouse.",
+      ar: "أخبر العميل دائماً أن الوزن و CBM يُحدَّدان بعد وصول البضاعة إلى مستودعنا.",
+      zh: "务必告知客户，重量和 CBM 需货到我们仓库后才能确定。" },
+    detail: {
+      ku: "کێش و قەبارەی ڕاستەقینە تەنها دوای پێواندن لە کۆگا دیاری دەبێت — ئەوەی فرۆشیار دەیڵێت زۆرجار جیاوازە. ئەگەر پێشوەخت ژمارەیەکی جێگیر بە موشتەری بڵێیت، دواتر کە نرخەکە دەگۆڕێت بە هەڵەی ئێمەی دەزانێت. لە سەرەتاوە ڕوونی بکەوە.",
+      en: "The real weight and volume are only known after measuring at the warehouse — what the seller states is often different. If you give the customer a firm figure up front, they'll see the later change as our mistake. Make it clear from the start.",
+      ar: "الوزن والحجم الحقيقيان لا يُعرفان إلا بعد القياس في المستودع — وما يذكره البائع يختلف غالباً. إذا أعطيت العميل رقماً نهائياً مسبقاً، سيعتبر التغيير لاحقاً خطأً منّا. وضّح ذلك من البداية.",
+      zh: "真实重量和体积只有在仓库测量后才能确定——卖家所述常有出入。若你事先给出确定数字，客户会把日后的变动视为我们的失误。请从一开始就说明。" },
+    example: {
+      ku: "موشتەری دەڵێت فرۆشیار گوتی پێنج کیلۆیە → بڵێ دوای گەیشتن بۆ کۆگا پێوانەی دەکەین و ئەوکات نرخی کۆتایی دیار دەبێت.",
+      en: "Customer says the seller quoted five kilos → reply that we weigh it at the warehouse and the final price is set then.",
+      ar: "يقول العميل إن البائع ذكر خمسة كيلوغرامات → أجب أننا نزنه في المستودع وحينها يتحدّد السعر النهائي.",
+      zh: "客户说卖家称是五公斤 → 回答我们会在仓库称重，届时才确定最终价格。" } },
+  { id: "tip-68",
+    short: {
+      ku: "بۆ ئۆردەری زۆر و گەورە، پێش کڕین و ناردن ئاگاداری ئێمە بکەرەوە.",
+      en: "For large or bulk orders, tell us before buying and shipping.",
+      ar: "للطلبات الكبيرة أو بالجملة، أبلِغنا قبل الشراء والشحن.",
+      zh: "大宗或大额订单，请在采购和发货前先通知我们。" },
+    detail: {
+      ku: "ئۆردەری گەورە پێویستی بە ئامادەکاری هەیە: شوێن لە کۆگا، ڕێککەوتن لەسەر نرخ، و دڵنیابوون لەوەی لە باچی داهاتوودا جێی دەبێتەوە. ئەگەر بەبێ ئاگادارکردنەوە بێت، لەوانەیە دوابخرێت یان نرخێکی چاوەڕوان‌نەکراوی لەسەر بێت. ئاگادارکردنەوەی پێشوەخت هەردوولا دەپارێزێت.",
+      en: "A large order needs preparation: warehouse space, an agreed rate, and confirmation it fits the next batch. Arriving unannounced, it may be delayed or carry an unexpected cost. Advance notice protects both sides.",
+      ar: "الطلب الكبير يحتاج تحضيراً: مساحة في المستودع، واتفاقاً على السعر، وتأكيداً أنه يناسب الدفعة القادمة. إذا وصل دون إشعار، قد يتأخّر أو تترتّب عليه كلفة غير متوقّعة. الإشعار المسبق يحمي الطرفين.",
+      zh: "大额订单需要准备：仓储空间、议定费率，以及确认能否装入下一批次。若不打招呼就到货，可能延误或产生意外费用。提前告知对双方都有保障。" },
+    example: {
+      ku: "موشتەری دەیەوێت دوو سەد دانە کاڵا بکڕێت → پێش کڕین پێمان بڵێ تاوەکو ئامادەکاری بکەین.",
+      en: "A customer wants to buy two hundred units → tell us before the purchase so we can prepare.",
+      ar: "يريد عميل شراء مئتي قطعة → أبلِغنا قبل الشراء لنستعد.",
+      zh: "客户想买两百件 → 请在采购前告知我们以便安排。" } },
 ];
 
 export const MOTIVATION_MESSAGES: MotivationMessage[] = [
