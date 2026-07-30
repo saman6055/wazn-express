@@ -250,7 +250,10 @@ export default function CommissionForm() {
       toast.success(pickLang(language, { ku: "گۆڕانکارییەکان خەزن کران ✓", en: "Changes saved ✓", ar: "تم حفظ التعديلات ✓", zh: "更改已保存 ✓" }));
       utils.fullPackage.list.invalidate();
       utils.fullPackage.getById.invalidate({ id: orderId as number });
-      setLocation(`/commission/${orderId}`);
+      // Back to the list, not the order page: an edit is usually one of
+      // several being worked through, so the list is where the operator
+      // continues from. Save, cancel and no-change all land here.
+      setLocation("/commission");
     },
     onError: (error) => {
       // Prefer the first field-level validation message; otherwise fall back to
@@ -509,7 +512,7 @@ export default function CommissionForm() {
           ar: "لم يتغيّر شيء — بقي الطلب كما هو",
           zh: "没有任何更改 — 订单保持原样",
         }));
-        setLocation(`/commission/${orderId}`);
+        setLocation("/commission");
         return;
       }
       if (moneyChangeDetected && editReason.trim().length < 3) {
@@ -608,7 +611,7 @@ export default function CommissionForm() {
       <div className="max-w-4xl mx-auto space-y-3">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setLocation(isEditMode ? `/commission/${orderId}` : "/commission")}>
+          <Button variant="ghost" size="icon" onClick={() => setLocation("/commission")}>
             <ArrowRight className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
@@ -1429,7 +1432,7 @@ export default function CommissionForm() {
 
           {/* Submit */}
           <StickyFormBar>
-            <Button type="button" variant="outline" onClick={() => setLocation(isEditMode ? `/commission/${orderId}` : "/commission")}>
+            <Button type="button" variant="outline" onClick={() => setLocation("/commission")}>
               {t("common.cancel") || pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button
@@ -1478,7 +1481,7 @@ export default function CommissionForm() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setLocation(`/commission/${orderId}`)}>
+              <AlertDialogCancel onClick={() => setLocation("/commission")}>
                 {pickLang(language, { ku: "کانسڵ — خەزن مەکە", en: "Cancel — don't save", ar: "إلغاء — لا تحفظ", zh: "取消 — 不保存" })}
               </AlertDialogCancel>
               <AlertDialogAction onClick={submitEdit} className="bg-purple-600 hover:bg-purple-700">
