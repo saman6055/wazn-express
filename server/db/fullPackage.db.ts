@@ -88,9 +88,42 @@ const notDeleted = isNull(fullPackageOrders.deletedAt);
 
 // ============ FULL PACKAGE ORDER OPERATIONS ============
 
+/**
+ * `platform` is added by SCHEMA_PATCHES at boot, but a deploy whose patch step
+ * did not run leaves every write failing with "Unknown column 'platform'".
+ * The driver's error for that carries the ENTIRE statement's parameters — the
+ * base64 product image and every field of the order — which is how a routine
+ * save turned into a wall of characters on screen.
+ *
+ * So the column is also ensured on first write, self-healing that case.
+ * Mirrors ensureServiceTypeColumns in services.db.ts.
+ */
+let _fpColumnsEnsured = false;
+async function ensureFullPackageColumns(
+  db: NonNullable<Awaited<ReturnType<typeof getDb>>>,
+): Promise<void> {
+  if (_fpColumnsEnsured) return;
+  _fpColumnsEnsured = true;
+  try {
+    await db.execute(sql`SELECT platform FROM fullPackageOrders LIMIT 0`);
+  } catch {
+    try {
+      await db.execute(sql.raw("ALTER TABLE fullPackageOrders ADD COLUMN platform VARCHAR(100) NULL"));
+      appLogger.info("[FullPackage] added missing platform column");
+    } catch (err) {
+      // Already added by a concurrent boot, or we lack DDL rights — either way
+      // don't let this block the write.
+      appLogger.warn("[FullPackage] could not ensure platform column", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+}
+
 export async function createFullPackageOrder(data: InsertFullPackageOrder): Promise<FullPackageOrder> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await ensureFullPackageColumns(db);
 
   // UNIFIED FINANCIAL MODEL:
   // Full Package & Purchase Request: Customer pays sellingPriceUsd (final price) only
@@ -570,7 +603,8 @@ async function getOrderIdsWithMultiTracking(): Promise<number[]> {
 export async function updateFullPackageOrder(id: number, data: Partial<InsertFullPackageOrder>, userId?: number) {
   const db = await getDb();
   if (!db) return undefined;
-  
+  await ensureFullPackageColumns(db);
+
   // Always get existing order first
   const existing = await getFullPackageOrderById(id);
   if (!existing) return undefined;

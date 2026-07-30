@@ -810,7 +810,25 @@ export const fullPackageRouter = router({
         // 7. Persist the order changes. updateFullPackageOrder bumps version
         //    automatically (Plan v3), so the next OCC round-trip will see
         //    existing.version + 1.
-        await db.updateFullPackageOrder(id, data, ctx.user.id);
+        //
+        //    A driver-level failure here (e.g. a column missing on a stale
+        //    deploy) throws an error whose message embeds EVERY parameter of
+        //    the statement — the base64 product image and the whole order.
+        //    That message would travel to the client and be printed verbatim,
+        //    which is how a failed save filled the screen with characters.
+        //    Log the detail server-side; hand the operator a sentence.
+        try {
+          await db.updateFullPackageOrder(id, data, ctx.user.id);
+        } catch (err) {
+          appLogger.error("[FullPackage] update failed to persist", {
+            orderId: id,
+            error: err instanceof Error ? err.message : String(err),
+          });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "نەتوانرا گۆڕانکارییەکان خەزن بکرێن — تکایە دووبارە هەوڵ بدەوە | Could not save the changes, please try again",
+          });
+        }
 
         // `existing` is the getById row, which spreads the joined customer,
         // supplier and batch into it — including customers.passwordHash. Log
