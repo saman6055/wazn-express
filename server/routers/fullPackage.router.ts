@@ -820,13 +820,24 @@ export const fullPackageRouter = router({
         try {
           await db.updateFullPackageOrder(id, data, ctx.user.id);
         } catch (err) {
+          const raw = err instanceof Error ? err.message : String(err);
           appLogger.error("[FullPackage] update failed to persist", {
             orderId: id,
-            error: err instanceof Error ? err.message : String(err),
+            error: raw,
+            fields: Object.keys(data),
           });
+          // Show the driver's OWN first line — "Unknown column 'x' in 'field
+          // list'" and friends say exactly what is wrong, and an operator
+          // shouldn't have to dig through server logs to report it. Only the
+          // first line, capped, with any base64/parameter run stripped, so the
+          // payload dump that follows it can never reach the screen.
+          const reason = raw
+            .split("\n")[0]
+            .replace(/[A-Za-z0-9+/=]{40,}/g, "…")
+            .slice(0, 160);
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: "نەتوانرا گۆڕانکارییەکان خەزن بکرێن — تکایە دووبارە هەوڵ بدەوە | Could not save the changes, please try again",
+            message: `نەتوانرا خەزن بکرێت | Could not save — ${reason}`,
           });
         }
 
