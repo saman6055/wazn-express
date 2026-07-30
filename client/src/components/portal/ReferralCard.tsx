@@ -16,12 +16,37 @@ export function ReferralCard({ isDark, language }: { isDark: boolean; language: 
   const code = (account as any)?.customerCode as string | undefined;
   if (!code) return null;
 
-  const shareText = pickLang(language, {
-    ku: `سڵاو! من کارگوزاری وەزن ئێکسپرێس بەکاردەهێنم بۆ گواستنەوەی بار لە چینەوە بۆ عێراق — خێرا و متمانەپێکراوە. کاتی تۆمارکردن کۆدی من بڵێ: ${code}`,
-    en: `Hi! I use Wazn Express to ship from China to Iraq — fast and reliable. Mention my code when you register: ${code}`,
-    ar: `مرحبًا! أستخدم وزن إكسبريس للشحن من الصين إلى العراق — سريع وموثوق. اذكر رمزي عند التسجيل: ${code}`,
-    zh: `你好！我使用 Wazn Express 从中国运货到伊拉克——快速可靠。注册时请提及我的代码：${code}`,
-  });
+  // The full company pitch, exactly as the owner wrote it, with the sharer's
+  // own code carried inside — so a forwarded message already contains the
+  // contact details, address and channels, not just a bare code.
+  const shareText = `سڵاو هاوڕێ گیان، من لەگەڵ شەریکەی وەزن ئێستا زۆر بە ئاسانی لە چین کاڵا بە نرخی کۆ داوا دەکەم لەسەر جەم ئەپلیکەیشنە چینییەکان
+تۆش بۆ ئەوەی کارەکەت پێشکەوێت و کاڵا بە نرخی کۆ بکڕیت، وەزن ئێکسپرێس باشترین هەڵبژاردەیە
+
+🔹 گەیاندنی خێرا و پارێزراو بۆ بارەکانت تەنها لە ماوەی ١٠ ڕۆژدا 🚀
+
+🎁 کۆدی ناساندنی من لە کاتی تۆمارکردن بڵێ: ${code}
+
+با قازانج و سەرکەوتنەکانت لەگەڵ ئێمە دەست پێبکات! 👇
+📞 واتساپ: 07709183535
+📞 تەلەفۆن: 07509183535
+
+📍 عنوان: اربیل. 32 بارک سایدین جوازات
+📍 ناونیشان: هەولێر، 32 پارک، جۆت سایدی جەوازات 🏢
+Map: https://maps.app.goo.gl/2AXdNzfZnxtv4rX3A
+
+📱 پەیوەندی / تواصل:
+📞 07709183535
+📞 07509183535
+💬 07709183535
+📧 waznexpress@gmail.com
+
+وزن اكسبریس
+وەزن ئێکسپرێس
+🌐 www.waznexpress.com
+TikTok: wazn.express
+Instagram: wazn.express
+Telegram: https://t.me/waznexpress
+WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -35,12 +60,14 @@ export function ReferralCard({ isDark, language }: { isDark: boolean; language: 
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
   };
 
+  // Copy the whole message, not just the code — the point of the card is to
+  // hand the customer something ready to paste anywhere.
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(code);
-      toast.success(pickLang(language, { ku: "کۆد کۆپی کرا", en: "Code copied", ar: "تم نسخ الرمز", zh: "代码已复制" }));
+      await navigator.clipboard.writeText(shareText);
+      toast.success(pickLang(language, { ku: "پەیامەکە کۆپی کرا ✓", en: "Message copied ✓", ar: "تم نسخ الرسالة ✓", zh: "消息已复制 ✓" }));
     } catch {
-      toast.error(code);
+      toast.error(pickLang(language, { ku: "نەتوانرا کۆپی بکرێت", en: "Could not copy", ar: "تعذّر النسخ", zh: "无法复制" }));
     }
   };
 
@@ -66,15 +93,19 @@ export function ReferralCard({ isDark, language }: { isDark: boolean; language: 
             </h3>
             <p className={cn("text-xs mt-0.5 leading-relaxed", isDark ? "text-fuchsia-300/80" : "text-fuchsia-700")}>
               {pickLang(language, {
-                ku: "کۆدەکەت هاوبەش بکە — هاوڕێکەت لە کاتی تۆمارکردن باسی بکات.",
-                en: "Share your code — your friend mentions it when registering.",
-                ar: "شارك رمزك — يذكره صديقك عند التسجيل.",
-                zh: "分享您的代码——好友注册时提及即可。",
+                ku: "پەیامی تەواو لەگەڵ کۆدەکەت — هاوڕێکەت لە کاتی تۆمارکردن باسی بکات.",
+                en: "The full message with your code — your friend mentions it when registering.",
+                ar: "الرسالة كاملة مع رمزك — يذكره صديقك عند التسجيل.",
+                zh: "含您代码的完整消息——好友注册时提及即可。",
               })}
             </p>
             <div className="mt-3 flex items-center gap-2 flex-wrap">
               <button
                 onClick={handleCopy}
+                /* Copies the whole pitch, not just the code — the label keeps
+                   showing the code so the customer can still read it at a
+                   glance. */
+                title={pickLang(language, { ku: "کۆپیکردنی پەیامی تەواو", en: "Copy the full message", ar: "نسخ الرسالة كاملة", zh: "复制完整消息" })}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 font-mono text-sm font-bold transition active:scale-95",
                   isDark ? "bg-fuchsia-950/60 text-fuchsia-200 hover:bg-fuchsia-950" : "bg-white text-fuchsia-900 hover:bg-fuchsia-100 shadow-sm"
