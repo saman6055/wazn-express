@@ -170,6 +170,10 @@ export default function CommissionForm() {
   // Snapshot of the order as it was loaded — the baseline for "did anything
   // actually change?" on save.
   const originalSnapshot = useRef<string | null>(null);
+  // Images are stored as base64 data URIs, so re-posting them on every save
+  // sends the whole picture back for no reason — a payload big enough to be
+  // refused before it reaches the server. Only send them when they changed.
+  const originalImages = useRef<string | null>(null);
   useEffect(() => {
     if (!isEditMode || didHydrate.current || !existingOrder) return;
     didHydrate.current = true;
@@ -221,6 +225,7 @@ export default function CommissionForm() {
     // Remember exactly what was loaded, so Save can tell an untouched form
     // from a real edit and skip the round-trip entirely.
     originalSnapshot.current = editableSnapshot(hydrated, imgs);
+    originalImages.current = imgs.join("|");
   }, [isEditMode, existingOrder]);
 
   // Mirror the ¥ helper boxes off the hydrated USD price once the rate is known.
@@ -560,6 +565,9 @@ export default function CommissionForm() {
   /** Runs after the operator confirms the edit in the dialog. */
   const submitEdit = () => {
     setConfirmOpen(false);
+    // undefined means "leave unchanged" on the server, so untouched images
+    // are simply omitted instead of being re-uploaded.
+    const imagesChanged = originalImages.current !== productImages.join("|");
     updateMutation.mutate({
         id: orderId as number,
         expectedVersion: (existingOrder as any)?.version,
@@ -574,8 +582,8 @@ export default function CommissionForm() {
         productName: formData.productType,
         productType: formData.productType || undefined,
         productLink: formData.productLink,
-        productImage: productImages[0] || undefined,
-        productImages: productImages,
+        productImage: imagesChanged ? (productImages[0] || undefined) : undefined,
+        productImages: imagesChanged ? productImages : undefined,
         platform: formData.platform,
         orderNumber: formData.orderNumber,
         trackingNumber: formData.trackingNumber.trim(),

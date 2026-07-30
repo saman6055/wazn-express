@@ -192,6 +192,10 @@ export default function FullPackageForm() {
   // and re-running would wipe whatever the operator has typed so far.
   const didHydrate = useRef(false);
   const originalSnapshot = useRef<string | null>(null);
+  // Images are stored as base64 data URIs, so re-posting them on every save
+  // sends the whole picture back for no reason — a payload big enough to be
+  // refused before it reaches the server. Only send them when they changed.
+  const originalImages = useRef<string | null>(null);
   useEffect(() => {
     if (!isEditMode || didHydrate.current || !existingOrder) return;
     didHydrate.current = true;
@@ -230,6 +234,7 @@ export default function FullPackageForm() {
         : [];
     setProductImages(imgs);
     originalSnapshot.current = editableSnapshot(hydrated, imgs);
+    originalImages.current = imgs.join("|");
   }, [isEditMode, existingOrder]);
 
   // Update mutation — used only in edit mode. Same endpoint the old edit
@@ -421,6 +426,9 @@ export default function FullPackageForm() {
   /** Runs after the operator confirms the edit in the dialog. */
   const submitEdit = () => {
     setConfirmOpen(false);
+    // undefined means "leave unchanged" on the server, so untouched images
+    // are simply omitted instead of being re-uploaded.
+    const imagesChanged = originalImages.current !== productImages.join("|");
     updateMutation.mutate({
         id: orderId as number,
         expectedVersion: (existingOrder as any)?.version,
@@ -435,8 +443,8 @@ export default function FullPackageForm() {
         productType: formData.productType || undefined,
         platform: formData.platform,
         productLink: formData.productLink,
-        productImage: productImages[0] || undefined,
-        productImages: productImages,
+        productImage: imagesChanged ? (productImages[0] || undefined) : undefined,
+        productImages: imagesChanged ? productImages : undefined,
         orderNumber: formData.orderNumber,
         trackingNumber: formData.trackingNumber.trim(),
         productDescription: formData.productDescription,
