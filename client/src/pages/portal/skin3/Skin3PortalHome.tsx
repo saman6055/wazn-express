@@ -22,7 +22,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { PriceListSection } from "@/components/portal/PriceListSection";
 
 // Bold ¥ glyph styled like a lucide icon (lucide has no CNY symbol).
 // Accepts (and ignores) strokeWidth so it can stand in for a lucide icon.
@@ -359,10 +358,6 @@ export default function Skin3PortalHome() {
           </div>
         </motion.div>
 
-        {/* ===== Price List Section — admin-curated ===== */}
-        <motion.div variants={itemVariants} className="mb-8 -mx-4">
-          <PriceListSection />
-        </motion.div>
 
         {/* ===== Stats 2x2 Grid ===== */}
         <motion.div variants={itemVariants} className="mb-8">

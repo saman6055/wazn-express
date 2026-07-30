@@ -23,7 +23,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { PriceListSection } from "@/components/portal/PriceListSection";
 
 // Bold ¥ glyph styled like a lucide icon (lucide has no CNY symbol).
 function YuanGlyphIcon({ className }: { className?: string }) {
@@ -357,10 +356,6 @@ export default function ModernPortalHome() {
           </div>
         </motion.div>
 
-        {/* ===== Price List Section — admin-curated ===== */}
-        <motion.div variants={itemVariants} className="-mx-5">
-          <PriceListSection />
-        </motion.div>
 
         {/* ===== Stats Row (horizontal scroll) ===== */}
         <motion.div variants={itemVariants} className="mb-6">
