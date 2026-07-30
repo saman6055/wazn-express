@@ -613,3 +613,55 @@ export type InsertBlogPost = typeof blogPosts.$inferInsert;
 
 
 // ============ DELETION LOGS (Data Management History) ============
+
+// ============ PORTAL TUTORIALS (how-to videos shown to customers) ============
+//
+// Short YouTube walkthroughs — "how to order from Taobao", "how to register a
+// tracking number" — grouped into sections the admin controls from Portal
+// Center. The video itself stays on YouTube: we store only the link, so an
+// embedded play still counts toward the channel's views, and there is no video
+// hosting to pay for or maintain.
+//
+// `category` is free text rather than an enum so a section can be a platform
+// (Taobao, 1688) or a topic of its own ("Portal", "Payment"); the admin form
+// offers the productAttributes platform list as suggestions.
+export const portalTutorials = mysqlTable("portalTutorials", {
+  id: int("id").autoincrement().primaryKey(),
+
+  category: varchar("category", { length: 100 }).notNull(),
+
+  titleKu: varchar("titleKu", { length: 300 }).notNull(),
+  titleEn: varchar("titleEn", { length: 300 }),
+  titleAr: varchar("titleAr", { length: 300 }),
+
+  summaryKu: text("summaryKu"),
+  summaryEn: text("summaryEn"),
+  summaryAr: text("summaryAr"),
+
+  // Full YouTube URL as pasted by the admin. The video id — and therefore the
+  // thumbnail — is derived from it, so no image ever needs uploading.
+  videoUrl: varchar("videoUrl", { length: 500 }).notNull(),
+  durationSeconds: int("durationSeconds"),
+
+  sortOrder: int("sortOrder").default(0).notNull(),
+  isPublished: boolean("isPublished").default(false).notNull(),
+  // Pinned to the top of the page — the one thing a new customer should watch.
+  isFeatured: boolean("isFeatured").default(false).notNull(),
+
+  // How often it was opened, and how often it was watched to the end: a large
+  // gap between the two says the video is too long or unclear.
+  viewCount: int("viewCount").default(0).notNull(),
+  completedCount: int("completedCount").default(0).notNull(),
+  helpfulCount: int("helpfulCount").default(0).notNull(),
+  notHelpfulCount: int("notHelpfulCount").default(0).notNull(),
+
+  createdById: int("createdById"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  categoryIdx: index("idx_portal_tutorials_category").on(table.category),
+  publishedIdx: index("idx_portal_tutorials_published").on(table.isPublished, table.sortOrder),
+}));
+
+export type PortalTutorial = typeof portalTutorials.$inferSelect;
+export type InsertPortalTutorial = typeof portalTutorials.$inferInsert;

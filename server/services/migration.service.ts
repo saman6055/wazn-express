@@ -178,6 +178,34 @@ export async function runMigration(): Promise<{ success: boolean; message: strin
     // ---- Customer Portal Center (this list runs at server startup — any
     // table added to _core/migrations.ts must be mirrored here too) ----
     {
+      name: "portalTutorials",
+      sql: `CREATE TABLE IF NOT EXISTS \`portalTutorials\` (
+        \`id\` INT NOT NULL AUTO_INCREMENT,
+        \`category\` VARCHAR(100) NOT NULL,
+        \`titleKu\` VARCHAR(300) NOT NULL,
+        \`titleEn\` VARCHAR(300),
+        \`titleAr\` VARCHAR(300),
+        \`summaryKu\` TEXT,
+        \`summaryEn\` TEXT,
+        \`summaryAr\` TEXT,
+        \`videoUrl\` VARCHAR(500) NOT NULL,
+        \`durationSeconds\` INT,
+        \`sortOrder\` INT NOT NULL DEFAULT 0,
+        \`isPublished\` TINYINT(1) NOT NULL DEFAULT 0,
+        \`isFeatured\` TINYINT(1) NOT NULL DEFAULT 0,
+        \`viewCount\` INT NOT NULL DEFAULT 0,
+        \`completedCount\` INT NOT NULL DEFAULT 0,
+        \`helpfulCount\` INT NOT NULL DEFAULT 0,
+        \`notHelpfulCount\` INT NOT NULL DEFAULT 0,
+        \`createdById\` INT,
+        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (\`id\`),
+        KEY \`portalTutorials_category_idx\` (\`category\`),
+        KEY \`portalTutorials_published_idx\` (\`isPublished\`, \`sortOrder\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
+    },
+    {
       name: "customerActivityLog",
       sql: `CREATE TABLE IF NOT EXISTS \`customerActivityLog\` (
         \`id\` INT NOT NULL AUTO_INCREMENT,

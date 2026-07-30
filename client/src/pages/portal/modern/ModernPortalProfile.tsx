@@ -1,4 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -121,7 +122,9 @@ export default function ModernPortalProfile() {
     {
       icon: Headphones,
       label: t("portal.support"),
-      href: "https://wa.me/9647501234567",
+      // The company WhatsApp — was a placeholder number, so "Support" opened
+      // a chat with nobody. Use the shared constant so it can never drift.
+      href: `https://wa.me/${TERMS_WHATSAPP_NUMBER}`,
       external: true,
     },
     {

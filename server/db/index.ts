@@ -20,3 +20,4 @@ export * from './portalCenter.db';
 export * from './yuanExchange.db';
 
 export * from './productAttributes.db';
+export * from "./tutorials.db";

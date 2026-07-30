@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { TutorialsTab } from "@/components/portal-center/TutorialsTab";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -30,6 +31,7 @@ import {
   UserCheck, PackageCheck, Ban, Sparkles, Send, Bell, Megaphone,
   StickyNote, DollarSign, Plane, Zap, Ship, Loader2, Star, Newspaper, Pin, Eye,
   EyeOff, KeyRound, ShieldCheck, Copy, Check, RefreshCw, Phone, Power, Undo2,
+  GraduationCap,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -139,6 +141,7 @@ export default function PortalCenter() {
             <TabsTrigger value="messages" className={TAB_TRIGGER_CLS}><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}</TabsTrigger>
             <TabsTrigger value="send" className={TAB_TRIGGER_CLS}><Send className="h-4 w-4" />{p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}</TabsTrigger>
             <TabsTrigger value="prices" className={TAB_TRIGGER_CLS}><DollarSign className="h-4 w-4" />{p({ ku: "نرخەکان", en: "Prices", ar: "الأسعار", zh: "价格" })}</TabsTrigger>
+            <TabsTrigger value="tutorials" className={TAB_TRIGGER_CLS}><GraduationCap className="h-4 w-4" />{p({ ku: "فێرکاری", en: "Tutorials", ar: "الشروحات", zh: "教程" })}</TabsTrigger>
             <TabsTrigger value="activity" className={TAB_TRIGGER_CLS}><Activity className="h-4 w-4" />{p({ ku: "چالاکی", en: "Activity", ar: "النشاط", zh: "活动" })}</TabsTrigger>
             <TabsTrigger value="declared" className={TAB_TRIGGER_CLS}><Package className="h-4 w-4" />{p({ ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪" })}</TabsTrigger>
             <TabsTrigger value="claims" className={TAB_TRIGGER_CLS}><FileText className="h-4 w-4" />{p({ ku: "خاوەنداری", en: "Claims", ar: "المطالبات", zh: "认领" })}</TabsTrigger>
@@ -160,6 +163,7 @@ export default function PortalCenter() {
           <TabsContent value="messages"><MessagesTab p={p} /></TabsContent>
           <TabsContent value="send"><SendTab p={p} /></TabsContent>
           <TabsContent value="prices"><PricesTab p={p} /></TabsContent>
+          <TabsContent value="tutorials"><TutorialsTab p={p} /></TabsContent>
           <TabsContent value="activity"><ActivityTab p={p} /></TabsContent>
           <TabsContent value="declared"><DeclaredTab p={p} /></TabsContent>
           <TabsContent value="claims"><ClaimsTab p={p} /></TabsContent>

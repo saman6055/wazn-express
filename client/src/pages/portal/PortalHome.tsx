@@ -12,7 +12,7 @@ import {
   AlertCircle, Plane, Ship, Megaphone, TrendingUp, Search,
   CreditCard, MessageCircle, FileText, DollarSign,
   Sun, Moon, Sparkles, AlertTriangle, PackagePlus, Info, X,
-  Scale, Ban, ShoppingBag, Wallet, User, BookOpen
+  Scale, Ban, ShoppingBag, Wallet, User, BookOpen, GraduationCap
 } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { Link } from "wouter";
@@ -422,6 +422,18 @@ const { t, language } = useLanguage();
         title: pickLang(language, { ku: "ڕێبەری پۆرتاڵ", en: "Portal guide", ar: "دليل البوابة", zh: "门户指南" }),
         desc: pickLang(language, { ku: "چۆنیەتی بەکارهێنانی پۆرتاڵ — هەنگاو بە هەنگاو.", en: "How to use the portal — step by step.", ar: "كيفية استخدام البوابة — خطوة بخطوة.", zh: "如何使用门户 — 分步说明。" }),
         example: pickLang(language, { ku: "نموونە: چۆن تراک تۆمار بکەم؟", en: "e.g. how do I register a tracking number?", ar: "مثال: كيف أسجّل رقم التتبع؟", zh: "例如：如何登记运单号？" }),
+      },
+    },
+    {
+      icon: GraduationCap,
+      label: pickLang(language, { ku: "فێرکاری", en: "Tutorials", ar: "الشروحات", zh: "教程" }),
+      href: "/portal/tutorials",
+      color: tileColor,
+      shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "فێرکاری بە ڤیدیۆ", en: "Video tutorials", ar: "شروحات بالفيديو", zh: "视频教程" }),
+        desc: pickLang(language, { ku: "ڤیدیۆی کورت کە پیشانت دەدەن چۆن لە تاوباو و پیندودو داوای کاڵا بکەیت و پۆرتاڵ بەکاربهێنیت.", en: "Short videos showing how to order from Taobao and Pinduoduo and use the portal.", ar: "فيديوهات قصيرة تشرح الطلب من تاوباو وبيندودو واستخدام البوابة.", zh: "简短视频，演示如何在淘宝和拼多多下单并使用门户。" }),
+        example: pickLang(language, { ku: "نموونە: «چۆن لە تاوباو کاڵا داوا بکەیت» ببینە", en: "e.g. watch \"how to order from Taobao\"", ar: "مثال: شاهد «كيف تطلب من تاوباو»", zh: "例如：观看「如何在淘宝下单」" }),
       },
     },
     {

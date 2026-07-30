@@ -51,7 +51,17 @@ async function startServer() {
   // Security headers (CSP disabled in dev - Vite HMR and React Refresh need inline scripts)
   app.use(
     helmet({
-      contentSecurityPolicy: process.env.NODE_ENV === "development" ? false : undefined,
+      // Helmet's default policy allows frames from 'self' only, which blocks
+      // the YouTube player the portal tutorials embed. Widen just that one
+      // directive — everything else keeps the default — so a tutorial plays
+      // in-app and the view still counts on the company's own channel.
+      contentSecurityPolicy: process.env.NODE_ENV === "development" ? false : {
+        useDefaults: true,
+        directives: {
+          "frame-src": ["'self'", "https://www.youtube.com", "https://www.youtube-nocookie.com"],
+          "img-src": ["'self'", "data:", "blob:", "https://i.ytimg.com", "https:"],
+        },
+      },
     })
   );
 

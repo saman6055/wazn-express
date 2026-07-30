@@ -198,6 +198,7 @@ const PortalInvoiceReports = lazy(() => import("./pages/portal/PortalInvoiceRepo
 const PortalYuanExchange = lazy(() => import("./pages/portal/PortalYuanExchange"));
 const PortalProhibitedItems = lazy(() => import("./pages/portal/PortalProhibitedItems"));
 const PortalGuide = lazy(() => import("./pages/portal/PortalGuide"));
+const PortalTutorials = lazy(() => import("./pages/portal/PortalTutorials"));
 const PortalSecurity = lazy(() => import("./pages/portal/PortalSecurity"));
 const PortalFAQ = lazy(() => import("./pages/portal/PortalFAQ"));
 const PortalAbout = lazy(() => import("./pages/portal/PortalAbout"));
@@ -350,6 +351,7 @@ function Router() {
         <Route path="/portal/prohibited-items" component={PortalProhibitedItems} />
         <Route path="/portal/prohibited-packages" component={PortalProhibitedPackages} />
         <Route path="/portal/guide" component={PortalGuide} />
+        <Route path="/portal/tutorials" component={PortalTutorials} />
         <Route path="/portal/security" component={PortalSecurity} />
         <Route path="/portal/faq" component={PortalFAQ} />
         <Route path="/portal/about" component={PortalAbout} />

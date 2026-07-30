@@ -1890,6 +1890,35 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "portalTutorials",
+    dependencies: ["users"],
+    sql: `CREATE TABLE IF NOT EXISTS portalTutorials (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      category VARCHAR(100) NOT NULL,
+      titleKu VARCHAR(300) NOT NULL,
+      titleEn VARCHAR(300),
+      titleAr VARCHAR(300),
+      summaryKu TEXT,
+      summaryEn TEXT,
+      summaryAr TEXT,
+      videoUrl VARCHAR(500) NOT NULL,
+      durationSeconds INT,
+      sortOrder INT NOT NULL DEFAULT 0,
+      isPublished BOOLEAN NOT NULL DEFAULT FALSE,
+      isFeatured BOOLEAN NOT NULL DEFAULT FALSE,
+      viewCount INT NOT NULL DEFAULT 0,
+      completedCount INT NOT NULL DEFAULT 0,
+      helpfulCount INT NOT NULL DEFAULT 0,
+      notHelpfulCount INT NOT NULL DEFAULT 0,
+      createdById INT,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_portal_tutorials_category (category),
+      INDEX idx_portal_tutorials_published (isPublished, sortOrder)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "blogPosts",
     dependencies: ["users"],
     sql: `CREATE TABLE IF NOT EXISTS blogPosts (

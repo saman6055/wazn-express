@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { trpc } from "@/lib/trpc";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { Button } from "@/components/ui/button";
@@ -796,7 +797,9 @@ export default function PortalMessages() {
         )}>
           <div className="flex items-center justify-center gap-6">
             <a 
-              href="tel:+9647501234567" 
+              /* The company line — was a placeholder number, so "call us" dialled
+                 nobody. Shares the constant with every WhatsApp link. */
+              href={`tel:+${TERMS_WHATSAPP_NUMBER}`}
               className={cn(
                 "flex items-center gap-2 text-sm",
                 isDark ? "text-slate-400 hover:text-white" : "text-gray-500 hover:text-gray-800"

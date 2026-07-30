@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
+import { TutorialHint } from "@/components/TutorialHint";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -126,6 +127,7 @@ export default function PortalDeclarePackage() {
             <p className="text-xs text-muted-foreground">
               {label({ ku: "هەرچیت کڕیوە تراکەکەی داخڵ بکە بۆ ئەوەی بەناوی تۆ تۆمار بکرێت", en: "Declare what you bought so it's assigned to you on arrival", ar: "أدخل ما اشتريته ليُسجَّل باسمك عند وصوله", zh: "登记您购买的商品，到货即归到您名下" })}
             </p>
+            <TutorialHint section="تۆماری تراک" className="mt-1.5" />
           </div>
         </div>
 

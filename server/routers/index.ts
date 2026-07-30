@@ -17,6 +17,7 @@ import { fullPackageRouter } from "./fullPackage.router";
 import { scanningRouters } from "./scanning.router";
 import { servicesRouters } from "./services.router";
 import { productAttributesRouter } from "./productAttributes.router";
+import { tutorialsRouter } from "./tutorials.router";
 import { portalCenterRouter } from "./portalCenter.router";
 import { storeRouter } from "./store.router";
 import { prohibitedRouter } from "./prohibited.router";
@@ -38,6 +39,7 @@ export const appRouter = router({
   ...scanningRouters,
   ...servicesRouters,
   productAttributes: productAttributesRouter,
+  tutorials: tutorialsRouter,
   portalCenter: portalCenterRouter,
   store: storeRouter,
   prohibited: prohibitedRouter,

@@ -92,7 +92,9 @@ const { t, language, setLanguage } = useLanguage();
       label: language === "ku" ? "پشتگیری" : "Support",
       description: language === "ku" ? "پەیوەندیمان پێوە بکە" : "Contact us anytime",
       iconBg: "bg-gradient-to-br from-indigo-400 to-purple-500",
-      action: () => window.open("https://wa.me/9647501234567", "_blank"),
+      // The company WhatsApp — was a placeholder number, so "Support" opened
+      // a chat with nobody. Use the shared constant so it can never drift.
+      action: () => window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}`, "_blank"),
     },
     {
       icon: HelpCircle,
