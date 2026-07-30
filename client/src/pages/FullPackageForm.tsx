@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import PlatformSelect, { LAST_PLATFORM_KEY } from "@/components/PlatformSelect";
 import { cn } from "@/lib/utils";
 
 // Lightweight section wrapper — small bold title + thin divider, no heavy card
@@ -86,6 +87,7 @@ export default function FullPackageForm() {
   const [formData, setFormData] = useState({
     customerId: "",
     supplierId: "",
+    platform: "",
     orderNumber: "",
     trackingNumber: "",
     productLink: "",
@@ -144,6 +146,8 @@ export default function FullPackageForm() {
       didApplyLastCustomer.current = true;
       return;
     }
+    const lastPlatform = localStorage.getItem(LAST_PLATFORM_KEY);
+    if (lastPlatform) setFormData((prev) => (prev.platform ? prev : { ...prev, platform: lastPlatform }));
     const lastId = localStorage.getItem("wazn-last-commission-customer");
     if (!lastId) return;
     const match = customers.find((c) => c.id.toString() === lastId);
@@ -162,13 +166,20 @@ export default function FullPackageForm() {
       if (keepCustomerId) {
         localStorage.setItem("wazn-last-commission-customer", keepCustomerId);
       }
+      // Platform is sticky the same way the customer is: a run of orders is
+      // usually bought from one shop, so it carries over until changed.
+      const keepPlatform = formData.platform;
+      if (keepPlatform) {
+        localStorage.setItem(LAST_PLATFORM_KEY, keepPlatform);
+      }
       // Keep the form open for rapid multi-order entry: reset every field for
-      // the next order but KEEP the selected customer, so staff can enter all
-      // of one customer's orders back-to-back without re-picking them. Exit is
-      // a manual choice (the back button) — we intentionally don't navigate.
+      // the next order but KEEP the selected customer and platform, so staff can
+      // enter all of one customer's orders back-to-back without re-picking them.
+      // Exit is a manual choice (the back button) — we intentionally don't navigate.
       setFormData({
         customerId: keepCustomerId,
         supplierId: "",
+        platform: keepPlatform,
         orderNumber: "",
         trackingNumber: "",
         productLink: "",
@@ -225,6 +236,7 @@ export default function FullPackageForm() {
       productLink: formData.productLink || undefined,
       productImage: productImages[0] || undefined,
       productImages: productImages.length > 0 ? productImages : undefined,
+      platform: formData.platform || undefined,
       orderNumber: formData.orderNumber || undefined,
       trackingNumber: formData.trackingNumber.trim() || undefined,
       productDescription: formData.productDescription || undefined,
@@ -507,7 +519,15 @@ export default function FullPackageForm() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order number", ar: "رقم الطلب", zh: "订单号" })}</Label>
+                  <Label className="text-xs">{pickLang(language, { ku: "پلاتفۆرم *", en: "Platform *", ar: "المنصة *", zh: "平台 *" })}</Label>
+                  <PlatformSelect
+                    value={formData.platform}
+                    onChange={(v) => setFormData((p) => ({ ...p, platform: v }))}
+                    className={cn(filledCls(formData.platform))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">{pickLang(language, { ku: "ئۆردەر نەمبەر *", en: "Order number *", ar: "رقم الطلب *", zh: "订单号 *" })}</Label>
                   <Input
                     value={formData.orderNumber}
                     onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}

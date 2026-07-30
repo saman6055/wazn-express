@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { readableError, editableSnapshot } from "@/lib/commissionEditUtils";
+import PlatformSelect, { LAST_PLATFORM_KEY } from "@/components/PlatformSelect";
 import { toast } from "sonner";
 
 // Lightweight section wrapper — small bold title + thin divider. Defined at
@@ -76,6 +77,7 @@ export default function CommissionForm() {
   const [formData, setFormData] = useState({
     customerId: "",
     supplierId: "",
+    platform: "",
     orderNumber: "",
     trackingNumber: "",
     productLink: "",
@@ -142,6 +144,8 @@ export default function CommissionForm() {
       didApplyLastCustomer.current = true;
       return;
     }
+    const lastPlatform = localStorage.getItem(LAST_PLATFORM_KEY);
+    if (lastPlatform) setFormData((prev) => (prev.platform ? prev : { ...prev, platform: lastPlatform }));
     const lastId = localStorage.getItem("wazn-last-commission-customer");
     if (!lastId) return;
     const match = customers.find((c) => c.id.toString() === lastId);
@@ -176,6 +180,7 @@ export default function CommissionForm() {
     const hydrated = {
       customerId: o.customerId?.toString() || "",
       supplierId: o.supplierId?.toString() || "none",
+      platform: o.platform || "",
       orderNumber: o.orderNumber || "",
       trackingNumber: o.trackingNumber || "",
       productLink: o.productLink || "",
@@ -261,13 +266,20 @@ export default function CommissionForm() {
       if (keepCustomerId) {
         localStorage.setItem("wazn-last-commission-customer", keepCustomerId);
       }
+      // Platform is sticky the same way the customer is: a run of orders is
+      // usually bought from one shop, so it carries over until changed.
+      const keepPlatform = formData.platform;
+      if (keepPlatform) {
+        localStorage.setItem(LAST_PLATFORM_KEY, keepPlatform);
+      }
       // Keep the form open for rapid multi-order entry: reset every field for
-      // the next order but KEEP the selected customer, so staff can enter all
-      // of one customer's orders back-to-back without re-picking them. Exit is
-      // a manual choice (the back button) — we intentionally don't navigate.
+      // the next order but KEEP the selected customer and platform, so staff can
+      // enter all of one customer's orders back-to-back without re-picking them.
+      // Exit is a manual choice (the back button) — we intentionally don't navigate.
       setFormData({
         customerId: keepCustomerId,
         supplierId: "",
+        platform: keepPlatform,
         orderNumber: "",
         trackingNumber: "",
         productLink: "",
@@ -432,6 +444,17 @@ export default function CommissionForm() {
       return;
     }
 
+    // Every real order has a number from the shop it was bought on.
+    if (!formData.orderNumber.trim()) {
+      toast.error(pickLang(language, { ku: "تکایە ئۆردەر نەمبەر داخڵ بکە", en: "Please enter the order number", ar: "يرجى إدخال رقم الطلب", zh: "请输入订单编号" }));
+      return;
+    }
+
+    if (!formData.platform.trim()) {
+      toast.error(pickLang(language, { ku: "تکایە پلاتفۆرم هەڵبژێرە", en: "Please select a platform", ar: "يرجى اختيار المنصة", zh: "请选择平台" }));
+      return;
+    }
+
     if (!formData.itemPriceUsd || itemPrice <= 0) {
       toast.error(pickLang(language, { ku: "تکایە نرخی کاڵا داخڵ بکە", en: "Please enter the item price", ar: "يرجى إدخال سعر المنتج", zh: "请输入商品价格" }));
       return;
@@ -501,6 +524,7 @@ export default function CommissionForm() {
         productLink: formData.productLink,
         productImage: productImages[0] || undefined,
         productImages: productImages,
+        platform: formData.platform,
         orderNumber: formData.orderNumber,
         trackingNumber: formData.trackingNumber.trim(),
         productDescription: formData.productDescription,
@@ -529,6 +553,7 @@ export default function CommissionForm() {
       productLink: formData.productLink || undefined,
       productImage: productImages[0] || undefined,
       productImages: productImages.length > 0 ? productImages : undefined,
+      platform: formData.platform || undefined,
       orderNumber: formData.orderNumber || undefined,
       trackingNumber: formData.trackingNumber.trim() || undefined,
       productDescription: formData.productDescription || undefined,
@@ -782,7 +807,15 @@ export default function CommissionForm() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order number", ar: "رقم الطلب", zh: "订单编号" })}</Label>
+                  <Label className="text-xs">{pickLang(language, { ku: "پلاتفۆرم *", en: "Platform *", ar: "المنصة *", zh: "平台 *" })}</Label>
+                  <PlatformSelect
+                    value={formData.platform}
+                    onChange={(v) => setFormData((p) => ({ ...p, platform: v }))}
+                    className={cn(filledCls(formData.platform))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">{pickLang(language, { ku: "ئۆردەر نەمبەر *", en: "Order number *", ar: "رقم الطلب *", zh: "订单编号 *" })}</Label>
                   <Input
                     value={formData.orderNumber}
                     onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}

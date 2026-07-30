@@ -275,7 +275,10 @@ export type InsertIpWhitelist = typeof ipWhitelist.$inferInsert;
 
 export const productAttributes = mysqlTable("productAttributes", {
   id: int("id").autoincrement().primaryKey(),
-  type: mysqlEnum("type", ["color", "size", "productType"]).notNull(),
+  // "platform" = the shop an order was placed on (Taobao, 1688, …). Kept here
+  // rather than as an enum on the order so admins can add their own from the
+  // order form without a migration.
+  type: mysqlEnum("type", ["color", "size", "productType", "platform"]).notNull(),
   value: varchar("value", { length: 200 }).notNull(),
   sortOrder: int("sortOrder").default(0).notNull(),
   isActive: boolean("isActive").default(true).notNull(),

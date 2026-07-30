@@ -46,6 +46,10 @@ export const fullPackageOrders = mysqlTable("fullPackageOrders", {
   color: varchar("color", { length: 100 }), // Product color
   size: varchar("size", { length: 100 }), // Product size
   productType: varchar("productType", { length: 200 }), // Product type/category
+  // Shop the order was placed on (Taobao, 1688, …). Free text, not an enum:
+  // admins add their own from the order form, backed by productAttributes
+  // rows of type "platform".
+  platform: varchar("platform", { length: 100 }),
   
   // Supplier Tracking
   supplierTrackingNumber: varchar("supplierTrackingNumber", { length: 100 }), // 1688/Taobao tracking

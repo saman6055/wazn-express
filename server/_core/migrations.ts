@@ -2202,6 +2202,11 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "fullPackageOrders.advancePaidUsd", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaidUsd DECIMAL(10,2) NOT NULL DEFAULT 0" },
   { name: "fullPackageOrders.advancePaidAt", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaidAt TIMESTAMP NULL" },
   { name: "fullPackageOrders.advancePaymentMethod", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaymentMethod ENUM('CASH','BANK_TRANSFER','FIB','FASTPAY','ZAINCASH','ASIAHAWALA','CARD','OTHER') NULL" },
+  // Platforms are user-extendable (admins add their own from the order form),
+  // so they live as productAttributes rows rather than a hard-coded enum, and
+  // the order's platform column widens to free text to hold any of them.
+  { name: "productAttributes.type.platform", sql: "ALTER TABLE productAttributes MODIFY COLUMN type ENUM('color','size','productType','platform') NOT NULL" },
+  { name: "fullPackageOrders.platform", sql: "ALTER TABLE fullPackageOrders ADD COLUMN platform VARCHAR(100) NULL" },
   { name: "fullPackageOrders.advancePaymentTransactionId", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaymentTransactionId INT NULL" },
   { name: "paymentRecords.reversedAmountUsd", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAmountUsd DECIMAL(10,2) NOT NULL DEFAULT 0" },
   { name: "paymentRecords.reversedAt", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAt TIMESTAMP NULL" },

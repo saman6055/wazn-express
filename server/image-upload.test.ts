@@ -182,6 +182,7 @@ describe("fullPackage.create with images", () => {
       customerId: 1,
       orderType: "full_package" as const,
       productName: "Single Product with Images",
+      orderNumber: "IMG-SINGLE-1",
       productImage: "https://cdn.example.com/uploads/single.jpg",
       productImages: [
         "https://cdn.example.com/uploads/single1.jpg",
@@ -211,6 +212,7 @@ describe("fullPackage.create with images", () => {
       customerId: 1,
       orderType: "commission" as const,
       productName: "Commission Single with Image",
+      orderNumber: "IMG-COMM-1",
       productImage: "https://cdn.example.com/uploads/comm-single.jpg",
       productImages: ["https://cdn.example.com/uploads/comm-single1.jpg"],
       quantity: 1,

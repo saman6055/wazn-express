@@ -30,7 +30,7 @@ export function editableSnapshot(
   images: string[],
 ): string {
   return JSON.stringify([
-    f.customerId, f.supplierId, f.orderNumber, f.trackingNumber, f.productLink,
+    f.customerId, f.supplierId, f.platform, f.orderNumber, f.trackingNumber, f.productLink,
     f.productDescription, f.quantity, f.color, f.size, f.productType,
     f.itemPriceUsd, f.commissionFeeUsd, f.notes, f.shippingType, f.weightKg,
     f.dimensionLength, f.dimensionWidth, f.dimensionHeight, f.volumeCbm,

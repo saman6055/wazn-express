@@ -9,7 +9,7 @@ import {
   deleteProductAttribute,
 } from "../db/productAttributes.db";
 
-const attributeTypeSchema = z.enum(["color", "size", "productType"]);
+const attributeTypeSchema = z.enum(["color", "size", "productType", "platform"]);
 
 export const productAttributesRouter = router({
   // List all attributes (optionally filtered by type)

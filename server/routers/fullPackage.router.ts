@@ -212,6 +212,7 @@ export const fullPackageRouter = router({
         dimensionWidth: z.string().optional(),
         dimensionHeight: z.string().optional(),
         // Order info
+        platform: z.string().max(100).optional(),
         orderNumber: z.string().optional(),
         trackingNumber: z.string().optional(),
         trackingNumbers: z.array(z.string()).optional(), // Multiple tracking numbers
@@ -226,9 +227,17 @@ export const fullPackageRouter = router({
         batchId: z.number().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        // Every real order has an order number from the shop it was bought on,
+        // so it is required — an order without one can't be traced back.
+        if (!input.orderNumber || !input.orderNumber.trim()) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "ئۆردەر نەمبەر پێویستە | An order number is required",
+          });
+        }
         // Order numbers must be unique — each real order has exactly one. Reject
         // a create that reuses an existing (non-deleted) order's number so a
-        // duplicate can't be entered by mistake. Blank order numbers are allowed.
+        // duplicate can't be entered by mistake.
         if (input.orderNumber && input.orderNumber.trim()) {
           const dup = await db.getFullPackageOrderByOrderNumber(input.orderNumber);
           if (dup) {
@@ -375,6 +384,7 @@ export const fullPackageRouter = router({
           dimensionLength: z.string().optional(),
           dimensionWidth: z.string().optional(),
           dimensionHeight: z.string().optional(),
+          platform: z.string().max(100).optional(),
           orderNumber: z.string().optional(),
           trackingNumber: z.string().optional(),
           orderDate: z.date().optional(),
@@ -568,6 +578,7 @@ export const fullPackageRouter = router({
         dimensionWidth: z.string().optional(),
         dimensionHeight: z.string().optional(),
         // Order info
+        platform: z.string().max(100).optional(),
         orderNumber: z.string().optional(),
         trackingNumber: z.string().optional(),
         trackingNumbers: z.array(z.string()).optional(), // Multiple tracking numbers

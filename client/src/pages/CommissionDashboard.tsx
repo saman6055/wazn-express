@@ -920,18 +920,29 @@ export default function CommissionDashboard() {
                         key={order.id}
                         className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"
                       >
+                        {/* The shop's order number is what staff actually work
+                            from, so it leads with the copy button. The internal
+                            CM- code only appears for legacy rows that predate
+                            the order number being required. */}
                         <TableCell>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1">
-                              <Badge variant="outline" className="font-mono text-amber-600 border-amber-300">
-                                {order.orderCode}
-                              </Badge>
-                              <CopyButton value={order.orderCode} label={pickLang(language, { ku: "کۆپی کۆد", en: "Copy code", ar: "نسخ الرمز", zh: "复制代码" })} />
-                            </div>
-                            {(order as any).orderNumber && (
-                              <p className="text-xs text-muted-foreground font-mono">
-                                #{(order as any).orderNumber}
-                              </p>
+                          <div className="flex items-center gap-1">
+                            {(order as any).orderNumber ? (
+                              <>
+                                <span className="font-mono text-sm font-medium" dir="ltr">
+                                  {(order as any).orderNumber}
+                                </span>
+                                <CopyButton
+                                  value={(order as any).orderNumber}
+                                  label={pickLang(language, { ku: "کۆپی ئۆردەر نەمبەر", en: "Copy order number", ar: "نسخ رقم الطلب", zh: "复制订单编号" })}
+                                />
+                              </>
+                            ) : (
+                              <>
+                                <Badge variant="outline" className="font-mono text-amber-600 border-amber-300">
+                                  {order.orderCode}
+                                </Badge>
+                                <CopyButton value={order.orderCode} label={pickLang(language, { ku: "کۆپی کۆد", en: "Copy code", ar: "نسخ الرمز", zh: "复制代码" })} />
+                              </>
                             )}
                           </div>
                         </TableCell>
