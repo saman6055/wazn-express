@@ -572,7 +572,7 @@ export const customerPortalRouter = router({
     declareIncomingPackage: protectedProcedure
       .input(z.object({
         trackingNumber: z.string().trim().min(1),
-        platform: z.enum(["taobao", "pinduoduo", "alibaba", "1688", "aliexpress", "weixin", "other"]).optional(),
+        platform: z.string().max(100).optional(),
         productName: z.string().max(255).optional(),
         productImages: z.array(z.string()).optional(),
         categoryId: z.number().optional(),
@@ -603,7 +603,7 @@ export const customerPortalRouter = router({
       .input(z.object({
         id: z.number(),
         trackingNumber: z.string().trim().min(1).optional(),
-        platform: z.enum(["taobao", "pinduoduo", "alibaba", "1688", "aliexpress", "weixin", "other"]).nullable().optional(),
+        platform: z.string().max(100).nullable().optional(),
         productName: z.string().max(255).optional(),
         productImages: z.array(z.string()).optional(),
         categoryId: z.number().nullable().optional(),

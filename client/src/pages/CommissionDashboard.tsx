@@ -36,6 +36,7 @@ import {
   ShoppingCart,
   Users,
   PackagePlus,
+  ImageIcon,
 } from "lucide-react";
 import {
   Select,
@@ -57,6 +58,7 @@ import {
 } from "@/components/ui/popover";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { PlatformChip } from "@/components/PlatformChip";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
@@ -115,6 +117,9 @@ export default function CommissionDashboard() {
   const [maxPrice, setMaxPrice] = useState<string>("");
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  // Orders missing a product photo are hard to identify later, so they can
+  // be listed and completed rather than quietly forgotten.
+  const [imageFilter, setImageFilter] = useState<"all" | "with" | "without">("all");
   const [showFilters, setShowFilters] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
 
@@ -176,6 +181,15 @@ export default function CommissionDashboard() {
       result = result.filter(o => (parseFloat(o.itemPriceUsd || "0") * (o.quantity || 1)) <= max);
     }
     
+    // Image filter (has / no product photo)
+    if (imageFilter !== "all") {
+      result = result.filter(o => {
+        const imgs = (o as any).productImages;
+        const has = (Array.isArray(imgs) && imgs.length > 0) || !!(o as any).productImage;
+        return imageFilter === "with" ? has : !has;
+      });
+    }
+
     // Sort
     result.sort((a, b) => {
       let comparison = 0;
@@ -188,16 +202,18 @@ export default function CommissionDashboard() {
                        (parseFloat(b.itemPriceUsd || "0") * (b.quantity || 1));
           break;
         case "commission":
-          // Commission is a flat per-order fee — order creation
-          // (fullPackage.router.ts createCommissionOrder) and the box
-          // builder (deliveryBoxes.db.ts buildBoxItemValuesFromPackage)
-          // both treat it that way. Multiplying by qty inflates the
-          // sort key and produces wrong order on multi-qty rows.
-          comparison = parseFloat(a.commissionFeeUsd || "0") - parseFloat(b.commissionFeeUsd || "0");
+          // Commission is PER UNIT, so what the order actually earns is
+          // fee × quantity — see commissionProfit in fullPackage.db.ts.
+          // Sorting on the bare fee ranked a 1-unit order above a 10-unit
+          // one that earns ten times as much.
+          comparison = (parseFloat(a.commissionFeeUsd || "0") * (a.quantity || 1)) -
+                       (parseFloat(b.commissionFeeUsd || "0") * (b.quantity || 1));
           break;
         case "total":
-          const totalA = (parseFloat(a.itemPriceUsd || "0") * (a.quantity || 1)) + parseFloat(a.commissionFeeUsd || "0");
-          const totalB = (parseFloat(b.itemPriceUsd || "0") * (b.quantity || 1)) + parseFloat(b.commissionFeeUsd || "0");
+          // (item + commission) × qty — both are per-unit, matching
+          // commissionGoodsTotal in fullPackage.db.ts.
+          const totalA = (parseFloat(a.itemPriceUsd || "0") + parseFloat(a.commissionFeeUsd || "0")) * (a.quantity || 1);
+          const totalB = (parseFloat(b.itemPriceUsd || "0") + parseFloat(b.commissionFeeUsd || "0")) * (b.quantity || 1);
           comparison = totalA - totalB;
           break;
         case "customer":
@@ -208,7 +224,7 @@ export default function CommissionDashboard() {
     });
     
     return result;
-  }, [orders, searchQuery, customerFilter, batchFilter, dateFrom, dateTo, minPrice, maxPrice, sortField, sortDirection]);
+  }, [orders, searchQuery, customerFilter, batchFilter, dateFrom, dateTo, minPrice, maxPrice, imageFilter, sortField, sortDirection]);
 
   // Calculate stats based on filtered orders
   const totalOrders = filteredOrders.length;
@@ -220,15 +236,12 @@ export default function CommissionDashboard() {
     return sum + (parseFloat(o.itemPriceUsd || "0") * (o.quantity || 1));
   }, 0);
   
-  // Commission fee is a flat per-order amount (see commission order creation
-  // at fullPackage.router.ts:1451 and the box builder at
-  // deliveryBoxes.db.ts buildBoxItemValuesFromPackage — both add it once,
-  // not once-per-unit). Multiplying by qty here inflated the dashboard
-  // total against what the customer was actually charged, which is what
-  // the box receipt shows. Sum without the qty multiplier so reports,
-  // exports, and on-screen stats agree with the box and the ledger.
+  // Commission is PER UNIT — buying a bag at $20 and selling at $25 earns $5
+  // on one and $10 on two. The charge, the box builder and the ledger all
+  // multiply by quantity (see commissionProfit in fullPackage.db.ts), so the
+  // dashboard total has to as well or it under-reports every multi-unit order.
   const totalCommission = filteredOrders.reduce((sum, o) => {
-    return sum + parseFloat(o.commissionFeeUsd || "0");
+    return sum + parseFloat(o.commissionFeeUsd || "0") * (o.quantity || 1);
   }, 0);
   
   const totalCost = totalItemValue + totalCommission;
@@ -326,12 +339,13 @@ export default function CommissionDashboard() {
       [t("commission.customer")]: (order as any).customer?.fullName || "",
       [t("commission.customerCode")]: (order as any).customer?.customerCode || "",
       [t("commission.productName")]: order.productName,
+      [pickLang(language, { ku: "پلاتفۆرم", en: "Platform", ar: "المنصة", zh: "平台" })]: (order as any).platform || "",
       [t("commission.quantity")]: order.quantity,
       [t("commission.batchLabel")]: (order as any).batch?.batchCode || t("commission.noBatch"),
       [t("commission.itemPrice") + " ($)"]: (parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2),
       // Commission is flat per-order — do NOT multiply by quantity, that
       // diverges from what the customer is actually charged at delivery.
-      [t("commission.commissionAmount") + " ($)"]: parseFloat(order.commissionFeeUsd || "0").toFixed(2),
+      [t("commission.commissionAmount") + " ($)"]: (parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2),
       [t("commission.grandTotal") + " ($)"]: ((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + parseFloat(order.commissionFeeUsd || "0")).toFixed(2),
       [t("commission.tracking")]: order.trackingNumber || "",
       [t("commission.statusColumn")]: statusLabels[order.status] || order.status,
@@ -450,7 +464,7 @@ export default function CommissionDashboard() {
                 <td>${order.productName}</td>
                 <td>${order.quantity}</td>
                 <td>$${(parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
-                <td>$${parseFloat(order.commissionFeeUsd || "0").toFixed(2)}</td>
+                <td>${(parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
                 <td>$${((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + parseFloat(order.commissionFeeUsd || "0")).toFixed(2)}</td>
                 <td>${statusLabels[order.status] || order.status}</td>
                 <td>${new Date(order.createdAt).toLocaleDateString("ku")}</td>
@@ -770,6 +784,22 @@ export default function CommissionDashboard() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        {pickLang(language, { ku: "وێنەی کاڵا", en: "Product image", ar: "صورة المنتج", zh: "商品图片" })}
+                      </label>
+                      <Select value={imageFilter} onValueChange={(v) => setImageFilter(v as "all" | "with" | "without")}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}</SelectItem>
+                          <SelectItem value="with">{pickLang(language, { ku: "بە وێنە", en: "With image", ar: "مع صورة", zh: "有图片" })}</SelectItem>
+                          <SelectItem value="without">{pickLang(language, { ku: "بێ وێنە", en: "Without image", ar: "بدون صورة", zh: "无图片" })}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
                     {/* Date Range */}
                     <div className="space-y-2">
@@ -971,7 +1001,13 @@ export default function CommissionDashboard() {
                               </div>
                             )}
                             <div>
-                              <p className="font-medium text-sm">{order.productName}</p>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <p className="font-medium text-sm">{order.productName}</p>
+                                {/* Inline rather than its own column — the table
+                                    already scrolls sideways, and the shop reads
+                                    naturally next to the product. */}
+                                <PlatformChip platform={(order as any).platform} size="xs" />
+                              </div>
                               {order.quantity > 1 && (
                                 <p className="text-xs text-muted-foreground">{order.quantity} {t("commission.quantityUnit")}</p>
                               )}
@@ -1002,7 +1038,7 @@ export default function CommissionDashboard() {
                           ${(parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2)}
                         </TableCell>
                         <TableCell className="font-mono text-amber-600">
-                          ${parseFloat(order.commissionFeeUsd || "0").toFixed(2)}
+                          ${(parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2)}
                         </TableCell>
                         <TableCell>
                           {order.trackingNumber ? (

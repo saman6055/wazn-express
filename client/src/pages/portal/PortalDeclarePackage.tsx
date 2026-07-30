@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
+import { PlatformBadge } from "@/components/PlatformSelect";
 import {
   PackagePlus,
   ScanBarcode,
@@ -29,16 +30,10 @@ import {
   CalendarDays,
 } from "lucide-react";
 
-// Supported source platforms — value maps 1:1 to the DB enum.
-const PLATFORMS: { value: string; label: string }[] = [
-  { value: "taobao", label: "Taobao · 淘宝" },
-  { value: "pinduoduo", label: "Pinduoduo · 拼多多" },
-  { value: "alibaba", label: "Alibaba · 阿里巴巴" },
-  { value: "1688", label: "1688" },
-  { value: "aliexpress", label: "AliExpress" },
-  { value: "weixin", label: "WeChat · 微信" },
-  { value: "other", label: "———" },
-];
+// Platforms come from productAttributes — the same list the staff order forms
+// use — so a shop the admin adds shows up here too. These are only the
+// fallback for a database that has not seeded them yet.
+const FALLBACK_PLATFORMS = ["Taobao", "Pinduoduo", "Alibaba", "Aliexpress", "Wechat", "1688"];
 
 const STATUS_STYLE: Record<string, { cls: string; icon: typeof Clock }> = {
   pending: { cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300", icon: Clock },
@@ -55,6 +50,10 @@ export default function PortalDeclarePackage() {
 
   const [trackingNumber, setTrackingNumber] = useState("");
   const [platform, setPlatform] = useState<string>("");
+  // One list for the whole system — see FALLBACK_PLATFORMS above.
+  const { data: platformAttrs } = trpc.productAttributes.list.useQuery({ type: "platform" });
+  const platformOptions = (platformAttrs ?? []).filter((x: any) => x.isActive !== false).map((x: any) => x.value as string);
+  const resolvedPlatforms = platformOptions.length > 0 ? platformOptions : FALLBACK_PLATFORMS;
   const [images, setImages] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
@@ -163,9 +162,12 @@ export default function PortalDeclarePackage() {
                 <SelectValue placeholder={label({ ku: "پلاتفۆرم هەڵبژێرە", en: "Choose platform", ar: "اختر المنصة", zh: "选择平台" })} />
               </SelectTrigger>
               <SelectContent>
-                {PLATFORMS.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.value === "other" ? label({ ku: "هیتر", en: "Other", ar: "أخرى", zh: "其他" }) : p.label}
+                {resolvedPlatforms.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    <span className="flex items-center gap-2">
+                      <PlatformBadge name={name} size={18} />
+                      {name}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -222,7 +224,7 @@ export default function PortalDeclarePackage() {
             declared.map((d: any) => {
               const st = STATUS_STYLE[d.status] || STATUS_STYLE.pending;
               const StIcon = st.icon;
-              const platformLabel = PLATFORMS.find((p) => p.value === d.platform)?.label;
+              const platformLabel = d.platform || null;
               return (
                 <div key={d.id} className={cn("flex items-center gap-3 rounded-2xl border p-3", isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-200")}>
                   {d.productImages?.[0] ? (

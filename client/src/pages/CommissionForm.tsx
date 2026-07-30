@@ -470,6 +470,12 @@ export default function CommissionForm() {
       return;
     }
 
+    // Saving without a picture is allowed, but never silent — the order is
+    // harder to identify at the warehouse and on the receipt without one.
+    if (productImages.length === 0) {
+      toast.warning(pickLang(language, { ku: "ئاگاداری: وێنەی کاڵا دانەنراوە — دواتر زیادی بکە", en: "Note: no product image — remember to add one later", ar: "ملاحظة: لا توجد صورة للمنتج — أضفها لاحقاً", zh: "注意：没有商品图片 — 请稍后补充" }));
+    }
+
     if (!formData.platform.trim()) {
       toast.error(pickLang(language, { ku: "تکایە پلاتفۆرم هەڵبژێرە", en: "Please select a platform", ar: "يرجى اختيار المنصة", zh: "请选择平台" }));
       return;
@@ -930,6 +936,16 @@ export default function CommissionForm() {
                     accentColor="amber"
                     compact
                   />
+                  {/* A picture is how goods are identified at the warehouse
+                      and on the receipt, so its absence is called out — but it
+                      never blocks the save: the image often is not to hand at
+                      entry time, and forcing it would only produce junk uploads. */}
+                  {productImages.length === 0 && (
+                    <p className="text-[11px] text-amber-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {pickLang(language, { ku: "وێنە دانەنراوە — دواتر زیادی بکە", en: "No image yet — you can add it later", ar: "لا توجد صورة بعد — يمكن إضافتها لاحقاً", zh: "尚无图片 — 可稍后添加" })}
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -387,7 +387,10 @@ export const customerDeclaredPackages = mysqlTable("customerDeclaredPackages", {
   id: int("id").autoincrement().primaryKey(),
   customerId: int("customerId").notNull(), // FK → customers
   trackingNumber: varchar("trackingNumber", { length: 100 }).notNull(),
-  platform: mysqlEnum("platform", ["taobao", "pinduoduo", "alibaba", "1688", "aliexpress", "weixin", "other"]),
+  // Free text, not an enum: platforms are productAttributes rows the admin
+  // can extend, and the customer portal picks from that same list — so a shop
+  // added for orders is immediately available here too.
+  platform: varchar("platform", { length: 100 }),
   productName: varchar("productName", { length: 255 }),
   productImages: json("productImages").$type<string[]>(),
   categoryId: int("categoryId"), // optional FK → productCategories

@@ -2566,3 +2566,72 @@ export async function getComprehensiveDashboardStats(startDate: Date, endDate: D
   };
 }
 
+
+/**
+ * Which shops the buying actually happens on.
+ *
+ * Groups orders by the platform recorded on them (Taobao, 1688, …) so the
+ * owner can see where the volume and the money go. Orders predating the
+ * platform field — or entered without one — are grouped under a null key by
+ * the caller rather than silently dropped, so the totals still add up.
+ *
+ * Counts commission and full-package orders together: both are purchases we
+ * make on a shop. Value uses each type's own customer-facing total —
+ * (item + commission) x qty for commission, selling x qty for full package —
+ * matching commissionGoodsTotal / computeOrderChargeAmount.
+ */
+export async function getOrdersByPlatform(startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [isNull(fullPackageOrders.deletedAt)];
+  if (startDate) conditions.push(gte(fullPackageOrders.createdAt, startDate));
+  if (endDate) conditions.push(lte(fullPackageOrders.createdAt, endDate));
+
+  const rows = await db.select({
+    platform: fullPackageOrders.platform,
+    orderType: fullPackageOrders.orderType,
+    orders: sql<number>`COUNT(*)`,
+    units: sql<number>`COALESCE(SUM(COALESCE(quantity, 1)), 0)`,
+    value: sql<number>`COALESCE(SUM(
+      CASE WHEN orderType = 'commission'
+        THEN (COALESCE(itemPriceUsd, 0) + COALESCE(commissionFeeUsd, 0)) * COALESCE(quantity, 1)
+        ELSE COALESCE(sellingPriceUsd, 0) * COALESCE(quantity, 1)
+      END), 0)`,
+    profit: sql<number>`COALESCE(SUM(
+      CASE WHEN orderType = 'commission'
+        THEN COALESCE(commissionFeeUsd, 0) * COALESCE(quantity, 1)
+        ELSE (COALESCE(sellingPriceUsd, 0) - COALESCE(purchasePriceUsd, 0)) * COALESCE(quantity, 1)
+      END), 0)`,
+  })
+    .from(fullPackageOrders)
+    .where(and(...conditions))
+    .groupBy(fullPackageOrders.platform, fullPackageOrders.orderType);
+
+  // Fold the per-type rows into one entry per platform, keeping the split so
+  // the report can show which side of the business each shop serves.
+  const byPlatform = new Map<string, {
+    platform: string | null;
+    orders: number; units: number; value: number; profit: number;
+    commissionOrders: number; fullPackageOrders: number;
+  }>();
+
+  for (const r of rows) {
+    const key = (r.platform ?? "").trim() || "__none__";
+    const entry = byPlatform.get(key) ?? {
+      platform: (r.platform ?? "").trim() || null,
+      orders: 0, units: 0, value: 0, profit: 0,
+      commissionOrders: 0, fullPackageOrders: 0,
+    };
+    entry.orders += Number(r.orders || 0);
+    entry.units += Number(r.units || 0);
+    entry.value += Number(r.value || 0);
+    entry.profit += Number(r.profit || 0);
+    if (r.orderType === "commission") entry.commissionOrders += Number(r.orders || 0);
+    else entry.fullPackageOrders += Number(r.orders || 0);
+    byPlatform.set(key, entry);
+  }
+
+  // Busiest first — the question this report answers is "where do we buy most".
+  return Array.from(byPlatform.values()).sort((a, b) => b.orders - a.orders);
+}

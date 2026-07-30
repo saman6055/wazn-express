@@ -55,7 +55,9 @@ export function platformInitials(name: string): string {
   return /^\d/.test(trimmed) ? trimmed.slice(0, 2) : trimmed[0].toUpperCase();
 }
 
-function PlatformBadge({ name, size = 22 }: { name: string; size?: number }) {
+/** Coloured letter badge for a platform. Exported so tables and the scan
+ *  screen can show which shop an order came from at a glance. */
+export function PlatformBadge({ name, size = 22 }: { name: string; size?: number }) {
   return (
     <span
       aria-hidden="true"

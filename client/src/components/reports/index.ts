@@ -6,3 +6,4 @@ export { CustomerAnalyticsSection } from "./CustomerAnalyticsSection";
 export { ScanningActivitySection } from "./ScanningActivitySection";
 export { FullPackageServicesSection } from "./FullPackageServicesSection";
 export { QuickLinksSection } from "./QuickLinksSection";
+export { PlatformBreakdownSection } from "./PlatformBreakdownSection";

@@ -9,6 +9,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PlatformChip } from "@/components/PlatformChip";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -36,7 +37,7 @@ export default function QuickRegister() {
   const [expandedLookup, setExpandedLookup] = useState<{
     case: 'single' | 'shared' | 'multi' | 'duplicate' | 'regular';
     orders: Array<{
-      order: { id: number; orderCode: string; orderType: string; productName: string; quantity: number; status: string; customerId: number | null; batchId: number | null; trackingNumber: string | null };
+      order: { id: number; orderCode: string; orderType: string; platform: string | null; productName: string; quantity: number; status: string; customerId: number | null; batchId: number | null; trackingNumber: string | null };
       customer: { id: number; customerCode: string | null; fullName: string | null } | null;
       batch: { id: number; batchCode: string | null; status: string } | null;
       trackings: Array<{ id: number; trackingNumber: string; cartonIndex: number }>;
@@ -970,6 +971,9 @@ export default function QuickRegister() {
                           {expandedLookup.orders.map((od) => (
                             <div key={od.order.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-white/70 dark:bg-black/30 border border-orange-200/60 dark:border-orange-800/40">
                               <span className="font-mono font-medium">{od.order.orderCode}</span>
+                              {/* Which shop it was bought from — context only,
+                                  and absent for orders that never recorded one. */}
+                              <PlatformChip platform={od.order.platform} size="xs" />
                               <span className="truncate">{od.order.productName}</span>
                               {od.order.quantity > 1 && <span className="text-muted-foreground">×{od.order.quantity}</span>}
                               <span className="text-primary ms-auto font-medium">{od.customer?.customerCode ?? '?'}</span>

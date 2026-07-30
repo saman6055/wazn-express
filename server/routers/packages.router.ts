@@ -208,6 +208,9 @@ export const packagesRouter = router({
                 orderCode: o.orderCode,
                 orderType: o.orderType,
                 orderNumber: (o as { orderNumber?: string | null }).orderNumber ?? null,
+                // Shown beside the order on the scan screen so the operator can
+                // see which shop it came from without opening the order.
+                platform: (o as { platform?: string | null }).platform ?? null,
                 productName: o.productName,
                 productImage: (o as { productImage?: string | null }).productImage ?? null,
                 quantity: o.quantity,

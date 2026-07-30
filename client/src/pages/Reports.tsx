@@ -17,6 +17,7 @@ import {
   ScanningActivitySection,
   FullPackageServicesSection,
   QuickLinksSection,
+  PlatformBreakdownSection,
 } from "@/components/reports";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { BarChart3, Calendar, RefreshCw } from "lucide-react";
@@ -87,6 +88,11 @@ export default function Reports() {
             endDate={endDate}
             dateRange={dateRange}
           />
+        </DashboardSection>
+
+        {/* Where the buying happens — which shops the orders come from */}
+        <DashboardSection title={t("reports.platformReport") || "کڕین بەپێی پلاتفۆرم"}>
+          <PlatformBreakdownSection startDate={startDate} endDate={endDate} />
         </DashboardSection>
 
         {/* Package Overview */}

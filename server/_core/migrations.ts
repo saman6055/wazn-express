@@ -2211,6 +2211,10 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // 64KB ceiling, so MySQL rejected the whole write with "Data too long" and
   // adding a picture to an order simply never saved.
   { name: "fullPackageOrders.productImage.mediumtext", sql: "ALTER TABLE fullPackageOrders MODIFY COLUMN productImage MEDIUMTEXT" },
+  // One platform list for the whole system: the customer portal's pre-declare
+  // form now picks from the same productAttributes rows the order forms use,
+  // so a shop the admin adds is available everywhere instead of only on orders.
+  { name: "customerDeclaredPackages.platform.varchar", sql: "ALTER TABLE customerDeclaredPackages MODIFY COLUMN platform VARCHAR(100) NULL" },
   { name: "fullPackageOrders.advancePaymentTransactionId", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaymentTransactionId INT NULL" },
   { name: "paymentRecords.reversedAmountUsd", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAmountUsd DECIMAL(10,2) NOT NULL DEFAULT 0" },
   { name: "paymentRecords.reversedAt", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAt TIMESTAMP NULL" },

@@ -17,6 +17,15 @@ export const reportsRouter = router({
     packagesByStatus: staffProcedure.query(async () => {
       return db.getPackageCountByStatus();
     }),
+    /** Which shops the buying happens on — orders, units, value and profit. */
+    ordersByPlatform: staffProcedure
+      .input(z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getOrdersByPlatform(input?.startDate, input?.endDate);
+      }),
     customersWithBalance: accountantProcedure.query(async () => {
       return db.getCustomersWithBalance();
     }),

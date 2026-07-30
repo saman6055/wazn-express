@@ -39,6 +39,7 @@ import {
   PackagePlus,
   Plane,
   Barcode,
+  ImageIcon,
 } from "lucide-react";
 import {
   Select,
@@ -62,6 +63,7 @@ import {
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { PlatformChip } from "@/components/PlatformChip";
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -94,6 +96,9 @@ export default function FullPackageDashboard() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [shippingFilter, setShippingFilter] = useState<string>("all");
   const [trackingFilter, setTrackingFilter] = useState<"all" | "with" | "without">("all");
+  // Orders missing a product photo are hard to identify later, so they can
+  // be listed and completed rather than quietly forgotten.
+  const [imageFilter, setImageFilter] = useState<"all" | "with" | "without">("all");
   const [showFilters, setShowFilters] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
 
@@ -193,6 +198,15 @@ export default function FullPackageDashboard() {
       });
     }
 
+    // Image filter (has / no product photo)
+    if (imageFilter !== "all") {
+      result = result.filter(o => {
+        const imgs = (o as any).productImages;
+        const has = (Array.isArray(imgs) && imgs.length > 0) || !!(o as any).productImage;
+        return imageFilter === "with" ? has : !has;
+      });
+    }
+
     // Sort
     result.sort((a, b) => {
       let comparison = 0;
@@ -220,7 +234,7 @@ export default function FullPackageDashboard() {
     });
     
     return result;
-  }, [orders, customerFilter, batchFilter, dateFrom, dateTo, minPrice, maxPrice, shippingFilter, trackingFilter, sortField, sortDirection]);
+  }, [orders, customerFilter, batchFilter, dateFrom, dateTo, minPrice, maxPrice, shippingFilter, trackingFilter, imageFilter, sortField, sortDirection]);
 
   // Calculate stats
   const totalOrders = filteredOrders.length;
@@ -363,6 +377,7 @@ export default function FullPackageDashboard() {
       [t("fullPackage.customer")]: (order as any).customer?.fullName || "",
       [t("fullPackage.customerCode")]: (order as any).customer?.customerCode || "",
       [t("fullPackage.productName")]: order.productName,
+      [pickLang(language, { ku: "پلاتفۆرم", en: "Platform", ar: "المنصة", zh: "平台" })]: (order as any).platform || "",
       [t("fullPackage.quantity")]: order.quantity,
       [t("fullPackage.batchLabel")]: (order as any).batch?.batchCode || t("fullPackage.noBatch"),
       [t("fullPackage.purchasePrice") + " ($)"]: (parseFloat(order.purchasePriceUsd || "0") * (order.quantity || 1)).toFixed(2),
@@ -880,6 +895,22 @@ export default function FullPackageDashboard() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        {pickLang(language, { ku: "وێنەی کاڵا", en: "Product image", ar: "صورة المنتج", zh: "商品图片" })}
+                      </label>
+                      <Select value={imageFilter} onValueChange={(v) => setImageFilter(v as "all" | "with" | "without")}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}</SelectItem>
+                          <SelectItem value="with">{pickLang(language, { ku: "بە وێنە", en: "With image", ar: "مع صورة", zh: "有图片" })}</SelectItem>
+                          <SelectItem value="without">{pickLang(language, { ku: "بێ وێنە", en: "Without image", ar: "بدون صورة", zh: "无图片" })}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1028,7 +1059,13 @@ export default function FullPackageDashboard() {
                               </div>
                             )}
                             <div>
-                              <p className="font-medium text-sm">{order.productName}</p>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <p className="font-medium text-sm">{order.productName}</p>
+                                {/* Inline rather than its own column — the table
+                                    already scrolls sideways, and the shop reads
+                                    naturally next to the product. */}
+                                <PlatformChip platform={(order as any).platform} size="xs" />
+                              </div>
                               {order.quantity > 1 && (
                                 <p className="text-xs text-muted-foreground">{order.quantity} {t("fullPackage.quantityUnit")}</p>
                               )}
