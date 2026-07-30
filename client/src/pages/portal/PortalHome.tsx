@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useState, useEffect } from "react";
+import { PriceListSection } from "@/components/portal/PriceListSection";
 import { WaznNewsCarousel } from "@/components/portal/WaznNewsCarousel";
 import { DeliveryRatingCard } from "@/components/portal/DeliveryRatingCard";
 import { ReferralCard } from "@/components/portal/ReferralCard";
@@ -653,6 +654,9 @@ const { t, language } = useLanguage();
           </Link>
         </div>
       )}
+
+      {/* Price List Section — admin-curated shipping rates & services */}
+      <PriceListSection />
 
       {/* Stats Cards */}
       <div className="px-4 mt-6">
