@@ -15,7 +15,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
-import { readableError, editableSnapshot } from "@/lib/commissionEditUtils";
+import { readableError, editableSnapshot, advancePayload } from "@/lib/commissionEditUtils";
 import PlatformSelect, { LAST_PLATFORM_KEY } from "@/components/PlatformSelect";
 import { toast } from "sonner";
 
@@ -564,7 +564,10 @@ export default function CommissionForm() {
       itemPriceUsd: formData.itemPriceUsd,
       commissionFeeUsd: formData.commissionFeeUsd,
       totalPrepaidUsd: totalPrepaid.toFixed(2),
-      advancePaidUsd: formData.advancePaidUsd || undefined,
+      // Only send an advance when one was actually entered. A typed "0" is a
+      // truthy string, so `|| undefined` alone would still post it; the server
+      // treats a present advance as intent, so it must be omitted outright.
+      advancePaidUsd: advancePayload(formData.advancePaidUsd),
       advancePaymentMethod: formData.advancePaidUsd && parseFloat(formData.advancePaidUsd) > 0 ? formData.advancePaymentMethod : undefined,
       notes: formData.notes || undefined,
       shippingType: formData.shippingType || undefined,
@@ -1147,7 +1150,11 @@ export default function CommissionForm() {
 
                   <div className="mt-2 pt-2 border-t border-amber-300 flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-amber-700">{pickLang(language, { ku: "کۆی پارەدانی پێشوەخت", en: "Total prepayment", ar: "إجمالي الدفع المسبق", zh: "预付总额" })}</p>
+                      {/* This is what the order is WORTH, not money received.
+                          It was labelled "prepayment", which read as though the
+                          customer had already paid it even when no advance was
+                          entered. The advance, if any, is its own section. */}
+                      <p className="text-xs text-amber-700">{pickLang(language, { ku: "کۆی گشتی ئۆردەر", en: "Order total", ar: "إجمالي الطلب", zh: "订单总额" })}</p>
                       <p className="text-[10px] text-slate-500">{pickLang(language, { ku: `(نرخ + عمولە) × ${formData.quantity || 1}`, en: `(price + commission) × ${formData.quantity || 1}`, ar: `(السعر + العمولة) × ${formData.quantity || 1}`, zh: `（价格 + 佣金）× ${formData.quantity || 1}` })}</p>
                     </div>
                     <div className="text-end">

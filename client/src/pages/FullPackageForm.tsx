@@ -45,6 +45,7 @@ import {
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import PlatformSelect, { LAST_PLATFORM_KEY } from "@/components/PlatformSelect";
+import { advancePayload } from "@/lib/commissionEditUtils";
 import { cn } from "@/lib/utils";
 
 // Lightweight section wrapper — small bold title + thin divider, no heavy card
@@ -246,7 +247,10 @@ export default function FullPackageForm() {
       productType: formData.productType || undefined,
       purchasePriceUsd: formData.purchasePriceUsd || undefined,
       sellingPriceUsd: formData.sellingPriceUsd || undefined,
-      advancePaidUsd: formData.advancePaidUsd || undefined,
+      // Only send an advance when one was actually entered. A typed "0" is a
+      // truthy string, so `|| undefined` alone would still post it; the server
+      // treats a present advance as intent, so it must be omitted outright.
+      advancePaidUsd: advancePayload(formData.advancePaidUsd),
       advancePaymentMethod: formData.advancePaidUsd && parseFloat(formData.advancePaidUsd) > 0 ? formData.advancePaymentMethod : undefined,
       notes: formData.notes || undefined,
       shippingType: formData.shippingType || undefined,

@@ -25,6 +25,22 @@ export function readableError(raw: string | undefined, fallback: string): string
  *  - `sellPriceUsd`, a UI-only helper (buy + commission) that is never sent
  *  - the advance-payment fields, which edit mode never sends
  */
+/**
+ * What to put in an order payload's `advancePaidUsd`.
+ *
+ * The server treats a PRESENT advance as intent and moves money on the
+ * customer's ledger, so "no advance entered" must send nothing at all — not
+ * "0" and not "0.00". A typed zero is a truthy string, so the obvious
+ * `field || undefined` would still post it.
+ */
+export function advancePayload(raw: string | null | undefined): string | undefined {
+  const value = (raw ?? "").trim();
+  if (!value) return undefined;
+  const amount = parseFloat(value);
+  if (!Number.isFinite(amount) || amount <= 0) return undefined;
+  return value;
+}
+
 export function editableSnapshot(
   f: { [k: string]: unknown },
   images: string[],

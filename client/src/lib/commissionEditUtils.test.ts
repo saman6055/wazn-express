@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readableError, editableSnapshot } from "./commissionEditUtils";
+import { readableError, editableSnapshot, advancePayload } from "./commissionEditUtils";
 
 /**
  * Saving a commission edit used to fill the screen with an unreadable blob:
@@ -96,5 +96,43 @@ describe("editableSnapshot", () => {
   it("ignores advance-payment fields, which edit mode never sends", () => {
     expect(editableSnapshot({ ...base, advancePaidUsd: "10", advancePaymentMethod: "FIB" }, []))
       .toBe(editableSnapshot(base, []));
+  });
+});
+
+/**
+ * The server treats a PRESENT advancePaidUsd as intent and moves real money on
+ * the customer's ledger (recordPaymentReceived / reverseAdvancePayment). So an
+ * order saved with no advance entered must send nothing at all — the owner's
+ * requirement: "when no advance is entered, don't calculate an advance in any
+ * way".
+ */
+describe("advancePayload", () => {
+  it("sends nothing when the field was never touched", () => {
+    expect(advancePayload("")).toBeUndefined();
+    expect(advancePayload(undefined)).toBeUndefined();
+    expect(advancePayload(null)).toBeUndefined();
+    expect(advancePayload("   ")).toBeUndefined();
+  });
+
+  it("sends nothing for a typed zero — the case `|| undefined` would leak", () => {
+    expect(advancePayload("0")).toBeUndefined();
+    expect(advancePayload("0.00")).toBeUndefined();
+    expect(advancePayload("0.0")).toBeUndefined();
+    expect(advancePayload(" 0 ")).toBeUndefined();
+  });
+
+  it("sends nothing for junk rather than posting NaN", () => {
+    expect(advancePayload("abc")).toBeUndefined();
+    expect(advancePayload("-")).toBeUndefined();
+  });
+
+  it("never sends a negative advance", () => {
+    expect(advancePayload("-25")).toBeUndefined();
+  });
+
+  it("sends a real advance through untouched", () => {
+    expect(advancePayload("25")).toBe("25");
+    expect(advancePayload("0.50")).toBe("0.50");
+    expect(advancePayload(" 100.25 ")).toBe("100.25");
   });
 });
