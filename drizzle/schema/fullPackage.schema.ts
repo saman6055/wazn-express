@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, bigint, index } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, mediumtext, timestamp, varchar, decimal, boolean, json, bigint, index } from "drizzle-orm/mysql-core";
 
 export const suppliers = mysqlTable("suppliers", {
   id: int("id").autoincrement().primaryKey(),
@@ -39,7 +39,11 @@ export const fullPackageOrders = mysqlTable("fullPackageOrders", {
   // Product Information
   productName: varchar("productName", { length: 500 }).notNull(),
   productLink: text("productLink"),
-  productImage: text("productImage"),
+  // MEDIUMTEXT, not TEXT: images are stored as base64 data URIs and a
+  // compressed photo runs past TEXT's 64KB ceiling, which made MySQL reject
+  // the whole write with "Data too long" — so adding a picture silently
+  // failed to save. MEDIUMTEXT holds 16MB.
+  productImage: mediumtext("productImage"),
   productImages: json("productImages").$type<string[]>(), // Multiple product images
   productDescription: text("productDescription"),
   quantity: int("quantity").default(1).notNull(),

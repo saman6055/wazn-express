@@ -831,10 +831,13 @@ export const fullPackageRouter = router({
           // shouldn't have to dig through server logs to report it. Only the
           // first line, capped, with any base64/parameter run stripped, so the
           // payload dump that follows it can never reach the screen.
+          // The driver puts its wrapper ("Failed query: update ... set ?")
+          // first and the actual cause after, so keep enough to reach the
+          // cause. Base64/parameter runs are still collapsed.
           const reason = raw
-            .split("\n")[0]
             .replace(/[A-Za-z0-9+/=]{40,}/g, "…")
-            .slice(0, 160);
+            .replace(/\s+/g, " ")
+            .slice(0, 300);
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: `نەتوانرا خەزن بکرێت | Could not save — ${reason}`,

@@ -2207,6 +2207,10 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // the order's platform column widens to free text to hold any of them.
   { name: "productAttributes.type.platform", sql: "ALTER TABLE productAttributes MODIFY COLUMN type ENUM('color','size','productType','platform') NOT NULL" },
   { name: "fullPackageOrders.platform", sql: "ALTER TABLE fullPackageOrders ADD COLUMN platform VARCHAR(100) NULL" },
+  // Images are stored as base64 data URIs. A compressed photo runs past TEXT's
+  // 64KB ceiling, so MySQL rejected the whole write with "Data too long" and
+  // adding a picture to an order simply never saved.
+  { name: "fullPackageOrders.productImage.mediumtext", sql: "ALTER TABLE fullPackageOrders MODIFY COLUMN productImage MEDIUMTEXT" },
   { name: "fullPackageOrders.advancePaymentTransactionId", sql: "ALTER TABLE fullPackageOrders ADD COLUMN advancePaymentTransactionId INT NULL" },
   { name: "paymentRecords.reversedAmountUsd", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAmountUsd DECIMAL(10,2) NOT NULL DEFAULT 0" },
   { name: "paymentRecords.reversedAt", sql: "ALTER TABLE paymentRecords ADD COLUMN reversedAt TIMESTAMP NULL" },

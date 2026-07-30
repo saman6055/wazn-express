@@ -112,6 +112,26 @@ async function ensureFullPackageColumns(
 ): Promise<void> {
   if (_fpColumnsEnsured) return;
   _fpColumnsEnsured = true;
+  // productImage holds a base64 data URI. As TEXT it caps at 64KB, so a
+  // compressed photo overflowed it and MySQL refused the entire UPDATE with
+  // "Data too long" — adding a picture to an order never saved. Widen it only
+  // when it is still TEXT, so a healthy database is not rebuilt on every boot.
+  try {
+    const [rows] = (await db.execute(sql.raw(
+      "SELECT DATA_TYPE AS t FROM information_schema.COLUMNS " +
+      "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'fullPackageOrders' AND COLUMN_NAME = 'productImage'"
+    ))) as unknown as [{ t: string }[]];
+    const current = Array.isArray(rows) ? rows[0]?.t?.toLowerCase() : undefined;
+    if (current === "text") {
+      await db.execute(sql.raw("ALTER TABLE fullPackageOrders MODIFY COLUMN productImage MEDIUMTEXT"));
+      appLogger.info("[FullPackage] widened productImage to MEDIUMTEXT");
+    }
+  } catch (err) {
+    appLogger.warn("[FullPackage] could not widen productImage", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
   for (const col of FP_PATCHED_COLUMNS) {
     try {
       await db.execute(sql.raw(`SELECT ${col.name} FROM fullPackageOrders LIMIT 0`));
