@@ -2706,15 +2706,18 @@ export async function createActivityAlert(data: {
   triggeredByName?: string;
   customTitle?: string;
   customMessage?: string;
+  /** Overrides the ALERT_TRIGGERS severity — lets one action be routine most
+   *  of the time but raise its voice when it moved money. */
+  severity?: 'info' | 'warning' | 'critical';
 }): Promise<void> {
   const db = await getDb();
   if (!db) return;
-  
+
   const trigger = ALERT_TRIGGERS[data.action];
   if (!trigger && !data.customTitle) return; // Only create alerts for important actions
-  
+
   const title = data.customTitle || trigger?.titleKu || data.action;
-  const severity = trigger?.severity || 'info';
+  const severity = data.severity || trigger?.severity || 'info';
   
   const message = data.customMessage || 
     `${data.triggeredByName || 'بەکارهێنەر'} چالاکی "${title}" ئەنجامدا${data.entityCode ? ` بۆ ${data.entityCode}` : ''}`;

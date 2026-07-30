@@ -17,6 +17,10 @@ import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { readableError, editableSnapshot, advancePayload } from "@/lib/commissionEditUtils";
 import PlatformSelect, { LAST_PLATFORM_KEY } from "@/components/PlatformSelect";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 // Lightweight section wrapper — small bold title + thin divider. Defined at
@@ -61,6 +65,9 @@ export default function CommissionForm() {
   // Reason for the change — the server demands one (min 3 chars) when the
   // amounts move on an order that was already charged.
   const [editReason, setEditReason] = useState("");
+  // Confirmation before an edit is written — an edit can move money on the
+  // customer's ledger, so it is never a single unguarded click.
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Customer search state
   const [customerOpen, setCustomerOpen] = useState(false);
@@ -307,7 +314,12 @@ export default function CommissionForm() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
     onError: (error) => {
-      toast.error(error.message);
+      // Same guard as the update path: a failed create can carry a
+      // serialized payload (base64 image + every field) in its message,
+      // which must never be printed into a toast.
+      toast.error(readableError(error.message, pickLang(language, { ku: "ئۆردەر تۆمار نەکرا", en: "Could not create the order", ar: "تعذّر إنشاء الطلب", zh: "无法创建订单" })));
+      // eslint-disable-next-line no-console
+      console.error("[OrderForm] create failed:", error);
     },
   });
 
@@ -478,14 +490,10 @@ export default function CommissionForm() {
     }
 
     // ── Edit mode ──
-    // Sends the same fields the previous edit screen sent (plus the shipping
-    // details this form shows). Advance payment is intentionally omitted: the
-    // server treats a present `advancePaidUsd` as intent and would move money
-    // on the customer ledger.
+    // Nothing actually edited — say so and go back rather than writing a
+    // no-op update, which would bump the order's version and log a change
+    // that never happened.
     if (isEditMode) {
-      // Nothing actually edited — say so and go back rather than writing a
-      // no-op update, which would bump the order's version and log a change
-      // that never happened.
       if (
         originalSnapshot.current !== null &&
         editableSnapshot(formData, productImages) === originalSnapshot.current
@@ -508,39 +516,9 @@ export default function CommissionForm() {
         }));
         return;
       }
-      updateMutation.mutate({
-        id: orderId as number,
-        expectedVersion: (existingOrder as any)?.version,
-        reason: moneyChangeDetected ? editReason.trim() : undefined,
-        customerId: parseInt(formData.customerId),
-        // `null` (not undefined) is what clears a supplier — undefined means
-        // "leave unchanged" on the server.
-        supplierId:
-          formData.supplierId && formData.supplierId !== "none"
-            ? parseInt(formData.supplierId)
-            : null,
-        productName: formData.productType,
-        productType: formData.productType || undefined,
-        productLink: formData.productLink,
-        productImage: productImages[0] || undefined,
-        productImages: productImages,
-        platform: formData.platform,
-        orderNumber: formData.orderNumber,
-        trackingNumber: formData.trackingNumber.trim(),
-        productDescription: formData.productDescription,
-        quantity,
-        color: formData.color,
-        size: formData.size,
-        itemPriceUsd: formData.itemPriceUsd,
-        commissionFeeUsd: formData.commissionFeeUsd,
-        notes: formData.notes,
-        shippingType: formData.shippingType || undefined,
-        weightKg: formData.weightKg,
-        dimensionLength: formData.dimensionLength,
-        dimensionWidth: formData.dimensionWidth,
-        dimensionHeight: formData.dimensionHeight,
-        volumeCbm: formData.volumeCbm,
-      });
+      // Saving an edit is confirmed first: it can move money on the customer's
+      // ledger, and the change is recorded against whoever pressed the button.
+      setConfirmOpen(true);
       return;
     }
 
@@ -576,6 +554,44 @@ export default function CommissionForm() {
       dimensionWidth: formData.dimensionWidth || undefined,
       dimensionHeight: formData.dimensionHeight || undefined,
       volumeCbm: formData.volumeCbm || undefined,
+    });
+  };
+
+  /** Runs after the operator confirms the edit in the dialog. */
+  const submitEdit = () => {
+    setConfirmOpen(false);
+    updateMutation.mutate({
+        id: orderId as number,
+        expectedVersion: (existingOrder as any)?.version,
+        reason: moneyChangeDetected ? editReason.trim() : undefined,
+        customerId: parseInt(formData.customerId),
+        // `null` (not undefined) is what clears a supplier — undefined means
+        // "leave unchanged" on the server.
+        supplierId:
+          formData.supplierId && formData.supplierId !== "none"
+            ? parseInt(formData.supplierId)
+            : null,
+        productName: formData.productType,
+        productType: formData.productType || undefined,
+        productLink: formData.productLink,
+        productImage: productImages[0] || undefined,
+        productImages: productImages,
+        platform: formData.platform,
+        orderNumber: formData.orderNumber,
+        trackingNumber: formData.trackingNumber.trim(),
+        productDescription: formData.productDescription,
+        quantity,
+        color: formData.color,
+        size: formData.size,
+        itemPriceUsd: formData.itemPriceUsd,
+        commissionFeeUsd: formData.commissionFeeUsd,
+        notes: formData.notes,
+        shippingType: formData.shippingType || undefined,
+        weightKg: formData.weightKg,
+        dimensionLength: formData.dimensionLength,
+        dimensionWidth: formData.dimensionWidth,
+        dimensionHeight: formData.dimensionHeight,
+        volumeCbm: formData.volumeCbm,
     });
   };
 
@@ -1424,6 +1440,45 @@ export default function CommissionForm() {
             </Button>
           </StickyFormBar>
         </form>
+
+        {/* Confirm before writing an edit. Cancel discards the change and
+            returns to the order, exactly as the owner asked — the operator is
+            never left unsure whether a half-made edit was saved. */}
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent dir={language === "en" || language === "zh" ? "ltr" : "rtl"}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {pickLang(language, { ku: "گۆڕانکارییەکان خەزن بکرێن؟", en: "Save the changes?", ar: "حفظ التعديلات؟", zh: "保存更改？" })}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <span className="block">
+                  {pickLang(language, {
+                    ku: `ئۆردەری ${(existingOrder as any)?.orderNumber || (existingOrder as any)?.orderCode || ""} نوێ دەکرێتەوە.`,
+                    en: `Order ${(existingOrder as any)?.orderNumber || (existingOrder as any)?.orderCode || ""} will be updated.`,
+                    ar: `سيتم تحديث الطلب ${(existingOrder as any)?.orderNumber || (existingOrder as any)?.orderCode || ""}.`,
+                    zh: `订单 ${(existingOrder as any)?.orderNumber || (existingOrder as any)?.orderCode || ""} 将被更新。`,
+                  })}
+                </span>
+                {moneyChangeDetected && (
+                  <span className="block font-semibold text-amber-700">
+                    ⚠️ {pickLang(language, { ku: "نرخ دەگۆڕدرێت — حسابی کڕیار کاریگەر دەبێت", en: "Prices change — the customer's account is affected", ar: "تتغيّر الأسعار — يتأثر حساب العميل", zh: "价格变更 — 将影响客户账户" })}
+                  </span>
+                )}
+                <span className="block text-xs">
+                  {pickLang(language, { ku: "ئەم گۆڕانکارییە بە ناوی تۆوە تۆمار دەکرێت و ئادمین ئاگادار دەکرێتەوە.", en: "This change is recorded under your name and admins are notified.", ar: "يُسجَّل هذا التعديل باسمك ويتم إشعار المسؤولين.", zh: "此更改将以您的名义记录，并通知管理员。" })}
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setLocation(`/commission/${orderId}`)}>
+                {pickLang(language, { ku: "کانسڵ — خەزن مەکە", en: "Cancel — don't save", ar: "إلغاء — لا تحفظ", zh: "取消 — 不保存" })}
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={submitEdit} className="bg-purple-600 hover:bg-purple-700">
+                {pickLang(language, { ku: "ئۆکەی — خەزنی بکە", en: "OK — save it", ar: "موافق — احفظ", zh: "确定 — 保存" })}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );

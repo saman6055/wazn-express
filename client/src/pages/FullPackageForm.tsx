@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,11 @@ import {
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import PlatformSelect, { LAST_PLATFORM_KEY } from "@/components/PlatformSelect";
-import { advancePayload } from "@/lib/commissionEditUtils";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { advancePayload, readableError, editableSnapshot } from "@/lib/commissionEditUtils";
 import { cn } from "@/lib/utils";
 
 // Lightweight section wrapper — small bold title + thin divider, no heavy card
@@ -75,6 +79,27 @@ export default function FullPackageForm() {
   const { t, language } = useTranslation();
 
   const utils = trpc.useUtils();
+
+  // ── Edit mode ──
+  // The SAME form serves /full-package/new and /full-package/:id/edit, so a
+  // correction is made in exactly the layout the order was registered in.
+  // Only the UI is shared: editing still goes through fullPackage.update,
+  // which owns all pricing/ledger logic.
+  const { id: routeId } = useParams<{ id?: string }>();
+  const orderId = routeId ? Number(routeId) : null;
+  const isEditMode = !!orderId && Number.isFinite(orderId);
+
+  const { data: existingOrder, isLoading: orderLoading } = trpc.fullPackage.getById.useQuery(
+    { id: orderId as number },
+    { enabled: isEditMode, refetchOnWindowFocus: false },
+  );
+
+  // Reason for the change — the server demands one (min 3 chars) when the
+  // amounts move on an order that was already charged.
+  const [editReason, setEditReason] = useState("");
+  // Confirmation before an edit is written — an edit can move money on the
+  // customer's ledger, so it is never a single unguarded click.
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Customer search state
   const [customerOpen, setCustomerOpen] = useState(false);
@@ -138,9 +163,12 @@ export default function FullPackageForm() {
   // Get selected customer
   const selectedCustomer = customers?.find((c) => c.id.toString() === formData.customerId);
 
-  // Default to the last-used customer once, after customers load (never overwrite a manual choice)
+  // Default to the last-used customer once, after customers load (never overwrite a manual choice).
+  // Skipped entirely while editing — the order already has its own customer and
+  // this would race the hydration below and silently reassign the order.
   const didApplyLastCustomer = useRef(false);
   useEffect(() => {
+    if (isEditMode) return;
     if (didApplyLastCustomer.current) return;
     if (!customers || customers.length === 0) return;
     if (formData.customerId) {
@@ -157,7 +185,70 @@ export default function FullPackageForm() {
       setFormData((prev) => ({ ...prev, customerId: lastId }));
       setCustomerSearch(match.customerCode || match.fullName || "");
     }
-  }, [customers, formData.customerId]);
+  }, [customers, formData.customerId, isEditMode]);
+
+  // ── Hydrate the form from the order being edited ──
+  // Runs ONCE (ref-guarded): getById returns a fresh object on every refetch,
+  // and re-running would wipe whatever the operator has typed so far.
+  const didHydrate = useRef(false);
+  const originalSnapshot = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isEditMode || didHydrate.current || !existingOrder) return;
+    didHydrate.current = true;
+    const o = existingOrder as any;
+
+    const hydrated = {
+      customerId: o.customerId?.toString() || "",
+      supplierId: o.supplierId?.toString() || "none",
+      platform: o.platform || "",
+      orderNumber: o.orderNumber || "",
+      trackingNumber: o.trackingNumber || "",
+      productLink: o.productLink || "",
+      productDescription: o.productDescription || "",
+      quantity: o.quantity?.toString() || "1",
+      color: o.color || "",
+      size: o.size || "",
+      productType: o.productType || o.productName || "",
+      purchasePriceUsd: o.purchasePriceUsd?.toString() || "",
+      sellingPriceUsd: o.sellingPriceUsd?.toString() || "",
+      notes: o.notes || "",
+      shippingType: o.shippingType || "",
+      weightKg: o.weightKg?.toString() || "",
+      dimensionLength: o.dimensionLength?.toString() || "",
+      dimensionWidth: o.dimensionWidth?.toString() || "",
+      dimensionHeight: o.dimensionHeight?.toString() || "",
+      volumeCbm: o.volumeCbm?.toString() || "",
+      // Advance payment is deliberately NOT hydrated — edit mode never sends
+      // it, so the recorded advance can't be disturbed by re-saving.
+    };
+    setFormData((prev) => ({ ...prev, ...hydrated }));
+
+    const imgs: string[] = Array.isArray(o.productImages) && o.productImages.length
+      ? o.productImages
+      : o.productImage
+        ? [o.productImage]
+        : [];
+    setProductImages(imgs);
+    originalSnapshot.current = editableSnapshot(hydrated, imgs);
+  }, [isEditMode, existingOrder]);
+
+  // Update mutation — used only in edit mode. Same endpoint the old edit
+  // screen used, so all pricing/ledger behaviour is unchanged.
+  const updateMutation = trpc.fullPackage.update.useMutation({
+    onSuccess: () => {
+      toast.success(pickLang(language, { ku: "گۆڕانکارییەکان خەزن کران ✓", en: "Changes saved ✓", ar: "تم حفظ التعديلات ✓", zh: "更改已保存 ✓" }));
+      utils.fullPackage.list.invalidate();
+      utils.fullPackage.getById.invalidate({ id: orderId as number });
+      navigate(`/full-package/${orderId}`);
+    },
+    onError: (error) => {
+      const fallback = pickLang(language, { ku: "نوێکردنەوەی ئۆردەر سەرکەوتوو نەبوو", en: "Failed to update order", ar: "فشل تحديث الطلب", zh: "更新订单失败" });
+      const err = error as unknown as { message?: string; data?: { zodError?: { errors?: { message: string }[] } } };
+      toast.error(readableError(err.data?.zodError?.errors?.[0]?.message, readableError(err.message, fallback)));
+      // eslint-disable-next-line no-console
+      console.error("[FullPackageForm] update failed:", error);
+    },
+  });
 
   const createMutation = trpc.fullPackage.create.useMutation({
     onSuccess: () => {
@@ -207,9 +298,30 @@ export default function FullPackageForm() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
     onError: (error) => {
-      toast.error(error.message);
+      // Same guard as the update path: a failed create can carry a
+      // serialized payload (base64 image + every field) in its message,
+      // which must never be printed into a toast.
+      toast.error(readableError(error.message, pickLang(language, { ku: "ئۆردەر تۆمار نەکرا", en: "Could not create the order", ar: "تعذّر إنشاء الطلب", zh: "无法创建订单" })));
+      // eslint-disable-next-line no-console
+      console.error("[OrderForm] create failed:", error);
     },
   });
+
+  // ── Edit mode: does this change move money? ──
+  // A full-package order is charged sellingPrice × quantity, so only those two
+  // shift the ledger. Only already-charged orders need a reason; pending ones
+  // can be corrected freely. Mirrors the server's own gate.
+  const isPendingCharge =
+    !(existingOrder as any)?.isCharged && !(existingOrder as any)?.chargeTransactionId;
+  const moneyChangeDetected = (() => {
+    if (!isEditMode || !existingOrder || isPendingCharge) return false;
+    const o = existingOrder as any;
+    const num = (v: unknown) => parseFloat(String(v ?? "0")) || 0;
+    return (
+      (o.quantity ?? 1) !== (parseInt(formData.quantity) || 1) ||
+      num(o.sellingPriceUsd) !== num(formData.sellingPriceUsd)
+    );
+  })();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,6 +338,50 @@ export default function FullPackageForm() {
 
     if (!formData.productType) {
       toast.error(pickLang(language, { ku: "تکایە جۆری کاڵا هەڵبژێرە", en: "Please select a product type", ar: "يرجى اختيار نوع المنتج", zh: "请选择商品类型" }));
+      return;
+    }
+
+    // Every real order has a number from the shop it was bought on.
+    if (!formData.orderNumber.trim()) {
+      toast.error(pickLang(language, { ku: "تکایە ئۆردەر نەمبەر داخڵ بکە", en: "Please enter the order number", ar: "يرجى إدخال رقم الطلب", zh: "请输入订单编号" }));
+      return;
+    }
+
+    if (!formData.platform.trim()) {
+      toast.error(pickLang(language, { ku: "تکایە پلاتفۆرم هەڵبژێرە", en: "Please select a platform", ar: "يرجى اختيار المنصة", zh: "请选择平台" }));
+      return;
+    }
+
+    // ── Edit mode ──
+    // Sends the same fields the previous edit screen sent. Advance payment is
+    // intentionally omitted: the server treats a present `advancePaidUsd` as
+    // intent and would move money on the customer ledger.
+    if (isEditMode) {
+      if (
+        originalSnapshot.current !== null &&
+        editableSnapshot(formData, productImages) === originalSnapshot.current
+      ) {
+        toast.info(pickLang(language, {
+          ku: "هیچ گۆڕانکارییەک نەکرا — ئۆردەرەکە وەک خۆی مایەوە",
+          en: "Nothing changed — the order was left as it was",
+          ar: "لم يتغيّر شيء — بقي الطلب كما هو",
+          zh: "没有任何更改 — 订单保持原样",
+        }));
+        navigate(`/full-package/${orderId}`);
+        return;
+      }
+      if (moneyChangeDetected && editReason.trim().length < 3) {
+        toast.error(pickLang(language, {
+          ku: "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت)",
+          en: "Reason is required when prices change (min 3 chars)",
+          ar: "السبب مطلوب عند تغيير الأسعار (٣ أحرف على الأقل)",
+          zh: "更改价格时需填写原因（至少3个字符）",
+        }));
+        return;
+      }
+      // Saving an edit is confirmed first: it can move money on the customer's
+      // ledger, and the change is recorded against whoever pressed the button.
+      setConfirmOpen(true);
       return;
     }
 
@@ -259,6 +415,43 @@ export default function FullPackageForm() {
       dimensionWidth: formData.dimensionWidth || undefined,
       dimensionHeight: formData.dimensionHeight || undefined,
       volumeCbm: formData.volumeCbm || undefined,
+    });
+  };
+
+  /** Runs after the operator confirms the edit in the dialog. */
+  const submitEdit = () => {
+    setConfirmOpen(false);
+    updateMutation.mutate({
+        id: orderId as number,
+        expectedVersion: (existingOrder as any)?.version,
+        reason: moneyChangeDetected ? editReason.trim() : undefined,
+        customerId: parseInt(formData.customerId),
+        // `null` (not undefined) is what clears a supplier.
+        supplierId:
+          formData.supplierId && formData.supplierId !== "none"
+            ? parseInt(formData.supplierId)
+            : null,
+        productName: formData.productType,
+        productType: formData.productType || undefined,
+        platform: formData.platform,
+        productLink: formData.productLink,
+        productImage: productImages[0] || undefined,
+        productImages: productImages,
+        orderNumber: formData.orderNumber,
+        trackingNumber: formData.trackingNumber.trim(),
+        productDescription: formData.productDescription,
+        quantity: parseInt(formData.quantity) || 1,
+        color: formData.color,
+        size: formData.size,
+        purchasePriceUsd: formData.purchasePriceUsd,
+        sellingPriceUsd: formData.sellingPriceUsd,
+        notes: formData.notes,
+        shippingType: formData.shippingType || undefined,
+        weightKg: formData.weightKg,
+        dimensionLength: formData.dimensionLength,
+        dimensionWidth: formData.dimensionWidth,
+        dimensionHeight: formData.dimensionHeight,
+        volumeCbm: formData.volumeCbm,
     });
   };
 
@@ -325,21 +518,49 @@ export default function FullPackageForm() {
       <div className="max-w-4xl mx-auto space-y-3">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/full-package")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(isEditMode ? `/full-package/${orderId}` : "/full-package")}>
             <ArrowRight className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <ShoppingBag className="h-5 w-5 text-emerald-600" />
+            <div className={cn("p-2 rounded-lg", isEditMode ? "bg-purple-100" : "bg-emerald-100")}>
+              <ShoppingBag className={cn("h-5 w-5", isEditMode ? "text-purple-600" : "text-emerald-600")} />
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-tight">{pickLang(language, { ku: "ئۆردەری پاکێجی تەواوی نوێ", en: "New full package order", ar: "طلب حزمة كاملة جديد", zh: "新建完整套餐订单" })}</h1>
-              <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کڕین و فرۆشتنەوە بە قازانج", en: "Buy and resell at a profit", ar: "الشراء وإعادة البيع بربح", zh: "买入并加价转售" })}</p>
+              <h1 className="text-xl font-bold leading-tight">
+                {isEditMode
+                  ? pickLang(language, { ku: "دەستکاری ئۆردەری پاکێجی تەواو", en: "Edit full package order", ar: "تعديل طلب الحزمة الكاملة", zh: "编辑完整套餐订单" })
+                  : pickLang(language, { ku: "ئۆردەری پاکێجی تەواوی نوێ", en: "New full package order", ar: "طلب حزمة كاملة جديد", zh: "新建完整套餐订单" })}
+              </h1>
+              {/* On edit, say WHICH order and WHOSE it is. */}
+              {isEditMode ? (
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                  <span className="font-mono font-semibold text-purple-700" dir="ltr">
+                    {(existingOrder as any)?.orderNumber || (existingOrder as any)?.orderCode || "…"}
+                  </span>
+                  {selectedCustomer && (
+                    <>
+                      <span>·</span>
+                      <span className="font-semibold text-foreground">{selectedCustomer.fullName || (selectedCustomer as any).fullNameKurdish}</span>
+                      <span className="font-mono text-xs" dir="ltr">({selectedCustomer.customerCode})</span>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کڕین و فرۆشتنەوە بە قازانج", en: "Buy and resell at a profit", ar: "الشراء وإعادة البيع بربح", zh: "买入并加价转售" })}</p>
+              )}
             </div>
           </div>
         </div>
 
-        <form data-fast onSubmit={handleSubmit} className="space-y-3">
+        {/* Wait for the order before showing a form full of empty fields. */}
+        {isEditMode && orderLoading && (
+          <div className="flex items-center justify-center gap-2 rounded-xl border bg-card p-8 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="text-sm">{pickLang(language, { ku: "زانیاری ئۆردەر دەهێنرێت...", en: "Loading order...", ar: "جارٍ تحميل الطلب...", zh: "正在加载订单..." })}</span>
+          </div>
+        )}
+
+        <form data-fast onSubmit={handleSubmit} className={cn("space-y-3", isEditMode && orderLoading && "hidden")}>
           {/* Customer Selection */}
           <Section icon={User} title={pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })} hint={pickLang(language, { ku: "کڕیارێک هەڵبژێرە بۆ ئەم ئۆردەرە", en: "Select a customer for this order", ar: "اختر عميلاً لهذا الطلب", zh: "为此订单选择客户" })} accent="emerald">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -852,7 +1073,11 @@ export default function FullPackageForm() {
             </div>
           </Section>
 
-          {/* ── Advance Payment ── */}
+          {/* ── Advance Payment ──
+              Creation only. On edit this is hidden: the advance is a real
+              ledger movement, corrected from the payment screen, not by
+              re-saving the form. */}
+          {!isEditMode && (
           <Section icon={Wallet} title={pickLang(language, { ku: "پارەدانی پێشەکی (ئاختیاری)", en: "Advance payment (optional)", ar: "دفعة مقدمة (اختياري)", zh: "预付款（可选）" })} hint={pickLang(language, { ku: "ڕاستەوخۆ لە حسابی کڕیار تۆمار دەبێت", en: "Recorded directly in the customer's account", ar: "يُسجَّل مباشرة في حساب العميل", zh: "直接记入客户账户" })} accent="teal">
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -930,6 +1155,7 @@ export default function FullPackageForm() {
               )}
             </div>
           </Section>
+          )}
 
           {/* ── Weight & Size (moved to second-to-last; only when a shipping type is chosen) ── */}
           {formData.shippingType && (
@@ -1067,25 +1293,80 @@ export default function FullPackageForm() {
             />
           </Section>
 
+          {/* Reason — only when the edit shifts an already-charged order's
+              amounts. The server rejects those without one. */}
+          {isEditMode && moneyChangeDetected && (
+            <Section icon={Save} title={pickLang(language, { ku: "هۆکاری گۆڕانکاری *", en: "Reason for the change *", ar: "سبب التعديل *", zh: "更改原因 *" })} hint={pickLang(language, { ku: "نرخ گۆڕاوە — هۆکارەکە تۆمار دەکرێت", en: "Prices changed — the reason is recorded", ar: "تغيّرت الأسعار — يُسجَّل السبب", zh: "价格已更改 — 原因将被记录" })} accent="amber">
+              <Textarea
+                value={editReason}
+                onChange={(e) => setEditReason(e.target.value)}
+                placeholder={pickLang(language, { ku: "بۆچی نرخەکە دەگۆڕدرێت؟", en: "Why is the price being changed?", ar: "لماذا يتم تغيير السعر؟", zh: "为什么更改价格？" })}
+                rows={2}
+                className={cn(filledCls(editReason))}
+              />
+            </Section>
+          )}
+
           {/* Submit */}
           <StickyFormBar>
-            <Button type="button" variant="outline" onClick={() => navigate("/full-package")}>
+            <Button type="button" variant="outline" onClick={() => navigate(isEditMode ? `/full-package/${orderId}` : "/full-package")}>
               {t("common.cancel") || pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              disabled={createMutation.isPending || updateMutation.isPending}
+              className={isEditMode ? "bg-purple-600 hover:bg-purple-700" : "bg-emerald-600 hover:bg-emerald-700"}
             >
-              {createMutation.isPending ? (
+              {createMutation.isPending || updateMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin ms-2" />
               ) : (
                 <Save className="h-4 w-4 ms-2" />
               )}
-              {t("common.save") || pickLang(language, { ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" })}
+              {isEditMode
+                ? pickLang(language, { ku: "پاشەکەوتکردنی گۆڕانکاری", en: "Save changes", ar: "حفظ التعديلات", zh: "保存更改" })
+                : (t("common.save") || pickLang(language, { ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" }))}
             </Button>
           </StickyFormBar>
         </form>
+
+        {/* Confirm before writing an edit. Cancel discards the change and
+            returns to the order, so the operator is never left unsure whether
+            a half-made edit was saved. */}
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent dir={language === "en" || language === "zh" ? "ltr" : "rtl"}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {pickLang(language, { ku: "گۆڕانکارییەکان خەزن بکرێن؟", en: "Save the changes?", ar: "حفظ التعديلات؟", zh: "保存更改？" })}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <span className="block">
+                  {pickLang(language, {
+                    ku: `ئۆردەری ${(existingOrder as any)?.orderNumber || (existingOrder as any)?.orderCode || ""} نوێ دەکرێتەوە.`,
+                    en: `Order ${(existingOrder as any)?.orderNumber || (existingOrder as any)?.orderCode || ""} will be updated.`,
+                    ar: `سيتم تحديث الطلب ${(existingOrder as any)?.orderNumber || (existingOrder as any)?.orderCode || ""}.`,
+                    zh: `订单 ${(existingOrder as any)?.orderNumber || (existingOrder as any)?.orderCode || ""} 将被更新。`,
+                  })}
+                </span>
+                {moneyChangeDetected && (
+                  <span className="block font-semibold text-amber-700">
+                    ⚠️ {pickLang(language, { ku: "نرخ دەگۆڕدرێت — حسابی کڕیار کاریگەر دەبێت", en: "Prices change — the customer's account is affected", ar: "تتغيّر الأسعار — يتأثر حساب العميل", zh: "价格变更 — 将影响客户账户" })}
+                  </span>
+                )}
+                <span className="block text-xs">
+                  {pickLang(language, { ku: "ئەم گۆڕانکارییە بە ناوی تۆوە تۆمار دەکرێت و ئادمین ئاگادار دەکرێتەوە.", en: "This change is recorded under your name and admins are notified.", ar: "يُسجَّل هذا التعديل باسمك ويتم إشعار المسؤولين.", zh: "此更改将以您的名义记录，并通知管理员。" })}
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => navigate(`/full-package/${orderId}`)}>
+                {pickLang(language, { ku: "کانسڵ — خەزن مەکە", en: "Cancel — don't save", ar: "إلغاء — لا تحفظ", zh: "取消 — 不保存" })}
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={submitEdit} className="bg-purple-600 hover:bg-purple-700">
+                {pickLang(language, { ku: "ئۆکەی — خەزنی بکە", en: "OK — save it", ar: "موافق — احفظ", zh: "确定 — 保存" })}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );

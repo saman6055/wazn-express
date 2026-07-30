@@ -304,6 +304,10 @@ function Router() {
         <Route path="/full-package/new" component={FullPackageForm} />
         <Route path="/full-package/bulk-create" component={BulkOrderForm} />
         <Route path="/full-package/:id" component={FullPackageDetail} />
+        {/* Editing reuses the SAME form the order was registered in, like the
+            commission route below. Must precede the generic `:mode` route —
+            wouter matches in order and `:mode` would otherwise swallow "edit". */}
+        <Route path="/full-package/:id/edit" component={FullPackageForm} />
         <Route path="/full-package/:id/:mode" component={FullPackageDetail} />
         <Route path="/commission" component={CommissionDashboard} />
         <Route path="/commission-orders" component={CommissionOrders} />

@@ -48,7 +48,11 @@ export function editableSnapshot(
   return JSON.stringify([
     f.customerId, f.supplierId, f.platform, f.orderNumber, f.trackingNumber, f.productLink,
     f.productDescription, f.quantity, f.color, f.size, f.productType,
-    f.itemPriceUsd, f.commissionFeeUsd, f.notes, f.shippingType, f.weightKg,
+    // Commission prices AND full-package prices — this snapshot backs the
+    // "nothing changed" check on both forms, and a missing field here would
+    // silently discard a real edit.
+    f.itemPriceUsd, f.commissionFeeUsd, f.purchasePriceUsd, f.sellingPriceUsd,
+    f.notes, f.shippingType, f.weightKg,
     f.dimensionLength, f.dimensionWidth, f.dimensionHeight, f.volumeCbm,
     images.join("|"),
   ]);

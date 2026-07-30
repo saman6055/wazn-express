@@ -136,3 +136,35 @@ describe("advancePayload", () => {
     expect(advancePayload(" 100.25 ")).toBe("100.25");
   });
 });
+
+/**
+ * The same snapshot backs the full-package form, whose prices live in
+ * different fields. If those were missing, editing a selling price would look
+ * like "nothing changed" and the save would be silently discarded.
+ */
+describe("editableSnapshot — full-package fields", () => {
+  const fp = {
+    customerId: "7", supplierId: "none", platform: "Taobao", orderNumber: "ORD-9",
+    quantity: "1", productType: "Bag",
+    purchasePriceUsd: "50.00", sellingPriceUsd: "75.00",
+  };
+
+  it("changes when the selling price is edited", () => {
+    expect(editableSnapshot({ ...fp, sellingPriceUsd: "80.00" }, []))
+      .not.toBe(editableSnapshot(fp, []));
+  });
+
+  it("changes when the purchase price is edited", () => {
+    expect(editableSnapshot({ ...fp, purchasePriceUsd: "55.00" }, []))
+      .not.toBe(editableSnapshot(fp, []));
+  });
+
+  it("changes when the platform is edited", () => {
+    expect(editableSnapshot({ ...fp, platform: "1688" }, []))
+      .not.toBe(editableSnapshot(fp, []));
+  });
+
+  it("is identical for an untouched full-package form", () => {
+    expect(editableSnapshot(fp, ["a"])).toBe(editableSnapshot({ ...fp }, ["a"]));
+  });
+});

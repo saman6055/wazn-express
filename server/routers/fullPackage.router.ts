@@ -812,15 +812,54 @@ export const fullPackageRouter = router({
         //    existing.version + 1.
         await db.updateFullPackageOrder(id, data, ctx.user.id);
 
+        // `existing` is the getById row, which spreads the joined customer,
+        // supplier and batch into it — including customers.passwordHash. Log
+        // the order's own fields only; the joins add nothing to an audit trail
+        // and must not be serialized into it.
+        const { customer: _c, supplier: _s, batch: _b, ...existingOrderOnly } = existing as any;
+
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
           action: "update_full_package_order",
           entityType: "full_package_order",
           entityId: id,
-          oldValues: existing,
+          oldValues: existingOrderOnly,
           newValues: { ...data, reason: reason ?? null, chargeDeltaUsd: chargeChanged ? chargeDelta : 0 },
         });
+
+        // Raise an activity alert so admins/super-admins see edits as they
+        // happen rather than having to go looking through the audit log.
+        // Money-moving edits are flagged louder. Never let this break the
+        // mutation: the ledger has already been adjusted and the order saved.
+        try {
+          const actor = ctx.user.name || `#${ctx.user.id}`;
+          const moved = chargeChanged || advanceChanged;
+          const money = chargeChanged
+            ? ` (${chargeDelta > 0 ? "+" : ""}$${chargeDelta.toFixed(2)})`
+            : "";
+          await db.createActivityAlert({
+            action: "update_full_package_order",
+            category: existing.orderType === "commission" ? "commission" : "full_package",
+            entityType: "full_package_order",
+            entityId: id,
+            entityCode: existing.orderCode,
+            triggeredById: ctx.user.id,
+            triggeredByName: actor,
+            severity: moved ? "warning" : "info",
+            customTitle: moved
+              ? `گۆڕانی پارە لە ئۆردەری ${existing.orderCode}`
+              : `دەستکاری ئۆردەری ${existing.orderCode}`,
+            customMessage:
+              `${actor} (${ctx.user.role}) ئۆردەری ${existing.orderCode}ی دەستکاری کرد${money}` +
+              (reason ? ` — هۆکار: ${reason}` : ""),
+          });
+        } catch (err) {
+          appLogger.error("[FullPackage] activity alert failed", {
+            orderId: id,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
 
         return {
           success: true,
