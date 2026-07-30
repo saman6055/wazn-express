@@ -762,13 +762,6 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
     staleTime: 60_000,
   });
 
-  // Yuan sell rate for the live-rates strip in the header (tappable → the
-  // yuan exchange page). Read-only, shares the cache with the yuan page.
-  const { data: yuanInfo } = trpc.customerPortal.getYuanExchangeInfo.useQuery(undefined, {
-    staleTime: 60_000,
-    retry: false,
-  });
-
   type TabKey = "shipping" | "services" | "calculator" | "guide";
   const [activeTab, setActiveTab] = useState<TabKey>("shipping");
   // Per-section "what is this?" helper — hidden until the ⓘ on the active tab
@@ -903,27 +896,16 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
           </div>
         </div>
 
-        {/* Live rates strip */}
-        {((yuanInfo?.enabled && Number(yuanInfo.rate) > 0) || (showIqd && iqdRate)) && (
+        {/* Live rates strip.
+            The Buy-Yuan chip used to sit here too, but the portal home now has
+            a dedicated Buy-Yuan tile in the quick-action grid, so this was a
+            second door to the same page taking up header room. */}
+        {showIqd && iqdRate && (
           <div className="relative mt-3 flex flex-wrap items-center gap-1.5">
-            {yuanInfo?.enabled && Number(yuanInfo.rate) > 0 && (
-              <Link href="/portal/yuan-exchange">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-300/40 px-3 py-1.5 text-[12px] font-black text-amber-100 transition hover:bg-amber-400/30 active:scale-95 cursor-pointer">
-                  <span className="text-sm leading-none">¥</span>
-                  <span>
-                    {pickLang(language, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "买人民币" })}
-                  </span>
-                  <span className="font-mono" dir="ltr">1$ = {Number(yuanInfo.rate)}¥</span>
-                  <ChevronDown className="w-3.5 h-3.5 -rotate-90 rtl:rotate-90 opacity-80" />
-                </span>
-              </Link>
-            )}
-            {showIqd && iqdRate && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3 py-1.5 text-[12px] font-bold text-white/90">
-                <span className="font-mono" dir="ltr">1$ ≈ {Math.round(iqdRate).toLocaleString("en-US")}</span>
-                <span>د.ع</span>
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3 py-1.5 text-[12px] font-bold text-white/90">
+              <span className="font-mono" dir="ltr">1$ ≈ {Math.round(iqdRate).toLocaleString("en-US")}</span>
+              <span>د.ع</span>
+            </span>
           </div>
         )}
       </div>
