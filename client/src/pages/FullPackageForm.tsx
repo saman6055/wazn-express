@@ -49,7 +49,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { advancePayload, readableError, editableSnapshot } from "@/lib/commissionEditUtils";
+import { advancePayload, readableError, editableSnapshot, numericPayload } from "@/lib/commissionEditUtils";
 import { cn } from "@/lib/utils";
 
 // Lightweight section wrapper — small bold title + thin divider, no heavy card
@@ -451,15 +451,15 @@ export default function FullPackageForm() {
         quantity: parseInt(formData.quantity) || 1,
         color: formData.color,
         size: formData.size,
-        purchasePriceUsd: formData.purchasePriceUsd,
-        sellingPriceUsd: formData.sellingPriceUsd,
+        purchasePriceUsd: numericPayload(formData.purchasePriceUsd),
+        sellingPriceUsd: numericPayload(formData.sellingPriceUsd),
         notes: formData.notes,
         shippingType: formData.shippingType || undefined,
-        weightKg: formData.weightKg,
-        dimensionLength: formData.dimensionLength,
-        dimensionWidth: formData.dimensionWidth,
-        dimensionHeight: formData.dimensionHeight,
-        volumeCbm: formData.volumeCbm,
+        weightKg: numericPayload(formData.weightKg),
+        dimensionLength: numericPayload(formData.dimensionLength),
+        dimensionWidth: numericPayload(formData.dimensionWidth),
+        dimensionHeight: numericPayload(formData.dimensionHeight),
+        volumeCbm: numericPayload(formData.volumeCbm),
     });
   };
 

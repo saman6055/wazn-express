@@ -41,6 +41,21 @@ export function advancePayload(raw: string | null | undefined): string | undefin
   return value;
 }
 
+/**
+ * A numeric field's value for an order payload.
+ *
+ * Weight, dimensions, CBM and the prices are DECIMAL columns. An empty text
+ * input hands back `""`, and MySQL rejects that outright — "Incorrect decimal
+ * value: ''" — failing the ENTIRE update, so a rename or a price fix silently
+ * refused to save just because the weight box was blank. `undefined` means
+ * "leave this column alone", which is what an untouched field should do.
+ */
+export function numericPayload(raw: string | null | undefined): string | undefined {
+  const value = (raw ?? "").trim();
+  if (!value) return undefined;
+  return Number.isFinite(Number(value)) ? value : undefined;
+}
+
 export function editableSnapshot(
   f: { [k: string]: unknown },
   images: string[],

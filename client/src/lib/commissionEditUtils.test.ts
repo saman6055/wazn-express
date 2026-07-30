@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readableError, editableSnapshot, advancePayload } from "./commissionEditUtils";
+import { readableError, editableSnapshot, advancePayload, numericPayload } from "./commissionEditUtils";
 
 /**
  * Saving a commission edit used to fill the screen with an unreadable blob:
@@ -166,5 +166,40 @@ describe("editableSnapshot — full-package fields", () => {
 
   it("is identical for an untouched full-package form", () => {
     expect(editableSnapshot(fp, ["a"])).toBe(editableSnapshot({ ...fp }, ["a"]));
+  });
+});
+
+/**
+ * Weight, dimensions, CBM and prices are DECIMAL columns. An empty text input
+ * yields "", which MySQL rejects outright — "Incorrect decimal value: ''" —
+ * failing the WHOLE update. That is why editing a price or a name silently
+ * refused to save whenever the weight box happened to be blank.
+ */
+describe("numericPayload", () => {
+  it("omits an empty field instead of sending an empty string", () => {
+    expect(numericPayload("")).toBeUndefined();
+    expect(numericPayload("   ")).toBeUndefined();
+    expect(numericPayload(undefined)).toBeUndefined();
+    expect(numericPayload(null)).toBeUndefined();
+  });
+
+  it("sends a real number through untouched", () => {
+    expect(numericPayload("5.25")).toBe("5.25");
+    expect(numericPayload("0.001")).toBe("0.001");
+    expect(numericPayload(" 12 ")).toBe("12");
+  });
+
+  it("keeps an explicit zero — 0 is a real weight, not a blank", () => {
+    expect(numericPayload("0")).toBe("0");
+    expect(numericPayload("0.00")).toBe("0.00");
+  });
+
+  it("omits junk rather than letting the database reject the whole update", () => {
+    expect(numericPayload("abc")).toBeUndefined();
+    expect(numericPayload("--")).toBeUndefined();
+  });
+
+  it("allows a negative value through (validation belongs to the form)", () => {
+    expect(numericPayload("-3")).toBe("-3");
   });
 });

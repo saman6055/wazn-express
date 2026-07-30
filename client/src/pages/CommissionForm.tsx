@@ -15,7 +15,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
-import { readableError, editableSnapshot, advancePayload } from "@/lib/commissionEditUtils";
+import { readableError, editableSnapshot, advancePayload, numericPayload } from "@/lib/commissionEditUtils";
 import PlatformSelect, { LAST_PLATFORM_KEY } from "@/components/PlatformSelect";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -591,15 +591,15 @@ export default function CommissionForm() {
         quantity,
         color: formData.color,
         size: formData.size,
-        itemPriceUsd: formData.itemPriceUsd,
-        commissionFeeUsd: formData.commissionFeeUsd,
+        itemPriceUsd: numericPayload(formData.itemPriceUsd),
+        commissionFeeUsd: numericPayload(formData.commissionFeeUsd),
         notes: formData.notes,
         shippingType: formData.shippingType || undefined,
-        weightKg: formData.weightKg,
-        dimensionLength: formData.dimensionLength,
-        dimensionWidth: formData.dimensionWidth,
-        dimensionHeight: formData.dimensionHeight,
-        volumeCbm: formData.volumeCbm,
+        weightKg: numericPayload(formData.weightKg),
+        dimensionLength: numericPayload(formData.dimensionLength),
+        dimensionWidth: numericPayload(formData.dimensionWidth),
+        dimensionHeight: numericPayload(formData.dimensionHeight),
+        volumeCbm: numericPayload(formData.volumeCbm),
     });
   };
 
