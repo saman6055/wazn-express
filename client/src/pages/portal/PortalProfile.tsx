@@ -10,7 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { 
   User, MessageSquare, Bell, MapPin, FileText, HelpCircle, 
   AlertTriangle, ChevronRight, LogOut, Settings, Shield, Phone, Mail,
-  Package, CreditCard, Star, Moon, Sun, Headphones, MessageCircle,
+  Package, CreditCard, Star, Moon, Sun, Headphones, MessageCircle, PhoneCall,
   Globe, Languages, Info, Heart, Share2, ExternalLink, BookOpen, Check
 } from "lucide-react";
 import { Link } from "wouter";
@@ -76,6 +76,12 @@ const { t, language, setLanguage } = useLanguage();
       label: language === "ku" ? "کڕینی یوانی چینی" : language === "ar" ? "شراء اليوان الصيني" : language === "zh" ? "购买人民币" : "Buy Chinese Yuan",
       path: "/portal/yuan-exchange",
       iconBg: "bg-gradient-to-br from-red-400 to-orange-500",
+    },
+    {
+      icon: PhoneCall,
+      label: language === "ku" ? "پەیوەندی" : language === "ar" ? "تواصل" : language === "zh" ? "联系我们" : "Contact",
+      path: "/portal/contact",
+      iconBg: "bg-gradient-to-br from-emerald-400 to-green-600",
     },
   ];
 

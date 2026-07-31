@@ -12,7 +12,7 @@ import {
   AlertCircle, Plane, Ship, Megaphone, TrendingUp, Search,
   CreditCard, MessageCircle, FileText, DollarSign,
   Sun, Moon, Sparkles, AlertTriangle, PackagePlus, Info, X,
-  Scale, Ban, ShoppingBag, Wallet, User, BookOpen, GraduationCap
+  Scale, Ban, ShoppingBag, Wallet, User, BookOpen, GraduationCap, PhoneCall
 } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { Link } from "wouter";
@@ -440,6 +440,18 @@ const { t, language } = useLanguage();
         title: pickLang(language, { ku: "فێرکاری بە ڤیدیۆ", en: "Video tutorials", ar: "شروحات بالفيديو", zh: "视频教程" }),
         desc: pickLang(language, { ku: "ڤیدیۆی کورت کە پیشانت دەدەن چۆن لە تاوباو و پیندودو داوای کاڵا بکەیت و پۆرتاڵ بەکاربهێنیت.", en: "Short videos showing how to order from Taobao and Pinduoduo and use the portal.", ar: "فيديوهات قصيرة تشرح الطلب من تاوباو وبيندودو واستخدام البوابة.", zh: "简短视频，演示如何在淘宝和拼多多下单并使用门户。" }),
         example: pickLang(language, { ku: "نموونە: «چۆن لە تاوباو کاڵا داوا بکەیت» ببینە", en: "e.g. watch \"how to order from Taobao\"", ar: "مثال: شاهد «كيف تطلب من تاوباو»", zh: "例如：观看「如何在淘宝下单」" }),
+      },
+    },
+    {
+      icon: PhoneCall,
+      label: pickLang(language, { ku: "پەیوەندی", en: "Contact", ar: "تواصل", zh: "联系我们" }),
+      href: "/portal/contact",
+      color: tileColor,
+      shadowColor: tileShadow,
+      info: {
+        title: pickLang(language, { ku: "پەیوەندی", en: "Contact us", ar: "تواصل معنا", zh: "联系我们" }),
+        desc: pickLang(language, { ku: "ژمارە و ناونیشان و هەموو سەکۆکانی کۆمەڵایەتیمان لە یەک شوێن.", en: "Our numbers, address, and every social channel in one place.", ar: "أرقامنا وعنواننا وكل قنوات التواصل في مكان واحد.", zh: "我们的电话、地址和所有社交渠道，尽在一处。" }),
+        example: pickLang(language, { ku: "نموونە: نەخشەی شوێنمان بکەرەوە", en: "e.g. open our location on the map", ar: "مثال: افتح موقعنا على الخريطة", zh: "例如：在地图上打开我们的位置" }),
       },
     },
     {
