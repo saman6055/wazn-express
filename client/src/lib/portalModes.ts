@@ -9,13 +9,55 @@ import type { Accent } from "@/contexts/ThemeContext";
  */
 export type PortalMode = "dark" | "purple" | "pink" | "light";
 
+/**
+ * The four brand colours each mode paints the portal with.
+ *
+ * The portal was written with the company blue spelled out in the markup, so
+ * changing mode recoloured the header and left everything under it blue. These
+ * are the same four roles that blue played — deep, brand, light, pale — so a
+ * surface can ask for the role it needs and get the right colour for whichever
+ * mode is on.
+ *
+ * Only brand colour goes through here. Red for debt, amber for a warning and
+ * green for success mean something, and must not follow the mode.
+ */
+export interface PortalPalette {
+  /** Darkest — gradient ends and deep backgrounds. */
+  deep: string;
+  /** The main brand colour: buttons, tiles, the balance card. */
+  brand: string;
+  /** A step lighter — the other end of most gradients. */
+  light: string;
+  /** Pale tint for text and icons sitting on a brand-coloured surface. */
+  pale: string;
+}
+
 export interface PortalModeDef {
   id: PortalMode;
   theme: "light" | "dark";
   accent: Accent;
   /** Two stops for the swatch dot and the header wash, darkest last. */
   swatch: [string, string];
+  palette: PortalPalette;
   label: { ku: string; en: string; ar: string; zh: string };
+}
+
+/**
+ * Add an alpha channel to a hex colour: tint("#1C4D8D", 0.15).
+ *
+ * Written as 8-digit hex rather than a Tailwind `/15` suffix, which cannot
+ * take a colour that is only known at runtime.
+ */
+export function tint(hex: string, alpha: number): string {
+  const a = Math.round(Math.min(Math.max(alpha, 0), 1) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return `${hex}${a}`;
+}
+
+/** A linear gradient from runtime colours, for an inline background-image. */
+export function gradient(direction: string, ...stops: string[]): string {
+  return `linear-gradient(${direction}, ${stops.join(", ")})`;
 }
 
 export const PORTAL_MODES: PortalModeDef[] = [
@@ -24,6 +66,8 @@ export const PORTAL_MODES: PortalModeDef[] = [
     theme: "dark",
     accent: "default",
     swatch: ["#1e3a8a", "#0f172a"],
+    // The company blue the portal was built in.
+    palette: { deep: "#0F2854", brand: "#1C4D8D", light: "#4988C4", pale: "#BDE8F5" },
     label: { ku: "تاریک", en: "Dark", ar: "داكن", zh: "深色" },
   },
   {
@@ -31,6 +75,7 @@ export const PORTAL_MODES: PortalModeDef[] = [
     theme: "dark",
     accent: "violet",
     swatch: ["#8b5cf6", "#6d28d9"],
+    palette: { deep: "#3B1D6E", brand: "#6D28D9", light: "#8B5CF6", pale: "#DDD6FE" },
     label: { ku: "مۆر", en: "Purple", ar: "بنفسجي", zh: "紫色" },
   },
   {
@@ -38,6 +83,7 @@ export const PORTAL_MODES: PortalModeDef[] = [
     theme: "dark",
     accent: "rose",
     swatch: ["#f472b6", "#db2777"],
+    palette: { deep: "#831843", brand: "#DB2777", light: "#F472B6", pale: "#FBCFE8" },
     label: { ku: "پەمەیی", en: "Pink", ar: "وردي", zh: "粉色" },
   },
   {
@@ -45,6 +91,8 @@ export const PORTAL_MODES: PortalModeDef[] = [
     theme: "light",
     accent: "default",
     swatch: ["#f8fafc", "#cbd5e1"],
+    // Light mode keeps the company blue; only the page behind it turns pale.
+    palette: { deep: "#0F2854", brand: "#1C4D8D", light: "#4988C4", pale: "#BDE8F5" },
     label: { ku: "ڕووناک", en: "Light", ar: "فاتح", zh: "浅色" },
   },
 ];
@@ -69,16 +117,15 @@ export function modeFromTheme(theme: string, accent: string): PortalMode {
 }
 
 /**
- * The header wash for each mode. The classic portal's blue is the "dark"
- * default; the others shift the whole gradient so the mode is felt
- * immediately, not just in small accents.
+ * The header wash for each mode, built from that mode's own palette so the
+ * two can never drift apart. Light mode is the exception: its header is a pale
+ * surface, not a brand-coloured one.
  */
-export const MODE_HEADER_GRADIENT: Record<PortalMode, string> = {
-  dark: "from-[#0f2f5e] via-[#1c4d8d] to-[#123a72]",
-  purple: "from-[#3b1d6e] via-[#6d28d9] to-[#4c1d95]",
-  pink: "from-[#831843] via-[#db2777] to-[#9d174d]",
-  light: "from-[#dbe6f3] via-[#eef2f7] to-[#e7edf5]",
-};
+export function headerGradient(mode: PortalMode): string {
+  if (mode === "light") return "linear-gradient(140deg, #dbe6f3, #eef2f7 55%, #e7edf5)";
+  const { deep, brand } = modeDef(mode).palette;
+  return `linear-gradient(140deg, ${deep}, ${brand} 55%, ${deep})`;
+}
 
 /** Light mode needs dark text on the header; the rest are white on colour. */
 export function isLightHeader(mode: PortalMode): boolean {

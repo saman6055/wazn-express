@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { TutorialHint } from "@/components/TutorialHint";
 import { pickLang } from "@/lib/lang";
 import { Link, useSearch } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -343,6 +344,7 @@ export default function PortalFullPackage() {
                 <h1 className="text-2xl font-bold text-white">
                   {pickLang(language, { ku: "ئۆردەرەکانم", en: "My Orders", ar: "طلباتي", zh: "我的订单" })}
                 </h1>
+                <TutorialHint section="پاکێجی تەواو" className="mt-1.5 mb-1" />
                 <div className="flex items-center gap-2">
                   <p className="text-white/70 text-sm">
                     {pickLang(language, { ku: "بەڕێوەبردنی ئۆردەرەکانت", en: "Manage your orders", ar: "إدارة طلباتك", zh: "管理您的订单" })}

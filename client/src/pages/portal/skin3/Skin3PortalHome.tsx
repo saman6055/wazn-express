@@ -16,6 +16,10 @@ import {
   CreditCard,
   Clock,
   ChevronRight,
+  PackagePlus,
+  Wallet,
+  GraduationCap,
+  PhoneCall,
 } from "lucide-react";
 import { PortalHeaderControls } from "@/components/portal/PortalHeaderControls";
 import { Link } from "wouter";
@@ -201,6 +205,38 @@ export default function Skin3PortalHome() {
       icon: YuanGlyphIcon,
       href: "/portal/yuan-exchange",
       bg: isDark ? "bg-red-600 hover:bg-red-500" : "bg-red-500 hover:bg-red-600",
+    },
+    // These sections existed only on the classic skin, so a customer here had
+    // no way of knowing they were there at all.
+    {
+      label: language === "ku" ? "تۆماری تراک" : language === "ar" ? "تسجيل التتبع" : language === "zh" ? "登记运单" : "Declare",
+      icon: PackagePlus,
+      href: "/portal/declare",
+      bg: isDark ? "bg-teal-600 hover:bg-teal-500" : "bg-teal-500 hover:bg-teal-600",
+    },
+    {
+      label: language === "ku" ? "بارەکانم" : language === "ar" ? "شحناتي" : language === "zh" ? "我的货物" : "Shipments",
+      icon: Truck,
+      href: "/portal/shipments",
+      bg: isDark ? "bg-sky-600 hover:bg-sky-500" : "bg-sky-500 hover:bg-sky-600",
+    },
+    {
+      label: language === "ku" ? "داراری" : language === "ar" ? "المالية" : language === "zh" ? "财务" : "Financial",
+      icon: Wallet,
+      href: "/portal/financial",
+      bg: isDark ? "bg-lime-600 hover:bg-lime-500" : "bg-lime-500 hover:bg-lime-600",
+    },
+    {
+      label: language === "ku" ? "فێرکاری" : language === "ar" ? "الشروحات" : language === "zh" ? "教程" : "Tutorials",
+      icon: GraduationCap,
+      href: "/portal/tutorials",
+      bg: isDark ? "bg-violet-600 hover:bg-violet-500" : "bg-violet-500 hover:bg-violet-600",
+    },
+    {
+      label: language === "ku" ? "پەیوەندی" : language === "ar" ? "تواصل" : language === "zh" ? "联系我们" : "Contact",
+      icon: PhoneCall,
+      href: "/portal/contact",
+      bg: isDark ? "bg-green-600 hover:bg-green-500" : "bg-green-500 hover:bg-green-600",
     },
   ];
 

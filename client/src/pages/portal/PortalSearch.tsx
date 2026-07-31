@@ -10,6 +10,7 @@ import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { TutorialHint } from "@/components/TutorialHint";
 import { pickLang } from "@/lib/lang";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
@@ -183,7 +184,8 @@ export default function PortalSearch() {
     <CustomerPortalLayout>
       {/* Header */}
       <div className="bg-slate-800 text-white px-4 pt-12 pb-8">
-        <h1 className="text-xl font-bold mb-4">{t("trackPackage") || "Track Package"}</h1>
+        <h1 className="text-xl font-bold mb-2">{t("trackPackage") || "Track Package"}</h1>
+        <TutorialHint section="شوێنکەوتن" className="mb-4" />
         
         {/* Search Input */}
         <div className="relative">

@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { trpc } from "@/lib/trpc";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TutorialHint } from "@/components/TutorialHint";
 import {
   ArrowDownUp,
   Banknote,
@@ -139,6 +140,7 @@ export default function PortalYuanExchange() {
               <h1 className="text-2xl font-extrabold leading-tight">
                 {pick({ ku: "کڕینی یوانی چینی", en: "Buy Chinese Yuan", ar: "شراء اليوان الصيني", zh: "购买人民币" })}
               </h1>
+              <TutorialHint section="کڕینی یوان" className="mt-1.5 mb-1" />
               <p className="text-sm text-white/80">
                 {pick({
                   ku: "بۆ پارەدان بە سەپلایەرە چینییەکانت",

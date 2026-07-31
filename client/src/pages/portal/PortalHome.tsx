@@ -25,7 +25,7 @@ import { WaznNewsCarousel } from "@/components/portal/WaznNewsCarousel";
 import { DeliveryRatingCard } from "@/components/portal/DeliveryRatingCard";
 import { ReferralCard } from "@/components/portal/ReferralCard";
 import { PortalHeaderControls, PortalClock, usePortalMode } from "@/components/portal/PortalHeaderControls";
-import { MODE_HEADER_GRADIENT, isLightHeader } from "@/lib/portalModes";
+import { headerGradient, isLightHeader, modeDef, tint, gradient } from "@/lib/portalModes";
 
 // Animated Counter Component
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
@@ -217,16 +217,20 @@ const { t, language } = useLanguage();
   // text from white to slate so it stays readable on the pale gradient.
   const [portalMode] = usePortalMode();
   const lightHeader = isLightHeader(portalMode);
+  // Brand colour for this mode. Semantic colours — red for debt, amber for a
+  // warning — are left alone; they mean something and must not follow it.
+  const pal = modeDef(portalMode).palette;
   // Every surface in this header was written for white-on-colour. In light
   // mode the text and the glass panels have to flip, or the header is a blank
   // pale rectangle.
   const headStrong = lightHeader ? "text-slate-900" : "text-white";
   const headSoft = lightHeader ? "text-slate-700" : "text-white/90";
   const headMuted = lightHeader ? "text-slate-600" : "text-white/70";
-  const headAccent = lightHeader ? "text-slate-700" : "text-[#BDE8F5]";
   const headGlass = lightHeader
     ? "bg-slate-900/[0.05] border-slate-900/10 hover:bg-slate-900/[0.09]"
-    : "bg-white/10 border-[#BDE8F5]/20 hover:bg-white/15";
+    : "bg-white/10 border-white/20 hover:bg-white/15";
+  /** The pale brand tint, for icons and small labels on the header. */
+  const paleStyle = lightHeader ? undefined : { color: pal.pale };
 
   const { data: account, isLoading: accountLoading } = trpc.customerPortal.getMyAccount.useQuery();
   const { data: batches, isLoading: batchesLoading } = trpc.customerPortal.getMyBatches.useQuery();
@@ -303,8 +307,6 @@ const { t, language } = useLanguage();
   // Quick Actions
   // One cohesive navy→blue palette for every tile so the grid reads as a set,
   // not a clashing rainbow. (#4988C4 → #1C4D8D from the portal palette.)
-  const tileColor = "from-[#4988C4] to-[#1C4D8D]";
-  const tileShadow = "shadow-[#1C4D8D]/40";
   // Order is deliberate — set by the owner. Every destination already exists;
   // these tiles are shortcuts, not new pages.
   const quickActions = [
@@ -312,8 +314,6 @@ const { t, language } = useLanguage();
       icon: Scale,
       label: pickLang(language, { ku: "مەرج و ڕێسا", en: "Terms & rules", ar: "الشروط والأحكام", zh: "条款与规则" }),
       href: "/portal/terms",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "مەرج و ڕێساکان", en: "Terms & rules", ar: "الشروط والأحكام", zh: "条款与规则" }),
         desc: pickLang(language, { ku: "مەرجەکانی گواستنەوە و بەرپرسیارێتی — پێش ناردن بیانخوێنەوە.", en: "Shipping terms and responsibilities — read them before sending.", ar: "شروط الشحن والمسؤوليات — اقرأها قبل الإرسال.", zh: "运输条款与责任 — 发货前请阅读。" }),
@@ -324,8 +324,6 @@ const { t, language } = useLanguage();
       icon: Ban,
       label: pickLang(language, { ku: "کاڵای قەدەغە", en: "Prohibited items", ar: "المواد الممنوعة", zh: "违禁物品" }),
       href: "/portal/prohibited-packages",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "کاڵا قەدەغەکان", en: "Prohibited items", ar: "المواد الممنوعة", zh: "违禁物品" }),
         desc: pickLang(language, { ku: "ئەو کاڵایانەی ناگوازرێنەوە — پێش کڕین دڵنیابەرەوە.", en: "Items we can't ship — check before you buy.", ar: "المواد التي لا يمكن شحنها — تحقق قبل الشراء.", zh: "我们无法运输的物品 — 购买前请查看。" }),
@@ -336,8 +334,6 @@ const { t, language } = useLanguage();
       icon: ShoppingBag,
       label: t("portal.fullPack"),
       href: "/portal/full-package",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "کاڵاکانم", en: "My items", ar: "بضائعي", zh: "我的商品" }),
         desc: pickLang(language, { ku: "ئەو کاڵایانەی بۆت کڕدراون یان داوات کردوون — دۆخیان ببینە.", en: "The items bought for you or requested — see their status.", ar: "البضائع المشتراة لك أو المطلوبة — شاهد حالتها.", zh: "为您购买或您请求的商品 — 查看状态。" }),
@@ -348,8 +344,6 @@ const { t, language } = useLanguage();
       icon: Truck,
       label: t("portal.shipments"),
       href: "/portal/shipments",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "گواستنەوە", en: "Transport", ar: "النقل", zh: "运输" }),
         desc: pickLang(language, { ku: "بارەکانت لە ڕێگادان — بزانە لە کوێن و کەی دەگەن.", en: "Your shipments on the way — where they are and when they arrive.", ar: "شحناتك في الطريق — أين هي ومتى تصل.", zh: "在途货物 — 位置与预计到达时间。" }),
@@ -360,8 +354,6 @@ const { t, language } = useLanguage();
       icon: Search,
       label: t("portal.track"),
       href: "/portal/search",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "شوێنکەوتنی بار", en: "Track shipment", ar: "تتبع الشحنة", zh: "追踪货物" }),
         desc: pickLang(language, { ku: "دۆخی پاکێج یان بارەکەت بەدواداچوون بکە بە ژمارەی تراک.", en: "Follow your package/shipment status by its tracking number.", ar: "تابع حالة طردك/شحنتك برقم التتبع.", zh: "通过运单号跟踪您的包裹/货物状态。" }),
@@ -372,8 +364,6 @@ const { t, language } = useLanguage();
       icon: AlertTriangle,
       label: language === "ku" ? "بێ خاوەن" : "Unclaimed",
       href: "/portal/no-mark",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "پاکێجی بێ‌خاوەن", en: "Unclaimed packages", ar: "طرود بلا مالك", zh: "无主包裹" }),
         desc: pickLang(language, { ku: "پاکێجە گەیشتووەکان کە کۆدی تۆیان پێوە نییە — لێرە داوایان بکە.", en: "Arrived packages with no customer code — claim yours here.", ar: "طرود وصلت بدون كود العميل — طالب بها هنا.", zh: "已到达但没有客户代码的包裹——在此认领。" }),
@@ -384,8 +374,6 @@ const { t, language } = useLanguage();
       icon: PackagePlus,
       label: pickLang(language, { ku: "تۆماری تراک", en: "Register tracking", ar: "تسجيل التتبع", zh: "登记运单" }),
       href: "/portal/declare",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "تۆمارکردنی تراک", en: "Register tracking", ar: "تسجيل التتبع", zh: "登记运单" }),
         desc: pickLang(language, { ku: "ژمارەی تراکی کاڵاکەت لە چین پێش‌وەخت تۆمار بکە بۆ بەدواداچوونی خۆکار.", en: "Pre-register your item's China tracking number for automatic follow-up.", ar: "سجّل رقم تتبع بضاعتك من الصين مسبقًا للمتابعة التلقائية.", zh: "提前登记您在中国的运单号以便自动跟进。" }),
@@ -396,8 +384,6 @@ const { t, language } = useLanguage();
       icon: Wallet,
       label: t("portal.financial"),
       href: "/portal/financial",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "دارایی و پارەدان", en: "Finance & payment", ar: "المالية والدفع", zh: "财务与付款" }),
         desc: pickLang(language, { ku: "باڵانس و مامەڵەکانت ببینە و قەرزەکەت بدە.", en: "See your balance and transactions, and settle what you owe.", ar: "شاهد رصيدك ومعاملاتك وسدّد ما عليك.", zh: "查看余额和交易并结清欠款。" }),
@@ -408,8 +394,6 @@ const { t, language } = useLanguage();
       icon: FileText,
       label: t("portal.request"),
       href: "/portal/full-package",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" }),
         desc: pickLang(language, { ku: "داوای کڕینی کاڵا بکە (فوڵ-پاکێج/کۆمیشن) و ئێمە بۆت دەیکڕین.", en: "Ask us to buy an item for you (full-package / commission).", ar: "اطلب منا شراء منتج لك (باقة كاملة/عمولة).", zh: "让我们为您购买商品（全包/代购）。" }),
@@ -420,8 +404,6 @@ const { t, language } = useLanguage();
       icon: YuanIcon,
       label: pickLang(language, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "购买人民币" }),
       href: "/portal/yuan-exchange",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "购买人民币" }),
         desc: pickLang(language, { ku: "یوان بکڕە بۆ کڕینەکانت لە چین بە نرخی ئەمڕۆ.", en: "Buy Yuan for your China purchases at today's rate.", ar: "اشترِ اليوان لمشترياتك من الصين بسعر اليوم.", zh: "以今日汇率购买人民币用于中国采购。" }),
@@ -432,8 +414,6 @@ const { t, language } = useLanguage();
       icon: BookOpen,
       label: pickLang(language, { ku: "ڕێبەری پۆرتاڵ", en: "Portal guide", ar: "دليل البوابة", zh: "门户指南" }),
       href: "/portal/guide",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "ڕێبەری پۆرتاڵ", en: "Portal guide", ar: "دليل البوابة", zh: "门户指南" }),
         desc: pickLang(language, { ku: "چۆنیەتی بەکارهێنانی پۆرتاڵ — هەنگاو بە هەنگاو.", en: "How to use the portal — step by step.", ar: "كيفية استخدام البوابة — خطوة بخطوة.", zh: "如何使用门户 — 分步说明。" }),
@@ -444,8 +424,6 @@ const { t, language } = useLanguage();
       icon: GraduationCap,
       label: pickLang(language, { ku: "فێرکاری", en: "Tutorials", ar: "الشروحات", zh: "教程" }),
       href: "/portal/tutorials",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "فێرکاری بە ڤیدیۆ", en: "Video tutorials", ar: "شروحات بالفيديو", zh: "视频教程" }),
         desc: pickLang(language, { ku: "ڤیدیۆی کورت کە پیشانت دەدەن چۆن لە تاوباو و پیندودو داوای کاڵا بکەیت و پۆرتاڵ بەکاربهێنیت.", en: "Short videos showing how to order from Taobao and Pinduoduo and use the portal.", ar: "فيديوهات قصيرة تشرح الطلب من تاوباو وبيندودو واستخدام البوابة.", zh: "简短视频，演示如何在淘宝和拼多多下单并使用门户。" }),
@@ -456,8 +434,6 @@ const { t, language } = useLanguage();
       icon: PhoneCall,
       label: pickLang(language, { ku: "پەیوەندی", en: "Contact", ar: "تواصل", zh: "联系我们" }),
       href: "/portal/contact",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "پەیوەندی", en: "Contact us", ar: "تواصل معنا", zh: "联系我们" }),
         desc: pickLang(language, { ku: "ژمارە و ناونیشان و هەموو سەکۆکانی کۆمەڵایەتیمان لە یەک شوێن.", en: "Our numbers, address, and every social channel in one place.", ar: "أرقامنا وعنواننا وكل قنوات التواصل في مكان واحد.", zh: "我们的电话、地址和所有社交渠道，尽在一处。" }),
@@ -468,8 +444,6 @@ const { t, language } = useLanguage();
       icon: User,
       label: t("portal.me"),
       href: "/portal/profile",
-      color: tileColor,
-      shadowColor: tileShadow,
       info: {
         title: pickLang(language, { ku: "پرۆفایلی من", en: "My profile", ar: "ملفي الشخصي", zh: "我的资料" }),
         desc: pickLang(language, { ku: "زانیاری خۆت، کۆدی کڕیار و ناونیشانەکانت ببینە و بگۆڕە.", en: "See and edit your details, customer code and addresses.", ar: "شاهد وعدّل بياناتك وكود العميل وعناوينك.", zh: "查看和修改您的资料、客户代码和地址。" }),
@@ -484,10 +458,10 @@ const { t, language } = useLanguage();
       <div className="relative overflow-hidden">
         {/* The wash follows the colour mode the customer picked, so the choice
             is felt across the whole header rather than in small accents. */}
-        <div className={cn(
-          "absolute inset-0 bg-gradient-to-br transition-colors duration-500",
-          MODE_HEADER_GRADIENT[portalMode]
-        )} />
+        <div
+          className="absolute inset-0 transition-[background-image] duration-500"
+          style={{ backgroundImage: headerGradient(portalMode) }}
+        />
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
         
         {/* Aurora glow orbs. They were tuned to sit on a deep blue; on the pale
@@ -516,10 +490,10 @@ const { t, language } = useLanguage();
                 <Skeleton className="h-8 w-40 bg-white/20" />
               ) : (
                 <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <span className={cn(lightHeader ? "text-slate-900" : "bg-gradient-to-l from-white via-[#BDE8F5] to-[#4988C4] bg-clip-text text-transparent")}>
+                  <span className={lightHeader ? "text-slate-900" : "bg-clip-text text-transparent"} style={lightHeader ? undefined : { backgroundImage: gradient("to left", "#ffffff", pal.pale, pal.light) }}>
                     {account?.fullName || account?.customerCode}
                   </span>
-                  <Sparkles className={cn("w-5 h-5", headAccent)} />
+                  <Sparkles className="w-5 h-5" style={paleStyle} />
                 </h1>
               )}
             </div>
@@ -555,10 +529,10 @@ const { t, language } = useLanguage();
                 "inline-flex items-center gap-2 border px-4 py-2 rounded-full backdrop-blur-sm",
                 lightHeader
                   ? "bg-slate-900/[0.06] border-slate-900/10"
-                  : "bg-gradient-to-r from-[#BDE8F5]/15 to-[#4988C4]/20 border-[#BDE8F5]/30"
-              )}>
-                <Package className={cn("w-4 h-4", lightHeader ? "text-slate-700" : "text-[#BDE8F5]")} />
-                <span className={cn("text-sm font-semibold", lightHeader ? "text-slate-800" : "text-[#BDE8F5]")}>
+                  : ""
+              )} style={lightHeader ? undefined : { backgroundImage: gradient("to right", tint(pal.pale, 0.15), tint(pal.light, 0.2)), borderColor: tint(pal.pale, 0.3) }}>
+                <Package className={cn("w-4 h-4", lightHeader && "text-slate-700")} style={paleStyle} />
+                <span className={cn("text-sm font-semibold", lightHeader && "text-slate-800")} style={paleStyle}>
                   {account.customerCode}
                 </span>
               </div>
@@ -578,15 +552,17 @@ const { t, language } = useLanguage();
                     tabIndex={0}
                     aria-label="info"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenTileInfo(openTileInfo === index ? null : index); }}
-                    className={cn("absolute top-2 end-2 transition-colors", lightHeader ? "text-slate-500 hover:text-slate-900" : "text-[#BDE8F5]/70 hover:text-white")}
+                    className={cn("absolute top-2 end-2 transition-colors", lightHeader ? "text-slate-500 hover:text-slate-900" : "opacity-70 hover:opacity-100")} style={paleStyle}
                   >
                     <Info className="w-3.5 h-3.5" />
                   </span>
-                  <div className={cn(
-                    "w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg",
-                    action.color,
-                    action.shadowColor
-                  )}>
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg"
+                    style={{
+                      backgroundImage: `linear-gradient(135deg, ${pal.light}, ${pal.brand})`,
+                      boxShadow: `0 8px 16px -6px ${tint(pal.brand, 0.5)}`,
+                    }}
+                  >
                     <action.icon className="w-5 h-5 text-white" />
                   </div>
                   <span className={cn("text-xs font-medium text-start leading-tight", headSoft)}>
@@ -601,12 +577,12 @@ const { t, language } = useLanguage();
           {openTileInfo !== null && (
             <div className={cn("mt-3 relative flex gap-3 rounded-2xl p-3.5 border backdrop-blur-sm", headGlass)}>
               <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
-                <Info className="w-5 h-5 text-[#1C4D8D]" />
+                <Info className="w-5 h-5" style={{ color: pal.brand }} />
               </div>
               <div className="flex-1 min-w-0 pe-5">
                 <h4 className={cn("text-sm font-bold", headStrong)}>{quickActions[openTileInfo].info.title}</h4>
                 <p className={cn("text-xs mt-0.5 leading-relaxed", headSoft)}>{quickActions[openTileInfo].info.desc}</p>
-                <span className={cn("inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium", lightHeader ? "bg-slate-900/[0.07] text-slate-700" : "bg-[#BDE8F5]/20 text-[#BDE8F5]")}>
+                <span className={cn("inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium", lightHeader && "bg-slate-900/[0.07] text-slate-700")} style={lightHeader ? undefined : { backgroundColor: tint(pal.pale, 0.2), color: pal.pale }}>
                   {quickActions[openTileInfo].info.example}
                 </span>
               </div>
@@ -622,12 +598,17 @@ const { t, language } = useLanguage();
       {/* Balance Card - Floating */}
       <div className="px-4 -mt-5 relative z-10">
         <Link href="/portal/financial">
-          <div className={cn(
-            "rounded-2xl p-5 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer",
-            hasDebt
-              ? "bg-gradient-to-br from-[#d97706] to-[#b45309] shadow-[#b45309]/40"
-              : "bg-gradient-to-br from-[#1C4D8D] to-[#4988C4] shadow-[#1C4D8D]/40"
-          )}>
+          <div
+            className={cn(
+              "rounded-2xl p-5 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer",
+              // Debt keeps its amber warning colour in every mode.
+              hasDebt && "bg-gradient-to-br from-[#d97706] to-[#b45309] shadow-[#b45309]/40",
+            )}
+            style={hasDebt ? undefined : {
+              backgroundImage: `linear-gradient(135deg, ${pal.brand}, ${pal.light})`,
+              boxShadow: `0 10px 20px -8px ${tint(pal.brand, 0.5)}`,
+            }}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white/80 text-sm font-medium mb-1">

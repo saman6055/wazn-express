@@ -17,6 +17,10 @@ import {
   MessageSquare,
   Headphones,
   Plane,
+  PackagePlus,
+  Wallet,
+  GraduationCap,
+  PhoneCall,
 } from "lucide-react";
 import { PortalHeaderControls } from "@/components/portal/PortalHeaderControls";
 import { Link } from "wouter";
@@ -230,6 +234,43 @@ export default function ModernPortalHome() {
       href: "/portal/yuan-exchange",
       color: "text-red-600 dark:text-red-400",
       bg: "bg-red-50 dark:bg-red-950/40",
+    },
+    // These sections existed only on the classic skin, so a customer here had
+    // no way of knowing they were there at all.
+    {
+      label: language === "ku" ? "تۆماری تراک" : language === "ar" ? "تسجيل التتبع" : language === "zh" ? "登记运单" : "Declare",
+      icon: PackagePlus,
+      href: "/portal/declare",
+      color: "text-teal-600 dark:text-teal-400",
+      bg: "bg-teal-50 dark:bg-teal-950/40",
+    },
+    {
+      label: language === "ku" ? "بارەکانم" : language === "ar" ? "شحناتي" : language === "zh" ? "我的货物" : "Shipments",
+      icon: Truck,
+      href: "/portal/shipments",
+      color: "text-sky-600 dark:text-sky-400",
+      bg: "bg-sky-50 dark:bg-sky-950/40",
+    },
+    {
+      label: language === "ku" ? "داراری" : language === "ar" ? "المالية" : language === "zh" ? "财务" : "Financial",
+      icon: Wallet,
+      href: "/portal/financial",
+      color: "text-lime-600 dark:text-lime-400",
+      bg: "bg-lime-50 dark:bg-lime-950/40",
+    },
+    {
+      label: language === "ku" ? "فێرکاری" : language === "ar" ? "الشروحات" : language === "zh" ? "教程" : "Tutorials",
+      icon: GraduationCap,
+      href: "/portal/tutorials",
+      color: "text-indigo-600 dark:text-indigo-400",
+      bg: "bg-indigo-50 dark:bg-indigo-950/40",
+    },
+    {
+      label: language === "ku" ? "پەیوەندی" : language === "ar" ? "تواصل" : language === "zh" ? "联系我们" : "Contact",
+      icon: PhoneCall,
+      href: "/portal/contact",
+      color: "text-green-600 dark:text-green-400",
+      bg: "bg-green-50 dark:bg-green-950/40",
     },
   ];
 
