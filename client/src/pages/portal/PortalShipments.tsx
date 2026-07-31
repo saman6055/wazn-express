@@ -20,7 +20,7 @@ import { PortalListSkeleton } from "@/components/portal/PortalListSkeleton";
 import { BatchJourneyTimeline } from "@/components/portal/BatchJourneyTimeline";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
 import { matchesStage, countByStage, type ShipmentStage } from "@/lib/shipmentFilters";
@@ -50,6 +50,20 @@ function ClassicPortalShipments() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
+
+  // The filter bar shrinks once the reader scrolls past choosing, handing the
+  // screen back to the list. Two thresholds, not one: a single boundary makes
+  // the bar flip back and forth while a finger rests near it.
+  const [compactFilters, setCompactFilters] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setCompactFilters(prev => (prev ? y > 24 : y > 72));
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   
   const { data: batches, isLoading, refetch } = trpc.customerPortal.getMyBatches.useQuery();
   const { data: unbatchedPackages, refetch: refetchUnbatched } = trpc.customerPortal.getMyUnbatchedPackages.useQuery();
@@ -333,17 +347,23 @@ function ClassicPortalShipments() {
       </div>
 
       {/* Shipping Type Tabs */}
+      {/* Both filter rows in one frozen bar. It starts full height — heading,
+          three tall cards, and the line explaining what the chosen type
+          carries — then collapses on the first scroll to a single compact row
+          per filter, so the list gets the screen back once the reader is past
+          choosing. */}
       <div className={cn(
-        // Not sticky: this is a decide-once choice, and too tall to keep on
-        // screen. The compact status row below is the one that stays.
-        "px-4 py-3 border-b transition-colors duration-300",
-        isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
+        "sticky top-14 z-20 border-b backdrop-blur-md transition-all duration-300",
+        compactFilters ? "px-3 py-2" : "px-4 py-3",
+        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-100"
       )}>
-        <p className={cn("mb-2 text-[11px] font-medium", isDark ? "text-slate-500" : "text-slate-400")}>
-          {language === "ku" ? "چۆن دەنێردرێت" : language === "ar" ? "كيف تُشحن" : "How it ships"}
-        </p>
+        {!compactFilters && (
+          <p className={cn("mb-2 text-[11px] font-medium", isDark ? "text-slate-500" : "text-slate-400")}>
+            {language === "ku" ? "چۆن دەنێردرێت" : language === "ar" ? "كيف تُشحن" : "How it ships"}
+          </p>
+        )}
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className={cn("grid grid-cols-3 transition-all duration-300", compactFilters ? "gap-1.5" : "gap-2")}>
           {shippingTabs.map((tab) => {
             const isActive = shippingType === tab.value;
             return (
@@ -354,43 +374,54 @@ function ClassicPortalShipments() {
                 onClick={() => setShippingType(isActive ? "" : tab.value)}
                 aria-pressed={isActive}
                 className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-xl px-2 py-2.5 text-center transition-all duration-300 active:scale-95",
+                  // Raised like the stage pills below: highlight on the top
+                  // edge, shadow beneath, pressed flat on tap.
+                  "flex items-center justify-center text-center font-semibold leading-tight",
+                  "transition-all duration-300 -translate-y-px active:translate-y-0",
+                  compactFilters
+                    ? "flex-row gap-1.5 rounded-full px-2 py-1.5 text-[10.5px]"
+                    : "flex-col gap-1.5 rounded-xl px-2 py-2.5 text-[11px]",
                   isActive
-                    ? (isDark ? "bg-white text-slate-900" : "bg-slate-800 text-white shadow-lg shadow-slate-300")
-                    : (isDark ? "bg-slate-800 text-slate-400 hover:bg-slate-700" : "bg-slate-50 text-slate-600 hover:bg-slate-100")
+                    ? "text-white"
+                    : (isDark
+                        ? "bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-600"
+                        : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300")
                 )}
+                style={isActive ? {
+                  backgroundImage: gradient("135deg", pal.light, pal.brand),
+                  boxShadow: `0 0 0 1px ${tint(pal.light, 0.55)}, 0 6px 14px -4px ${tint(pal.brand, 0.75)}, inset 0 1px 0 ${tint("#ffffff", 0.35)}`,
+                } : {
+                  boxShadow: isDark
+                    ? "0 2px 5px -2px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)"
+                    : "0 2px 5px -2px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.9)",
+                }}
               >
-                <tab.icon className="w-4 h-4 shrink-0" />
-                <span className="text-[11px] font-medium leading-tight">
-                  {language === "ku" ? tab.labelKu : language === "ar" ? tab.labelAr : tab.label}
-                </span>
+                <tab.icon className={cn("shrink-0", compactFilters ? "w-3.5 h-3.5" : "w-4 h-4")} />
+                <span>{language === "ku" ? tab.labelKu : language === "ar" ? tab.labelAr : tab.label}</span>
               </button>
             );
           })}
         </div>
 
         {/* What the selected type carries — the point of the redesign. The old
-            labels named the categories without saying what belonged in them. */}
-        <div className={cn(
-          "mt-2 flex items-start gap-2 rounded-xl px-3 py-2",
-          isDark ? "bg-slate-800/60" : "bg-slate-50"
-        )}>
-          <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", isDark ? "text-slate-500" : "text-slate-400")} />
-          <p className={cn("text-[11.5px] leading-relaxed", isDark ? "text-slate-400" : "text-slate-500")}>
-            {shippingHint}
-          </p>
-        </div>
-      </div>
+            labels named the categories without saying what belonged in them.
+            Once the reader has scrolled past choosing, it is just noise. */}
+        {!compactFilters && (
+          <div className={cn(
+            "mt-2 flex items-start gap-2 rounded-xl px-3 py-2",
+            isDark ? "bg-slate-800/60" : "bg-slate-50"
+          )}>
+            <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", isDark ? "text-slate-500" : "text-slate-400")} />
+            <p className={cn("text-[11.5px] leading-relaxed", isDark ? "text-slate-400" : "text-slate-500")}>
+              {shippingHint}
+            </p>
+          </div>
+        )}
 
-      {/* Status Filter Pills — frozen below the portal's search bar. This is
-          the row a customer reaches for while reading down a long list, so it
-          is the one worth keeping on screen. The taller "how it ships" block
-          above is a decide-once choice and scrolls away. */}
-      <div className={cn(
-        "sticky top-14 z-20 px-4 py-3 border-b backdrop-blur-md transition-colors duration-300",
-        isDark ? "bg-slate-900/85 border-slate-800" : "bg-slate-50/90 border-slate-200"
-      )}>
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 pt-0.5">
+        <div className={cn(
+          "flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 pt-0.5 transition-all duration-300",
+          compactFilters ? "mt-1.5" : "mt-2.5"
+        )}>
           {statusFilters.map((filter) => {
             const isActive = statusFilter === filter.value;
             return (
