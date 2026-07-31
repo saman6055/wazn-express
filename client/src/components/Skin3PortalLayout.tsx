@@ -1,3 +1,4 @@
+import { NewsTicker } from "@/components/portal/NewsTicker";
 import { ReactNode, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { Home, Package, Wallet, User, ShoppingBag } from "lucide-react";
@@ -80,7 +81,13 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
       <PortalTopBar />
 
       {/* Main Content */}
-      <main className="relative max-w-lg mx-auto">{children}</main>
+      <main className="relative max-w-lg mx-auto">
+        {children}
+        {/* Wazn News strip — in-flow at the very end of the content, the same
+            as the classic skin. It was only ever rendered there, so on this
+            skin the news never appeared at all. */}
+        <NewsTicker language={language} />
+      </main>
 
       {/* Floating Pill Bottom Navigation */}
       <div

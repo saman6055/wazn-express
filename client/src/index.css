@@ -1213,10 +1213,20 @@ a:focus-visible,
   /* Duration is set inline per headline count; this is only a fallback. */
   animation: wazn-ticker 20s linear infinite;
 }
-.wazn-ticker-track:hover,
+/* Pause on hover only where hovering is a real thing. On a touch screen the
+   :hover state sticks after a tap until the reader taps something else, which
+   left the ticker frozen for the rest of the visit — the one place it must
+   never stop. :active is safe: it lasts only while a finger is down. */
+@media (hover: hover) and (pointer: fine) {
+  .wazn-ticker-track:hover {
+    animation-play-state: paused;
+  }
+}
 .wazn-ticker-track:active {
   animation-play-state: paused;
 }
 @media (prefers-reduced-motion: reduce) {
+  /* Deliberate: a reader who asked the system for less motion gets a still
+     strip showing the latest headlines rather than no headlines at all. */
   .wazn-ticker-track { animation: none; }
 }

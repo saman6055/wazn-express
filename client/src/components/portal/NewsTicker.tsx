@@ -5,6 +5,7 @@ import { postText, isPostInLanguage } from "@/lib/blogLang";
 import { cn } from "@/lib/utils";
 import { Radio } from "lucide-react";
 import { Link } from "wouter";
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 
 // ---------------------------------------------------------------------------
 // NewsTicker — a TV-style scrolling headline strip pinned just above the
@@ -15,6 +16,7 @@ import { Link } from "wouter";
 
 export function NewsTicker({ language }: { language: string }) {
   const pick = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
+  const { banner } = usePortalPalette();
 
   const { data: channels } = trpc.customerPortal.getNewsChannels.useQuery(undefined, {
     staleTime: 5 * 60_000,
@@ -80,8 +82,11 @@ export function NewsTicker({ language }: { language: string }) {
           // In-flow (not fixed): the strip lives at the very bottom of the page
           // content, so it only comes into view when the reader scrolls to the
           // end — never a permanently-moving band competing for attention.
-          "relative w-full h-9 overflow-hidden bg-gradient-to-r from-[#1C4D8D] to-[#4988C4] text-white shadow-md cursor-pointer",
+          "relative w-full h-9 overflow-hidden text-white shadow-md cursor-pointer",
         )}
+        // The company blue was spelled out here, so the strip stayed blue in
+        // purple and pink mode like the rest of the portal used to.
+        style={banner}
         dir="ltr"
       >
         <div className="flex items-center h-full">
