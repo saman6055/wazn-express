@@ -24,6 +24,7 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
 import { matchesStage, countByStage, type ShipmentStage } from "@/lib/shipmentFilters";
+import { tint, gradient } from "@/lib/portalModes";
 // "" is no filter — which is what the old "All" chip meant. Dropping the chip
 // and letting nothing-selected mean everything is one less thing to explain.
 type StatusFilter = ShipmentStage;
@@ -32,7 +33,7 @@ type SortOption = "newest" | "oldest" | "status";
 
 function ClassicPortalShipments() {
   // Banner colour follows the mode the customer picked, like every other page.
-  const { banner: portalBanner } = usePortalPalette();
+  const { banner: portalBanner, palette: pal } = usePortalPalette();
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -333,10 +334,9 @@ function ClassicPortalShipments() {
 
       {/* Shipping Type Tabs */}
       <div className={cn(
-        // Sticky was a no-op while the list scrolled inside its own box — the
-        // page never moved. Now that it does, these keep the air/sea filter in
-        // reach, offset to clear the portal's own sticky search bar above.
-        "px-4 py-3 border-b sticky top-14 z-10 transition-colors duration-300",
+        // Not sticky: this is a decide-once choice, and too tall to keep on
+        // screen. The compact status row below is the one that stays.
+        "px-4 py-3 border-b transition-colors duration-300",
         isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
       )}>
         <p className={cn("mb-2 text-[11px] font-medium", isDark ? "text-slate-500" : "text-slate-400")}>
@@ -382,12 +382,15 @@ function ClassicPortalShipments() {
         </div>
       </div>
 
-      {/* Status Filter Pills */}
+      {/* Status Filter Pills — frozen below the portal's search bar. This is
+          the row a customer reaches for while reading down a long list, so it
+          is the one worth keeping on screen. The taller "how it ships" block
+          above is a decide-once choice and scrolls away. */}
       <div className={cn(
-        "px-4 py-3 transition-colors duration-300",
-        isDark ? "bg-slate-900/50" : "bg-slate-50/50"
+        "sticky top-14 z-20 px-4 py-3 border-b backdrop-blur-md transition-colors duration-300",
+        isDark ? "bg-slate-900/85 border-slate-800" : "bg-slate-50/90 border-slate-200"
       )}>
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 pt-0.5">
           {statusFilters.map((filter) => {
             const isActive = statusFilter === filter.value;
             return (
@@ -397,19 +400,36 @@ function ClassicPortalShipments() {
                 onClick={() => setStatusFilter(isActive ? "" : filter.value)}
                 aria-pressed={isActive}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300",
-                  isActive 
-                    ? (isDark ? "bg-white text-slate-900" : "bg-slate-800 text-white")
-                    : (isDark ? "bg-slate-800 text-slate-400 border border-slate-700" : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300")
+                  // Raised: a highlight along the top edge and a shadow beneath
+                  // give the pill some depth, and it presses down when tapped.
+                  "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap",
+                  "transition-all duration-200 -translate-y-px active:translate-y-0",
+                  isActive
+                    ? "text-white"
+                    : (isDark
+                        ? "bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-600"
+                        : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300")
                 )}
+                style={isActive ? {
+                  // The glow is the mode's own brand colour, so the row stays
+                  // in step with the rest of the portal.
+                  backgroundImage: gradient("135deg", pal.light, pal.brand),
+                  boxShadow: `0 0 0 1px ${tint(pal.light, 0.55)}, 0 6px 14px -4px ${tint(pal.brand, 0.75)}, inset 0 1px 0 ${tint("#ffffff", 0.35)}`,
+                } : {
+                  boxShadow: isDark
+                    ? "0 2px 5px -2px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)"
+                    : "0 2px 5px -2px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.9)",
+                }}
               >
                 {language === "ku" ? filter.labelKu : language === "ar" ? filter.labelAr : filter.label}
-                <span className={cn(
-                  "px-1.5 py-0.5 rounded-full text-xs",
-                  isActive 
-                    ? (isDark ? "bg-slate-200 text-slate-800" : "bg-white/20 text-white")
-                    : (isDark ? "bg-slate-700 text-slate-400" : "bg-slate-100 text-slate-500")
-                )}>
+                <span
+                  className={cn(
+                    "px-1.5 py-0.5 rounded-full text-xs font-bold tabular-nums",
+                    isActive
+                      ? "bg-black/25 text-white"
+                      : (isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-500")
+                  )}
+                >
                   {filter.count}
                 </span>
               </button>
