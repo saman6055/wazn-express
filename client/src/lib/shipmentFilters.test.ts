@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { stageOf, matchesStage, countByStage, type BatchStatus } from "./shipmentFilters";
+import {
+  stageOf,
+  matchesStage,
+  countByStage,
+  STATUS_LABEL,
+  SHIPPING_TYPE_LABEL,
+  type BatchStatus,
+} from "./shipmentFilters";
 
 const ALL_STATUSES: BatchStatus[] = [
   "preparing",
@@ -85,5 +92,61 @@ describe("countByStage", () => {
   it("ignores a status it does not recognise instead of miscounting it", () => {
     const counts = countByStage(["preparing", "cancelled"]);
     expect(counts).toEqual({ in_china: 1, in_transit: 0, delivered: 0 });
+  });
+});
+
+/**
+ * Two screens used to name these six statuses independently, and both landed
+ * on "گەیشتووە" for `arrived` and again for `delivered` — the same word for
+ * "it reached Iraq" and "you have it in your hands", which is exactly the
+ * distinction a customer is looking for on that page.
+ */
+describe("STATUS_LABEL", () => {
+  const LANGS = ["ku", "en", "ar", "zh"] as const;
+
+  it("names every status in all four languages", () => {
+    for (const status of ALL_STATUSES) {
+      for (const lang of LANGS) {
+        expect(STATUS_LABEL[status]?.[lang], `${status}.${lang}`).toBeTruthy();
+      }
+    }
+  });
+
+  it("never gives two statuses the same name in any language", () => {
+    for (const lang of LANGS) {
+      const names = ALL_STATUSES.map((s) => STATUS_LABEL[s][lang]);
+      expect(new Set(names).size, `${lang}: ${names.join(" / ")}`).toBe(names.length);
+    }
+  });
+
+  it("keeps 'reached Iraq' and 'delivered' apart — the pair that used to collide", () => {
+    for (const lang of LANGS) {
+      expect(STATUS_LABEL.arrived[lang], lang).not.toBe(STATUS_LABEL.delivered[lang]);
+    }
+  });
+
+  it("uses the same wording as the stage filters, so both screens agree", () => {
+    expect(STATUS_LABEL.preparing.ku).toBe("لە کۆگای چین");
+    expect(STATUS_LABEL.in_transit.ku).toBe("لە ڕێگادا");
+  });
+});
+
+describe("SHIPPING_TYPE_LABEL", () => {
+  it("covers the three types the database stores", () => {
+    expect(Object.keys(SHIPPING_TYPE_LABEL).sort()).toEqual([
+      "air_irregular",
+      "air_regular",
+      "sea",
+    ]);
+  });
+
+  it("names each in all four languages, so none falls back to a raw column value", () => {
+    for (const type of Object.keys(SHIPPING_TYPE_LABEL)) {
+      for (const lang of ["ku", "en", "ar", "zh"] as const) {
+        expect(SHIPPING_TYPE_LABEL[type][lang], `${type}.${lang}`).toBeTruthy();
+        // "air regular" leaked to the page as an English column name before.
+        expect(SHIPPING_TYPE_LABEL[type][lang]).not.toMatch(/^air_|_/);
+      }
+    }
   });
 });

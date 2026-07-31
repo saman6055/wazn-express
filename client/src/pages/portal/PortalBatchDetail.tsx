@@ -1,4 +1,6 @@
 ﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { pickLang } from "@/lib/lang";
+import { STATUS_LABEL, SHIPPING_TYPE_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { PackageThumb, usePackageImages } from "@/components/portal/PackageThumb";
@@ -21,8 +23,8 @@ import { toast } from "sonner";
 // Timeline step type
 interface TimelineStep {
   status: string;
-  label: string;
-  labelKu: string;
+  /** Names come from the shared STATUS_LABEL table, not from this file. */
+  stepKey: BatchStatus;
   icon: any;
   completed: boolean;
   current: boolean;
@@ -60,40 +62,35 @@ const { t, language } = useLanguage();
     return [
       { 
         status: "preparing", 
-        label: "Preparing", 
-        labelKu: "ئامادەکاری",
+        stepKey: "preparing" as const,
         icon: Package, 
         completed: currentIndex > 0, 
         current: currentIndex === 0 
       },
       { 
         status: "in_transit", 
-        label: "In Transit", 
-        labelKu: "لە ڕێگادا",
+        stepKey: "in_transit" as const,
         icon: Plane, 
         completed: currentIndex > 1, 
         current: currentIndex === 1 
       },
       { 
         status: "arrived", 
-        label: "Arrived", 
-        labelKu: "گەیشتووە",
+        stepKey: "arrived" as const,
         icon: MapPin, 
         completed: currentIndex > 2, 
         current: currentIndex === 2 
       },
       { 
         status: "customs", 
-        label: "Customs", 
-        labelKu: "گومرگ",
+        stepKey: "customs" as const,
         icon: FileText, 
         completed: currentIndex > 3, 
         current: currentIndex === 3 
       },
       { 
         status: "delivered", 
-        label: "Delivered", 
-        labelKu: "گەیشتووە",
+        stepKey: "delivered" as const,
         icon: CheckCircle, 
         completed: currentIndex >= 4 || batch?.status === "closed", 
         current: currentIndex === 4 || batch?.status === "closed"
@@ -214,7 +211,10 @@ const { t, language } = useLanguage();
                   batch.status === "delivered" || batch.status === "closed" ? "bg-emerald-500/20 text-emerald-300" :
                   "bg-slate-600 text-slate-200"
                 )}>
-                  {batch.shippingType === "sea" ? "🚢" : "✈️"} {batch.shippingType?.replace("_", " ")}
+                  {batch.shippingType === "sea" ? "🚢" : "✈️"}{" "}
+                  {batch.shippingType && SHIPPING_TYPE_LABEL[batch.shippingType]
+                    ? pickLang(language, SHIPPING_TYPE_LABEL[batch.shippingType])
+                    : batch.shippingType?.replace("_", " ")}
                 </span>
                 <span className="text-slate-400 text-sm">
                   • {packages?.length || 0} {language === "ku" ? "پاکەت" : "packages"}
@@ -286,7 +286,7 @@ const { t, language } = useLanguage();
                       ? (isDark ? "text-white" : "text-slate-800")
                       : (isDark ? "text-slate-500" : "text-slate-400")
                   )}>
-                    {language === "ku" ? step.labelKu : step.label}
+                    {pickLang(language, STATUS_LABEL[step.stepKey])}
                   </span>
                 </div>
               ))}

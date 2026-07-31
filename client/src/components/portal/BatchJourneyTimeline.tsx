@@ -1,5 +1,6 @@
 import { pickLang, type Lang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
+import { STATUS_LABEL } from "@/lib/shipmentFilters";
 import {
   Warehouse,
   Plane,
@@ -65,27 +66,27 @@ export function BatchJourneyTimeline({
   const stages: { icon: LucideIcon; label: L10n; date: string | null }[] = [
     {
       icon: Warehouse,
-      label: { ku: "کۆگای چین", en: "China depot", ar: "مخزن الصين", zh: "中国仓库" },
+      label: STATUS_LABEL.preparing,
       date: fmtDate(createdAt),
     },
     {
       icon: TransitIcon,
-      label: { ku: "بەڕێکەوت", en: "In transit", ar: "في الطريق", zh: "运输中" },
+      label: STATUS_LABEL.in_transit,
       date: fmtDate(departureDate),
     },
     {
       icon: PackageCheck,
-      label: { ku: "گەیشت", en: "Arrived", ar: "وصلت", zh: "已到达" },
+      label: STATUS_LABEL.arrived,
       date: fmtDate(actualArrival),
     },
     {
       icon: Landmark,
-      label: { ku: "گومرگ", en: "Customs", ar: "الجمارك", zh: "海关" },
+      label: STATUS_LABEL.customs,
       date: null,
     },
     {
       icon: CheckCircle2,
-      label: { ku: "ڕادەستکردن", en: "Delivered", ar: "التسليم", zh: "已交付" },
+      label: STATUS_LABEL.delivered,
       date: null,
     },
   ];

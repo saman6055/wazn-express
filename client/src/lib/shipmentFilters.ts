@@ -43,6 +43,37 @@ export function matchesStage(status: string, stage: ShipmentStage): boolean {
   return stageOf(status) === stage;
 }
 
+/**
+ * What each status is called, in one place.
+ *
+ * Two screens used to name these independently, and both had "گەیشتووە" for
+ * `arrived` and again for `delivered` — the same word for "it reached Iraq"
+ * and "you have it", which is the difference a customer most wants to know.
+ * The wording also matches the stage filters, so the list and the detail page
+ * speak the same language.
+ */
+export const STATUS_LABEL: Record<
+  BatchStatus,
+  { ku: string; en: string; ar: string; zh: string }
+> = {
+  preparing: { ku: "لە کۆگای چین", en: "In China", ar: "في مستودع الصين", zh: "中国仓库" },
+  in_transit: { ku: "لە ڕێگادا", en: "In transit", ar: "في الطريق", zh: "运输中" },
+  arrived: { ku: "گەیشتە عێراق", en: "Reached Iraq", ar: "وصلت العراق", zh: "抵达伊拉克" },
+  customs: { ku: "لە گومرگ", en: "At customs", ar: "في الجمارك", zh: "清关中" },
+  delivered: { ku: "گەیشتە دەستت", en: "Delivered", ar: "تم التسليم", zh: "已交付" },
+  closed: { ku: "تەواو بوو", en: "Closed", ar: "مغلق", zh: "已完成" },
+};
+
+/** How a shipment travels, for anywhere that shows the raw column value. */
+export const SHIPPING_TYPE_LABEL: Record<
+  string,
+  { ku: string; en: string; ar: string; zh: string }
+> = {
+  air_regular: { ku: "ئاسمانی ئاسایی", en: "Air · standard", ar: "جوي عادي", zh: "空运 · 标准" },
+  air_irregular: { ku: "ئاسمانی نائاسایی", en: "Air · special", ar: "جوي خاص", zh: "空运 · 特殊" },
+  sea: { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" },
+};
+
 /** How many batches sit in each stage, for the filter counts. */
 export function countByStage(statuses: string[]): Record<Exclude<ShipmentStage, "">, number> {
   const counts = { in_china: 0, in_transit: 0, delivered: 0 };
