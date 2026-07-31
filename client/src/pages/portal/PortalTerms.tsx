@@ -8,6 +8,7 @@ import {
   termsHint,
   termsHeader,
   termsGeneralOpener,
+  termsPartyLabel,
   TERMS_WHATSAPP_NUMBER,
   type L10n,
 } from "@/constants/portalTerms";
@@ -83,11 +84,21 @@ export default function PortalTerms() {
                   green hint below it is the WhatsApp deep-link. */}
               <div className="p-2 sm:p-3 divide-y divide-gray-100 dark:divide-white/5">
                 {section.items.map((item, itemIndex) => {
-                  const text = pick(item);
+                  const text = pick(item.text);
+                  const isYou = item.party === "you";
                   return (
                     <div key={itemIndex} className="flex items-start gap-3 p-3">
-                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400 text-xs font-bold tabular-nums">
-                        {itemIndex + 1}
+                      {/* Who this point binds. Two colours, alternating down the
+                          page, so the balance between the customer's side and
+                          ours is visible before a word is read. */}
+                      <span
+                        className={`mt-0.5 flex h-6 shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-bold ${
+                          isYou
+                            ? "bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300"
+                            : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
+                        }`}
+                      >
+                        {pick(termsPartyLabel[item.party])}
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="text-[15px] leading-relaxed text-gray-800 dark:text-gray-100 font-medium">
