@@ -108,7 +108,8 @@ function ClassicPortalShipments() {
         in_transit: 1,
         customs: 2,
         arrived: 3,
-        preparing: 4,
+        at_depot: 4,
+        preparing: 5,
         delivered: 5,
         closed: 6
       };
@@ -125,6 +126,7 @@ function ClassicPortalShipments() {
       case "in_transit": return 50;
       case "arrived": return 70;
       case "customs": return 80;
+      case "at_depot": return 90;
       case "delivered": return 100;
       case "closed": return 100;
       default: return 10;

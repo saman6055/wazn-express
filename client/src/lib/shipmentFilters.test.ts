@@ -13,6 +13,7 @@ const ALL_STATUSES: BatchStatus[] = [
   "in_transit",
   "arrived",
   "customs",
+  "at_depot",
   "delivered",
   "closed",
 ];
@@ -29,6 +30,9 @@ describe("stageOf", () => {
     expect(stageOf("arrived")).toBe("in_transit");
     expect(stageOf("customs")).toBe("in_transit");
     expect(stageOf("in_transit")).toBe("in_transit");
+    // Sitting in the Erbil depot still counts as coming: it is in the city,
+    // but not in the customer's hands.
+    expect(stageOf("at_depot")).toBe("in_transit");
   });
 
   it("only calls it arrived once the customer has it", () => {
@@ -80,7 +84,7 @@ describe("matchesStage", () => {
 describe("countByStage", () => {
   it("counts each batch exactly once", () => {
     const counts = countByStage(ALL_STATUSES);
-    expect(counts).toEqual({ in_china: 1, in_transit: 3, delivered: 2 });
+    expect(counts).toEqual({ in_china: 1, in_transit: 4, delivered: 2 });
     const total = counts.in_china + counts.in_transit + counts.delivered;
     expect(total).toBe(ALL_STATUSES.length);
   });

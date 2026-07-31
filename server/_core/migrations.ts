@@ -2360,6 +2360,14 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // the right default: every video recorded up to that point was in Kurdish.
   { name: "portalTutorials.language", sql: "ALTER TABLE portalTutorials ADD COLUMN language VARCHAR(10) NOT NULL DEFAULT 'ku'" },
   { name: "idx.portal_tutorials_language", sql: "CREATE INDEX idx_portal_tutorials_language ON portalTutorials (language, isPublished)" },
+
+  // A stage between customs and delivered: through customs, in the Erbil
+  // depot, waiting to be collected. Widening an enum keeps every existing row
+  // valid, so this is safe to re-run and safe on live data.
+  {
+    name: "batches.status.at_depot",
+    sql: "ALTER TABLE batches MODIFY COLUMN status ENUM('preparing','in_transit','arrived','customs','at_depot','delivered','closed') NOT NULL DEFAULT 'preparing'",
+  },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {

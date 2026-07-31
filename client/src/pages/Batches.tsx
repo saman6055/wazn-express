@@ -28,6 +28,7 @@ const statusColors: Record<string, string> = {
   in_transit: "bg-amber-100 text-amber-800",
   arrived: "bg-green-100 text-green-800",
   customs: "bg-purple-100 text-purple-800",
+  at_depot: "bg-teal-100 text-teal-800",
   delivered: "bg-green-200 text-green-900",
   closed: "bg-gray-100 text-gray-800",
 };
@@ -1107,6 +1108,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               <SelectItem value="in_transit">In Transit</SelectItem>
                               <SelectItem value="arrived">Arrived</SelectItem>
                               <SelectItem value="customs">Customs</SelectItem>
+                              <SelectItem value="at_depot">In Erbil depot</SelectItem>
                               <SelectItem value="delivered">Delivered</SelectItem>
                               <SelectItem value="closed">Closed</SelectItem>
                             </SelectContent>

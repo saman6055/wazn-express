@@ -17,7 +17,10 @@ export const batches = mysqlTable("batches", {
   departureDate: timestamp("departureDate"),
   estimatedArrival: timestamp("estimatedArrival"),
   actualArrival: timestamp("actualArrival"),
-  status: mysqlEnum("status", ["preparing", "in_transit", "arrived", "customs", "delivered", "closed"]).default("preparing").notNull(),
+  // at_depot: cleared customs and waiting in the Erbil depot for collection.
+  // Added because the jump from "customs" straight to "delivered" gave the
+  // customer no way to know their goods were in Erbil and ready.
+  status: mysqlEnum("status", ["preparing", "in_transit", "arrived", "customs", "at_depot", "delivered", "closed"]).default("preparing").notNull(),
   totalPackages: int("totalPackages").default(0).notNull(),
   totalWeight: decimal("totalWeight", { precision: 10, scale: 2 }),
   

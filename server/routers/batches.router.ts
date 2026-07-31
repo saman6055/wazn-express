@@ -915,7 +915,7 @@ export const batchesRouter = router({
     updateStatus: staffProcedure
       .input(z.object({
         id: idSchema,
-        status: z.enum(["preparing", "in_transit", "arrived", "customs", "delivered", "closed"]),
+        status: z.enum(["preparing", "in_transit", "arrived", "customs", "at_depot", "delivered", "closed"]),
         actualArrival: z.date().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -939,7 +939,7 @@ export const batchesRouter = router({
           } catch (e) {
             appLogger.error("[Notification] Failed to send batch departure notification", { error: e instanceof Error ? e.message : String(e) });
           }
-        } else if (input.status === "arrived" || input.status === "customs") {
+        } else if (input.status === "arrived" || input.status === "customs" || input.status === "at_depot") {
           const packages = await db.getPackagesByBatch(id);
           for (const pkg of packages) {
             await db.updatePackage(pkg.id, { status: "customs_processing" });

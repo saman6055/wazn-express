@@ -16,6 +16,8 @@ export type BatchStatus =
   | "in_transit"
   | "arrived"
   | "customs"
+  // Cleared customs, waiting in the Erbil depot to be collected.
+  | "at_depot"
   | "delivered"
   | "closed";
 
@@ -28,6 +30,8 @@ const STAGE_OF: Record<BatchStatus, Exclude<ShipmentStage, "">> = {
   in_transit: "in_transit",
   arrived: "in_transit",
   customs: "in_transit",
+  // In Erbil, but still not handed over — from the customer's side, coming.
+  at_depot: "in_transit",
   delivered: "delivered",
   closed: "delivered",
 };
@@ -60,6 +64,9 @@ export const STATUS_LABEL: Record<
   in_transit: { ku: "لە ڕێگادا", en: "In transit", ar: "في الطريق", zh: "运输中" },
   arrived: { ku: "گەیشتە عێراق", en: "Reached Iraq", ar: "وصلت العراق", zh: "抵达伊拉克" },
   customs: { ku: "لە گومرگ", en: "At customs", ar: "في الجمارك", zh: "清关中" },
+  // Mirrors "لە کۆگای چین" at the other end of the journey: through customs,
+  // in Erbil, ready to be collected.
+  at_depot: { ku: "لە کۆگای هەولێر", en: "Erbil depot", ar: "في مستودع أربيل", zh: "埃尔比勒仓库" },
   delivered: { ku: "گەیشتە دەستت", en: "Delivered", ar: "تم التسليم", zh: "已交付" },
   closed: { ku: "تەواو بوو", en: "Closed", ar: "مغلق", zh: "已完成" },
 };

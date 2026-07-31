@@ -3,10 +3,9 @@ import { cn } from "@/lib/utils";
 import { STATUS_LABEL } from "@/lib/shipmentFilters";
 import {
   Warehouse,
-  Plane,
-  Ship,
   Landmark,
-  PackageCheck,
+  Plane,
+  Ship,  PackageCheck,
   CheckCircle2,
   type LucideIcon,
 } from "lucide-react";
@@ -37,8 +36,9 @@ const STAGE_INDEX: Record<string, number> = {
   in_transit: 1,
   arrived: 2,
   customs: 3,
-  delivered: 4,
-  closed: 4,
+  at_depot: 4,
+  delivered: 5,
+  closed: 5,
 };
 
 function fmtDate(d?: string | Date | null): string | null {
@@ -82,6 +82,11 @@ export function BatchJourneyTimeline({
     {
       icon: Landmark,
       label: STATUS_LABEL.customs,
+      date: null,
+    },
+    {
+      icon: Warehouse,
+      label: STATUS_LABEL.at_depot,
       date: null,
     },
     {

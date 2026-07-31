@@ -10,7 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { 
   Package, ChevronLeft, Truck, CheckCircle, Clock, AlertCircle, 
   Scale, Ruler, Box, Camera, X, ChevronRight, Plane, Ship,
-  MapPin, Calendar, Download, Share2, FileText
+  MapPin, Calendar, Download, Share2, FileText, Warehouse
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -56,7 +56,7 @@ const { t, language } = useLanguage();
 
   // Generate timeline steps based on batch status
   const getTimelineSteps = (): TimelineStep[] => {
-    const statusOrder = ["preparing", "in_transit", "arrived", "customs", "delivered"];
+    const statusOrder = ["preparing", "in_transit", "arrived", "customs", "at_depot", "delivered"];
     const currentIndex = statusOrder.indexOf(batch?.status || "preparing");
     
     return [
@@ -89,11 +89,18 @@ const { t, language } = useLanguage();
         current: currentIndex === 3 
       },
       { 
+        status: "at_depot", 
+        stepKey: "at_depot" as const,
+        icon: Warehouse, 
+        completed: currentIndex > 4, 
+        current: currentIndex === 4 
+      },
+      { 
         status: "delivered", 
         stepKey: "delivered" as const,
         icon: CheckCircle, 
-        completed: currentIndex >= 4 || batch?.status === "closed", 
-        current: currentIndex === 4 || batch?.status === "closed"
+        completed: currentIndex >= 5 || batch?.status === "closed", 
+        current: currentIndex === 5 || batch?.status === "closed"
       },
     ];
   };
