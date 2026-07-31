@@ -13,7 +13,7 @@ import { trpc } from "@/lib/trpc";
 import { 
   Package, ChevronRight, Truck, CheckCircle, Clock, AlertCircle, 
   Plane, Ship, Box, AlertTriangle, Search, Filter, X, Calendar,
-  ArrowUpDown, Download, Share2, HelpCircle
+  ArrowUpDown, Download, Share2, HelpCircle, Info
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { PortalListSkeleton } from "@/components/portal/PortalListSkeleton";
@@ -23,8 +23,11 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
-type StatusFilter = "all" | "in_transit" | "delivered" | "preparing";
-type ShippingFilter = "all" | "air_regular" | "sea" | "air_irregular";
+import { matchesStage, countByStage, type ShipmentStage } from "@/lib/shipmentFilters";
+// "" is no filter — which is what the old "All" chip meant. Dropping the chip
+// and letting nothing-selected mean everything is one less thing to explain.
+type StatusFilter = ShipmentStage;
+type ShippingFilter = "" | "air_regular" | "sea" | "air_irregular";
 type SortOption = "newest" | "oldest" | "status";
 
 function ClassicPortalShipments() {
@@ -38,10 +41,11 @@ function ClassicPortalShipments() {
   // Get URL params for initial filter
   const searchString = useSearch();
   const urlParams = new URLSearchParams(searchString);
-  const initialStatus = (urlParams.get("status") as StatusFilter) || "all";
+  // A link may deep-link to a status; no param means no filter.
+  const initialStatus = (urlParams.get("status") as StatusFilter) || "";
   
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus);
-  const [shippingType, setShippingType] = useState<ShippingFilter>("all");
+  const [shippingType, setShippingType] = useState<ShippingFilter>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
@@ -65,18 +69,14 @@ function ClassicPortalShipments() {
       );
     }
     
-    // Status filter
-    if (statusFilter !== "all") {
-      result = result.filter(batch => {
-        if (statusFilter === "in_transit") return batch.status === "in_transit";
-        if (statusFilter === "delivered") return ["delivered", "closed"].includes(batch.status);
-        if (statusFilter === "preparing") return ["preparing", "arrived", "customs"].includes(batch.status);
-        return true;
-      });
-    }
-    
+    // Status filter. "arrived" and "customs" mean the goods reached Iraq and
+    // are with customs — they used to sit in the same bucket as "preparing",
+    // which was wrong and only survived because that bucket was vaguely named.
+    // From the customer's side anything not yet in their hands is on its way.
+    result = result.filter(batch => matchesStage(batch.status, statusFilter));
+
     // Shipping type filter
-    if (shippingType !== "all") {
+    if (shippingType) {
       result = result.filter(batch => batch.shippingType === shippingType);
     }
     
@@ -211,20 +211,62 @@ function ClassicPortalShipments() {
   };
 
   // Shipping type tabs
-  const shippingTabs: { value: ShippingFilter; label: string; labelKu: string; labelAr: string; icon: any }[] = [
-    { value: "all", label: "All", labelKu: "هەموو", labelAr: "الكل", icon: Package },
-    { value: "air_regular", label: "Air", labelKu: "ئاسمانی", labelAr: "جوي", icon: Plane },
-    { value: "sea", label: "Sea", labelKu: "دەریایی", labelAr: "بحري", icon: Ship },
-    { value: "air_irregular", label: "Irregular", labelKu: "نائاسایی", labelAr: "غير منتظم", icon: AlertTriangle },
+  /**
+   * How a shipment travels. The data always had these three; only the names
+   * were opaque — "نائاسایی" on its own told a customer nothing, so each now
+   * says what it carries and what that costs in speed or money. It doubles as
+   * guidance for someone still deciding how to send.
+   */
+  const shippingTabs: {
+    value: Exclude<ShippingFilter, "">;
+    label: string; labelKu: string; labelAr: string;
+    descKu: string; descEn: string; descAr: string;
+    icon: any;
+  }[] = [
+    {
+      value: "air_regular",
+      label: "Air · standard", labelKu: "ئاسمانی ئاسایی", labelAr: "جوي عادي",
+      descKu: "جل و بەرگ، جانتا، پێڵاو و کەلوپەلی ئاسایی. خێراترین ڕێگا.",
+      descEn: "Clothes, bags, shoes and everyday goods. The fastest route.",
+      descAr: "ملابس وحقائب وأحذية وبضائع اعتيادية. أسرع طريق.",
+      icon: Plane,
+    },
+    {
+      value: "air_irregular",
+      label: "Air · special", labelKu: "ئاسمانی نائاسایی", labelAr: "جوي خاص",
+      descKu: "شلەمەنی، پاتری، ماگنێت و هاوشێوەکانیان. ڕێگایەکی تایبەت و کاتی زیاتری دەوێت.",
+      descEn: "Liquids, batteries, magnets and the like. A special route, and slower.",
+      descAr: "سوائل وبطاريات ومغناطيس وما شابه. مسار خاص ويستغرق وقتًا أطول.",
+      icon: AlertTriangle,
+    },
+    {
+      value: "sea",
+      label: "Sea", labelKu: "دەریایی", labelAr: "بحري",
+      descKu: "کاڵای قەبارە گەورە کە پەلەت لە گەیشتنی نییە. هەرزانترین ڕێگا.",
+      descEn: "Bulky goods you are not in a hurry for. The cheapest route.",
+      descAr: "بضائع كبيرة الحجم لا تستعجلها. أرخص طريق.",
+      icon: Ship,
+    },
   ];
 
-  // Status filter pills
-  const statusFilters: { value: StatusFilter; label: string; labelKu: string; labelAr: string; count: number }[] = [
-    { value: "all", label: "All", labelKu: "هەموو", labelAr: "الكل", count: batches?.length || 0 },
-    { value: "in_transit", label: "In Transit", labelKu: "لە ڕێگادا", labelAr: "في الطريق", count: batches?.filter(b => b.status === "in_transit").length || 0 },
-    { value: "preparing", label: "Preparing", labelKu: "ئامادەکاری", labelAr: "قيد الانتظار", count: batches?.filter(b => ["preparing", "arrived", "customs"].includes(b.status)).length || 0 },
-    { value: "delivered", label: "Delivered", labelKu: "گەیشتوو", labelAr: "تم التسليم", count: batches?.filter(b => ["delivered", "closed"].includes(b.status)).length || 0 },
+  /**
+   * Where a shipment has got to. Three stages, in the order they happen.
+   * "arrived" and "customs" belong with in-transit: the goods are in Iraq but
+   * not yet in the customer's hands, so from their side they are still coming.
+   */
+  const stageCounts = countByStage((batches ?? []).map(b => b.status));
+  const statusFilters: { value: Exclude<StatusFilter, "">; label: string; labelKu: string; labelAr: string; count: number }[] = [
+    { value: "in_china", label: "In China", labelKu: "لە کۆگای چین", labelAr: "في مستودع الصين", count: stageCounts.in_china },
+    { value: "in_transit", label: "On the way", labelKu: "لە ڕێگادا", labelAr: "في الطريق", count: stageCounts.in_transit },
+    { value: "delivered", label: "Arrived", labelKu: "گەیشتوو", labelAr: "تم التسليم", count: stageCounts.delivered },
   ];
+
+  const activeShipping = shippingTabs.find(t => t.value === shippingType);
+  const shippingHint = activeShipping
+    ? (language === "ku" ? activeShipping.descKu : language === "ar" ? activeShipping.descAr : activeShipping.descEn)
+    : (language === "ku" ? "هەموو بارەکانت — یەکێک هەڵبژێرە بۆ پاڵاوتن."
+      : language === "ar" ? "كل شحناتك — اختر واحدًا للتصفية."
+      : "All your shipments — pick one to filter.");
 
   return (
     <CustomerPortalLayout>
@@ -297,25 +339,46 @@ function ClassicPortalShipments() {
         "px-4 py-3 border-b sticky top-14 z-10 transition-colors duration-300",
         isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
       )}>
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <p className={cn("mb-2 text-[11px] font-medium", isDark ? "text-slate-500" : "text-slate-400")}>
+          {language === "ku" ? "چۆن دەنێردرێت" : language === "ar" ? "كيف تُشحن" : "How it ships"}
+        </p>
+
+        <div className="grid grid-cols-3 gap-2">
           {shippingTabs.map((tab) => {
             const isActive = shippingType === tab.value;
             return (
               <button
                 key={tab.value}
-                onClick={() => setShippingType(tab.value)}
+                // Tapping the active one clears it — that is what the old "All"
+                // chip did, without needing a chip of its own.
+                onClick={() => setShippingType(isActive ? "" : tab.value)}
+                aria-pressed={isActive}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300",
-                  isActive 
+                  "flex flex-col items-center gap-1.5 rounded-xl px-2 py-2.5 text-center transition-all duration-300 active:scale-95",
+                  isActive
                     ? (isDark ? "bg-white text-slate-900" : "bg-slate-800 text-white shadow-lg shadow-slate-300")
                     : (isDark ? "bg-slate-800 text-slate-400 hover:bg-slate-700" : "bg-slate-50 text-slate-600 hover:bg-slate-100")
                 )}
               >
-                <tab.icon className="w-4 h-4" />
-                {language === "ku" ? tab.labelKu : language === "ar" ? tab.labelAr : tab.label}
+                <tab.icon className="w-4 h-4 shrink-0" />
+                <span className="text-[11px] font-medium leading-tight">
+                  {language === "ku" ? tab.labelKu : language === "ar" ? tab.labelAr : tab.label}
+                </span>
               </button>
             );
           })}
+        </div>
+
+        {/* What the selected type carries — the point of the redesign. The old
+            labels named the categories without saying what belonged in them. */}
+        <div className={cn(
+          "mt-2 flex items-start gap-2 rounded-xl px-3 py-2",
+          isDark ? "bg-slate-800/60" : "bg-slate-50"
+        )}>
+          <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", isDark ? "text-slate-500" : "text-slate-400")} />
+          <p className={cn("text-[11.5px] leading-relaxed", isDark ? "text-slate-400" : "text-slate-500")}>
+            {shippingHint}
+          </p>
         </div>
       </div>
 
@@ -330,7 +393,9 @@ function ClassicPortalShipments() {
             return (
               <button
                 key={filter.value}
-                onClick={() => setStatusFilter(filter.value)}
+                // Same as the type row: tapping the active one clears it.
+                onClick={() => setStatusFilter(isActive ? "" : filter.value)}
+                aria-pressed={isActive}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300",
                   isActive 
