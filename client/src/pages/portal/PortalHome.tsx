@@ -24,6 +24,8 @@ import { PriceListSection } from "@/components/portal/PriceListSection";
 import { WaznNewsCarousel } from "@/components/portal/WaznNewsCarousel";
 import { DeliveryRatingCard } from "@/components/portal/DeliveryRatingCard";
 import { ReferralCard } from "@/components/portal/ReferralCard";
+import { PortalHeaderControls, PortalClock, usePortalMode } from "@/components/portal/PortalHeaderControls";
+import { MODE_HEADER_GRADIENT, isLightHeader } from "@/lib/portalModes";
 
 // Animated Counter Component
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
@@ -211,6 +213,10 @@ const { t, language } = useLanguage();
   // Which quick-action's "what is this?" card is open (index), or null — the
   // info stays hidden until the tile's ⓘ is tapped, never auto-shown.
   const [openTileInfo, setOpenTileInfo] = useState<number | null>(null);
+  // Colour mode drives the header wash and, in light mode, flips the header
+  // text from white to slate so it stays readable on the pale gradient.
+  const [portalMode] = usePortalMode();
+  const lightHeader = isLightHeader(portalMode);
 
   const { data: account, isLoading: accountLoading } = trpc.customerPortal.getMyAccount.useQuery();
   const { data: batches, isLoading: batchesLoading } = trpc.customerPortal.getMyBatches.useQuery();
@@ -454,11 +460,11 @@ const { t, language } = useLanguage();
     <CustomerPortalLayout>
       {/* Premium Header with Gradient */}
       <div className="relative overflow-hidden">
+        {/* The wash follows the colour mode the customer picked, so the choice
+            is felt across the whole header rather than in small accents. */}
         <div className={cn(
-          "absolute inset-0",
-          isDark
-            ? "bg-[#07070f]"
-            : "bg-gradient-to-br from-[#0F2854] via-[#1C4D8D] to-[#4988C4]"
+          "absolute inset-0 bg-gradient-to-br transition-colors duration-500",
+          MODE_HEADER_GRADIENT[portalMode]
         )} />
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
         
@@ -467,7 +473,11 @@ const { t, language } = useLanguage();
         <div className="absolute top-16 -left-20 w-60 h-60 rounded-full" style={{ background: "radial-gradient(circle, rgba(28,77,141,0.50) 0%, transparent 70%)" }} />
         <div className="absolute -bottom-10 right-0 w-56 h-56 rounded-full" style={{ background: "radial-gradient(circle, rgba(189,232,245,0.30) 0%, transparent 70%)" }} />
         
-        <div className="relative px-5 pt-14 pb-12">
+        <div className={cn("relative px-5 pt-14 pb-12", lightHeader ? "text-slate-900" : "text-white")}>
+          {/* Colour modes, language, and the date — above the greeting so the
+              controls read as chrome rather than as part of the account. */}
+          <PortalHeaderControls onLight={lightHeader} className="mb-5" />
+
           {/* Top Row */}
           <div className="flex items-start justify-between mb-6">
             <div>
@@ -513,13 +523,25 @@ const { t, language } = useLanguage();
             </Link>
           </div>
 
-          {/* Customer Code Badge */}
-          {account?.customerCode && (
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#BDE8F5]/15 to-[#4988C4]/20 border border-[#BDE8F5]/30 px-4 py-2 rounded-full backdrop-blur-sm">
-              <Package className="w-4 h-4 text-[#BDE8F5]" />
-              <span className="text-sm font-semibold text-[#BDE8F5]">{account.customerCode}</span>
-            </div>
-          )}
+          {/* Customer Code Badge + clock, on one line so the header keeps its
+              height instead of growing a third row. */}
+          <div className="flex items-end justify-between gap-3">
+            {account?.customerCode ? (
+              <div className={cn(
+                "inline-flex items-center gap-2 border px-4 py-2 rounded-full backdrop-blur-sm",
+                lightHeader
+                  ? "bg-slate-900/[0.06] border-slate-900/10"
+                  : "bg-gradient-to-r from-[#BDE8F5]/15 to-[#4988C4]/20 border-[#BDE8F5]/30"
+              )}>
+                <Package className={cn("w-4 h-4", lightHeader ? "text-slate-700" : "text-[#BDE8F5]")} />
+                <span className={cn("text-sm font-semibold", lightHeader ? "text-slate-800" : "text-[#BDE8F5]")}>
+                  {account.customerCode}
+                </span>
+              </div>
+            ) : <span />}
+
+            <PortalClock onLight={lightHeader} />
+          </div>
 
           {/* Quick Actions — bento glass tiles */}
           <div className="mt-6 grid grid-cols-3 gap-2.5">

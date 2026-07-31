@@ -6,6 +6,12 @@ export type Accent = "default" | "rose" | "violet" | "ocean" | "amber";
 interface ThemeContextType {
   theme: Theme;
   toggleTheme?: () => void;
+  /**
+   * Set light or dark outright. Toggling is no use to the portal's mode
+   * picker, which has to land on a named mode rather than flip whatever is
+   * currently set.
+   */
+  setTheme: (t: Theme) => void;
   switchable: boolean;
   accent: Accent;
   setAccent: (a: Accent) => void;
@@ -68,7 +74,7 @@ export function ThemeProvider({
   const toggleTheme = switchable ? doToggleTheme : undefined;
 
   const value = useMemo(
-    () => ({ theme, toggleTheme, switchable, accent, setAccent }),
+    () => ({ theme, toggleTheme, setTheme, switchable, accent, setAccent }),
     [theme, toggleTheme, switchable, accent]
   );
 

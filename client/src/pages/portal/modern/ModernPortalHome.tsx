@@ -18,6 +18,7 @@ import {
   Headphones,
   Plane,
 } from "lucide-react";
+import { PortalHeaderControls } from "@/components/portal/PortalHeaderControls";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -253,6 +254,10 @@ export default function ModernPortalHome() {
         initial="hidden"
         animate="visible"
       >
+        {/* Colour modes and language — the same strip on every skin, so a
+            customer who switches skins does not lose the control. */}
+        <PortalHeaderControls onLight={!isDark} showClock className="mb-4" />
+
         {/* ===== Greeting + Notification Bell ===== */}
         <motion.div
           variants={itemVariants}
