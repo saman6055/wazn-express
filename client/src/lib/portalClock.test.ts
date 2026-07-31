@@ -35,9 +35,9 @@ describe("formatClockTime — 12 hour", () => {
     expect(formatClockTime(at(23, 59), "en", true)).toBe("11:59 PM");
   });
 
-  it("marks before and after noon in each language's own convention", () => {
-    expect(formatClockTime(at(9, 41), "ku", true)).toBe("9:41 پ.ن");
-    expect(formatClockTime(at(15, 41), "ku", true)).toBe("3:41 د.ن");
+  it("marks before and after noon in a form each language actually reads", () => {
+    expect(formatClockTime(at(9, 41), "ku", true)).toBe("9:41 AM");
+    expect(formatClockTime(at(15, 41), "ku", true)).toBe("3:41 PM");
     expect(formatClockTime(at(9, 41), "ar", true)).toBe("9:41 ص");
     expect(formatClockTime(at(15, 41), "ar", true)).toBe("3:41 م");
     expect(formatClockTime(at(9, 41), "zh", true)).toBe("9:41 上午");
@@ -54,8 +54,25 @@ describe("formatClockTime — 12 hour", () => {
 });
 
 describe("formatClockDate", () => {
-  it("writes the Kurdish weekday and month, which Intl has no locale for", () => {
-    expect(formatClockDate(friday, "ku")).toBe("هەینی، 31ی تەممووز");
+  it("writes the Kurdish weekday, which Intl has no locale for, plus a numeric date", () => {
+    expect(formatClockDate(friday, "ku")).toBe("هەینی، 31/7");
+  });
+
+  it("keeps the whole date short enough for the clock box", () => {
+    // The month was spelled out at first and overflowed the box on a phone.
+    for (const lang of ["ku", "en", "ar", "zh"]) {
+      expect(formatClockDate(friday, lang).length, lang).toBeLessThanOrEqual(14);
+    }
+  });
+
+  it("writes day then month, the order the region reads dates in", () => {
+    // 31/7, never 7/31 — a US-style date would be read as a wrong day here.
+    expect(formatClockDate(friday, "ku")).toContain("31/7");
+    expect(formatClockDate(friday, "en")).toContain("31/7");
+  });
+
+  it("does not pad the month, so January reads 1 rather than 01", () => {
+    expect(formatClockDate(new Date(2026, 0, 5), "ku")).toContain("5/1");
   });
 
   it("names each Kurdish weekday correctly across a full week", () => {
@@ -71,9 +88,9 @@ describe("formatClockDate", () => {
     ]);
   });
 
-  it("picks the right Kurdish month at both ends of the year", () => {
-    expect(formatClockDate(new Date(2026, 0, 1), "ku")).toContain("کانوونی دووەم");
-    expect(formatClockDate(new Date(2026, 11, 31), "ku")).toContain("کانوونی یەکەم");
+  it("numbers the month from 1, not from 0", () => {
+    expect(formatClockDate(new Date(2026, 0, 1), "ku")).toContain("1/1");
+    expect(formatClockDate(new Date(2026, 11, 31), "ku")).toContain("31/12");
   });
 
   it("uses Latin digits so the date matches the time above it", () => {

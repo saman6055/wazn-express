@@ -20,24 +20,15 @@ const KU_WEEKDAYS = [
   "شەممە",
 ];
 
-const KU_MONTHS = [
-  "کانوونی دووەم",
-  "شوبات",
-  "ئازار",
-  "نیسان",
-  "ئایار",
-  "حوزەیران",
-  "تەممووز",
-  "ئاب",
-  "ئەیلوول",
-  "تشرینی یەکەم",
-  "تشرینی دووەم",
-  "کانوونی یەکەم",
-];
-
-/** Before-noon / after-noon marker, in each language's own convention. */
+/**
+ * Before-noon / after-noon marker.
+ *
+ * Kurdish gets AM/PM rather than an invented abbreviation: پ.ن / د.ن was tried
+ * and had to be explained, which is the one thing a clock marker must never
+ * need. Every Kurdish speaker already reads AM/PM off their phone. Arabic and
+ * Chinese keep their own markers, which are genuinely standard there.
+ */
 const MERIDIEM: Record<string, [string, string]> = {
-  ku: ["پ.ن", "د.ن"],
   ar: ["ص", "م"],
   zh: ["上午", "下午"],
   en: ["AM", "PM"],
@@ -63,25 +54,28 @@ export function formatClockTime(date: Date, language: string, hour12 = false): s
   return `${h12}:${mm} ${marker}`;
 }
 
-/** Weekday and day-of-month — enough to orient, short enough for the header. */
+/**
+ * Weekday and a numeric day/month — "هەینی، 31/7".
+ *
+ * The month was spelled out at first, which pushed the line past the width of
+ * the clock box on a phone. The weekday is what a customer actually reads off
+ * a header; the date only needs to be checkable, so digits do the job in a
+ * fraction of the space.
+ */
 export function formatClockDate(date: Date, language: string): string {
-  if (language === "ku") {
-    return `${KU_WEEKDAYS[date.getDay()]}، ${date.getDate()}ی ${KU_MONTHS[date.getMonth()]}`;
-  }
+  const dayMonth = `${date.getDate()}/${date.getMonth() + 1}`;
+
+  if (language === "ku") return `${KU_WEEKDAYS[date.getDay()]}، ${dayMonth}`;
 
   const locale = language === "ar" ? "ar" : language === "zh" ? "zh-CN" : "en-GB";
   try {
-    return new Intl.DateTimeFormat(locale, {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      // Latin digits, so the date matches the time sitting right above it.
-      numberingSystem: "latn",
-    }).format(date);
+    const weekday = new Intl.DateTimeFormat(locale, { weekday: "short" }).format(date);
+    const separator = language === "ar" ? "، " : " ";
+    return `${weekday}${separator}${dayMonth}`;
   } catch {
     // A browser without the locale data still gets a readable date rather
     // than an empty header.
-    return date.toDateString();
+    return dayMonth;
   }
 }
 

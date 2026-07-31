@@ -198,7 +198,7 @@ export function PortalClock({
     : "border-white/20 bg-white/10 text-white";
 
   const hint = pickLang(language, {
-    ku: "کلیک بکە بۆ گۆڕینی ١٢ / ٢٤ کاتژمێری",
+    ku: "کلیک بکە بۆ گۆڕینی 12 / 24 کاتژمێری",
     en: "Tap to switch between 12- and 24-hour",
     ar: "اضغط للتبديل بين 12 و24 ساعة",
     zh: "点击切换 12 / 24 小时制",
@@ -217,11 +217,9 @@ export function PortalClock({
         )}
       >
         <span className="text-xs font-bold tabular-nums">{formatClockTime(now, language, hour12)}</span>
-        {/* The date only where there is room — it is in the tooltip either way,
-            and in full on the classic skin's larger block. */}
-        <span className="hidden text-[10px] opacity-75 sm:inline">
-          {formatClockDate(now, language)}
-        </span>
+        {/* Short enough now to keep on a phone too — it was the spelled-out
+            month that forced it to hide on narrow screens. */}
+        <span className="text-[10px] opacity-75">{formatClockDate(now, language)}</span>
       </button>
     );
   }
