@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from "react";
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -187,6 +188,8 @@ const orderTypeConfig: Record<string, { label: string; labelKu: string; labelAr:
 };
 
 export default function PortalFullPackage() {
+  // Banner colour follows the mode the customer picked, like every other page.
+  const { banner: portalBanner } = usePortalPalette();
   const { user } = useAuth();
   const { language } = useLanguage();
   const { theme } = useTheme();
@@ -325,7 +328,7 @@ export default function PortalFullPackage() {
       {/* Beautiful Gradient Header */}
       <div className="relative overflow-hidden">
         {/* Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700" />
+        <div className="absolute inset-0" style={portalBanner} />
         
         {/* Decorative Circles */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />

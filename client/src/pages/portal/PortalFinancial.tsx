@@ -1,3 +1,4 @@
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import { Link, useLocation, useSearch } from "wouter";
@@ -40,6 +41,8 @@ function txHref(tx: any): string | null {
 }
 
 function ClassicPortalFinancial() {
+  // Banner colour follows the mode the customer picked, like every other page.
+  const { banner: portalBanner } = usePortalPalette();
 const { t, language } = useLanguage();
   const [, setLocation] = useLocation();
   const { theme } = useTheme();
@@ -215,12 +218,7 @@ const { t, language } = useLanguage();
     <CustomerPortalLayout>
       {/* Premium Header with Gradient */}
       <div className="relative overflow-hidden">
-        <div className={cn(
-          "absolute inset-0",
-          isDark 
-            ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" 
-            : "bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700"
-        )} />
+        <div className="absolute inset-0" style={portalBanner} />
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />

@@ -1,3 +1,4 @@
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import { lazy } from "react";
@@ -27,6 +28,8 @@ type ShippingFilter = "all" | "air_regular" | "sea" | "air_irregular";
 type SortOption = "newest" | "oldest" | "status";
 
 function ClassicPortalShipments() {
+  // Banner colour follows the mode the customer picked, like every other page.
+  const { banner: portalBanner } = usePortalPalette();
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -227,12 +230,7 @@ function ClassicPortalShipments() {
     <CustomerPortalLayout>
       {/* Premium Header */}
       <div className="relative overflow-hidden">
-        <div className={cn(
-          "absolute inset-0",
-          isDark 
-            ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" 
-            : "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
-        )} />
+        <div className="absolute inset-0" style={portalBanner} />
         <div className="relative px-5 pt-14 pb-8">
           <div className="flex items-center justify-between">
             <div>

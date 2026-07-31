@@ -1,3 +1,4 @@
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,10 @@ import type { L10n } from "@/constants/portalTerms";
 
 export default function PortalGuide() {
   const { language } = useLanguage();
+
+  // Banner colour follows the mode the customer picked, like every other page.
+
+  const { banner: portalBanner } = usePortalPalette();
   const isRTL = language === "ku" || language === "ar";
   const pick = (v: L10n) => pickLang(language, v);
 
@@ -71,7 +76,7 @@ export default function PortalGuide() {
     <CustomerPortalLayout>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950" dir={isRTL ? "rtl" : "ltr"}>
         {/* Header */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-700 text-white px-4 pt-8 pb-10">
+        <div className="relative overflow-hidden text-white px-4 pt-8 pb-10" style={portalBanner}>
           <div className="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-12 -start-6 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
           <div className="relative flex items-center gap-3">

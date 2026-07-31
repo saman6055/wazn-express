@@ -1,3 +1,4 @@
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,10 @@ const STATUS_STYLE: Record<OrderStatus, { badge: string; dot: string }> = {
 
 export default function PortalYuanExchange() {
   const { language } = useLanguage();
+
+  // Banner colour follows the mode the customer picked, like every other page.
+
+  const { banner: portalBanner } = usePortalPalette();
   const isRTL = language === "ku" || language === "ar";
   const pick = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
 
@@ -129,7 +134,7 @@ export default function PortalYuanExchange() {
     <CustomerPortalLayout>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950" dir={isRTL ? "rtl" : "ltr"}>
         {/* Header */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-red-600 via-rose-600 to-orange-600 text-white px-4 pt-8 pb-12">
+        <div className="relative overflow-hidden text-white px-4 pt-8 pb-12" style={portalBanner}>
           <div className="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-12 -start-6 w-40 h-40 rounded-full bg-yellow-300/20 blur-2xl" />
           <div className="relative flex items-center gap-3">

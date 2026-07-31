@@ -1,4 +1,5 @@
 ﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -23,6 +24,10 @@ const SUPPORT_WHATSAPP = "9647709183535";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function PortalUnclaimedPackages() {
   const { t, language } = useLanguage();
+
+  // Banner colour follows the mode the customer picked, like every other page.
+
+  const { banner: portalBanner } = usePortalPalette();
   const isRTL = language === "ku" || language === "ar";
   
   
@@ -114,7 +119,7 @@ export default function PortalUnclaimedPackages() {
   return (
     <CustomerPortalLayout>
       {/* Header */}
-      <div className="bg-gradient-to-br from-slate-800 via-slate-800 to-slate-700 text-white px-4 pt-12 pb-8">
+      <div className="text-white px-4 pt-12 pb-8" style={portalBanner}>
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
             <AlertTriangle className="w-5 h-5" />

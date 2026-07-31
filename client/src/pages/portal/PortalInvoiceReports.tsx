@@ -1,3 +1,4 @@
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -36,6 +37,8 @@ const englishMonths = [
 ];
 
 function ClassicPortalInvoiceReports() {
+  // Banner colour follows the mode the customer picked, like every other page.
+  const { banner: portalBanner } = usePortalPalette();
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -277,12 +280,7 @@ function ClassicPortalInvoiceReports() {
     <CustomerPortalLayout>
       {/* Header */}
       <div className="relative overflow-hidden">
-        <div className={cn(
-          "absolute inset-0",
-          isDark 
-            ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" 
-            : "bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700"
-        )} />
+        <div className="absolute inset-0" style={portalBanner} />
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />

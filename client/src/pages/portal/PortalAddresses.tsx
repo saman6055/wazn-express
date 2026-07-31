@@ -1,3 +1,4 @@
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
@@ -19,6 +20,8 @@ import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 
 export default function PortalAddresses() {
+  // Banner colour follows the mode the customer picked, like every other page.
+  const { banner: portalBanner } = usePortalPalette();
 const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -148,7 +151,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
     <CustomerPortalLayout>
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-4 py-4">
+        <div className="text-white px-4 py-4" style={portalBanner}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link href="/portal/profile">

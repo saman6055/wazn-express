@@ -1,3 +1,4 @@
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -24,6 +25,10 @@ import {
 
 export default function PortalServices() {
 const { language } = useLanguage();
+
+// Banner colour follows the mode the customer picked, like every other page.
+
+const { banner: portalBanner } = usePortalPalette();
   const isRTL = language === "ku" || language === "ar";
 
   const shippingServices = [
@@ -157,7 +162,7 @@ const { language } = useLanguage();
     <CustomerPortalLayout>
       <div className={`min-h-screen bg-gray-50 ${isRTL ? 'rtl' : 'ltr'}`}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 pt-6 pb-8">
+        <div className="text-white px-4 pt-6 pb-8" style={portalBanner}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
               <Sparkles className="w-5 h-5" />

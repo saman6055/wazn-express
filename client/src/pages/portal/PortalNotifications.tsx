@@ -1,3 +1,4 @@
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { trpc } from "@/lib/trpc";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ import { useState } from "react";
 const DEAD_ACTION_URLS = new Set(["/portal", "/portal/", "/"]);
 
 export default function PortalNotifications() {
+  // Banner colour follows the mode the customer picked, like every other page.
+  const { banner: portalBanner } = usePortalPalette();
 const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNotifications.useQuery();
   // Tapping a notification expands it in place to show the full message.
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -86,7 +89,7 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
     <CustomerPortalLayout>
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-4 py-4">
+        <div className="text-white px-4 py-4" style={portalBanner}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link href="/portal/profile">

@@ -10,6 +10,7 @@ import {
   modeDef,
   modeFromTheme,
   isLightHeader,
+  bannerStyle,
   type PortalMode,
 } from "@/lib/portalModes";
 import { formatClockTime, formatClockDate, msUntilNextMinute, CLOCK_HOUR12_KEY } from "@/lib/portalClock";
@@ -53,6 +54,15 @@ export function usePortalMode(): [PortalMode, (m: PortalMode) => void] {
   };
 
   return [mode, setMode];
+}
+
+/**
+ * The brand palette for the mode in force — what an interior page needs to
+ * colour its banner without repeating the lookup.
+ */
+export function usePortalPalette() {
+  const [mode] = usePortalMode();
+  return { mode, palette: modeDef(mode).palette, banner: bannerStyle(mode) };
 }
 
 /**

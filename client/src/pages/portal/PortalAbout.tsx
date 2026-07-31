@@ -1,3 +1,4 @@
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -28,6 +29,10 @@ const WHATSAPP_NUMBER = "9647709183535";
 
 export default function PortalAbout() {
   const { language } = useLanguage();
+
+  // Banner colour follows the mode the customer picked, like every other page.
+
+  const { banner: portalBanner } = usePortalPalette();
   const { theme } = useTheme();
   const company = useCompanyInfo();
   const isDark = theme === "dark";
@@ -169,7 +174,7 @@ export default function PortalAbout() {
     <CustomerPortalLayout>
       <div className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50")} dir={isRTL ? "rtl" : "ltr"}>
         {/* Hero */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 text-white px-4 pt-6 pb-12">
+        <div className="relative overflow-hidden text-white px-4 pt-6 pb-12" style={portalBanner}>
           <div className="absolute -top-16 -end-10 w-56 h-56 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -bottom-16 -start-10 w-56 h-56 rounded-full bg-white/10 blur-3xl" />
 

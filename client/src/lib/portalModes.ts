@@ -131,3 +131,24 @@ export function headerGradient(mode: PortalMode): string {
 export function isLightHeader(mode: PortalMode): boolean {
   return mode === "light";
 }
+
+/**
+ * The banner across the top of an interior page.
+ *
+ * Every page used to pick its own colour — sky here, amber there, emerald on
+ * the terms page — so the portal read as a rainbow and none of it followed the
+ * customer's chosen mode. They all use this now.
+ *
+ * Unlike the home hero, this stays a saturated brand colour even in light
+ * mode. Interior banners carry white text, and a pale banner would need every
+ * one of those pages rewritten to stay legible.
+ */
+export function bannerGradient(mode: PortalMode): string {
+  const { brand, light } = modeDef(mode).palette;
+  return `linear-gradient(135deg, ${brand}, ${light})`;
+}
+
+/** Style object for an interior page banner. */
+export function bannerStyle(mode: PortalMode): { backgroundImage: string } {
+  return { backgroundImage: bannerGradient(mode) };
+}

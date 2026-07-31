@@ -1,3 +1,4 @@
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useState } from "react";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -16,6 +17,10 @@ type L = { ku: string; en: string; ar: string; zh: string };
 
 export default function PortalSecurity() {
   const { language } = useLanguage();
+
+  // Banner colour follows the mode the customer picked, like every other page.
+
+  const { banner: portalBanner } = usePortalPalette();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
@@ -116,7 +121,7 @@ export default function PortalSecurity() {
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Header */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 text-white px-4 pt-6 pb-10">
+        <div className="relative overflow-hidden text-white px-4 pt-6 pb-10" style={portalBanner}>
           <div className="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-12 -start-6 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
 

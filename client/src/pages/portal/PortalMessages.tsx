@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { trpc } from "@/lib/trpc";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
@@ -52,6 +53,8 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 
 export default function PortalMessages() {
+  // Banner colour follows the mode the customer picked, like every other page.
+  const { banner: portalBanner } = usePortalPalette();
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { user } = useAuth();
@@ -299,12 +302,7 @@ export default function PortalMessages() {
         isDark ? "bg-slate-900" : "bg-gray-50"
       )}>
         {/* Header */}
-        <div className={cn(
-          "relative overflow-hidden",
-          isDark 
-            ? "bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-900" 
-            : "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600"
-        )}>
+        <div className="relative overflow-hidden" style={portalBanner}>
           <div className="absolute inset-0 overflow-hidden">
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl" />
             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/5 rounded-full blur-3xl" />

@@ -1,4 +1,5 @@
 ﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -15,6 +16,10 @@ import { SocialChannels, firstYouTubeId } from "@/components/portal/SocialChanne
 
 export default function PortalBlog() {
 const { t, language } = useLanguage();
+
+// Banner colour follows the mode the customer picked, like every other page.
+
+const { banner: portalBanner } = usePortalPalette();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
@@ -100,7 +105,7 @@ const { t, language } = useLanguage();
             </button>
           </Link>
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-sm shrink-0">
+            <div className="p-2 rounded-xl text-white shadow-sm shrink-0" style={portalBanner}>
               <Newspaper className="w-5 h-5" />
             </div>
             <div className="min-w-0">

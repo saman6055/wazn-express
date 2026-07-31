@@ -1,4 +1,5 @@
 ﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { PackageThumb, usePackageImages } from "@/components/portal/PackageThumb";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -29,6 +30,8 @@ interface TimelineStep {
 }
 
 export default function PortalBatchDetail() {
+  // Banner colour follows the mode the customer picked, like every other page.
+  const { banner: portalBanner } = usePortalPalette();
 const { t, language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -192,12 +195,7 @@ const { t, language } = useLanguage();
   return (
     <CustomerPortalLayout>
       {/* Header */}
-      <div className={cn(
-        "text-white px-4 pt-12 pb-8",
-        isDark 
-          ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" 
-          : "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
-      )}>
+      <div className="text-white px-4 pt-12 pb-8" style={portalBanner}>
         <Link href="/portal/shipments">
           <button className="flex items-center gap-1 text-slate-300 mb-3 hover:text-white transition-colors">
             <ChevronLeft className={cn("w-5 h-5", isRTL && "rotate-180")} />
