@@ -217,6 +217,16 @@ const { t, language } = useLanguage();
   // text from white to slate so it stays readable on the pale gradient.
   const [portalMode] = usePortalMode();
   const lightHeader = isLightHeader(portalMode);
+  // Every surface in this header was written for white-on-colour. In light
+  // mode the text and the glass panels have to flip, or the header is a blank
+  // pale rectangle.
+  const headStrong = lightHeader ? "text-slate-900" : "text-white";
+  const headSoft = lightHeader ? "text-slate-700" : "text-white/90";
+  const headMuted = lightHeader ? "text-slate-600" : "text-white/70";
+  const headAccent = lightHeader ? "text-slate-700" : "text-[#BDE8F5]";
+  const headGlass = lightHeader
+    ? "bg-slate-900/[0.05] border-slate-900/10 hover:bg-slate-900/[0.09]"
+    : "bg-white/10 border-[#BDE8F5]/20 hover:bg-white/15";
 
   const { data: account, isLoading: accountLoading } = trpc.customerPortal.getMyAccount.useQuery();
   const { data: batches, isLoading: batchesLoading } = trpc.customerPortal.getMyBatches.useQuery();
@@ -480,10 +490,12 @@ const { t, language } = useLanguage();
         )} />
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
         
-        {/* Aurora glow orbs */}
-        <div className="absolute -top-16 -right-10 w-64 h-64 rounded-full" style={{ background: "radial-gradient(circle, rgba(73,136,196,0.55) 0%, transparent 68%)" }} />
-        <div className="absolute top-16 -left-20 w-60 h-60 rounded-full" style={{ background: "radial-gradient(circle, rgba(28,77,141,0.50) 0%, transparent 70%)" }} />
-        <div className="absolute -bottom-10 right-0 w-56 h-56 rounded-full" style={{ background: "radial-gradient(circle, rgba(189,232,245,0.30) 0%, transparent 70%)" }} />
+        {/* Aurora glow orbs. They were tuned to sit on a deep blue; on the pale
+            light wash the same opacity reads as blue smudges, so they fade back
+            to a hint of depth. */}
+        <div className="absolute -top-16 -right-10 w-64 h-64 rounded-full" style={{ background: `radial-gradient(circle, rgba(73,136,196,${lightHeader ? 0.18 : 0.55}) 0%, transparent 68%)` }} />
+        <div className="absolute top-16 -left-20 w-60 h-60 rounded-full" style={{ background: `radial-gradient(circle, rgba(28,77,141,${lightHeader ? 0.14 : 0.5}) 0%, transparent 70%)` }} />
+        <div className="absolute -bottom-10 right-0 w-56 h-56 rounded-full" style={{ background: `radial-gradient(circle, rgba(189,232,245,${lightHeader ? 0.5 : 0.3}) 0%, transparent 70%)` }} />
         
         <div className={cn("relative px-5 pt-14 pb-12", lightHeader ? "text-slate-900" : "text-white")}>
           {/* Colour modes, language, and the date — above the greeting so the
@@ -496,7 +508,7 @@ const { t, language } = useLanguage();
               {/* Time-based greeting */}
               <div className="flex items-center gap-2 mb-2">
                 <GreetingIcon />
-                <p className="text-white/70 text-sm font-medium">
+                <p className={cn("text-sm font-medium", headMuted)}>
                   {getGreeting(language)}
                 </p>
               </div>
@@ -504,10 +516,10 @@ const { t, language } = useLanguage();
                 <Skeleton className="h-8 w-40 bg-white/20" />
               ) : (
                 <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <span className="bg-gradient-to-l from-white via-[#BDE8F5] to-[#4988C4] bg-clip-text text-transparent">
+                  <span className={cn(lightHeader ? "text-slate-900" : "bg-gradient-to-l from-white via-[#BDE8F5] to-[#4988C4] bg-clip-text text-transparent")}>
                     {account?.fullName || account?.customerCode}
                   </span>
-                  <Sparkles className="w-5 h-5 text-[#BDE8F5]" />
+                  <Sparkles className={cn("w-5 h-5", headAccent)} />
                 </h1>
               )}
             </div>
@@ -520,10 +532,10 @@ const { t, language } = useLanguage();
                 "relative p-3 backdrop-blur-sm rounded-2xl transition-all duration-300 group",
                 (notificationCount ?? 0) > 0
                   ? "bg-red-500/25 hover:bg-red-500/35 ring-2 ring-red-400/60"
-                  : "bg-white/10 hover:bg-white/20"
+                  : headGlass
               )}>
                 <Bell className={cn(
-                  "w-5 h-5 text-white group-hover:scale-110 transition-transform",
+                  "w-5 h-5 group-hover:scale-110 transition-transform", headStrong,
                   (notificationCount ?? 0) > 0 && "animate-bell-ring"
                 )} />
                 {(notificationCount ?? 0) > 0 && (
@@ -559,14 +571,14 @@ const { t, language } = useLanguage();
           <div className="mt-6 grid grid-cols-3 gap-2.5">
             {quickActions.map((action, index) => (
               <Link key={index} href={action.href}>
-                <button className="relative w-full h-full flex flex-col items-start gap-2.5 rounded-2xl p-3 bg-white/10 border border-[#BDE8F5]/20 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 hover:-translate-y-0.5 active:scale-[0.98]">
+                <button className={cn("relative w-full h-full flex flex-col items-start gap-2.5 rounded-2xl p-3 border backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]", headGlass)}>
                   {/* ⓘ — reveals "what is this?" without navigating; hidden until tapped. */}
                   <span
                     role="button"
                     tabIndex={0}
                     aria-label="info"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenTileInfo(openTileInfo === index ? null : index); }}
-                    className="absolute top-2 end-2 text-[#BDE8F5]/70 hover:text-white transition-colors"
+                    className={cn("absolute top-2 end-2 transition-colors", lightHeader ? "text-slate-500 hover:text-slate-900" : "text-[#BDE8F5]/70 hover:text-white")}
                   >
                     <Info className="w-3.5 h-3.5" />
                   </span>
@@ -577,7 +589,7 @@ const { t, language } = useLanguage();
                   )}>
                     <action.icon className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-xs font-medium text-white/90 text-start leading-tight">
+                  <span className={cn("text-xs font-medium text-start leading-tight", headSoft)}>
                     {action.label}
                   </span>
                 </button>
@@ -587,19 +599,19 @@ const { t, language } = useLanguage();
 
           {/* "What is this?" card — shown only after a tile's ⓘ is tapped. */}
           {openTileInfo !== null && (
-            <div className="mt-3 relative flex gap-3 rounded-2xl p-3.5 bg-white/12 border border-[#BDE8F5]/25 backdrop-blur-sm">
+            <div className={cn("mt-3 relative flex gap-3 rounded-2xl p-3.5 border backdrop-blur-sm", headGlass)}>
               <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
                 <Info className="w-5 h-5 text-[#1C4D8D]" />
               </div>
               <div className="flex-1 min-w-0 pe-5">
-                <h4 className="text-sm font-bold text-white">{quickActions[openTileInfo].info.title}</h4>
-                <p className="text-xs mt-0.5 leading-relaxed text-white/80">{quickActions[openTileInfo].info.desc}</p>
-                <span className="inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium bg-[#BDE8F5]/20 text-[#BDE8F5]">
+                <h4 className={cn("text-sm font-bold", headStrong)}>{quickActions[openTileInfo].info.title}</h4>
+                <p className={cn("text-xs mt-0.5 leading-relaxed", headSoft)}>{quickActions[openTileInfo].info.desc}</p>
+                <span className={cn("inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium", lightHeader ? "bg-slate-900/[0.07] text-slate-700" : "bg-[#BDE8F5]/20 text-[#BDE8F5]")}>
                   {quickActions[openTileInfo].info.example}
                 </span>
               </div>
               <button onClick={() => setOpenTileInfo(null)} aria-label="close"
-                className="absolute top-2 end-2 p-1 rounded-full text-white/60 hover:bg-white/10 transition-colors">
+                className={cn("absolute top-2 end-2 p-1 rounded-full transition-colors", lightHeader ? "text-slate-500 hover:bg-slate-900/10" : "text-white/60 hover:bg-white/10")}>
                 <X className="w-4 h-4" />
               </button>
             </div>

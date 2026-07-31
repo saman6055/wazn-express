@@ -1,46 +1,61 @@
 import { describe, it, expect } from "vitest";
-import {
-  toArabicIndic,
-  formatClockTime,
-  formatClockDate,
-  msUntilNextMinute,
-} from "./portalClock";
+import { formatClockTime, formatClockDate, msUntilNextMinute } from "./portalClock";
 
 // Friday 31 July 2026, 09:41:30 local time.
 const friday = new Date(2026, 6, 31, 9, 41, 30, 250);
 
-describe("toArabicIndic", () => {
-  it("converts digits and leaves everything else alone", () => {
-    expect(toArabicIndic("09:41")).toBe("٠٩:٤١");
-    expect(toArabicIndic("31ی تەممووز")).toBe("٣١ی تەممووز");
+const at = (h: number, m = 0) => new Date(2026, 6, 31, h, m);
+
+describe("formatClockTime — 24 hour", () => {
+  it("pads to a stable width so the header does not jump on the minute", () => {
+    expect(formatClockTime(at(9, 5), "en")).toBe("09:05");
+    expect(formatClockTime(at(0, 0), "en")).toBe("00:00");
+    expect(formatClockTime(at(21, 7), "en")).toBe("21:07");
   });
 
-  it("returns a string with no digits unchanged", () => {
-    expect(toArabicIndic("هەینی")).toBe("هەینی");
+  it("keeps digits Latin in every language — a clock is read at a glance", () => {
+    for (const lang of ["ku", "ar", "en", "zh"]) {
+      expect(formatClockTime(friday, lang), lang).toBe("09:41");
+    }
   });
 });
 
-describe("formatClockTime", () => {
-  it("pads to a stable width so the header does not jump on the minute", () => {
-    expect(formatClockTime(new Date(2026, 6, 31, 9, 5), "en")).toBe("09:05");
-    expect(formatClockTime(new Date(2026, 6, 31, 0, 0), "en")).toBe("00:00");
+describe("formatClockTime — 12 hour", () => {
+  it("shows midnight and noon as 12, not 0", () => {
+    expect(formatClockTime(at(0, 0), "en", true)).toBe("12:00 AM");
+    expect(formatClockTime(at(12, 0), "en", true)).toBe("12:00 PM");
   });
 
-  it("uses a 24-hour clock, avoiding an AM/PM marker Kurdish has no short form for", () => {
-    expect(formatClockTime(new Date(2026, 6, 31, 21, 7), "en")).toBe("21:07");
+  it("drops the leading zero on the hour but keeps it on the minute", () => {
+    expect(formatClockTime(at(9, 5), "en", true)).toBe("9:05 AM");
   });
 
-  it("switches to Arabic-Indic digits for Kurdish and Arabic", () => {
-    expect(formatClockTime(friday, "ku")).toBe("٠٩:٤١");
-    expect(formatClockTime(friday, "ar")).toBe("٠٩:٤١");
-    expect(formatClockTime(friday, "en")).toBe("09:41");
-    expect(formatClockTime(friday, "zh")).toBe("09:41");
+  it("wraps the afternoon back to a 12-hour hand", () => {
+    expect(formatClockTime(at(13, 30), "en", true)).toBe("1:30 PM");
+    expect(formatClockTime(at(23, 59), "en", true)).toBe("11:59 PM");
+  });
+
+  it("marks before and after noon in each language's own convention", () => {
+    expect(formatClockTime(at(9, 41), "ku", true)).toBe("9:41 پ.ن");
+    expect(formatClockTime(at(15, 41), "ku", true)).toBe("3:41 د.ن");
+    expect(formatClockTime(at(9, 41), "ar", true)).toBe("9:41 ص");
+    expect(formatClockTime(at(15, 41), "ar", true)).toBe("3:41 م");
+    expect(formatClockTime(at(9, 41), "zh", true)).toBe("9:41 上午");
+  });
+
+  it("falls back to AM/PM for a language with no marker of its own", () => {
+    expect(formatClockTime(at(9, 41), "fr", true)).toBe("9:41 AM");
+  });
+
+  it("keeps the digits Latin here too", () => {
+    expect(formatClockTime(at(9, 41), "ku", true)).toContain("9:41");
+    expect(formatClockTime(at(9, 41), "ar", true)).toContain("9:41");
   });
 });
 
 describe("formatClockDate", () => {
   it("writes the Kurdish weekday and month, which Intl has no locale for", () => {
-    expect(formatClockDate(friday, "ku")).toBe("هەینی، ٣١ی تەممووز");
+    expect(formatClockDate(friday, "ku")).toBe("هەینی، 31ی تەممووز");
   });
 
   it("names each Kurdish weekday correctly across a full week", () => {
@@ -61,15 +76,17 @@ describe("formatClockDate", () => {
     expect(formatClockDate(new Date(2026, 11, 31), "ku")).toContain("کانوونی یەکەم");
   });
 
-  it("returns something non-empty for the other three languages", () => {
-    for (const lang of ["en", "ar", "zh"]) {
-      const text = formatClockDate(friday, lang);
-      expect(text.length, lang).toBeGreaterThan(3);
+  it("uses Latin digits so the date matches the time above it", () => {
+    // Arabic would otherwise render ٣١ beside a Latin 09:41.
+    for (const lang of ["ku", "ar", "en", "zh"]) {
+      expect(formatClockDate(friday, lang), lang).toMatch(/31/);
     }
   });
 
-  it("puts the day number in the English date", () => {
-    expect(formatClockDate(friday, "en")).toContain("31");
+  it("returns something readable for the other three languages", () => {
+    for (const lang of ["en", "ar", "zh"]) {
+      expect(formatClockDate(friday, lang).length, lang).toBeGreaterThan(3);
+    }
   });
 });
 

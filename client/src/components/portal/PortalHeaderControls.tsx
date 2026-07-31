@@ -12,7 +12,7 @@ import {
   isLightHeader,
   type PortalMode,
 } from "@/lib/portalModes";
-import { formatClockTime, formatClockDate, msUntilNextMinute } from "@/lib/portalClock";
+import { formatClockTime, formatClockDate, msUntilNextMinute, CLOCK_HOUR12_KEY } from "@/lib/portalClock";
 import { Languages, Check } from "lucide-react";
 
 /**
@@ -169,6 +169,17 @@ export function PortalClock({
 }) {
   const { language } = useLanguage();
   const [now, setNow] = useState(() => new Date());
+  // Tapping the clock switches between 12- and 24-hour, and the choice sticks.
+  const [hour12, setHour12] = useState(
+    () => localStorage.getItem(CLOCK_HOUR12_KEY) === "true",
+  );
+
+  const toggleHour12 = () => {
+    setHour12((prev) => {
+      localStorage.setItem(CLOCK_HOUR12_KEY, String(!prev));
+      return !prev;
+    });
+  };
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -186,34 +197,52 @@ export function PortalClock({
     ? "border-slate-900/10 bg-slate-900/[0.06] text-slate-800"
     : "border-white/20 bg-white/10 text-white";
 
+  const hint = pickLang(language, {
+    ku: "کلیک بکە بۆ گۆڕینی ١٢ / ٢٤ کاتژمێری",
+    en: "Tap to switch between 12- and 24-hour",
+    ar: "اضغط للتبديل بين 12 و24 ساعة",
+    zh: "点击切换 12 / 24 小时制",
+  });
+
   if (compact) {
     return (
-      <div
+      <button
+        type="button"
+        onClick={toggleHour12}
+        title={`${formatClockDate(now, language)} — ${hint}`}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 backdrop-blur-sm",
+          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 backdrop-blur-sm transition active:scale-95",
           surface,
           className,
         )}
-        title={formatClockDate(now, language)}
       >
-        <span className="text-xs font-bold tabular-nums">{formatClockTime(now, language)}</span>
-        {/* The weekday alone on narrow screens — the full date is in the
-            tooltip and, on the classic skin, in the full-size block. */}
+        <span className="text-xs font-bold tabular-nums">{formatClockTime(now, language, hour12)}</span>
+        {/* The date only where there is room — it is in the tooltip either way,
+            and in full on the classic skin's larger block. */}
         <span className="hidden text-[10px] opacity-75 sm:inline">
           {formatClockDate(now, language)}
         </span>
-      </div>
+      </button>
     );
   }
 
   return (
-    <div className={cn("rounded-2xl border px-3 py-2 text-center backdrop-blur-sm", surface, className)}>
+    <button
+      type="button"
+      onClick={toggleHour12}
+      title={hint}
+      className={cn(
+        "rounded-2xl border px-3 py-2 text-center backdrop-blur-sm transition active:scale-95",
+        surface,
+        className,
+      )}
+    >
       <p className="text-xl font-bold leading-none tabular-nums tracking-wide">
-        {formatClockTime(now, language)}
+        {formatClockTime(now, language, hour12)}
       </p>
       <p className="mt-1 text-[10px] leading-none opacity-75">
         {formatClockDate(now, language)}
       </p>
-    </div>
+    </button>
   );
 }
