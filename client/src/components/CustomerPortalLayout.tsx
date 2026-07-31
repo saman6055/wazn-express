@@ -190,7 +190,10 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     <div
       dir={isRTL ? "rtl" : "ltr"}
       className={cn(
-        "portal-theme min-h-screen transition-colors duration-300",
+        // A flex column so <main> can grow: that is what lets the news strip
+        // sit at the bottom of a short page instead of directly under the
+        // content, halfway up the screen.
+        "portal-theme min-h-screen flex flex-col transition-colors duration-300",
         isDark ? "bg-slate-900" : "bg-slate-50",
         isRTL && "rtl",
         // Bottom room so content (incl. the in-flow news ticker) clears the
@@ -231,16 +234,22 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
           </form>
         </div>
       </div>
-      {/* Main Content */}
-      <main className="max-w-lg mx-auto">
+      {/* Main Content. Grows to fill the viewport so the news strip below can
+          be pushed to the bottom on a short page — without it the strip landed
+          wherever the content happened to end, halfway up the screen on a page
+          like Shipments with only a couple of rows. */}
+      <main className="max-w-lg mx-auto w-full flex-1 flex flex-col">
         {/* Admin-set announcement banner — shown on every portal page */}
         <AnnouncementBanner />
         {/* Prominent pre-declaration CTA — home only, above every skin */}
         {location === "/portal" && <DeclarePackageBanner />}
         {children}
-        {/* Wazn News ticker — in-flow at the very bottom of the content, so it
-            only appears when the reader scrolls to the end (not a fixed band). */}
-        <NewsTicker language={language} />
+        {/* Wazn News ticker — in-flow, and mt-auto pins it to the bottom of a
+            short page while still sitting at the end of a long one. Never
+            fixed: it should come into view, not hover over the content. */}
+        <div className="mt-auto">
+          <NewsTicker language={language} />
+        </div>
       </main>
 
       {/* Bottom Navigation - fixed with smooth transitions */}

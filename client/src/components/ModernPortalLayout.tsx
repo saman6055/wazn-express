@@ -61,7 +61,10 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
   return (
     <div
       className={cn(
-        "portal-theme min-h-screen transition-colors duration-300",
+        // A flex column so <main> can grow: that is what lets the news strip
+        // sit at the bottom of a short page instead of directly under the
+        // content, halfway up the screen.
+        "portal-theme min-h-screen flex flex-col transition-colors duration-300",
         isDark ? "bg-zinc-950" : "bg-gray-50",
         isRTL && "rtl",
         isInstalled ? "pb-28" : "pb-24"
@@ -81,12 +84,15 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
       <PortalTopBar />
 
       {/* Main Content */}
-      <main className="relative max-w-lg mx-auto">
+      <main className="relative max-w-lg mx-auto w-full flex-1 flex flex-col">
         {children}
         {/* Wazn News strip — in-flow at the very end of the content, the same
             as the classic skin. It was only ever rendered there, so on this
-            skin the news never appeared at all. */}
-        <NewsTicker language={language} />
+            skin the news never appeared at all. mt-auto pins it to the bottom
+            of a short page. */}
+        <div className="mt-auto">
+          <NewsTicker language={language} />
+        </div>
       </main>
 
       {/* Glass Morphism Bottom Navigation */}
