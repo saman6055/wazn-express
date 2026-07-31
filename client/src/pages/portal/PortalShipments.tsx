@@ -291,7 +291,10 @@ function ClassicPortalShipments() {
 
       {/* Shipping Type Tabs */}
       <div className={cn(
-        "px-4 py-3 border-b sticky top-0 z-10 transition-colors duration-300",
+        // Sticky was a no-op while the list scrolled inside its own box — the
+        // page never moved. Now that it does, these keep the air/sea filter in
+        // reach, offset to clear the portal's own sticky search bar above.
+        "px-4 py-3 border-b sticky top-14 z-10 transition-colors duration-300",
         isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
       )}>
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -385,12 +388,14 @@ function ClassicPortalShipments() {
         </div>
       )}
 
-      {/* Scrollable area with pull-to-refresh (mobile) */}
+      {/* The list flows in the page rather than scrolling inside a fixed-height
+          box. That box was why the news strip looked pinned: the page itself
+          never scrolled, so the strip sat below the box, permanently on screen
+          and never scrolled past. Pull-to-refresh still works — the hook now
+          reads the page's scroll position when its container isn't the thing
+          scrolling. */}
       <div
-        className={cn(
-          "overflow-y-auto overscroll-contain max-h-[calc(100vh-320px)] transition-colors duration-300",
-          isDark ? "bg-slate-900" : "bg-slate-50"
-        )}
+        className={cn("transition-colors duration-300", isDark ? "bg-slate-900" : "bg-slate-50")}
         {...pullToRefreshProps}
       >
         {/* Pull indicator */}
