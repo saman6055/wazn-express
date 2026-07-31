@@ -182,6 +182,7 @@ export async function runMigration(): Promise<{ success: boolean; message: strin
       sql: `CREATE TABLE IF NOT EXISTS \`portalTutorials\` (
         \`id\` INT NOT NULL AUTO_INCREMENT,
         \`category\` VARCHAR(100) NOT NULL,
+        \`language\` VARCHAR(10) NOT NULL DEFAULT 'ku',
         \`titleKu\` VARCHAR(300) NOT NULL,
         \`titleEn\` VARCHAR(300),
         \`titleAr\` VARCHAR(300),

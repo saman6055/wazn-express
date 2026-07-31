@@ -1895,6 +1895,7 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
     sql: `CREATE TABLE IF NOT EXISTS portalTutorials (
       id INT AUTO_INCREMENT PRIMARY KEY,
       category VARCHAR(100) NOT NULL,
+      language VARCHAR(10) NOT NULL DEFAULT 'ku',
       titleKu VARCHAR(300) NOT NULL,
       titleEn VARCHAR(300),
       titleAr VARCHAR(300),
@@ -2354,6 +2355,11 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.batch_customer_pricing",    sql: "CREATE INDEX idx_batch_customer_pricing ON batchCustomerPricing (batchId, customerId)" },
   { name: "idx.delivery_boxes_batch_id",   sql: "CREATE INDEX idx_delivery_boxes_batch_id ON deliveryBoxes (batchId)" },
   { name: "idx.delivery_boxes_customer_id", sql: "CREATE INDEX idx_delivery_boxes_customer_id ON deliveryBoxes (customerId)" },
+
+  // Tutorials added before videos were split by spoken language. Kurdish is
+  // the right default: every video recorded up to that point was in Kurdish.
+  { name: "portalTutorials.language", sql: "ALTER TABLE portalTutorials ADD COLUMN language VARCHAR(10) NOT NULL DEFAULT 'ku'" },
+  { name: "idx.portal_tutorials_language", sql: "CREATE INDEX idx_portal_tutorials_language ON portalTutorials (language, isPublished)" },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {

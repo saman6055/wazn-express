@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlatformBadge } from "@/components/PlatformSelect";
+import { LANGUAGE_NAME, TUTORIAL_LANGUAGES, type TutorialLanguage } from "@/constants/tutorialLanguages";
 import {
   GraduationCap, Plus, Trash2, Pencil, Eye, EyeOff, Star, Loader2, X, ThumbsUp, ThumbsDown,
 } from "lucide-react";
@@ -30,6 +31,7 @@ export function TutorialsTab({ p }: { p: (v: L) => string }) {
   const blank = {
     id: 0,
     category: "",
+    language: "ku" as TutorialLanguage,
     titleKu: "", titleEn: "", titleAr: "",
     summaryKu: "", summaryEn: "", summaryAr: "",
     videoUrl: "",
@@ -72,14 +74,20 @@ export function TutorialsTab({ p }: { p: (v: L) => string }) {
       }));
       return;
     }
+    // For a single-language video the title lives in the canonical column
+    // whatever language it is written in — there is only ever one. The
+    // per-language columns are sent empty so a video switched from "all" to
+    // one language doesn't leave stale translations behind.
+    const everyPortal = form.language === "all";
     const payload = {
       category: form.category.trim(),
+      language: form.language,
       titleKu: form.titleKu.trim(),
-      titleEn: form.titleEn.trim() || undefined,
-      titleAr: form.titleAr.trim() || undefined,
+      titleEn: everyPortal ? form.titleEn.trim() || undefined : "",
+      titleAr: everyPortal ? form.titleAr.trim() || undefined : "",
       summaryKu: form.summaryKu.trim() || undefined,
-      summaryEn: form.summaryEn.trim() || undefined,
-      summaryAr: form.summaryAr.trim() || undefined,
+      summaryEn: everyPortal ? form.summaryEn.trim() || undefined : "",
+      summaryAr: everyPortal ? form.summaryAr.trim() || undefined : "",
       videoUrl: form.videoUrl.trim(),
       // Blank means "unknown length" — the card then shows no duration badge.
       durationSeconds: form.durationSeconds ? Number(form.durationSeconds) : undefined,
@@ -95,6 +103,7 @@ export function TutorialsTab({ p }: { p: (v: L) => string }) {
     setForm({
       id: t.id,
       category: t.category ?? "",
+      language: (t.language ?? "ku") as TutorialLanguage,
       titleKu: t.titleKu ?? "", titleEn: t.titleEn ?? "", titleAr: t.titleAr ?? "",
       summaryKu: t.summaryKu ?? "", summaryEn: t.summaryEn ?? "", summaryAr: t.summaryAr ?? "",
       videoUrl: t.videoUrl ?? "",
@@ -155,24 +164,73 @@ export function TutorialsTab({ p }: { p: (v: L) => string }) {
             </div>
           </div>
 
+          {/* Language of the video. This is what decides which portal sees it,
+              so it sits above the title — the answer changes what you type. */}
           <div className="space-y-1.5">
-            <Label className="text-xs">{p({ ku: "ناونیشان (کوردی) *", en: "Title (Kurdish) *", ar: "العنوان (كردي) *", zh: "标题（库尔德语）*" })}</Label>
-            <Input value={form.titleKu} onChange={(e) => setForm({ ...form, titleKu: e.target.value })} />
+            <Label className="text-xs">{p({ ku: "زمانی ڤیدیۆکە", en: "Language of the video", ar: "لغة الفيديو", zh: "视频语言" })}</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {TUTORIAL_LANGUAGES.map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => setForm({ ...form, language: code })}
+                  className={cn(
+                    "rounded-lg border px-3 py-1.5 text-xs font-medium transition active:scale-95",
+                    form.language === code ? "bg-sky-600 border-sky-600 text-white" : "bg-muted/40",
+                  )}
+                >
+                  {LANGUAGE_NAME[code]}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {form.language === "all"
+                ? p({
+                    ku: "لە هەموو پۆرتاڵێکدا دەردەکەوێت — بۆ ڤیدیۆی بێ دەنگ. ناونیشان بۆ هەر زمانێک بنووسە.",
+                    en: "Appears in every portal — for videos with no speech. Give a title per language.",
+                    ar: "يظهر في كل بوابة — للفيديو بلا صوت. اكتب عنواناً لكل لغة.",
+                    zh: "在所有门户中显示——适用于无语音视频。请为每种语言填写标题。",
+                  })
+                : p({
+                    ku: "تەنها لە پۆرتاڵی هەمان زمان دەردەکەوێت",
+                    en: "Shown only in the portal set to this language",
+                    ar: "يظهر فقط في البوابة بهذه اللغة",
+                    zh: "仅在设为该语言的门户中显示",
+                  })}
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">{p({ ku: "ناونیشان (ئینگلیزی)", en: "Title (English)", ar: "العنوان (إنجليزي)", zh: "标题（英语）" })}</Label>
-              <Input value={form.titleEn} onChange={(e) => setForm({ ...form, titleEn: e.target.value })} dir="ltr" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">{p({ ku: "ناونیشان (عەرەبی)", en: "Title (Arabic)", ar: "العنوان (عربي)", zh: "标题（阿拉伯语）" })}</Label>
-              <Input value={form.titleAr} onChange={(e) => setForm({ ...form, titleAr: e.target.value })} />
-            </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">
+              {p({ ku: "ناونیشان", en: "Title", ar: "العنوان", zh: "标题" })}
+              {" "}({LANGUAGE_NAME[form.language === "all" ? "ku" : form.language]}) *
+            </Label>
+            <Input
+              value={form.titleKu}
+              onChange={(e) => setForm({ ...form, titleKu: e.target.value })}
+              dir={form.language === "en" ? "ltr" : undefined}
+            />
           </div>
 
+          {/* Only a speechless video needs the same title in three languages. */}
+          {form.language === "all" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">{p({ ku: "ناونیشان (ئینگلیزی)", en: "Title (English)", ar: "العنوان (إنجليزي)", zh: "标题（英语）" })}</Label>
+                <Input value={form.titleEn} onChange={(e) => setForm({ ...form, titleEn: e.target.value })} dir="ltr" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">{p({ ku: "ناونیشان (عەرەبی)", en: "Title (Arabic)", ar: "العنوان (عربي)", zh: "标题（阿拉伯语）" })}</Label>
+                <Input value={form.titleAr} onChange={(e) => setForm({ ...form, titleAr: e.target.value })} />
+              </div>
+            </div>
+          )}
+
           <div className="space-y-1.5">
-            <Label className="text-xs">{p({ ku: "کورتە (کوردی)", en: "Summary (Kurdish)", ar: "ملخص (كردي)", zh: "简介（库尔德语）" })}</Label>
+            <Label className="text-xs">
+              {p({ ku: "کورتە", en: "Summary", ar: "ملخص", zh: "简介" })}
+              {" "}({LANGUAGE_NAME[form.language === "all" ? "ku" : form.language]})
+            </Label>
             <Textarea rows={2} value={form.summaryKu} onChange={(e) => setForm({ ...form, summaryKu: e.target.value })} />
           </div>
 
@@ -237,6 +295,14 @@ export function TutorialsTab({ p }: { p: (v: L) => string }) {
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <PlatformBadge name={t.category} size={16} />
                       <span className="text-xs text-muted-foreground">{t.category}</span>
+                      <span className={cn(
+                        "rounded px-1.5 py-0.5 text-[10px] font-medium",
+                        t.language === "all"
+                          ? "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
+                          : "bg-muted text-muted-foreground",
+                      )}>
+                        {LANGUAGE_NAME[t.language as TutorialLanguage] ?? t.language}
+                      </span>
                       {t.isFeatured && <Star className="h-3 w-3 fill-amber-500 text-amber-500" />}
                       {!t.isPublished && (
                         <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">

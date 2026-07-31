@@ -1,4 +1,4 @@
-import { eq, and, asc, desc, sql } from "drizzle-orm";
+import { eq, and, or, asc, desc, sql } from "drizzle-orm";
 import { getDb } from "./connection";
 import { portalTutorials, type PortalTutorial, type InsertPortalTutorial } from "../../drizzle/schema";
 
@@ -48,12 +48,28 @@ function decorate(row: PortalTutorial) {
 
 export type TutorialForPortal = ReturnType<typeof decorate>;
 
-/** Published tutorials for the customer portal, featured first. */
-export async function getPublishedTutorials(category?: string): Promise<TutorialForPortal[]> {
+/** Videos with no speech — they suit a customer reading in any language. */
+export const TUTORIAL_LANGUAGE_ANY = "all";
+
+/**
+ * Published tutorials for the customer portal, featured first.
+ *
+ * `language` is the language the customer is browsing in. Only videos spoken
+ * in that language come back, plus the speechless ones. Passing nothing
+ * returns every language — used by the "show me other languages anyway"
+ * escape hatch, so a portal whose language has no videos yet is never a dead
+ * end.
+ */
+export async function getPublishedTutorials(category?: string, language?: string): Promise<TutorialForPortal[]> {
   const db = await getDb();
   if (!db) return [];
   const conditions = [eq(portalTutorials.isPublished, true)];
   if (category) conditions.push(eq(portalTutorials.category, category));
+  if (language) {
+    conditions.push(
+      or(eq(portalTutorials.language, language), eq(portalTutorials.language, TUTORIAL_LANGUAGE_ANY))!,
+    );
+  }
   const rows = await db.select().from(portalTutorials)
     .where(and(...conditions))
     .orderBy(desc(portalTutorials.isFeatured), asc(portalTutorials.sortOrder), desc(portalTutorials.id));

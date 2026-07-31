@@ -19,8 +19,13 @@ const videoUrlSchema = z.string().min(5).max(500).refine(
   { message: "لینکی یوتوب نادروستە | Not a valid YouTube link" },
 );
 
+// The language spoken in the video. "all" means no speech, so it belongs in
+// every portal.
+const languageSchema = z.enum(["ku", "en", "ar", "zh", "all"]);
+
 const tutorialInput = {
   category: z.string().min(1).max(100),
+  language: languageSchema.default("ku"),
   titleKu: z.string().min(1).max(300),
   titleEn: z.string().max(300).optional(),
   titleAr: z.string().max(300).optional(),
@@ -37,9 +42,15 @@ const tutorialInput = {
 export const tutorialsRouter = router({
   /** Published tutorials — what the customer portal renders. */
   list: protectedProcedure
-    .input(z.object({ category: z.string().max(100).optional() }).optional())
+    .input(z.object({
+      category: z.string().max(100).optional(),
+      // The portal passes the language it is being read in. Omitting it
+      // returns every language — the customer's own "show other languages"
+      // fallback when nothing exists in theirs yet.
+      language: languageSchema.exclude(["all"]).optional(),
+    }).optional())
     .query(async ({ input }) => {
-      return db.getPublishedTutorials(input?.category);
+      return db.getPublishedTutorials(input?.category, input?.language);
     }),
 
   /** Section names that actually have published videos. */
@@ -64,6 +75,7 @@ export const tutorialsRouter = router({
     .input(z.object({
       id: z.number().int(),
       category: z.string().min(1).max(100).optional(),
+      language: languageSchema.optional(),
       titleKu: z.string().min(1).max(300).optional(),
       titleEn: z.string().max(300).optional(),
       titleAr: z.string().max(300).optional(),

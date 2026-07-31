@@ -630,6 +630,12 @@ export const portalTutorials = mysqlTable("portalTutorials", {
 
   category: varchar("category", { length: 100 }).notNull(),
 
+  // The language actually spoken in the video. The portal shows only videos
+  // matching the language the customer is browsing in — a Kurdish narration is
+  // no use to an Arabic customer, whatever the title says. "all" is for videos
+  // with no speech (a plain screen recording), which suit every portal.
+  language: varchar("language", { length: 10 }).default("ku").notNull(),
+
   titleKu: varchar("titleKu", { length: 300 }).notNull(),
   titleEn: varchar("titleEn", { length: 300 }),
   titleAr: varchar("titleAr", { length: 300 }),

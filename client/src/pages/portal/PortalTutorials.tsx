@@ -8,7 +8,9 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlatformBadge } from "@/components/PlatformSelect";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
-import { GraduationCap, Play, X, ThumbsUp, ThumbsDown, MessageCircle, Star } from "lucide-react";
+import { LANGUAGE_NAME } from "@/constants/tutorialLanguages";
+import { tutorialTitle, tutorialSummary } from "@/lib/tutorialText";
+import { GraduationCap, Play, X, ThumbsUp, ThumbsDown, MessageCircle, Star, Languages } from "lucide-react";
 
 /**
  * Tutorials — short how-to videos, grouped into admin-defined sections.
@@ -35,7 +37,13 @@ export default function PortalTutorials() {
   const [playing, setPlaying] = useState<any | null>(null);
   const [voted, setVoted] = useState<Record<number, "helpful" | "notHelpful">>({});
 
-  const { data: tutorials, isLoading } = trpc.tutorials.list.useQuery({});
+  // Videos are filtered by the language they are spoken in, not by the
+  // language of their title — a Kurdish narration helps nobody reading in
+  // Arabic. Once the customer asks for other languages we stop sending it.
+  const [allLanguages, setAllLanguages] = useState(false);
+  const { data: tutorials, isLoading } = trpc.tutorials.list.useQuery(
+    allLanguages ? {} : { language },
+  );
   const recordEvent = trpc.tutorials.recordEvent.useMutation();
 
   const categories = useMemo(() => {
@@ -48,10 +56,8 @@ export default function PortalTutorials() {
     [tutorials, category],
   );
 
-  const title = (t: any) =>
-    (language === "ku" && t.titleKu) || (language === "ar" && t.titleAr) || t.titleEn || t.titleKu;
-  const summary = (t: any) =>
-    (language === "ku" && t.summaryKu) || (language === "ar" && t.summaryAr) || t.summaryEn || t.summaryKu;
+  const title = (t: any) => tutorialTitle(t, language);
+  const summary = (t: any) => tutorialSummary(t, language);
 
   const duration = (secs?: number | null) => {
     if (!secs) return null;
@@ -136,8 +142,30 @@ export default function PortalTutorials() {
           <div className={cn("rounded-2xl border p-8 text-center", isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 bg-white")}>
             <GraduationCap className="mx-auto mb-2 h-10 w-10 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">
-              {label({ ku: "هێشتا هیچ فێرکارییەک نییە", en: "No tutorials yet", ar: "لا توجد شروحات بعد", zh: "暂无教程" })}
+              {allLanguages
+                ? label({ ku: "هێشتا هیچ فێرکارییەک نییە", en: "No tutorials yet", ar: "لا توجد شروحات بعد", zh: "暂无教程" })
+                : label({
+                    ku: "هێشتا فێرکاری بە کوردی نییە",
+                    en: "No tutorials in English yet",
+                    ar: "لا توجد شروحات بالعربية بعد",
+                    zh: "暂无中文教程",
+                  })}
             </p>
+            {/* Never a dead end: the videos exist, just not in this language. */}
+            {!allLanguages && (
+              <button
+                onClick={() => setAllLanguages(true)}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700 transition active:scale-95 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300"
+              >
+                <Languages className="h-3.5 w-3.5" />
+                {label({
+                  ku: "فێرکاریەکان بە زمانی تر پیشان بدە",
+                  en: "Show tutorials in other languages",
+                  ar: "عرض الشروحات بلغات أخرى",
+                  zh: "显示其他语言的教程",
+                })}
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -172,6 +200,15 @@ export default function PortalTutorials() {
                 <div className="p-3">
                   <p className="text-sm font-semibold leading-snug">{title(t)}</p>
                   {summary(t) && <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{summary(t)}</p>}
+                  {/* Only while browsing across languages — otherwise every
+                      card would carry a badge saying what the customer
+                      already knows. */}
+                  {allLanguages && (
+                    <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      <Languages className="h-3 w-3" />
+                      {LANGUAGE_NAME[t.language as keyof typeof LANGUAGE_NAME] ?? t.language}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
