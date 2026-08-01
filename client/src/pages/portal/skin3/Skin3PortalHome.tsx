@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PriceListSection } from "@/components/portal/PriceListSection";
+import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 
 // Bold ¥ glyph styled like a lucide icon (lucide has no CNY symbol).
 // Accepts (and ignores) strokeWidth so it can stand in for a lucide icon.
@@ -401,7 +402,12 @@ export default function Skin3PortalHome() {
         </motion.div>
 
         {/* ===== Price List Section — admin-curated ===== */}
-        <motion.div variants={itemVariants} className="mb-8 -mx-4">
+        <motion.div variants={itemVariants} className="mb-8 -mx-4">        {/* The customer's own boxes, with the button to confirm receipt.
+            It existed only on the classic skin, so a customer here had no way
+            to confirm at all. Renders nothing when there are none. */}
+        <MyDeliveryBoxes className="-mx-5 mb-6" />
+
+
           <PriceListSection />
         </motion.div>
 

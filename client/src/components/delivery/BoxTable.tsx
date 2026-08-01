@@ -250,6 +250,19 @@ export function BoxTable({
                   <div className="flex items-center gap-1">
                     <span className="font-mono font-semibold text-primary">{box.boxCode}</span>
                     <CopyButton value={box.boxCode} label="کۆپی کۆد" />
+                    {/* Closed by the customer from the portal rather than by a
+                        member of staff taking a signature. The two are stored
+                        apart on purpose, and the day someone says they never
+                        received it, this is the difference that matters. */}
+                    {(box as any).customerConfirmedAt && (
+                      <Badge
+                        variant="outline"
+                        className="ms-1 shrink-0 border-sky-300 bg-sky-50 text-[10px] font-medium text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300"
+                        title="کڕیار خۆی لە پۆرتاڵ دووپاتی کردەوە کە وەریگرتووە"
+                      >
+                        کڕیار دووپاتی کردەوە
+                      </Badge>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
