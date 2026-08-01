@@ -81,6 +81,60 @@ export const SHIPPING_TYPE_LABEL: Record<
   sea: { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" },
 };
 
+/**
+ * Full-package and commission orders travel the same road, but the table
+ * tracks them with its own vocabulary — `in_china_warehouse` rather than
+ * `registered`, `arrived` rather than `customs_processing`, and so on.
+ *
+ * Two ladders and two pages is how the portal came to contradict itself: an
+ * order sitting in the China depot said so on "My goods" and was missing
+ * entirely from "Shipments". Mapping both onto the same three stages is what
+ * keeps the two pages telling one story.
+ *
+ * Statuses before the goods physically exist — quoted, approved, ordered —
+ * deliberately map to nothing. Nothing has shipped yet, so nothing belongs on
+ * a shipments page.
+ */
+const ORDER_STAGE: Record<string, Exclude<ShipmentStage, "">> = {
+  in_china_warehouse: "in_china",
+  quality_check: "in_china",
+  in_batch: "in_transit",
+  in_transit: "in_transit",
+  arrived: "in_transit",
+  ready_for_delivery: "in_transit",
+  delivered: "delivered",
+};
+
+/** Which stage a full-package / commission order sits in, if any. */
+export function orderStageOf(status: string): Exclude<ShipmentStage, ""> | null {
+  return ORDER_STAGE[status] ?? null;
+}
+
+/**
+ * The status name to show for an order, in the same words the rest of the
+ * portal uses. Falls back to null for anything not yet on the road.
+ */
+export function orderStatusLabel(
+  status: string,
+): { ku: string; en: string; ar: string; zh: string } | null {
+  switch (status) {
+    case "in_china_warehouse":
+    case "quality_check":
+      return STATUS_LABEL.preparing;
+    case "in_batch":
+    case "in_transit":
+      return STATUS_LABEL.in_transit;
+    case "arrived":
+      return STATUS_LABEL.arrived;
+    case "ready_for_delivery":
+      return STATUS_LABEL.at_depot;
+    case "delivered":
+      return STATUS_LABEL.delivered;
+    default:
+      return null;
+  }
+}
+
 /** How many batches sit in each stage, for the filter counts. */
 export function countByStage(statuses: string[]): Record<Exclude<ShipmentStage, "">, number> {
   const counts = { in_china: 0, in_transit: 0, delivered: 0 };

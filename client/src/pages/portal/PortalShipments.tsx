@@ -24,7 +24,7 @@ import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
-import { matchesStage, countByStage, STATUS_LABEL, type ShipmentStage } from "@/lib/shipmentFilters";
+import { matchesStage, countByStage, STATUS_LABEL, orderStageOf, type ShipmentStage } from "@/lib/shipmentFilters";
 import { tint, gradient } from "@/lib/portalModes";
 import { formatClockDate } from "@/lib/portalClock";
 // "" is no filter — which is what the old "All" chip meant. Dropping the chip
@@ -69,6 +69,10 @@ function ClassicPortalShipments() {
   
   const { data: batches, isLoading, refetch } = trpc.customerPortal.getMyBatches.useQuery();
   const { data: unbatchedPackages, refetch: refetchUnbatched } = trpc.customerPortal.getMyUnbatchedPackages.useQuery();
+  // Full-package and commission orders travel the same road but live in their
+  // own table with their own status names. Leaving them out is why an order
+  // could say "in China" on My Goods and be missing here entirely.
+  const { data: myOrders } = trpc.customerPortal.getMyFullPackageOrders.useQuery({});
   const handleRefresh = async () => {
     await Promise.all([refetch(), refetchUnbatched()]);
   };
@@ -120,6 +124,55 @@ function ClassicPortalShipments() {
     
     return result;
   }, [batches, searchQuery, statusFilter, shippingType, sortBy]);
+
+  /**
+   * Everything of this customer's that is sitting in the China depot, from
+   * both places it can be recorded: a loose package scanned onto their code,
+   * and a full-package or commission order the office bought for them.
+   *
+   * They are two tables with two status vocabularies, which is precisely how
+   * the portal came to contradict itself — an order could read "in China" on
+   * My Goods and be absent here. One list, one wording.
+   */
+  const inChinaItems = useMemo(() => {
+    const items: {
+      key: string;
+      code: string;
+      name?: string | null;
+      date: Date | null;
+      weightKg: number | null;
+    }[] = [];
+
+    const asDate = (v: any): Date | null => {
+      if (!v) return null;
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
+    for (const pkg of unbatchedPackages ?? []) {
+      items.push({
+        key: `pkg-${pkg.id}`,
+        code: pkg.trackingNumber || pkg.packageCode || `#${pkg.id}`,
+        name: null,
+        date: asDate(pkg.registeredAt),
+        weightKg: pkg.weightKg != null ? Number(pkg.weightKg) : null,
+      });
+    }
+
+    for (const order of (myOrders as any[]) ?? []) {
+      if (orderStageOf(order.status) !== "in_china") continue;
+      items.push({
+        key: `order-${order.id}`,
+        code: order.trackingNumber || order.orderCode || `#${order.id}`,
+        name: order.productName ?? null,
+        date: asDate(order.updatedAt || order.createdAt),
+        weightKg: order.weightKg != null ? Number(order.weightKg) : null,
+      });
+    }
+
+    // Newest first, undated last.
+    return items.sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+  }, [unbatchedPackages, myOrders]);
 
   // Calculate progress percentage based on status
   const getProgressPercentage = (status: string) => {
@@ -724,7 +777,7 @@ function ClassicPortalShipments() {
             This used to be an amber warning card showing nothing but a count.
             Goods arriving safely is good news, not a caution, and a customer
             who has just been told "3 packages" wants to know *which* three. */}
-        {unbatchedPackages && unbatchedPackages.length > 0 && (
+        {inChinaItems.length > 0 && (
           <div className="mt-6">
             <div className="flex items-center gap-2 mb-3">
               <Warehouse className={cn("w-5 h-5", isDark ? "text-emerald-400" : "text-emerald-600")} />
@@ -735,7 +788,7 @@ function ClassicPortalShipments() {
                 "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
                 isDark ? "bg-emerald-900/50 text-emerald-300" : "bg-emerald-100 text-emerald-700"
               )}>
-                {unbatchedPackages.length}
+                {inChinaItems.length}
               </span>
             </div>
 
@@ -743,8 +796,8 @@ function ClassicPortalShipments() {
               "divide-y overflow-hidden rounded-2xl border",
               isDark ? "divide-slate-700 border-slate-700 bg-slate-800/50" : "divide-slate-100 border-slate-200 bg-white"
             )}>
-              {unbatchedPackages.map((pkg: any) => (
-                <div key={pkg.id} className="flex items-center gap-3 p-3">
+              {inChinaItems.map((item) => (
+                <div key={item.key} className="flex items-center gap-3 p-3">
                   <div className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
                     isDark ? "bg-emerald-900/40" : "bg-emerald-50"
@@ -753,17 +806,22 @@ function ClassicPortalShipments() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-mono text-sm font-semibold" dir="ltr">
-                      {pkg.trackingNumber || pkg.packageCode || `#${pkg.id}`}
+                      {item.code}
                     </p>
-                    {pkg.registeredAt && (
-                      <p className="text-[11px] text-muted-foreground">
-                        {formatClockDate(new Date(pkg.registeredAt), language)}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {item.date && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {formatClockDate(item.date, language)}
+                        </p>
+                      )}
+                      {item.name && (
+                        <p className="truncate text-[11px] text-muted-foreground">{item.name}</p>
+                      )}
+                    </div>
                   </div>
-                  {pkg.weightKg && (
+                  {item.weightKg != null && (
                     <span className="shrink-0 text-xs text-muted-foreground tabular-nums" dir="ltr">
-                      {Number(pkg.weightKg).toFixed(2)} kg
+                      {item.weightKg.toFixed(2)} kg
                     </span>
                   )}
                 </div>

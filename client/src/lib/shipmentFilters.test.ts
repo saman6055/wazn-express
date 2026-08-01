@@ -5,6 +5,8 @@ import {
   countByStage,
   STATUS_LABEL,
   SHIPPING_TYPE_LABEL,
+  orderStageOf,
+  orderStatusLabel,
   type BatchStatus,
 } from "./shipmentFilters";
 
@@ -151,6 +153,78 @@ describe("SHIPPING_TYPE_LABEL", () => {
         // "air regular" leaked to the page as an English column name before.
         expect(SHIPPING_TYPE_LABEL[type][lang]).not.toMatch(/^air_|_/);
       }
+    }
+  });
+});
+
+/**
+ * Full-package and commission orders live in their own table with their own
+ * status names. Two ladders and two pages is how the portal came to
+ * contradict itself: an order sitting in the China depot said so on "My
+ * goods" and was missing from "Shipments" entirely.
+ */
+describe("orderStageOf", () => {
+  it("puts an order in the China depot when it is in the China depot", () => {
+    expect(orderStageOf("in_china_warehouse")).toBe("in_china");
+    // Under inspection is still sitting on our shelf in China.
+    expect(orderStageOf("quality_check")).toBe("in_china");
+  });
+
+  it("agrees with the package ladder about what counts as on the way", () => {
+    for (const status of ["in_batch", "in_transit", "arrived", "ready_for_delivery"]) {
+      expect(orderStageOf(status), status).toBe("in_transit");
+    }
+  });
+
+  it("only calls it delivered once the customer has it", () => {
+    expect(orderStageOf("delivered")).toBe("delivered");
+  });
+
+  it("shows nothing for an order that has not shipped yet", () => {
+    // Quoted, approved, even ordered — the goods do not exist in our hands,
+    // so they have no business on a shipments page.
+    for (const status of ["pending_quote", "quoted", "pending", "approved", "ordered", "tracking_added"]) {
+      expect(orderStageOf(status), status).toBeNull();
+    }
+  });
+
+  it("shows nothing for an order that ended badly", () => {
+    for (const status of ["cancelled", "rejected", "refunded", "returned"]) {
+      expect(orderStageOf(status), status).toBeNull();
+    }
+  });
+});
+
+describe("orderStatusLabel", () => {
+  it("uses the very same words as the package journey", () => {
+    // If these ever diverge, the two pages start telling different stories.
+    expect(orderStatusLabel("in_china_warehouse")).toBe(STATUS_LABEL.preparing);
+    expect(orderStatusLabel("in_transit")).toBe(STATUS_LABEL.in_transit);
+    expect(orderStatusLabel("arrived")).toBe(STATUS_LABEL.arrived);
+    expect(orderStatusLabel("ready_for_delivery")).toBe(STATUS_LABEL.at_depot);
+    expect(orderStatusLabel("delivered")).toBe(STATUS_LABEL.delivered);
+  });
+
+  it("gives every on-the-road status a name", () => {
+    for (const status of [
+      "in_china_warehouse", "quality_check", "in_batch",
+      "in_transit", "arrived", "ready_for_delivery", "delivered",
+    ]) {
+      expect(orderStatusLabel(status), status).not.toBeNull();
+    }
+  });
+
+  it("names nothing that has no stage, and gives a stage to everything it names", () => {
+    const statuses = [
+      "pending_quote", "quoted", "pending", "approved", "rejected", "ordered",
+      "tracking_added", "in_china_warehouse", "quality_check", "in_batch",
+      "in_transit", "arrived", "ready_for_delivery", "delivered", "cancelled",
+      "refunded", "returned",
+    ];
+    for (const status of statuses) {
+      const hasStage = orderStageOf(status) !== null;
+      const hasLabel = orderStatusLabel(status) !== null;
+      expect(hasLabel, `${status}: stage=${hasStage} label=${hasLabel}`).toBe(hasStage);
     }
   });
 });
