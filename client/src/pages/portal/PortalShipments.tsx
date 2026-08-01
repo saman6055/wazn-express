@@ -174,6 +174,24 @@ function ClassicPortalShipments() {
     return items.sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
   }, [unbatchedPackages, myOrders]);
 
+  /**
+   * The China list has to obey the filters like everything else, or the page
+   * says one thing at the top and another below it.
+   *
+   * Choosing a shipping type hides it: nothing here has been put on a plane or
+   * a ship yet, so it has no type to match.
+   */
+  const visibleInChina = useMemo(() => {
+    if (statusFilter && statusFilter !== "in_china") return [];
+    if (shippingType) return [];
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return inChinaItems;
+    return inChinaItems.filter(item => item.code.toLowerCase().includes(query));
+  }, [inChinaItems, statusFilter, shippingType, searchQuery]);
+
+  /** Everything on screen, so the count and the empty state agree with it. */
+  const totalResults = filteredBatches.length + visibleInChina.length;
+
   // Calculate progress percentage based on status
   const getProgressPercentage = (status: string) => {
     switch (status) {
@@ -326,7 +344,14 @@ function ClassicPortalShipments() {
    * "arrived" and "customs" belong with in-transit: the goods are in Iraq but
    * not yet in the customer's hands, so from their side they are still coming.
    */
-  const stageCounts = countByStage((batches ?? []).map(b => b.status));
+  // Counts have to match what tapping the pill actually shows. Goods in the
+  // China depot belong to no batch yet, so counting batches alone reported 0
+  // while six items sat listed underneath.
+  const batchStageCounts = countByStage((batches ?? []).map(b => b.status));
+  const stageCounts = {
+    ...batchStageCounts,
+    in_china: batchStageCounts.in_china + inChinaItems.length,
+  };
   const statusFilters: { value: Exclude<StatusFilter, "">; label: string; labelKu: string; labelAr: string; count: number }[] = [
     { value: "in_china", label: "In China", labelKu: "لە کۆگای چین", labelAr: "في مستودع الصين", count: stageCounts.in_china },
     { value: "in_transit", label: "On the way", labelKu: "لە ڕێگادا", labelAr: "في الطريق", count: stageCounts.in_transit },
@@ -589,10 +614,10 @@ function ClassicPortalShipments() {
         )}>
           <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
             {language === "ku" 
-              ? `${filteredBatches.length} ئەنجام دۆزرایەوە` 
+              ? `${totalResults} ئەنجام دۆزرایەوە` 
               : language === "ar"
-              ? `${filteredBatches.length} نتيجة`
-              : `${filteredBatches.length} results found`}
+              ? `${totalResults} نتيجة`
+              : `${totalResults} results found`}
           </p>
         </div>
 
@@ -603,7 +628,7 @@ function ClassicPortalShipments() {
         )}>
           {isLoading ? (
           <PortalListSkeleton rows={4} />
-        ) : filteredBatches.length === 0 ? (
+        ) : totalResults === 0 ? (
           <div className={cn(
             "rounded-2xl p-10 text-center shadow-sm transition-colors duration-300",
             isDark ? "bg-slate-800" : "bg-white"
@@ -777,7 +802,7 @@ function ClassicPortalShipments() {
             This used to be an amber warning card showing nothing but a count.
             Goods arriving safely is good news, not a caution, and a customer
             who has just been told "3 packages" wants to know *which* three. */}
-        {inChinaItems.length > 0 && (
+        {visibleInChina.length > 0 && (
           <div className="mt-6">
             <div className="flex items-center gap-2 mb-3">
               <Warehouse className={cn("w-5 h-5", isDark ? "text-emerald-400" : "text-emerald-600")} />
@@ -788,7 +813,7 @@ function ClassicPortalShipments() {
                 "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
                 isDark ? "bg-emerald-900/50 text-emerald-300" : "bg-emerald-100 text-emerald-700"
               )}>
-                {inChinaItems.length}
+                {visibleInChina.length}
               </span>
             </div>
 
@@ -796,7 +821,7 @@ function ClassicPortalShipments() {
               "divide-y overflow-hidden rounded-2xl border",
               isDark ? "divide-slate-700 border-slate-700 bg-slate-800/50" : "divide-slate-100 border-slate-200 bg-white"
             )}>
-              {inChinaItems.map((item) => (
+              {visibleInChina.map((item) => (
                 <div key={item.key} className="flex items-center gap-3 p-3">
                   <div className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
