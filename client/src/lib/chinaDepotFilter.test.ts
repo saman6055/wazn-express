@@ -117,3 +117,60 @@ describe("leaving the depot", () => {
     expect(filterChinaDepot([], { shippingType: "sea" })).toEqual([]);
   });
 });
+
+/**
+ * One physical parcel can be recorded twice: the office buys it (an order) and
+ * the depot then scans it in (a package). Both carry the same tracking number.
+ * Listed separately, the customer saw the same box twice and the count said
+ * six when they had four.
+ */
+describe("one parcel, one row", () => {
+  // Mirrors the merge in useChinaDepotItems: key on tracking number, and keep
+  // whichever side knows each field.
+  const dedupe = (rows: { tracking: string | null; id: string; name?: string | null; weight?: number | null }[]) => {
+    const byKey = new Map<string, { code: string; name: string | null; weight: number | null }>();
+    for (const row of rows) {
+      const key = row.tracking ? String(row.tracking) : row.id;
+      const existing = byKey.get(key);
+      const next = { code: row.tracking ?? row.id, name: row.name ?? null, weight: row.weight ?? null };
+      byKey.set(key, existing
+        ? { ...existing, name: existing.name ?? next.name, weight: existing.weight ?? next.weight }
+        : next);
+    }
+    return Array.from(byKey.values());
+  };
+
+  it("collapses a package and an order sharing a tracking number", () => {
+    const merged = dedupe([
+      { id: "pkg-1", tracking: "79123431425593", weight: 0.1 },
+      { id: "order-1", tracking: "79123431425593", name: "Accessories" },
+    ]);
+    expect(merged).toHaveLength(1);
+  });
+
+  it("keeps the weight from the depot and the name from the order", () => {
+    // Each side knows something the other does not; dropping either loses it.
+    const [row] = dedupe([
+      { id: "pkg-1", tracking: "773427610383344", weight: 0.3 },
+      { id: "order-1", tracking: "773427610383344", name: "clothes" },
+    ]);
+    expect(row.weight).toBe(0.3);
+    expect(row.name).toBe("clothes");
+  });
+
+  it("never merges two parcels that have no tracking number", () => {
+    // Falling back to a shared empty key would collapse unrelated parcels.
+    const merged = dedupe([
+      { id: "pkg-1", tracking: null },
+      { id: "pkg-2", tracking: null },
+    ]);
+    expect(merged).toHaveLength(2);
+  });
+
+  it("leaves genuinely different tracking numbers alone", () => {
+    expect(dedupe([
+      { id: "pkg-1", tracking: "AAA" },
+      { id: "pkg-2", tracking: "BBB" },
+    ])).toHaveLength(2);
+  });
+});

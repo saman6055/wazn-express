@@ -1,3 +1,4 @@
+import { ChinaDepotList, useChinaDepotItems } from "@/components/portal/ChinaDepotList";
 import { STATUS_LABEL } from "@/lib/shipmentFilters";
 import { pickLang } from "@/lib/lang";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -34,6 +35,8 @@ type StatusFilter = "all" | "in_transit" | "arrived" | "delivered";
 
 export default function ModernPortalShipments() {
   const { language } = useLanguage();
+
+  const chinaDepotItems = useChinaDepotItems();
 
   // Shared wording, so this skin cannot drift from the others.
 
@@ -718,88 +721,10 @@ export default function ModernPortalShipments() {
           )}
 
           {/* Unbatched Packages Alert */}
-          {unbatchedPackages && unbatchedPackages.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cn(
-                "mt-4 rounded-2xl p-4 shadow-sm",
-                isDark
-                  ? "bg-amber-950/30 border border-amber-800/40"
-                  : "bg-amber-50 border border-amber-200"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div className="flex-1">
-                  <p
-                    className={cn(
-                      "text-sm font-semibold",
-                      isDark ? "text-amber-300" : "text-amber-800"
-                    )}
-                  >
-                    {unbatchedPackages.length}{" "}
-                    {language === "ku"
-                      ? "پاکەت چاوەڕوانی باچن"
-                      : "packages awaiting batch"}
-                  </p>
-                  <p
-                    className={cn(
-                      "text-xs mt-0.5",
-                      isDark ? "text-amber-400/70" : "text-amber-600"
-                    )}
-                  >
-                    {language === "ku"
-                      ? "بەم زووانە زیاد دەکرێن"
-                      : "Will be added to a batch soon"}
-                  </p>
-                </div>
-              </div>
-
-              {/* List unbatched packages */}
-              <div className="mt-3 space-y-2">
-                {unbatchedPackages.slice(0, 5).map((pkg: any) => (
-                  <div
-                    key={pkg.id}
-                    className={cn(
-                      "flex items-center justify-between rounded-xl px-3 py-2",
-                      isDark ? "bg-amber-950/40" : "bg-amber-100/50"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "text-xs font-mono font-medium",
-                        isDark ? "text-amber-300" : "text-amber-800"
-                      )}
-                    >
-                      {pkg.trackingNumber || pkg.packageCode || `PKG-${pkg.id}`}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-xs",
-                        isDark ? "text-amber-400/60" : "text-amber-600"
-                      )}
-                    >
-                      {Number(pkg.weightKg || 0).toFixed(1)} kg
-                    </span>
-                  </div>
-                ))}
-                {unbatchedPackages.length > 5 && (
-                  <p
-                    className={cn(
-                      "text-xs text-center pt-1",
-                      isDark ? "text-amber-400/50" : "text-amber-500"
-                    )}
-                  >
-                    +{unbatchedPackages.length - 5}{" "}
-                    {language === "ku" ? "زیاتر" : "more"}
-                  </p>
-                )}
-              </div>
-            </motion.div>
-          )}
+          {/* The same China-depot list every skin shows: each parcel with
+              its photo, tracking number and weight, rather than the bare
+              amber count this used to be. */}
+          <ChinaDepotList items={chinaDepotItems} isDark={isDark} />
         </div>
       </div>
     </ModernPortalLayout>

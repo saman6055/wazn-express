@@ -1,3 +1,4 @@
+import { ChinaDepotList, useChinaDepotItems } from "@/components/portal/ChinaDepotList";
 import { STATUS_LABEL } from "@/lib/shipmentFilters";
 import { pickLang } from "@/lib/lang";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -34,6 +35,8 @@ type StatusFilter = "all" | "in_transit" | "arrived" | "delivered";
 
 export default function Skin3PortalShipments() {
   const { language } = useLanguage();
+
+  const chinaDepotItems = useChinaDepotItems();
 
   // Shared wording, so this skin cannot drift from the others.
 
@@ -797,101 +800,10 @@ export default function Skin3PortalShipments() {
           )}
 
           {/* Unbatched Packages Alert */}
-          {unbatchedPackages && unbatchedPackages.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 24 }}
-              className={cn(
-                "mt-4 rounded-xl border-2 p-4",
-                isDark
-                  ? "bg-amber-950/30 border-amber-500/30"
-                  : "bg-amber-50 border-amber-300 shadow-[4px_4px_0px_rgba(245,158,11,0.1)]"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
-                    isDark ? "bg-amber-900/50" : "bg-amber-200"
-                  )}
-                >
-                  <AlertTriangle
-                    className={cn(
-                      "w-5 h-5",
-                      isDark ? "text-amber-400" : "text-amber-700"
-                    )}
-                    strokeWidth={2.5}
-                  />
-                </div>
-                <div className="flex-1">
-                  <p
-                    className={cn(
-                      "text-sm font-black",
-                      isDark ? "text-amber-300" : "text-amber-800"
-                    )}
-                  >
-                    {unbatchedPackages.length}{" "}
-                    {language === "ku"
-                      ? "پاکەت چاوەڕوانی باچن"
-                      : "packages awaiting batch"}
-                  </p>
-                  <p
-                    className={cn(
-                      "text-xs font-medium mt-0.5",
-                      isDark ? "text-amber-400/70" : "text-amber-600"
-                    )}
-                  >
-                    {language === "ku"
-                      ? "بەم زووانە زیاد دەکرێن"
-                      : "Will be added to a batch soon"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-3 space-y-2">
-                {unbatchedPackages.slice(0, 5).map((pkg: any) => (
-                  <div
-                    key={pkg.id}
-                    className={cn(
-                      "flex items-center justify-between rounded-lg px-3 py-2 border",
-                      isDark
-                        ? "bg-amber-950/40 border-amber-700/30"
-                        : "bg-amber-100/60 border-amber-200"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "text-xs font-mono font-black",
-                        isDark ? "text-amber-300" : "text-amber-800"
-                      )}
-                    >
-                      {pkg.trackingNumber || pkg.packageCode || `PKG-${pkg.id}`}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-xs font-bold tabular-nums",
-                        isDark ? "text-amber-400/60" : "text-amber-600"
-                      )}
-                    >
-                      {Number(pkg.weightKg || 0).toFixed(1)} kg
-                    </span>
-                  </div>
-                ))}
-                {unbatchedPackages.length > 5 && (
-                  <p
-                    className={cn(
-                      "text-xs font-bold text-center pt-1",
-                      isDark ? "text-amber-400/50" : "text-amber-500"
-                    )}
-                  >
-                    +{unbatchedPackages.length - 5}{" "}
-                    {language === "ku" ? "زیاتر" : "more"}
-                  </p>
-                )}
-              </div>
-            </motion.div>
-          )}
+          {/* The same China-depot list every skin shows: each parcel with
+              its photo, tracking number and weight, rather than the bare
+              amber count this used to be. */}
+          <ChinaDepotList items={chinaDepotItems} isDark={isDark} />
         </div>
       </div>
     </Skin3PortalLayout>
