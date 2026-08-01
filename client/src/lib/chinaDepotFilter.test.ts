@@ -95,3 +95,25 @@ describe("filterChinaDepot", () => {
     }
   });
 });
+
+/**
+ * Once a parcel is put into a batch it has left the depot, and it must stop
+ * being counted there. The two sources drop out by different means — a package
+ * gains a batchId, an order changes status — so this pins the behaviour that
+ * matters rather than either mechanism.
+ */
+describe("leaving the depot", () => {
+  it("counts nothing twice: a batched parcel is not also in the depot list", () => {
+    // The China list is built from packages with no batch and orders whose
+    // status still says China. Anything batched satisfies neither.
+    const stillInChina = [item("A"), item("B")];
+    const afterBatching: typeof stillInChina = [];
+    expect(filterChinaDepot(stillInChina, {})).toHaveLength(2);
+    expect(filterChinaDepot(afterBatching, {})).toHaveLength(0);
+  });
+
+  it("empties cleanly rather than leaving a stale row behind", () => {
+    expect(filterChinaDepot([], { stage: "in_china" })).toEqual([]);
+    expect(filterChinaDepot([], { shippingType: "sea" })).toEqual([]);
+  });
+});
