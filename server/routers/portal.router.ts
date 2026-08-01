@@ -111,7 +111,41 @@ export const customerPortalRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "هەژماری کڕیار نەدۆزرایەوە" });
         }
 
+        const box = await db.getDeliveryBoxById(input.boxId);
         const result = await db.confirmBoxReceivedByCustomer(input.boxId, customerId);
+
+        // Put it on the office's activity feed. A box closing itself without a
+        // staff member touching it is exactly the kind of movement the office
+        // should be able to see — and the feed is where it belongs rather than
+        // a push per box, which would be noise within a week.
+        if (result.ok && box) {
+          logPortal(ctx, customerId, "confirm_box_received", "claim", {
+            detail: box.boxCode,
+            entityType: "deliveryBox",
+            entityId: box.id,
+          });
+          try {
+            const customer = await db.getCustomerById(customerId);
+            await db.createActivityAlert({
+              action: "customer_confirmed_delivery",
+              category: "package",
+              entityType: "deliveryBox",
+              entityId: box.id,
+              entityCode: box.boxCode,
+              triggeredById: customerId,
+              triggeredByName: customer?.fullName || customer?.customerCode || "کڕیار",
+              customTitle: "کڕیار وەرگرتنی دووپات کردەوە",
+              customMessage:
+                `${customer?.fullName || "کڕیار"}${customer?.customerCode ? ` (${customer.customerCode})` : ""}` +
+                ` لە پۆرتاڵەوە دووپاتی کردەوە کە بۆکسی ${box.boxCode} بەدەستی گەیشتووە.`,
+              severity: "info",
+            });
+          } catch {
+            // The confirmation itself already succeeded; a failed feed entry
+            // must not turn that into an error for the customer.
+          }
+        }
+
         if (!result.ok) {
           const messages: Record<string, string> = {
             not_found: "بۆکس نەدۆزرایەوە",
@@ -633,6 +667,31 @@ export const customerPortalRouter = router({
           entityType: "declared_package",
           entityId: (declared as any)?.id,
         });
+
+        // The customer activity log above is written but has no screen behind
+        // it, so on its own this movement was invisible to the office. A
+        // customer announcing a parcel is something the depot needs to expect,
+        // so it also goes on the alert feed the office actually reads.
+        try {
+          const customer = await db.getCustomerById(customerId);
+          await db.createActivityAlert({
+            action: "customer_declared_package",
+            category: "package",
+            entityType: "declared_package",
+            entityId: (declared as any)?.id,
+            entityCode: input.trackingNumber,
+            triggeredById: customerId,
+            triggeredByName: customer?.fullName || customer?.customerCode || "کڕیار",
+            customTitle: "کڕیار تراکێکی نوێی تۆمار کرد",
+            customMessage:
+              `${customer?.fullName || "کڕیار"}${customer?.customerCode ? ` (${customer.customerCode})` : ""}` +
+              ` تراکی ${input.trackingNumber} ی تۆمار کرد و چاوەڕێی گەیشتنیەتی.`,
+            severity: "info",
+          });
+        } catch {
+          // The declaration itself already saved; the feed entry is secondary.
+        }
+
         return declared;
       }),
 
