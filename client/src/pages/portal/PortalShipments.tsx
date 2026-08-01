@@ -28,6 +28,7 @@ import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
 import { matchesStage, countByStage, STATUS_LABEL, orderStageOf, type ShipmentStage } from "@/lib/shipmentFilters";
 import { tint, gradient } from "@/lib/portalModes";
 import { formatClockDate } from "@/lib/portalClock";
+import { filterChinaDepot, matchesRoute } from "@/lib/chinaDepotFilter";
 // "" is no filter — which is what the old "All" chip meant. Dropping the chip
 // and letting nothing-selected mean everything is one less thing to explain.
 type StatusFilter = ShipmentStage;
@@ -157,6 +158,8 @@ function ClassicPortalShipments() {
       date: Date | null;
       weightKg: number | null;
       image: ReturnType<typeof resolvePackageImage> | null;
+      /** Chosen at quick-register, so these do belong under a route. */
+      shippingType: string | null;
     }[] = [];
 
     const asDate = (v: any): Date | null => {
@@ -176,6 +179,7 @@ function ClassicPortalShipments() {
         date: asDate(pkg.registeredAt),
         weightKg: pkg.weightKg != null ? Number(pkg.weightKg) : null,
         image: image.url ? image : null,
+        shippingType: pkg.shippingType ?? null,
       });
     }
 
@@ -192,6 +196,7 @@ function ClassicPortalShipments() {
         date: asDate(order.updatedAt || order.createdAt),
         weightKg: order.weightKg != null ? Number(order.weightKg) : null,
         image: image.url ? image : null,
+        shippingType: order.shippingType ?? null,
       });
     }
 
@@ -203,16 +208,19 @@ function ClassicPortalShipments() {
    * The China list has to obey the filters like everything else, or the page
    * says one thing at the top and another below it.
    *
-   * Choosing a shipping type hides it: nothing here has been put on a plane or
-   * a ship yet, so it has no type to match.
+   * The route is chosen at quick-register, so these parcels do belong under
+   * one — an air-standard parcel has no business appearing under sea. An item
+   * with no route recorded stays visible rather than disappearing from every
+   * route at once.
    */
-  const visibleInChina = useMemo(() => {
-    if (statusFilter && statusFilter !== "in_china") return [];
-    if (shippingType) return [];
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return inChinaItems;
-    return inChinaItems.filter(item => item.code.toLowerCase().includes(query));
-  }, [inChinaItems, statusFilter, shippingType, searchQuery]);
+  const visibleInChina = useMemo(
+    () => filterChinaDepot(inChinaItems, {
+      stage: statusFilter,
+      shippingType,
+      search: searchQuery,
+    }),
+    [inChinaItems, statusFilter, shippingType, searchQuery],
+  );
 
   /** Everything on screen, so the count and the empty state agree with it. */
   const totalResults = filteredBatches.length + visibleInChina.length;
@@ -369,14 +377,23 @@ function ClassicPortalShipments() {
    * "arrived" and "customs" belong with in-transit: the goods are in Iraq but
    * not yet in the customer's hands, so from their side they are still coming.
    */
-  // Counts have to match what tapping the pill actually shows. Goods in the
-  // China depot belong to no batch yet, so counting batches alone reported 0
-  // while six items sat listed underneath.
-  const batchStageCounts = countByStage((batches ?? []).map(b => b.status));
-  const stageCounts = {
-    ...batchStageCounts,
-    in_china: batchStageCounts.in_china + inChinaItems.length,
-  };
+  // Counts have to match what tapping the pill actually shows.
+  //
+  // Two things they used to get wrong: goods in the China depot belong to no
+  // batch, so counting batches alone reported 0 while six items sat listed
+  // underneath; and the route above is an upstream filter, so a count that
+  // ignored it promised parcels the stage would not then show.
+  const stageCounts = useMemo(() => {
+    const inRoute = (type: string | null | undefined) => matchesRoute(type, shippingType);
+
+    const counts = countByStage(
+      (batches ?? []).filter(b => inRoute(b.shippingType)).map(b => b.status),
+    );
+    return {
+      ...counts,
+      in_china: counts.in_china + inChinaItems.filter(i => inRoute(i.shippingType)).length,
+    };
+  }, [batches, inChinaItems, shippingType]);
   const statusFilters: { value: Exclude<StatusFilter, "">; label: string; labelKu: string; labelAr: string; count: number }[] = [
     { value: "in_china", label: "In China", labelKu: "لە کۆگای چین", labelAr: "في مستودع الصين", count: stageCounts.in_china },
     { value: "in_transit", label: "On the way", labelKu: "لە ڕێگادا", labelAr: "في الطريق", count: stageCounts.in_transit },
