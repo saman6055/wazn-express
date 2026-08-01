@@ -978,3 +978,69 @@ export async function recomputeBoxItems(
 
   return { added, updated, removed, totalPackages, totalWeightKg, totalValueUsd };
 }
+
+/**
+ * The boxes a customer can see in their portal.
+ *
+ * Only boxes that have left our hands — an `open` box is still being packed,
+ * and showing a customer a half-filled box invites "where is the rest of it?".
+ * Cancelled boxes are hidden for the same reason.
+ */
+export async function getCustomerVisibleBoxes(customerId: number): Promise<DeliveryBox[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(deliveryBoxes)
+    .where(and(
+      eq(deliveryBoxes.customerId, customerId),
+      inArray(deliveryBoxes.status, ['ready', 'in_transit', 'delivered']),
+    ))
+    .orderBy(desc(deliveryBoxes.id));
+}
+
+/**
+ * The customer confirming, from the portal, that a box reached them.
+ *
+ * Deliberately narrow:
+ *  - only their own box, and only one that has actually left (`ready` or
+ *    `in_transit`); nobody can confirm a box still being packed;
+ *  - the timestamp is written once and never cleared, so a receipt cannot be
+ *    quietly reversed — undoing one takes a member of staff;
+ *  - `deliveredById` is left alone. That field names the person who handed the
+ *    box over and took a signature, and a customer's word is not the same
+ *    thing.
+ */
+export async function confirmBoxReceivedByCustomer(
+  boxId: number,
+  customerId: number,
+): Promise<{ ok: boolean; reason?: string }> {
+  const db = await getDb();
+  if (!db) return { ok: false, reason: "no_db" };
+
+  const box = await getDeliveryBoxById(boxId);
+  if (!box) return { ok: false, reason: "not_found" };
+  if (box.customerId !== customerId) return { ok: false, reason: "not_yours" };
+  if (box.customerConfirmedAt) return { ok: true }; // already done; not an error
+  if (box.status !== 'ready' && box.status !== 'in_transit') {
+    return { ok: false, reason: "not_sent_yet" };
+  }
+
+  const now = new Date();
+  await db.update(deliveryBoxes)
+    .set({ status: 'delivered', customerConfirmedAt: now, deliveredAt: now })
+    .where(eq(deliveryBoxes.id, boxId));
+
+  // The packages inside travel with it.
+  const items = await getBoxItems(boxId);
+  for (const item of items) {
+    if (!item.packageId) continue;
+    try {
+      await db.update(packages)
+        .set({ status: 'delivered', deliveredAt: now })
+        .where(eq(packages.id, item.packageId));
+    } catch {
+      // One bad row must not stop the rest of the box being marked.
+    }
+  }
+
+  return { ok: true };
+}

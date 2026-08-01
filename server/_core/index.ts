@@ -10,6 +10,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
+import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
 import { runMigration } from "../services/migration.service";
 import { initializeScheduledBackups } from "../services/scheduledBackups.service";
 import { startScheduledCampaignsPoller } from "../services/push.service";
@@ -245,6 +246,8 @@ async function startServer() {
   try {
     await scheduleTrackingAlertNotifications();
     appLogger.info("Tracking alerts notification scheduler started");
+    await scheduleOpenBoxAlerts();
+    appLogger.info("Open delivery box reminder scheduler started");
   } catch (error) {
     appLogger.error("Failed to start tracking alert scheduler", { error: error instanceof Error ? error.message : String(error) });
   }

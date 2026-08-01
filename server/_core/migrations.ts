@@ -2364,6 +2364,11 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // A stage between customs and delivered: through customs, in the Erbil
   // depot, waiting to be collected. Widening an enum keeps every existing row
   // valid, so this is safe to re-run and safe on live data.
+  // Set when the customer confirms receipt from the portal, kept apart from
+  // deliveredById so a staff handover with a signature stays distinguishable
+  // from the customer's own word.
+  { name: "deliveryBoxes.customerConfirmedAt", sql: "ALTER TABLE deliveryBoxes ADD COLUMN customerConfirmedAt TIMESTAMP NULL" },
+
   {
     name: "batches.status.at_depot",
     sql: "ALTER TABLE batches MODIFY COLUMN status ENUM('preparing','in_transit','arrived','customs','at_depot','delivered','closed') NOT NULL DEFAULT 'preparing'",

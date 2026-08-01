@@ -82,6 +82,50 @@ export const customerPortalRouter = router({
         return { success: true };
       }),
 
+    /**
+     * The customer's own delivery boxes — the goods packed for them
+     * specifically, as opposed to the batch they travelled in.
+     */
+    getMyDeliveryBoxes: protectedProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.user.isCustomer
+        ? ctx.user.id
+        : (await db.getCustomerByUserId(ctx.user.id))?.id;
+      if (!customerId) return [];
+      return db.getCustomerVisibleBoxes(customerId);
+    }),
+
+    /**
+     * "I have received it." Confirms one of the customer's own boxes.
+     *
+     * One direction only: there is no way back from here. If it was tapped by
+     * mistake a member of staff can undo it, but a customer cannot quietly
+     * reverse a receipt they have already given.
+     */
+    confirmBoxReceived: protectedProcedure
+      .input(z.object({ boxId: z.number().int() }))
+      .mutation(async ({ input, ctx }) => {
+        const customerId = ctx.user.isCustomer
+          ? ctx.user.id
+          : (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "هەژماری کڕیار نەدۆزرایەوە" });
+        }
+
+        const result = await db.confirmBoxReceivedByCustomer(input.boxId, customerId);
+        if (!result.ok) {
+          const messages: Record<string, string> = {
+            not_found: "بۆکس نەدۆزرایەوە",
+            not_yours: "ئەم بۆکسە هی تۆ نییە",
+            not_sent_yet: "ئەم بۆکسە هێشتا نەنێردراوە",
+          };
+          throw new TRPCError({
+            code: result.reason === "not_yours" ? "FORBIDDEN" : "BAD_REQUEST",
+            message: messages[result.reason ?? ""] ?? "نەتوانرا دووپات بکرێتەوە",
+          });
+        }
+        return { success: true };
+      }),
+
     getMyPackages: protectedProcedure.query(async ({ ctx }) => {
       // For merged model, use user.id directly as customerId
       if (ctx.user.isCustomer) {

@@ -24,6 +24,7 @@ import { PriceListSection } from "@/components/portal/PriceListSection";
 import { WaznNewsCarousel } from "@/components/portal/WaznNewsCarousel";
 import { DeliveryRatingCard } from "@/components/portal/DeliveryRatingCard";
 import { ReferralCard } from "@/components/portal/ReferralCard";
+import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalHeaderControls, PortalClock, usePortalMode } from "@/components/portal/PortalHeaderControls";
 import { headerGradient, isLightHeader, modeDef, tint, gradient } from "@/lib/portalModes";
 
@@ -1065,6 +1066,11 @@ const { t, language } = useLanguage();
           </div>
         )}
       </div>
+
+      {/* The customer's own boxes. Sits above the referral card because a
+          box waiting to be confirmed is the most actionable thing on the page.
+          Renders nothing when there are none. */}
+      <MyDeliveryBoxes className="mt-4" />
 
       {/* Invite a friend — customer's code doubles as a referral code */}
       <ReferralCard isDark={isDark} language={language} />

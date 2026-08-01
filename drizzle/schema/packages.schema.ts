@@ -336,6 +336,15 @@ export const deliveryBoxes = mysqlTable("deliveryBoxes", {
   sealedById: int("sealedById"),
   deliveredById: int("deliveredById"),
 
+  // When the customer confirmed receipt themselves, from the portal.
+  //
+  // Kept apart from deliveredById, which names the staff member who handed the
+  // box over and took a signature. The day someone says "I never received it",
+  // the company needs to know which of the two happened: a staff handover with
+  // a signature, or the customer's own word. Writing a customer into a staff
+  // field would erase that difference.
+  customerConfirmedAt: timestamp("customerConfirmedAt"),
+
   // کاتەکان
   sealedAt: timestamp("sealedAt"),
   inTransitAt: timestamp("inTransitAt"),
