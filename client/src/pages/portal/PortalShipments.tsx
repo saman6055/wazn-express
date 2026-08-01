@@ -13,12 +13,13 @@ import { trpc } from "@/lib/trpc";
 import { 
   Package, ChevronRight, Truck, CheckCircle, Clock, AlertCircle, 
   Plane, Ship, Box, AlertTriangle, Search, Filter, X, Calendar,
-  ArrowUpDown, Download, Share2, HelpCircle, Info, Warehouse
+  ArrowUpDown, Download, Share2, HelpCircle, Info, Warehouse, Copy
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { PortalListSkeleton } from "@/components/portal/PortalListSkeleton";
 import { BatchJourneyTimeline } from "@/components/portal/BatchJourneyTimeline";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
+import { PackageThumb, usePackageImages } from "@/components/portal/PackageThumb";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -73,6 +74,20 @@ function ClassicPortalShipments() {
   // own table with their own status names. Leaving them out is why an order
   // could say "in China" on My Goods and be missing here entirely.
   const { data: myOrders } = trpc.customerPortal.getMyFullPackageOrders.useQuery({});
+  const { resolve: resolvePackageImage } = usePackageImages();
+
+  // Which tracking number was just copied, so the row can confirm it happened.
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const copyTracking = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 1600);
+    } catch {
+      // Blocked on insecure origins. The number is still on screen to read,
+      // so there is nothing worth interrupting the customer about.
+    }
+  };
   const handleRefresh = async () => {
     await Promise.all([refetch(), refetchUnbatched()]);
   };
@@ -141,6 +156,7 @@ function ClassicPortalShipments() {
       name?: string | null;
       date: Date | null;
       weightKg: number | null;
+      image: ReturnType<typeof resolvePackageImage> | null;
     }[] = [];
 
     const asDate = (v: any): Date | null => {
@@ -150,29 +166,38 @@ function ClassicPortalShipments() {
     };
 
     for (const pkg of unbatchedPackages ?? []) {
+      // The photo the warehouse took at check-in, falling back to the product
+      // or declared picture when there is none.
+      const image = resolvePackageImage(pkg as any);
       items.push({
         key: `pkg-${pkg.id}`,
         code: pkg.trackingNumber || pkg.packageCode || `#${pkg.id}`,
         name: null,
         date: asDate(pkg.registeredAt),
         weightKg: pkg.weightKg != null ? Number(pkg.weightKg) : null,
+        image: image.url ? image : null,
       });
     }
 
     for (const order of (myOrders as any[]) ?? []) {
       if (orderStageOf(order.status) !== "in_china") continue;
+      const image = resolvePackageImage({
+        photos: null,
+        trackingNumber: order.trackingNumber,
+      } as any);
       items.push({
         key: `order-${order.id}`,
         code: order.trackingNumber || order.orderCode || `#${order.id}`,
         name: order.productName ?? null,
         date: asDate(order.updatedAt || order.createdAt),
         weightKg: order.weightKg != null ? Number(order.weightKg) : null,
+        image: image.url ? image : null,
       });
     }
 
     // Newest first, undated last.
     return items.sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
-  }, [unbatchedPackages, myOrders]);
+  }, [unbatchedPackages, myOrders, resolvePackageImage]);
 
   /**
    * The China list has to obey the filters like everything else, or the page
@@ -823,17 +848,56 @@ function ClassicPortalShipments() {
             )}>
               {visibleInChina.map((item) => (
                 <div key={item.key} className="flex items-center gap-3 p-3">
-                  <div className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
-                    isDark ? "bg-emerald-900/40" : "bg-emerald-50"
-                  )}>
-                    <Package className={cn("h-4 w-4", isDark ? "text-emerald-400" : "text-emerald-600")} />
-                  </div>
+                  {/* The photo the warehouse took when the parcel was scanned
+                      in. Seeing their own goods on the shelf is the whole
+                      reassurance of this section; a generic box icon is not. */}
+                  {item.image ? (
+                    <PackageThumb
+                      resolved={item.image}
+                      language={language}
+                      size={44}
+                      isDark={isDark}
+                      showBadge={false}
+                      className="shrink-0"
+                    />
+                  ) : (
+                    <div className={cn(
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+                      isDark ? "bg-emerald-900/40" : "bg-emerald-50"
+                    )}>
+                      <Package className={cn("h-4 w-4", isDark ? "text-emerald-400" : "text-emerald-600")} />
+                    </div>
+                  )}
+
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-mono text-sm font-semibold" dir="ltr">
-                      {item.code}
-                    </p>
-                    <div className="flex items-center gap-2">
+                    {/* Tap to copy. A tracking number is for pasting into a
+                        courier's site, and typing one off a phone screen by
+                        hand is how digits get transposed. */}
+                    <button
+                      type="button"
+                      onClick={() => copyTracking(item.code)}
+                      className={cn(
+                        "flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 -mx-1 transition active:scale-[0.98]",
+                        isDark ? "hover:bg-white/5" : "hover:bg-black/5"
+                      )}
+                    >
+                      <span
+                        // Had no colour of its own, so it inherited the page's
+                        // dark body text and vanished in dark mode.
+                        className={cn(
+                          "truncate font-mono text-sm font-semibold",
+                          isDark ? "text-slate-100" : "text-slate-800"
+                        )}
+                        dir="ltr"
+                      >
+                        {item.code}
+                      </span>
+                      {copiedCode === item.code
+                        ? <CheckCircle className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                        : <Copy className={cn("h-3.5 w-3.5 shrink-0", isDark ? "text-slate-500" : "text-slate-400")} />}
+                    </button>
+
+                    <div className="flex items-center gap-2 px-1">
                       {item.date && (
                         <p className="text-[11px] text-muted-foreground">
                           {formatClockDate(item.date, language)}
@@ -844,6 +908,7 @@ function ClassicPortalShipments() {
                       )}
                     </div>
                   </div>
+
                   {item.weightKg != null && (
                     <span className="shrink-0 text-xs text-muted-foreground tabular-nums" dir="ltr">
                       {item.weightKg.toFixed(2)} kg
