@@ -1,3 +1,5 @@
+import { STATUS_LABEL } from "@/lib/shipmentFilters";
+import { pickLang } from "@/lib/lang";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -32,6 +34,16 @@ type StatusFilter = "all" | "in_transit" | "arrived" | "delivered";
 
 export default function Skin3PortalShipments() {
   const { language } = useLanguage();
+
+  // Shared wording, so this skin cannot drift from the others.
+
+  const statusLabel = (status: string) => {
+
+    const label = STATUS_LABEL[status as keyof typeof STATUS_LABEL];
+
+    return label ? pickLang(language, label) : (status?.replace(/_/g, " ") || "—");
+
+  };
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
@@ -95,7 +107,7 @@ export default function Skin3PortalShipments() {
       case "delivered":
       case "closed":
         return {
-          label: language === "ku" ? "گەیاندرا" : "Delivered",
+          label: statusLabel("delivered"),
           color: isDark ? "text-emerald-400" : "text-emerald-700",
           bg: isDark ? "bg-emerald-950/50" : "bg-emerald-100",
           pillBg: isDark
@@ -105,7 +117,7 @@ export default function Skin3PortalShipments() {
         };
       case "in_transit":
         return {
-          label: language === "ku" ? "لەڕێگا" : "In Transit",
+          label: statusLabel("in_transit"),
           color: isDark ? "text-blue-400" : "text-blue-700",
           bg: isDark ? "bg-blue-950/50" : "bg-blue-100",
           pillBg: isDark
@@ -115,7 +127,7 @@ export default function Skin3PortalShipments() {
         };
       case "arrived":
         return {
-          label: language === "ku" ? "گەیشتوو" : "Arrived",
+          label: statusLabel("arrived"),
           color: isDark ? "text-violet-400" : "text-violet-700",
           bg: isDark ? "bg-violet-950/50" : "bg-violet-100",
           pillBg: isDark
@@ -125,7 +137,7 @@ export default function Skin3PortalShipments() {
         };
       case "customs":
         return {
-          label: language === "ku" ? "گومرگ" : "Customs",
+          label: statusLabel("customs"),
           color: isDark ? "text-amber-400" : "text-amber-700",
           bg: isDark ? "bg-amber-950/50" : "bg-amber-100",
           pillBg: isDark
@@ -135,7 +147,7 @@ export default function Skin3PortalShipments() {
         };
       case "preparing":
         return {
-          label: language === "ku" ? "ئامادەکاری" : "Preparing",
+          label: statusLabel("preparing"),
           color: isDark ? "text-gray-400" : "text-gray-600",
           bg: isDark ? "bg-gray-800/50" : "bg-gray-100",
           pillBg: isDark
@@ -145,7 +157,7 @@ export default function Skin3PortalShipments() {
         };
       default:
         return {
-          label: status?.replace(/_/g, " ") || "Unknown",
+          label: statusLabel(status),
           color: isDark ? "text-gray-400" : "text-gray-600",
           bg: isDark ? "bg-gray-800/50" : "bg-gray-100",
           pillBg: isDark
@@ -160,19 +172,19 @@ export default function Skin3PortalShipments() {
     switch (status) {
       case "delivered":
         return {
-          label: language === "ku" ? "گەیاندرا" : "Delivered",
+          label: statusLabel("delivered"),
           color: isDark ? "text-emerald-400" : "text-emerald-700",
           bg: isDark ? "bg-emerald-500/20" : "bg-emerald-100",
         };
       case "in_transit":
         return {
-          label: language === "ku" ? "لەڕێگا" : "In Transit",
+          label: statusLabel("in_transit"),
           color: isDark ? "text-blue-400" : "text-blue-700",
           bg: isDark ? "bg-blue-500/20" : "bg-blue-100",
         };
       case "arrived":
         return {
-          label: language === "ku" ? "گەیشتوو" : "Arrived",
+          label: statusLabel("arrived"),
           color: isDark ? "text-violet-400" : "text-violet-700",
           bg: isDark ? "bg-violet-500/20" : "bg-violet-100",
         };

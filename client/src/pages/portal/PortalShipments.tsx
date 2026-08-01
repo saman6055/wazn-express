@@ -287,38 +287,19 @@ function ClassicPortalShipments() {
     }
   };
 
+  /**
+   * The badge on each batch card.
+   *
+   * This was a fourth private copy of the status names, and it carried the
+   * same fault the others did: "گەیشتووە" for both `arrived` and `delivered`,
+   * so a batch that had reached Iraq and one already in the customer's hands
+   * read identically. It also predated `at_depot`, which would have shown as
+   * the raw column value, and used different words from the filters directly
+   * above it — the page disagreeing with itself.
+   */
   const getStatusText = (status: string) => {
-    if (language === "ku") {
-      const statusMap: Record<string, string> = {
-        preparing: "ئامادەکاری",
-        in_transit: "لە ڕێگادا",
-        arrived: "گەیشتووە",
-        customs: "گومرگ",
-        delivered: "گەیشتووە",
-        closed: "داخراوە",
-      };
-      return statusMap[status] || status;
-    }
-    if (language === "ar") {
-      const statusMap: Record<string, string> = {
-        preparing: "جاري التحضير",
-        in_transit: "في الطريق",
-        arrived: "وصلت",
-        customs: "الجمارك",
-        delivered: "تم التسليم",
-        closed: "مغلق",
-      };
-      return statusMap[status] || status;
-    }
-    const statusMap: Record<string, string> = {
-      preparing: "Preparing",
-      in_transit: "In Transit",
-      arrived: "Arrived",
-      customs: "Customs",
-      delivered: "Delivered",
-      closed: "Closed",
-    };
-    return statusMap[status] || status;
+    const label = STATUS_LABEL[status as keyof typeof STATUS_LABEL];
+    return label ? pickLang(language, label) : status;
   };
 
   const getShippingIcon = (type: string) => {

@@ -1,3 +1,5 @@
+import { STATUS_LABEL } from "@/lib/shipmentFilters";
+import { pickLang } from "@/lib/lang";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -32,6 +34,16 @@ type StatusFilter = "all" | "in_transit" | "arrived" | "delivered";
 
 export default function ModernPortalShipments() {
   const { language } = useLanguage();
+
+  // Shared wording, so this skin cannot drift from the others.
+
+  const statusLabel = (status: string) => {
+
+    const label = STATUS_LABEL[status as keyof typeof STATUS_LABEL];
+
+    return label ? pickLang(language, label) : (status?.replace(/_/g, " ") || "—");
+
+  };
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
@@ -95,7 +107,7 @@ export default function ModernPortalShipments() {
       case "delivered":
       case "closed":
         return {
-          label: language === "ku" ? "گەیاندرا" : "Delivered",
+          label: statusLabel("delivered"),
           color: "text-emerald-600 dark:text-emerald-400",
           bg: "bg-emerald-50 dark:bg-emerald-950/40",
           border: "border-emerald-200 dark:border-emerald-800",
@@ -103,7 +115,7 @@ export default function ModernPortalShipments() {
         };
       case "in_transit":
         return {
-          label: language === "ku" ? "لەڕێگا" : "In Transit",
+          label: statusLabel("in_transit"),
           color: "text-blue-600 dark:text-blue-400",
           bg: "bg-blue-50 dark:bg-blue-950/40",
           border: "border-blue-200 dark:border-blue-800",
@@ -111,7 +123,7 @@ export default function ModernPortalShipments() {
         };
       case "arrived":
         return {
-          label: language === "ku" ? "گەیشتوو" : "Arrived",
+          label: statusLabel("arrived"),
           color: "text-violet-600 dark:text-violet-400",
           bg: "bg-violet-50 dark:bg-violet-950/40",
           border: "border-violet-200 dark:border-violet-800",
@@ -119,7 +131,7 @@ export default function ModernPortalShipments() {
         };
       case "customs":
         return {
-          label: language === "ku" ? "گومرگ" : "Customs",
+          label: statusLabel("customs"),
           color: "text-amber-600 dark:text-amber-400",
           bg: "bg-amber-50 dark:bg-amber-950/40",
           border: "border-amber-200 dark:border-amber-800",
@@ -127,7 +139,7 @@ export default function ModernPortalShipments() {
         };
       case "preparing":
         return {
-          label: language === "ku" ? "ئامادەکاری" : "Preparing",
+          label: statusLabel("preparing"),
           color: "text-gray-600 dark:text-gray-400",
           bg: "bg-gray-50 dark:bg-gray-950/40",
           border: "border-gray-200 dark:border-gray-800",
@@ -135,7 +147,7 @@ export default function ModernPortalShipments() {
         };
       default:
         return {
-          label: status?.replace(/_/g, " ") || "Unknown",
+          label: statusLabel(status),
           color: "text-gray-600 dark:text-gray-400",
           bg: "bg-gray-50 dark:bg-gray-950/40",
           border: "border-gray-200 dark:border-gray-800",
@@ -148,19 +160,19 @@ export default function ModernPortalShipments() {
     switch (status) {
       case "delivered":
         return {
-          label: language === "ku" ? "گەیاندرا" : "Delivered",
+          label: statusLabel("delivered"),
           color: "text-emerald-600 dark:text-emerald-400",
           bg: "bg-emerald-50 dark:bg-emerald-950/40",
         };
       case "in_transit":
         return {
-          label: language === "ku" ? "لەڕێگا" : "In Transit",
+          label: statusLabel("in_transit"),
           color: "text-blue-600 dark:text-blue-400",
           bg: "bg-blue-50 dark:bg-blue-950/40",
         };
       case "arrived":
         return {
-          label: language === "ku" ? "گەیشتوو" : "Arrived",
+          label: statusLabel("arrived"),
           color: "text-violet-600 dark:text-violet-400",
           bg: "bg-violet-50 dark:bg-violet-950/40",
         };
@@ -172,7 +184,7 @@ export default function ModernPortalShipments() {
         };
       default:
         return {
-          label: status?.replace(/_/g, " ") || "—",
+          label: statusLabel(status),
           color: "text-gray-600 dark:text-gray-400",
           bg: "bg-gray-50 dark:bg-gray-950/40",
         };
