@@ -13,7 +13,7 @@ import { trpc } from "@/lib/trpc";
 import { 
   Package, ChevronRight, Truck, CheckCircle, Clock, AlertCircle, 
   Plane, Ship, Box, AlertTriangle, Search, Filter, X, Calendar,
-  ArrowUpDown, Download, Share2, HelpCircle, Info
+  ArrowUpDown, Download, Share2, HelpCircle, Info, Warehouse
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { PortalListSkeleton } from "@/components/portal/PortalListSkeleton";
@@ -22,9 +22,11 @@ import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { pickLang } from "@/lib/lang";
 import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
-import { matchesStage, countByStage, type ShipmentStage } from "@/lib/shipmentFilters";
+import { matchesStage, countByStage, STATUS_LABEL, type ShipmentStage } from "@/lib/shipmentFilters";
 import { tint, gradient } from "@/lib/portalModes";
+import { formatClockDate } from "@/lib/portalClock";
 // "" is no filter — which is what the old "All" chip meant. Dropping the chip
 // and letting nothing-selected mean everything is one less thing to explain.
 type StatusFilter = ShipmentStage;
@@ -110,8 +112,8 @@ function ClassicPortalShipments() {
         arrived: 3,
         at_depot: 4,
         preparing: 5,
-        delivered: 5,
-        closed: 6
+        delivered: 6,
+        closed: 7
       };
       return (statusPriority[a.status] || 99) - (statusPriority[b.status] || 99);
     });
@@ -715,37 +717,68 @@ function ClassicPortalShipments() {
         )}
 
         {/* Unbatched Packages Section */}
+        {/* Packages scanned onto this customer's code but not yet in a batch —
+            in other words, the first rung of the journey: they have reached our
+            China depot safely.
+
+            This used to be an amber warning card showing nothing but a count.
+            Goods arriving safely is good news, not a caution, and a customer
+            who has just been told "3 packages" wants to know *which* three. */}
         {unbatchedPackages && unbatchedPackages.length > 0 && (
           <div className="mt-6">
             <div className="flex items-center gap-2 mb-3">
-              <Box className={cn("w-5 h-5", isDark ? "text-amber-400" : "text-amber-600")} />
+              <Warehouse className={cn("w-5 h-5", isDark ? "text-emerald-400" : "text-emerald-600")} />
               <h3 className={cn("font-bold", isDark ? "text-white" : "text-slate-800")}>
-                {language === "ku" ? "پاکەتە چاوەڕوانەکان" : language === "ar" ? "الطرود المعلقة" : "Pending Packages"}
+                {pickLang(language, STATUS_LABEL.preparing)}
               </h3>
+              <span className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
+                isDark ? "bg-emerald-900/50 text-emerald-300" : "bg-emerald-100 text-emerald-700"
+              )}>
+                {unbatchedPackages.length}
+              </span>
             </div>
+
             <div className={cn(
-              "rounded-2xl p-4 border",
-              isDark 
-                ? "bg-gradient-to-r from-amber-900/30 to-yellow-900/30 border-amber-800" 
-                : "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200"
+              "divide-y overflow-hidden rounded-2xl border",
+              isDark ? "divide-slate-700 border-slate-700 bg-slate-800/50" : "divide-slate-100 border-slate-200 bg-white"
             )}>
-              <div className="flex items-center gap-3">
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center",
-                  isDark ? "bg-amber-900/50" : "bg-amber-100"
-                )}>
-                  <AlertTriangle className={cn("w-5 h-5", isDark ? "text-amber-400" : "text-amber-600")} />
+              {unbatchedPackages.map((pkg: any) => (
+                <div key={pkg.id} className="flex items-center gap-3 p-3">
+                  <div className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+                    isDark ? "bg-emerald-900/40" : "bg-emerald-50"
+                  )}>
+                    <Package className={cn("h-4 w-4", isDark ? "text-emerald-400" : "text-emerald-600")} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-mono text-sm font-semibold" dir="ltr">
+                      {pkg.trackingNumber || pkg.packageCode || `#${pkg.id}`}
+                    </p>
+                    {pkg.registeredAt && (
+                      <p className="text-[11px] text-muted-foreground">
+                        {formatClockDate(new Date(pkg.registeredAt), language)}
+                      </p>
+                    )}
+                  </div>
+                  {pkg.weightKg && (
+                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums" dir="ltr">
+                      {Number(pkg.weightKg).toFixed(2)} kg
+                    </span>
+                  )}
                 </div>
-                <div>
-                  <p className={cn("font-medium", isDark ? "text-amber-300" : "text-amber-800")}>
-                    {unbatchedPackages.length} {language === "ku" ? "پاکەت چاوەڕوانی باچن" : language === "ar" ? "طرد بانتظار التجميع" : "packages waiting to be batched"}
-                  </p>
-                  <p className={cn("text-sm", isDark ? "text-amber-400/70" : "text-amber-600")}>
-                    {language === "ku" ? "بەم زووانە زیاد دەکرێن" : language === "ar" ? "سيتم إضافتها إلى دفعة قريباً" : "Will be added to a batch soon"}
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
+
+            <p className="mt-2 px-1 text-[11px] text-muted-foreground">
+              {language === "ku"
+                ? "بە سەلامەتی گەیشتوونەتە کۆگاکەمان لە چین. کاتێک باچێک پڕ بوو، بەڕێ دەکەون."
+                : language === "ar"
+                ? "وصلت بأمان إلى مستودعنا في الصين. وستُشحن حين تكتمل الدفعة."
+                : language === "zh"
+                ? "已安全抵达我们的中国仓库，凑够一批后即发运。"
+                : "Safely at our China depot. They ship once a batch is full."}
+            </p>
           </div>
         )}
         </div>
