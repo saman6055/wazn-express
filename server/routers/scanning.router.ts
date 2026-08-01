@@ -15,6 +15,10 @@ import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, ba
 // string a scanner stores. Best-effort — never blocks or fails the scan.
 // ---------------------------------------------------------------------------
 const STAGE_NOTIF: Record<string, { en: string; ku: string; ar: string; ok?: boolean }> = {
+  // A quick-register scan is the first moment a customer's goods exist in the
+  // system, and it happens at the China depot — so it says the same thing the
+  // portal's first stage says, in the same words.
+  registered:       { en: "Arrived at China warehouse", ku: "گەیشتە کۆگای چین",     ar: "وصل إلى مستودع الصين" },
   received_china:   { en: "Arrived at China warehouse", ku: "گەیشتە کۆگای چین",     ar: "وصل إلى مستودع الصين" },
   in_batch:         { en: "Added to shipment",          ku: "خرایە ناو بارەکە",      ar: "أُضيف إلى الشحنة" },
   received_local:   { en: "Arrived at Erbil warehouse", ku: "گەیشتە کۆگای هەولێر",   ar: "وصل إلى مستودع أربيل" },
@@ -279,16 +283,27 @@ export const scanningRouter = router({
           notes: 'Quick registered via barcode scan',
         });
         
-        // Create status history
+        // Create status history. Lowercase to match the column's own values —
+        // every other writer uses 'registered', so 'Registered' here made the
+        // same package's history read in two different vocabularies.
         await db.createStatusHistory({
           packageId: pkg.id,
           fromStatus: null,
-          toStatus: 'Registered',
+          toStatus: 'registered',
           changedById: ctx.user.id,
           changeMethod: 'scan',
           reason: 'Initial registration via barcode scan',
         });
-        
+
+        // Tell the customer their goods have reached us. This is the first
+        // moment they can be told anything at all, and until now it passed in
+        // silence — the parcel appeared in the portal with nothing to say it
+        // had. The notification carries a link to the package itself.
+        //
+        // Best-effort: a notification that fails must not fail the scan, or a
+        // warehouse worker gets an error for something that already worked.
+        await notifyStageInApp(pkg.id, 'registered');
+
         return pkg;
       }),
     
