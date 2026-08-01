@@ -1,3 +1,4 @@
+import { statusForScan } from "../lib/scanStatus";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
@@ -171,21 +172,16 @@ export const scanningRouter = router({
           photoUrl: input.photoUrl,
         });
         
-        // If package exists, update its status
+        // If package exists, update its status.
+        //
+        // This used to map the scan type to a display string — 'In Local
+        // Warehouse', 'In Transit' — and write that to packages.status, which
+        // is an ENUM of nine lowercase values. Six of the nine scan types
+        // therefore wrote something the column cannot hold, and MySQL in
+        // strict mode rejected the write. Only 'registered', 'delivered' and
+        // 'returned' worked, and only because ENUM lookups ignore case.
         if (input.packageId) {
-          const statusMap: Record<string, string> = {
-            'registered': 'Registered',
-            'received_china': 'In China Warehouse',
-            'in_batch': 'In Batch',
-            'in_transit': 'In Transit',
-            'received_local': 'In Local Warehouse',
-            'out_for_delivery': 'Out for Delivery',
-            'delivered': 'Delivered',
-            'returned': 'Returned',
-            'customs_hold': 'Customs Hold'
-          };
-          
-          const newStatus = statusMap[input.scanType];
+          const newStatus = statusForScan(input.scanType);
           if (newStatus) {
             await db.updatePackageStatusViaScan(
               input.packageId,

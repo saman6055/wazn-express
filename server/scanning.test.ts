@@ -1,3 +1,4 @@
+import { statusForScan, isPackageStatus } from "./lib/scanStatus";
 import { describe, it, expect, beforeAll } from "vitest";
 import * as db from "./db";
 
@@ -51,30 +52,23 @@ describe("Barcode Scanning System", () => {
   });
 
   describe("Status Mapping", () => {
-    const statusMap: Record<string, string> = {
-      'registered': 'Registered',
-      'received_china': 'In China Warehouse',
-      'in_batch': 'In Batch',
-      'in_transit': 'In Transit',
-      'received_local': 'In Local Warehouse',
-      'out_for_delivery': 'Out for Delivery',
-      'delivered': 'Delivered',
-      'returned': 'Returned',
-      'customs_hold': 'Customs Hold'
-    };
+    // The mapping moved to server/lib/scanStatus.ts and is covered by
+    // server/scan-status.test.ts. It used to be asserted here as display
+    // strings ('In Local Warehouse'), which is exactly the shape that could
+    // not be written to the packages.status ENUM.
+    const scanTypes = [
+      "registered", "received_china", "in_batch", "in_transit",
+      "received_local", "out_for_delivery", "delivered", "returned", "customs_hold",
+    ];
 
-    it("should map scan types to package statuses correctly", () => {
-      expect(statusMap['registered']).toBe('Registered');
-      expect(statusMap['delivered']).toBe('Delivered');
-      expect(statusMap['in_transit']).toBe('In Transit');
-    });
-
-    it("should have status for all scan types", () => {
-      const scanTypes = Object.keys(statusMap);
-      expect(scanTypes.length).toBe(9);
+    it("maps every scan type to a value the status column accepts", () => {
+      for (const scanType of scanTypes) {
+        const status = statusForScan(scanType);
+        expect(status, scanType).not.toBeNull();
+        expect(isPackageStatus(status!), scanType).toBe(true);
+      }
     });
   });
-
   describe("Notification Triggers", () => {
     const notificationTriggers = ['received_local', 'delivered'];
 
