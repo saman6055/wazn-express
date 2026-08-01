@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { advanceStatus, type PackageStatus } from '../lib/scanStatus';
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getCustomerById } from './customers.db';
@@ -272,10 +273,18 @@ export async function updatePackageStatusViaScan(
   if (!pkg) throw new Error("Package not found");
   
   const oldStatus = pkg.status;
-  
+
+  // Only ever forwards. Scans arrive out of order — a container unpacked late,
+  // a parcel rescanned at the wrong station — and without this a stray scan
+  // would drag a delivered package back to "in the Erbil depot" and tell the
+  // customer their goods had un-arrived. Returning or cancelling is still
+  // allowed from anywhere, since that is a deliberate act.
+  const resolved = advanceStatus(oldStatus, newStatus as PackageStatus);
+  if (!resolved) return { skipped: true, oldStatus, newStatus };
+
   // Update package status
-  await db.update(packages).set({ 
-    status: newStatus as any,
+  await db.update(packages).set({
+    status: resolved,
     updatedAt: new Date()
   }).where(eq(packages.id, packageId));
   
@@ -283,14 +292,14 @@ export async function updatePackageStatusViaScan(
   await createStatusHistory({
     packageId,
     fromStatus: oldStatus,
-    toStatus: newStatus,
+    toStatus: resolved,
     changedById: userId,
     changeMethod: "scan",
     scanId,
     metadata
   });
-  
-  return { oldStatus, newStatus };
+
+  return { oldStatus, newStatus: resolved };
 }
 
 

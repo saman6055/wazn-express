@@ -1811,7 +1811,8 @@
     "arrive": "到达",
     "arriveDesc": "包裹到达最终目的地",
     "deliver": "配送",
-    "deliverDesc": "包裹已交付客户"
+    "deliverDesc": "包裹已交付客户",
+    "arrivalNotSaved": "到货未保存 — 请重新扫描"
   },
   "finance": {
     "title": "财务",

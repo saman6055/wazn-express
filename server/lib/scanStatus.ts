@@ -80,3 +80,48 @@ export function statusForScan(scanType: string): PackageStatus | null {
 export function isPackageStatus(value: string): value is PackageStatus {
   return (PACKAGE_STATUSES as string[]).includes(value);
 }
+
+/**
+ * How far along the journey each status sits.
+ *
+ * `returned` and `cancelled` are endings rather than steps, so they get no
+ * rank: nothing should ever quietly move a package out of them.
+ */
+const RANK: Partial<Record<PackageStatus, number>> = {
+  registered: 0,
+  in_batch: 1,
+  in_transit: 2,
+  customs_processing: 3,
+  ready_for_delivery: 4,
+  out_for_delivery: 5,
+  delivered: 6,
+};
+
+/**
+ * The status a package should end up in, given where it is and what just
+ * happened — never moving it backwards.
+ *
+ * A package can be touched by several things at once: a late arrival scan, an
+ * item added to a delivery box, a batch marked delivered. Without this, a scan
+ * arriving out of order would drag a delivered package back to "in the Erbil
+ * depot" and tell the customer their goods had un-arrived.
+ *
+ * A package that was returned or cancelled stays put. Those are decisions, and
+ * undoing one should take a person, not a barcode.
+ */
+export function advanceStatus(
+  current: string | null | undefined,
+  next: PackageStatus,
+): PackageStatus | null {
+  // Already ended, or holding a value we don't recognise: leave it alone.
+  if (current && RANK[current as PackageStatus] === undefined) return null;
+
+  // Returning or cancelling is a deliberate act — a scan that says so is
+  // allowed to end the journey from wherever the package had got to.
+  if (!isPackageStatus(next)) return null;
+  if (RANK[next] === undefined) return next;
+
+  const currentRank = RANK[current as PackageStatus];
+  if (currentRank === undefined) return next; // no status yet
+  return RANK[next]! > currentRank ? next : null;
+}

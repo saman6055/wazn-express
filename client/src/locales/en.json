@@ -1872,7 +1872,8 @@
     "arrive": "Arrival",
     "arriveDesc": "Package arrived at final destination",
     "deliver": "Delivery",
-    "deliverDesc": "Package delivered to customer"
+    "deliverDesc": "Package delivered to customer",
+    "arrivalNotSaved": "Arrival not saved — scan it again"
   },
   "finance": {
     "title": "Finance",

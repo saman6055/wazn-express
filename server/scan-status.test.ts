@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   statusForScan,
   isPackageStatus,
+  advanceStatus,
   PACKAGE_STATUSES,
   type ScanType,
 } from "./lib/scanStatus";
@@ -111,5 +112,81 @@ describe("isPackageStatus", () => {
     // why 'Registered' and 'Delivered' masked the bug for so long.
     expect(isPackageStatus("Registered")).toBe(false);
     expect(isPackageStatus("Delivered")).toBe(false);
+  });
+});
+
+/**
+ * A package can be touched by several things at once — a late arrival scan, an
+ * item added to a box, a batch marked delivered. Moving only forwards is what
+ * stops a stray scan telling a customer their delivered goods have un-arrived.
+ */
+describe("advanceStatus", () => {
+  it("moves a package forward", () => {
+    expect(advanceStatus("registered", "in_transit")).toBe("in_transit");
+    expect(advanceStatus("in_transit", "ready_for_delivery")).toBe("ready_for_delivery");
+    expect(advanceStatus("ready_for_delivery", "delivered")).toBe("delivered");
+  });
+
+  it("refuses to move it backwards", () => {
+    // The case that matters: a late arrival scan on a delivered package.
+    expect(advanceStatus("delivered", "ready_for_delivery")).toBeNull();
+    expect(advanceStatus("in_transit", "registered")).toBeNull();
+    expect(advanceStatus("out_for_delivery", "in_batch")).toBeNull();
+  });
+
+  it("treats a repeat of the same status as nothing to do", () => {
+    // Scanning the same parcel twice should not rewrite the row.
+    for (const status of ["registered", "in_transit", "delivered"] as const) {
+      expect(advanceStatus(status, status), status).toBeNull();
+    }
+  });
+
+  it("leaves a returned or cancelled package alone", () => {
+    // Undoing one of those is a decision, not something a barcode should do.
+    expect(advanceStatus("returned", "delivered")).toBeNull();
+    expect(advanceStatus("cancelled", "ready_for_delivery")).toBeNull();
+    expect(advanceStatus("returned", "in_transit")).toBeNull();
+  });
+
+  it("lets a scan end the journey from wherever the package had got to", () => {
+    // A `returned` scan is a deliberate act and must still work, whether the
+    // package was in transit or already sitting in the Erbil depot.
+    expect(advanceStatus("in_transit", "returned")).toBe("returned");
+    expect(advanceStatus("ready_for_delivery", "returned")).toBe("returned");
+    expect(advanceStatus("registered", "cancelled")).toBe("cancelled");
+  });
+
+  it("still refuses to bring it back out again", () => {
+    expect(advanceStatus("returned", "delivered")).toBeNull();
+    expect(advanceStatus("cancelled", "in_transit")).toBeNull();
+  });
+
+  it("rejects a target the column cannot hold", () => {
+    expect(advanceStatus("in_transit", "In Local Warehouse" as never)).toBeNull();
+  });
+
+  it("accepts a package that has no status yet", () => {
+    expect(advanceStatus(null, "registered")).toBe("registered");
+    expect(advanceStatus(undefined, "in_transit")).toBe("in_transit");
+    expect(advanceStatus("", "ready_for_delivery")).toBe("ready_for_delivery");
+  });
+
+  it("leaves a status it does not recognise untouched", () => {
+    // Better to skip than to overwrite something we do not understand.
+    expect(advanceStatus("In Local Warehouse", "delivered")).toBeNull();
+  });
+
+  it("carries a package the whole way in order", () => {
+    const journey = [
+      "registered", "in_batch", "in_transit",
+      "customs_processing", "ready_for_delivery", "out_for_delivery", "delivered",
+    ] as const;
+    let current: string = journey[0];
+    for (const next of journey.slice(1)) {
+      const moved = advanceStatus(current, next);
+      expect(moved, `${current} → ${next}`).toBe(next);
+      current = moved!;
+    }
+    expect(current).toBe("delivered");
   });
 });

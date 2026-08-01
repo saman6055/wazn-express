@@ -1,4 +1,4 @@
-import { statusForScan } from "../lib/scanStatus";
+import { statusForScan, advanceStatus } from "../lib/scanStatus";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
@@ -1096,6 +1096,28 @@ export const deliveryBoxRouter = router({
         sourceInfo,
         scannedById: ctx.user.id,
       });
+
+      // Putting a package into a delivery box means it is physically in the
+      // Erbil depot, being sorted for this customer. That is the moment the
+      // customer's own goods reach the city — batch status cannot say it,
+      // because a batch is shared by everyone in it.
+      //
+      // advanceStatus keeps this from moving anything backwards: a box built
+      // after delivery, or from a returned package, leaves the status alone.
+      if (pkg?.id) {
+        try {
+          const next = advanceStatus(pkg.status, "ready_for_delivery");
+          if (next) {
+            await db.updatePackage(pkg.id, { status: next });
+            await notifyStageInApp(pkg.id, "received_local");
+          }
+        } catch (e) {
+          appLogger.error("[DeliveryBox] Failed to mark package ready for delivery", {
+            packageId: pkg.id,
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
+      }
 
       return { item, packageInfo: pkg || fpOrder };
     }),

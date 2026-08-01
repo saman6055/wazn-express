@@ -109,6 +109,8 @@ export default function ArrivalVerificationScanner() {
   const { data: batchesRaw, refetch: refetchBatches } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const trpcUtils = trpc.useUtils();
+  // Writes the arrival scan. See the call site for why this screen needs it.
+  const recordArrival = trpc.scanning.registerScan.useMutation();
   
   // Get batches that are in transit (ready for arrival verification)
   const availableBatches = useMemo(() => {
@@ -319,6 +321,34 @@ export default function ArrivalVerificationScanner() {
         };
         setVerifiedPackages((prev) => [verifiedPkg, ...prev]);
         soundManager.playSuccess();
+
+        // Record the arrival. Until now this screen only looked packages up:
+        // staff scanned a whole container and the result lived in this tab's
+        // localStorage until they closed it. The scan is the moment we learn
+        // the goods reached Erbil, and it is the only such moment the system
+        // ever sees — so it has to be written down.
+        //
+        // Fire-and-forget: a failed write must not stop the person scanning.
+        // The list on screen is unaffected either way.
+        recordArrival.mutate(
+          {
+            trackingNumber: verifiedPkg.trackingNumber,
+            packageId: pkg.id,
+            scanType: "received_local",
+          },
+          {
+            onError: (e) =>
+              toast.warning(
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                  <div>
+                    <div className="font-medium">{t("scan.arrivalNotSaved")}</div>
+                    <div className="text-sm text-muted-foreground">{e.message}</div>
+                  </div>
+                </div>
+              ),
+          },
+        );
         if (!hasCompleteData) {
           toast.warning(
             <div className="flex items-center gap-2">
