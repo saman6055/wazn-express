@@ -31,22 +31,22 @@ import {
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "@/contexts/LanguageContext";
 
-const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-  registered: { bg: "bg-blue-100", text: "text-blue-800", label: "Registered" },
-  in_batch: { bg: "bg-purple-100", text: "text-purple-800", label: "In Batch" },
-  in_transit: { bg: "bg-amber-100", text: "text-amber-800", label: "In Transit" },
-  customs_processing: { bg: "bg-orange-100", text: "text-orange-800", label: "Customs" },
-  ready_for_delivery: { bg: "bg-cyan-100", text: "text-cyan-800", label: "Ready" },
-  out_for_delivery: { bg: "bg-indigo-100", text: "text-indigo-800", label: "Out for Delivery" },
-  delivered: { bg: "bg-green-100", text: "text-green-800", label: "Delivered" },
-  cancelled: { bg: "bg-red-100", text: "text-red-800", label: "Cancelled" },
-  returned: { bg: "bg-gray-100", text: "text-gray-800", label: "Returned" },
+const statusColors: Record<string, { bg: string; text: string; labelKey: string }> = {
+  registered: { bg: "bg-blue-100", text: "text-blue-800", labelKey: "packages.stRegistered" },
+  in_batch: { bg: "bg-purple-100", text: "text-purple-800", labelKey: "packages.stInBatch" },
+  in_transit: { bg: "bg-amber-100", text: "text-amber-800", labelKey: "packages.stInTransit" },
+  customs_processing: { bg: "bg-orange-100", text: "text-orange-800", labelKey: "packages.stCustoms" },
+  ready_for_delivery: { bg: "bg-cyan-100", text: "text-cyan-800", labelKey: "packages.stReady" },
+  out_for_delivery: { bg: "bg-indigo-100", text: "text-indigo-800", labelKey: "packages.stOutForDelivery" },
+  delivered: { bg: "bg-green-100", text: "text-green-800", labelKey: "packages.stDelivered" },
+  cancelled: { bg: "bg-red-100", text: "text-red-800", labelKey: "packages.stCancelled" },
+  returned: { bg: "bg-gray-100", text: "text-gray-800", labelKey: "packages.stReturned" },
 };
 
-const shippingTypeConfig: Record<string, { icon: typeof Plane; color: string; label: string }> = {
-  air_regular: { icon: Plane, color: "text-blue-600", label: "Air Regular" },
-  air_irregular: { icon: AlertTriangle, color: "text-amber-600", label: "Air Irregular" },
-  sea: { icon: Ship, color: "text-cyan-600", label: "Sea Freight" },
+const shippingTypeConfig: Record<string, { icon: typeof Plane; color: string; labelKey: string }> = {
+  air_regular: { icon: Plane, color: "text-blue-600", labelKey: "packages.shAirRegular" },
+  air_irregular: { icon: AlertTriangle, color: "text-amber-600", labelKey: "packages.shAirIrregular" },
+  sea: { icon: Ship, color: "text-cyan-600", labelKey: "packages.shSea" },
 };
 
 export default function PackagesDashboard() {
@@ -58,8 +58,8 @@ const [, setLocation] = useLocation();
   const { data: customers } = trpc.customers.list.useQuery();
 
   const getCustomerName = (customerId: number | null) => {
-    if (!customerId) return "Unclaimed";
-    return customers?.find(c => c.id === customerId)?.fullName || "Unknown";
+    if (!customerId) return t("packages.unclaimedShortName");
+    return customers?.find(c => c.id === customerId)?.fullName || t("packages.unknownCustomer");
   };
 
   const getCustomerCode = (customerId: number | null) => {
@@ -76,14 +76,14 @@ const [, setLocation] = useLocation();
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Packages Dashboard</h1>
-            <p className="text-muted-foreground">Overview of all package operations</p>
+            <h1 className="text-2xl font-bold tracking-tight">{t("packages.pkgDashTitle")}</h1>
+            <p className="text-muted-foreground">{t("packages.pkgDashSubtitle")}</p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 me-2" />
-                Register Package
+                {t("packages.registerPackage")}
                 <ChevronDown className="h-4 w-4 ms-2" />
               </Button>
             </DropdownMenuTrigger>
@@ -91,30 +91,30 @@ const [, setLocation] = useLocation();
               <DropdownMenuItem onClick={() => setLocation("/packages/register")}>
                 <Plus className="h-4 w-4 me-2" />
                 <div>
-                  <div className="font-medium">Standard Register</div>
-                  <div className="text-xs text-muted-foreground">Full wizard with all options</div>
+                  <div className="font-medium">{t("packages.standardRegister")}</div>
+                  <div className="text-xs text-muted-foreground">{t("packages.fullWizard")}</div>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setLocation("/packages/quick-register")}>
                 <Zap className="h-4 w-4 me-2 text-amber-500" />
                 <div>
-                  <div className="font-medium">Quick Register</div>
-                  <div className="text-xs text-muted-foreground">Fast single-page form</div>
+                  <div className="font-medium">{t("packages.quickRegisterName")}</div>
+                  <div className="text-xs text-muted-foreground">{t("packages.fastSinglePage")}</div>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setLocation("/packages/bulk-register")}>
                 <Layers className="h-4 w-4 me-2 text-purple-500" />
                 <div>
-                  <div className="font-medium">Bulk Register</div>
-                  <div className="text-xs text-muted-foreground">Multiple packages at once</div>
+                  <div className="font-medium">{t("packages.bulkRegister")}</div>
+                  <div className="text-xs text-muted-foreground">{t("packages.multiplePackages")}</div>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setLocation("/packages/unclaimed")}>
                 <AlertTriangle className="h-4 w-4 me-2 text-amber-500" />
                 <div>
-                  <div className="font-medium">Unclaimed Packages</div>
-                  <div className="text-xs text-muted-foreground">View packages without owner</div>
+                  <div className="font-medium">{t("packages.unclaimedPackages")}</div>
+                  <div className="text-xs text-muted-foreground">{t("packages.viewWithoutOwner")}</div>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -127,7 +127,7 @@ const [, setLocation] = useLocation();
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-blue-600">Total Packages</p>
+                  <p className="text-xs font-medium text-blue-600">{t("packages.totalPackages")}</p>
                   <p className="text-2xl font-bold text-blue-900">{stats?.total || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
@@ -141,7 +141,7 @@ const [, setLocation] = useLocation();
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-amber-600">Unclaimed</p>
+                  <p className="text-xs font-medium text-amber-600">{t("packages.unclaimedShortName")}</p>
                   <p className="text-2xl font-bold text-amber-900">{stats?.unclaimed || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-amber-500 flex items-center justify-center">
@@ -155,7 +155,7 @@ const [, setLocation] = useLocation();
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-purple-600">Registered</p>
+                  <p className="text-xs font-medium text-purple-600">{t("packages.stRegistered")}</p>
                   <p className="text-2xl font-bold text-purple-900">{stats?.registered || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center">
@@ -197,7 +197,7 @@ const [, setLocation] = useLocation();
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-cyan-600">Today</p>
+                  <p className="text-xs font-medium text-cyan-600">{t("packages.today")}</p>
                   <p className="text-2xl font-bold text-cyan-900">{stats?.todayCount || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-cyan-500 flex items-center justify-center">
@@ -214,9 +214,9 @@ const [, setLocation] = useLocation();
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                Status Distribution
+                {t("packages.statusDistribution")}
               </CardTitle>
-              <CardDescription>Packages by current status</CardDescription>
+              <CardDescription>{t("packages.byCurrentStatus")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -227,7 +227,7 @@ const [, setLocation] = useLocation();
                     <div key={item.status} className="flex items-center gap-3">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">{config.label}</span>
+                          <span className="text-sm font-medium">{t(config.labelKey)}</span>
                           <span className="text-sm text-muted-foreground">{item.count}</span>
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -242,7 +242,7 @@ const [, setLocation] = useLocation();
                   );
                 })}
                 {(!stats?.byStatus || stats.byStatus.length === 0) && (
-                  <p className="text-center text-muted-foreground py-4">No data available</p>
+                  <p className="text-center text-muted-foreground py-4">{t("packages.noDataAvailable")}</p>
                 )}
               </div>
             </CardContent>
@@ -253,9 +253,9 @@ const [, setLocation] = useLocation();
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Plane className="h-4 w-4" />
-                Shipping Types
+                {t("packages.shippingTypes")}
               </CardTitle>
-              <CardDescription>Packages by shipping method</CardDescription>
+              <CardDescription>{t("packages.byShippingMethod")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -270,7 +270,7 @@ const [, setLocation] = useLocation();
                         <Icon className="h-5 w-5" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium">{config.label}</p>
+                        <p className="font-medium">{t(config.labelKey)}</p>
                         <p className="text-sm text-muted-foreground">{item.count} packages</p>
                       </div>
                       <div className="text-right">
@@ -280,7 +280,7 @@ const [, setLocation] = useLocation();
                   );
                 })}
                 {(!stats?.byShippingType || stats.byShippingType.length === 0) && (
-                  <p className="text-center text-muted-foreground py-4">No data available</p>
+                  <p className="text-center text-muted-foreground py-4">{t("packages.noDataAvailable")}</p>
                 )}
               </div>
             </CardContent>
@@ -291,9 +291,9 @@ const [, setLocation] = useLocation();
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Zap className="h-4 w-4" />
-                Quick Actions
+                {t("packages.quickActions")}
               </CardTitle>
-              <CardDescription>Common operations</CardDescription>
+              <CardDescription>{t("packages.commonOperations")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button 
@@ -320,8 +320,8 @@ const [, setLocation] = useLocation();
                   <Layers className="h-4 w-4 text-purple-600" />
                 </div>
                 <div className="text-left">
-                  <p className="font-medium">Bulk Register</p>
-                  <p className="text-xs text-muted-foreground">Multiple packages at once</p>
+                  <p className="font-medium">{t("packages.bulkRegister")}</p>
+                  <p className="text-xs text-muted-foreground">{t("packages.multiplePackages")}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 ml-auto" />
               </Button>
@@ -335,8 +335,8 @@ const [, setLocation] = useLocation();
                   <QrCode className="h-4 w-4 text-blue-600" />
                 </div>
                 <div className="text-left">
-                  <p className="font-medium">Smart Scanner</p>
-                  <p className="text-xs text-muted-foreground">Scan QR codes</p>
+                  <p className="font-medium">{t("packages.smartScanner")}</p>
+                  <p className="text-xs text-muted-foreground">{t("packages.scanQrCodes")}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 ml-auto" />
               </Button>
@@ -351,7 +351,7 @@ const [, setLocation] = useLocation();
                     <AlertTriangle className="h-4 w-4 text-amber-600" />
                   </div>
                   <div className="text-left">
-                    <p className="font-medium">Unclaimed Packages</p>
+                    <p className="font-medium">{t("packages.unclaimedPackages")}</p>
                     <p className="text-xs text-amber-600">{stats?.unclaimed} packages waiting</p>
                   </div>
                   <ChevronRight className="h-4 w-4 ml-auto" />
@@ -367,12 +367,12 @@ const [, setLocation] = useLocation();
             <div>
               <CardTitle className="text-base flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                Recent Packages
+                {t("packages.recentPackages")}
               </CardTitle>
-              <CardDescription>Latest registered packages</CardDescription>
+              <CardDescription>{t("packages.latestRegistered")}</CardDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={() => setLocation("/packages/all")}>
-              View All
+              {t("packages.viewAll")}
               <ChevronRight className="h-4 w-4 ms-1" />
             </Button>
           </CardHeader>
@@ -402,7 +402,7 @@ const [, setLocation] = useLocation();
                         <p className="font-mono font-medium text-sm">{pkg.packageCode}</p>
                         {pkg.isUnclaimed && (
                           <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">
-                            Unclaimed
+                            {t("packages.unclaimedShortName")}
                           </Badge>
                         )}
                       </div>
@@ -412,7 +412,7 @@ const [, setLocation] = useLocation();
                     </div>
                     <div className="text-right">
                       <Badge className={`${statusConfig.bg} ${statusConfig.text} border-0`}>
-                        {statusConfig.label}
+                        {t(statusConfig.labelKey)}
                       </Badge>
                       <p className="text-xs text-muted-foreground mt-1">
                         {pkg.weightKg ? `${pkg.weightKg} kg` : '-'}
@@ -425,7 +425,7 @@ const [, setLocation] = useLocation();
                 );
               })}
               {(!recentPackages || recentPackages.length === 0) && (
-                <p className="text-center text-muted-foreground py-8">No packages yet</p>
+                <p className="text-center text-muted-foreground py-8">{t("packages.noPackagesYet")}</p>
               )}
             </div>
           </CardContent>
