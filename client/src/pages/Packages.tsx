@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { usePackages } from "@/hooks/usePackages";
-import { Plus, Search, QrCode, Eye, Zap, Layers, AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Printer, Trash2, Download, Filter, CalendarIcon, X, Package, Plane, Ship, User, CheckCircle2, Tags, FileText, Calculator, Clock, MapPin, Weight, Ruler, DollarSign, Hash, Calendar as CalendarIcon2, PackageX, Link2Off, Truck, BarChart3, ImagePlus, Loader2, Camera } from "lucide-react";
+import { Plus, Search, QrCode, Eye, Zap, Layers, AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Printer, Trash2, Download, Filter, CalendarIcon, X, Package, Plane, Ship, User, CheckCircle2, Tags, FileText, Calculator, Clock, MapPin, Weight, Ruler, DollarSign, Hash, Calendar as CalendarIcon2, PackageX, Link2Off, Truck, BarChart3, ImagePlus, Loader2, Camera, PackagePlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -605,10 +605,43 @@ const [, setLocation] = useLocation();
         return filteredPackages.filter(p => p.status === 'ready_for_delivery' || p.status === 'out_for_delivery');
       case 'delivered':
         return filteredPackages.filter(p => p.status === 'delivered');
+      // Everything taken in at Quick Register and not yet shipped out — the
+      // day's intake. Keyed off registration rather than status so a parcel
+      // stays in this view while it is being weighed, priced and batched.
+      case 'registered':
+        return filteredPackages.filter(p => p.status === 'registered');
       default:
         return filteredPackages;
     }
   }, [filteredPackages, activeTab]);
+
+  /**
+   * Registrations taken in today, and the ones that cannot go any further
+   * until somebody fills a gap.
+   *
+   * A parcel with no weight cannot be priced or batched, and one with no
+   * customer sits in the depot belonging to nobody. Counting them here turns
+   * the tab from a log into a list of work.
+   */
+  const registrationSummary = useMemo(() => {
+    const all = filteredPackages ?? [];
+    const registered = all.filter(p => p.status === 'registered');
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const isToday = (value: unknown) => {
+      if (!value) return false;
+      const d = new Date(value as string);
+      return !isNaN(d.getTime()) && d >= startOfToday;
+    };
+
+    return {
+      total: registered.length,
+      today: registered.filter(p => isToday((p as any).registeredAt ?? p.createdAt)).length,
+      missingWeight: registered.filter(p => !p.weightKg || Number(p.weightKg) <= 0).length,
+      unclaimed: registered.filter(p => (p as any).isUnclaimed || !p.customerId).length,
+    };
+  }, [filteredPackages]);
 
   const activeFiltersCount = [
     statusFilter !== "all",
@@ -1026,6 +1059,37 @@ const [, setLocation] = useLocation();
                 <p className="text-white/70 text-sm">{t('packages.delivered')}</p>
               </div>
               <p className="text-2xl font-bold">{stats.delivered}</p>
+            </div>
+            {/* Everything taken in at Quick Register. The card carries today's
+                count and the gaps, because a parcel with no weight cannot be
+                priced or batched and one with no owner sits in the depot
+                belonging to nobody — those are the ones needing a person. */}
+            <div
+              className={`bg-white/10 backdrop-blur rounded-xl p-4 cursor-pointer transition-all hover:bg-white/20 ${activeTab === 'registered' ? 'ring-2 ring-white' : ''}`}
+              onClick={() => setActiveTab('registered')}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <PackagePlus className="h-4 w-4 text-teal-300" />
+                <p className="text-white/70 text-sm">
+                  {t('packages.registrations')}
+                </p>
+              </div>
+              <p className="text-2xl font-bold">{registrationSummary.total}</p>
+              <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs">
+                <span className="text-white/70">
+                  {t('packages.registeredToday')} {registrationSummary.today}
+                </span>
+                {registrationSummary.missingWeight > 0 && (
+                  <span className="text-amber-300">
+                    {t('packages.noWeightShort')} {registrationSummary.missingWeight}
+                  </span>
+                )}
+                {registrationSummary.unclaimed > 0 && (
+                  <span className="text-amber-300">
+                    {t('packages.unclaimedShort')} {registrationSummary.unclaimed}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           

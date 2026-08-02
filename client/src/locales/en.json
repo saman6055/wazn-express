@@ -1683,7 +1683,11 @@
     "calculatedFromDimensions": "Calculated from Dimensions",
     "finalCbm": "Final CBM:",
     "packagePhotos": "Package Photos",
-    "divisor": "Divisor:"
+    "divisor": "Divisor:",
+    "registrations": "Registrations",
+    "registeredToday": "today",
+    "noWeightShort": "no weight",
+    "unclaimedShort": "unclaimed"
   },
   "batches": {
     "title": "Batches",

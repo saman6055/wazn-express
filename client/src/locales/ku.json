@@ -1703,7 +1703,11 @@
     "calculatedFromDimensions": "حسابکراو لە قەبارە",
     "finalCbm": "CBM کۆتایی:",
     "packagePhotos": "وێنەکانی پاکەت",
-    "divisor": "دابەشکەر:"
+    "divisor": "دابەشکەر:",
+    "registrations": "تۆمارەکان",
+    "registeredToday": "ئەمڕۆ",
+    "noWeightShort": "بێ کێش",
+    "unclaimedShort": "بێ خاوەن"
   },
   "batches": {
     "title": "باچەکان",

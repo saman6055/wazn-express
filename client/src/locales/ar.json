@@ -1683,7 +1683,11 @@
     "calculatedFromDimensions": "محسوب من الأبعاد",
     "finalCbm": "CBM النهائي:",
     "packagePhotos": "صور الطرد",
-    "divisor": "القاسم:"
+    "divisor": "القاسم:",
+    "registrations": "التسجيلات",
+    "registeredToday": "اليوم",
+    "noWeightShort": "بلا وزن",
+    "unclaimedShort": "بلا مالك"
   },
   "batches": {
     "title": "الدفعات",

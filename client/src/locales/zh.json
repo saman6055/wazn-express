@@ -1687,7 +1687,11 @@
     "calculatedFromDimensions": "根据尺寸计算",
     "finalCbm": "最终CBM：",
     "packagePhotos": "包裹照片",
-    "divisor": "除数："
+    "divisor": "除数：",
+    "registrations": "登记",
+    "registeredToday": "今天",
+    "noWeightShort": "无重量",
+    "unclaimedShort": "无主"
   },
   "batches": {
     "title": "批次",
