@@ -387,7 +387,12 @@ const [, setLocation] = useLocation();
                   <div 
                     key={pkg.id} 
                     className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => setLocation(`/packages/${pkg.id}`)}
+                    // /packages/:id has never been a route, so this was a 404
+                    // on every click. The table is the place a package is
+                    // actually viewed, so open it looking for this one.
+                    onClick={() => setLocation(
+                      `/packages/all?search=${encodeURIComponent(pkg.trackingNumber || pkg.packageCode || "")}`
+                    )}
                   >
                     <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${shippingConfig.color} bg-muted`}>
                       <ShippingIcon className="h-5 w-5" />

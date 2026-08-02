@@ -317,7 +317,11 @@ export default function AuditLogs() {
         return `/customers/${entityId}`;
       case "Package":
       case "package":
-        return `/packages/${entityId}`;
+        // /packages/:id is not a route and never has been, so this led to a
+        // 404. The audit row only carries the numeric id, which the table's
+        // search does not match, so this lands on the table itself rather
+        // than pretending to find the row.
+        return `/packages/all`;
       case "FullPackageOrder":
       case "full_package_order":
         return `/full-package/${entityId}`;

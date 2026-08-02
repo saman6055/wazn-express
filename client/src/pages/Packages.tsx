@@ -315,7 +315,13 @@ const PackageTableRow = memo(function PackageTableRow({
 export default function Packages() {
     const { t } = useTranslation();
 const [, setLocation] = useLocation();
-  const [searchInput, setSearchInput] = useState("");
+  // Deep link: /packages/all?search=PKG-XYZ opens the table already looking
+  // for that parcel. Anything that used to link to /packages/:id — which has
+  // never been a route — now points here instead of at a 404.
+  const [searchInput, setSearchInput] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("search") ?? "";
+  });
   const [minWeight, setMinWeight] = useState<string>("");
   const [maxWeight, setMaxWeight] = useState<string>("");
   const [batchFilter, setBatchFilter] = useState<string>("all");
