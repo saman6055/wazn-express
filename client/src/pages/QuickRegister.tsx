@@ -225,6 +225,13 @@ export default function QuickRegister() {
             setCustomerSearch(dmCustomer.customerCode || dmCustomer.fullName || "");
             setIsUnclaimed(false);
           }
+          // The customer already said what kind of goods these are when they
+          // declared the tracking. That was being thrown away, leaving the
+          // category empty on the very parcels we knew the most about.
+          // Never overwrites a choice the person scanning has already made.
+          if (!categoryId && dm.categoryId) {
+            setCategoryId(String(dm.categoryId));
+          }
           soundManager.playFound();
           toast.success(
             <div className="flex items-center gap-2">
@@ -1594,6 +1601,54 @@ export default function QuickRegister() {
                       </Select>
                     </div>
                   </div>
+
+                  {/* Goods category, as one-tap chips.
+                      It was only in the collapsed "additional info (optional)"
+                      panel, so in practice it was never filled — and for a
+                      parcel the customer never declared, the person holding
+                      the box is the only one who will ever know what is in it.
+                      The most-used categories sit here; the full list stays in
+                      the panel below. */}
+                  {categories && categories.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-teal-600 dark:text-teal-400">
+                        <Tags className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{t("quickRegister.productCategory")}</span>
+                        {declaredMatch?.categoryId && String(declaredMatch.categoryId) === categoryId && (
+                          <span className="text-[10px] font-medium text-muted-foreground">
+                            {pickLang(language, {
+                              ku: "لە کڕیارەوە", en: "from the customer",
+                              ar: "من العميل", zh: "来自客户",
+                            })}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {categories.slice(0, 8).map((cat) => {
+                          const value = String(cat.id);
+                          const isActive = categoryId === value;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              // Tapping the active one clears it, so a wrong
+                              // tap costs one more tap rather than a reset.
+                              onClick={() => setCategoryId(isActive ? "" : value)}
+                              className={cn(
+                                "rounded-full border px-2.5 py-1 text-[11px] font-medium transition active:scale-95",
+                                isActive
+                                  ? "border-teal-500 bg-teal-500 text-white"
+                                  : "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
+                              )}
+                            >
+                              {cat.icon ? `${cat.icon} ` : ""}{cat.nameKu || cat.nameEn}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Batch */}
                   <Select
                     value={batchId}

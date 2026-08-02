@@ -1362,6 +1362,10 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
           platform: declared.declared.platform,
           productName: declared.declared.productName,
           productImages: declared.declared.productImages,
+          // The customer picks this when declaring. Quick Register can then
+          // start from what they said instead of leaving the field empty on
+          // the very parcels we know the most about.
+          categoryId: declared.declared.categoryId,
           notes: declared.declared.notes,
         }
       : null,
