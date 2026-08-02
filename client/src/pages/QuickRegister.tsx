@@ -351,6 +351,19 @@ export default function QuickRegister() {
       toast.error(`Upload failed: ${error.message}`);
     },
   });
+
+  /**
+   * The upload procedure reports a storage failure by RETURNING
+   * `{ success: false, url: null, error }` instead of throwing, so onError
+   * never fires and the caller's success toast used to appear over a photo
+   * that was never attached. Treat a missing url as the failure it is.
+   */
+  const uploadPhoto = async (fileName: string, contentType: string, base64Data: string) => {
+    const result = await uploadMutation.mutateAsync({ fileName, contentType, base64Data });
+    if (!result?.url) {
+      throw new Error(result?.error || t("quickRegister.uploadNoUrl"));
+    }
+  };
   
   const compressImage = (file: File, maxWidth = 1200, quality = 0.8): Promise<{ base64: string; type: string }> => {
     return new Promise((resolve, reject) => {
@@ -406,15 +419,16 @@ export default function QuickRegister() {
         toast.info(t("quickRegister.compressing", { name: file.name }));
         const { base64, type } = await compressImage(file);
 
-        await uploadMutation.mutateAsync({
-          fileName: file.name.replace(/\.[^.]+$/, '.jpg'),
-          contentType: type,
-          base64Data: base64,
-        });
+        await uploadPhoto(file.name.replace(/\.[^.]+$/, '.jpg'), type, base64);
 
         toast.success(t("quickRegister.uploadSuccess", { name: file.name }));
       } catch (error) {
-        toast.error(t("quickRegister.uploadError", { name: file.name }));
+        // Show the reason, not just "failed" — a storage misconfiguration and
+        // a corrupt file need different people to fix them.
+        const reason = error instanceof Error ? error.message : String(error);
+        toast.error(`${t("quickRegister.uploadError", { name: file.name })} — ${reason}`, {
+          duration: 8000,
+        });
       }
     }
     

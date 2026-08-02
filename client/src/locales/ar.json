@@ -91,7 +91,8 @@
     "orderWithCartons": "الطلب {{orderCode}} بـ {{count}} كرتون",
     "carton": "كرتون {{index}}",
     "cartonNow": "الآن",
-    "cartonWaiting": "قيد الانتظار"
+    "cartonWaiting": "قيد الانتظار",
+    "uploadNoUrl": "لم يخزّن الخادم الصورة"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",

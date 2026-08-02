@@ -7,6 +7,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
+import { getUploadsDir, UPLOADS_ROUTE } from "../services/localUpload";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
@@ -210,10 +211,13 @@ async function startServer() {
   // bundled file in client/public.
   registerAppIconRoutes(app);
 
-  // Local uploads (when Forge is not configured)
-  const uploadsDir = path.join(process.cwd(), "uploads");
+  // Local uploads (when Forge is not configured). Path and route come from
+  // localUpload so the writer and the server can never disagree about where
+  // the files are — production served a different answer than dev for a while,
+  // and every photo saved through it came back as index.html.
+  const uploadsDir = getUploadsDir();
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-  app.use("/uploads", express.static(uploadsDir));
+  app.use(UPLOADS_ROUTE, express.static(uploadsDir));
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     // Dynamic import to avoid loading vite in production

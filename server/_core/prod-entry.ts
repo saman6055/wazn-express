@@ -12,6 +12,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
+import { getUploadsDir, UPLOADS_ROUTE } from "../services/localUpload";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
@@ -55,6 +56,29 @@ function serveStatic(app: express.Express) {
   }
 
   app.use(express.static(distPath));
+
+  // Locally-stored uploads (used whenever Forge storage is not configured).
+  //
+  // This has to be registered BEFORE the SPA catch-all below, and it was
+  // missing here entirely — the dev server mounts it, production never did.
+  // So a photo taken at the China warehouse uploaded fine and its URL was
+  // saved on the package, but fetching that URL fell through to the catch-all
+  // and returned index.html instead of the image. The <img> silently rendered
+  // nothing, which looked exactly like the photo had never been attached.
+  const uploadsDir = getUploadsDir();
+  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+  app.use(UPLOADS_ROUTE, express.static(uploadsDir, { maxAge: "7d" }));
+  appLogger.info("Serving uploads", { uploadsDir, route: UPLOADS_ROUTE });
+
+  // Without a mounted volume this directory is part of the container and is
+  // recreated empty on every deploy, taking every stored photo with it. Say so
+  // once at startup — silent data loss is the worst kind.
+  if (!process.env.UPLOADS_DIR?.trim()) {
+    appLogger.warn(
+      "UPLOADS_DIR is not set — uploaded photos are stored inside the container and will be LOST on the next redeploy. Mount a persistent volume and point UPLOADS_DIR at it.",
+      { uploadsDir },
+    );
+  }
 
   // fall through to index.html if the file doesn't exist (SPA routing)
   app.use("*", (_req, res) => {

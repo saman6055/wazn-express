@@ -91,7 +91,8 @@
     "orderWithCartons": "订单 {{orderCode}} 共 {{count}} 箱",
     "carton": "第 {{index}} 箱",
     "cartonNow": "当前",
-    "cartonWaiting": "等待中"
+    "cartonWaiting": "等待中",
+    "uploadNoUrl": "服务器未保存该照片"
   },
   "errors": {
     "required": "此字段必填",

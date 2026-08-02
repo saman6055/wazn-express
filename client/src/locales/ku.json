@@ -91,7 +91,8 @@
     "orderWithCartons": "ئۆردەری {{orderCode}} بە {{count}} کارتۆن",
     "carton": "کارتۆن {{index}}",
     "cartonNow": "ئێستا",
-    "cartonWaiting": "چاوەڕێ"
+    "cartonWaiting": "چاوەڕێ",
+    "uploadNoUrl": "وێنەکە خەزن نەکرا لە سێرڤەر"
   },
   "errors": {
     "required": "ئەم خانەیە پێویستە",
