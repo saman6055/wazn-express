@@ -1,3 +1,4 @@
+import { RegistrationsSummaryCard } from "@/components/dashboard/RegistrationsSummaryCard";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
@@ -335,6 +336,10 @@ export default function Dashboard() {
             },
           ]}
         />
+
+        {/* Today's intake at the scanner — sums and the busiest customers;
+            the Registrations tab on /packages is where the rows get worked. */}
+        <RegistrationsSummaryCard className="mb-4" />
 
         {/* Financial overview */}
         <DashboardSection className="pro-section" title={t("dashboard.financialOverview") || "Financial overview"}>

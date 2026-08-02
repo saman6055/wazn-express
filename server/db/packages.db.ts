@@ -1016,3 +1016,142 @@ export async function backfillPackageOrderLinks(): Promise<{
   return { totalCandidates: candidates.length, inserted, alreadyLinked, errors };
 }
 
+
+/**
+ * What the warehouse took in over a period, grouped by customer.
+ *
+ * Answers the questions an owner actually asks about a day's intake: how many
+ * pieces, for whom, how many kilos by air, how many cubic metres by sea, what
+ * kind of goods, and roughly what it is worth.
+ *
+ * The value is estimated here rather than read from the row. Quick Register
+ * calculates a price and then discards it — the line that would store it aims
+ * at a column name that does not exist — so the figure is derived at read time
+ * from the same active pricing rules. Nothing about registration changes.
+ */
+export async function getRegistrationSummary(opts: {
+  from: Date;
+  to: Date;
+}): Promise<{
+  totals: {
+    pieces: number;
+    customers: number;
+    airWeightKg: number;
+    seaCbm: number;
+    estimatedValueUsd: number;
+    missingWeight: number;
+    unclaimed: number;
+  };
+  byCustomer: {
+    customerId: number | null;
+    customerCode: string | null;
+    customerName: string | null;
+    pieces: number;
+    weightKg: number;
+    cbm: number;
+    estimatedValueUsd: number;
+    shippingTypes: string[];
+    categories: string[];
+  }[];
+}> {
+  const empty = {
+    totals: { pieces: 0, customers: 0, airWeightKg: 0, seaCbm: 0, estimatedValueUsd: 0, missingWeight: 0, unclaimed: 0 },
+    byCustomer: [],
+  };
+
+  const db = await getDb();
+  if (!db) return empty;
+
+  const rows = await db
+    .select({
+      pkg: packages,
+      customerCode: customers.customerCode,
+      customerName: customers.fullName,
+      categoryKu: productCategories.nameKu,
+      categoryEn: productCategories.nameEn,
+    })
+    .from(packages)
+    .leftJoin(customers, eq(packages.customerId, customers.id))
+    .leftJoin(productCategories, eq(packages.categoryId, productCategories.id))
+    .where(and(gte(packages.registeredAt, opts.from), lte(packages.registeredAt, opts.to)));
+
+  if (rows.length === 0) return empty;
+
+  // One lookup for the whole period rather than per row.
+  const rules = await db.select().from(pricingRules).where(eq(pricingRules.isActive, true));
+  const priceOf = (shippingType: string, weightKg: number, cbm: number): number => {
+    const rule = rules.find((r: PricingRule) => r.shippingType === shippingType);
+    if (!rule) return 0;
+    const perUnit = parseFloat(rule.pricePerUnit || "0");
+    if (!perUnit) return 0;
+    return rule.unit === "cbm" ? cbm * perUnit : weightKg * perUnit;
+  };
+
+  const grouped = new Map<string, {
+    customerId: number | null; customerCode: string | null; customerName: string | null;
+    pieces: number; weightKg: number; cbm: number; estimatedValueUsd: number;
+    shippingTypes: Set<string>; categories: Set<string>;
+  }>();
+
+  const totals = { pieces: 0, customers: 0, airWeightKg: 0, seaCbm: 0, estimatedValueUsd: 0, missingWeight: 0, unclaimed: 0 };
+
+  for (const row of rows) {
+    const pkg = row.pkg;
+    const weightKg = parseFloat(pkg.weightKg?.toString() || "0") || 0;
+    const cbm = parseFloat(pkg.volumeCbm?.toString() || "0") || 0;
+    const value = priceOf(pkg.shippingType, weightKg, cbm);
+
+    totals.pieces += 1;
+    if (pkg.shippingType === "sea") totals.seaCbm += cbm;
+    else totals.airWeightKg += weightKg;
+    totals.estimatedValueUsd += value;
+    if (weightKg <= 0 && cbm <= 0) totals.missingWeight += 1;
+    if (pkg.isUnclaimed || !pkg.customerId) totals.unclaimed += 1;
+
+    // Unclaimed parcels share a bucket: they belong to nobody yet, and one
+    // row each would bury the real customers under them.
+    const key = pkg.customerId ? String(pkg.customerId) : "unclaimed";
+    const entry = grouped.get(key) ?? {
+      customerId: pkg.customerId ?? null,
+      customerCode: row.customerCode ?? null,
+      customerName: row.customerName ?? null,
+      pieces: 0, weightKg: 0, cbm: 0, estimatedValueUsd: 0,
+      shippingTypes: new Set<string>(), categories: new Set<string>(),
+    };
+    entry.pieces += 1;
+    entry.weightKg += weightKg;
+    entry.cbm += cbm;
+    entry.estimatedValueUsd += value;
+    entry.shippingTypes.add(pkg.shippingType);
+    const categoryName = row.categoryKu || row.categoryEn;
+    if (categoryName) entry.categories.add(categoryName);
+    grouped.set(key, entry);
+  }
+
+  totals.customers = Array.from(grouped.keys()).filter(k => k !== "unclaimed").length;
+
+  const byCustomer = Array.from(grouped.values())
+    .map(e => ({
+      customerId: e.customerId,
+      customerCode: e.customerCode,
+      customerName: e.customerName,
+      pieces: e.pieces,
+      weightKg: Number(e.weightKg.toFixed(3)),
+      cbm: Number(e.cbm.toFixed(4)),
+      estimatedValueUsd: Number(e.estimatedValueUsd.toFixed(2)),
+      shippingTypes: Array.from(e.shippingTypes),
+      categories: Array.from(e.categories),
+    }))
+    // Busiest customer first — that is the one worth looking at.
+    .sort((a, b) => b.pieces - a.pieces);
+
+  return {
+    totals: {
+      ...totals,
+      airWeightKg: Number(totals.airWeightKg.toFixed(3)),
+      seaCbm: Number(totals.seaCbm.toFixed(4)),
+      estimatedValueUsd: Number(totals.estimatedValueUsd.toFixed(2)),
+    },
+    byCustomer,
+  };
+}

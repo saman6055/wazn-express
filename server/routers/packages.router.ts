@@ -923,6 +923,36 @@ export const packagesRouter = router({
 
         return { ...updated, lateCharge };
       }),
+    /**
+     * What the warehouse took in over a period, grouped by customer.
+     *
+     * Read-only. Defaults to today, which is what the dashboard asks for; the
+     * range is open so the same figures can be pulled for any day without a
+     * second endpoint.
+     */
+    registrationSummary: staffProcedure
+      .input(z.object({
+        from: z.string().optional(),
+        to: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
+
+        const parse = (value: string | undefined, fallback: Date) => {
+          if (!value) return fallback;
+          const d = new Date(value);
+          return isNaN(d.getTime()) ? fallback : d;
+        };
+
+        return db.getRegistrationSummary({
+          from: parse(input?.from, startOfToday),
+          to: parse(input?.to, endOfToday),
+        });
+      }),
+
     assignToBatch: staffProcedure
       .input(z.object({
         packageId: z.number(),
