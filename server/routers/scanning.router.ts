@@ -1,4 +1,5 @@
 import { statusForScan, advanceStatus } from "../lib/scanStatus";
+import { resolveGoodsCategory } from "../lib/goodsCategory";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
@@ -223,6 +224,12 @@ export const scanningRouter = router({
           height: z.number(),
         }).optional(),
         goodsType: z.string().optional(),
+        /**
+         * What kind of goods this is. Optional here because it is usually
+         * already known — see the resolution below — and only the warehouse
+         * can supply it when nobody else has.
+         */
+        categoryId: z.number().optional(),
         warehouseId: z.number().optional(),
         batchId: z.number().optional(),
         notes: z.string().optional(),
@@ -231,6 +238,31 @@ export const scanningRouter = router({
       .mutation(async ({ input, ctx }) => {
         // Generate package code
         const packageCode = `PKG-${Date.now().toString(36).toUpperCase()}`;
+
+        /**
+         * Where the goods category comes from, in order of who knows best.
+         *
+         * A customer declaring a tracking number in the portal can already
+         * pick a category, and that was being thrown away here — they had
+         * told us what was coming and the scan ignored it. Whoever bought the
+         * item is a better source than whoever is holding the box.
+         *
+         * Only when neither has said anything does the warehouse have to, and
+         * that is the one case where nobody else ever will.
+         */
+        let declaredCategoryId: number | null | undefined;
+        if (!input.categoryId) {
+          try {
+            const declared = await db.findActiveDeclaredByTracking(input.trackingNumber);
+            declaredCategoryId = declared?.declared?.categoryId;
+          } catch {
+            // A missing declaration is the normal case, not a failure.
+          }
+        }
+        const categoryId = resolveGoodsCategory({
+          scanned: input.categoryId,
+          declared: declaredCategoryId,
+        });
         
         // Calculate CBM for sea shipments
         let volumeCbm: string | undefined;
@@ -266,6 +298,7 @@ export const scanningRouter = router({
           heightCm: input.dimensions?.height?.toString(),
           // estimatedPriceUsd: estimatedPriceCalc, // Field doesn't exist yet
           description: input.goodsType,
+          categoryId,
           status: 'registered',
           batchId: input.batchId,
           registeredById: ctx.user.id,
