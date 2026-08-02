@@ -56,6 +56,7 @@ import {
   Menu,
   X,
   ClipboardList,
+  Images,
   Database,
   Wrench,
   Banknote,
@@ -313,7 +314,6 @@ function DashboardLayoutContent({
           { icon: Truck, label: t("nav.quickRegister") || "تۆمارکردنی خێرا", path: "/packages/quick-register" },
           { icon: Package, label: t("nav.allPackages") || "هەموو پاکەتەکان", path: "/packages/all" },
           { icon: ClipboardList, label: t("nav.bulkRegister") || "تۆماری کۆمەڵە", path: "/packages/bulk-register" },
-          { icon: ClipboardList, label: t("nav.registrations") || "تۆمارەکان", path: "/packages/registrations" },
           { icon: Layers, label: t("nav.batches") || "باچەکان", path: "/batches" },
           { icon: AlertTriangle, label: t("nav.unclaimedPackages") || "پاکەتی بێ خاوەن", path: "/packages/unclaimed" },
           { icon: FileText, label: t("nav.claimRequests") || "داواکاری خاوەنداری", path: "/packages/claim-requests" },
@@ -330,6 +330,7 @@ function DashboardLayoutContent({
         color: "cyan",
         items: [
           { icon: QrCode, label: t("nav.quickRegister") || "تۆماری خێرا", path: "/quick-register" },
+          { icon: Images, label: t("nav.registrations") || "تۆمارەکان", path: "/packages/registrations" },
           { icon: Ban, label: pickLang(language, { ku: "تۆماری کەلوپەلی قەدەغە", en: "Register prohibited items", ar: "تسجيل البضائع الممنوعة", zh: "登记违禁物品" }), path: "/packages/prohibited-register" },
           { icon: Boxes, label: t("nav.batchAssignment") || "خستنە ناو باچ", path: "/batch-assignment-scanner" },
           { icon: Truck, label: t("nav.arrivalVerification") || "پشکنینی گەیشتن", path: "/arrival-verification-scanner" },
