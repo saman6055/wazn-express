@@ -142,6 +142,46 @@ export default function TrackingAlerts() {
           zh: `重复/跳过：${result.duplicates.join(", ")}`,
         }));
       }
+      // The parcel may already have been sitting in the China warehouse,
+      // quick-registered before this order was entered. Say so — the operator
+      // would otherwise never learn the two were joined up.
+      const linked = result.backlink?.linked ?? [];
+      if (linked.length > 0) {
+        const codes = linked.map((l) => l.packageCode).join(", ");
+        toast.success(pickLang(language, {
+          ku: `${linked.length} پاکەتی پێشتر تۆمارکراو بەم ئۆردەرەوە بەسترا: ${codes}`,
+          en: `${linked.length} already-registered package(s) linked to this order: ${codes}`,
+          ar: `تم ربط ${linked.length} طرد مسجّل مسبقاً بهذا الطلب: ${codes}`,
+          zh: `已将 ${linked.length} 个已登记包裹关联到此订单：${codes}`,
+        }));
+      }
+      // A tracking that matches a parcel we refused to touch needs a human.
+      // Never silent: an unreported mismatch is how a customer ends up paying
+      // for someone else's goods.
+      for (const c of result.backlink?.conflicts ?? []) {
+        toast.warning(pickLang(language, {
+          ku: `پاکەتی ${c.packageCode} نەبەسترا — ${
+            c.reason === "customer_mismatch" ? "هی کڕیارێکی تر"
+              : c.reason === "unclaimed" ? "خاوەنی دیاری نەکراوە"
+              : "پێشتر حساب کراوە یان گەیەنراوە"
+          }`,
+          en: `Package ${c.packageCode} not linked — ${
+            c.reason === "customer_mismatch" ? "belongs to another customer"
+              : c.reason === "unclaimed" ? "has no owner yet"
+              : "already charged or delivered"
+          }`,
+          ar: `لم يُربط الطرد ${c.packageCode} — ${
+            c.reason === "customer_mismatch" ? "يخصّ عميلاً آخر"
+              : c.reason === "unclaimed" ? "بلا مالك بعد"
+              : "تمت محاسبته أو تسليمه"
+          }`,
+          zh: `包裹 ${c.packageCode} 未关联 — ${
+            c.reason === "customer_mismatch" ? "属于其他客户"
+              : c.reason === "unclaimed" ? "尚无归属"
+              : "已计费或已交付"
+          }`,
+        }), { duration: 10000 });
+      }
       setTrackingDialogOpen(false);
       setSelectedOrder(null);
       setTrackingNumbers([""]);

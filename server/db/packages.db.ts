@@ -6,7 +6,13 @@ import {
   getAllOrdersByTrackingNumber,
   getFullPackageOrderById,
   updateFullPackageOrder,
+  getOrderTrackings,
 } from './fullPackage.db';
+import {
+  classifyBacklinkCandidate,
+  isTerminalOrderStatus,
+  type BacklinkConflictReason,
+} from '../lib/orderBacklink';
 import { createCustomerNotification } from './portal.db';
 import { findActiveDeclaredByTracking, markDeclaredMatched } from './declaredPackages.db';
 import {
@@ -957,6 +963,147 @@ export async function promoteOrderStatusIfFullyReceived(orderId: number): Promis
     cartonsRegistered: cartons.registered,
     cartonsTotal: cartons.total,
   };
+}
+
+/** Why a package that matches an order's tracking was NOT linked to it. */
+export type OrderBacklinkConflict = {
+  trackingNumber: string;
+  packageId: number;
+  packageCode: string;
+  reason: BacklinkConflictReason;
+  packageCustomerId: number | null;
+  orderCustomerId: number;
+};
+
+/**
+ * Attach packages that were registered BEFORE their order existed.
+ *
+ * The normal sequence is order first, parcel second: `packages.register`
+ * resolves the tracking to an order and writes the link then and there. The
+ * reverse sequence happens too — goods bought at cost that nobody entered
+ * yet, which reach the China warehouse with only a customer code on the box.
+ * Staff quick-register the parcel, and only later is the purchase order
+ * created. Nothing used to revisit that parcel, so it stayed unlinked, and
+ * an unlinked package IS the definition of a self order (see
+ * getSelfOrderReport). The same physical box then counted once as shipping-
+ * only revenue and once as order profit, and the order sat at
+ * `tracking_added` forever because status promotion only ever ran from the
+ * register path.
+ *
+ * This closes that gap from the other side: whenever an order gains a
+ * tracking, any already-registered package carrying it gets linked, and the
+ * order's status catches up.
+ *
+ * Deliberately conservative — a package is linked ONLY when it plainly
+ * belongs to the same customer and no money has settled on it yet. Anything
+ * else is returned as a conflict for staff to resolve by hand rather than
+ * being guessed at. Idempotent: re-running links nothing twice.
+ */
+export async function backlinkRegisteredPackagesForOrder(orderId: number): Promise<{
+  linked: Array<{ packageId: number; packageCode: string; trackingNumber: string; isPrimary: boolean }>;
+  conflicts: OrderBacklinkConflict[];
+  promoted: boolean;
+}> {
+  const empty = { linked: [], conflicts: [], promoted: false };
+
+  const order = await getFullPackageOrderById(orderId);
+  if (!order || !order.customerId) return empty;
+
+  // Never reopen an order that is already finished or abandoned.
+  if (isTerminalOrderStatus(order.status)) return empty;
+
+  const cartons = await getOrderCartonStatus(orderId);
+  if (cartons.registeredTrackings.length === 0) return empty;
+
+  // cartonIndex per tracking, so a multi-carton order keeps its carton order
+  // instead of collapsing every late link onto carton 1.
+  const trackingRows = await getOrderTrackings(orderId);
+  const cartonIndexOf = new Map<string, number>();
+  for (const row of trackingRows) {
+    if (row.trackingNumber) cartonIndexOf.set(row.trackingNumber.trim(), row.cartonIndex ?? 1);
+  }
+
+  const pkgs = await getPackagesByTrackingNumbers(cartons.registeredTrackings);
+
+  const linked: Array<{ packageId: number; packageCode: string; trackingNumber: string; isPrimary: boolean }> = [];
+  const conflicts: OrderBacklinkConflict[] = [];
+
+  for (const pkg of pkgs) {
+    const tn = (pkg.trackingNumber ?? '').trim();
+    if (!tn) continue;
+    try {
+      const existingLinks = await getPackageOrderLinks(pkg.id);
+
+      const decision = classifyBacklinkCandidate({
+        pkg: {
+          customerId: pkg.customerId,
+          isCharged: pkg.isCharged,
+          status: pkg.status,
+          fullPackageOrderId: pkg.fullPackageOrderId,
+        },
+        orderId,
+        orderCustomerId: order.customerId,
+        existingLinks,
+      });
+
+      if (decision.action === 'skip') continue;
+
+      if (decision.action === 'conflict') {
+        conflicts.push({
+          trackingNumber: tn, packageId: pkg.id, packageCode: pkg.packageCode,
+          reason: decision.reason,
+          packageCustomerId: pkg.customerId, orderCustomerId: order.customerId,
+        });
+        continue;
+      }
+
+      await createPackageOrderLinks(pkg.id, [{
+        fullPackageOrderId: orderId,
+        cartonIndex: cartonIndexOf.get(tn) ?? 1,
+        isPrimary: decision.isPrimary,
+      }]);
+
+      // Mirror the primary link into the legacy FK, exactly as the register
+      // path does, so code that reads only that column agrees with the join
+      // table instead of still seeing an unlinked (self-order) package.
+      if (decision.isPrimary) {
+        await updatePackage(pkg.id, { fullPackageOrderId: orderId });
+      }
+
+      linked.push({ packageId: pkg.id, packageCode: pkg.packageCode, trackingNumber: tn, isPrimary: decision.isPrimary });
+    } catch (err) {
+      // One bad package must not stop the others, and must never fail the
+      // tracking-entry the operator actually asked for.
+      appLogger.warn('[Backlink] Failed to link package to order', {
+        orderId, packageId: pkg.id, trackingNumber: tn,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  let promoted = false;
+  if (linked.length > 0) {
+    appLogger.info('[Backlink] Linked pre-registered packages to order', {
+      orderId, orderCode: order.orderCode,
+      linked: linked.map((l) => l.packageCode), conflicts: conflicts.length,
+    });
+    try {
+      // The parcels were already in the warehouse; the order just never knew.
+      const result = await promoteOrderStatusIfFullyReceived(orderId);
+      promoted = result.promoted;
+    } catch (err) {
+      appLogger.warn('[Backlink] Status promotion after linking failed', {
+        orderId, error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+  if (conflicts.length > 0) {
+    appLogger.warn('[Backlink] Packages matched by tracking but were NOT linked', {
+      orderId, orderCode: order.orderCode, conflicts,
+    });
+  }
+
+  return { linked, conflicts, promoted };
 }
 
 /**

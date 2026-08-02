@@ -6,6 +6,33 @@ import { staffProcedure, adminProcedure, accountantProcedure } from "../middlewa
 import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
+/**
+ * Adopt any parcel that was registered before this order existed.
+ *
+ * Orders normally come first and `packages.register` writes the package↔order
+ * link on the spot. When the order is entered afterwards — goods bought at
+ * cost that reach the China warehouse with only a customer code on the box —
+ * nothing used to go back and connect the two, so the parcel stayed a self
+ * order in every report and the order never left `tracking_added`. Calling
+ * this wherever an order gains a tracking closes that gap.
+ *
+ * Never throws: an operator adding a tracking must not see their save fail
+ * because a follow-up link could not be written. The tracking itself is
+ * already saved by the time we get here; a missed link is recoverable, a
+ * failed save is confusing.
+ */
+async function safeBacklink(orderId: number) {
+  try {
+    return await db.backlinkRegisteredPackagesForOrder(orderId);
+  } catch (err) {
+    appLogger.error("[FullPackage] Backlink of pre-registered packages failed", {
+      orderId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return { linked: [], conflicts: [], promoted: false };
+  }
+}
+
 async function autoSplitShippingByTracking(order: any, userId: number): Promise<void> {
   const trackingNumber = order.trackingNumber;
   if (!trackingNumber || !order.batchId) return;
@@ -342,6 +369,11 @@ export const fullPackageRouter = router({
           entityId: order.id,
           newValues: input,
         });
+
+        // The order may have been entered AFTER its parcel already reached the
+        // China warehouse and was quick-registered. Adopt any such parcel now,
+        // otherwise it stays counted as a self order forever.
+        await safeBacklink(order.id);
 
         return order;
       }),
@@ -893,14 +925,23 @@ export const fullPackageRouter = router({
           });
         }
 
+        // Only when this edit touched the trackings: a tracking typed in now
+        // may already belong to a parcel sitting in the China warehouse,
+        // quick-registered before this order was entered.
+        const trackingsTouched =
+          (data as Record<string, unknown>).trackingNumber !== undefined ||
+          (data as Record<string, unknown>).trackingNumbers !== undefined;
+        const backlink = trackingsTouched ? await safeBacklink(id) : null;
+
         return {
           success: true,
           newVersion: (existing.version ?? 1) + 1,
           chargeDeltaUsd: chargeChanged ? chargeDelta : 0,
           newChargeAmountUsd: newChargeAmount,
+          backlink,
         };
       }),
-    
+
     updateStatus: staffProcedure
       .input(z.object({
         id: z.number(),
@@ -1402,7 +1443,14 @@ export const fullPackageRouter = router({
         fullPackageOrderId: z.number(),
         trackingNumbers: z.array(z.string().min(1)).min(1),
       }))
-      .mutation(async ({ input }) => db.addOrderTrackings(input.fullPackageOrderId, input.trackingNumbers)),
+      .mutation(async ({ input }) => {
+        const result = await db.addOrderTrackings(input.fullPackageOrderId, input.trackingNumbers);
+        // A parcel can reach the warehouse before anyone enters its order —
+        // goods bought at cost, quick-registered off the customer code on the
+        // box. Now that the order owns the tracking, adopt that parcel.
+        const backlink = await safeBacklink(input.fullPackageOrderId);
+        return { ...result, backlink };
+      }),
     removeOrderTracking: staffProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => db.removeOrderTracking(input.id)),
