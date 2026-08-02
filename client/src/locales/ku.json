@@ -639,7 +639,8 @@
     "expenseAlerts": "ئاگادارکردنەوەی خەرجی",
     "servicesSection": "خزمەتگوزارییەکان",
     "allServices": "هەموو خزمەتگوزارییەکان",
-    "pricingRules": "نرخی گواستنەوە"
+    "pricingRules": "نرخی گواستنەوە",
+    "registrations": "تۆمارەکان"
   },
   "dashboard": {
     "problemsTitle": "مەشاکل و کارە پێویستەکان",

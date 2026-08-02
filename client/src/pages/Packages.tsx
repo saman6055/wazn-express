@@ -1070,9 +1070,12 @@ const [, setLocation] = useLocation();
                 count and the gaps, because a parcel with no weight cannot be
                 priced or batched and one with no owner sits in the depot
                 belonging to nobody — those are the ones needing a person. */}
+            {/* Sends you to the registrations page rather than switching a tab
+                here: this generic table has no photos and no record of who
+                entered what, which is most of what you come looking for. */}
             <div
-              className={`bg-white/10 backdrop-blur rounded-xl p-4 cursor-pointer transition-all hover:bg-white/20 ${activeTab === 'registered' ? 'ring-2 ring-white' : ''}`}
-              onClick={() => setActiveTab('registered')}
+              className="bg-white/10 backdrop-blur rounded-xl p-4 cursor-pointer transition-all hover:bg-white/20"
+              onClick={() => setLocation('/packages/registrations')}
             >
               <div className="flex items-center gap-2 mb-1">
                 <PackagePlus className="h-4 w-4 text-teal-300" />

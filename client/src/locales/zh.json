@@ -619,7 +619,8 @@
     "servicesSection": "服务",
     "allServices": "所有服务",
     "pricingRules": "运费价格",
-    "batchLabelTemplate": "批次标签模板"
+    "batchLabelTemplate": "批次标签模板",
+    "registrations": "登记记录"
   },
   "dashboard": {
     "problemsTitle": "问题与待办事项",

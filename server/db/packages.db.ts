@@ -363,11 +363,17 @@ export async function getAllPackages(options: {
     status: packages.status,
     createdAt: packages.createdAt,
     updatedAt: packages.updatedAt,
+    // Who registered it and exactly when — the registrations view answers
+    // "who entered this and at what time", which createdAt alone can't.
+    registeredAt: packages.registeredAt,
+    registeredById: packages.registeredById,
+    registeredByName: users.name,
     // Full package order type for display
     orderType: fullPackageOrders.orderType,
   })
     .from(packages)
     .leftJoin(fullPackageOrders, eq(packages.fullPackageOrderId, fullPackageOrders.id))
+    .leftJoin(users, eq(packages.registeredById, users.id))
     .where(dataWhereClause)
     .orderBy(desc(packages.id))
     .limit(pageSize)

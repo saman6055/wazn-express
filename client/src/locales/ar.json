@@ -619,7 +619,8 @@
     "servicesSection": "الخدمات",
     "allServices": "جميع الخدمات",
     "pricingRules": "أسعار الشحن",
-    "batchLabelTemplate": "قالب ملصق الدفعة"
+    "batchLabelTemplate": "قالب ملصق الدفعة",
+    "registrations": "التسجيلات"
   },
   "dashboard": {
     "problemsTitle": "المشاكل والإجراءات المطلوبة",

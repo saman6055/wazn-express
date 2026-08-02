@@ -74,7 +74,7 @@ export function RegistrationsSummaryCard({ className }: { className?: string }) 
             })}
           </h3>
           <Link
-            href="/packages"
+            href="/packages/registrations"
             className="ms-auto inline-flex items-center gap-0.5 text-xs font-medium text-sky-600 dark:text-sky-400"
           >
             {label({ ku: "هەمووی", en: "All", ar: "الكل", zh: "全部" })}
@@ -130,7 +130,7 @@ export function RegistrationsSummaryCard({ className }: { className?: string }) 
 
         {(data?.byCustomer?.length ?? 0) > 3 && (
           <Link
-            href="/packages"
+            href="/packages/registrations"
             className="mt-2 block text-center text-[11.5px] font-medium text-sky-600 dark:text-sky-400"
           >
             {label({

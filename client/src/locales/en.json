@@ -619,7 +619,8 @@
     "backupManagement": "Backup Management",
     "scheduledBackups": "Scheduled Backups",
     "pricingRules": "Shipping rates",
-    "batchLabelTemplate": "Batch label template"
+    "batchLabelTemplate": "Batch label template",
+    "registrations": "Registrations"
   },
   "dashboard": {
     "problemsTitle": "Problems & action needed",

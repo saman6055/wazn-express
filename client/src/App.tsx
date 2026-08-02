@@ -42,6 +42,7 @@ const SelfOrders = lazy(() => import("./pages/SelfOrders"));
 const QuickRegister = lazy(() => import("./pages/QuickRegister"));
 const BulkRegister = lazy(() => import("./pages/BulkRegister"));
 const UnclaimedPackages = lazy(() => import("./pages/UnclaimedPackages"));
+const Registrations = lazy(() => import("./pages/Registrations"));
 const ClaimRequests = lazy(() => import("./pages/ClaimRequests"));
 
 // ---------------------------------------------------------------------------
@@ -230,6 +231,7 @@ function Router() {
         <Route path="/quick-register" component={QuickRegister} />
         <Route path="/packages/prohibited-register" component={ProhibitedRegister} />
         <Route path="/packages/bulk-register" component={BulkRegister} />
+        <Route path="/packages/registrations" component={Registrations} />
         <Route path="/packages/unclaimed" component={UnclaimedPackages} />
         <Route path="/packages/claim-requests" component={ClaimRequests} />
         <Route path="/batch-assignment-scanner" component={BatchAssignmentScanner} />
