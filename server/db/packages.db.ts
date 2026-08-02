@@ -1024,10 +1024,15 @@ export async function backfillPackageOrderLinks(): Promise<{
  * pieces, for whom, how many kilos by air, how many cubic metres by sea, what
  * kind of goods, and roughly what it is worth.
  *
- * The value is estimated here rather than read from the row. Quick Register
- * calculates a price and then discards it — the line that would store it aims
- * at a column name that does not exist — so the figure is derived at read time
- * from the same active pricing rules. Nothing about registration changes.
+ * The value prefers what registration actually stored. `packages.register`
+ * prices each parcel against the rule for its own origin and destination and
+ * writes it to calculatedCostUsd, and that same stored figure is what a
+ * finalized batch bills the customer — so a summary that recomputed it would
+ * quietly disagree with the invoice.
+ *
+ * The rule-based estimate is only a fallback, for rows registered without one:
+ * unclaimed parcels get no cost on purpose, and a parcel weighed after
+ * registration keeps whatever it was priced at then.
  */
 export async function getRegistrationSummary(opts: {
   from: Date;
@@ -1099,7 +1104,10 @@ export async function getRegistrationSummary(opts: {
     const pkg = row.pkg;
     const weightKg = parseFloat(pkg.weightKg?.toString() || "0") || 0;
     const cbm = parseFloat(pkg.volumeCbm?.toString() || "0") || 0;
-    const value = priceOf(pkg.shippingType, weightKg, cbm);
+    // What registration priced it at, which is also what a finalized batch
+    // bills. Only estimate when nothing was stored.
+    const storedCost = parseFloat(pkg.calculatedCostUsd?.toString() || "0") || 0;
+    const value = storedCost > 0 ? storedCost : priceOf(pkg.shippingType, weightKg, cbm);
 
     totals.pieces += 1;
     if (pkg.shippingType === "sea") totals.seaCbm += cbm;
