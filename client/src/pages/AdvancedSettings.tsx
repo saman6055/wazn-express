@@ -18,6 +18,7 @@ import { Settings2, Building2, Shield, Palette, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { DeadPhotoCleanupCard } from "@/components/settings/DeadPhotoCleanupCard";
 
 export default function AdvancedSettings() {
   const { language } = useTranslation();
@@ -359,6 +360,10 @@ export default function AdvancedSettings() {
               </Button>
             </CardContent>
           </Card>
+
+          <div className="mt-6">
+            <DeadPhotoCleanupCard />
+          </div>
         </TabsContent>
 
         {/* User Experience Configuration */}

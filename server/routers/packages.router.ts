@@ -38,6 +38,36 @@ export const packagesRouter = router({
           dateTo: input?.dateTo ? new Date(input.dateTo) : undefined,
         });
       }),
+    /**
+     * Clear photo URLs whose files no longer exist on disk.
+     *
+     * Admin-only and dry-run by default: `apply` has to be sent explicitly,
+     * so a mis-click reports rather than deletes. Only files in our own
+     * uploads directory are ever touched.
+     */
+    cleanupDeadPhotos: adminProcedure
+      .input(z.object({ apply: z.boolean().default(false) }).optional())
+      .mutation(async ({ input, ctx }) => {
+        const apply = input?.apply === true;
+        const result = await db.cleanupDeadPhotoUrls({ dryRun: !apply });
+
+        if (apply && result.removedPhotos > 0) {
+          await db.createAuditLog({
+            userId: ctx.user.id,
+            userRole: ctx.user.role,
+            action: "cleanup_dead_photos",
+            entityType: "package",
+            entityId: 0,
+            newValues: {
+              affectedPackages: result.affectedPackages,
+              removedPhotos: result.removedPhotos,
+              emptiedPackages: result.emptiedPackages,
+            },
+          });
+        }
+        return result;
+      }),
+
     stats: staffProcedure
       .query(async () => {
         return cacheGetOrSet("packages:stats", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getPackagesStats());

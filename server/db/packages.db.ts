@@ -8,11 +8,14 @@ import {
   updateFullPackageOrder,
   getOrderTrackings,
 } from './fullPackage.db';
+import fs from 'fs';
 import {
   classifyBacklinkCandidate,
   isTerminalOrderStatus,
   type BacklinkConflictReason,
 } from '../lib/orderBacklink';
+import { prunePhotoList } from '../lib/photoUrls';
+import { getUploadsDir } from '../services/localUpload';
 import { createCustomerNotification } from './portal.db';
 import { findActiveDeclaredByTracking, markDeclaredMatched } from './declaredPackages.db';
 import {
@@ -1110,6 +1113,94 @@ export async function backlinkRegisteredPackagesForOrder(orderId: number): Promi
   }
 
   return { linked, conflicts, promoted };
+}
+
+/**
+ * Clear photo URLs that point at files which no longer exist.
+ *
+ * Photos taken at the warehouse were written into the container and served
+ * from a route production never mounted, so every redeploy rebuilt the
+ * container and took the files with it while their URLs stayed on the package
+ * rows. Those rows render as broken images; a package with no photo should say
+ * so plainly instead.
+ *
+ * Only files in our own uploads directory are ever considered — see
+ * photoUrls.ts. An absolute URL, an inline image, or anything unrecognised is
+ * kept regardless, because a missing local file proves nothing about it.
+ *
+ * `dryRun` visits exactly the same rows and reports exactly the same numbers
+ * as a real run; it simply does not write. Run it first.
+ */
+export async function cleanupDeadPhotoUrls(options: { dryRun?: boolean } = {}): Promise<{
+  dryRun: boolean;
+  scanned: number;
+  affectedPackages: number;
+  removedPhotos: number;
+  emptiedPackages: number;
+  samples: Array<{ packageCode: string; removed: string[] }>;
+}> {
+  const dryRun = options.dryRun !== false; // deleting is opt-in, never the default
+  const empty = { dryRun, scanned: 0, affectedPackages: 0, removedPhotos: 0, emptiedPackages: 0, samples: [] };
+
+  const db = await getDb();
+  if (!db) return empty;
+
+  const uploadsDir = getUploadsDir();
+  // One directory read, not one stat per photo: the same file is referenced by
+  // several rows, and this runs over the whole table.
+  let present: Set<string>;
+  try {
+    present = new Set(fs.readdirSync(uploadsDir));
+  } catch (err) {
+    // No directory at all means nothing local survives. That is a legitimate
+    // state (fresh container), but deleting every local URL on the strength of
+    // a failed readdir is not a risk worth taking — bail out instead.
+    appLogger.warn('[PhotoCleanup] Could not read the uploads directory; nothing was changed', {
+      uploadsDir, error: err instanceof Error ? err.message : String(err),
+    });
+    return empty;
+  }
+
+  const rows = await db.select({
+    id: packages.id,
+    packageCode: packages.packageCode,
+    photos: packages.photos,
+  })
+    .from(packages)
+    .where(isNotNull(packages.photos));
+
+  let affectedPackages = 0;
+  let removedPhotos = 0;
+  let emptiedPackages = 0;
+  const samples: Array<{ packageCode: string; removed: string[] }> = [];
+
+  for (const row of rows) {
+    // The column is JSON, but a legacy row may hold the encoded string.
+    let photos: unknown = row.photos;
+    if (typeof photos === 'string') {
+      try { photos = JSON.parse(photos); } catch { continue; }
+    }
+
+    const pruned = prunePhotoList(photos, (name) => present.has(name));
+    if (!pruned) continue;
+
+    affectedPackages++;
+    removedPhotos += pruned.removed.length;
+    if (pruned.kept.length === 0) emptiedPackages++;
+    if (samples.length < 10) samples.push({ packageCode: row.packageCode, removed: pruned.removed });
+
+    if (!dryRun) {
+      await db.update(packages)
+        .set({ photos: pruned.kept.length > 0 ? pruned.kept : null })
+        .where(eq(packages.id, row.id));
+    }
+  }
+
+  appLogger.info('[PhotoCleanup] Finished', {
+    dryRun, scanned: rows.length, affectedPackages, removedPhotos, emptiedPackages,
+  });
+
+  return { dryRun, scanned: rows.length, affectedPackages, removedPhotos, emptiedPackages, samples };
 }
 
 /**
