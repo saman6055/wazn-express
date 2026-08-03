@@ -15,6 +15,7 @@ import {
   type BacklinkConflictReason,
 } from '../lib/orderBacklink';
 import { prunePhotoList } from '../lib/photoUrls';
+import { isDuplicateKeyError, dbErrorReason } from '../lib/dbErrors';
 import {
   assessVolumetric,
   DEFAULT_VOLUMETRIC_THRESHOLDS,
@@ -855,9 +856,10 @@ export async function createPackageOrderLinks(
       });
       inserted++;
     } catch (err: unknown) {
-      const msg = err && typeof err === "object" && "message" in err ? String((err as { message: unknown }).message) : "";
-      const code = err && typeof err === "object" && "code" in err ? (err as { code: unknown }).code : "";
-      if (code === "ER_DUP_ENTRY" || /duplicate|unique/i.test(msg)) {
+      // A link that already exists is the expected outcome of re-running this,
+      // not a failure — but only if the duplicate is recognised through
+      // Drizzle's wrapper.
+      if (isDuplicateKeyError(err)) {
         skipped++;
       } else {
         throw err;
@@ -2112,6 +2114,19 @@ export async function backfillPackageOrderLinks(): Promise<{
     .from(packages)
     .where(isNotNull(packages.fullPackageOrderId));
 
+  // Every startup after the first has nothing to do, but "nothing to do" still
+  // meant one INSERT per linked package — hundreds of round trips before the
+  // server would serve a request. Ask once whether the work is already done.
+  if (candidates.length > 0) {
+    const existing = await db.select({ packageId: packageOrderLinks.packageId })
+      .from(packageOrderLinks)
+      .where(inArray(packageOrderLinks.packageId, candidates.map((c) => c.id)));
+    const linked = new Set(existing.map((e) => e.packageId));
+    if (candidates.every((c) => linked.has(c.id))) {
+      return { totalCandidates: candidates.length, inserted: 0, alreadyLinked: candidates.length, errors: 0 };
+    }
+  }
+
   let inserted = 0;
   let alreadyLinked = 0;
   let errors = 0;
@@ -2127,14 +2142,15 @@ export async function backfillPackageOrderLinks(): Promise<{
       });
       inserted++;
     } catch (err: unknown) {
-      const code = err && typeof err === "object" && "code" in err ? (err as { code: unknown }).code : "";
-      const msg = err && typeof err === "object" && "message" in err ? String((err as { message: unknown }).message) : "";
-      if (code === "ER_DUP_ENTRY" || /duplicate|unique/i.test(msg)) {
+      // Drizzle wraps the mysql2 error, so the duplicate code lives on
+      // `cause`. Reading it off the wrapper meant every row this backfill had
+      // already written was logged as a failure on the next startup.
+      if (isDuplicateKeyError(err)) {
         alreadyLinked++;
       } else {
         errors++;
         appLogger.warn("[Backfill] packageOrderLinks insert failed", {
-          packageId: c.id, orderId: c.fullPackageOrderId, error: msg,
+          packageId: c.id, orderId: c.fullPackageOrderId, error: dbErrorReason(err),
         });
       }
     }
