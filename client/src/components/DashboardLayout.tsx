@@ -637,9 +637,6 @@ function DashboardLayoutContent({
         className={cn(
           "fixed top-0 h-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50 transition-all duration-300 ease-in-out overflow-hidden flex flex-col",
           isRTL ? "right-0 border-l" : "left-0 border-r",
-          // Full screen slides the rail out of the way rather than unmounting
-          // it, so coming back does not re-run every query it holds.
-          fullScreen && !isMobile && (isRTL ? "translate-x-full" : "-translate-x-full"),
           isMobile
             ? cn(
                 "w-72",
@@ -647,7 +644,11 @@ function DashboardLayoutContent({
                   ? "translate-x-0"
                   : isRTL ? "translate-x-full" : "-translate-x-full"
               )
-            : "w-20 translate-x-0"
+            // Full screen slides the rail out rather than unmounting it, so
+            // returning does not re-run every query it holds. The transform
+            // has to live here: a separate class earlier in the list was
+            // overridden by the translate-x-0 that follows it.
+            : cn("w-20", fullScreen ? (isRTL ? "translate-x-full" : "-translate-x-full") : "translate-x-0")
         )}
       >
         {/* Sidebar Header */}
@@ -880,6 +881,10 @@ function DashboardLayoutContent({
             mobile header (top-14) or to the viewport on desktop (top-0). */}
         <div className={cn(
           "sticky z-30 flex items-center gap-1 h-11 px-2 md:px-6 border-b border-gray-200 dark:border-gray-700 bg-white/85 dark:bg-gray-900/85 backdrop-blur print:hidden",
+          // In full screen this strip is the last chrome standing, so it goes
+          // as well. Escape brings it back — the same key that leaves any
+          // other full screen.
+          fullScreen && !isMobile && "hidden",
           isMobile ? "top-14" : "top-0"
         )}>
           {/* Nav cluster — Windows 11–style rounded pill group */}
@@ -1058,6 +1063,20 @@ function DashboardLayoutContent({
           {children}
         </div>
       </main>
+
+      {/* The one control left on screen in full screen. Without it the only
+          way back is a keyboard shortcut nobody was told about. */}
+      {fullScreen && !isMobile && (
+        <button
+          type="button"
+          onClick={() => setFullScreen(false)}
+          className="fixed bottom-4 end-4 z-50 inline-flex items-center gap-2 rounded-full bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition-opacity hover:bg-blue-800 print:hidden"
+          title={pickLang(language, { ku: "دەرچوون (Esc)", en: "Exit (Esc)", ar: "خروج (Esc)", zh: "退出 (Esc)" })}
+        >
+          <Minimize2 className="h-4 w-4" />
+          {pickLang(language, { ku: "دەرچوون", en: "Exit", ar: "خروج", zh: "退出" })}
+        </button>
+      )}
 
       <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
       <ShortcutsOverlay />
