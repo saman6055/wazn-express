@@ -68,6 +68,23 @@ export const packagesRouter = router({
         return result;
       }),
 
+    /** Quick Register intake for a period, with every photo and the owning order. */
+    registrations: staffProcedure
+      .input(z.object({
+        dateFrom: z.string().max(50),
+        dateTo: z.string().max(50),
+        search: z.string().max(200).optional(),
+        limit: z.number().int().positive().max(2000).optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getRegistrations({
+          from: new Date(input.dateFrom),
+          to: new Date(input.dateTo),
+          search: input.search,
+          limit: input.limit,
+        });
+      }),
+
     stats: staffProcedure
       .query(async () => {
         return cacheGetOrSet("packages:stats", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getPackagesStats());

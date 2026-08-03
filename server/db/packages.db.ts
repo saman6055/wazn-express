@@ -91,6 +91,7 @@ import {
   expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog,
   packageOrderLinks, InsertPackageOrderLink, PackageOrderLink,
   fullPackageOrderTrackings,
+  customerDeclaredPackages,
 } from "../../drizzle/schema";
 
 // ============ PACKAGE OPERATIONS ============
@@ -1113,6 +1114,348 @@ export async function backlinkRegisteredPackagesForOrder(orderId: number): Promi
   }
 
   return { linked, conflicts, promoted };
+}
+
+/** One picture on a registration, and where it came from. */
+export type RegistrationPhoto = {
+  url: string;
+  /**
+   * - warehouse — taken at Quick Register when the parcel arrived.
+   * - order — supplied when the purchase order was created (پاکێجی تەواو / کڕین بە تێچوو).
+   * - customer — uploaded by the customer in the portal when declaring the tracking.
+   */
+  source: 'warehouse' | 'order' | 'customer';
+};
+
+export type RegistrationRow = {
+  id: number;
+  packageCode: string;
+  trackingNumber: string | null;
+  customerId: number | null;
+  customerName: string | null;
+  customerCode: string | null;
+  isUnclaimed: boolean;
+  weightKg: string | null;
+  lengthCm: string | null;
+  widthCm: string | null;
+  heightCm: string | null;
+  volumeCbm: string | null;
+  shippingType: 'air_regular' | 'air_irregular' | 'sea';
+  description: string | null;
+  categoryName: string | null;
+  calculatedCostUsd: string | null;
+  status: string;
+  batchId: number | null;
+  registeredAt: Date | string | null;
+  registeredByName: string | null;
+  photos: RegistrationPhoto[];
+  /** Null means nobody bought this for them — a self order. */
+  order: {
+    id: number;
+    orderCode: string;
+    orderType: 'full_package' | 'commission' | 'purchase_request';
+    productName: string | null;
+    status: string;
+  } | null;
+  /** The customer told us this tracking was coming, before it arrived. */
+  declaredByCustomer: boolean;
+  /**
+   * A self order from a customer who has live purchase orders with us.
+   *
+   * A parcel with no order behind it is a genuine self order — the customer
+   * bought it and we only ship. But when that customer also has open
+   * کڕین بە تێچوو or پاکێجی تەواو orders, one arriving unattached is worth a
+   * look: far more often it is an order nobody entered yet than a customer who
+   * happened to shop alone this once. The office should check rather than let
+   * it settle into the wrong column, where it would be billed for shipping
+   * only and counted as self-order profit.
+   */
+  needsReview: boolean;
+  /** How many live orders that customer has, for the reviewer's context. */
+  customerOpenOrders: number;
+};
+
+/**
+ * Everything Quick Register took in over a period, assembled from every place
+ * that knows something about the parcel.
+ *
+ * Built as its own query rather than reusing the package list because that list
+ * answers a different question. Two things it could not do:
+ *
+ *   - Find the order. It reads packages.fullPackageOrderId, which is only set
+ *     when the order existed at registration time. A parcel registered first
+ *     shows no order at all and reads as a self order, which is how a
+ *     کڕین بە تێچوو ended up labelled سێلف ئۆردەر on screen. Here the tracking
+ *     number is used as well, so the order is found either way.
+ *   - Find the photos. A parcel can be pictured three times over: at the
+ *     warehouse, on the purchase order, and by the customer declaring it in the
+ *     portal. All three are collected here, each tagged with where it came
+ *     from, so a parcel whose warehouse photo is missing still shows what it
+ *     looks like.
+ */
+export async function getRegistrations(options: {
+  from: Date;
+  to: Date;
+  search?: string;
+  limit?: number;
+}): Promise<RegistrationRow[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const limit = Math.min(options.limit ?? 500, 2000);
+
+  const conds = [
+    eq(packages.status, 'registered'),
+    gte(packages.registeredAt, options.from),
+    lt(packages.registeredAt, options.to),
+  ];
+
+  const base = await db.select({
+    id: packages.id,
+    packageCode: packages.packageCode,
+    trackingNumber: packages.trackingNumber,
+    customerId: packages.customerId,
+    fullPackageOrderId: packages.fullPackageOrderId,
+    categoryId: packages.categoryId,
+    isUnclaimed: packages.isUnclaimed,
+    weightKg: packages.weightKg,
+    lengthCm: packages.lengthCm,
+    widthCm: packages.widthCm,
+    heightCm: packages.heightCm,
+    volumeCbm: packages.volumeCbm,
+    shippingType: packages.shippingType,
+    description: packages.description,
+    photos: packages.photos,
+    calculatedCostUsd: packages.calculatedCostUsd,
+    status: packages.status,
+    batchId: packages.batchId,
+    registeredAt: packages.registeredAt,
+    customerName: customers.fullName,
+    customerCode: customers.customerCode,
+    categoryNameEn: productCategories.nameEn,
+    categoryNameAr: productCategories.nameAr,
+    categoryNameKu: productCategories.nameKu,
+    registeredByName: users.name,
+  })
+    .from(packages)
+    .leftJoin(customers, eq(packages.customerId, customers.id))
+    .leftJoin(productCategories, eq(packages.categoryId, productCategories.id))
+    .leftJoin(users, eq(packages.registeredById, users.id))
+    .where(and(...conds))
+    .orderBy(desc(packages.registeredAt), desc(packages.id))
+    .limit(limit);
+
+  if (base.length === 0) return [];
+
+  const trackings = Array.from(
+    new Set(base.map((r) => r.trackingNumber?.trim()).filter((t): t is string => Boolean(t))),
+  );
+
+  // Orders reachable from these trackings — the multi-tracking table and the
+  // legacy single column both, since either may be the only one filled in.
+  type OrderInfo = {
+    id: number; orderCode: string; orderType: string; productName: string | null;
+    status: string; productImage: string | null; productImages: string[] | null;
+  };
+  const orderByTracking = new Map<string, OrderInfo>();
+  const orderById = new Map<number, OrderInfo>();
+
+  if (trackings.length > 0) {
+    const viaTable = await db.select({
+      trackingNumber: fullPackageOrderTrackings.trackingNumber,
+      id: fullPackageOrders.id,
+      orderCode: fullPackageOrders.orderCode,
+      orderType: fullPackageOrders.orderType,
+      productName: fullPackageOrders.productName,
+      status: fullPackageOrders.status,
+      productImage: fullPackageOrders.productImage,
+      productImages: fullPackageOrders.productImages,
+    })
+      .from(fullPackageOrderTrackings)
+      .innerJoin(fullPackageOrders, eq(fullPackageOrderTrackings.fullPackageOrderId, fullPackageOrders.id))
+      .where(inArray(fullPackageOrderTrackings.trackingNumber, trackings));
+
+    const viaLegacy = await db.select({
+      trackingNumber: fullPackageOrders.trackingNumber,
+      id: fullPackageOrders.id,
+      orderCode: fullPackageOrders.orderCode,
+      orderType: fullPackageOrders.orderType,
+      productName: fullPackageOrders.productName,
+      status: fullPackageOrders.status,
+      productImage: fullPackageOrders.productImage,
+      productImages: fullPackageOrders.productImages,
+    })
+      .from(fullPackageOrders)
+      .where(inArray(fullPackageOrders.trackingNumber, trackings));
+
+    for (const o of [...viaTable, ...viaLegacy]) {
+      const info: OrderInfo = {
+        id: o.id, orderCode: o.orderCode, orderType: String(o.orderType),
+        productName: o.productName ?? null, status: String(o.status),
+        productImage: o.productImage ?? null,
+        productImages: (o.productImages as string[] | null) ?? null,
+      };
+      orderById.set(o.id, info);
+      const tn = o.trackingNumber?.trim();
+      // First writer wins: the multi-tracking table is the newer, more precise
+      // source and is read first, so a stale legacy column cannot override it.
+      if (tn && !orderByTracking.has(tn)) orderByTracking.set(tn, info);
+    }
+  }
+
+  // Orders reachable only through the FK (tracking may have been cleared).
+  const missingFkIds = Array.from(new Set(
+    base.map((r) => r.fullPackageOrderId).filter((id): id is number => Boolean(id) && !orderById.has(id!)),
+  ));
+  if (missingFkIds.length > 0) {
+    const extra = await db.select({
+      id: fullPackageOrders.id,
+      orderCode: fullPackageOrders.orderCode,
+      orderType: fullPackageOrders.orderType,
+      productName: fullPackageOrders.productName,
+      status: fullPackageOrders.status,
+      productImage: fullPackageOrders.productImage,
+      productImages: fullPackageOrders.productImages,
+    }).from(fullPackageOrders).where(inArray(fullPackageOrders.id, missingFkIds));
+    for (const o of extra) {
+      orderById.set(o.id, {
+        id: o.id, orderCode: o.orderCode, orderType: String(o.orderType),
+        productName: o.productName ?? null, status: String(o.status),
+        productImage: o.productImage ?? null,
+        productImages: (o.productImages as string[] | null) ?? null,
+      });
+    }
+  }
+
+  // What the customer sent us from the portal before the parcel arrived.
+  const declaredByTracking = new Map<string, string[]>();
+  if (trackings.length > 0) {
+    const declared = await db.select({
+      trackingNumber: customerDeclaredPackages.trackingNumber,
+      productImages: customerDeclaredPackages.productImages,
+    })
+      .from(customerDeclaredPackages)
+      .where(inArray(customerDeclaredPackages.trackingNumber, trackings));
+    for (const d of declared) {
+      const tn = d.trackingNumber?.trim();
+      if (!tn) continue;
+      const imgs = (d.productImages as string[] | null) ?? [];
+      const prev = declaredByTracking.get(tn) ?? [];
+      declaredByTracking.set(tn, prev.concat(imgs.filter(Boolean)));
+    }
+  }
+
+  // For parcels that arrived with no order attached: does that customer have
+  // live orders with us? One batched count, not a query per row.
+  const openOrdersByCustomer = new Map<number, number>();
+  const selfOrderCustomerIds = Array.from(new Set(
+    base
+      .filter((r) => {
+        const tn = r.trackingNumber?.trim();
+        const linked = (tn && orderByTracking.has(tn)) || (r.fullPackageOrderId && orderById.has(r.fullPackageOrderId));
+        return !linked && r.customerId;
+      })
+      .map((r) => r.customerId!)
+      .filter(Boolean),
+  ));
+  if (selfOrderCustomerIds.length > 0) {
+    const counts = await db.select({
+      customerId: fullPackageOrders.customerId,
+      n: count(),
+    })
+      .from(fullPackageOrders)
+      .where(and(
+        inArray(fullPackageOrders.customerId, selfOrderCustomerIds),
+        inArray(fullPackageOrders.orderType, ['full_package', 'commission']),
+        notInArray(fullPackageOrders.status, ['delivered', 'cancelled', 'refunded', 'returned']),
+      ))
+      .groupBy(fullPackageOrders.customerId);
+    for (const c of counts) {
+      if (c.customerId) openOrdersByCustomer.set(c.customerId, Number(c.n) || 0);
+    }
+  }
+
+  const term = options.search?.trim().toLowerCase();
+
+  const rows: RegistrationRow[] = [];
+  for (const r of base) {
+    const tn = r.trackingNumber?.trim() ?? null;
+    const order = (tn ? orderByTracking.get(tn) : undefined)
+      ?? (r.fullPackageOrderId ? orderById.get(r.fullPackageOrderId) : undefined)
+      ?? null;
+
+    // Warehouse pictures first — they show the parcel as it actually arrived,
+    // which is what someone checking a registration wants to see.
+    const photos: RegistrationPhoto[] = [];
+    const seen = new Set<string>();
+    const push = (url: unknown, source: RegistrationPhoto['source']) => {
+      if (typeof url !== 'string') return;
+      const u = url.trim();
+      if (!u || seen.has(u)) return;
+      seen.add(u);
+      photos.push({ url: u, source });
+    };
+
+    let own: unknown = r.photos;
+    if (typeof own === 'string') { try { own = JSON.parse(own); } catch { own = []; } }
+    for (const p of Array.isArray(own) ? own : []) push(p, 'warehouse');
+
+    if (order) {
+      push(order.productImage, 'order');
+      for (const p of order.productImages ?? []) push(p, 'order');
+    }
+    const declaredImgs = tn ? declaredByTracking.get(tn) : undefined;
+    for (const p of declaredImgs ?? []) push(p, 'customer');
+
+    const row: RegistrationRow = {
+      id: r.id,
+      packageCode: r.packageCode,
+      trackingNumber: r.trackingNumber,
+      customerId: r.customerId,
+      customerName: r.customerName ?? null,
+      customerCode: r.customerCode ?? null,
+      isUnclaimed: r.isUnclaimed,
+      weightKg: r.weightKg,
+      lengthCm: r.lengthCm,
+      widthCm: r.widthCm,
+      heightCm: r.heightCm,
+      volumeCbm: r.volumeCbm,
+      shippingType: r.shippingType as RegistrationRow['shippingType'],
+      description: r.description,
+      categoryName: r.categoryNameKu || r.categoryNameEn || r.categoryNameAr || null,
+      calculatedCostUsd: r.calculatedCostUsd,
+      status: r.status,
+      batchId: r.batchId,
+      registeredAt: r.registeredAt,
+      registeredByName: r.registeredByName ?? null,
+      photos,
+      order: order
+        ? {
+            id: order.id,
+            orderCode: order.orderCode,
+            orderType: order.orderType as 'full_package' | 'commission' | 'purchase_request',
+            productName: order.productName,
+            status: order.status,
+          }
+        : null,
+      declaredByCustomer: Boolean(declaredImgs && declaredImgs.length > 0),
+      needsReview: !order && Boolean(r.customerId) && (openOrdersByCustomer.get(r.customerId!) ?? 0) > 0,
+      customerOpenOrders: r.customerId ? (openOrdersByCustomer.get(r.customerId) ?? 0) : 0,
+    };
+
+    // Search runs here, after the order and customer are known, so typing an
+    // order code or a customer name finds the parcel too.
+    if (term) {
+      const hay = [
+        row.trackingNumber, row.packageCode, row.customerName, row.customerCode,
+        row.description, row.categoryName, row.order?.orderCode, row.order?.productName,
+      ].filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(term)) continue;
+    }
+    rows.push(row);
+  }
+
+  return rows;
 }
 
 /**
