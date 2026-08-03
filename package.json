@@ -11,7 +11,10 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
-    "create-admin": "tsx scripts/create-admin.ts"
+    "create-admin": "tsx scripts/create-admin.ts",
+    "ci:migrate": "tsx scripts/ci-migrate.ts",
+    "ci:seed": "tsx scripts/ci-seed.ts",
+    "ci": "tsc --noEmit && vitest run && vite build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",

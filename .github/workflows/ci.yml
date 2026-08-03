@@ -1,0 +1,80 @@
+name: CI
+
+# Runs on every push and pull request so a break is caught while it is still
+# one diff, not after a redeploy.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A newer push makes the previous run's answer irrelevant.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Types, tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # Most of this suite talks to MySQL. Without one, 87 tests fail on
+    # "Database not available" and every piece of business logic they cover
+    # goes unverified — which is exactly the state this repository was in.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci
+          MYSQL_DATABASE: wazn_express_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      DATABASE_URL: mysql://root:ci@127.0.0.1:3306/wazn_express_test
+      # Config validation refuses to boot without these; the values are
+      # throwaway and never leave the runner.
+      JWT_SECRET: ci-only-not-a-real-secret-0123456789
+      MIGRATION_SECRET: ci-only-not-a-real-secret-0123456789
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Type errors are a hard gate: the count was driven to zero, and it
+      # stays there.
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Create the schema
+        run: pnpm exec tsx scripts/ci-migrate.ts
+
+      # Fifteen tests open by looking for a customer / warehouse / country and
+      # abort when they find none. Without this a green run would prove
+      # nothing about them.
+      - name: Seed the minimum the tests expect
+        run: pnpm exec tsx scripts/ci-seed.ts
+
+      - name: Test
+        run: pnpm exec vitest run --reporter=verbose
+
+      - name: Build
+        run: pnpm build
