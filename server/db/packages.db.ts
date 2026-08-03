@@ -1116,6 +1116,253 @@ export async function backlinkRegisteredPackagesForOrder(orderId: number): Promi
   return { linked, conflicts, promoted };
 }
 
+/** A tracking we are waiting on, and why we know about it. */
+export type AwaitedParcel = {
+  trackingNumber: string;
+  /**
+   * - order — we bought it for them, so we have the order behind it.
+   * - customer — they told us in the portal that this tracking is coming.
+   */
+  origin: 'order' | 'customer';
+  customerId: number | null;
+  customerName: string | null;
+  customerCode: string | null;
+  /** When we first learned this tracking existed. Age is measured from here. */
+  knownSince: Date | string | null;
+  daysWaiting: number;
+  /** Past this, the parcel is late enough that somebody should look. */
+  isLate: boolean;
+  productName: string | null;
+  productImage: string | null;
+  shippingType: string | null;
+  order: { id: number; orderCode: string; orderType: string; status: string } | null;
+};
+
+/** A tracking is normal for a week; after that it wants a person. */
+export const AWAITING_LATE_AFTER_DAYS = 7;
+
+/**
+ * Trackings we know about that have not reached the China warehouse.
+ *
+ * The mirror of the registrations list, and the piece the office was missing.
+ * Tracking Alerts covers the step before this — orders with no tracking at all
+ * — and the registrations page covers the step after, once a parcel is on the
+ * shelf. In between sat a blind spot: goods dispatched, tracking known, and no
+ * screen saying what to expect.
+ *
+ * Two sources, deliberately merged. Orders are what we bought for a customer.
+ * Portal declarations are what the customer bought themselves and told us
+ * about — and those are the ones that matter most here, because when one goes
+ * quiet the customer is the only person who can chase the seller, and only if
+ * we tell them.
+ */
+export async function getAwaitingArrival(options: { lateOnly?: boolean } = {}): Promise<AwaitedParcel[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const TERMINAL: ("delivered" | "cancelled" | "refunded" | "returned")[] = ["delivered", "cancelled", "refunded", "returned"];
+  const now = Date.now();
+  const daysSince = (d: Date | string | null): number => {
+    if (!d) return 0;
+    return Math.max(0, Math.floor((now - new Date(d).getTime()) / 86_400_000));
+  };
+
+  // Every tracking an active order owns, from both the multi-tracking table
+  // and the legacy single column.
+  const fromTable = await db.select({
+    trackingNumber: fullPackageOrderTrackings.trackingNumber,
+    addedAt: fullPackageOrderTrackings.createdAt,
+    orderId: fullPackageOrders.id,
+    orderCode: fullPackageOrders.orderCode,
+    orderType: fullPackageOrders.orderType,
+    orderStatus: fullPackageOrders.status,
+    productName: fullPackageOrders.productName,
+    productImage: fullPackageOrders.productImage,
+    trackingAddedDate: fullPackageOrders.trackingAddedDate,
+    customerId: fullPackageOrders.customerId,
+    customerName: customers.fullName,
+    customerCode: customers.customerCode,
+  })
+    .from(fullPackageOrderTrackings)
+    .innerJoin(fullPackageOrders, eq(fullPackageOrderTrackings.fullPackageOrderId, fullPackageOrders.id))
+    .leftJoin(customers, eq(fullPackageOrders.customerId, customers.id))
+    .where(notInArray(fullPackageOrders.status, TERMINAL));
+
+  const fromLegacy = await db.select({
+    trackingNumber: fullPackageOrders.trackingNumber,
+    orderId: fullPackageOrders.id,
+    orderCode: fullPackageOrders.orderCode,
+    orderType: fullPackageOrders.orderType,
+    orderStatus: fullPackageOrders.status,
+    productName: fullPackageOrders.productName,
+    productImage: fullPackageOrders.productImage,
+    trackingAddedDate: fullPackageOrders.trackingAddedDate,
+    customerId: fullPackageOrders.customerId,
+    customerName: customers.fullName,
+    customerCode: customers.customerCode,
+  })
+    .from(fullPackageOrders)
+    .leftJoin(customers, eq(fullPackageOrders.customerId, customers.id))
+    .where(and(
+      notInArray(fullPackageOrders.status, TERMINAL),
+      isNotNull(fullPackageOrders.trackingNumber),
+      ne(fullPackageOrders.trackingNumber, ''),
+    ));
+
+  // What customers declared in the portal and we have not received yet.
+  const declared = await db.select({
+    trackingNumber: customerDeclaredPackages.trackingNumber,
+    createdAt: customerDeclaredPackages.createdAt,
+    productName: customerDeclaredPackages.productName,
+    productImages: customerDeclaredPackages.productImages,
+    customerId: customerDeclaredPackages.customerId,
+    customerName: customers.fullName,
+    customerCode: customers.customerCode,
+  })
+    .from(customerDeclaredPackages)
+    .leftJoin(customers, eq(customerDeclaredPackages.customerId, customers.id))
+    .where(notInArray(customerDeclaredPackages.status, ["received", "cancelled"] as ("received" | "cancelled")[]));
+
+  const candidates = new Map<string, AwaitedParcel>();
+
+  const add = (p: AwaitedParcel) => {
+    const existing = candidates.get(p.trackingNumber);
+    // An order carries more for the office to act on than a declaration, so it
+    // wins; otherwise keep whichever we learned about first, since that is the
+    // honest start of the wait.
+    if (!existing) { candidates.set(p.trackingNumber, p); return; }
+    if (existing.origin === 'customer' && p.origin === 'order') {
+      candidates.set(p.trackingNumber, { ...p, knownSince: existing.knownSince, daysWaiting: existing.daysWaiting, isLate: existing.isLate });
+    }
+  };
+
+  const orderRows: Array<{ since: Date | null; row: typeof fromLegacy[number] }> = [
+    ...fromTable.map((o) => ({ since: (o.addedAt ?? o.trackingAddedDate) as Date | null, row: o as unknown as typeof fromLegacy[number] })),
+    ...fromLegacy.map((o) => ({ since: o.trackingAddedDate as Date | null, row: o })),
+  ];
+
+  for (const { since, row: o } of orderRows) {
+    const tn = o.trackingNumber?.trim();
+    if (!tn) continue;
+    const days = daysSince(since);
+    add({
+      trackingNumber: tn,
+      origin: 'order',
+      customerId: o.customerId ?? null,
+      customerName: o.customerName ?? null,
+      customerCode: o.customerCode ?? null,
+      knownSince: since,
+      daysWaiting: days,
+      isLate: days >= AWAITING_LATE_AFTER_DAYS,
+      productName: o.productName ?? null,
+      productImage: o.productImage ?? null,
+      shippingType: null,
+      order: { id: o.orderId, orderCode: o.orderCode, orderType: String(o.orderType), status: String(o.orderStatus) },
+    });
+  }
+
+  for (const d of declared) {
+    const tn = d.trackingNumber?.trim();
+    if (!tn) continue;
+    const days = daysSince(d.createdAt);
+    add({
+      trackingNumber: tn,
+      origin: 'customer',
+      customerId: d.customerId ?? null,
+      customerName: d.customerName ?? null,
+      customerCode: d.customerCode ?? null,
+      knownSince: d.createdAt,
+      daysWaiting: days,
+      isLate: days >= AWAITING_LATE_AFTER_DAYS,
+      productName: d.productName ?? null,
+      productImage: ((d.productImages as string[] | null) ?? [])[0] ?? null,
+      shippingType: null,
+      order: null,
+    });
+  }
+
+  if (candidates.size === 0) return [];
+
+  // Drop everything that has already landed. One query, not one per tracking.
+  const allTrackings = Array.from(candidates.keys());
+  const arrived = new Set<string>();
+  for (let i = 0; i < allTrackings.length; i += 500) {
+    const slice = allTrackings.slice(i, i + 500);
+    const rows = await db.select({ tn: packages.trackingNumber })
+      .from(packages)
+      .where(inArray(packages.trackingNumber, slice));
+    for (const r of rows) { if (r.tn) arrived.add(r.tn.trim()); }
+  }
+
+  const result = Array.from(candidates.values()).filter((p) => !arrived.has(p.trackingNumber));
+  const filtered = options.lateOnly ? result.filter((p) => p.isLate) : result;
+
+  // Longest wait first: the top of this list is the work.
+  return filtered.sort((a, b) => b.daysWaiting - a.daysWaiting);
+}
+
+/** A parcel is expected to join a batch within this many days of arriving. */
+export const STALE_IN_DEPOT_AFTER_DAYS = 15;
+
+export type StaleDepotParcel = {
+  id: number;
+  packageCode: string;
+  trackingNumber: string | null;
+  customerId: number | null;
+  customerName: string | null;
+  customerCode: string | null;
+  shippingType: string;
+  weightKg: string | null;
+  volumeCbm: string | null;
+  registeredAt: Date | string | null;
+  daysInDepot: number;
+};
+
+/**
+ * Parcels sitting in the China warehouse that no batch has picked up.
+ *
+ * A registration that never joins a batch never ships. Nothing surfaced that,
+ * so a forgotten box could sit for a month while the customer waited and the
+ * office believed it was on its way.
+ */
+export async function getStaleDepotPackages(options: { olderThanDays?: number } = {}): Promise<StaleDepotParcel[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const days = options.olderThanDays ?? STALE_IN_DEPOT_AFTER_DAYS;
+  const cutoff = new Date(Date.now() - days * 86_400_000);
+
+  const rows = await db.select({
+    id: packages.id,
+    packageCode: packages.packageCode,
+    trackingNumber: packages.trackingNumber,
+    customerId: packages.customerId,
+    customerName: customers.fullName,
+    customerCode: customers.customerCode,
+    shippingType: packages.shippingType,
+    weightKg: packages.weightKg,
+    volumeCbm: packages.volumeCbm,
+    registeredAt: packages.registeredAt,
+  })
+    .from(packages)
+    .leftJoin(customers, eq(packages.customerId, customers.id))
+    .where(and(
+      eq(packages.status, 'registered'),
+      isNull(packages.batchId),
+      lt(packages.registeredAt, cutoff),
+    ))
+    .orderBy(asc(packages.registeredAt));
+
+  const now = Date.now();
+  return rows.map((r) => ({
+    ...r,
+    shippingType: String(r.shippingType),
+    daysInDepot: r.registeredAt
+      ? Math.max(0, Math.floor((now - new Date(r.registeredAt).getTime()) / 86_400_000))
+      : 0,
+  }));
+}
+
 /** One picture on a registration, and where it came from. */
 export type RegistrationPhoto = {
   url: string;

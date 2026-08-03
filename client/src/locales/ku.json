@@ -92,7 +92,10 @@
     "carton": "کارتۆن {{index}}",
     "cartonNow": "ئێستا",
     "cartonWaiting": "چاوەڕێ",
-    "uploadNoUrl": "وێنەکە خەزن نەکرا لە سێرڤەر"
+    "uploadNoUrl": "وێنەکە خەزن نەکرا لە سێرڤەر",
+    "measureMissingWeight": "کێش داخڵ نەکراوە",
+    "measureMissingVolume": "قەبارە داخڵ نەکراوە",
+    "measureWhy": "بەبێ ئەمە نرخی بۆ دانانرێت و ناخرێتە باچەوە — ئێستا بیپێوە، دواتر لە کۆگا نابێت"
   },
   "errors": {
     "required": "ئەم خانەیە پێویستە",
@@ -640,7 +643,8 @@
     "servicesSection": "خزمەتگوزارییەکان",
     "allServices": "هەموو خزمەتگوزارییەکان",
     "pricingRules": "نرخی گواستنەوە",
-    "registrations": "تۆمارەکان"
+    "registrations": "تۆمارەکان",
+    "awaitingArrival": "نەگەیشتووەکان"
   },
   "dashboard": {
     "problemsTitle": "مەشاکل و کارە پێویستەکان",

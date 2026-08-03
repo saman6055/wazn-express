@@ -11,6 +11,7 @@ import type { InsertPackage, InsertFullPackageOrder } from "../../drizzle/schema
 import { fullPackageOrders, fullPackageOrderTrackings, packages } from "../../drizzle/schema";
 import { signQrData, verifyQrSignature } from "../utils/qr";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
+import { missingMeasurements, missingMeasurementMessage } from "@shared/measurementGuard";
 
 export const packagesRouter = router({
     list: staffProcedure
@@ -83,6 +84,20 @@ export const packagesRouter = router({
           search: input.search,
           limit: input.limit,
         });
+      }),
+
+    /** Trackings we know about that have not reached the China warehouse. */
+    awaitingArrival: staffProcedure
+      .input(z.object({ lateOnly: z.boolean().optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getAwaitingArrival({ lateOnly: input?.lateOnly });
+      }),
+
+    /** Parcels on the China shelf that no batch has picked up. */
+    staleInDepot: staffProcedure
+      .input(z.object({ olderThanDays: z.number().int().min(1).max(365).optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getStaleDepotPackages({ olderThanDays: input?.olderThanDays });
       }),
 
     stats: staffProcedure
@@ -407,6 +422,23 @@ export const packagesRouter = router({
           if (existing) {
             throw new TRPCError({ code: "CONFLICT", message: "ئەم تراکینگە پێشتر تۆمار کراوە. ناتوانرێت دووبارە تۆماری بکەیت." });
           }
+        }
+
+        // A parcel with no measurements cannot be priced or batched, and by the
+        // time anyone notices, the box is somewhere in a pile in the China
+        // warehouse and nobody can go back and weigh it. Refuse here, where it
+        // is still on the scale. Air needs weight and dimensions (chargeable
+        // weight is the greater of the two); sea needs only its volume.
+        const missing = missingMeasurements({
+          shippingType: input.shippingType,
+          weightKg: input.weightKg,
+          lengthCm: input.lengthCm,
+          widthCm: input.widthCm,
+          heightCm: input.heightCm,
+          volumeCbm: input.volumeCbm,
+        });
+        if (missing.length > 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: missingMeasurementMessage(missing) });
         }
 
         // ----- Resolve & validate linked orders -----

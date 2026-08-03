@@ -57,6 +57,7 @@ import {
   X,
   ClipboardList,
   Images,
+  PackageSearch,
   Database,
   Wrench,
   Banknote,
@@ -331,6 +332,7 @@ function DashboardLayoutContent({
         items: [
           { icon: QrCode, label: t("nav.quickRegister") || "تۆماری خێرا", path: "/quick-register" },
           { icon: Images, label: t("nav.registrations") || "تۆمارەکان", path: "/packages/registrations" },
+          { icon: PackageSearch, label: t("nav.awaitingArrival") || "نەگەیشتووەکان", path: "/packages/awaiting" },
           { icon: Ban, label: pickLang(language, { ku: "تۆماری کەلوپەلی قەدەغە", en: "Register prohibited items", ar: "تسجيل البضائع الممنوعة", zh: "登记违禁物品" }), path: "/packages/prohibited-register" },
           { icon: Boxes, label: t("nav.batchAssignment") || "خستنە ناو باچ", path: "/batch-assignment-scanner" },
           { icon: Truck, label: t("nav.arrivalVerification") || "پشکنینی گەیشتن", path: "/arrival-verification-scanner" },

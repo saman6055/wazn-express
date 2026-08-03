@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CustomerAwaitingCard } from "@/components/customers/CustomerAwaitingCard";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -378,7 +379,10 @@ export default function CustomerDetail() {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="packages" className="mt-4">
+              <TabsContent value="packages" className="mt-4 space-y-4">
+                {/* What is still coming, above what already arrived: the office
+                    reads this out when the customer rings to ask where it is. */}
+                <CustomerAwaitingCard customerId={customerId} />
                 <CustomerPackagesTab packages={packages as any} customerId={customerId} t={t} />
               </TabsContent>
 

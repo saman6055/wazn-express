@@ -92,7 +92,10 @@
     "carton": "كرتون {{index}}",
     "cartonNow": "الآن",
     "cartonWaiting": "قيد الانتظار",
-    "uploadNoUrl": "لم يخزّن الخادم الصورة"
+    "uploadNoUrl": "لم يخزّن الخادم الصورة",
+    "measureMissingWeight": "الوزن مفقود",
+    "measureMissingVolume": "الحجم مفقود",
+    "measureWhy": "بدونه لا يمكن تسعير الطرد أو إدراجه في دفعة — قِسه الآن، لا لاحقاً في المستودع"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",
@@ -620,7 +623,8 @@
     "allServices": "جميع الخدمات",
     "pricingRules": "أسعار الشحن",
     "batchLabelTemplate": "قالب ملصق الدفعة",
-    "registrations": "التسجيلات"
+    "registrations": "التسجيلات",
+    "awaitingArrival": "لم تصل بعد"
   },
   "dashboard": {
     "problemsTitle": "المشاكل والإجراءات المطلوبة",

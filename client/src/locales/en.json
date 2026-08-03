@@ -92,7 +92,10 @@
     "carton": "Carton {{index}}",
     "cartonNow": "Now",
     "cartonWaiting": "Waiting",
-    "uploadNoUrl": "The server did not store the photo"
+    "uploadNoUrl": "The server did not store the photo",
+    "measureMissingWeight": "Weight is missing",
+    "measureMissingVolume": "Volume is missing",
+    "measureWhy": "Without it the parcel cannot be priced or batched — measure it now, not later in the warehouse"
   },
   "errors": {
     "required": "This field is required",
@@ -620,7 +623,8 @@
     "scheduledBackups": "Scheduled Backups",
     "pricingRules": "Shipping rates",
     "batchLabelTemplate": "Batch label template",
-    "registrations": "Registrations"
+    "registrations": "Registrations",
+    "awaitingArrival": "Not yet arrived"
   },
   "dashboard": {
     "problemsTitle": "Problems & action needed",

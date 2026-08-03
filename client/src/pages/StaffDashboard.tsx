@@ -1,4 +1,5 @@
 import { RegistrationsSummaryCard } from "@/components/dashboard/RegistrationsSummaryCard";
+import { StaleDepotCard } from "@/components/dashboard/StaleDepotCard";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,8 @@ export default function StaffDashboard() {
 
         {/* Today's intake at the scanner. Staff see it too — it is their own
             work, and the gaps are theirs to close. */}
-        <RegistrationsSummaryCard />
+        <StaleDepotCard />
+            <RegistrationsSummaryCard />
 
         {/* Quick actions */}
         <div className="grid gap-4 sm:grid-cols-2">

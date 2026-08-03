@@ -92,7 +92,10 @@
     "carton": "第 {{index}} 箱",
     "cartonNow": "当前",
     "cartonWaiting": "等待中",
-    "uploadNoUrl": "服务器未保存该照片"
+    "uploadNoUrl": "服务器未保存该照片",
+    "measureMissingWeight": "缺少重量",
+    "measureMissingVolume": "缺少体积",
+    "measureWhy": "否则无法计价或入批次 — 请现在称量，而不是之后在仓库"
   },
   "errors": {
     "required": "此字段必填",
@@ -620,7 +623,8 @@
     "allServices": "所有服务",
     "pricingRules": "运费价格",
     "batchLabelTemplate": "批次标签模板",
-    "registrations": "登记记录"
+    "registrations": "登记记录",
+    "awaitingArrival": "尚未到达"
   },
   "dashboard": {
     "problemsTitle": "问题与待办事项",
