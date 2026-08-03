@@ -74,6 +74,8 @@ import {
   Search,
   Maximize2,
   Minimize2,
+  Plus,
+  Minus,
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
@@ -190,13 +192,58 @@ function DashboardLayoutContent({
   useEffect(() => {
     try { localStorage.setItem("wazn.fullScreen", fullScreen ? "1" : "0"); } catch { /* private mode */ }
   }, [fullScreen]);
+
+  /**
+   * Zoom, for the space full screen frees up.
+   *
+   * Two opposite things are wanted from a wide screen: bigger figures that can
+   * be read across a desk, or smaller ones so more rows fit. Rather than
+   * choosing, this is a control — CSS zoom scales the whole page including the
+   * pixel sizes Tailwind emits, which a root font-size change would not reach.
+   */
+  const ZOOM_STEPS = [0.8, 0.9, 1, 1.1, 1.25, 1.5];
+  const [zoom, setZoom] = useState<number>(() => {
+    const saved = Number(localStorage.getItem("wazn.zoom"));
+    return ZOOM_STEPS.includes(saved) ? saved : 1;
+  });
+  useEffect(() => {
+    try { localStorage.setItem("wazn.zoom", String(zoom)); } catch { /* private mode */ }
+  }, [zoom]);
+  const stepZoom = (dir: 1 | -1) => {
+    const i = ZOOM_STEPS.indexOf(zoom);
+    const next = ZOOM_STEPS[Math.min(ZOOM_STEPS.length - 1, Math.max(0, (i < 0 ? 2 : i) + dir))];
+    setZoom(next);
+  };
+
   // Escape is what people press to get out of anything full screen.
   useEffect(() => {
     if (!fullScreen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFullScreen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setFullScreen(false); return; }
+      // Ctrl +/- is what people already press to zoom. Take it over only in
+      // full screen, so the browser's own zoom is untouched everywhere else.
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.key === "+" || e.key === "=") { e.preventDefault(); stepZoom(1); }
+      else if (e.key === "-") { e.preventDefault(); stepZoom(-1); }
+      else if (e.key === "0") { e.preventDefault(); setZoom(1); }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [fullScreen]);
+  }, [fullScreen, zoom]);
+
+  /**
+   * Double-clicking empty space leaves full screen, the way it does in a video
+   * player. Only empty space: a double-click inside a card, a table or any
+   * control belongs to that control, and closing the view under someone's
+   * cursor mid-edit would be worse than having no shortcut at all.
+   */
+  const onBackgroundDoubleClick = (e: React.MouseEvent) => {
+    if (!fullScreen) return;
+    const el = e.target as HTMLElement | null;
+    if (!el) return;
+    if (el.closest('button, a, input, select, textarea, table, [role="button"], [contenteditable="true"], .rounded-2xl, .rounded-xl, .rounded-3xl')) return;
+    setFullScreen(false);
+  };
   // Desktop icon-rail: only the clicked group's items pop out in a flyout next
   // to the rail. flyoutTop anchors the panel vertically to the clicked icon.
   const [flyoutGroup, setFlyoutGroup] = useState<string | null>(null);
@@ -872,10 +919,18 @@ function DashboardLayoutContent({
       </div>
 
       {/* Main Content */}
-      <main className={cn(
-        "min-h-screen transition-all duration-300 bg-gradient-to-b from-background to-muted/20 dark:to-muted/10",
-        isMobile ? "pt-14" : fullScreen ? "ms-0" : "ms-20"
-      )}>
+      <main
+        onDoubleClick={onBackgroundDoubleClick}
+        className={cn(
+          "min-h-screen transition-all duration-300 bg-gradient-to-b from-background to-muted/20 dark:to-muted/10",
+          isMobile ? "pt-14" : fullScreen ? "ms-0" : "ms-20"
+        )}
+        // Zoom only in full screen: at the normal width it would push content
+        // under the rail. `zoom` is used rather than `transform: scale` because
+        // scale leaves the element's layout box at the old size, which strands
+        // the page in its original width and adds a scrollbar.
+        style={fullScreen && !isMobile && zoom !== 1 ? { zoom } : undefined}
+      >
         {/* Global navigation bar — go one step back / forward, or jump to the
             dashboard home. Available on every page. Sticks just below the
             mobile header (top-14) or to the viewport on desktop (top-0). */}
@@ -1076,6 +1131,44 @@ function DashboardLayoutContent({
           <Minimize2 className="h-4 w-4" />
           {pickLang(language, { ku: "دەرچوون", en: "Exit", ar: "خروج", zh: "退出" })}
         </button>
+      )}
+
+      {/* Zoom, beside the exit. Bigger figures to read across a desk, or
+          smaller ones to fit more rows — the screen is wide enough for either,
+          so it is a choice rather than a decision made here. */}
+      {fullScreen && !isMobile && (
+        <div className="fixed bottom-4 start-4 z-50 flex items-center gap-1 rounded-full bg-card/95 p-1 shadow-lg ring-1 ring-border backdrop-blur print:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => stepZoom(-1)}
+            disabled={zoom === ZOOM_STEPS[0]}
+            title={pickLang(language, { ku: "بچووککردنەوە", en: "Zoom out", ar: "تصغير", zh: "缩小" })}
+            aria-label={pickLang(language, { ku: "بچووککردنەوە", en: "Zoom out", ar: "تصغير", zh: "缩小" })}
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+          <button
+            type="button"
+            onClick={() => setZoom(1)}
+            className="min-w-[3.25rem] rounded-full px-2 py-1 text-[13px] font-semibold tabular-nums text-foreground hover:bg-muted"
+            title={pickLang(language, { ku: "گەڕاندنەوە بۆ ١٠٠٪", en: "Reset to 100%", ar: "إعادة إلى ١٠٠٪", zh: "重置为 100%" })}
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => stepZoom(1)}
+            disabled={zoom === ZOOM_STEPS[ZOOM_STEPS.length - 1]}
+            title={pickLang(language, { ku: "گەورەکردن", en: "Zoom in", ar: "تكبير", zh: "放大" })}
+            aria-label={pickLang(language, { ku: "گەورەکردن", en: "Zoom in", ar: "تكبير", zh: "放大" })}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
       )}
 
       <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
