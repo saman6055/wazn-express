@@ -72,6 +72,8 @@ import {
   CreditCard,
   Send,
   Search,
+  Maximize2,
+  Minimize2,
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
@@ -172,6 +174,29 @@ function DashboardLayoutContent({
   const company = useCompanyInfo();
   useDynamicFavicon();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  /**
+   * Full screen: hide the chrome and give the page the whole window.
+   *
+   * A registrations grid or a batch table is mostly rows, and on a laptop the
+   * sidebar costs a column of them. This is a view toggle, not the browser's
+   * F11 — that one hides the address bar and the OS taskbar too, which is
+   * more than anyone wants while working. Remembered per browser, so someone
+   * who prefers the wide view keeps it.
+   */
+  const [fullScreen, setFullScreen] = useState<boolean>(() => {
+    try { return localStorage.getItem("wazn.fullScreen") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("wazn.fullScreen", fullScreen ? "1" : "0"); } catch { /* private mode */ }
+  }, [fullScreen]);
+  // Escape is what people press to get out of anything full screen.
+  useEffect(() => {
+    if (!fullScreen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFullScreen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [fullScreen]);
   // Desktop icon-rail: only the clicked group's items pop out in a flyout next
   // to the rail. flyoutTop anchors the panel vertically to the clicked icon.
   const [flyoutGroup, setFlyoutGroup] = useState<string | null>(null);
@@ -612,6 +637,9 @@ function DashboardLayoutContent({
         className={cn(
           "fixed top-0 h-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50 transition-all duration-300 ease-in-out overflow-hidden flex flex-col",
           isRTL ? "right-0 border-l" : "left-0 border-r",
+          // Full screen slides the rail out of the way rather than unmounting
+          // it, so coming back does not re-run every query it holds.
+          fullScreen && !isMobile && (isRTL ? "translate-x-full" : "-translate-x-full"),
           isMobile
             ? cn(
                 "w-72",
@@ -845,7 +873,7 @@ function DashboardLayoutContent({
       {/* Main Content */}
       <main className={cn(
         "min-h-screen transition-all duration-300 bg-gradient-to-b from-background to-muted/20 dark:to-muted/10",
-        isMobile ? "pt-14" : "ms-20"
+        isMobile ? "pt-14" : fullScreen ? "ms-0" : "ms-20"
       )}>
         {/* Global navigation bar — go one step back / forward, or jump to the
             dashboard home. Available on every page. Sticks just below the
@@ -924,6 +952,23 @@ function DashboardLayoutContent({
               aria-label={pickLang(language, { ku: "گەڕان بۆ فەنکشن", en: "Search for a function", ar: "البحث عن وظيفة", zh: "搜索功能" })}
             >
               <Search className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              onClick={() => setFullScreen((v) => !v)}
+              title={pickLang(language, {
+                ku: fullScreen ? "دەرچوون لە پڕ بە شاشە (Esc)" : "پڕ بە شاشە",
+                en: fullScreen ? "Exit full screen (Esc)" : "Full screen",
+                ar: fullScreen ? "إنهاء ملء الشاشة (Esc)" : "ملء الشاشة",
+                zh: fullScreen ? "退出全屏 (Esc)" : "全屏",
+              })}
+              aria-label={pickLang(language, { ku: "پڕ بە شاشە", en: "Full screen", ar: "ملء الشاشة", zh: "全屏" })}
+              aria-pressed={fullScreen}
+            >
+              {fullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </Button>
 
             {/* Recently viewed pages dropdown */}

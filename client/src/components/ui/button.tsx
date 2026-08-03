@@ -16,8 +16,12 @@ const buttonVariants = cva(
           "border bg-transparent shadow-xs hover:bg-accent dark:bg-transparent dark:border-input dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        // An explicit foreground: a ghost button sets no colour of its own, so
+        // its icon took whatever it inherited. In the top bar that came out a
+        // dim grey against a dark navy strip and the icons were barely there.
+        // Anything deliberately placed on a coloured surface overrides this.
         ghost:
-          "hover:bg-accent dark:hover:bg-accent/50",
+          "text-foreground hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
