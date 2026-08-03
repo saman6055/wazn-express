@@ -42,6 +42,13 @@ export const packages = mysqlTable("packages", {
   registeredById: int("registeredById").notNull(),
   deliveredAt: timestamp("deliveredAt"),
   deliveredById: int("deliveredById"),
+  // Volumetric billing: air charges the greater of scale weight and
+  // (L×W×H)/divisor, so a light bulky carton can cost several times what the
+  // scale suggests. These three record that the customer was told and that
+  // somebody signed it off. Never a gate on batching — only a trail.
+  volumetricNotifiedAt: timestamp("volumetricNotifiedAt"),
+  volumetricAckAt: timestamp("volumetricAckAt"),
+  volumetricAckById: int("volumetricAckById"),
   recipientName: varchar("recipientName", { length: 255 }),
   recipientSignature: text("recipientSignature"),
   deliveryPhoto: text("deliveryPhoto"),

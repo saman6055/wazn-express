@@ -15,7 +15,9 @@ import {
   ClipboardList, LayoutGrid, Table2, CameraOff, Copy, Search, ImageOff,
   Plane, Ship, AlertTriangle, Users, Package as PackageIcon, DollarSign,
   ExternalLink, Warehouse, ShoppingBag, UserCircle, Layers, ChevronLeft, ChevronRight, ShieldAlert,
+  Scale, MessageCircle, CheckCircle2,
 } from "lucide-react";
+import { buildVolumetricMessage, buildWhatsAppLink } from "@shared/volumetricAlert";
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
@@ -54,6 +56,17 @@ type Registration = {
   declaredByCustomer: boolean;
   needsReview: boolean;
   customerOpenOrders: number;
+  volumetric: {
+    actualKg: number;
+    volumetricKg: number;
+    chargeableKg: number;
+    extraKg: number;
+    ratio: number;
+    divisor: number;
+    alert: boolean;
+  } | null;
+  volumetricAckAt: string | Date | null;
+  customerMobile: string | null;
 };
 
 const num = (v: unknown): number => {
@@ -200,6 +213,21 @@ export default function Registrations() {
     return Array.from(m.values()).sort((a, b) => b.items.length - a.items.length);
   }, [rows, groupByCustomer, language]);
 
+  const utils = trpc.useUtils();
+  const ackMutation = trpc.packages.acknowledgeVolumetric.useMutation({
+    onSuccess: () => {
+      toast.success(label({
+        ku: "تۆمار کرا کە لەگەڵ کڕیار چێک کراوەتەوە",
+        en: "Recorded as checked with the customer",
+        ar: "تم تسجيلها كمراجَعة مع العميل",
+        zh: "已记录为与客户核实",
+      }));
+      utils.packages.registrations.invalidate();
+      utils.packages.volumetricParcels.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const copyTracking = (tn: string) => {
     navigator.clipboard.writeText(tn);
     toast.success(label({ ku: "تراک کۆپی کرا", en: "Tracking copied", ar: "تم نسخ التتبّع", zh: "已复制追踪号" }));
@@ -220,7 +248,14 @@ export default function Registrations() {
   ];
 
   const incomplete = totals.noPhoto + totals.noWeight + totals.unclaimed;
-  const cardProps = { language, onCopy: copyTracking, onGallery: setGallery, onOpenOrder: openOrder };
+  const cardProps = {
+    language,
+    onCopy: copyTracking,
+    onGallery: setGallery,
+    onOpenOrder: openOrder,
+    onAck: (packageId: number) => ackMutation.mutate({ packageId }),
+    ackPending: ackMutation.isPending,
+  };
 
   return (
     <div className="space-y-5 p-4 md:p-6">
@@ -461,13 +496,15 @@ function Thumb({
 }
 
 function RegistrationCard({
-  row, language, onCopy, onGallery, onOpenOrder,
+  row, language, onCopy, onGallery, onOpenOrder, onAck, ackPending,
 }: {
   row: Registration;
   language: string;
   onCopy: (tn: string) => void;
   onGallery: (g: { photos: Photo[]; index: number }) => void;
   onOpenOrder: (r: Registration) => void;
+  onAck: (packageId: number) => void;
+  ackPending: boolean;
 }) {
   const label = (v: L) => pickLang(language, v);
   const unclaimed = row.isUnclaimed || !row.customerId;
@@ -493,6 +530,9 @@ function RegistrationCard({
       // A possible forgotten order glows, because it is the one thing on this
       // page a person has to act on before the goods land.
       row.needsReview && "border-2 border-rose-400/90 bg-rose-50/40 shadow-lg shadow-rose-500/20 dark:border-rose-600/80 dark:bg-rose-950/20 dark:shadow-rose-900/30",
+      // Money the customer has not agreed to yet. Loudest thing on the card.
+      row.volumetric?.alert && !row.volumetricAckAt &&
+        "border-2 border-red-500 bg-red-50/50 shadow-lg shadow-red-500/25 dark:border-red-600 dark:bg-red-950/25 dark:shadow-red-900/40",
     )}>
       <div className={cn("absolute inset-y-0 start-0 w-1 bg-gradient-to-b", accent)} />
       <CardContent className="flex gap-3 p-3 ps-4">
@@ -573,6 +613,10 @@ function RegistrationCard({
             </div>
           )}
 
+          {row.volumetric?.alert && (
+            <VolumetricBanner row={row} language={language} onAck={onAck} ackPending={ackPending} />
+          )}
+
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <Chip tone="sky"><Icon className="h-3 w-3" />{pickLang(language, SHIPPING_TYPE_LABEL[row.shippingType])}</Chip>
             {row.categoryName && <Chip tone="slate">{row.categoryName}</Chip>}
@@ -633,6 +677,111 @@ function RegistrationCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * A parcel billed on its size, and the two things a person must do about it:
+ * tell the customer, then record that they did.
+ *
+ * The WhatsApp button opens the chat with the message already written. It
+ * never sends — the admin reads what is there and presses send. No message
+ * about somebody's bill leaves this system without a person having looked at
+ * it.
+ */
+function VolumetricBanner({
+  row, language, onAck, ackPending,
+}: {
+  row: Registration;
+  language: string;
+  onAck: (packageId: number) => void;
+  ackPending: boolean;
+}) {
+  const label = (v: L) => pickLang(language, v);
+  const v = row.volumetric!;
+  const acknowledged = Boolean(row.volumetricAckAt);
+  const kg = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, ""));
+
+  const waLink = buildWhatsAppLink(
+    row.customerMobile,
+    buildVolumetricMessage({
+      customerName: row.customerName || "",
+      trackingNumber: row.trackingNumber || row.packageCode,
+      lengthCm: row.lengthCm,
+      widthCm: row.widthCm,
+      heightCm: row.heightCm,
+      assessment: { ...v, billedOnVolume: true, alert: true },
+    }),
+  );
+
+  return (
+    <div className={cn(
+      "mt-2 rounded-xl border px-2.5 py-2",
+      acknowledged
+        ? "border-emerald-300 bg-emerald-50/70 dark:border-emerald-800 dark:bg-emerald-950/30"
+        : "border-red-400 bg-red-100/70 dark:border-red-700 dark:bg-red-950/40",
+    )}>
+      <div className="flex flex-wrap items-center gap-2">
+        {!acknowledged && (
+          <span className="relative flex h-2.5 w-2.5 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+          </span>
+        )}
+        <Scale className={cn("h-4 w-4 shrink-0", acknowledged ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300")} />
+        <p className={cn("text-[12px] font-medium", acknowledged ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200")}>
+          {label({
+            ku: `کێشی قەبارەیی — حساب لەسەر ${kg(v.chargeableKg)} کیلۆ دەکرێت نەک ${kg(v.actualKg)}`,
+            en: `Volumetric weight — billed at ${kg(v.chargeableKg)} kg, not ${kg(v.actualKg)}`,
+            ar: `الوزن الحجمي — يُحتسب ${kg(v.chargeableKg)} كغ بدل ${kg(v.actualKg)}`,
+            zh: `体积重 — 按 ${kg(v.chargeableKg)} 公斤计费，而非 ${kg(v.actualKg)}`,
+          })}
+        </p>
+      </div>
+
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11.5px]" dir="ltr">
+        <span><span className="text-muted-foreground">actual</span> {kg(v.actualKg)}</span>
+        <span><span className="text-muted-foreground">volumetric</span> {kg(v.volumetricKg)}</span>
+        <span className="font-medium"><span className="text-muted-foreground">charged</span> {kg(v.chargeableKg)}</span>
+        <span className="text-red-700 dark:text-red-300">+{kg(v.extraKg)} kg</span>
+        <span className="text-muted-foreground">×{v.ratio.toFixed(2)} · ÷{v.divisor}</span>
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {waLink ? (
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-2.5 py-1 text-[12px] font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            {label({ ku: "ئامادەکردنی پەیام", en: "Draft WhatsApp", ar: "تحضير الرسالة", zh: "准备消息" })}
+          </a>
+        ) : (
+          <span className="text-[11px] text-muted-foreground">
+            {label({ ku: "ژمارەی مۆبایل نییە", en: "no mobile number", ar: "لا يوجد رقم", zh: "无手机号" })}
+          </span>
+        )}
+
+        {acknowledged ? (
+          <span className="inline-flex items-center gap-1 text-[11.5px] font-medium text-emerald-700 dark:text-emerald-300">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            {label({ ku: "چێک کراوەتەوە", en: "checked", ar: "تمت المراجعة", zh: "已核查" })}
+          </span>
+        ) : (
+          <button
+            type="button"
+            disabled={ackPending}
+            onClick={() => onAck(row.id)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-400 px-2.5 py-1 text-[12px] font-medium text-red-800 transition-colors hover:bg-red-200/60 disabled:opacity-50 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            {label({ ku: "چێک کرایەوە لەگەڵ کڕیار", en: "Checked with customer", ar: "تمت المراجعة مع العميل", zh: "已与客户核实" })}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

@@ -1,4 +1,6 @@
 import { getDb } from './connection';
+import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from '@shared/chargeableWeight';
+import { getSetting } from './settings.db';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import {
   InsertUser, users,
@@ -305,6 +307,23 @@ export async function getApplicableTierPrice(batchId: number, customerTotalValue
   return Number(tiers[tiers.length - 1].pricePerUnit);
 }
 
+/**
+ * The divisor every volumetric calculation must agree on.
+ *
+ * It was written as a literal 6000 in three places here while the register
+ * form read it from settings, so changing the setting would have moved the
+ * quoted price and left the invoice where it was. One reader, one answer.
+ */
+async function getVolumetricDivisor(): Promise<number> {
+  try {
+    const raw = await getSetting('cbm_divisor');
+    const n = parseInt(raw ?? '', 10);
+    return n > 0 ? n : DEFAULT_VOLUMETRIC_DIVISOR;
+  } catch {
+    return DEFAULT_VOLUMETRIC_DIVISOR;
+  }
+}
+
 // Calculate customer's total weight/CBM in a batch
 // For kg unit, uses chargeable weight (max of actual weight and volumetric weight)
 export async function getCustomerTotalInBatch(batchId: number, customerId: number, unit: 'kg' | 'cbm'): Promise<number> {
@@ -318,17 +337,11 @@ export async function getCustomerTotalInBatch(batchId: number, customerId: numbe
     ));
   
   if (unit === 'kg') {
-    // Use chargeable weight (max of actual weight and volumetric weight)
+    // Chargeable weight: the greater of the scale and the dimensions. Same
+    // calculation the register form quotes from, so the two cannot drift.
+    const divisor = await getVolumetricDivisor();
     return customerPackages.reduce((sum, pkg) => {
-      const actualKg = Number(pkg.weightKg) || 0;
-      const lengthCm = Number(pkg.lengthCm) || 0;
-      const widthCm = Number(pkg.widthCm) || 0;
-      const heightCm = Number(pkg.heightCm) || 0;
-      // Volumetric weight = (L × W × H) / 6000 for air shipping
-      const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-      // Chargeable weight is the higher of actual weight and volumetric weight
-      const chargeableKg = Math.max(actualKg, volumetricKg);
-      return sum + chargeableKg;
+      return sum + chargeableWeight(pkg, divisor).chargeableKg;
     }, 0);
   } else {
     return customerPackages.reduce((sum, pkg) => sum + (Number(pkg.volumeCbm) || 0), 0);
@@ -467,15 +480,10 @@ export async function getBatchFinancialSummary(batchId: number) {
   }
   
   // Calculate chargeable weight for each package (max of actual vs volumetric)
+  const divisor = await getVolumetricDivisor();
   let totalChargeableWeight = 0;
   for (const pkg of batchPackages) {
-    const actualKg = Number(pkg.weightKg) || 0;
-    const lengthCm = Number(pkg.lengthCm) || 0;
-    const widthCm = Number(pkg.widthCm) || 0;
-    const heightCm = Number(pkg.heightCm) || 0;
-    const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-    const chargeableKg = Math.max(actualKg, volumetricKg);
-    totalChargeableWeight += chargeableKg;
+    totalChargeableWeight += chargeableWeight(pkg, divisor).chargeableKg;
   }
   
   // Use batch values if set, otherwise use calculated values from packages
@@ -529,11 +537,7 @@ export async function getBatchFinancialSummary(batchId: number) {
     }
 
     const actualKg = Number(pkg.weightKg) || 0;
-    const lengthCm = Number(pkg.lengthCm) || 0;
-    const widthCm = Number(pkg.widthCm) || 0;
-    const heightCm = Number(pkg.heightCm) || 0;
-    const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-    const chargeableKg = Math.max(actualKg, volumetricKg);
+    const chargeableKg = chargeableWeight(pkg, divisor).chargeableKg;
 
     customerBreakdown[pkg.customerId].packages++;
     customerBreakdown[pkg.customerId].weight += actualKg;

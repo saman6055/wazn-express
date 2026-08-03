@@ -2369,6 +2369,19 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // from the customer's own word.
   { name: "deliveryBoxes.customerConfirmedAt", sql: "ALTER TABLE deliveryBoxes ADD COLUMN customerConfirmedAt TIMESTAMP NULL" },
 
+  // Volumetric billing acknowledgement.
+  //
+  // Air is billed on the greater of scale weight and volumetric weight, so a
+  // light bulky carton costs several times what its weight suggests. The
+  // customer has to be told before it ships, and somebody has to record that
+  // they were. Nullable and additive: an existing parcel simply has no
+  // acknowledgement, which is exactly true of every parcel registered before
+  // this existed. Batching is never blocked on it — the flag is there so the
+  // case cannot pass unnoticed, not to hold up the warehouse.
+  { name: "packages.volumetricAckAt", sql: "ALTER TABLE packages ADD COLUMN volumetricAckAt TIMESTAMP NULL" },
+  { name: "packages.volumetricAckById", sql: "ALTER TABLE packages ADD COLUMN volumetricAckById INT NULL" },
+  { name: "packages.volumetricNotifiedAt", sql: "ALTER TABLE packages ADD COLUMN volumetricNotifiedAt TIMESTAMP NULL" },
+
   {
     name: "batches.status.at_depot",
     sql: "ALTER TABLE batches MODIFY COLUMN status ENUM('preparing','in_transit','arrived','customs','at_depot','delivered','closed') NOT NULL DEFAULT 'preparing'",

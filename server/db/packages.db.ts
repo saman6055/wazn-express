@@ -15,6 +15,15 @@ import {
   type BacklinkConflictReason,
 } from '../lib/orderBacklink';
 import { prunePhotoList } from '../lib/photoUrls';
+import {
+  assessVolumetric,
+  DEFAULT_VOLUMETRIC_THRESHOLDS,
+  VOLUMETRIC_SETTING_KEYS,
+  type VolumetricThresholds,
+  type VolumetricAssessment,
+} from '@shared/volumetricAlert';
+import { getSetting } from './settings.db';
+import { createActivityAlert } from './admin.db';
 import { getUploadsDir } from '../services/localUpload';
 import { createCustomerNotification } from './portal.db';
 import { findActiveDeclaredByTracking, markDeclaredMatched } from './declaredPackages.db';
@@ -1116,6 +1125,245 @@ export async function backlinkRegisteredPackagesForOrder(orderId: number): Promi
   return { linked, conflicts, promoted };
 }
 
+/**
+ * The three numbers that decide when a volumetric surcharge is worth telling
+ * a customer about, read from settings with the shared defaults as fallback.
+ */
+export async function getVolumetricThresholds(): Promise<VolumetricThresholds> {
+  const read = async (key: string, fallback: number): Promise<number> => {
+    try {
+      const raw = await getSetting(key);
+      const n = parseFloat(raw ?? '');
+      return Number.isFinite(n) && n > 0 ? n : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+  const d = DEFAULT_VOLUMETRIC_THRESHOLDS;
+  return {
+    minExtraKg: await read(VOLUMETRIC_SETTING_KEYS.minExtraKg, d.minExtraKg),
+    minRatio: await read(VOLUMETRIC_SETTING_KEYS.minRatio, d.minRatio),
+    alwaysAboveExtraKg: await read(VOLUMETRIC_SETTING_KEYS.alwaysAboveExtraKg, d.alwaysAboveExtraKg),
+  };
+}
+
+/**
+ * Raise a volumetric surcharge everywhere a person might look.
+ *
+ * Three destinations on purpose. The customer's portal, so they read it in
+ * their own account. The staff activity feed, so the office sees it in the
+ * portal centre alongside everything else that needs attention. And a stamp on
+ * the package row, so the registrations list can glow red until somebody signs
+ * it off. The WhatsApp draft is not sent from here — an admin opens it, reads
+ * it and presses send, because no message about somebody's bill should leave
+ * without a person having looked at it.
+ *
+ * Every step is independently guarded: a failed notification must not cost us
+ * the record that the surcharge happened.
+ */
+export async function raiseVolumetricAlert(params: {
+  packageId: number;
+  packageCode: string;
+  trackingNumber: string | null;
+  customerId: number | null;
+  assessment: VolumetricAssessment;
+  dims: { lengthCm?: string | null; widthCm?: string | null; heightCm?: string | null };
+  actorId: number;
+  actorName: string;
+}): Promise<void> {
+  const { packageId, packageCode, trackingNumber, customerId, assessment: a } = params;
+  const kg = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, ''));
+
+  // Stamp first: this is the record, and it must survive a failed send.
+  try {
+    await updatePackage(packageId, { volumetricNotifiedAt: new Date() });
+  } catch (err) {
+    appLogger.warn('[Volumetric] Could not stamp the package', {
+      packageId, error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  if (customerId) {
+    try {
+      await createCustomerNotification({
+        customerId,
+        type: 'warning',
+        title: 'Volumetric weight on your parcel',
+        titleKu: 'کێشی قەبارەیی لەسەر بارەکەت',
+        titleAr: 'الوزن الحجمي على طردك',
+        message:
+          `Parcel ${trackingNumber ?? packageCode}: actual ${kg(a.actualKg)} kg, volumetric ${kg(a.volumetricKg)} kg. ` +
+          `Airlines bill the greater of the two because the parcel takes up space on the aircraft. ` +
+          `This surcharge is the airline's, not ours. Please contact us within 24 hours if you have any question.`,
+        messageKu:
+          `بارەکەت ${trackingNumber ?? packageCode}: کێشی ڕاستەقینە ${kg(a.actualKg)} کیلۆ، کێشی قەبارەیی ${kg(a.volumetricKg)} کیلۆ. ` +
+          `هێڵە ئاسمانییەکان گەورەترینیان حساب دەکەن، چونکە بارەکە لە فڕۆکەدا شوێن دەگرێت. ` +
+          `ئەم زیادەیە هی هێڵی ئاسمانییە نەک هی ئێمە. ئەگەر پرسیارت هەبوو، لە ماوەی ٢٤ کاتژمێردا پەیوەندیمان پێوە بکە.`,
+        messageAr:
+          `طردك ${trackingNumber ?? packageCode}: الوزن الفعلي ${kg(a.actualKg)} كغ، الوزن الحجمي ${kg(a.volumetricKg)} كغ. ` +
+          `شركات الطيران تحتسب الأكبر منهما لأن الطرد يشغل حيزاً في الطائرة. ` +
+          `هذه الزيادة من شركة الطيران وليست منّا. تواصل معنا خلال ٢٤ ساعة لأي استفسار.`,
+      }, { push: true });
+    } catch (err) {
+      appLogger.warn('[Volumetric] Customer notification failed', {
+        packageId, customerId, error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  try {
+    await createActivityAlert({
+      action: 'volumetric_surcharge',
+      category: 'package',
+      entityType: 'package',
+      entityId: packageId,
+      entityCode: packageCode,
+      triggeredById: params.actorId,
+      triggeredByName: params.actorName,
+      severity: 'warning',
+      customTitle: `کێشی قەبارەیی لەسەر ${packageCode}`,
+      customMessage:
+        `${packageCode} (${trackingNumber ?? '—'}): کێشی ڕاستەقینە ${kg(a.actualKg)} کیلۆ، ` +
+        `کێشی قەبارەیی ${kg(a.volumetricKg)} کیلۆ، حساب لەسەر ${kg(a.chargeableKg)} کیلۆ ` +
+        `(${kg(a.extraKg)} کیلۆ زیادە). پێویستە لەگەڵ ناوەند و کڕیار چێک بکرێتەوە.`,
+    });
+  } catch (err) {
+    appLogger.warn('[Volumetric] Activity alert failed', {
+      packageId, error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  appLogger.info('[Volumetric] Surcharge raised', {
+    packageId, packageCode, actualKg: a.actualKg, volumetricKg: a.volumetricKg, extraKg: a.extraKg,
+  });
+}
+
+export type VolumetricParcel = {
+  id: number;
+  packageCode: string;
+  trackingNumber: string | null;
+  customerId: number | null;
+  customerName: string | null;
+  customerCode: string | null;
+  customerMobile: string | null;
+  shippingType: string;
+  lengthCm: string | null;
+  widthCm: string | null;
+  heightCm: string | null;
+  registeredAt: Date | string | null;
+  batchId: number | null;
+  actualKg: number;
+  volumetricKg: number;
+  chargeableKg: number;
+  extraKg: number;
+  ratio: number;
+  divisor: number;
+  alert: boolean;
+  acknowledgedAt: Date | string | null;
+};
+
+/**
+ * Every parcel currently billed on its size rather than its weight.
+ *
+ * The dashboard view: not a period, but a standing list of the cases somebody
+ * still has to deal with. Sorted by how much extra the customer is paying,
+ * because that is the order in which the conversations get difficult.
+ *
+ * Assessed on read rather than stored, so changing a threshold re-scores the
+ * whole list instead of leaving old rows judged by an old rule.
+ */
+export async function getVolumetricParcels(options: {
+  pendingOnly?: boolean;
+  limit?: number;
+} = {}): Promise<VolumetricParcel[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const thresholds = await getVolumetricThresholds();
+  const divisorRaw = await getSetting('cbm_divisor');
+  const divisor = parseInt(divisorRaw ?? '', 10) || undefined;
+
+  const rows = await db.select({
+    id: packages.id,
+    packageCode: packages.packageCode,
+    trackingNumber: packages.trackingNumber,
+    customerId: packages.customerId,
+    customerName: customers.fullName,
+    customerCode: customers.customerCode,
+    customerMobile: customers.mobileNumber,
+    shippingType: packages.shippingType,
+    weightKg: packages.weightKg,
+    lengthCm: packages.lengthCm,
+    widthCm: packages.widthCm,
+    heightCm: packages.heightCm,
+    registeredAt: packages.registeredAt,
+    batchId: packages.batchId,
+    volumetricAckAt: packages.volumetricAckAt,
+  })
+    .from(packages)
+    .leftJoin(customers, eq(packages.customerId, customers.id))
+    .where(and(
+      // Once handed over or written off there is nothing left to explain.
+      notInArray(packages.status, ['delivered', 'returned', 'cancelled']),
+      inArray(packages.shippingType, ['air_regular', 'air_irregular']),
+    ))
+    .orderBy(desc(packages.registeredAt))
+    .limit(Math.min(options.limit ?? 500, 1000));
+
+  const out: VolumetricParcel[] = [];
+  for (const r of rows) {
+    const a = assessVolumetric(
+      {
+        shippingType: String(r.shippingType),
+        weightKg: r.weightKg,
+        lengthCm: r.lengthCm,
+        widthCm: r.widthCm,
+        heightCm: r.heightCm,
+      },
+      { divisor, thresholds },
+    );
+    if (!a.alert) continue;
+    if (options.pendingOnly && r.volumetricAckAt) continue;
+
+    out.push({
+      id: r.id,
+      packageCode: r.packageCode,
+      trackingNumber: r.trackingNumber,
+      customerId: r.customerId,
+      customerName: r.customerName ?? null,
+      customerCode: r.customerCode ?? null,
+      customerMobile: r.customerMobile ?? null,
+      shippingType: String(r.shippingType),
+      lengthCm: r.lengthCm,
+      widthCm: r.widthCm,
+      heightCm: r.heightCm,
+      registeredAt: r.registeredAt,
+      batchId: r.batchId,
+      actualKg: a.actualKg,
+      volumetricKg: a.volumetricKg,
+      chargeableKg: a.chargeableKg,
+      extraKg: a.extraKg,
+      ratio: a.ratio,
+      divisor: a.divisor,
+      alert: a.alert,
+      acknowledgedAt: r.volumetricAckAt ?? null,
+    });
+  }
+
+  // Biggest gap first: that is the order the conversations get difficult in.
+  return out.sort((x, y) => y.extraKg - x.extraKg);
+}
+
+/** Record that a person has checked a volumetric surcharge with the customer. */
+export async function acknowledgeVolumetric(packageId: number, userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(packages)
+    .set({ volumetricAckAt: new Date(), volumetricAckById: userId })
+    .where(eq(packages.id, packageId));
+  return true;
+}
+
 /** A tracking we are waiting on, and why we know about it. */
 export type AwaitedParcel = {
   trackingNumber: string;
@@ -1420,6 +1668,19 @@ export type RegistrationRow = {
   needsReview: boolean;
   /** How many live orders that customer has, for the reviewer's context. */
   customerOpenOrders: number;
+  /** Billed on size rather than weight, by a margin worth explaining. */
+  volumetric: {
+    actualKg: number;
+    volumetricKg: number;
+    chargeableKg: number;
+    extraKg: number;
+    ratio: number;
+    divisor: number;
+    alert: boolean;
+  } | null;
+  /** Set once somebody has checked the surcharge with the customer. */
+  volumetricAckAt: Date | string | null;
+  customerMobile: string | null;
 };
 
 /**
@@ -1483,6 +1744,8 @@ export async function getRegistrations(options: {
     categoryNameAr: productCategories.nameAr,
     categoryNameKu: productCategories.nameKu,
     registeredByName: users.name,
+    volumetricAckAt: packages.volumetricAckAt,
+    customerMobile: customers.mobileNumber,
   })
     .from(packages)
     .leftJoin(customers, eq(packages.customerId, customers.id))
@@ -1624,6 +1887,11 @@ export async function getRegistrations(options: {
 
   const term = options.search?.trim().toLowerCase();
 
+  // Read once for the whole page rather than per row.
+  const vThresholds = await getVolumetricThresholds();
+  const vDivisorRaw = await getSetting('cbm_divisor');
+  const vDivisor = parseInt(vDivisorRaw ?? '', 10) || undefined;
+
   const rows: RegistrationRow[] = [];
   for (const r of base) {
     const tn = r.trackingNumber?.trim() ?? null;
@@ -1688,6 +1956,31 @@ export async function getRegistrations(options: {
       declaredByCustomer: Boolean(declaredImgs && declaredImgs.length > 0),
       needsReview: !order && Boolean(r.customerId) && (openOrdersByCustomer.get(r.customerId!) ?? 0) > 0,
       customerOpenOrders: r.customerId ? (openOrdersByCustomer.get(r.customerId) ?? 0) : 0,
+      volumetric: (() => {
+        const a = assessVolumetric(
+          {
+            shippingType: String(r.shippingType),
+            weightKg: r.weightKg,
+            lengthCm: r.lengthCm,
+            widthCm: r.widthCm,
+            heightCm: r.heightCm,
+          },
+          { divisor: vDivisor, thresholds: vThresholds },
+        );
+        // Sea is billed on volume outright; there is nothing to surface.
+        if (!a.billedOnVolume) return null;
+        return {
+          actualKg: a.actualKg,
+          volumetricKg: a.volumetricKg,
+          chargeableKg: a.chargeableKg,
+          extraKg: a.extraKg,
+          ratio: a.ratio,
+          divisor: a.divisor,
+          alert: a.alert,
+        };
+      })(),
+      volumetricAckAt: r.volumetricAckAt ?? null,
+      customerMobile: r.customerMobile ?? null,
     };
 
     // Search runs here, after the order and customer are known, so typing an

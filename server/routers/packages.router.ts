@@ -12,6 +12,8 @@ import { fullPackageOrders, fullPackageOrderTrackings, packages } from "../../dr
 import { signQrData, verifyQrSignature } from "../utils/qr";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { missingMeasurements, missingMeasurementMessage } from "@shared/measurementGuard";
+import { chargeableWeight, isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { assessVolumetric } from "@shared/volumetricAlert";
 
 export const packagesRouter = router({
     list: staffProcedure
@@ -83,6 +85,42 @@ export const packagesRouter = router({
           to: new Date(input.dateTo),
           search: input.search,
           limit: input.limit,
+        });
+      }),
+
+    /**
+     * Record that a person has checked a volumetric surcharge with the
+     * customer. Does not change the price — it only stops the case glowing,
+     * and names who took responsibility for it.
+     */
+    acknowledgeVolumetric: staffProcedure
+      .input(z.object({ packageId: idSchema }))
+      .mutation(async ({ input, ctx }) => {
+        const pkg = await db.getPackageById(input.packageId);
+        if (!pkg) throw new TRPCError({ code: "NOT_FOUND", message: "پاکەت نەدۆزرایەوە" });
+
+        await db.acknowledgeVolumetric(input.packageId, ctx.user.id);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "acknowledge_volumetric",
+          entityType: "package",
+          entityId: input.packageId,
+          newValues: { packageCode: pkg.packageCode },
+        });
+        return { success: true };
+      }),
+
+    /** Every parcel currently billed on its size rather than its weight. */
+    volumetricParcels: staffProcedure
+      .input(z.object({
+        pendingOnly: z.boolean().optional(),
+        limit: z.number().int().positive().max(1000).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getVolumetricParcels({
+          pendingOnly: input?.pendingOnly,
+          limit: input?.limit,
         });
       }),
 
@@ -500,6 +538,22 @@ export const packagesRouter = router({
           volumeCbm = vol.toFixed(6);
         }
 
+        // Air is billed on the greater of scale weight and volumetric weight;
+        // sea on volume outright, so it never enters this comparison.
+        const divisorSetting = await db.getSetting('cbm_divisor');
+        const divisor = parseInt(divisorSetting ?? '', 10) || DEFAULT_VOLUMETRIC_DIVISOR;
+        const breakdown = isAirShipping(input.shippingType)
+          ? chargeableWeight(
+              {
+                weightKg: input.weightKg,
+                lengthCm: input.lengthCm,
+                widthCm: input.widthCm,
+                heightCm: input.heightCm,
+              },
+              divisor,
+            )
+          : null;
+
         // Get applicable pricing
         const country = await db.getCountryById(warehouse.countryId);
         const destCountries = await db.getDestinationCountries();
@@ -520,7 +574,11 @@ export const packagesRouter = router({
             const pricePerUnit = parseFloat(pricingRule.pricePerUnit);
             
             if (pricingRule.unit === "kg" && input.weightKg) {
-              calculatedCostUsd = (pricePerUnit * parseFloat(input.weightKg)).toFixed(2);
+              // Bill what the batch invoice will bill. This used to multiply
+              // the actual weight, so a 2 kg carton measuring 12 kg by volume
+              // was stored at a sixth of its real price — and that small number
+              // is the one staff and the customer saw first.
+              calculatedCostUsd = (pricePerUnit * (breakdown ? breakdown.chargeableKg : parseFloat(input.weightKg))).toFixed(2);
             } else if (pricingRule.unit === "cbm" && volumeCbm) {
               calculatedCostUsd = (pricePerUnit * parseFloat(volumeCbm)).toFixed(2);
             }
@@ -698,6 +756,46 @@ export const packagesRouter = router({
             linkedOrderIds,
           },
         });
+
+        // Billed on size rather than weight, by a margin worth explaining.
+        // The customer weighed this box themselves and will not accept the
+        // invoice without knowing why it says more — and they have to hear it
+        // before the parcel ships, not after. Raise it in every place a person
+        // looks, and never let a failure here undo a registration that is
+        // already saved.
+        if (breakdown) {
+          try {
+            const thresholds = await db.getVolumetricThresholds();
+            const assessment = assessVolumetric(
+              {
+                shippingType: input.shippingType,
+                weightKg: input.weightKg,
+                lengthCm: input.lengthCm,
+                widthCm: input.widthCm,
+                heightCm: input.heightCm,
+              },
+              { divisor, thresholds },
+            );
+
+            if (assessment.alert) {
+              await db.raiseVolumetricAlert({
+                packageId: pkg.id,
+                packageCode,
+                trackingNumber: input.trackingNumber ?? null,
+                customerId: effectiveCustomerId ?? input.customerId ?? null,
+                assessment,
+                dims: { lengthCm: input.lengthCm, widthCm: input.widthCm, heightCm: input.heightCm },
+                actorId: ctx.user.id,
+                actorName: ctx.user.name ?? `#${ctx.user.id}`,
+              });
+            }
+          } catch (err) {
+            appLogger.error("[Register] Volumetric alert failed", {
+              packageId: pkg.id,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          }
+        }
 
         return pkg;
       }),
