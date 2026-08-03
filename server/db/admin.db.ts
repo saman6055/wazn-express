@@ -2960,7 +2960,10 @@ export async function createChatMessage(data: {
   senderId?: number;
   senderName?: string;
   content: string;
-  messageType?: 'text' | 'image' | 'file' | 'system';
+  // Mirrors the messageType column, which gained 'voice' when voice notes
+  // shipped. Leaving it out here made every voice note a type error at the
+  // call site and silently invited an 'as any' instead.
+  messageType?: 'text' | 'image' | 'file' | 'system' | 'voice';
   attachmentUrl?: string;
   attachmentName?: string;
   attachmentType?: string;

@@ -17,6 +17,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
 import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
+import { startScheduledCampaignsPoller } from "../services/push.service";
 import { initializeScheduledBackups } from "../services/scheduledBackups.service";
 import { loadConfig } from "../config";
 import { globalLimiter, authLimiterMiddleware } from "../middleware/rateLimiter";
@@ -173,6 +174,17 @@ async function startServer() {
     appLogger.info("Open delivery box reminder scheduler started");
   } catch (error) {
     appLogger.error("Failed to start notification scheduler", { error: error instanceof Error ? error.message : String(error) });
+  }
+
+  // Scheduled push campaigns. The dev server has started this since it was
+  // written; production never did, so every campaign anyone scheduled sat in
+  // the table and its send time passed in silence. Same class of bug as the
+  // uploads route: two entry points, one of them forgotten.
+  try {
+    startScheduledCampaignsPoller();
+    appLogger.info("Push campaign scheduler started");
+  } catch (error) {
+    appLogger.error("Failed to start push campaign scheduler", { error: error instanceof Error ? error.message : String(error) });
   }
 
   // Start scheduled backups

@@ -164,6 +164,11 @@ export default function PortalMessages() {
           base64Data: base64,
         });
 
+        // The upload procedure reports a storage failure by RETURNING
+        // { success: false, url: null } instead of throwing, so without this
+        // the message went out with no attachment and nobody was told.
+        if (!result?.url) throw new Error(result?.error || "upload returned no url");
+
         attachmentUrl = result.url;
         attachmentName = attachmentFile.name;
         attachmentType = attachmentFile.type;
@@ -241,6 +246,10 @@ export default function PortalMessages() {
         contentType: file.type,
         base64Data: base64,
       });
+
+      // A voice note with no url is a message that says nothing. Fail loudly
+      // rather than sending an empty bubble.
+      if (!result?.url) throw new Error(result?.error || "upload returned no url");
 
       sendMessage.mutate({
         chatId,

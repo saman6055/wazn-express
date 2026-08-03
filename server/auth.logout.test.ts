@@ -51,10 +51,15 @@ describe("auth.logout", () => {
     expect(result).toEqual({ success: true });
     expect(clearedCookies).toHaveLength(1);
     expect(clearedCookies[0]?.name).toBe(COOKIE_NAME);
+    // Must match what login set, attribute for attribute: a browser only
+    // removes a cookie when the clearing one carries the same SameSite, Secure
+    // and Path. Both sides read getSessionCookieOptions, so this asserts they
+    // still agree. "lax" is deliberate — "none" was dropped by browsers on
+    // navigation and logged people out mid-session.
     expect(clearedCookies[0]?.options).toMatchObject({
       maxAge: -1,
       secure: true,
-      sameSite: "none",
+      sameSite: "lax",
       httpOnly: true,
       path: "/",
     });

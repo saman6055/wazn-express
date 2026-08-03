@@ -198,7 +198,7 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
               createdAt: box.createdAt,
             },
             items,
-            customer ? { fullName: customer.fullName, customerCode: customer.customerCode, mobileNumber: customer.mobileNumber } : undefined,
+            customer ? { fullName: customer.fullName, customerCode: customer.customerCode, mobileNumber: customer.mobileNumber } : null,
             t
           );
         } else {

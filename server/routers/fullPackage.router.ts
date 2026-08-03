@@ -72,7 +72,10 @@ async function autoSplitShippingByTracking(order: any, userId: number): Promise<
 
   const groupWeights = new Map<string, number>();
   let totalWeight = 0;
-  for (const [tn, orders] of trackingGroups) {
+  // Array.from rather than iterating the Map directly: the compiler target
+  // here predates Map iteration, and one file should not force a global
+  // tsconfig change on the whole project.
+  for (const [tn, orders] of Array.from(trackingGroups.entries())) {
     const gw = orders.reduce((s: number, o: any) => s + getMeasure(o), 0);
     groupWeights.set(tn, gw);
     totalWeight += gw;
