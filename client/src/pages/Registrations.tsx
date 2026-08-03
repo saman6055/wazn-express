@@ -573,10 +573,11 @@ function RegistrationCard({
             )}>
               {unclaimed ? label({ ku: "بێ خاوەن", en: "Unclaimed", ar: "بلا مالك", zh: "无主" }) : row.customerCode || "—"}
             </span>
-            <span className={cn("truncate text-sm", unclaimed ? "text-muted-foreground" : "font-medium")}>
-              {unclaimed
-                ? label({ ku: "کڕیار دیاری نەکراوە", en: "No customer assigned", ar: "لم يُحدَّد عميل", zh: "未指定客户" })
-                : row.customerName || "—"}
+            {/* The badge to the left already says "unclaimed"; repeating it
+                here as the customer name just filled the row with the same
+                word twice. Name the parcel instead. */}
+            <span className={cn("truncate text-sm", unclaimed ? "font-mono text-muted-foreground" : "font-medium")}>
+              {unclaimed ? row.packageCode : row.customerName || "—"}
             </span>
             <span className="ms-auto shrink-0 rounded-md bg-muted/60 px-2 py-0.5 font-mono text-[11px] text-muted-foreground" dir="ltr">
               {shortDateTime(row.registeredAt)}
@@ -592,7 +593,9 @@ function RegistrationCard({
               {row.trackingNumber || "—"}
               <Copy className="h-3.5 w-3.5 text-muted-foreground transition-colors group-hover/tn:text-sky-500" />
             </button>
-            <span className="font-mono text-[11px] text-muted-foreground">{row.packageCode}</span>
+            {!unclaimed && (
+              <span className="font-mono text-[11px] text-muted-foreground">{row.packageCode}</span>
+            )}
           </div>
 
           {row.needsReview && (
@@ -642,21 +645,29 @@ function RegistrationCard({
             {row.batchId && (
               <Chip tone="slate"><Layers className="h-3 w-3" />{label({ ku: "لە باچ", en: "in batch", ar: "في دفعة", zh: "已入批次" })}</Chip>
             )}
-            {row.photos.length === 0 && (
-              <Chip tone="amber"><CameraOff className="h-3 w-3" />{label({ ku: "وێنەی نییە", en: "no photo", ar: "بلا صورة", zh: "无照片" })}</Chip>
-            )}
             {noWeight && (
               <Chip tone="amber"><AlertTriangle className="h-3 w-3" />{label({ ku: "کێش نەنووسراوە", en: "no weight", ar: "بلا وزن", zh: "无重量" })}</Chip>
             )}
           </div>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-dashed pt-2.5 text-[12.5px]" dir="ltr">
-            <Metric unit="kg" value={noWeight ? "—" : num(row.weightKg).toFixed(2)} muted={noWeight} />
+            {noWeight ? (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2 py-0.5 text-[11.5px] font-medium text-amber-800 ring-1 ring-amber-300/70 dark:bg-amber-950/50 dark:text-amber-200 dark:ring-amber-800/70">
+                <AlertTriangle className="h-3 w-3" />
+                {label({ ku: "بێ کێش", en: "no weight", ar: "بلا وزن", zh: "无重量" })}
+              </span>
+            ) : (
+              <Metric unit="kg" value={num(row.weightKg).toFixed(2)} />
+            )}
             {dims && <Metric unit="cm" value={dims} />}
             {num(row.volumeCbm) > 0 && <Metric unit="CBM" value={num(row.volumeCbm).toFixed(3)} />}
-            {num(row.calculatedCostUsd) > 0 && (
+            {num(row.calculatedCostUsd) > 0 ? (
               <span className="rounded-lg bg-emerald-100 px-2 py-0.5 font-mono text-[12.5px] font-medium text-emerald-800 ring-1 ring-emerald-300/70 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/70">
                 ${num(row.calculatedCostUsd).toFixed(2)}
+              </span>
+            ) : (
+              <span className="text-[11.5px] text-muted-foreground">
+                {label({ ku: "نرخ دانەنراوە", en: "not priced", ar: "بلا سعر", zh: "未计价" })}
               </span>
             )}
             {row.registeredByName && (
