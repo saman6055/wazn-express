@@ -1,19 +1,25 @@
 /**
- * A parcel may not be stored without the measurements it will be billed on.
+ * A parcel may not be stored without the measurement it will be billed on.
  *
- * A registration with no weight and no volume cannot be priced, cannot be put
+ * A registration with nothing to bill against cannot be priced, cannot be put
  * in a batch, and cannot be invoiced. It used to be accepted anyway, and the
  * gap was found weeks later — by which time the box is deep in a pile in the
- * China warehouse and nobody can go back and weigh it. Refusing at the counter
- * costs one minute; refusing later costs a parcel nobody can charge for.
+ * China warehouse and nobody can go back and weigh it.
  *
  * What counts as measured depends on how it ships:
  *
- *   - Sea is billed by volume, so volume is what it must have.
+ *   - Sea is billed by volume outright. Without it there is no billable
+ *     quantity at all, so it stays required.
  *   - Air is billed by chargeable weight — the greater of actual weight and
- *     volumetric weight — so it needs the actual weight, and dimensions too,
- *     since without them the volumetric side of that comparison is missing and
- *     a light bulky carton silently bills as though it were small.
+ *     volumetric weight — and the scale alone always yields a price. Only the
+ *     weight is required.
+ *
+ * Dimensions were briefly required on air too, so the volumetric side of that
+ * comparison could never be missing. In practice it meant measuring every
+ * envelope and small parcel to protect against the occasional bulky carton,
+ * and it slowed the counter down more than it was worth. Staff can see which
+ * boxes are large; they measure those. When they do, the volumetric alert
+ * picks it up — and those are exactly the parcels it exists for.
  */
 
 export type MeasurementInput = {
@@ -51,9 +57,9 @@ export function missingMeasurements(input: MeasurementInput): MissingMeasurement
     return missing;
   }
 
+  // Air: the scale is enough to produce a price. Dimensions are optional and
+  // left to the operator, who can see which boxes are large.
   if (weight === 0) missing.push('weight');
-  // Dimensions may be skipped if the volume is already known some other way.
-  if (!hasDims && cbm === 0) missing.push('dimensions');
   return missing;
 }
 

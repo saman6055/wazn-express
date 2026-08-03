@@ -12,35 +12,36 @@ const air = (over: Record<string, unknown> = {}) =>
 const sea = (over: Record<string, unknown> = {}) =>
   ({ shippingType: 'sea' as const, ...over });
 
-describe('air — billed on chargeable weight, so it needs both sides of that comparison', () => {
+describe('air — the scale is enough to produce a price', () => {
   it('accepts a parcel with weight and dimensions', () => {
     expect(missingMeasurements(air({ weightKg: '12.4', lengthCm: '40', widthCm: '30', heightCm: '25' }))).toEqual([]);
   });
 
-  it('refuses a parcel with nothing filled in', () => {
-    expect(missingMeasurements(air())).toEqual(['weight', 'dimensions']);
+  it('accepts weight on its own', () => {
+    // Dimensions were briefly required here, which meant measuring every
+    // envelope to catch the occasional bulky carton. Staff can see which boxes
+    // are large; the counter should not stop for the rest.
+    expect(missingMeasurements(air({ weightKg: '12.4' }))).toEqual([]);
   });
 
-  it('refuses weight alone — a light bulky carton would bill as though it were small', () => {
-    expect(missingMeasurements(air({ weightKg: '12.4' }))).toEqual(['dimensions']);
+  it('accepts a 0.11 kg parcel with no dimensions', () => {
+    // The reported case: a very light parcel held up at the counter.
+    expect(missingMeasurements(air({ weightKg: '0.11' }))).toEqual([]);
   });
 
-  it('refuses dimensions alone', () => {
+  it('accepts a partial set of sides, since none of them are required', () => {
+    expect(missingMeasurements(air({ weightKg: '5', lengthCm: '40', widthCm: '30' }))).toEqual([]);
+  });
+
+  it('still refuses a parcel with no weight at all', () => {
+    // Nothing to bill against, on any route.
+    expect(missingMeasurements(air())).toEqual(['weight']);
     expect(missingMeasurements(air({ lengthCm: '40', widthCm: '30', heightCm: '25' }))).toEqual(['weight']);
   });
 
-  it('accepts weight plus a volume that was entered directly', () => {
-    // The sides are only ever a means of getting the volume; if it is already
-    // known there is nothing to insist on.
-    expect(missingMeasurements(air({ weightKg: '12.4', volumeCbm: '0.030' }))).toEqual([]);
-  });
-
-  it('refuses a partial set of sides', () => {
-    expect(missingMeasurements(air({ weightKg: '5', lengthCm: '40', widthCm: '30' }))).toEqual(['dimensions']);
-  });
-
   it('treats air_irregular exactly like air_regular', () => {
-    expect(missingMeasurements({ shippingType: 'air_irregular', weightKg: '5' })).toEqual(['dimensions']);
+    expect(missingMeasurements({ shippingType: 'air_irregular', weightKg: '5' })).toEqual([]);
+    expect(missingMeasurements({ shippingType: 'air_irregular' })).toEqual(['weight']);
   });
 });
 
@@ -65,13 +66,12 @@ describe('sea — billed on volume, so volume is all it must have', () => {
 describe('what counts as a filled-in number', () => {
   it('rejects zero, blank, whitespace and nonsense as not measured', () => {
     for (const v of ['0', '', '   ', 'abc', null, undefined, '-3', 0, -1, NaN]) {
-      expect(missingMeasurements(air({ weightKg: v, lengthCm: '40', widthCm: '30', heightCm: '25' })), String(v))
-        .toEqual(['weight']);
+      expect(missingMeasurements(air({ weightKg: v })), String(v)).toEqual(['weight']);
     }
   });
 
   it('accepts a number as well as a string', () => {
-    expect(missingMeasurements(air({ weightKg: 12.4, lengthCm: 40, widthCm: 30, heightCm: 25 }))).toEqual([]);
+    expect(missingMeasurements(air({ weightKg: 12.4 }))).toEqual([]);
   });
 
   it('accepts a very small but real measurement', () => {
@@ -81,7 +81,7 @@ describe('what counts as a filled-in number', () => {
 
 describe('isMeasured', () => {
   it('agrees with missingMeasurements', () => {
-    expect(isMeasured(air({ weightKg: '5', lengthCm: '1', widthCm: '1', heightCm: '1' }))).toBe(true);
+    expect(isMeasured(air({ weightKg: '5' }))).toBe(true);
     expect(isMeasured(air())).toBe(false);
     expect(isMeasured(sea({ volumeCbm: '0.2' }))).toBe(true);
     expect(isMeasured(sea())).toBe(false);
