@@ -95,7 +95,9 @@
     "uploadNoUrl": "The server did not store the photo",
     "measureMissingWeight": "Weight is missing",
     "measureMissingVolume": "Volume is missing",
-    "measureWhy": "Without a weight it cannot be priced or batched — weigh it now"
+    "measureWhy": "Without a weight it cannot be priced or batched — weigh it now",
+    "photosHint": "How the parcel looked on arrival",
+    "addPhoto": "Add"
   },
   "errors": {
     "required": "This field is required",

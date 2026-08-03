@@ -1498,6 +1498,65 @@ export default function QuickRegister() {
                 </Card>
               )}
 
+              {/* Photos — a card of its own, always open.
+                  These used to live inside the collapsed "additional info"
+                  accordion, so the person registering had to know to expand a
+                  section marked optional before they could attach anything.
+                  The warehouse photo is the only record of how a parcel looked
+                  on arrival, and it is the first thing anyone asks for when a
+                  customer disputes what they received. It belongs in plain
+                  sight. */}
+              <Card className="border-2 border-sky-200 dark:border-sky-900/60 bg-gradient-to-br from-sky-50/60 to-card dark:from-sky-950/20 rounded-xl shadow-sm">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-md bg-sky-500 text-white flex items-center justify-center">
+                      <Camera className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-xs font-semibold">{t("quickRegister.photos")}</span>
+                    {photos.length > 0 && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200">
+                        {photos.length}
+                      </span>
+                    )}
+                    <span className="text-[10px] text-muted-foreground ms-auto">
+                      {t("quickRegister.photosHint")}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {photos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img src={photo} alt="" className="w-20 h-20 object-cover rounded-lg border shadow-sm" />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(index)}
+                          className="absolute -top-2 -end-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <label className="w-20 h-20 border-2 border-dashed border-sky-300 dark:border-sky-800 rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={isUploading}
+                      />
+                      {isUploading ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-sky-500" />
+                      ) : (
+                        <>
+                          <ImagePlus className="h-6 w-6 text-sky-500" />
+                          <span className="text-[9.5px] text-sky-600 dark:text-sky-400">{t("quickRegister.addPhoto")}</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Row 3: Optional Fields — compact, rarely used, sits low */}
               <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-3">
@@ -1541,41 +1600,6 @@ export default function QuickRegister() {
                           onChange={(e) => setDescription(e.target.value)}
                           className="h-11"
                         />
-                      </div>
-                      <div className="md:col-span-3 space-y-2">
-                        <Label className="text-sm font-semibold flex items-center gap-2">
-                          <Camera className="h-4 w-4" />
-                          {t("quickRegister.photos")}
-                        </Label>
-                        <div className="flex flex-wrap gap-3">
-                          {photos.map((photo, index) => (
-                            <div key={index} className="relative group">
-                              <img src={photo} alt="" className="w-16 h-16 object-cover rounded-lg border shadow-sm" />
-                              <button
-                                type="button"
-                                onClick={() => removePhoto(index)}
-                                className="absolute -top-2 -end-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ))}
-                          <label className="w-16 h-16 border border-dashed border-muted-foreground/40 rounded-lg flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              onChange={handleImageUpload}
-                              className="hidden"
-                              disabled={isUploading}
-                            />
-                            {isUploading ? (
-                              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                            ) : (
-                              <ImagePlus className="h-6 w-6 text-gray-400" />
-                            )}
-                          </label>
-                        </div>
                       </div>
                     </div>
                   )}

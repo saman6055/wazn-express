@@ -95,7 +95,9 @@
     "uploadNoUrl": "لم يخزّن الخادم الصورة",
     "measureMissingWeight": "الوزن مفقود",
     "measureMissingVolume": "الحجم مفقود",
-    "measureWhy": "بدون الوزن لا يمكن تسعيره أو إدراجه في دفعة — زِنه الآن"
+    "measureWhy": "بدون الوزن لا يمكن تسعيره أو إدراجه في دفعة — زِنه الآن",
+    "photosHint": "شكل الطرد عند الوصول",
+    "addPhoto": "إضافة"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",
