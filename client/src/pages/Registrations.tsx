@@ -96,6 +96,51 @@ const ORDER_TYPE: Record<string, { label: L; path: string }> = {
   },
 };
 
+/**
+ * Everything about a parcel that somebody has to deal with before it leaves
+ * China. These were scattered — some on the dashboard, some only visible by
+ * reading each card — so the office had no single place to ask "what still
+ * needs work today". Each one is a filter here.
+ */
+type Flag = "volumetric" | "review" | "noWeight" | "stale" | "noBatch" | "noPhoto" | "unclaimed";
+
+/** A parcel is expected to join a batch within this many days of arriving. */
+const STALE_DAYS = 15;
+
+function flagsFor(r: Registration): Flag[] {
+  const flags: Flag[] = [];
+  // Money the customer has not agreed to yet.
+  if (r.volumetric?.alert && !r.volumetricAckAt) flags.push("volumetric");
+  // A self order from a customer who has open orders — probably a forgotten one.
+  if (r.needsReview) flags.push("review");
+  // Cannot be priced, so cannot be invoiced.
+  if (num(r.weightKg) <= 0) flags.push("noWeight");
+  if (!r.customerId || r.isUnclaimed) flags.push("unclaimed");
+  if (r.photos.length === 0) flags.push("noPhoto");
+  // No batch means it is not going anywhere, whatever else is right about it.
+  if (!r.batchId) {
+    flags.push("noBatch");
+    const days = r.registeredAt
+      ? Math.floor((Date.now() - new Date(r.registeredAt).getTime()) / 86_400_000)
+      : 0;
+    if (days >= STALE_DAYS) flags.push("stale");
+  }
+  return flags;
+}
+
+const FLAG_META: Record<Flag, { label: L; tone: "red" | "indigo" | "blue" }> = {
+  volumetric: { label: { ku: "قەبارەیی", en: "Volumetric", ar: "حجمي", zh: "体积重" }, tone: "red" },
+  review: { label: { ku: "پێویستی پشکنین", en: "Needs review", ar: "يحتاج مراجعة", zh: "待核查" }, tone: "red" },
+  noWeight: { label: { ku: "بێ کێش", en: "No weight", ar: "بلا وزن", zh: "无重量" }, tone: "indigo" },
+  stale: { label: { ku: "لە کۆگا ماوە", en: "Stuck in depot", ar: "عالق بالمستودع", zh: "滞留仓库" }, tone: "red" },
+  noBatch: { label: { ku: "لە باچ نییە", en: "No batch", ar: "بلا دفعة", zh: "未入批次" }, tone: "indigo" },
+  noPhoto: { label: { ku: "بێ وێنە", en: "No photo", ar: "بلا صورة", zh: "无照片" }, tone: "indigo" },
+  unclaimed: { label: { ku: "بێ خاوەن", en: "Unclaimed", ar: "بلا مالك", zh: "无主" }, tone: "indigo" },
+};
+
+/** Loudest first: money, then a missing decision, then ordinary gaps. */
+const FLAG_ORDER: Flag[] = ["volumetric", "review", "stale", "noWeight", "noBatch", "unclaimed", "noPhoto"];
+
 type ViewSize = "xl" | "large" | "medium" | "list";
 
 /** How many cards fit across, per density. */
@@ -178,6 +223,7 @@ export default function Registrations() {
   const [customTo, setCustomTo] = useState(toInputDate(startOfDay(new Date())));
   const [search, setSearch] = useState("");
   const [gallery, setGallery] = useState<{ photos: Photo[]; index: number } | null>(null);
+  const [flag, setFlag] = useState<Flag | null>(null);
 
   const { from, to } = useMemo(() => {
     if (rangeKey !== "custom") return rangeFor(rangeKey);
@@ -194,10 +240,23 @@ export default function Registrations() {
   // Review cases float to the top. The office opens this page to prepare for
   // goods that have not landed yet; a parcel needing a decision must not be
   // three screens down. Everything else stays newest-first.
-  const rows = useMemo(() => {
+  const allRows = useMemo(() => {
     const list = (data ?? []) as Registration[];
     return [...list].sort((a, b) => Number(b.needsReview) - Number(a.needsReview));
   }, [data]);
+
+  /** How many parcels carry each flag, over the whole period, not the filtered view. */
+  const flagCounts = useMemo(() => {
+    const counts = {} as Record<Flag, number>;
+    for (const f of FLAG_ORDER) counts[f] = 0;
+    for (const r of allRows) for (const f of flagsFor(r)) counts[f]++;
+    return counts;
+  }, [allRows]);
+
+  const rows = useMemo(
+    () => (flag ? allRows.filter((r) => flagsFor(r).includes(flag)) : allRows),
+    [allRows, flag],
+  );
 
   const totals = useMemo(() => {
     let airKg = 0, seaCbm = 0, value = 0, noPhoto = 0, noWeight = 0, unclaimed = 0, review = 0;
@@ -331,6 +390,59 @@ export default function Registrations() {
           <Stat value={String(incomplete)} caption={label({ ku: "کەموکوڕی", en: "incomplete", ar: "ناقص", zh: "不完整" })} icon={AlertTriangle} warn={incomplete > 0} />
           <Stat value={String(totals.review)} caption={label({ ku: "پێویستی پشکنین", en: "needs review", ar: "يحتاج مراجعة", zh: "待核查" })} icon={ShieldAlert} warn={totals.review > 0} />
         </div>
+      </div>
+
+      {/* Everything that still needs work, in one row. These used to be spread
+          between the dashboard and the individual cards, so there was nowhere
+          to ask "what is outstanding today" and get an answer. */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => setFlag(null)}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-[13px] font-semibold transition-all",
+            flag === null
+              ? "bg-gradient-to-br from-blue-700 to-indigo-700 text-white shadow-md shadow-blue-700/25"
+              : "border bg-card text-foreground/80 hover:bg-muted",
+          )}
+        >
+          {label({ ku: "هەمووی", en: "All", ar: "الكل", zh: "全部" })}
+          <span className={cn("rounded-md px-1.5 text-[12px] tabular-nums", flag === null ? "bg-white/25" : "bg-muted")}>
+            {allRows.length}
+          </span>
+        </button>
+
+        {FLAG_ORDER.filter((f) => flagCounts[f] > 0).map((f) => {
+          const meta = FLAG_META[f];
+          const on = flag === f;
+          return (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFlag(on ? null : f)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-[13px] font-semibold ring-1 transition-all",
+                on && meta.tone === "red" && "bg-red-600 text-white ring-red-500 shadow-md shadow-red-600/30",
+                on && meta.tone !== "red" && "bg-indigo-600 text-white ring-indigo-500 shadow-md shadow-indigo-600/30",
+                !on && meta.tone === "red" &&
+                  "bg-red-100 text-red-900 ring-red-300 hover:bg-red-200 dark:bg-red-950/50 dark:text-red-100 dark:ring-red-800/70 dark:hover:bg-red-900/50",
+                !on && meta.tone !== "red" &&
+                  "bg-indigo-100 text-indigo-900 ring-indigo-300 hover:bg-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-100 dark:ring-indigo-800/70 dark:hover:bg-indigo-900/50",
+              )}
+            >
+              {meta.tone === "red" && !on && (
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
+              )}
+              {label(meta.label)}
+              <span className={cn("rounded-md px-1.5 text-[12px] tabular-nums", on ? "bg-white/25" : "bg-black/10 dark:bg-white/15")}>
+                {flagCounts[f]}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -553,6 +665,9 @@ function RegistrationCard({
     ? `${num(row.lengthCm)}×${num(row.widthCm)}×${num(row.heightCm)}`
     : null;
   const orderType = row.order ? ORDER_TYPE[row.order.orderType] : null;
+  const staleDays = !row.batchId && row.registeredAt
+    ? Math.floor((Date.now() - new Date(row.registeredAt).getTime()) / 86_400_000)
+    : 0;
 
   // Blue for the ordinary routes, indigo for the irregular one — the palette
   // stays blue-to-purple rather than picking a new hue per route.
@@ -689,8 +804,22 @@ function RegistrationCard({
             {row.declaredByCustomer && (
               <Chip tone="emerald"><UserCircle className="h-3 w-3" />{label({ ku: "کڕیار ئاگاداری کردبووین", en: "pre-declared", ar: "أُبلغ مسبقاً", zh: "已预报" })}</Chip>
             )}
-            {row.batchId && (
-              <Chip tone="slate"><Layers className="h-3 w-3" />{label({ ku: "لە باچ", en: "in batch", ar: "في دفعة", zh: "已入批次" })}</Chip>
+            {row.batchId ? (
+              <Chip tone="sky"><Layers className="h-3.5 w-3.5" />{label({ ku: "لە باچ", en: "in batch", ar: "في دفعة", zh: "已入批次" })}</Chip>
+            ) : (
+              // Not in a batch means it is not going anywhere, however complete
+              // the rest of the record is. Past fifteen days it is forgotten.
+              <Chip tone={staleDays >= STALE_DAYS ? "red" : "amber"}>
+                <Layers className="h-3.5 w-3.5" />
+                {staleDays >= STALE_DAYS
+                  ? label({
+                      ku: `${staleDays} ڕۆژە لە کۆگا`,
+                      en: `${staleDays} days in depot`,
+                      ar: `${staleDays} يوماً بالمستودع`,
+                      zh: `已在仓库 ${staleDays} 天`,
+                    })
+                  : label({ ku: "لە باچ نییە", en: "no batch", ar: "بلا دفعة", zh: "未入批次" })}
+              </Chip>
             )}
             {noWeight && (
               <Chip tone="amber"><AlertTriangle className="h-3 w-3" />{label({ ku: "کێش نەنووسراوە", en: "no weight", ar: "بلا وزن", zh: "无重量" })}</Chip>
@@ -843,7 +972,7 @@ function VolumetricBanner({
   );
 }
 
-function Chip({ tone, children }: { tone: "sky" | "slate" | "violet" | "amber" | "emerald"; children: React.ReactNode }) {
+function Chip({ tone, children }: { tone: "sky" | "slate" | "violet" | "amber" | "emerald" | "red"; children: React.ReactNode }) {
   // Every tone carries an explicit dark-mode pair: inheriting the light text
   // colour left several of these unreadable on the dark theme.
   const tones = {
@@ -854,6 +983,7 @@ function Chip({ tone, children }: { tone: "sky" | "slate" | "violet" | "amber" |
     violet: "bg-violet-100 text-violet-900 ring-violet-300/70 dark:bg-violet-950/50 dark:text-violet-100 dark:ring-violet-800/70",
     amber: "bg-indigo-100 text-indigo-900 ring-indigo-300/70 dark:bg-indigo-950/50 dark:text-indigo-100 dark:ring-indigo-800/70",
     emerald: "bg-blue-100 text-blue-900 ring-blue-300/70 dark:bg-blue-950/50 dark:text-blue-100 dark:ring-blue-800/70",
+    red: "bg-red-100 text-red-900 ring-red-300/70 dark:bg-red-950/50 dark:text-red-100 dark:ring-red-800/70",
   };
   return (
     <span className={cn("inline-flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-[12.5px] font-medium ring-1", tones[tone])}>
