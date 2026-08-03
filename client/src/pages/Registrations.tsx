@@ -386,7 +386,11 @@ export default function Registrations() {
                   </span>
                 </div>
                 {view === "cards"
-                  ? g.items.map((r) => <RegistrationCard key={r.id} row={r} {...cardProps} />)
+                  ? (
+                    <div className="grid gap-2.5 xl:grid-cols-2 2xl:grid-cols-3">
+                      {g.items.map((r) => <RegistrationCard key={r.id} row={r} {...cardProps} />)}
+                    </div>
+                  )
                   : <RegistrationTable rows={g.items} language={language} onCopy={copyTracking} onOpenOrder={openOrder} />}
               </div>
             );
@@ -394,7 +398,12 @@ export default function Registrations() {
         </div>
       ) : view === "cards" ? (
         <div className="space-y-2">
-          {rows.map((r) => <RegistrationCard key={r.id} row={r} {...cardProps} />)}
+          {/* A grid, not a stack: one card per full-width row left the middle of
+              every card empty on a desktop screen, which is what made the page
+              look unfinished. */}
+          <div className="grid gap-2.5 xl:grid-cols-2 2xl:grid-cols-3">
+            {rows.map((r) => <RegistrationCard key={r.id} row={r} {...cardProps} />)}
+          </div>
         </div>
       ) : (
         <RegistrationTable rows={rows} language={language} onCopy={copyTracking} onOpenOrder={openOrder} />
@@ -462,7 +471,7 @@ function Thumb({
   if (broken) {
     return (
       <div className={cn(
-        "flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-amber-300/70 bg-amber-50/60 text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/25 dark:text-amber-400",
+        "flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50/60 text-indigo-800 dark:border-indigo-700/70 dark:bg-indigo-950/30 dark:text-indigo-200",
         className,
       )}>
         <ImageOff className="h-5 w-5" />
@@ -516,17 +525,20 @@ function RegistrationCard({
     : null;
   const orderType = row.order ? ORDER_TYPE[row.order.orderType] : null;
 
+  // Blue for the ordinary routes, indigo for the irregular one — the palette
+  // stays blue-to-purple rather than picking a new hue per route.
   const accent = row.shippingType === "sea"
-    ? "from-teal-400 to-emerald-500"
+    ? "from-blue-500 to-blue-700"
     : row.shippingType === "air_irregular"
-      ? "from-fuchsia-400 to-purple-500"
-      : "from-sky-400 to-blue-500";
+      ? "from-indigo-400 to-violet-600"
+      : "from-sky-400 to-blue-600";
 
   return (
     <Card className={cn(
       "group relative overflow-hidden rounded-2xl border-border/60 transition-all duration-300",
       "hover:-translate-y-0.5 hover:border-sky-300/70 hover:shadow-lg hover:shadow-sky-500/10 dark:hover:border-sky-700/60",
-      needsAttention && !row.needsReview && "border-amber-300/80 bg-amber-50/30 dark:border-amber-800/70 dark:bg-amber-950/10",
+      // A gap is ordinary work, not an emergency: purple, not alarm colour.
+      needsAttention && !row.needsReview && "border-indigo-300 bg-indigo-50/50 dark:border-indigo-800/70 dark:bg-indigo-950/25",
       // A possible forgotten order glows, because it is the one thing on this
       // page a person has to act on before the goods land.
       row.needsReview && "border-2 border-rose-400/90 bg-rose-50/40 shadow-lg shadow-rose-500/20 dark:border-rose-600/80 dark:bg-rose-950/20 dark:shadow-rose-900/30",
@@ -539,24 +551,30 @@ function RegistrationCard({
         <div className="flex shrink-0 gap-1">
           {row.photos.length > 0 ? (
             <>
-              <Thumb
-                photo={row.photos[0]}
-                language={language}
-                className="h-[4.75rem] w-[4.75rem]"
-                onClick={() => onGallery({ photos: row.photos, index: 0 })}
-              />
-              {row.photos.length > 1 && (
+              {/* Four side by side, then a count. One thumbnail plus "+N" hid
+                  how much had actually been photographed; four is enough to
+                  see the parcel from every side without the card growing. */}
+              {row.photos.slice(0, 4).map((photo, i) => (
+                <Thumb
+                  key={`${photo.url}-${i}`}
+                  photo={photo}
+                  language={language}
+                  className="h-[4.75rem] w-[4.75rem]"
+                  onClick={() => onGallery({ photos: row.photos, index: i })}
+                />
+              ))}
+              {row.photos.length > 4 && (
                 <button
                   type="button"
-                  onClick={() => onGallery({ photos: row.photos, index: 1 })}
-                  className="flex h-[4.75rem] w-9 items-center justify-center rounded-xl bg-gradient-to-b from-muted to-muted/50 text-xs font-medium text-muted-foreground ring-1 ring-border transition-colors hover:text-foreground"
+                  onClick={() => onGallery({ photos: row.photos, index: 4 })}
+                  className="flex h-[4.75rem] w-10 items-center justify-center rounded-xl bg-blue-50 text-sm font-semibold text-blue-800 ring-1 ring-blue-200 transition-colors hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-200 dark:ring-blue-800/60 dark:hover:bg-blue-900/50"
                 >
-                  +{row.photos.length - 1}
+                  +{row.photos.length - 4}
                 </button>
               )}
             </>
           ) : (
-            <div className="flex h-[4.75rem] w-[4.75rem] flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-amber-300/70 bg-amber-50/50 text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/20 dark:text-amber-400">
+            <div className="flex h-[4.75rem] w-[4.75rem] flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50/60 text-indigo-800 dark:border-indigo-700/70 dark:bg-indigo-950/30 dark:text-indigo-200">
               <CameraOff className="h-5 w-5" />
               <span className="text-[10px] font-medium">{label({ ku: "بێ وێنە", en: "no photo", ar: "بلا صورة", zh: "无照片" })}</span>
             </div>
@@ -568,8 +586,8 @@ function RegistrationCard({
             <span className={cn(
               "rounded-lg px-2.5 py-1 font-mono text-xs font-medium tracking-wide text-white shadow-sm",
               unclaimed
-                ? "bg-gradient-to-br from-amber-500 to-orange-600 shadow-amber-500/25"
-                : "bg-gradient-to-br from-sky-500 to-blue-600 shadow-blue-500/25",
+                ? "bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-500/25"
+                : "bg-gradient-to-br from-blue-600 to-blue-800 shadow-blue-600/25",
             )}>
               {unclaimed ? label({ ku: "بێ خاوەن", en: "Unclaimed", ar: "بلا مالك", zh: "无主" }) : row.customerCode || "—"}
             </span>
@@ -579,7 +597,7 @@ function RegistrationCard({
             <span className={cn("truncate text-sm", unclaimed ? "font-mono text-muted-foreground" : "font-medium")}>
               {unclaimed ? row.packageCode : row.customerName || "—"}
             </span>
-            <span className="ms-auto shrink-0 rounded-md bg-muted/60 px-2 py-0.5 font-mono text-[11px] text-muted-foreground" dir="ltr">
+            <span className="ms-auto shrink-0 rounded-md bg-muted/60 px-2 py-0.5 font-mono text-[12px] text-muted-foreground" dir="ltr">
               {shortDateTime(row.registeredAt)}
             </span>
           </div>
@@ -588,13 +606,13 @@ function RegistrationCard({
             <button
               type="button"
               onClick={() => row.trackingNumber && onCopy(row.trackingNumber)}
-              className="group/tn inline-flex items-center gap-1.5 rounded-lg border border-transparent bg-muted/50 px-2 py-1 font-mono text-[13px] tracking-wide transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 dark:hover:border-sky-800 dark:hover:bg-sky-950/30 dark:hover:text-sky-300"
+              className="group/tn inline-flex items-center gap-1.5 rounded-lg border border-transparent bg-muted/50 px-2 py-1 font-mono text-[14px] tracking-wide transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 dark:hover:border-sky-800 dark:hover:bg-sky-950/30 dark:hover:text-sky-300"
             >
               {row.trackingNumber || "—"}
               <Copy className="h-3.5 w-3.5 text-muted-foreground transition-colors group-hover/tn:text-sky-500" />
             </button>
             {!unclaimed && (
-              <span className="font-mono text-[11px] text-muted-foreground">{row.packageCode}</span>
+              <span className="font-mono text-[12px] text-muted-foreground">{row.packageCode}</span>
             )}
           </div>
 
@@ -650,10 +668,10 @@ function RegistrationCard({
             )}
           </div>
 
-          <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-dashed pt-2.5 text-[12.5px]" dir="ltr">
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-dashed pt-2.5 text-[13.5px]" dir="ltr">
             {noWeight ? (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2 py-0.5 text-[11.5px] font-medium text-amber-800 ring-1 ring-amber-300/70 dark:bg-amber-950/50 dark:text-amber-200 dark:ring-amber-800/70">
-                <AlertTriangle className="h-3 w-3" />
+              <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2.5 py-0.5 text-[12.5px] font-medium text-indigo-900 ring-1 ring-indigo-300/70 dark:bg-indigo-950/50 dark:text-indigo-100 dark:ring-indigo-800/70">
+                <Scale className="h-3.5 w-3.5" />
                 {label({ ku: "بێ کێش", en: "no weight", ar: "بلا وزن", zh: "无重量" })}
               </span>
             ) : (
@@ -662,11 +680,11 @@ function RegistrationCard({
             {dims && <Metric unit="cm" value={dims} />}
             {num(row.volumeCbm) > 0 && <Metric unit="CBM" value={num(row.volumeCbm).toFixed(3)} />}
             {num(row.calculatedCostUsd) > 0 ? (
-              <span className="rounded-lg bg-emerald-100 px-2 py-0.5 font-mono text-[12.5px] font-medium text-emerald-800 ring-1 ring-emerald-300/70 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/70">
+              <span className="rounded-lg bg-blue-700 px-2.5 py-0.5 font-mono text-[13px] font-semibold text-white shadow-sm dark:bg-blue-600">
                 ${num(row.calculatedCostUsd).toFixed(2)}
               </span>
             ) : (
-              <span className="text-[11.5px] text-muted-foreground">
+              <span className="rounded-lg bg-indigo-100 px-2.5 py-0.5 text-[12.5px] font-medium text-indigo-900 ring-1 ring-indigo-300/70 dark:bg-indigo-950/50 dark:text-indigo-100 dark:ring-indigo-800/70">
                 {label({ ku: "نرخ دانەنراوە", en: "not priced", ar: "بلا سعر", zh: "未计价" })}
               </span>
             )}
@@ -800,14 +818,16 @@ function Chip({ tone, children }: { tone: "sky" | "slate" | "violet" | "amber" |
   // Every tone carries an explicit dark-mode pair: inheriting the light text
   // colour left several of these unreadable on the dark theme.
   const tones = {
-    sky: "bg-sky-100 text-sky-800 ring-sky-300/70 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-800/70",
-    slate: "bg-muted text-foreground/75 ring-border",
-    violet: "bg-violet-100 text-violet-800 ring-violet-300/70 dark:bg-violet-950/50 dark:text-violet-200 dark:ring-violet-800/70",
-    amber: "bg-amber-100 text-amber-800 ring-amber-300/70 dark:bg-amber-950/50 dark:text-amber-200 dark:ring-amber-800/70",
-    emerald: "bg-emerald-100 text-emerald-800 ring-emerald-300/70 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-800/70",
+    // Blue carries information, indigo carries "something is missing", and
+    // each tone declares both themes so neither inherits the other's text.
+    sky: "bg-blue-100 text-blue-900 ring-blue-300/70 dark:bg-blue-950/50 dark:text-blue-100 dark:ring-blue-800/70",
+    slate: "bg-slate-100 text-slate-800 ring-slate-300/70 dark:bg-slate-800/60 dark:text-slate-100 dark:ring-slate-700",
+    violet: "bg-violet-100 text-violet-900 ring-violet-300/70 dark:bg-violet-950/50 dark:text-violet-100 dark:ring-violet-800/70",
+    amber: "bg-indigo-100 text-indigo-900 ring-indigo-300/70 dark:bg-indigo-950/50 dark:text-indigo-100 dark:ring-indigo-800/70",
+    emerald: "bg-blue-100 text-blue-900 ring-blue-300/70 dark:bg-blue-950/50 dark:text-blue-100 dark:ring-blue-800/70",
   };
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-[11.5px] font-medium ring-1", tones[tone])}>
+    <span className={cn("inline-flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-[12.5px] font-medium ring-1", tones[tone])}>
       {children}
     </span>
   );
@@ -817,7 +837,7 @@ function Metric({ unit, value, muted }: { unit: string; value: string; muted?: b
   return (
     <span className="inline-flex items-baseline gap-1 font-mono">
       <span className={cn("font-medium", muted && "text-muted-foreground")}>{value}</span>
-      <span className="text-[10.5px] text-muted-foreground">{unit}</span>
+      <span className="text-[11.5px] text-muted-foreground">{unit}</span>
     </span>
   );
 }
