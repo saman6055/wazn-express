@@ -4,6 +4,7 @@ import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, fullPacka
 import type { DeliveryBox, InsertDeliveryBox, DeliveryBoxItem, InsertDeliveryBoxItem } from "../../drizzle/schema/packages.schema";
 import { appLogger } from "../utils/logger";
 import { commissionGoodsTotal } from "./fullPackage.db";
+import { orderAdvancePaidUsd, type AdvanceSource } from "@shared/orderAdvance";
 
 // ============ BOX CODE GENERATION ============
 
@@ -242,32 +243,17 @@ export async function removeItemFromBox(itemId: number): Promise<void> {
  * `calculatedCostUsd` already sums all of them, so the advance must too.
  *
  * Per order type, "what has the customer already paid for this order's
- * goods?":
- *  - commission       → `advancePaidUsd` only (the advance actually paid
- *                        at order creation, recorded as a CREDIT_PAYMENT).
- *                        NOT `totalPrepaidUsd` — that is the goods value
- *                        (item × qty + commission) stored on every
- *                        commission order whether or not money was paid,
- *                        so using it credited the full order value and
- *                        under-billed at delivery. Legacy prepaid-at-
- *                        creation orders (`isPrepaid`) fall back to
- *                        `paidFromBalanceUsd`. See `fpAdvance` for detail.
- *  - full_package /
- *    purchase_request → MAX(`paidFromBalanceUsd`, `advancePaidUsd`).
- *                        - `advancePaidUsd` is set when a CASH advance
- *                          is recorded at order creation (line 285 in
- *                          fullPackage.router.ts).
- *                        - `paidFromBalanceUsd` is set when the order is
- *                          approved and the wallet is debited for the
- *                          full selling price (line 1340). The approve
- *                          flow does NOT mirror into advancePaidUsd, so
- *                          using only advancePaidUsd misses every
- *                          approved-from-wallet order — receipt then
- *                          shows $0 paid and bills the customer twice.
- *                        Taking MAX captures both pathways without
- *                        double-counting on commission-quickcreate
- *                        orders that mirror the same value into both
- *                        fields.
+ * goods?" — see shared/orderAdvance.ts, which owns the rule:
+ *  - commission / full_package / purchase_request
+ *                     → `advancePaidUsd` only, plus the legacy
+ *                       prepaid-at-creation commission carve-out.
+ *                       NOT `paidFromBalanceUsd`: despite the name, every
+ *                       writer of that column sits after a CHARGE and stores
+ *                       the amount BILLED. Crediting it turned what the
+ *                       customer owes into what they had supposedly paid.
+ *                       The authoritative batch-delivery invoice credits
+ *                       `advancePaidUsd` and nothing else
+ *                       (batches.router.ts:98), so the box matches it.
  *  - regular packages → 0 (no upstream FP order).
  *
  * Lookup priority per item:
@@ -300,40 +286,13 @@ export type BoxItemWithAdvance = DeliveryBoxItem & {
   shippingType: string | null;
 };
 
+/**
+ * What this order has genuinely been paid, delegated to the shared rule so the
+ * box, the invoice and the tests cannot drift apart. See shared/orderAdvance.ts
+ * for why  is not a payment.
+ */
 function fpAdvance(fp: typeof fullPackageOrders.$inferSelect): number {
-  if (fp.orderType === 'commission') {
-    // The ONLY money a customer pays toward a modern commission order
-    // before delivery is the advance recorded at order creation
-    // (`advancePaidUsd` — a real CREDIT_PAYMENT on the ledger, set by the
-    // create/bulkCreate/edit flows). This is exactly what the authoritative
-    // batch-delivery invoice credits (batches.router.ts: it sums
-    // advancePaidUsd and nothing else), so the box must match it.
-    //
-    // Deliberately NOT `totalPrepaidUsd`: that is the GOODS VALUE
-    // (item × qty + commission), stored on every commission order whether
-    // or not any money changed hands. Crediting it treated the full order
-    // value as "already paid" and under-billed the customer at delivery —
-    // the production bug report this fixes.
-    //
-    // Deliberately NOT `paidFromBalanceUsd` for the modern path: for
-    // commission, that field is the goods DEBIT applied AT batch delivery
-    // (batches.router.ts:469 — what the customer now OWES), not a
-    // prepayment.
-    const adv = Number((fp as any).advancePaidUsd || 0) || 0;
-    // Legacy `createCommissionOrder` charged item+commission from the wallet
-    // at creation and flagged the order `isPrepaid: true` (the only writer of
-    // that flag). For those historical orders the goods ARE genuinely
-    // prepaid, so honor `paidFromBalanceUsd`. Modern orders never set
-    // isPrepaid, so this branch can't reintroduce the over-credit.
-    const legacyPrepaid = fp.isPrepaid ? (Number((fp as any).paidFromBalanceUsd || 0) || 0) : 0;
-    return Math.max(adv, legacyPrepaid);
-  }
-  if (fp.orderType === 'full_package' || fp.orderType === 'purchase_request') {
-    const a = Number((fp as any).advancePaidUsd || 0) || 0;
-    const p = Number((fp as any).paidFromBalanceUsd || 0) || 0;
-    return Math.max(a, p);
-  }
-  return 0;
+  return orderAdvancePaidUsd(fp as unknown as AdvanceSource);
 }
 
 /**
