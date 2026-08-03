@@ -122,7 +122,7 @@ const { id } = useParams<{ id: string }>();
       <CustomerPortalLayout>
         <div className={cn(
           "text-center py-16 px-4",
-          isDark ? "text-white" : "text-slate-800"
+          isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
         )}>
           <Megaphone className="w-16 h-16 mx-auto mb-4 opacity-30" />
           <h2 className="text-xl font-bold mb-2">
@@ -143,7 +143,7 @@ const { id } = useParams<{ id: string }>();
       {/* Header */}
       <div className={cn(
         "sticky top-0 z-10 px-4 py-4 border-b backdrop-blur-lg",
-        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-gray-100"
+        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-gray-100 dark:border-gray-800/60"
       )}>
         <div className="flex items-center justify-between">
           <Link href="/portal/blog">
@@ -151,7 +151,7 @@ const { id } = useParams<{ id: string }>();
               "p-2 rounded-xl transition-colors",
               isDark ? "hover:bg-slate-800" : "hover:bg-gray-100"
             )}>
-              <ArrowLeft className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800")} />
+              <ArrowLeft className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")} />
             </button>
           </Link>
           
@@ -162,7 +162,7 @@ const { id } = useParams<{ id: string }>();
               isDark ? "hover:bg-slate-800" : "hover:bg-gray-100"
             )}
           >
-            <Share2 className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800")} />
+            <Share2 className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")} />
           </button>
         </div>
       </div>
@@ -202,7 +202,7 @@ const { id } = useParams<{ id: string }>();
           {/* Title */}
           <h1 className={cn(
             "text-2xl font-bold mb-4 leading-tight",
-            isDark ? "text-white" : "text-slate-800"
+            isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
           )} dir={isRTL ? "rtl" : "ltr"}>
             {getTitle(post)}
           </h1>
@@ -210,7 +210,7 @@ const { id } = useParams<{ id: string }>();
           {/* Meta Info */}
           <div className={cn(
             "flex flex-wrap items-center gap-4 mb-6 pb-6 border-b",
-            isDark ? "border-slate-700" : "border-gray-200"
+            isDark ? "border-slate-700" : "border-gray-200 dark:border-gray-800/60"
           )}>
             <div className={cn(
               "flex items-center gap-1.5 text-sm",
@@ -279,7 +279,7 @@ const { id } = useParams<{ id: string }>();
               return (
                 <p key={index} className={cn(
                   "mb-4 leading-relaxed",
-                  isDark ? "text-slate-300" : "text-slate-700"
+                  isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300"
                 )}>
                   {paragraph}
                 </p>
@@ -288,7 +288,7 @@ const { id } = useParams<{ id: string }>();
           </article>
 
           {/* Follow-us channels */}
-          <div className={cn("mt-8 pt-6 border-t", isDark ? "border-slate-700" : "border-gray-200")}>
+          <div className={cn("mt-8 pt-6 border-t", isDark ? "border-slate-700" : "border-gray-200 dark:border-gray-800/60")}>
             <p className={cn("text-sm font-semibold mb-3", isDark ? "text-slate-300" : "text-slate-600")}>
               {language === "ku" ? "لە کەناڵەکانمان بمانبینە" : language === "ar" ? "تابعنا على قنواتنا" : "Follow us on our channels"}
             </p>
@@ -298,7 +298,7 @@ const { id } = useParams<{ id: string }>();
           {/* Share Section — WhatsApp, copy link, and the native share sheet */}
           <div className={cn(
             "mt-8 pt-6 border-t",
-            isDark ? "border-slate-700" : "border-gray-200"
+            isDark ? "border-slate-700" : "border-gray-200 dark:border-gray-800/60"
           )}>
             <p className={cn("text-sm font-semibold mb-3", isDark ? "text-slate-300" : "text-slate-600")}>
               {language === "ku" ? "ئەم بابەتە هاوبەش بکە" : language === "ar" ? "شارك هذا المنشور" : "Share this post"}
@@ -320,7 +320,7 @@ const { id } = useParams<{ id: string }>();
                 }}
                 className={cn(
                   "flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition active:scale-95",
-                  isDark ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-gray-100 text-slate-800 hover:bg-gray-200",
+                  isDark ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-gray-100 dark:bg-gray-950/40 text-slate-800 dark:text-slate-200 hover:bg-gray-200",
                 )}
               >
                 <LinkIcon className="w-5 h-5" />
@@ -330,7 +330,7 @@ const { id } = useParams<{ id: string }>();
                 onClick={handleShare}
                 className={cn(
                   "flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition active:scale-95",
-                  isDark ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-gray-100 text-slate-800 hover:bg-gray-200",
+                  isDark ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-gray-100 dark:bg-gray-950/40 text-slate-800 dark:text-slate-200 hover:bg-gray-200",
                 )}
               >
                 <Share2 className="w-5 h-5" />

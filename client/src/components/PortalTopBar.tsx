@@ -38,7 +38,7 @@ export function PortalTopBar() {
         <span
           className={cn(
             "font-bold text-base truncate",
-            isDark ? "text-zinc-100" : "text-gray-800"
+            isDark ? "text-zinc-100" : "text-gray-800 dark:text-gray-200"
           )}
         >
           {name}

@@ -226,17 +226,17 @@ function ServiceCard({
       "relative overflow-hidden rounded-2xl p-5 border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group",
       isDark
         ? "bg-slate-800 border-slate-700 hover:border-slate-600"
-        : "bg-white border-slate-200 hover:border-slate-300 shadow-sm",
+        : "bg-white border-slate-200 dark:border-slate-800/60 hover:border-slate-300 shadow-sm",
       isYuan && "cursor-pointer",
     )}>
       {service.portalBadge && (
         <div className="absolute top-3 end-3">
           <Badge className={cn(
             "text-[10px] font-bold tracking-wide border-0",
-            service.portalBadge === "POPULAR" && "bg-amber-100 text-amber-800",
-            service.portalBadge === "NEW" && "bg-emerald-100 text-emerald-800",
-            service.portalBadge === "RECOMMENDED" && "bg-purple-100 text-purple-800",
-            service.portalBadge === "FAST" && "bg-rose-100 text-rose-800",
+            service.portalBadge === "POPULAR" && "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
+            service.portalBadge === "NEW" && "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200",
+            service.portalBadge === "RECOMMENDED" && "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200",
+            service.portalBadge === "FAST" && "bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200",
           )}>
             {service.portalBadge === "POPULAR" ? t("priceList.popular") :
               service.portalBadge === "NEW" ? t("priceList.new") :
@@ -257,7 +257,7 @@ function ServiceCard({
         <div className="flex-1 min-w-0">
           <h3 className={cn(
             "text-base font-bold truncate",
-            isDark ? "text-white" : "text-slate-900",
+            isDark ? "text-white" : "text-slate-900 dark:text-slate-200",
           )}>
             {name}
           </h3>
@@ -274,7 +274,7 @@ function ServiceCard({
 
       <div className={cn(
         "flex items-baseline gap-1.5 pt-3 mt-3 border-t",
-        isDark ? "border-slate-700" : "border-slate-100",
+        isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60",
       )}>
         {isYuan ? (
           <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-500">
@@ -285,7 +285,7 @@ function ServiceCard({
           <>
             <span className={cn(
               "text-2xl font-black tracking-tight",
-              isDark ? "text-white" : "text-slate-900",
+              isDark ? "text-white" : "text-slate-900 dark:text-slate-200",
             )}>
               ${price.toFixed(2)}
             </span>
@@ -419,14 +419,14 @@ function PriceCalculator({
       "rounded-2xl p-4 sm:p-5",
       violet
         ? "bg-gradient-to-br from-violet-600 via-purple-700 to-fuchsia-700 text-white shadow-lg"
-        : cn("mt-4 border", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 shadow-sm"),
+        : cn("mt-4 border", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60 shadow-sm"),
     )}>
       <div className="flex items-center gap-2 mb-3">
         <div className={cn("p-2 rounded-xl text-white shadow-md", violet ? "bg-white/20 backdrop-blur-sm" : "bg-gradient-to-br from-emerald-500 to-teal-600")}>
           <Calculator className="w-4 h-4" />
         </div>
         <div>
-          <h3 className={cn("text-sm font-bold", violet ? "text-white" : isDark ? "text-white" : "text-slate-900")}>
+          <h3 className={cn("text-sm font-bold", violet ? "text-white" : isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
             {pickLang(lang, { ku: "حیسابکەری نرخ", en: "Price calculator", ar: "حاسبة السعر", zh: "价格计算器" })}
           </h3>
           <p className={cn("text-[11px]", muted)}>
@@ -446,10 +446,10 @@ function PriceCalculator({
               className={cn(
                 "px-3.5 py-2 rounded-full text-xs font-bold transition-colors",
                 violet
-                  ? (active ? "bg-white text-purple-700 shadow-sm" : "bg-white/15 text-white hover:bg-white/25")
+                  ? (active ? "bg-white text-purple-700 dark:text-purple-300 shadow-sm" : "bg-white/15 text-white hover:bg-white/25")
                   : active
                     ? "bg-emerald-600 text-white shadow-sm"
-                    : isDark ? "bg-slate-700 text-slate-300 hover:bg-slate-600" : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                    : isDark ? "bg-slate-700 text-slate-300 hover:bg-slate-600" : "bg-slate-100 dark:bg-slate-950/40 text-slate-600 hover:bg-slate-200",
               )}
             >
               {typeLabel(r)}
@@ -498,7 +498,7 @@ function PriceCalculator({
       {/* Result */}
       <div className={cn(
         "mt-3 rounded-xl px-4 py-3 flex items-center justify-between gap-3",
-        violet ? "bg-white/15 backdrop-blur-sm" : isDark ? "bg-slate-900/70" : "bg-slate-50",
+        violet ? "bg-white/15 backdrop-blur-sm" : isDark ? "bg-slate-900/70" : "bg-slate-50 dark:bg-slate-950/40",
       )}>
         {hasInput ? (
           <>
@@ -541,7 +541,7 @@ function PriceCalculator({
               )}
             </div>
             <div className="text-end shrink-0">
-              <div className={cn("text-3xl font-black tabular-nums", violet ? "text-white" : isDark ? "text-white" : "text-slate-900")}>
+              <div className={cn("text-3xl font-black tabular-nums", violet ? "text-white" : isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
                 ${total.toFixed(2)}
               </div>
               {showIqd && iqdTotal !== null && (
@@ -653,13 +653,13 @@ function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string
   const methodCards = methods.map((m) => (
     <div key={m.key} className={cn(
       "rounded-xl border p-3.5",
-      isDark ? "bg-slate-900/50 border-slate-700" : "bg-slate-50/70 border-slate-100",
+      isDark ? "bg-slate-900/50 border-slate-700" : "bg-slate-50/70 border-slate-100 dark:border-slate-800/60",
     )}>
       <div className="flex items-center gap-2 mb-1.5">
         <div className={cn("p-1.5 rounded-lg bg-gradient-to-br text-white shadow-sm", m.chipBg)}>
           <m.icon className="w-4 h-4" />
         </div>
-        <span className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800")}>
+        <span className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
           {pickLang(lang, m.title)}
         </span>
       </div>
@@ -670,7 +670,7 @@ function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string
         {m.examples.map((ex, i) => (
           <span key={i} className={cn(
             "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium",
-            isDark ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-white text-slate-600 border border-slate-200",
+            isDark ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-white text-slate-600 border border-slate-200 dark:border-slate-800/60",
           )}>
             <span>{ex.emoji}</span>
             {pickLang(lang, ex.label)}
@@ -682,7 +682,7 @@ function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string
           {m.notes.map((n, i) => (
             <p key={i} className={cn(
               "text-[11px] leading-relaxed flex items-start gap-1.5 rounded-lg px-2 py-1.5",
-              isDark ? "bg-amber-950/40 text-amber-300" : "bg-amber-50 text-amber-700",
+              isDark ? "bg-amber-950/40 text-amber-300" : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300",
             )}>
               <span className="mt-px">⚠️</span>
               {pickLang(lang, n)}
@@ -701,7 +701,7 @@ function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string
   return (
     <div className={cn(
       "mt-4 rounded-2xl border p-4 sm:p-5",
-      isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 shadow-sm",
+      isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60 shadow-sm",
     )}>
       {/* Tap-to-expand header */}
       <button
@@ -713,7 +713,7 @@ function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string
           <Info className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-900")}>
+          <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
             {pickLang(lang, { ku: "زانیاری زیاتر لەسەر ڕێگاکانی گواستنەوە", en: "More about the shipping methods", ar: "معلومات أكثر عن طرق الشحن", zh: "关于运输方式的更多信息" })}
           </h3>
           {!open && (
@@ -929,7 +929,7 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
                     className={cn(
                       "flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-t-lg text-[13px] font-medium transition-colors",
                       isActive
-                        ? (isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900")
+                        ? (isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900 dark:text-slate-200")
                         : (isDark ? "text-slate-400 hover:bg-slate-700/50" : "text-slate-600 hover:bg-slate-100/70"),
                     )}
                   >
@@ -1009,7 +1009,7 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
             <div className="space-y-6">
               {canShipping && (
                 <div>
-                  <div className={cn("flex items-center gap-2 mb-3 px-1", isDark ? "text-slate-300" : "text-slate-700")}>
+                  <div className={cn("flex items-center gap-2 mb-3 px-1", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")}>
                     <Plane className="w-4 h-4" />
                     <h3 className="text-sm font-bold uppercase tracking-wider">{t("priceList.shipping")}</h3>
                   </div>
@@ -1023,7 +1023,7 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
               )}
               {canServices && (
                 <div>
-                  <div className={cn("flex items-center gap-2 mb-3 px-1", isDark ? "text-slate-300" : "text-slate-700")}>
+                  <div className={cn("flex items-center gap-2 mb-3 px-1", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")}>
                     <Wrench className="w-4 h-4" />
                     <h3 className="text-sm font-bold uppercase tracking-wider">{t("priceList.services")}</h3>
                   </div>
@@ -1067,7 +1067,7 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
       {disclaimer && (
         <div className={cn(
           "mt-4 flex items-start gap-2 px-3 py-2.5 rounded-xl text-[11px] leading-relaxed",
-          isDark ? "bg-slate-800/60 text-slate-400 border border-slate-700/50" : "bg-amber-50 text-amber-800 border border-amber-200/80",
+          isDark ? "bg-slate-800/60 text-slate-400 border border-slate-700/50" : "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-200/80",
         )}>
           <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
           <p>{disclaimer}</p>

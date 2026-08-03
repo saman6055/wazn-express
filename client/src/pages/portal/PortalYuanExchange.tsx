@@ -319,7 +319,7 @@ export default function PortalYuanExchange() {
 
               {/* My orders */}
               <section className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm ring-1 ring-gray-100 dark:ring-white/5 overflow-hidden">
-                <div className="px-4 py-3.5 flex items-center justify-between border-b border-gray-100 dark:border-white/5">
+                <div className="px-4 py-3.5 flex items-center justify-between border-b border-gray-100 dark:border-gray-800/60 dark:border-white/5">
                   <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
                     {pick({ ku: "داواکارییەکانم", en: "My orders", ar: "طلباتي", zh: "我的订单" })}
                   </h3>

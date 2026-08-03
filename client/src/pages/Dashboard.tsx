@@ -1034,7 +1034,7 @@ export default function Dashboard() {
                       <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm
                         ${index === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-200 dark:shadow-amber-900/30' : 
                           index === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-700 dark:from-slate-600 dark:to-slate-700 dark:text-slate-200' :
-                          index === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-400 text-orange-800' :
+                          index === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-400 text-orange-800 dark:text-orange-200' :
                           'bg-muted text-muted-foreground'}`}>
                         #{index + 1}
                       </div>

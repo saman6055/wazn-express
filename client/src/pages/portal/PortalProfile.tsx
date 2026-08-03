@@ -302,21 +302,21 @@ const { t, language, setLanguage } = useLanguage();
             <div className="text-center">
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2",
-                isDark ? "bg-blue-900/30" : "bg-blue-100"
+                isDark ? "bg-blue-900/30" : "bg-blue-100 dark:bg-blue-950/40"
               )}>
                 <Package className="w-5 h-5 text-blue-500" />
               </div>
-              <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800")}>
+              <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                 {summary?.totalPackages || 0}
               </p>
               <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
                 {language === "ku" ? "پاکەت" : "Packages"}
               </p>
             </div>
-            <div className={cn("text-center border-x", isDark ? "border-slate-700" : "border-slate-100")}>
+            <div className={cn("text-center border-x", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2",
-                isDark ? "bg-emerald-900/30" : "bg-emerald-100"
+                isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
                 <CreditCard className="w-5 h-5 text-emerald-500" />
               </div>
@@ -329,8 +329,8 @@ const { t, language, setLanguage } = useLanguage();
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2",
                 (summary?.balanceUsd || 0) > 0 
-                  ? isDark ? "bg-red-900/30" : "bg-red-100"
-                  : isDark ? "bg-emerald-900/30" : "bg-emerald-100"
+                  ? isDark ? "bg-red-900/30" : "bg-red-100 dark:bg-red-950/40"
+                  : isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
                 <CreditCard className={cn(
                   "w-5 h-5",
@@ -362,7 +362,7 @@ const { t, language, setLanguage } = useLanguage();
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center",
-                  isDark ? "bg-slate-700" : "bg-slate-100"
+                  isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
                 )}>
                   <Phone className={cn("w-5 h-5", isDark ? "text-slate-400" : "text-slate-600")} />
                 </div>
@@ -370,7 +370,7 @@ const { t, language, setLanguage } = useLanguage();
                   <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
                     {language === "ku" ? "ژمارەی مۆبایل" : "Mobile"}
                   </p>
-                  <p className={cn("font-medium", isDark ? "text-white" : "text-slate-800")}>
+                  <p className={cn("font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     {account.mobileNumber}
                   </p>
                 </div>
@@ -380,7 +380,7 @@ const { t, language, setLanguage } = useLanguage();
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center",
-                  isDark ? "bg-slate-700" : "bg-slate-100"
+                  isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
                 )}>
                   <Mail className={cn("w-5 h-5", isDark ? "text-slate-400" : "text-slate-600")} />
                 </div>
@@ -388,7 +388,7 @@ const { t, language, setLanguage } = useLanguage();
                   <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
                     {language === "ku" ? "ئیمەیل" : "Email"}
                   </p>
-                  <p className={cn("font-medium", isDark ? "text-white" : "text-slate-800")}>
+                  <p className={cn("font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     {account.email}
                   </p>
                 </div>
@@ -412,7 +412,7 @@ const { t, language, setLanguage } = useLanguage();
               <div className={cn(
                 "flex items-center justify-between p-4 transition-all duration-200",
                 isDark ? "hover:bg-slate-700 active:bg-slate-600" : "hover:bg-slate-50 active:bg-slate-100",
-                index !== 0 && (isDark ? "border-t border-slate-700" : "border-t border-slate-100")
+                index !== 0 && (isDark ? "border-t border-slate-700" : "border-t border-slate-100 dark:border-slate-800/60")
               )}>
                 <div className="flex items-center gap-3">
                   <div className={cn(
@@ -421,7 +421,7 @@ const { t, language, setLanguage } = useLanguage();
                   )}>
                     <item.icon className="w-5 h-5" />
                   </div>
-                  <span className={cn("font-medium", isDark ? "text-white" : "text-slate-800")}>
+                  <span className={cn("font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     {item.label}
                   </span>
                 </div>
@@ -455,7 +455,7 @@ const { t, language, setLanguage } = useLanguage();
               <div className={cn(
                 "flex items-center justify-between p-4 transition-all duration-200",
                 isDark ? "hover:bg-slate-700 active:bg-slate-600" : "hover:bg-slate-50 active:bg-slate-100",
-                index !== 0 && (isDark ? "border-t border-slate-700" : "border-t border-slate-100")
+                index !== 0 && (isDark ? "border-t border-slate-700" : "border-t border-slate-100 dark:border-slate-800/60")
               )}>
                 <div className="flex items-center gap-3">
                   <div className={cn(
@@ -465,7 +465,7 @@ const { t, language, setLanguage } = useLanguage();
                     <item.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className={cn("font-medium block", isDark ? "text-white" : "text-slate-800")}>
+                    <span className={cn("font-medium block", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                       {item.label}
                     </span>
                     <span className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
@@ -510,7 +510,7 @@ const { t, language, setLanguage } = useLanguage();
               <div className={cn(
                 "flex items-center justify-between p-4 transition-all duration-200",
                 isDark ? "hover:bg-slate-700 active:bg-slate-600" : "hover:bg-slate-50 active:bg-slate-100",
-                index !== 0 && (isDark ? "border-t border-slate-700" : "border-t border-slate-100")
+                index !== 0 && (isDark ? "border-t border-slate-700" : "border-t border-slate-100 dark:border-slate-800/60")
               )}>
                 <div className="flex items-center gap-3">
                   <div className={cn(
@@ -520,7 +520,7 @@ const { t, language, setLanguage } = useLanguage();
                     <item.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className={cn("font-medium block", isDark ? "text-white" : "text-slate-800")}>
+                    <span className={cn("font-medium block", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                       {item.label}
                     </span>
                     <span className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
@@ -559,7 +559,7 @@ const { t, language, setLanguage } = useLanguage();
             "w-full mt-6 rounded-2xl p-4 flex items-center justify-center gap-3 font-semibold transition-all duration-200 active:scale-[0.98]",
             isDark 
               ? "bg-red-900/30 text-red-400 hover:bg-red-900/50 border border-red-800" 
-              : "bg-white text-red-600 hover:bg-red-50 shadow-sm border border-red-100"
+              : "bg-white text-red-600 hover:bg-red-50 shadow-sm border border-red-100 dark:border-red-800/60"
           )}
         >
           <LogOut className="w-5 h-5" />
@@ -573,7 +573,7 @@ const { t, language, setLanguage } = useLanguage();
               <Heart className="w-3 h-3" />
               {pickLang(language, { ku: "ڕەخنە و پێشنیار", en: "Feedback", ar: "ملاحظات", zh: "反馈" })}
             </button>
-            <span className={isDark ? "text-slate-700" : "text-slate-300"}>•</span>
+            <span className={isDark ? "text-slate-700 dark:text-slate-300" : "text-slate-300"}>•</span>
             <button type="button" onClick={handleShareApp} className={cn("text-xs flex items-center gap-1 transition", isDark ? "text-slate-500 hover:text-slate-400" : "text-slate-400 hover:text-slate-600")}>
               <Share2 className="w-3 h-3" />
               {pickLang(language, { ku: "هاوبەشکردن", en: "Share App", ar: "مشاركة التطبيق", zh: "分享应用" })}
@@ -592,7 +592,7 @@ const { t, language, setLanguage } = useLanguage();
           isDark ? "bg-slate-900 border-slate-800" : "bg-white"
         )}>
           <DialogHeader className="px-5 pt-5 pb-2">
-            <DialogTitle className={cn("text-center", isDark ? "text-white" : "text-slate-900")}>
+            <DialogTitle className={cn("text-center", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
               {pickLang(language, { ku: "زمان هەڵبژێرە", en: "Choose language", ar: "اختر اللغة", zh: "选择语言" })}
             </DialogTitle>
           </DialogHeader>
@@ -613,7 +613,7 @@ const { t, language, setLanguage } = useLanguage();
                   )}
                 >
                   <span className="flex flex-col items-start">
-                    <span className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
+                    <span className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                       {opt.native}
                     </span>
                     <span className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>

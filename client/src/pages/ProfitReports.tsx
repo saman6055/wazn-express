@@ -178,7 +178,7 @@ export default function ProfitReports() {
 
         {/* Executive Summary */}
         {summary && hasData && (
-          <Card className="border-violet-200 bg-gradient-to-br from-violet-50/80 to-white dark:from-violet-950/20 dark:to-background">
+          <Card className="border-violet-200 dark:border-violet-800/60 bg-gradient-to-br from-violet-50/80 to-white dark:from-violet-950/20 dark:to-background">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <FileText className="h-4 w-4 text-violet-600" />
@@ -211,7 +211,7 @@ export default function ProfitReports() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-emerald-600">{t("profitReport.totalProfit")}</p>
-                      <p className="text-2xl font-bold text-emerald-700 tabular-nums">{formatCurrency(monthlyReport.yearSummary.totalProfit)}</p>
+                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">{formatCurrency(monthlyReport.yearSummary.totalProfit)}</p>
                     </div>
                     <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl">
                       <TrendingUp className="h-6 w-6 text-emerald-700 dark:text-emerald-400" />
@@ -224,7 +224,7 @@ export default function ProfitReports() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-blue-600">{t("profitReport.totalRevenue")}</p>
-                      <p className="text-2xl font-bold text-blue-700 tabular-nums">{formatCurrency(monthlyReport.yearSummary.totalRevenue)}</p>
+                      <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 tabular-nums">{formatCurrency(monthlyReport.yearSummary.totalRevenue)}</p>
                     </div>
                     <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
                       <DollarSign className="h-6 w-6 text-blue-700 dark:text-blue-400" />
@@ -237,7 +237,7 @@ export default function ProfitReports() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-orange-600">{t("profitReport.totalShipping")}</p>
-                      <p className="text-2xl font-bold text-orange-700 tabular-nums">{formatCurrency(monthlyReport.yearSummary.totalShipping)}</p>
+                      <p className="text-2xl font-bold text-orange-700 dark:text-orange-300 tabular-nums">{formatCurrency(monthlyReport.yearSummary.totalShipping)}</p>
                     </div>
                     <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
                       <Truck className="h-6 w-6 text-orange-700 dark:text-orange-400" />
@@ -250,7 +250,7 @@ export default function ProfitReports() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-purple-600">{t("profitReport.avgMonthly")}</p>
-                      <p className="text-2xl font-bold text-purple-700 tabular-nums">{formatCurrency(monthlyReport.yearSummary.avgMonthlyProfit)}</p>
+                      <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 tabular-nums">{formatCurrency(monthlyReport.yearSummary.avgMonthlyProfit)}</p>
                     </div>
                     <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
                       <Calendar className="h-6 w-6 text-purple-700 dark:text-purple-400" />

@@ -28,7 +28,7 @@ export function PortalNavButtons({ className }: { className?: string }) {
       enabled
         ? isDark
           ? "text-zinc-200 hover:bg-white/10 active:scale-95"
-          : "text-slate-700 hover:bg-black/5 active:scale-95"
+          : "text-slate-700 dark:text-slate-300 hover:bg-black/5 active:scale-95"
         : isDark
           ? "text-zinc-600 cursor-not-allowed"
           : "text-slate-300 cursor-not-allowed"

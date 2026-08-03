@@ -64,7 +64,7 @@ export default function PortalFAQ() {
   return (
     <CustomerPortalLayout>
       <div
-        className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50")}
+        className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50 dark:bg-gray-950/40")}
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Header */}
@@ -117,7 +117,7 @@ export default function PortalFAQ() {
         <div className="px-4 py-5 space-y-5 pb-28 max-w-lg mx-auto">
           {!hasResults ? (
             <div className={cn("text-center py-12 px-4 rounded-3xl", isDark ? "bg-slate-900" : "bg-white")}>
-              <HelpCircle className={cn("w-12 h-12 mx-auto mb-3", isDark ? "text-slate-700" : "text-slate-300")} />
+              <HelpCircle className={cn("w-12 h-12 mx-auto mb-3", isDark ? "text-slate-700 dark:text-slate-300" : "text-slate-300")} />
               <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>{pick(faqHeader.noResults)}</p>
             </div>
           ) : (
@@ -127,7 +127,7 @@ export default function PortalFAQ() {
                   <div className={cn("w-8 h-8 rounded-xl bg-gradient-to-br flex items-center justify-center text-white shrink-0", cat.gradient)}>
                     <cat.icon className="w-4.5 h-4.5" />
                   </div>
-                  <h2 className={cn("font-bold text-sm", isDark ? "text-white" : "text-slate-800")}>{pick(cat.title)}</h2>
+                  <h2 className={cn("font-bold text-sm", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>{pick(cat.title)}</h2>
                 </div>
 
                 <div className={cn("rounded-2xl overflow-hidden divide-y", isDark ? "bg-slate-900 divide-slate-800" : "bg-white divide-gray-100 shadow-sm")}>
@@ -143,7 +143,7 @@ export default function PortalFAQ() {
                             isDark ? "hover:bg-slate-800/50" : "hover:bg-slate-50",
                           )}
                         >
-                          <span className={cn("text-sm font-semibold flex-1", isDark ? "text-white" : "text-slate-800")}>
+                          <span className={cn("text-sm font-semibold flex-1", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                             {pick(it.q)}
                           </span>
                           <ChevronDown
@@ -183,7 +183,7 @@ export default function PortalFAQ() {
             "rounded-3xl p-5 text-center",
             isDark ? "bg-gradient-to-br from-slate-900 to-slate-800" : "bg-gradient-to-br from-cyan-50 to-blue-50 ring-1 ring-cyan-100",
           )}>
-            <p className={cn("text-sm font-semibold mb-3", isDark ? "text-white" : "text-slate-700")}>
+            <p className={cn("text-sm font-semibold mb-3", isDark ? "text-white" : "text-slate-700 dark:text-slate-300")}>
               {pick(faqHeader.stillStuck)}
             </p>
             <a

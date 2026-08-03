@@ -320,7 +320,7 @@ export default function ModernPortalHome() {
               <h1
                 className={cn(
                   "text-2xl font-bold tracking-tight",
-                  isDark ? "text-white" : "text-gray-900"
+                  isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                 )}
               >
                 {language === "ku" ? `سڵاو، ${firstName}` : `Hi, ${firstName}`}
@@ -391,7 +391,7 @@ export default function ModernPortalHome() {
               )}
 
               <Link href="/portal/financial">
-                <button className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-emerald-700 font-semibold text-sm hover:bg-white/90 transition-colors shadow-sm">
+                <button className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-emerald-700 dark:text-emerald-300 font-semibold text-sm hover:bg-white/90 transition-colors shadow-sm">
                   <CreditCard className="w-4 h-4" />
                   {language === "ku"
                     ? "پارەدان"
@@ -429,7 +429,7 @@ export default function ModernPortalHome() {
                     "flex-shrink-0 w-[130px] rounded-2xl p-4 shadow-sm",
                     isDark
                       ? "bg-zinc-900 border border-zinc-800"
-                      : "bg-white border border-gray-100"
+                      : "bg-white border border-gray-100 dark:border-gray-800/60"
                   )}
                 >
                   <div
@@ -443,7 +443,7 @@ export default function ModernPortalHome() {
                   <p
                     className={cn(
                       "text-2xl font-bold font-mono",
-                      isDark ? "text-white" : "text-gray-900"
+                      isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                     )}
                   >
                     {packagesLoading ? (
@@ -471,7 +471,7 @@ export default function ModernPortalHome() {
           <h2
             className={cn(
               "text-base font-bold mb-3",
-              isDark ? "text-white" : "text-gray-900"
+              isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
             )}
           >
             {language === "ku"
@@ -494,7 +494,7 @@ export default function ModernPortalHome() {
                         "w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm",
                         isDark
                           ? "bg-zinc-900 border border-zinc-800"
-                          : "bg-white border border-gray-100"
+                          : "bg-white border border-gray-100 dark:border-gray-800/60"
                       )}
                     >
                       <Icon className={cn("w-6 h-6", action.color)} />
@@ -520,7 +520,7 @@ export default function ModernPortalHome() {
             <h2
               className={cn(
                 "text-base font-bold",
-                isDark ? "text-white" : "text-gray-900"
+                isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
               )}
             >
               {language === "ku"
@@ -547,7 +547,7 @@ export default function ModernPortalHome() {
               "rounded-2xl overflow-hidden shadow-sm",
               isDark
                 ? "bg-zinc-900 border border-zinc-800"
-                : "bg-white border border-gray-100"
+                : "bg-white border border-gray-100 dark:border-gray-800/60"
             )}
           >
             {transactionsLoading ? (
@@ -595,7 +595,7 @@ export default function ModernPortalHome() {
                         <p
                           className={cn(
                             "text-sm font-medium truncate",
-                            isDark ? "text-white" : "text-gray-900"
+                            isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                           )}
                         >
                           {tx.description ||
@@ -631,7 +631,7 @@ export default function ModernPortalHome() {
                 <Clock
                   className={cn(
                     "w-10 h-10 mx-auto mb-2",
-                    isDark ? "text-zinc-700" : "text-gray-300"
+                    isDark ? "text-zinc-700 dark:text-zinc-300" : "text-gray-300"
                   )}
                 />
                 <p

@@ -55,7 +55,7 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
     <div className="px-4 mt-4" dir={isRTL ? "rtl" : "ltr"}>
       <div className={cn(
         "relative rounded-2xl p-5 shadow-sm border",
-        isDark ? "bg-slate-800 border-slate-700" : "bg-white border-amber-100",
+        isDark ? "bg-slate-800 border-slate-700" : "bg-white border-amber-100 dark:border-amber-800/60",
       )}>
         <button
           onClick={dismiss}
@@ -72,14 +72,14 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
         <div className="flex items-center gap-3">
           <div className={cn(
             "w-14 h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center",
-            isDark ? "bg-slate-900" : "bg-amber-50",
+            isDark ? "bg-slate-900" : "bg-amber-50 dark:bg-amber-950/40",
           )}>
             {photo
               ? <img src={photo} alt="" className="w-full h-full object-cover" loading="lazy" />
               : <PackageIcon className={cn("w-6 h-6", isDark ? "text-slate-500" : "text-amber-500")} />}
           </div>
           <div className="flex-1 min-w-0 pe-6">
-            <h3 className={cn("text-base font-bold leading-tight", isDark ? "text-white" : "text-slate-800")}>
+            <h3 className={cn("text-base font-bold leading-tight", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
               {pickLang(language, { ku: "گەیاندنەکەمان چۆن بوو؟", en: "How was your delivery?", ar: "كيف كان التسليم؟", zh: "配送体验如何？" })}
             </h3>
             {name && <p className={cn("text-xs mt-0.5 truncate", isDark ? "text-slate-300" : "text-slate-600")}>{name}</p>}

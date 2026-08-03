@@ -160,8 +160,8 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
           {/* Browser Permission Status */}
           {!isNotificationSupported() ? (
             <Card className={cn(
-              "border-amber-200",
-              isDark ? "bg-amber-500/10" : "bg-amber-50"
+              "border-amber-200 dark:border-amber-800/60",
+              isDark ? "bg-amber-500/10" : "bg-amber-50 dark:bg-amber-950/40"
             )}>
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
@@ -170,7 +170,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                 <div className="flex-1">
                   <p className={cn(
                     "font-medium text-sm",
-                    isDark ? "text-amber-400" : "text-amber-800"
+                    isDark ? "text-amber-400" : "text-amber-800 dark:text-amber-200"
                   )}>
                     {pickLang(language, { ku: "ئەم براوزەرە پشتگیری ئاگاداری ناکات", en: "This browser doesn't support notifications", ar: "هذا المتصفح لا يدعم الإشعارات", zh: "此浏览器不支持通知" })}
                   </p>
@@ -179,8 +179,8 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
             </Card>
           ) : browserPermission === 'denied' ? (
             <Card className={cn(
-              "border-red-200",
-              isDark ? "bg-red-500/10" : "bg-red-50"
+              "border-red-200 dark:border-red-800/60",
+              isDark ? "bg-red-500/10" : "bg-red-50 dark:bg-red-950/40"
             )}>
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -189,7 +189,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                 <div className="flex-1">
                   <p className={cn(
                     "font-medium text-sm",
-                    isDark ? "text-red-400" : "text-red-800"
+                    isDark ? "text-red-400" : "text-red-800 dark:text-red-200"
                   )}>
                     {pickLang(language, { ku: "ئاگادارییەکان بلۆککراون", en: "Notifications are blocked", ar: "تم حظر الإشعارات", zh: "通知已被阻止" })}
                   </p>
@@ -204,8 +204,8 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
             </Card>
           ) : browserPermission === 'default' ? (
             <Card className={cn(
-              "border-purple-200",
-              isDark ? "bg-purple-500/10" : "bg-purple-50"
+              "border-purple-200 dark:border-purple-800/60",
+              isDark ? "bg-purple-500/10" : "bg-purple-50 dark:bg-purple-950/40"
             )}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-4">
@@ -215,7 +215,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                   <div className="flex-1">
                     <p className={cn(
                       "font-medium text-sm",
-                      isDark ? "text-purple-400" : "text-purple-800"
+                      isDark ? "text-purple-400" : "text-purple-800 dark:text-purple-200"
                     )}>
                       {pickLang(language, { ku: "ئاگادارییەکان چالاک نییە", en: "Notifications not enabled", ar: "الإشعارات غير مفعّلة", zh: "通知未启用" })}
                     </p>
@@ -248,8 +248,8 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
             </Card>
           ) : (
             <Card className={cn(
-              "border-emerald-200",
-              isDark ? "bg-emerald-500/10" : "bg-emerald-50"
+              "border-emerald-200 dark:border-emerald-800/60",
+              isDark ? "bg-emerald-500/10" : "bg-emerald-50 dark:bg-emerald-950/40"
             )}>
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
@@ -258,7 +258,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                 <div className="flex-1">
                   <p className={cn(
                     "font-medium text-sm",
-                    isDark ? "text-emerald-400" : "text-emerald-800"
+                    isDark ? "text-emerald-400" : "text-emerald-800 dark:text-emerald-200"
                   )}>
                     {pickLang(language, { ku: "ئاگادارییەکان چالاکن", en: "Notifications are enabled", ar: "الإشعارات مفعّلة", zh: "通知已启用" })}
                   </p>
@@ -288,7 +288,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                     transition={{ delay: index * 0.1 }}
                     className={cn(
                       "flex items-center gap-3 p-3 rounded-xl",
-                      isDark ? "bg-slate-800" : "bg-slate-50"
+                      isDark ? "bg-slate-800" : "bg-slate-50 dark:bg-slate-950/40"
                     )}
                   >
                     <div className={cn(
@@ -300,7 +300,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
                     <div className="flex-1 min-w-0">
                       <p className={cn(
                         "font-medium text-sm",
-                        isDark ? "text-white" : "text-slate-800"
+                        isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                       )}>
                         {item.label}
                       </p>

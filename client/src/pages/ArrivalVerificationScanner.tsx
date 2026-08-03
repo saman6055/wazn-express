@@ -520,7 +520,7 @@ export default function ArrivalVerificationScanner() {
                           "p-3 rounded-lg border-2 cursor-pointer transition-all",
                           selectedBatchIds.includes(batch.id)
                             ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
-                            : "border-slate-200 hover:border-slate-300"
+                            : "border-slate-200 dark:border-slate-800/60 hover:border-slate-300"
                         )}
                       >
                         <div className="flex items-center gap-2">
@@ -620,7 +620,7 @@ export default function ArrivalVerificationScanner() {
                               {unverifiedPackages.map((pkg, index) => (
                                 <div
                                   key={`${pkg.id}-${index}`}
-                                  className="flex items-center justify-between p-3 rounded-lg border bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200"
+                                  className="flex items-center justify-between p-3 rounded-lg border bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800/60"
                                 >
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
@@ -656,22 +656,22 @@ export default function ArrivalVerificationScanner() {
                                   className={cn(
                                     "flex items-center justify-between p-3 rounded-lg border",
                                     pkg.isExtra 
-                                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200"
+                                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/60"
                                       : pkg.hasCompleteData
-                                        ? "bg-green-50 dark:bg-green-900/20 border-green-200"
-                                        : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200"
+                                        ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/60"
+                                        : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800/60"
                                   )}
                                 >
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                       <span className="font-mono text-sm font-medium">{pkg.trackingNumber}</span>
                                       {pkg.isExtra && (
-                                        <Badge className="text-xs bg-blue-100 text-blue-700">
+                                        <Badge className="text-xs bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
                                           {t("scan.extra")}
                                         </Badge>
                                       )}
                                       {!pkg.hasCompleteData && (
-                                        <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-300">
+                                        <Badge variant="outline" className="text-xs bg-yellow-50 dark:bg-yellow-950/40 border-yellow-300 dark:border-yellow-800/60">
                                           <AlertTriangle className="h-3 w-3 me-1" />
                                           {t("scan.incomplete")}
                                         </Badge>
@@ -868,7 +868,7 @@ export default function ArrivalVerificationScanner() {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/60">
               <div className="font-mono text-lg">{extraPackageDialog.trackingNumber}</div>
               <div className="text-sm text-blue-700 dark:text-blue-300 mt-2 flex items-center gap-2">
                 <Info className="h-4 w-4" />
@@ -929,16 +929,16 @@ export default function ArrivalVerificationScanner() {
               <div className={cn(
                 "p-4 rounded-lg text-center",
                 verificationStats.isComplete 
-                  ? "bg-green-100 dark:bg-green-900/30 border border-green-200"
-                  : "bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200"
+                  ? "bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800/60"
+                  : "bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800/60"
               )}>
                 {verificationStats.isComplete ? (
-                  <div className="flex items-center justify-center gap-2 text-green-700">
+                  <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-300">
                     <CheckCircle2 className="h-6 w-6" />
                     <span className="font-bold text-lg">{t("scan.allPackagesArrived")}</span>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center gap-2 text-yellow-700">
+                  <div className="flex items-center justify-center gap-2 text-yellow-700 dark:text-yellow-300">
                     <AlertTriangle className="h-6 w-6" />
                     <span className="font-bold text-lg">
                       {`${verificationStats.totalMissing} ${t("scan.packagesRemaining")}`}

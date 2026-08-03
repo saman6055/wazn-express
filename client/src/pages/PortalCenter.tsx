@@ -506,8 +506,8 @@ function ProhibitedTab({ p }: { p: (v: L) => string }) {
                       <TableCell className="text-xs"><div className="font-medium">{d.customerName}</div><div className="text-muted-foreground font-mono">{d.customerCode}</div></TableCell>
                       <TableCell className="text-xs max-w-[200px] truncate">{reason ? p(reason) : (d.reasonNote || "—")}</TableCell>
                       <TableCell>{d.viewedByCustomerAt
-                        ? <Badge className="text-[10px] border-0 bg-emerald-100 text-emerald-700">{p({ ku: "بینیویەتی", en: "Seen", ar: "شوهد", zh: "已看" })}</Badge>
-                        : <Badge className="text-[10px] border-0 bg-slate-100 text-slate-500">{p({ ku: "نەیبینیوە", en: "Not yet", ar: "لا", zh: "未看" })}</Badge>}</TableCell>
+                        ? <Badge className="text-[10px] border-0 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">{p({ ku: "بینیویەتی", en: "Seen", ar: "شوهد", zh: "已看" })}</Badge>
+                        : <Badge className="text-[10px] border-0 bg-slate-100 dark:bg-slate-950/40 text-slate-500">{p({ ku: "نەیبینیوە", en: "Not yet", ar: "لا", zh: "未看" })}</Badge>}</TableCell>
                       <TableCell className="text-xs font-medium">{choiceLabel(d.resolutionChoice)}</TableCell>
                       <TableCell>
                         {d.chargedAt ? (
@@ -1505,7 +1505,7 @@ function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customer
           <ShieldCheck className="h-3.5 w-3.5" />
           {p({ ku: "پاراستن و دەستگەیشتن", en: "Security & access", ar: "الأمان والوصول", zh: "安全与访问" })}
         </div>
-        <Badge className={cn("text-[9px] border-0", sec.isActive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")}>
+        <Badge className={cn("text-[9px] border-0", sec.isActive ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300" : "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300")}>
           {sec.isActive
             ? p({ ku: "چالاک", en: "Active", ar: "نشط", zh: "启用" })
             : p({ ku: "ناچالاک", en: "Disabled", ar: "معطل", zh: "停用" })}

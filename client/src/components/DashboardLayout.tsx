@@ -593,7 +593,7 @@ function DashboardLayoutContent({
             iconClassName="h-4 w-4 text-white"
             fallbackBg="bg-emerald-600"
           />
-          <span className="font-semibold text-gray-900 dark:text-white">{company.name}</span>
+          <span className="font-semibold text-gray-900 dark:text-gray-200 dark:text-white">{company.name}</span>
         </div>
         <div className="w-9" />
       </header>
@@ -636,7 +636,7 @@ function DashboardLayoutContent({
             />
             {!compact && (
               <div>
-                <span className="font-bold text-lg text-gray-900 dark:text-white block leading-tight">
+                <span className="font-bold text-lg text-gray-900 dark:text-gray-200 dark:text-white block leading-tight">
                   {company.name}
                 </span>
               </div>
@@ -807,7 +807,7 @@ function DashboardLayoutContent({
                   hasActiveItem ? colorClasses.icon : "text-gray-500 dark:text-gray-400"
                 )} />
               </div>
-              <span className="text-sm font-bold text-gray-900 dark:text-white">{group.title}</span>
+              <span className="text-sm font-bold text-gray-900 dark:text-gray-200 dark:text-white">{group.title}</span>
             </div>
             <div className="mt-1 space-y-0.5">
               {group.items.map((item) => {
@@ -985,7 +985,7 @@ function DashboardLayoutContent({
               </DropdownMenuTrigger>
               <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-56">
                 <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{user?.name}</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-200 dark:text-white">{user?.name}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
                 </div>
                 <div className="p-1">

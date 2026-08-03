@@ -34,11 +34,11 @@ function formatTime(value: unknown): string {
 }
 
 function actionColor(action: string): string {
-  if (action.startsWith("delete")) return "bg-red-100 text-red-700 border-red-200";
-  if (action.startsWith("create")) return "bg-green-100 text-green-700 border-green-200";
-  if (action.startsWith("update")) return "bg-blue-100 text-blue-700 border-blue-200";
-  if (action.includes("status")) return "bg-purple-100 text-purple-700 border-purple-200";
-  return "bg-gray-100 text-gray-700 border-gray-200";
+  if (action.startsWith("delete")) return "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60";
+  if (action.startsWith("create")) return "bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60";
+  if (action.startsWith("update")) return "bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60";
+  if (action.includes("status")) return "bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60";
+  return "bg-gray-100 dark:bg-gray-950/40 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800/60";
 }
 
 export default function OrderAuditHistory({
@@ -62,7 +62,7 @@ export default function OrderAuditHistory({
     <Card className="shadow-sm border-0 bg-white">
       <CardHeader className="border-b bg-gray-50/50">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-100 rounded-lg">
+          <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
             <History className="h-5 w-5 text-indigo-600" />
           </div>
           <div>
@@ -109,7 +109,7 @@ export default function OrderAuditHistory({
               return (
                 <li
                   key={log.id}
-                  className="rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                  className="rounded-lg border border-gray-200 dark:border-gray-800/60 hover:border-gray-300 transition-colors"
                 >
                   <button
                     type="button"
@@ -134,8 +134,8 @@ export default function OrderAuditHistory({
                         </span>
                       </div>
                       {reason && (
-                        <div className="mt-1 text-sm text-gray-700" dir="auto">
-                          <span className="font-bold text-amber-800">{pickLang(language, { ku: "هۆکار", en: "Reason", ar: "السبب", zh: "原因" })}:</span>{" "}
+                        <div className="mt-1 text-sm text-gray-700 dark:text-gray-300" dir="auto">
+                          <span className="font-bold text-amber-800 dark:text-amber-200">{pickLang(language, { ku: "هۆکار", en: "Reason", ar: "السبب", zh: "原因" })}:</span>{" "}
                           {reason}
                         </div>
                       )}
@@ -144,7 +144,7 @@ export default function OrderAuditHistory({
                           <span className="font-bold">{pickLang(language, { ku: "گۆڕانکاری نرخ", en: "Charge delta", ar: "فرق الرسوم", zh: "费用变动" })}:</span>{" "}
                           <span
                             className={`font-mono font-bold ${
-                              chargeDelta > 0 ? "text-red-700" : "text-green-700"
+                              chargeDelta > 0 ? "text-red-700 dark:text-red-300" : "text-green-700 dark:text-green-300"
                             }`}
                           >
                             {chargeDelta > 0 ? "+" : ""}${chargeDelta.toFixed(2)}
@@ -154,7 +154,7 @@ export default function OrderAuditHistory({
                       {typeof reversedCharge === "number" && reversedCharge > 0 && (
                         <div className="mt-1 text-sm">
                           <span className="font-bold">{pickLang(language, { ku: "گەڕاندنەوەی نرخ", en: "Charge reversed", ar: "إلغاء الرسوم", zh: "费用已撤销" })}:</span>{" "}
-                          <span className="font-mono font-bold text-green-700">
+                          <span className="font-mono font-bold text-green-700 dark:text-green-300">
                             −${reversedCharge.toFixed(2)}
                           </span>
                         </div>
@@ -162,7 +162,7 @@ export default function OrderAuditHistory({
                       {typeof reversedAdvance === "number" && reversedAdvance > 0 && (
                         <div className="mt-1 text-sm">
                           <span className="font-bold">{pickLang(language, { ku: "گەڕاندنەوەی پێشەکی", en: "Advance reversed", ar: "إلغاء الدفعة المقدمة", zh: "预付款已撤销" })}:</span>{" "}
-                          <span className="font-mono font-bold text-red-700">
+                          <span className="font-mono font-bold text-red-700 dark:text-red-300">
                             +${reversedAdvance.toFixed(2)}
                           </span>
                         </div>
@@ -175,10 +175,10 @@ export default function OrderAuditHistory({
                     )}
                   </button>
                   {isOpen && (
-                    <div className="border-t p-3 bg-gray-50 text-xs space-y-2">
+                    <div className="border-t p-3 bg-gray-50 dark:bg-gray-950/40 text-xs space-y-2">
                       {log.oldValues && (
                         <div>
-                          <div className="font-bold text-gray-700 mb-1">{pickLang(language, { ku: "پێشوو", en: "Before", ar: "قبل", zh: "之前" })}:</div>
+                          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">{pickLang(language, { ku: "پێشوو", en: "Before", ar: "قبل", zh: "之前" })}:</div>
                           <pre className="bg-white border rounded p-2 overflow-auto max-h-40 text-[10px]">
                             {JSON.stringify(log.oldValues, null, 2)}
                           </pre>
@@ -186,7 +186,7 @@ export default function OrderAuditHistory({
                       )}
                       {log.newValues && (
                         <div>
-                          <div className="font-bold text-gray-700 mb-1">{pickLang(language, { ku: "دوایی", en: "After", ar: "بعد", zh: "之后" })}:</div>
+                          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">{pickLang(language, { ku: "دوایی", en: "After", ar: "بعد", zh: "之后" })}:</div>
                           <pre className="bg-white border rounded p-2 overflow-auto max-h-40 text-[10px]">
                             {JSON.stringify(log.newValues, null, 2)}
                           </pre>

@@ -160,7 +160,7 @@ export default function CustomerDetail() {
                       ? "bg-gradient-to-r from-slate-600 to-slate-800 text-white"
                       : vipInfo?.tier === "gold"
                         ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white"
-                        : "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-700"
+                        : "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-700 dark:text-slate-300"
                   }`}
                 >
                   <Crown className="h-3 w-3 me-1" />
@@ -540,7 +540,7 @@ export default function CustomerDetail() {
                               </TableCell>
                               <TableCell>
                                 {service.isPaid ? (
-                                  <Badge className="bg-green-100 text-green-700 border-0 text-xs">{pickLang(language, { ku: "پارەدراو", en: "Paid", ar: "مدفوع", zh: "已付款" })}</Badge>
+                                  <Badge className="bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-0 text-xs">{pickLang(language, { ku: "پارەدراو", en: "Paid", ar: "مدفوع", zh: "已付款" })}</Badge>
                                 ) : (
                                   <Button
                                     variant="outline"
@@ -865,7 +865,7 @@ export default function CustomerDetail() {
                     id="edit-isActive"
                     checked={cd.editForm.isActive}
                     onChange={(e) => cd.setEditForm({ ...cd.editForm, isActive: e.target.checked })}
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-800/60"
                   />
                   <Label htmlFor="edit-isActive" className="cursor-pointer">
                     {t("common.active")}

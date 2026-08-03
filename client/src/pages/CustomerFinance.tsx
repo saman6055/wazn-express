@@ -374,9 +374,9 @@ export default function CustomerFinance() {
   };
   
   const getTransactionTypeBgColor = (type: string) => {
-    if (type.startsWith('DEBIT')) return 'bg-red-50 border-red-100';
-    if (type.startsWith('CREDIT')) return 'bg-emerald-50 border-emerald-100';
-    return 'bg-gray-50 border-gray-100';
+    if (type.startsWith('DEBIT')) return 'bg-red-50 dark:bg-red-950/40 border-red-100 dark:border-red-800/60';
+    if (type.startsWith('CREDIT')) return 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-800/60';
+    return 'bg-gray-50 dark:bg-gray-950/40 border-gray-100 dark:border-gray-800/60';
   };
   
   const getTransactionTypeLabel = (type: string) => {
@@ -1263,7 +1263,7 @@ export default function CustomerFinance() {
                     "هێنانە سفر" quick-mode pre-fills the form with the
                     exact amount + direction needed to zero the balance. */}
                 <Button
-                  className="bg-white text-purple-700 hover:bg-purple-50 rounded-xl shadow-lg"
+                  className="bg-white text-purple-700 dark:text-purple-300 hover:bg-purple-50 rounded-xl shadow-lg"
                   onClick={openAdjustDialogToZero}
                 >
                   <Activity className="w-4 h-4 me-2" />
@@ -1274,7 +1274,7 @@ export default function CustomerFinance() {
                     step so staff can search/choose any reversible payment
                     without scrolling to the payments tab. */}
                 <Button
-                  className="bg-white text-amber-700 hover:bg-amber-50 rounded-xl shadow-lg"
+                  className="bg-white text-amber-700 dark:text-amber-300 hover:bg-amber-50 rounded-xl shadow-lg"
                   onClick={() => {
                     setReverseTargetPayment(null);
                     setReverseMode('mistake');
@@ -1289,7 +1289,7 @@ export default function CustomerFinance() {
                 </Button>
                 <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl shadow-lg">
+                    <Button className="bg-white text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl shadow-lg">
                       <Plus className="w-4 h-4 me-2" />
                       {pickLang(language, { ku: "پارەدان", en: "Payment", ar: "دفعة", zh: "付款" })}
                     </Button>
@@ -1473,7 +1473,7 @@ export default function CustomerFinance() {
         ) : !account ? (
           <Card className="border-dashed border-2">
             <CardContent className="p-12 text-center">
-              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Wallet className="w-8 h-8 text-emerald-600" />
               </div>
               <h3 className="text-lg font-semibold mb-2">{pickLang(language, { ku: "هیچ حسابێک نییە بۆ ئەم کڕیارە", en: "No account exists for this customer", ar: "لا يوجد حساب لهذا العميل", zh: "此客户暂无账户" })}</h3>
@@ -1569,32 +1569,32 @@ export default function CustomerFinance() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                      <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-100">
+                      <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-800/60">
                         <Package className="w-6 h-6 text-blue-600 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی پاکەتەکان", en: "Package charges", ar: "رسوم الطرود", zh: "包裹费用" })}</p>
                         <p className="text-lg font-bold text-blue-600">${breakdown.packageDebt.toFixed(2)}</p>
                       </div>
-                      <div className="text-center p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                      <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-800/60">
                         <ShoppingCart className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی پاکێجی تەواو", en: "Full package charges", ar: "رسوم الحزمة الكاملة", zh: "完整套餐费用" })}</p>
                         <p className="text-lg font-bold text-emerald-600">${breakdown.fullPackageDebt.toFixed(2)}</p>
                       </div>
-                      <div className="text-center p-4 bg-amber-50 rounded-xl border border-amber-100">
+                      <div className="text-center p-4 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-100 dark:border-amber-800/60">
                         <Percent className="w-6 h-6 text-amber-600 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی عموڵە", en: "Commission charges", ar: "رسوم العمولة", zh: "佣金费用" })}</p>
                         <p className="text-lg font-bold text-amber-600">${breakdown.commissionDebt.toFixed(2)}</p>
                       </div>
-                      <div className="text-center p-4 bg-pink-50 rounded-xl border border-pink-100">
+                      <div className="text-center p-4 bg-pink-50 dark:bg-pink-950/40 rounded-xl border border-pink-100 dark:border-pink-800/60">
                         <Sparkles className="w-6 h-6 text-pink-600 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی خزمەتگوزاری", en: "Service charges", ar: "رسوم الخدمة", zh: "服务费用" })}</p>
                         <p className="text-lg font-bold text-pink-600">${breakdown.serviceDebt.toFixed(2)}</p>
                       </div>
-                      <div className="text-center p-4 bg-green-50 rounded-xl border border-green-100">
+                      <div className="text-center p-4 bg-green-50 dark:bg-green-950/40 rounded-xl border border-green-100 dark:border-green-800/60">
                         <Wallet className="w-6 h-6 text-green-600 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "کۆی پارەدان", en: "Total paid", ar: "إجمالي المدفوع", zh: "已付总额" })}</p>
                         <p className="text-lg font-bold text-green-600">${breakdown.creditBalance.toFixed(2)}</p>
                       </div>
-                      <div className="text-center p-4 bg-red-50 rounded-xl border border-red-100">
+                      <div className="text-center p-4 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-100 dark:border-red-800/60">
                         <TrendingUp className="w-6 h-6 text-red-600 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" })}</p>
                         <p className="text-lg font-bold text-red-600">${breakdown.totalDebt.toFixed(2)}</p>
@@ -1638,7 +1638,7 @@ export default function CustomerFinance() {
                           <Clock className="w-5 h-5 text-emerald-600" />
                           {pickLang(language, { ku: "داهاتی کڕیار", en: "Customer ledger", ar: "سجل العميل", zh: "客户账目" })}
                           {filteredTransactions && (
-                            <Badge variant="secondary" className="me-2 bg-emerald-100 text-emerald-700">
+                            <Badge variant="secondary" className="me-2 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
                               {filteredTransactions.length}
                             </Badge>
                           )}
@@ -1734,8 +1734,8 @@ export default function CustomerFinance() {
                                           className={cn(
                                             "gap-1 font-normal",
                                             txn.transactionType.startsWith('DEBIT')
-                                              ? "bg-red-50 text-red-700 border-red-200"
-                                              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                              ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60"
+                                              : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
                                           )}
                                         >
                                           {getTransactionTypeIcon(txn.transactionType)}
@@ -1794,8 +1794,8 @@ export default function CustomerFinance() {
                                           className={cn(
                                             "gap-1 font-normal",
                                             txn.transactionType.startsWith('DEBIT')
-                                              ? "bg-red-50 text-red-700 border-red-200"
-                                              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                              ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60"
+                                              : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
                                           )}
                                         >
                                           {getTransactionTypeIcon(txn.transactionType)}
@@ -1875,7 +1875,7 @@ export default function CustomerFinance() {
                                               isExpanded ? "rotate-0" : "-rotate-90"
                                             )}
                                           />
-                                          <span className="text-emerald-700 font-semibold truncate max-w-[180px]" title={group.invoiceNumber}>
+                                          <span className="text-emerald-700 dark:text-emerald-300 font-semibold truncate max-w-[180px]" title={group.invoiceNumber}>
                                             {group.invoiceNumber}
                                           </span>
                                         </div>
@@ -1883,7 +1883,7 @@ export default function CustomerFinance() {
                                       <TableCell>
                                         <Badge
                                           variant="outline"
-                                          className="gap-1 font-normal bg-emerald-50 text-emerald-700 border-emerald-200"
+                                          className="gap-1 font-normal bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
                                         >
                                           <Layers className="w-3.5 h-3.5" />
                                           {group.rows.length} {pickLang(language, { ku: "جوڵە", en: "transactions", ar: "حركة", zh: "笔" })}
@@ -1938,8 +1938,8 @@ export default function CustomerFinance() {
                                             className={cn(
                                               "gap-1 font-normal text-xs",
                                               txn.transactionType.startsWith('DEBIT')
-                                                ? "bg-red-50/70 text-red-700 border-red-200"
-                                                : "bg-emerald-50/70 text-emerald-700 border-emerald-200"
+                                                ? "bg-red-50/70 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60"
+                                                : "bg-emerald-50/70 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
                                             )}
                                           >
                                             {getTransactionTypeIcon(txn.transactionType)}
@@ -1994,7 +1994,7 @@ export default function CustomerFinance() {
                         <CreditCard className="w-5 h-5 text-emerald-600" />
                         {pickLang(language, { ku: "پارەدانەکان", en: "Payments", ar: "المدفوعات", zh: "付款记录" })}
                         {payments && (
-                          <Badge variant="secondary" className="me-2 bg-emerald-100 text-emerald-700">
+                          <Badge variant="secondary" className="me-2 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
                             {payments.length}
                           </Badge>
                         )}
@@ -2042,7 +2042,7 @@ export default function CustomerFinance() {
                                       {payment.paymentNumber}
                                     </TableCell>
                                     <TableCell>
-                                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                                      <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
                                         {getPaymentMethodLabel(payment.paymentMethod)}
                                       </Badge>
                                     </TableCell>
@@ -2052,22 +2052,22 @@ export default function CustomerFinance() {
                                     )}>
                                       ${original.toFixed(2)}
                                       {isPartiallyReversed && (
-                                        <span className="block text-xs text-amber-700 font-normal">
+                                        <span className="block text-xs text-amber-700 dark:text-amber-300 font-normal">
                                           ({pickLang(language, { ku: "ماوە", en: "remaining", ar: "المتبقي", zh: "剩余" })}: ${remaining.toFixed(2)})
                                         </span>
                                       )}
                                     </TableCell>
                                     <TableCell>
                                       {isFullyReversed ? (
-                                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
+                                        <Badge variant="outline" className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60 gap-1">
                                           <RotateCcw className="w-3 h-3" /> {pickLang(language, { ku: "گەڕێنراوەتەوە", en: "Reversed", ar: "معكوسة", zh: "已撤销" })}
                                         </Badge>
                                       ) : isPartiallyReversed ? (
-                                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1">
+                                        <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60 gap-1">
                                           <RotateCcw className="w-3 h-3" /> {pickLang(language, { ku: "بە بەشێ", en: "Partial", ar: "جزئية", zh: "部分" })}
                                         </Badge>
                                       ) : (
-                                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1">
+                                        <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60 gap-1">
                                           <CheckCircle className="w-3 h-3" /> {pickLang(language, { ku: "چالاک", en: "Active", ar: "نشطة", zh: "有效" })}
                                         </Badge>
                                       )}
@@ -2134,7 +2134,7 @@ export default function CustomerFinance() {
           </DialogHeader>
           <div className="space-y-4 mt-2">
             {/* Warning banner — this tool is for emergencies only */}
-            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex gap-2">
+            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-200 flex gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <div>
                 <p className="font-bold mb-1">{pickLang(language, { ku: "ئاگاداربە:", en: "Warning:", ar: "تنبيه:", zh: "注意：" })}</p>
@@ -2155,13 +2155,13 @@ export default function CustomerFinance() {
                   ${parseFloat(account?.currentBalanceUsd || '0').toFixed(2)}
                 </div>
               </div>
-              <div className="p-3 rounded-lg bg-purple-50 border-2 border-purple-200 text-center">
-                <div className="text-[10px] text-purple-700 uppercase">{pickLang(language, { ku: "بالانس دوای ڕاستکردنەوە", en: "Balance after adjustment", ar: "الرصيد بعد التعديل", zh: "调整后余额" })}</div>
+              <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/40 border-2 border-purple-200 dark:border-purple-800/60 text-center">
+                <div className="text-[10px] text-purple-700 dark:text-purple-300 uppercase">{pickLang(language, { ku: "بالانس دوای ڕاستکردنەوە", en: "Balance after adjustment", ar: "الرصيد بعد التعديل", zh: "调整后余额" })}</div>
                 <div className={cn(
                   "font-mono font-bold text-lg mt-1",
                   adjustPreviewBalance > 0 ? "text-red-600"
                     : adjustPreviewBalance < 0 ? "text-emerald-600"
-                    : "text-purple-700"
+                    : "text-purple-700 dark:text-purple-300"
                 )}>
                   ${adjustPreviewBalance.toFixed(2)}
                 </div>
@@ -2178,7 +2178,7 @@ export default function CustomerFinance() {
                   className={cn(
                     "p-3 rounded-lg border-2 text-sm transition-all text-right",
                     adjustDirection === 'debit'
-                      ? "border-red-500 bg-red-50 shadow"
+                      ? "border-red-500 bg-red-50 dark:bg-red-950/40 shadow"
                       : "border-muted hover:border-red-300"
                   )}
                 >
@@ -2196,7 +2196,7 @@ export default function CustomerFinance() {
                   className={cn(
                     "p-3 rounded-lg border-2 text-sm transition-all text-right",
                     adjustDirection === 'credit'
-                      ? "border-emerald-500 bg-emerald-50 shadow"
+                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 shadow"
                       : "border-muted hover:border-emerald-300"
                   )}
                 >
@@ -2336,11 +2336,11 @@ export default function CustomerFinance() {
                               <span className="font-mono text-xs text-muted-foreground truncate">
                                 {p.paymentNumber}
                               </span>
-                              <Badge variant="outline" className="text-[10px] py-0 bg-emerald-50 text-emerald-700 border-emerald-200">
+                              <Badge variant="outline" className="text-[10px] py-0 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
                                 {getPaymentMethodLabel(p.paymentMethod)}
                               </Badge>
                               {isPartial && (
-                                <Badge variant="outline" className="text-[10px] py-0 bg-amber-50 text-amber-700 border-amber-200">
+                                <Badge variant="outline" className="text-[10px] py-0 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
                                   {pickLang(language, { ku: "بە بەشێ", en: "Partial", ar: "جزئية", zh: "部分" })}
                                 </Badge>
                               )}
@@ -2351,7 +2351,7 @@ export default function CustomerFinance() {
                             </div>
                           </div>
                           <div className="text-end shrink-0">
-                            <div className="font-mono font-bold text-emerald-700">
+                            <div className="font-mono font-bold text-emerald-700 dark:text-emerald-300">
                               ${remaining.toFixed(2)}
                             </div>
                             {isPartial && (
@@ -2389,14 +2389,14 @@ export default function CustomerFinance() {
                   <span className="font-bold">${parseFloat(reverseTargetPayment.amountUsd || '0').toFixed(2)}</span>
                 </div>
                 {parseFloat(reverseTargetPayment.reversedAmountUsd || '0') > 0 && (
-                  <div className="flex justify-between text-amber-700">
+                  <div className="flex justify-between text-amber-700 dark:text-amber-300">
                     <span>{pickLang(language, { ku: "پێشتر گەڕێنراوەتەوە:", en: "Already reversed:", ar: "تم عكسه مسبقًا:", zh: "已撤销：" })}</span>
                     <span className="font-bold">${parseFloat(reverseTargetPayment.reversedAmountUsd || '0').toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between border-t pt-1 mt-1">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "ماوە بۆ گەڕاندنەوە:", en: "Remaining to reverse:", ar: "المتبقي للعكس:", zh: "可撤销余额：" })}</span>
-                  <span className="font-bold text-emerald-700">${reverseRemainingUsd.toFixed(2)}</span>
+                  <span className="font-bold text-emerald-700 dark:text-emerald-300">${reverseRemainingUsd.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -2410,7 +2410,7 @@ export default function CustomerFinance() {
                     className={cn(
                       "p-3 rounded-lg border-2 text-sm transition-all text-right",
                       reverseMode === 'mistake'
-                        ? "border-amber-500 bg-amber-50 shadow"
+                        ? "border-amber-500 bg-amber-50 dark:bg-amber-950/40 shadow"
                         : "border-muted hover:border-amber-300"
                     )}
                   >
@@ -2428,7 +2428,7 @@ export default function CustomerFinance() {
                     className={cn(
                       "p-3 rounded-lg border-2 text-sm transition-all text-right",
                       reverseMode === 'refund'
-                        ? "border-red-500 bg-red-50 shadow"
+                        ? "border-red-500 bg-red-50 dark:bg-red-950/40 shadow"
                         : "border-muted hover:border-red-300"
                     )}
                   >
@@ -2570,8 +2570,8 @@ export default function CustomerFinance() {
                     className={cn(
                       "gap-1",
                       selectedTransaction.transactionType.startsWith('DEBIT') 
-                        ? "bg-red-100 text-red-700 border-red-200" 
-                        : "bg-emerald-100 text-emerald-700 border-emerald-200"
+                        ? "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60" 
+                        : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
                     )}
                   >
                     {getTransactionTypeIcon(selectedTransaction.transactionType)}

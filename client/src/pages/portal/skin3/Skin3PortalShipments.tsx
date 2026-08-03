@@ -111,61 +111,61 @@ export default function Skin3PortalShipments() {
       case "closed":
         return {
           label: statusLabel("delivered"),
-          color: isDark ? "text-emerald-400" : "text-emerald-700",
-          bg: isDark ? "bg-emerald-950/50" : "bg-emerald-100",
+          color: isDark ? "text-emerald-400" : "text-emerald-700 dark:text-emerald-300",
+          bg: isDark ? "bg-emerald-950/50" : "bg-emerald-100 dark:bg-emerald-950/40",
           pillBg: isDark
             ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-            : "bg-emerald-100 text-emerald-700 border-emerald-300",
+            : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/60",
           icon: CheckCircle,
         };
       case "in_transit":
         return {
           label: statusLabel("in_transit"),
-          color: isDark ? "text-blue-400" : "text-blue-700",
-          bg: isDark ? "bg-blue-950/50" : "bg-blue-100",
+          color: isDark ? "text-blue-400" : "text-blue-700 dark:text-blue-300",
+          bg: isDark ? "bg-blue-950/50" : "bg-blue-100 dark:bg-blue-950/40",
           pillBg: isDark
             ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
-            : "bg-blue-100 text-blue-700 border-blue-300",
+            : "bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800/60",
           icon: Truck,
         };
       case "arrived":
         return {
           label: statusLabel("arrived"),
-          color: isDark ? "text-violet-400" : "text-violet-700",
-          bg: isDark ? "bg-violet-950/50" : "bg-violet-100",
+          color: isDark ? "text-violet-400" : "text-violet-700 dark:text-violet-300",
+          bg: isDark ? "bg-violet-950/50" : "bg-violet-100 dark:bg-violet-950/40",
           pillBg: isDark
             ? "bg-violet-500/20 text-violet-400 border-violet-500/30"
-            : "bg-violet-100 text-violet-700 border-violet-300",
+            : "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-800/60",
           icon: Package,
         };
       case "customs":
         return {
           label: statusLabel("customs"),
-          color: isDark ? "text-amber-400" : "text-amber-700",
-          bg: isDark ? "bg-amber-950/50" : "bg-amber-100",
+          color: isDark ? "text-amber-400" : "text-amber-700 dark:text-amber-300",
+          bg: isDark ? "bg-amber-950/50" : "bg-amber-100 dark:bg-amber-950/40",
           pillBg: isDark
             ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-            : "bg-amber-100 text-amber-700 border-amber-300",
+            : "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800/60",
           icon: AlertCircle,
         };
       case "preparing":
         return {
           label: statusLabel("preparing"),
           color: isDark ? "text-gray-400" : "text-gray-600",
-          bg: isDark ? "bg-gray-800/50" : "bg-gray-100",
+          bg: isDark ? "bg-gray-800/50" : "bg-gray-100 dark:bg-gray-950/40",
           pillBg: isDark
             ? "bg-gray-500/20 text-gray-400 border-gray-500/30"
-            : "bg-gray-100 text-gray-600 border-gray-300",
+            : "bg-gray-100 dark:bg-gray-950/40 text-gray-600 border-gray-300 dark:border-gray-800/60",
           icon: Clock,
         };
       default:
         return {
           label: statusLabel(status),
           color: isDark ? "text-gray-400" : "text-gray-600",
-          bg: isDark ? "bg-gray-800/50" : "bg-gray-100",
+          bg: isDark ? "bg-gray-800/50" : "bg-gray-100 dark:bg-gray-950/40",
           pillBg: isDark
             ? "bg-gray-500/20 text-gray-400 border-gray-500/30"
-            : "bg-gray-100 text-gray-600 border-gray-300",
+            : "bg-gray-100 dark:bg-gray-950/40 text-gray-600 border-gray-300 dark:border-gray-800/60",
           icon: Clock,
         };
     }
@@ -176,32 +176,32 @@ export default function Skin3PortalShipments() {
       case "delivered":
         return {
           label: statusLabel("delivered"),
-          color: isDark ? "text-emerald-400" : "text-emerald-700",
-          bg: isDark ? "bg-emerald-500/20" : "bg-emerald-100",
+          color: isDark ? "text-emerald-400" : "text-emerald-700 dark:text-emerald-300",
+          bg: isDark ? "bg-emerald-500/20" : "bg-emerald-100 dark:bg-emerald-950/40",
         };
       case "in_transit":
         return {
           label: statusLabel("in_transit"),
-          color: isDark ? "text-blue-400" : "text-blue-700",
-          bg: isDark ? "bg-blue-500/20" : "bg-blue-100",
+          color: isDark ? "text-blue-400" : "text-blue-700 dark:text-blue-300",
+          bg: isDark ? "bg-blue-500/20" : "bg-blue-100 dark:bg-blue-950/40",
         };
       case "arrived":
         return {
           label: statusLabel("arrived"),
-          color: isDark ? "text-violet-400" : "text-violet-700",
-          bg: isDark ? "bg-violet-500/20" : "bg-violet-100",
+          color: isDark ? "text-violet-400" : "text-violet-700 dark:text-violet-300",
+          bg: isDark ? "bg-violet-500/20" : "bg-violet-100 dark:bg-violet-950/40",
         };
       case "scanned":
         return {
           label: language === "ku" ? "سکان کراو" : "Scanned",
-          color: isDark ? "text-cyan-400" : "text-cyan-700",
-          bg: isDark ? "bg-cyan-500/20" : "bg-cyan-100",
+          color: isDark ? "text-cyan-400" : "text-cyan-700 dark:text-cyan-300",
+          bg: isDark ? "bg-cyan-500/20" : "bg-cyan-100 dark:bg-cyan-950/40",
         };
       default:
         return {
           label: status?.replace(/_/g, " ") || "---",
           color: isDark ? "text-gray-400" : "text-gray-600",
-          bg: isDark ? "bg-gray-500/20" : "bg-gray-100",
+          bg: isDark ? "bg-gray-500/20" : "bg-gray-100 dark:bg-gray-950/40",
         };
     }
   };
@@ -283,7 +283,7 @@ export default function Skin3PortalShipments() {
                 isRTL ? "pe-4 ps-12" : "ps-12 pe-10",
                 isDark
                   ? "text-white placeholder:text-zinc-600"
-                  : "text-gray-900 placeholder:text-gray-400",
+                  : "text-gray-900 dark:text-gray-200 placeholder:text-gray-400",
                 "focus:outline-none"
               )}
             />
@@ -327,7 +327,7 @@ export default function Skin3PortalShipments() {
                     "rounded-xl p-4 border-2",
                     isDark
                       ? "bg-emerald-950/30 border-emerald-500/30"
-                      : "bg-emerald-50 border-emerald-300 shadow-[3px_3px_0px_rgba(16,185,129,0.15)]"
+                      : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800/60 shadow-[3px_3px_0px_rgba(16,185,129,0.15)]"
                   )}
                 >
                   <div className="flex items-center gap-3">
@@ -340,7 +340,7 @@ export default function Skin3PortalShipments() {
                       <CheckCircle
                         className={cn(
                           "w-5 h-5",
-                          isDark ? "text-emerald-400" : "text-emerald-700"
+                          isDark ? "text-emerald-400" : "text-emerald-700 dark:text-emerald-300"
                         )}
                         strokeWidth={2.5}
                       />
@@ -349,7 +349,7 @@ export default function Skin3PortalShipments() {
                       <p
                         className={cn(
                           "text-sm font-black truncate",
-                          isDark ? "text-white" : "text-gray-900"
+                          isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                         )}
                       >
                         {(searchResult as any).trackingNumber ||
@@ -369,7 +369,7 @@ export default function Skin3PortalShipments() {
                     <span
                       className={cn(
                         "text-sm font-black tabular-nums",
-                        isDark ? "text-emerald-300" : "text-emerald-700"
+                        isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300"
                       )}
                     >
                       {Number((searchResult as any).weightKg || 0).toFixed(1)} kg
@@ -663,7 +663,7 @@ export default function Skin3PortalShipments() {
                                               "text-sm font-mono font-black",
                                               isDark
                                                 ? "text-white"
-                                                : "text-gray-900"
+                                                : "text-gray-900 dark:text-gray-200"
                                             )}
                                           >
                                             {pkg.trackingNumber ||
@@ -723,7 +723,7 @@ export default function Skin3PortalShipments() {
                                                 "text-[10px] font-black px-1.5 py-0.5 rounded-full",
                                                 isDark
                                                   ? "bg-violet-500/20 text-violet-400"
-                                                  : "bg-violet-100 text-violet-700"
+                                                  : "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300"
                                               )}
                                             >
                                               {language === "ku"
@@ -772,7 +772,7 @@ export default function Skin3PortalShipments() {
               <PackageOpen
                 className={cn(
                   "w-16 h-16 mx-auto mb-4",
-                  isDark ? "text-zinc-700" : "text-gray-300"
+                  isDark ? "text-zinc-700 dark:text-zinc-300" : "text-gray-300"
                 )}
                 strokeWidth={1.5}
               />

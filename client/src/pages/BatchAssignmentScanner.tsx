@@ -645,7 +645,7 @@ export default function BatchAssignmentScanner() {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200">
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800/60">
               <div className="font-mono text-lg">{incompleteDataDialog.trackingNumber}</div>
               <div className="text-sm text-yellow-700 dark:text-yellow-300 mt-2 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
@@ -663,7 +663,7 @@ export default function BatchAssignmentScanner() {
               <Button
                 variant="outline"
                 onClick={handleGoToQuickRegister}
-                className="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                className="border-indigo-300 dark:border-indigo-800/60 text-indigo-600 hover:bg-indigo-50"
               >
                 <ExternalLink className="h-4 w-4 me-2" />
                 {t("scan.goToQuickRegister")}

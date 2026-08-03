@@ -66,17 +66,17 @@ function orderTypeLabel(type: string, t: (k: string) => string): string {
 
 function statusColor(status: string): string {
   const map: Record<string, string> = {
-    pending: "bg-amber-100 text-amber-800 border-amber-200",
-    approved: "bg-blue-100 text-blue-800 border-blue-200",
-    ordered: "bg-indigo-100 text-indigo-800 border-indigo-200",
-    tracking_added: "bg-cyan-100 text-cyan-800 border-cyan-200",
-    in_china_warehouse: "bg-purple-100 text-purple-800 border-purple-200",
-    in_batch: "bg-violet-100 text-violet-800 border-violet-200",
-    in_transit: "bg-orange-100 text-orange-800 border-orange-200",
-    arrived: "bg-teal-100 text-teal-800 border-teal-200",
-    ready_for_delivery: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    pending: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800/60",
+    approved: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800/60",
+    ordered: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200 border-indigo-200 dark:border-indigo-800/60",
+    tracking_added: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200 border-cyan-200 dark:border-cyan-800/60",
+    in_china_warehouse: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800/60",
+    in_batch: "bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200 border-violet-200 dark:border-violet-800/60",
+    in_transit: "bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-800/60",
+    arrived: "bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 border-teal-200 dark:border-teal-800/60",
+    ready_for_delivery: "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800/60",
   };
-  return map[status] ?? "bg-slate-100 text-slate-800 border-slate-200";
+  return map[status] ?? "bg-slate-100 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-800/60";
 }
 
 export function CustomerPendingOrdersSection({ customerId }: Props) {
@@ -148,7 +148,7 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
               <CardDescription className="text-amber-50">{t("customers.pendingOrdersDesc")}</CardDescription>
             </div>
           </div>
-          <Badge className="bg-white text-amber-700 border-0 text-base px-3 py-1">
+          <Badge className="bg-white text-amber-700 dark:text-amber-300 border-0 text-base px-3 py-1">
             {count} {t("common.total")}
           </Badge>
         </div>
@@ -157,47 +157,47 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
       <CardContent className="p-6 space-y-5">
         {count === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="p-4 bg-emerald-50 rounded-full mb-3">
+            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-full mb-3">
               <Inbox className="h-12 w-12 text-emerald-500" />
             </div>
-            <p className="font-medium text-slate-700">{t("customers.noPendingOrders")}</p>
+            <p className="font-medium text-slate-700 dark:text-slate-300">{t("customers.noPendingOrders")}</p>
             <p className="text-sm text-muted-foreground mt-1">{t("customers.noPendingOrdersDesc")}</p>
           </div>
         ) : (
           <>
             {/* Stat cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
-                <div className="flex items-center gap-2 text-blue-700 mb-1">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 dark:border-blue-800/60">
+                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 mb-1">
                   <Package className="h-4 w-4" />
                   <span className="text-xs font-medium">{t("customers.ordersCount")}</span>
                 </div>
-                <p className="text-2xl font-bold text-blue-900">{count}</p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-200">{count}</p>
                 {summary && (
-                  <p className="text-xs text-blue-700 mt-1">
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
                     {summary.byType.full_package} FP · {summary.byType.commission} CM · {summary.byType.purchase_request} PR
                   </p>
                 )}
               </div>
 
-              <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200">
-                <div className="flex items-center gap-2 text-emerald-700 mb-1">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 dark:border-emerald-800/60">
+                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 mb-1">
                   <DollarSign className="h-4 w-4" />
                   <span className="text-xs font-medium">{t("customers.estimatedTotal")}</span>
                 </div>
-                <p className="text-2xl font-bold text-emerald-900 font-mono">${totalPrice.toFixed(2)}</p>
-                <p className="text-xs text-emerald-700 mt-1">{t("customers.estimatedInvoiceValue")}</p>
+                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-200 font-mono">${totalPrice.toFixed(2)}</p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">{t("customers.estimatedInvoiceValue")}</p>
               </div>
 
-              <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
-                <div className="flex items-center gap-2 text-purple-700 mb-1">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 dark:border-purple-800/60">
+                <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 mb-1">
                   <TrendingUp className="h-4 w-4" />
                   <span className="text-xs font-medium">{t("customers.oldestOrder")}</span>
                 </div>
-                <p className="text-2xl font-bold text-purple-900">
+                <p className="text-2xl font-bold text-purple-900 dark:text-purple-200">
                   {summary?.oldestAt ? formatRelative(summary.oldestAt, t) : "—"}
                 </p>
-                <p className="text-xs text-purple-700 mt-1">{t("customers.sinceCreation")}</p>
+                <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">{t("customers.sinceCreation")}</p>
               </div>
             </div>
 
@@ -299,7 +299,7 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
                             </div>
                           </TableCell>
                           <TableCell className="text-center text-sm">{qty}</TableCell>
-                          <TableCell className="text-end font-mono font-semibold text-emerald-700">
+                          <TableCell className="text-end font-mono font-semibold text-emerald-700 dark:text-emerald-300">
                             ${estimated.toFixed(2)}
                           </TableCell>
                           <TableCell>
@@ -344,7 +344,7 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
             </div>
 
             {/* Footer note */}
-            <div className="text-xs text-muted-foreground bg-amber-50 border border-amber-100 rounded-lg p-3 flex items-start gap-2">
+            <div className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-800/60 rounded-lg p-3 flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <span>{t("customers.pendingOrdersFooterNote")}</span>
             </div>

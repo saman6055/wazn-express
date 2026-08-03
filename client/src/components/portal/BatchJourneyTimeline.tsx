@@ -121,7 +121,7 @@ export function BatchJourneyTimeline({
                     state === "pending" &&
                       (isDark
                         ? "bg-slate-800 text-slate-500 ring-slate-700"
-                        : "bg-slate-100 text-slate-400 ring-slate-200"),
+                        : "bg-slate-100 dark:bg-slate-950/40 text-slate-400 ring-slate-200"),
                   )}
                 >
                   {state === "active" && (

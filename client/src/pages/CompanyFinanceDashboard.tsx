@@ -204,12 +204,12 @@ export default function CompanyFinanceDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-emerald-600">{t("companyFinance.totalRevenue") || "کۆی داهات"}</p>
-                      <p className="text-2xl font-bold text-emerald-700 mt-1">
+                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
                         {isLoading ? '...' : formatCurrency(pl?.totalRevenue || 0)}
                       </p>
                       <p className="text-xs text-emerald-500 mt-1">{getPeriodLabel(period)}</p>
                     </div>
-                    <div className="p-3 bg-emerald-100 rounded-xl">
+                    <div className="p-3 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
                       <DollarSign className="h-6 w-6 text-emerald-600" />
                     </div>
                   </div>
@@ -223,12 +223,12 @@ export default function CompanyFinanceDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-red-600">{t("companyFinance.totalExpenses") || "کۆی خەرجی"}</p>
-                      <p className="text-2xl font-bold text-red-700 mt-1">
+                      <p className="text-2xl font-bold text-red-700 dark:text-red-300 mt-1">
                         {isLoading ? '...' : formatCurrency(pl?.totalExpenses || 0)}
                       </p>
                       <p className="text-xs text-red-500 mt-1">{getPeriodLabel(period)}</p>
                     </div>
-                    <div className="p-3 bg-red-100 rounded-xl">
+                    <div className="p-3 bg-red-100 dark:bg-red-950/40 rounded-xl">
                       <CreditCard className="h-6 w-6 text-red-600" />
                     </div>
                   </div>
@@ -244,24 +244,24 @@ export default function CompanyFinanceDashboard() {
                       <p className={`text-sm font-medium ${(pl?.netProfit || 0) >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
                         {t("companyFinance.netProfit") || "قازانجی خاوێن"}
                       </p>
-                      <p className={`text-2xl font-bold mt-1 ${(pl?.netProfit || 0) >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+                      <p className={`text-2xl font-bold mt-1 ${(pl?.netProfit || 0) >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-orange-700 dark:text-orange-300'}`}>
                         {isLoading ? '...' : formatCurrency(pl?.netProfit || 0)}
                       </p>
                       <div className="flex items-center gap-1 mt-1">
                         {(pl?.netProfit || 0) >= 0 ? (
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
+                          <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-xs">
                             <ArrowUpRight className="w-3 h-3 ms-1" />
                             {t("companyFinance.profit") || "قازانج"}
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="bg-orange-100 text-orange-700 text-xs">
+                          <Badge variant="secondary" className="bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 text-xs">
                             <ArrowDownRight className="w-3 h-3 ms-1" />
                             {t("companyFinance.loss") || "زەرەر"}
                           </Badge>
                         )}
                       </div>
                     </div>
-                    <div className={`p-3 rounded-xl ${(pl?.netProfit || 0) >= 0 ? 'bg-blue-100' : 'bg-orange-100'}`}>
+                    <div className={`p-3 rounded-xl ${(pl?.netProfit || 0) >= 0 ? 'bg-blue-100 dark:bg-blue-950/40' : 'bg-orange-100 dark:bg-orange-950/40'}`}>
                       {(pl?.netProfit || 0) >= 0 ? (
                         <TrendingUp className="h-6 w-6 text-blue-600" />
                       ) : (
@@ -279,12 +279,12 @@ export default function CompanyFinanceDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-purple-600">{t("companyFinance.profitMargin") || "ڕێژەی قازانج"}</p>
-                      <p className="text-2xl font-bold text-purple-700 mt-1">
+                      <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 mt-1">
                         {isLoading ? '...' : formatPercent(pl?.profitMargin || 0)}
                       </p>
                       <p className="text-xs text-purple-500 mt-1">{getPeriodLabel(period)}</p>
                     </div>
-                    <div className="p-3 bg-purple-100 rounded-xl">
+                    <div className="p-3 bg-purple-100 dark:bg-purple-950/40 rounded-xl">
                       <Activity className="h-6 w-6 text-purple-600" />
                     </div>
                   </div>
@@ -304,7 +304,7 @@ export default function CompanyFinanceDashboard() {
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 border-0 shadow-md">
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 bg-blue-100 rounded-xl">
+                        <div className="p-2.5 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
                           <Plane className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
@@ -342,7 +342,7 @@ export default function CompanyFinanceDashboard() {
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 border-0 shadow-md">
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 bg-amber-100 rounded-xl">
+                        <div className="p-2.5 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
                           <AlertTriangle className="h-5 w-5 text-amber-600" />
                         </div>
                         <div>
@@ -380,7 +380,7 @@ export default function CompanyFinanceDashboard() {
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 border-0 shadow-md">
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 bg-cyan-100 rounded-xl">
+                        <div className="p-2.5 bg-cyan-100 dark:bg-cyan-950/40 rounded-xl">
                           <Ship className="h-5 w-5 text-cyan-600" />
                         </div>
                         <div>
@@ -418,7 +418,7 @@ export default function CompanyFinanceDashboard() {
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 border-0 shadow-md">
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 bg-green-100 rounded-xl">
+                        <div className="p-2.5 bg-green-100 dark:bg-green-950/40 rounded-xl">
                           <ShoppingBag className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
@@ -456,7 +456,7 @@ export default function CompanyFinanceDashboard() {
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 border-0 shadow-md">
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 bg-violet-100 rounded-xl">
+                        <div className="p-2.5 bg-violet-100 dark:bg-violet-950/40 rounded-xl">
                           <Briefcase className="h-5 w-5 text-violet-600" />
                         </div>
                         <div>
@@ -482,7 +482,7 @@ export default function CompanyFinanceDashboard() {
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 border-0 shadow-md">
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 bg-pink-100 rounded-xl">
+                        <div className="p-2.5 bg-pink-100 dark:bg-pink-950/40 rounded-xl">
                           <Wrench className="h-5 w-5 text-pink-600" />
                         </div>
                         <div>
@@ -631,7 +631,7 @@ export default function CompanyFinanceDashboard() {
                         <td className="py-3 px-4 text-right text-red-600 font-medium">{formatCurrency(revenueBySource?.batchProfit?.sea?.cost || 0)}</td>
                         <td className={`py-3 px-4 text-right font-bold ${(revenueBySource?.batchProfit?.sea?.profit || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatCurrency(revenueBySource?.batchProfit?.sea?.profit || 0)}</td>
                       </tr>
-                      <tr className="bg-blue-50 font-bold">
+                      <tr className="bg-blue-50 dark:bg-blue-950/40 font-bold">
                         <td className="py-3 px-4">{t("companyFinance.totalBatchProfit") || "کۆی قازانجی باچ"}</td>
                         <td className="py-3 px-4 text-right">
                           {(revenueBySource?.batchProfit?.air_regular?.batchCount || 0) + (revenueBySource?.batchProfit?.air_irregular?.batchCount || 0) + (revenueBySource?.batchProfit?.sea?.batchCount || 0)}
@@ -653,7 +653,7 @@ export default function CompanyFinanceDashboard() {
                             (revenueBySource?.batchProfit?.sea?.cost || 0)
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right text-blue-700">
+                        <td className="py-3 px-4 text-right text-blue-700 dark:text-blue-300">
                           {formatCurrency(revenueBySource?.batchProfit?.total || 0)}
                         </td>
                       </tr>
@@ -775,7 +775,7 @@ export default function CompanyFinanceDashboard() {
                           </div>
                           <span className="font-bold text-red-600">{formatCurrency(cat.amount)}</span>
                         </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-2 bg-gray-100 dark:bg-gray-950/40 rounded-full overflow-hidden">
                           <div 
                             className="h-full rounded-full transition-all duration-700"
                             style={{ width: `${cat.percentage}%`, backgroundColor: COLORS[i % COLORS.length] }}
@@ -845,8 +845,8 @@ export default function CompanyFinanceDashboard() {
               <CardContent className="pt-6">
                 <div className="space-y-1">
                   {/* Revenue Section */}
-                  <div className="bg-emerald-50 rounded-xl p-5 mb-4">
-                    <h3 className="font-bold text-emerald-800 text-lg mb-4 flex items-center gap-2">
+                  <div className="bg-emerald-50 dark:bg-emerald-950/40 rounded-xl p-5 mb-4">
+                    <h3 className="font-bold text-emerald-800 dark:text-emerald-200 text-lg mb-4 flex items-center gap-2">
                       <Plus className="w-5 h-5" />
                       {t("companyFinance.totalRevenue") || "کۆی داهات (قازانج)"}
                     </h3>
@@ -859,15 +859,15 @@ export default function CompanyFinanceDashboard() {
                       <PLRow label={`🔧 ${t("companyFinance.serviceProfit") || "قازانجی خزمەتگوزاری"}`} value={revenueBySource?.service?.profit || 0} />
                       <Separator className="my-2" />
                       <div className="flex justify-between items-center font-bold text-lg">
-                        <span className="text-emerald-800">{t("companyFinance.totalRevenueLabel") || "کۆی گشتی داهات"}</span>
-                        <span className="text-emerald-700">{formatCurrency(pl?.totalRevenue || 0)}</span>
+                        <span className="text-emerald-800 dark:text-emerald-200">{t("companyFinance.totalRevenueLabel") || "کۆی گشتی داهات"}</span>
+                        <span className="text-emerald-700 dark:text-emerald-300">{formatCurrency(pl?.totalRevenue || 0)}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Expenses Section */}
-                  <div className="bg-red-50 rounded-xl p-5 mb-4">
-                    <h3 className="font-bold text-red-800 text-lg mb-4 flex items-center gap-2">
+                  <div className="bg-red-50 dark:bg-red-950/40 rounded-xl p-5 mb-4">
+                    <h3 className="font-bold text-red-800 dark:text-red-200 text-lg mb-4 flex items-center gap-2">
                       <Minus className="w-5 h-5" />
                       {t("companyFinance.totalExpenses") || "کۆی خەرجی"}
                     </h3>
@@ -880,8 +880,8 @@ export default function CompanyFinanceDashboard() {
                       )}
                       <Separator className="my-2" />
                       <div className="flex justify-between items-center font-bold text-lg">
-                        <span className="text-red-800">{t("companyFinance.totalExpensesLabel") || "کۆی گشتی خەرجی"}</span>
-                        <span className="text-red-700">({formatCurrency(pl?.totalExpenses || 0)})</span>
+                        <span className="text-red-800 dark:text-red-200">{t("companyFinance.totalExpensesLabel") || "کۆی گشتی خەرجی"}</span>
+                        <span className="text-red-700 dark:text-red-300">({formatCurrency(pl?.totalExpenses || 0)})</span>
                       </div>
                     </div>
                   </div>
@@ -1037,13 +1037,13 @@ export default function CompanyFinanceDashboard() {
 // Helper Components
 function StatCard({ icon: Icon, color, label, value, href }: { icon: any; color: string; label: string; value: number; href: string }) {
   const colorMap: Record<string, { bg: string; text: string }> = {
-    blue: { bg: 'bg-blue-100', text: 'text-blue-600' },
-    green: { bg: 'bg-green-100', text: 'text-green-600' },
-    violet: { bg: 'bg-violet-100', text: 'text-violet-600' },
-    purple: { bg: 'bg-purple-100', text: 'text-purple-600' },
-    amber: { bg: 'bg-amber-100', text: 'text-amber-600' },
-    pink: { bg: 'bg-pink-100', text: 'text-pink-600' },
-    cyan: { bg: 'bg-cyan-100', text: 'text-cyan-600' },
+    blue: { bg: 'bg-blue-100 dark:bg-blue-950/40', text: 'text-blue-600' },
+    green: { bg: 'bg-green-100 dark:bg-green-950/40', text: 'text-green-600' },
+    violet: { bg: 'bg-violet-100 dark:bg-violet-950/40', text: 'text-violet-600' },
+    purple: { bg: 'bg-purple-100 dark:bg-purple-950/40', text: 'text-purple-600' },
+    amber: { bg: 'bg-amber-100 dark:bg-amber-950/40', text: 'text-amber-600' },
+    pink: { bg: 'bg-pink-100 dark:bg-pink-950/40', text: 'text-pink-600' },
+    cyan: { bg: 'bg-cyan-100 dark:bg-cyan-950/40', text: 'text-cyan-600' },
   };
   const c = colorMap[color] || colorMap.blue;
   
@@ -1081,7 +1081,7 @@ function PLRow({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex justify-between items-center text-sm">
       <span>{label}</span>
-      <span className={`font-medium ${isNegative ? 'text-red-700' : 'text-emerald-700'}`}>
+      <span className={`font-medium ${isNegative ? 'text-red-700 dark:text-red-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
         {isNegative ? `(${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Math.abs(value))})` : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)}
       </span>
     </div>

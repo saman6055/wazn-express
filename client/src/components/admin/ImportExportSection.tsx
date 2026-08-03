@@ -47,7 +47,7 @@ export function ImportExportSection({
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 rounded-lg">
+            <div className="p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
               <Download className="h-5 w-5 text-blue-600" />
             </div>
             <div>
@@ -101,7 +101,7 @@ export function ImportExportSection({
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-50 rounded-lg">
+            <div className="p-2 bg-green-50 dark:bg-green-950/40 rounded-lg">
               <Upload className="h-5 w-5 text-green-600" />
             </div>
             <div>
@@ -112,17 +112,17 @@ export function ImportExportSection({
         </CardHeader>
         <CardContent className="space-y-4">
           <div
-            className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-green-300 transition-colors cursor-pointer"
+            className="border-2 border-dashed border-gray-200 dark:border-gray-800/60 rounded-xl p-6 text-center hover:border-green-300 transition-colors cursor-pointer"
             onDragOver={(e) => {
               e.preventDefault();
-              e.currentTarget.classList.add("border-green-400", "bg-green-50");
+              e.currentTarget.classList.add("border-green-400", "bg-green-50 dark:bg-green-950/40");
             }}
             onDragLeave={(e) => {
-              e.currentTarget.classList.remove("border-green-400", "bg-green-50");
+              e.currentTarget.classList.remove("border-green-400", "bg-green-50 dark:bg-green-950/40");
             }}
             onDrop={(e) => {
               e.preventDefault();
-              e.currentTarget.classList.remove("border-green-400", "bg-green-50");
+              e.currentTarget.classList.remove("border-green-400", "bg-green-50 dark:bg-green-950/40");
               const file = e.dataTransfer.files?.[0];
               if (file) {
                 const fakeEvent = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
@@ -146,7 +146,7 @@ export function ImportExportSection({
           </div>
 
           {importPreview && (
-            <Card className="border-green-200 bg-green-50/50">
+            <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Eye className="h-4 w-4" />
@@ -174,7 +174,7 @@ export function ImportExportSection({
                       id="overwrite-mode-merged"
                       checked={importOverwrite}
                       onChange={(e) => setImportOverwrite(e.target.checked)}
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-300 dark:border-gray-800/60"
                     />
                     <Label htmlFor="overwrite-mode-merged" className="text-sm cursor-pointer">
                       {t("dataManagement.overwriteExisting")}

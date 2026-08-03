@@ -44,31 +44,31 @@ const shippingTypeConfig: Record<string, { label: LangMap; icon: React.ReactNode
   air_regular: {
     label: { ku: "ئاسمانی", en: "Air", ar: "جوي", zh: "空运" },
     icon: <Plane className="h-4 w-4" />,
-    color: "text-blue-700",
-    bgColor: "bg-blue-100"
+    color: "text-blue-700 dark:text-blue-300",
+    bgColor: "bg-blue-100 dark:bg-blue-950/40"
   },
   air_irregular: {
     label: { ku: "ئاسمانی مەترسیدار", en: "Air (hazardous)", ar: "جوي خطر", zh: "空运（危险品）" },
     icon: <AlertTriangle className="h-4 w-4" />,
-    color: "text-orange-700",
-    bgColor: "bg-orange-100"
+    color: "text-orange-700 dark:text-orange-300",
+    bgColor: "bg-orange-100 dark:bg-orange-950/40"
   },
   sea: {
     label: { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" },
     icon: <Ship className="h-4 w-4" />,
-    color: "text-cyan-700",
-    bgColor: "bg-cyan-100"
+    color: "text-cyan-700 dark:text-cyan-300",
+    bgColor: "bg-cyan-100 dark:bg-cyan-950/40"
   }
 };
 
 // Status labels and colors
 const statusConfig: Record<string, { label: LangMap; color: string; bgColor: string; icon: React.ReactNode }> = {
-  preparing: { label: { ku: "ئامادەکاری", en: "Preparing", ar: "قيد التحضير", zh: "准备中" }, color: "text-yellow-700", bgColor: "bg-yellow-100", icon: <Clock className="h-3 w-3" /> },
-  in_transit: { label: { ku: "لە ڕێگادا", en: "In transit", ar: "في الطريق", zh: "运输中" }, color: "text-blue-700", bgColor: "bg-blue-100", icon: <Truck className="h-3 w-3" /> },
-  arrived: { label: { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" }, color: "text-green-700", bgColor: "bg-green-100", icon: <CheckCircle className="h-3 w-3" /> },
-  customs: { label: { ku: "گومرگ", en: "Customs", ar: "الجمارك", zh: "海关" }, color: "text-purple-700", bgColor: "bg-purple-100", icon: <Building2 className="h-3 w-3" /> },
-  delivered: { label: { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }, color: "text-emerald-700", bgColor: "bg-emerald-100", icon: <CheckCircle className="h-3 w-3" /> },
-  closed: { label: { ku: "داخراوە", en: "Closed", ar: "مغلقة", zh: "已关闭" }, color: "text-gray-700", bgColor: "bg-gray-100", icon: <Archive className="h-3 w-3" /> }
+  preparing: { label: { ku: "ئامادەکاری", en: "Preparing", ar: "قيد التحضير", zh: "准备中" }, color: "text-yellow-700 dark:text-yellow-300", bgColor: "bg-yellow-100 dark:bg-yellow-950/40", icon: <Clock className="h-3 w-3" /> },
+  in_transit: { label: { ku: "لە ڕێگادا", en: "In transit", ar: "في الطريق", zh: "运输中" }, color: "text-blue-700 dark:text-blue-300", bgColor: "bg-blue-100 dark:bg-blue-950/40", icon: <Truck className="h-3 w-3" /> },
+  arrived: { label: { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" }, color: "text-green-700 dark:text-green-300", bgColor: "bg-green-100 dark:bg-green-950/40", icon: <CheckCircle className="h-3 w-3" /> },
+  customs: { label: { ku: "گومرگ", en: "Customs", ar: "الجمارك", zh: "海关" }, color: "text-purple-700 dark:text-purple-300", bgColor: "bg-purple-100 dark:bg-purple-950/40", icon: <Building2 className="h-3 w-3" /> },
+  delivered: { label: { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }, color: "text-emerald-700 dark:text-emerald-300", bgColor: "bg-emerald-100 dark:bg-emerald-950/40", icon: <CheckCircle className="h-3 w-3" /> },
+  closed: { label: { ku: "داخراوە", en: "Closed", ar: "مغلقة", zh: "已关闭" }, color: "text-gray-700 dark:text-gray-300", bgColor: "bg-gray-100 dark:bg-gray-950/40", icon: <Archive className="h-3 w-3" /> }
 };
 
 // Generate month options
@@ -494,15 +494,15 @@ export default function BatchReports() {
         {/* Overview Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* Total Batches */}
-          <Card className="border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50">
+          <Card className="border-2 border-indigo-200 dark:border-indigo-800/60 bg-gradient-to-br from-indigo-50 to-violet-50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-indigo-700">{pickLang(language, { ku: "کۆی باچەکان", en: "Total batches", ar: "إجمالي الدفعات", zh: "批次总数" })}</CardTitle>
-              <div className="p-2 bg-indigo-100 rounded-lg">
+              <CardTitle className="text-sm font-medium text-indigo-700 dark:text-indigo-300">{pickLang(language, { ku: "کۆی باچەکان", en: "Total batches", ar: "إجمالي الدفعات", zh: "批次总数" })}</CardTitle>
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
                 <Boxes className="h-5 w-5 text-indigo-600" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-indigo-700">{totals.totalBatches}</div>
+              <div className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">{totals.totalBatches}</div>
               <p className="text-sm text-indigo-600/70 mt-1">
                 {totals.totalPackages} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرد", zh: "包裹" })}
               </p>
@@ -510,10 +510,10 @@ export default function BatchReports() {
           </Card>
 
           {/* Total Cost */}
-          <Card className="border-2 border-red-200 bg-gradient-to-br from-red-50 to-rose-50">
+          <Card className="border-2 border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 to-rose-50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-red-700">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</CardTitle>
-              <div className="p-2 bg-red-100 rounded-lg">
+              <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</CardTitle>
+              <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-lg">
                 <DollarSign className="h-5 w-5 text-red-600" />
               </div>
             </CardHeader>
@@ -527,10 +527,10 @@ export default function BatchReports() {
           </Card>
 
           {/* Total Revenue */}
-          <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+          <Card className="border-2 border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 to-emerald-50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-green-700">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</CardTitle>
-              <div className="p-2 bg-green-100 rounded-lg">
+              <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</CardTitle>
+              <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
                 <Wallet className="h-5 w-5 text-green-600" />
               </div>
             </CardHeader>
@@ -544,15 +544,15 @@ export default function BatchReports() {
 
           {/* Total Profit */}
           <Card className={`border-2 ${totals.totalProfit >= 0 
-            ? 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50' 
-            : 'border-red-200 bg-gradient-to-br from-red-50 to-rose-50'}`}>
+            ? 'border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50 to-teal-50' 
+            : 'border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 to-rose-50'}`}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className={`text-sm font-medium ${totals.totalProfit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+              <CardTitle className={`text-sm font-medium ${totals.totalProfit >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
                 {totals.totalProfit >= 0
                   ? pickLang(language, { ku: "کۆی قازانج", en: "Total profit", ar: "إجمالي الربح", zh: "总利润" })
                   : pickLang(language, { ku: "کۆی زیان", en: "Total loss", ar: "إجمالي الخسارة", zh: "总亏损" })}
               </CardTitle>
-              <div className={`p-2 rounded-lg ${totals.totalProfit >= 0 ? 'bg-emerald-100' : 'bg-red-100'}`}>
+              <div className={`p-2 rounded-lg ${totals.totalProfit >= 0 ? 'bg-emerald-100 dark:bg-emerald-950/40' : 'bg-red-100 dark:bg-red-950/40'}`}>
                 {totals.totalProfit >= 0 
                   ? <TrendingUp className="h-5 w-5 text-emerald-600" />
                   : <TrendingDown className="h-5 w-5 text-red-600" />
@@ -736,7 +736,7 @@ export default function BatchReports() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs w-16 text-red-600">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</span>
-                          <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="flex-1 h-4 bg-gray-100 dark:bg-gray-950/40 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-red-500 rounded-full transition-all duration-500"
                               style={{ width: `${(data.cost / maxValue) * 100}%` }}
@@ -746,7 +746,7 @@ export default function BatchReports() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs w-16 text-green-600">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</span>
-                          <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="flex-1 h-4 bg-gray-100 dark:bg-gray-950/40 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-green-500 rounded-full transition-all duration-500"
                               style={{ width: `${(data.revenue / maxValue) * 100}%` }}
@@ -784,7 +784,7 @@ export default function BatchReports() {
                     
                     if (totalProfit === 0) {
                       return (
-                        <div className="w-full h-full rounded-full bg-gray-100 flex items-center justify-center">
+                        <div className="w-full h-full rounded-full bg-gray-100 dark:bg-gray-950/40 flex items-center justify-center">
                           <span className="text-muted-foreground text-sm">{pickLang(language, { ku: "هیچ قازانجێک نییە", en: "No profit", ar: "لا يوجد ربح", zh: "无利润" })}</span>
                         </div>
                       );
@@ -966,10 +966,10 @@ export default function BatchReports() {
                             <Badge 
                               variant="outline" 
                               className={`${
-                                batch.profitMargin >= 20 ? 'bg-green-100 text-green-700' :
-                                batch.profitMargin >= 10 ? 'bg-yellow-100 text-yellow-700' :
-                                batch.profitMargin >= 0 ? 'bg-orange-100 text-orange-700' :
-                                'bg-red-100 text-red-700'
+                                batch.profitMargin >= 20 ? 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300' :
+                                batch.profitMargin >= 10 ? 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300' :
+                                batch.profitMargin >= 0 ? 'bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300' :
+                                'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300'
                               } border-0`}
                             >
                               {batch.profitMargin.toFixed(1)}%
@@ -997,9 +997,9 @@ export default function BatchReports() {
         {/* Summary by Type */}
         <div className="grid gap-4 md:grid-cols-3">
           {/* Air Regular */}
-          <Card className="border-2 border-blue-200">
+          <Card className="border-2 border-blue-200 dark:border-blue-800/60">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-sky-50 rounded-t-lg">
-              <CardTitle className="flex items-center gap-2 text-blue-700">
+              <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                 <Plane className="h-5 w-5" />
                 {pickLang(language, { ku: "ئاسمانی", en: "Air", ar: "جوي", zh: "空运" })}
               </CardTitle>
@@ -1029,9 +1029,9 @@ export default function BatchReports() {
           </Card>
 
           {/* Air Irregular */}
-          <Card className="border-2 border-orange-200">
+          <Card className="border-2 border-orange-200 dark:border-orange-800/60">
             <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-t-lg">
-              <CardTitle className="flex items-center gap-2 text-orange-700">
+              <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
                 <AlertTriangle className="h-5 w-5" />
                 {pickLang(language, { ku: "ئاسمانی مەترسیدار", en: "Air (hazardous)", ar: "جوي خطر", zh: "空运（危险品）" })}
               </CardTitle>
@@ -1061,9 +1061,9 @@ export default function BatchReports() {
           </Card>
 
           {/* Sea */}
-          <Card className="border-2 border-cyan-200">
+          <Card className="border-2 border-cyan-200 dark:border-cyan-800/60">
             <CardHeader className="bg-gradient-to-r from-cyan-50 to-teal-50 rounded-t-lg">
-              <CardTitle className="flex items-center gap-2 text-cyan-700">
+              <CardTitle className="flex items-center gap-2 text-cyan-700 dark:text-cyan-300">
                 <Ship className="h-5 w-5" />
                 {pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" })}
               </CardTitle>
@@ -1181,10 +1181,10 @@ export default function BatchReports() {
                             <TableCell key={batch.id} className="text-center">
                               <Badge 
                                 className={`${
-                                  batch.profitMargin >= 20 ? 'bg-green-100 text-green-700' :
-                                  batch.profitMargin >= 10 ? 'bg-yellow-100 text-yellow-700' :
-                                  batch.profitMargin >= 0 ? 'bg-orange-100 text-orange-700' :
-                                  'bg-red-100 text-red-700'
+                                  batch.profitMargin >= 20 ? 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300' :
+                                  batch.profitMargin >= 10 ? 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300' :
+                                  batch.profitMargin >= 0 ? 'bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300' :
+                                  'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300'
                                 } border-0`}
                               >
                                 {batch.profitMargin.toFixed(1)}%

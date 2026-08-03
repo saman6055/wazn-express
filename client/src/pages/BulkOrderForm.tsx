@@ -722,7 +722,7 @@ export default function BulkOrderForm() {
                   <div className="px-4 pb-4 pt-1 border-t bg-muted/10">
                     {/* ¥ → $ converter for the item price (commission only) */}
                     {isCommission && (
-                      <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50/50 dark:bg-orange-900/10 p-3">
+                      <div className="mt-3 rounded-lg border border-orange-200 dark:border-orange-800/60 bg-orange-50/50 dark:bg-orange-900/10 p-3">
                         <div className="flex items-center justify-between mb-2">
                           <Label className="text-xs font-semibold text-orange-700 dark:text-orange-400">{pickLang(language, { ku: "نرخی کاڵا بە یوانی چینی (¥)", en: "Item price in Chinese Yuan (¥)", ar: "سعر المنتج باليوان الصيني (¥)", zh: "商品价格（人民币 ¥）" })}</Label>
                           {rmbRate > 0 ? (

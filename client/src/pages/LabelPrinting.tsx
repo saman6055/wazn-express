@@ -223,7 +223,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
           )}
 
           {template.showTrackingNumber && (
-            <div className="text-center py-2 border-y border-gray-300 my-2">
+            <div className="text-center py-2 border-y border-gray-300 dark:border-gray-800/60 my-2">
               <p className="text-xs text-gray-500">Tracking Number</p>
               <p className="font-bold text-lg" style={{ color: template.primaryColor }}>
                 {pkg.trackingNumber || 'N/A'}
@@ -261,7 +261,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-1 text-xs border-t border-gray-200 pt-2 mt-2">
+          <div className="grid grid-cols-2 gap-1 text-xs border-t border-gray-200 dark:border-gray-800/60 pt-2 mt-2">
             {template.showWeight && (
               <div className="flex items-center gap-1">
                 <Scale className="h-3 w-3 text-gray-400" />

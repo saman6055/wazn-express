@@ -65,7 +65,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
         // sit at the bottom of a short page instead of directly under the
         // content, halfway up the screen.
         "portal-theme min-h-screen flex flex-col transition-colors duration-300",
-        isDark ? "bg-zinc-950" : "bg-gray-50",
+        isDark ? "bg-zinc-950" : "bg-gray-50 dark:bg-gray-950/40",
         isRTL && "rtl",
         isInstalled ? "pb-28" : "pb-24"
       )}
@@ -75,7 +75,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
         <div
           className={cn(
             "h-safe-area-top",
-            isDark ? "bg-zinc-950" : "bg-gray-50"
+            isDark ? "bg-zinc-950" : "bg-gray-50 dark:bg-gray-950/40"
           )}
         />
       )}

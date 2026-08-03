@@ -115,7 +115,7 @@ export function FullPackageServicesSection() {
                       <p className="text-xs text-muted-foreground">{service.nameKu || service.nameEn}</p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30">
+                  <Badge variant="outline" className="border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 text-emerald-700 dark:text-emerald-300 dark:bg-emerald-950/30">
                     ${Number(service.defaultPrice || 0).toLocaleString()}
                   </Badge>
                 </div>

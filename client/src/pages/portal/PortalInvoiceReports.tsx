@@ -325,7 +325,7 @@ function ClassicPortalInvoiceReports() {
                         : "bg-emerald-500 text-white"
                       : isDark 
                         ? "bg-slate-700 text-slate-300 hover:bg-slate-600" 
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        : "bg-gray-100 dark:bg-gray-950/40 text-gray-600 hover:bg-gray-200"
                   )}
                 >
                   {f.label}
@@ -341,7 +341,7 @@ function ClassicPortalInvoiceReports() {
                   "px-3 py-1.5 rounded-lg text-sm font-medium border-0 outline-none",
                   isDark 
                     ? "bg-slate-700 text-white" 
-                    : "bg-gray-100 text-gray-700"
+                    : "bg-gray-100 dark:bg-gray-950/40 text-gray-700 dark:text-gray-300"
                 )}
               >
                 {years.map(year => (
@@ -407,7 +407,7 @@ function ClassicPortalInvoiceReports() {
             <div className="flex items-center gap-2 mb-2">
               <div className={cn(
                 "w-8 h-8 rounded-lg flex items-center justify-center",
-                isDark ? "bg-blue-900/50" : "bg-blue-100"
+                isDark ? "bg-blue-900/50" : "bg-blue-100 dark:bg-blue-950/40"
               )}>
                 <FileText className="w-4 h-4 text-blue-500" />
               </div>
@@ -424,7 +424,7 @@ function ClassicPortalInvoiceReports() {
               <>
                 <p className={cn(
                   "text-xl font-bold",
-                  isDark ? "text-white" : "text-gray-900"
+                  isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                 )}>
                   {summary?.totalInvoices || 0}
                 </p>
@@ -445,7 +445,7 @@ function ClassicPortalInvoiceReports() {
             <div className="flex items-center gap-2 mb-2">
               <div className={cn(
                 "w-8 h-8 rounded-lg flex items-center justify-center",
-                isDark ? "bg-emerald-900/50" : "bg-emerald-100"
+                isDark ? "bg-emerald-900/50" : "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
                 <CheckCircle className="w-4 h-4 text-emerald-500" />
               </div>
@@ -480,7 +480,7 @@ function ClassicPortalInvoiceReports() {
             <div className="flex items-center gap-2 mb-2">
               <div className={cn(
                 "w-8 h-8 rounded-lg flex items-center justify-center",
-                isDark ? "bg-purple-900/50" : "bg-purple-100"
+                isDark ? "bg-purple-900/50" : "bg-purple-100 dark:bg-purple-950/40"
               )}>
                 <TrendingUp className="w-4 h-4 text-purple-500" />
               </div>
@@ -510,7 +510,7 @@ function ClassicPortalInvoiceReports() {
         )}>
           <h3 className={cn(
             "font-semibold mb-4",
-            isDark ? "text-white" : "text-gray-900"
+            isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
           )}>
             {language === "ku" ? `ڕاپۆرتی مانگانە - ${selectedYear}` : `Monthly Report - ${selectedYear}`}
           </h3>
@@ -557,20 +557,20 @@ function ClassicPortalInvoiceReports() {
                     key={i}
                     className={cn(
                       "flex items-center justify-between p-3 rounded-xl",
-                      isDark ? "bg-slate-700/50" : "bg-gray-50"
+                      isDark ? "bg-slate-700/50" : "bg-gray-50 dark:bg-gray-950/40"
                     )}
                   >
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold",
-                        isDark ? "bg-slate-600 text-white" : "bg-gray-200 text-gray-700"
+                        isDark ? "bg-slate-600 text-white" : "bg-gray-200 text-gray-700 dark:text-gray-300"
                       )}>
                         {m.monthNumber}
                       </div>
                       <div>
                         <p className={cn(
                           "text-sm font-medium",
-                          isDark ? "text-white" : "text-gray-900"
+                          isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                         )}>
                           {m.month}
                         </p>
@@ -585,7 +585,7 @@ function ClassicPortalInvoiceReports() {
                     <div className="text-right">
                       <p className={cn(
                         "text-sm font-semibold",
-                        isDark ? "text-white" : "text-gray-900"
+                        isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                       )}>
                         {formatCurrency(m.total)}
                       </p>

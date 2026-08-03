@@ -149,7 +149,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
     <CustomerPortalLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950/40">
         {/* Header */}
         <div className="text-white px-4 py-4" style={portalBanner}>
           <div className="flex items-center justify-between">
@@ -205,7 +205,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-100 to-teal-200 flex items-center justify-center mb-4">
                 <MapPin className="h-10 w-10 text-teal-500" />
               </div>
-              <h3 className="font-semibold text-gray-800 mb-2">No Addresses Yet</h3>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">No Addresses Yet</h3>
               <p className="text-sm text-gray-500 max-w-xs mb-4">
                 Add your delivery addresses for faster checkout
               </p>
@@ -234,9 +234,9 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-800">{address.label}</h3>
+                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">{address.label}</h3>
                         {address.isDefault && (
-                          <span className="bg-teal-100 text-teal-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
                             <Star className="h-3 w-3 fill-current" />
                             Default
                           </span>
@@ -268,7 +268,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                   </div>
                   
                   {/* Actions */}
-                  <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800/60">
                     {!address.isDefault && (
                       <Button
                         variant="ghost"
@@ -453,7 +453,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                   id="isDefault"
                   checked={formData.isDefault}
                   onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
-                  className="rounded border-gray-300 text-teal-500 focus:ring-teal-500"
+                  className="rounded border-gray-300 dark:border-gray-800/60 text-teal-500 focus:ring-teal-500"
                 />
                 <Label htmlFor="isDefault" className="cursor-pointer">
                   Set as default address

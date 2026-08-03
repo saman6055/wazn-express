@@ -34,12 +34,12 @@ export default function Invoices() {
   const getCustomer = (customerId: number) => customers?.find(c => c.id === customerId);
 
   const statusConfig: Record<string, { labelKey: string; color: string; icon: typeof FileText }> = {
-    draft: { labelKey: "invoicesList.draft", color: "bg-gray-100 text-gray-700 border-gray-200", icon: FileText },
-    issued: { labelKey: "invoicesList.issued", color: "bg-blue-50 text-blue-700 border-blue-200", icon: CheckCircle2 },
-    paid: { labelKey: "invoicesList.paid", color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
-    partially_paid: { labelKey: "invoicesList.partiallyPaid", color: "bg-amber-50 text-amber-700 border-amber-200", icon: TrendingUp },
-    cancelled: { labelKey: "invoicesList.cancelled", color: "bg-red-50 text-red-700 border-red-200", icon: AlertTriangle },
-    refunded: { labelKey: "invoicesList.refunded", color: "bg-purple-50 text-purple-700 border-purple-200", icon: AlertTriangle },
+    draft: { labelKey: "invoicesList.draft", color: "bg-gray-100 dark:bg-gray-950/40 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800/60", icon: FileText },
+    issued: { labelKey: "invoicesList.issued", color: "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60", icon: CheckCircle2 },
+    paid: { labelKey: "invoicesList.paid", color: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60", icon: CheckCircle2 },
+    partially_paid: { labelKey: "invoicesList.partiallyPaid", color: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60", icon: TrendingUp },
+    cancelled: { labelKey: "invoicesList.cancelled", color: "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60", icon: AlertTriangle },
+    refunded: { labelKey: "invoicesList.refunded", color: "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60", icon: AlertTriangle },
   };
 
   const filteredInvoices = useMemo(() => {
@@ -100,7 +100,7 @@ export default function Invoices() {
                   <p className="text-xs text-muted-foreground font-medium">{t('invoicesList.totalInvoices')}</p>
                   <p className="text-2xl font-bold mt-1">{totalCount}</p>
                 </div>
-                <div className="p-2.5 bg-slate-100 rounded-xl"><Hash className="h-5 w-5 text-slate-600" /></div>
+                <div className="p-2.5 bg-slate-100 dark:bg-slate-950/40 rounded-xl"><Hash className="h-5 w-5 text-slate-600" /></div>
               </div>
             </CardContent>
           </Card>
@@ -109,9 +109,9 @@ export default function Invoices() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-teal-600 font-medium">{t('invoicesList.totalAmount')}</p>
-                  <p className="text-2xl font-bold text-teal-700 font-mono mt-1">${stats.totalAmount.toFixed(0)}</p>
+                  <p className="text-2xl font-bold text-teal-700 dark:text-teal-300 font-mono mt-1">${stats.totalAmount.toFixed(0)}</p>
                 </div>
-                <div className="p-2.5 bg-teal-100 rounded-xl"><DollarSign className="h-5 w-5 text-teal-600" /></div>
+                <div className="p-2.5 bg-teal-100 dark:bg-teal-950/40 rounded-xl"><DollarSign className="h-5 w-5 text-teal-600" /></div>
               </div>
             </CardContent>
           </Card>
@@ -120,9 +120,9 @@ export default function Invoices() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-blue-600 font-medium">{t('invoicesList.thisMonth')} ({stats.thisMonthCount})</p>
-                  <p className="text-2xl font-bold text-blue-700 font-mono mt-1">${stats.thisMonthAmount.toFixed(0)}</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 font-mono mt-1">${stats.thisMonthAmount.toFixed(0)}</p>
                 </div>
-                <div className="p-2.5 bg-blue-100 rounded-xl"><CalendarDays className="h-5 w-5 text-blue-600" /></div>
+                <div className="p-2.5 bg-blue-100 dark:bg-blue-950/40 rounded-xl"><CalendarDays className="h-5 w-5 text-blue-600" /></div>
               </div>
             </CardContent>
           </Card>
@@ -131,9 +131,9 @@ export default function Invoices() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-emerald-600 font-medium">{t('invoicesList.today')} ({stats.todayCount})</p>
-                  <p className="text-2xl font-bold text-emerald-700 font-mono mt-1">${stats.todayAmount.toFixed(0)}</p>
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 font-mono mt-1">${stats.todayAmount.toFixed(0)}</p>
                 </div>
-                <div className="p-2.5 bg-emerald-100 rounded-xl"><TrendingUp className="h-5 w-5 text-emerald-600" /></div>
+                <div className="p-2.5 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl"><TrendingUp className="h-5 w-5 text-emerald-600" /></div>
               </div>
             </CardContent>
           </Card>
@@ -177,8 +177,8 @@ export default function Invoices() {
               </div>
             ) : filteredInvoices.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="p-4 bg-gray-100 rounded-2xl mb-4"><FileX2 className="h-10 w-10 text-gray-400" /></div>
-                <h3 className="text-lg font-semibold text-gray-700">{t('invoicesList.noInvoices')}</h3>
+                <div className="p-4 bg-gray-100 dark:bg-gray-950/40 rounded-2xl mb-4"><FileX2 className="h-10 w-10 text-gray-400" /></div>
+                <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">{t('invoicesList.noInvoices')}</h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   {search || statusFilter !== "all" ? t('invoicesList.changeFilters') : t('invoicesList.noInvoicesYet')}
                 </p>
@@ -188,12 +188,12 @@ export default function Invoices() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
-                      <TableHead className="font-semibold text-gray-700">{t('invoicesList.invoiceNumber')}</TableHead>
-                      <TableHead className="font-semibold text-gray-700">{t('invoicesList.customer')}</TableHead>
-                      <TableHead className="font-semibold text-gray-700">{t('invoicesList.date')}</TableHead>
-                      <TableHead className="font-semibold text-gray-700">{t('invoicesList.total')}</TableHead>
-                      <TableHead className="font-semibold text-gray-700">{t('invoicesList.status')}</TableHead>
-                      <TableHead className="font-semibold text-gray-700 text-center">{t('invoicesList.actions')}</TableHead>
+                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300">{t('invoicesList.invoiceNumber')}</TableHead>
+                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300">{t('invoicesList.customer')}</TableHead>
+                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300">{t('invoicesList.date')}</TableHead>
+                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300">{t('invoicesList.total')}</TableHead>
+                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300">{t('invoicesList.status')}</TableHead>
+                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300 text-center">{t('invoicesList.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -206,7 +206,7 @@ export default function Invoices() {
                           onClick={() => navigate(`/invoices/${invoice.id}`)}>
                           <TableCell>
                             <div className="flex items-center gap-2.5">
-                              <div className="p-1.5 bg-teal-50 rounded-lg"><FileText className="h-4 w-4 text-teal-600" /></div>
+                              <div className="p-1.5 bg-teal-50 dark:bg-teal-950/40 rounded-lg"><FileText className="h-4 w-4 text-teal-600" /></div>
                               <span className="font-mono text-sm font-medium">{invoice.invoiceNumber}</span>
                             </div>
                           </TableCell>

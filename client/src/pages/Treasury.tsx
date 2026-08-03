@@ -506,7 +506,7 @@ const [activeTab, setActiveTab] = useState("accounts");
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800/60">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("treasury.totalCurrency")}</CardTitle>
               <PiggyBank className="h-5 w-5 text-green-600" />

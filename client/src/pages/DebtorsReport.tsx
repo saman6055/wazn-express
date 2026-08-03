@@ -128,13 +128,13 @@ const [searchTerm, setSearchTerm] = useState("");
   const getAgingBadge = (category: string) => {
     switch (category) {
       case '0-30':
-        return <Badge className="bg-green-100 text-green-800">{t("auto.text_9c94d3")} </Badge>;
+        return <Badge className="bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200">{t("auto.text_9c94d3")} </Badge>;
       case '30-60':
-        return <Badge className="bg-yellow-100 text-yellow-800">{t("auto.text_89c656")} </Badge>;
+        return <Badge className="bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-200">{t("auto.text_89c656")} </Badge>;
       case '60-90':
-        return <Badge className="bg-orange-100 text-orange-800">{t("auto.text_aebd66")} </Badge>;
+        return <Badge className="bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200">{t("auto.text_aebd66")} </Badge>;
       case '90+':
-        return <Badge className="bg-red-100 text-red-800">{t("auto.text_3192e6")} </Badge>;
+        return <Badge className="bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200">{t("auto.text_3192e6")} </Badge>;
       default:
         return <Badge variant="outline">{category}</Badge>;
     }
@@ -172,7 +172,7 @@ const [searchTerm, setSearchTerm] = useState("");
                   <p className="text-2xl font-bold text-red-600">{formatCurrency(stats.totalDebt)}</p>
                   <p className="text-xs text-muted-foreground">{stats.totalDebtors} {t("auto.text_cfa8e7")}</p>
                 </div>
-                <div className="p-3 bg-red-100 rounded-full">
+                <div className="p-3 bg-red-100 dark:bg-red-950/40 rounded-full">
                   <DollarSign className="w-5 h-5 text-red-600" />
                 </div>
               </div>
@@ -188,7 +188,7 @@ const [searchTerm, setSearchTerm] = useState("");
                   <p className="text-xl font-bold text-green-600">{formatCurrency(stats.aging0_30)}</p>
                   <p className="text-xs text-muted-foreground">{stats.count0_30} {t("common.customer")}</p>
                 </div>
-                <div className="p-2 bg-green-100 rounded-full">
+                <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-full">
                   <Clock className="w-4 h-4 text-green-600" />
                 </div>
               </div>
@@ -204,7 +204,7 @@ const [searchTerm, setSearchTerm] = useState("");
                   <p className="text-xl font-bold text-yellow-600">{formatCurrency(stats.aging30_60)}</p>
                   <p className="text-xs text-muted-foreground">{stats.count30_60} {t("common.customer")}</p>
                 </div>
-                <div className="p-2 bg-yellow-100 rounded-full">
+                <div className="p-2 bg-yellow-100 dark:bg-yellow-950/40 rounded-full">
                   <Clock className="w-4 h-4 text-yellow-600" />
                 </div>
               </div>
@@ -220,7 +220,7 @@ const [searchTerm, setSearchTerm] = useState("");
                   <p className="text-xl font-bold text-orange-600">{formatCurrency(stats.aging60_90)}</p>
                   <p className="text-xs text-muted-foreground">{stats.count60_90} {t("common.customer")}</p>
                 </div>
-                <div className="p-2 bg-orange-100 rounded-full">
+                <div className="p-2 bg-orange-100 dark:bg-orange-950/40 rounded-full">
                   <AlertTriangle className="w-4 h-4 text-orange-600" />
                 </div>
               </div>
@@ -233,11 +233,11 @@ const [searchTerm, setSearchTerm] = useState("");
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("auto.text_3192e6")} </p>
-                  <p className="text-xl font-bold text-red-700">{formatCurrency(stats.aging90Plus)}</p>
+                  <p className="text-xl font-bold text-red-700 dark:text-red-300">{formatCurrency(stats.aging90Plus)}</p>
                   <p className="text-xs text-muted-foreground">{stats.count90Plus} {t("common.customer")}</p>
                 </div>
-                <div className="p-2 bg-red-100 rounded-full">
-                  <AlertTriangle className="w-4 h-4 text-red-700" />
+                <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-full">
+                  <AlertTriangle className="w-4 h-4 text-red-700 dark:text-red-300" />
                 </div>
               </div>
             </CardContent>

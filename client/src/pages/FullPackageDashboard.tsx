@@ -66,16 +66,16 @@ import { pickLang } from "@/lib/lang";
 import { PlatformChip } from "@/components/PlatformChip";
 
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800",
-  approved: "bg-blue-100 text-blue-800",
-  ordered: "bg-indigo-100 text-indigo-800",
-  tracking_added: "bg-cyan-100 text-cyan-800",
-  in_china_warehouse: "bg-purple-100 text-purple-800",
-  in_batch: "bg-violet-100 text-violet-800",
-  in_transit: "bg-orange-100 text-orange-800",
-  arrived: "bg-teal-100 text-teal-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
+  pending: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
+  approved: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200",
+  ordered: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200",
+  tracking_added: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200",
+  in_china_warehouse: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200",
+  in_batch: "bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200",
+  in_transit: "bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200",
+  arrived: "bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200",
+  delivered: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200",
+  cancelled: "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200",
 };
 
 type SortField = "date" | "purchase" | "selling" | "profit" | "customer";
@@ -585,13 +585,13 @@ export default function FullPackageDashboard() {
               </DropdownMenu>
               
               <Link href="/full-package/bulk-create?type=full_package">
-                <Button variant="outline" className="bg-white/80 text-emerald-700 hover:bg-emerald-50 border-emerald-300">
+                <Button variant="outline" className="bg-white/80 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 border-emerald-300 dark:border-emerald-800/60">
                   <PackagePlus className="h-4 w-4 ms-2" />
                   {t("fullPackage.bulkCreate")}
                 </Button>
               </Link>
               <Link href="/full-package/new">
-                <Button className="bg-white text-emerald-700 hover:bg-emerald-50">
+                <Button className="bg-white text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50">
                   <Plus className="h-4 w-4 ms-2" />
                   {t("fullPackage.newOrder")}
                 </Button>
@@ -602,84 +602,84 @@ export default function FullPackageDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200">
+          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 dark:border-emerald-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-emerald-600 font-medium">{t("fullPackage.ordersCountLabel")}</p>
-                  <p className="text-2xl font-bold text-emerald-700">{totalOrders}</p>
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{totalOrders}</p>
                 </div>
-                <div className="p-2 bg-emerald-100 rounded-xl">
+                <div className="p-2 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
                   <Package className="h-5 w-5 text-emerald-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-200">
+          <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-200 dark:border-amber-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-amber-600 font-medium">{t("fullPackage.pendingLabel")}</p>
-                  <p className="text-2xl font-bold text-amber-700">{pendingOrders}</p>
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{pendingOrders}</p>
                 </div>
-                <div className="p-2 bg-amber-100 rounded-xl">
+                <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
                   <Clock className="h-5 w-5 text-amber-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200">
+          <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-blue-600 font-medium">{t("fullPackage.inTransitLabel")}</p>
-                  <p className="text-2xl font-bold text-blue-700">{inTransitOrders}</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{inTransitOrders}</p>
                 </div>
-                <div className="p-2 bg-blue-100 rounded-xl">
+                <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
                   <Clock className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 to-white border-red-200">
+          <Card className="bg-gradient-to-br from-red-50 to-white border-red-200 dark:border-red-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-red-600 font-medium">{t("fullPackage.totalPurchaseCost")}</p>
-                  <p className="text-xl font-bold text-red-700">${totalPurchaseCost.toFixed(2)}</p>
+                  <p className="text-xl font-bold text-red-700 dark:text-red-300">${totalPurchaseCost.toFixed(2)}</p>
                 </div>
-                <div className="p-2 bg-red-100 rounded-xl">
+                <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-xl">
                   <ShoppingCart className="h-5 w-5 text-red-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-white border-green-200">
+          <Card className="bg-gradient-to-br from-green-50 to-white border-green-200 dark:border-green-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-green-600 font-medium">{t("fullPackage.grossProfitLabel")}</p>
-                  <p className="text-xl font-bold text-green-700">${totalGrossProfit.toFixed(2)}</p>
+                  <p className="text-xl font-bold text-green-700 dark:text-green-300">${totalGrossProfit.toFixed(2)}</p>
                 </div>
-                <div className="p-2 bg-green-100 rounded-xl">
+                <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-xl">
                   <DollarSign className="h-5 w-5 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-200">
+          <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-200 dark:border-purple-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-purple-600 font-medium">{t("fullPackage.netProfitLabel")}</p>
-                  <p className="text-xl font-bold text-purple-700">${totalNetProfit.toFixed(2)}</p>
+                  <p className="text-xl font-bold text-purple-700 dark:text-purple-300">${totalNetProfit.toFixed(2)}</p>
                 </div>
-                <div className="p-2 bg-purple-100 rounded-xl">
+                <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-xl">
                   <TrendingUp className="h-5 w-5 text-purple-600" />
                 </div>
               </div>
@@ -1019,7 +1019,7 @@ export default function FullPackageDashboard() {
                         <TableCell>
                           <div className="space-y-1">
                             <div className="flex items-center gap-1">
-                              <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300">
+                              <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300 dark:border-emerald-800/60">
                                 {order.orderCode}
                               </Badge>
                               <CopyButton value={order.orderCode} label={pickLang(language, { ku: "کۆپی کۆدی ئۆردەر", en: "Copy order code", ar: "نسخ رمز الطلب", zh: "复制订单编码" })} />
@@ -1054,7 +1054,7 @@ export default function FullPackageDashboard() {
                                 className="w-10 h-10"
                               />
                             ) : (
-                              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                              <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
                                 <Package className="h-5 w-5 text-emerald-600" />
                               </div>
                             )}
@@ -1087,7 +1087,7 @@ export default function FullPackageDashboard() {
                               <CopyButton value={(order as any).batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次编码" })} />
                             </div>
                           ) : (
-                            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                            <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
                               {t("fullPackage.noBatch")}
                             </Badge>
                           )}
@@ -1113,7 +1113,7 @@ export default function FullPackageDashboard() {
                               )}
                             </div>
                           ) : (
-                            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                            <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
                               {t("fullPackage.noTracking")}
                             </Badge>
                           )}

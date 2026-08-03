@@ -149,9 +149,9 @@ export default function WarehouseArrivalModal({
             <Label className="text-base font-semibold">{t('warehouse.shippingTypeLabel')}</Label>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { value: "air_regular" as const, label: t('warehouse.airRegular'), icon: Plane, color: "text-blue-600", bg: "bg-blue-50" },
-                { value: "air_irregular" as const, label: t('warehouse.airIrregular'), icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
-                { value: "sea" as const, label: t('warehouse.sea'), icon: Ship, color: "text-cyan-600", bg: "bg-cyan-50" },
+                { value: "air_regular" as const, label: t('warehouse.airRegular'), icon: Plane, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/40" },
+                { value: "air_irregular" as const, label: t('warehouse.airIrregular'), icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
+                { value: "sea" as const, label: t('warehouse.sea'), icon: Ship, color: "text-cyan-600", bg: "bg-cyan-50 dark:bg-cyan-950/40" },
               ].map(type => (
                 <div
                   key={type.value}

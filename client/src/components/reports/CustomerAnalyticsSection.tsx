@@ -146,7 +146,7 @@ export function CustomerAnalyticsSection() {
                       -${Math.abs(balance).toLocaleString()}
                     </TableCell>
                     <TableCell className="text-end">
-                      <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700 dark:bg-red-950/30 dark:border-red-800">
+                      <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700 dark:text-red-300 dark:bg-red-950/30 dark:border-red-800">
                         {t("reports.overdue")}
                       </Badge>
                     </TableCell>

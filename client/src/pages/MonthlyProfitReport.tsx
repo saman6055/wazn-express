@@ -54,7 +54,7 @@ const orderTypeConfig = {
     labelAr: "الباقة الكاملة",
     labelZh: "全包",
     color: "#10b981",
-    bgColor: "bg-emerald-100",
+    bgColor: "bg-emerald-100 dark:bg-emerald-950/40",
     textColor: "text-emerald-600",
     icon: Package 
   },
@@ -65,7 +65,7 @@ const orderTypeConfig = {
     labelAr: "العمولة",
     labelZh: "佣金",
     color: "#f59e0b",
-    bgColor: "bg-amber-100",
+    bgColor: "bg-amber-100 dark:bg-amber-950/40",
     textColor: "text-amber-600",
     icon: Handshake 
   },
@@ -282,7 +282,7 @@ export default function MonthlyProfitReport() {
                     </>
                   )}
                 </div>
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-green-100 dark:bg-green-950/40 rounded-lg flex items-center justify-center">
                   <TrendingUp className="w-5 h-5 text-green-600" />
                 </div>
               </div>
@@ -308,7 +308,7 @@ export default function MonthlyProfitReport() {
                     </>
                   )}
                 </div>
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-red-100 dark:bg-red-950/40 rounded-lg flex items-center justify-center">
                   <TrendingDown className="w-5 h-5 text-red-600" />
                 </div>
               </div>
@@ -336,7 +336,7 @@ export default function MonthlyProfitReport() {
                     </>
                   )}
                 </div>
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-950/40 rounded-lg flex items-center justify-center">
                   <BarChart3 className="w-5 h-5 text-purple-600" />
                 </div>
               </div>

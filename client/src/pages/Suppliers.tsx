@@ -51,11 +51,11 @@ import {
 } from "@/components/ui/table";
 
 const platformConfig: Record<string, { color: string; bgColor: string; label: string }> = {
-  "1688": { color: "text-orange-700", bgColor: "bg-orange-100", label: "1688" },
-  "taobao": { color: "text-red-700", bgColor: "bg-red-100", label: "Taobao" },
-  "alibaba": { color: "text-amber-700", bgColor: "bg-amber-100", label: "Alibaba" },
-  "pinduoduo": { color: "text-rose-700", bgColor: "bg-rose-100", label: "Pinduoduo" },
-  "other": { color: "text-slate-700", bgColor: "bg-slate-100", label: "Other" },
+  "1688": { color: "text-orange-700 dark:text-orange-300", bgColor: "bg-orange-100 dark:bg-orange-950/40", label: "1688" },
+  "taobao": { color: "text-red-700 dark:text-red-300", bgColor: "bg-red-100 dark:bg-red-950/40", label: "Taobao" },
+  "alibaba": { color: "text-amber-700 dark:text-amber-300", bgColor: "bg-amber-100 dark:bg-amber-950/40", label: "Alibaba" },
+  "pinduoduo": { color: "text-rose-700 dark:text-rose-300", bgColor: "bg-rose-100 dark:bg-rose-950/40", label: "Pinduoduo" },
+  "other": { color: "text-slate-700 dark:text-slate-300", bgColor: "bg-slate-100 dark:bg-slate-950/40", label: "Other" },
 };
 
 export default function Suppliers() {
@@ -250,12 +250,12 @@ const [searchQuery, setSearchQuery] = useState("");
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 dark:border-orange-800/60">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-orange-600 font-medium">{t("auto.text_623214")} </p>
-                  <p className="text-2xl font-bold text-orange-700">{supplierStats?.total || suppliers?.length || 0}</p>
+                  <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{supplierStats?.total || suppliers?.length || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-orange-200 flex items-center justify-center">
                   <Store className="h-5 w-5 text-orange-600" />
@@ -264,12 +264,12 @@ const [searchQuery, setSearchQuery] = useState("");
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 dark:border-green-800/60">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-green-600 font-medium">{t("common.active")}</p>
-                  <p className="text-2xl font-bold text-green-700">{supplierStats?.active || suppliers?.filter(s => s.isActive).length || 0}</p>
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-300">{supplierStats?.active || suppliers?.filter(s => s.isActive).length || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-green-200 flex items-center justify-center">
                   <TrendingUp className="h-5 w-5 text-green-600" />
@@ -278,12 +278,12 @@ const [searchQuery, setSearchQuery] = useState("");
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 dark:border-blue-800/60">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-blue-600 font-medium">{t("auto.text_269691")} </p>
-                  <p className="text-2xl font-bold text-blue-700">{supplierStats?.totalOrders || 0}</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{supplierStats?.totalOrders || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-blue-200 flex items-center justify-center">
                   <ShoppingBag className="h-5 w-5 text-blue-600" />
@@ -292,12 +292,12 @@ const [searchQuery, setSearchQuery] = useState("");
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 dark:border-amber-800/60">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-amber-600 font-medium">{t("auto.text_17eb70")} </p>
-                  <p className="text-2xl font-bold text-amber-700 flex items-center gap-1">
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1">
                     <Star className="h-5 w-5 fill-amber-500 text-amber-500" />
                     {supplierStats?.avgRating?.toFixed(1) || "5.0"}
                   </p>
@@ -410,7 +410,7 @@ const [searchQuery, setSearchQuery] = useState("");
                       </TableCell>
                       <TableCell>
                         {supplier.wechatId ? (
-                          <span className="text-sm font-mono bg-green-50 text-green-700 px-2 py-1 rounded">
+                          <span className="text-sm font-mono bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 px-2 py-1 rounded">
                             {supplier.wechatId}
                           </span>
                         ) : (

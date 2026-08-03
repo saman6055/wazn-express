@@ -95,7 +95,7 @@ export default function PortalProhibitedPackages() {
             <Ban className="w-6 h-6" />
           </div>
           <div>
-            <h1 className={cn("text-xl font-bold", isDark ? "text-white" : "text-slate-900")}>
+            <h1 className={cn("text-xl font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
               {label({ ku: "کەل و پەلی قەدەغە", en: "Prohibited packages", ar: "الطرود الممنوعة", zh: "违禁包裹" })}
             </h1>
             <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
@@ -108,7 +108,7 @@ export default function PortalProhibitedPackages() {
           <div className="space-y-3">{[1, 2].map((i) => <div key={i} className={cn("h-40 rounded-2xl animate-pulse", isDark ? "bg-slate-800" : "bg-slate-200")} />)}</div>
         ) : !items || items.length === 0 ? (
           <div className="text-center py-20">
-            <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4", isDark ? "bg-slate-800" : "bg-slate-100")}>
+            <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4", isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40")}>
               <CheckCircle2 className="w-8 h-8 text-emerald-500" />
             </div>
             <p className={cn("font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
@@ -126,17 +126,17 @@ export default function PortalProhibitedPackages() {
                 <div key={it.id} ref={highlightId === it.id ? focusRef : undefined} className={cn(
                   "rounded-2xl border overflow-hidden transition-all",
                   highlightId === it.id && "ring-2 ring-offset-2 ring-amber-400 dark:ring-offset-slate-900",
-                  pending ? "wazn-prohibited-flash border-red-400" : (isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"),
+                  pending ? "wazn-prohibited-flash border-red-400" : (isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60"),
                 )}>
                   <div className={cn("p-4", pending && (isDark ? "bg-slate-800" : "bg-white"))}>
                     {/* Top: tracking + status */}
                     <div className="flex items-center justify-between mb-3">
-                      <span className={cn("inline-flex items-center gap-1.5 text-sm font-mono", isDark ? "text-slate-300" : "text-slate-700")}>
+                      <span className={cn("inline-flex items-center gap-1.5 text-sm font-mono", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")}>
                         <Hash className="w-3.5 h-3.5 opacity-60" />{it.trackingNumber}
                       </span>
                       <span className={cn(
                         "text-[11px] font-bold px-2.5 py-1 rounded-full",
-                        it.status === "resolved" ? "bg-emerald-100 text-emerald-700" : it.status === "chosen" ? "bg-violet-100 text-violet-700" : "bg-red-100 text-red-700",
+                        it.status === "resolved" ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300" : it.status === "chosen" ? "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300" : "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300",
                       )}>
                         {label(it.status === "resolved" ? { ku: "چارەسەرکرا", en: "Resolved", ar: "تم الحل", zh: "已解决" } : it.status === "chosen" ? { ku: "هەڵبژێردرا", en: "Chosen", ar: "تم الاختيار", zh: "已选择" } : { ku: "پێویستی بە بڕیارە", en: "Action needed", ar: "بحاجة لقرار", zh: "需要处理" })}
                       </span>
@@ -152,11 +152,11 @@ export default function PortalProhibitedPackages() {
                     )}
 
                     {/* Reason */}
-                    <div className={cn("rounded-xl p-3 flex items-start gap-2.5", isDark ? "bg-red-950/30" : "bg-red-50")}>
+                    <div className={cn("rounded-xl p-3 flex items-start gap-2.5", isDark ? "bg-red-950/30" : "bg-red-50 dark:bg-red-950/40")}>
                       <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className={cn("text-xs font-medium", isDark ? "text-red-300" : "text-red-700")}>{label({ ku: "هۆکاری قەدەغە", en: "Reason", ar: "السبب", zh: "原因" })}</p>
-                        <p className={cn("text-sm mt-0.5", isDark ? "text-slate-200" : "text-slate-700")}>
+                        <p className={cn("text-xs font-medium", isDark ? "text-red-300" : "text-red-700 dark:text-red-300")}>{label({ ku: "هۆکاری قەدەغە", en: "Reason", ar: "السبب", zh: "原因" })}</p>
+                        <p className={cn("text-sm mt-0.5", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")}>
                           {reason ? label(reason) : label({ ku: "کاڵای قەدەغەکراو", en: "Prohibited item", ar: "بضاعة ممنوعة", zh: "违禁物品" })}
                         </p>
                         {it.reasonNote && <p className={cn("text-xs mt-1", isDark ? "text-slate-400" : "text-slate-500")}>{it.reasonNote}</p>}
@@ -165,7 +165,7 @@ export default function PortalProhibitedPackages() {
 
                     {/* Fee (if charged) */}
                     {it.feeUsd && (
-                      <div className={cn("mt-3 text-sm flex items-center justify-between rounded-xl px-3 py-2", isDark ? "bg-amber-950/30 text-amber-300" : "bg-amber-50 text-amber-700")}>
+                      <div className={cn("mt-3 text-sm flex items-center justify-between rounded-xl px-3 py-2", isDark ? "bg-amber-950/30 text-amber-300" : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300")}>
                         <span>{label({ ku: "کولفە (قەرز لەسەر باڵانس)", en: "Fee (added to balance)", ar: "الرسوم (على الرصيد)", zh: "费用（已计入余额）" })}</span>
                         <span className="font-bold">${Number(it.feeUsd).toFixed(2)}</span>
                       </div>
@@ -174,7 +174,7 @@ export default function PortalProhibitedPackages() {
                     {/* Resolution */}
                     {pending ? (
                       <div className="mt-4">
-                        <p className={cn("text-sm font-medium mb-2", isDark ? "text-slate-300" : "text-slate-700")}>
+                        <p className={cn("text-sm font-medium mb-2", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")}>
                           {label({ ku: "چی لەم کاڵایە بکرێت؟ (هەر ڕێگایەک کولفەی خۆی هەیە)", en: "What should we do with it? (each option has a fee)", ar: "ماذا نفعل بها؟ (لكل خيار رسوم)", zh: "该如何处理？（每个选项都有费用）" })}
                         </p>
                         <div className="grid grid-cols-3 gap-2">
@@ -190,7 +190,7 @@ export default function PortalProhibitedPackages() {
                           <div className="mt-3">
                             <textarea value={reshipAddress} onChange={(e) => setReshipAddress(e.target.value)} rows={2}
                               placeholder={label({ ku: "ئەدرێسی نوێ بنووسە...", en: "Enter the new address...", ar: "أدخل العنوان الجديد...", zh: "输入新地址..." })}
-                              className={cn("w-full rounded-xl border px-3 py-2 text-sm outline-none", isDark ? "bg-slate-900 border-slate-700 text-white" : "border-slate-200")} />
+                              className={cn("w-full rounded-xl border px-3 py-2 text-sm outline-none", isDark ? "bg-slate-900 border-slate-700 text-white" : "border-slate-200 dark:border-slate-800/60")} />
                             <button onClick={() => choose(it, "reship")} disabled={chooseResolution.isPending}
                               className="mt-2 w-full rounded-xl bg-violet-600 text-white py-2.5 text-sm font-medium hover:bg-violet-700 flex items-center justify-center gap-2">
                               {chooseResolution.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -201,7 +201,7 @@ export default function PortalProhibitedPackages() {
                       </div>
                     ) : (
                       <div className="mt-4 flex items-center justify-between gap-2">
-                        <span className={cn("inline-flex items-center gap-1.5 text-sm font-medium", isDark ? "text-slate-200" : "text-slate-700")}>
+                        <span className={cn("inline-flex items-center gap-1.5 text-sm font-medium", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")}>
                           {chosen && <chosen.icon className="w-4 h-4" />}
                           {chosen ? label(chosen.label) : ""}
                         </span>

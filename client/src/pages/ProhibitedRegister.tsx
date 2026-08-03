@@ -96,7 +96,7 @@ export default function ProhibitedRegister() {
         </div>
 
         {lastCode && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl bg-emerald-50 text-emerald-700 px-4 py-3 text-sm">
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-4 py-3 text-sm">
             <CheckCircle2 className="w-4 h-4" />
             {label({ ku: "دواتر تۆمارکرا", en: "Last registered", ar: "آخر تسجيل", zh: "上次登记" })}: <span className="font-mono font-medium">{lastCode}</span>
           </div>

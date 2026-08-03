@@ -108,7 +108,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
       </div>
 
       {/* Balance Equation */}
-      <Card className="bg-gradient-to-r from-blue-50 via-white to-purple-50 border-2 border-blue-200">
+      <Card className="bg-gradient-to-r from-blue-50 via-white to-purple-50 border-2 border-blue-200 dark:border-blue-800/60">
         <CardContent className="p-6">
           <div className="flex items-center justify-center gap-4 text-center">
             <div className="flex-1">
@@ -131,9 +131,9 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Assets */}
-        <Card className="border-blue-200">
-          <CardHeader className="bg-blue-50 rounded-t-lg">
-            <CardTitle className="flex items-center gap-2 text-blue-700">
+        <Card className="border-blue-200 dark:border-blue-800/60">
+          <CardHeader className="bg-blue-50 dark:bg-blue-950/40 rounded-t-lg">
+            <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
               <TrendingUp className="h-5 w-5" />
               {t("auto.text_921f9e")} (Assets)
             </CardTitle>
@@ -147,7 +147,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
                       <Banknote className="h-4 w-4 text-emerald-600" />
                     </div>
                     <span>{t("auto.text_7725d0")} </span>
@@ -157,7 +157,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center">
                       <Building2 className="h-4 w-4 text-blue-600" />
                     </div>
                     <span>{t("auto.text_e3d705")} </span>
@@ -167,7 +167,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
                       <Users className="h-4 w-4 text-amber-600" />
                     </div>
                     <span>{t("auto.text_ddf1ac")} </span>
@@ -177,7 +177,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-950/40 flex items-center justify-center">
                       <Package className="h-4 w-4 text-purple-600" />
                     </div>
                     <span>{t("auto.text_a581a2")} </span>
@@ -188,19 +188,19 @@ const [selectedDate, setSelectedDate] = useState(() => {
             </div>
 
             {/* Total Assets */}
-            <div className="p-4 bg-blue-50">
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/40">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-blue-700">{t("auto.text_6ca2b0")} </span>
-                <span className="text-xl font-bold text-blue-700">${totalAssets.toLocaleString()}</span>
+                <span className="font-bold text-blue-700 dark:text-blue-300">{t("auto.text_6ca2b0")} </span>
+                <span className="text-xl font-bold text-blue-700 dark:text-blue-300">${totalAssets.toLocaleString()}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Liabilities */}
-        <Card className="border-red-200">
-          <CardHeader className="bg-red-50 rounded-t-lg">
-            <CardTitle className="flex items-center gap-2 text-red-700">
+        <Card className="border-red-200 dark:border-red-800/60">
+          <CardHeader className="bg-red-50 dark:bg-red-950/40 rounded-t-lg">
+            <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-300">
               <TrendingDown className="h-5 w-5" />
               {t("auto.text_701a1e")} (Liabilities)
             </CardTitle>
@@ -214,7 +214,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-red-100 dark:bg-red-950/40 flex items-center justify-center">
                       <Users className="h-4 w-4 text-red-600" />
                     </div>
                     <span>{t("auto.text_7e7304")} </span>
@@ -224,7 +224,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center">
                       <CreditCard className="h-4 w-4 text-orange-600" />
                     </div>
                     <span>{t("auto.text_a139ef")} </span>
@@ -234,7 +234,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-pink-100 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-pink-100 dark:bg-pink-950/40 flex items-center justify-center">
                       <Landmark className="h-4 w-4 text-pink-600" />
                     </div>
                     <span>{t("auto.text_812278")} </span>
@@ -245,19 +245,19 @@ const [selectedDate, setSelectedDate] = useState(() => {
             </div>
 
             {/* Total Liabilities */}
-            <div className="p-4 bg-red-50">
+            <div className="p-4 bg-red-50 dark:bg-red-950/40">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-red-700">{t("finance.totalDebt")}</span>
-                <span className="text-xl font-bold text-red-700">${totalLiabilities.toLocaleString()}</span>
+                <span className="font-bold text-red-700 dark:text-red-300">{t("finance.totalDebt")}</span>
+                <span className="text-xl font-bold text-red-700 dark:text-red-300">${totalLiabilities.toLocaleString()}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Equity */}
-        <Card className="border-emerald-200">
-          <CardHeader className="bg-emerald-50 rounded-t-lg">
-            <CardTitle className="flex items-center gap-2 text-emerald-700">
+        <Card className="border-emerald-200 dark:border-emerald-800/60">
+          <CardHeader className="bg-emerald-50 dark:bg-emerald-950/40 rounded-t-lg">
+            <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
               <Scale className="h-5 w-5" />
               {t("auto.text_cdeec4")} (Equity)
             </CardTitle>
@@ -270,7 +270,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
                       <PiggyBank className="h-4 w-4 text-emerald-600" />
                     </div>
                     <span>{t("auto.text_444ee9")} </span>
@@ -280,7 +280,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center">
                       <TrendingUp className="h-4 w-4 text-teal-600" />
                     </div>
                     <span>{t("auto.text_2252fe")} </span>
@@ -290,7 +290,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-cyan-100 dark:bg-cyan-950/40 flex items-center justify-center">
                       <Wallet className="h-4 w-4 text-cyan-600" />
                     </div>
                     <span>{t("auto.text_2c8e0f")} </span>
@@ -301,10 +301,10 @@ const [selectedDate, setSelectedDate] = useState(() => {
             </div>
 
             {/* Total Equity */}
-            <div className="p-4 bg-emerald-50">
+            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-emerald-700">{t("auto.text_66dedb")} </span>
-                <span className="text-xl font-bold text-emerald-700">${equity.toLocaleString()}</span>
+                <span className="font-bold text-emerald-700 dark:text-emerald-300">{t("auto.text_66dedb")} </span>
+                <span className="text-xl font-bold text-emerald-700 dark:text-emerald-300">${equity.toLocaleString()}</span>
               </div>
             </div>
           </CardContent>

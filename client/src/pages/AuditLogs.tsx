@@ -28,27 +28,27 @@ type LangLabel = { ku: string; en: string; ar: string; zh: string };
 
 // Category icons and colors
 const categoryConfig: Record<string, { icon: any; color: string; bgColor: string; label: LangLabel }> = {
-  customer: { icon: Users, color: "text-blue-600", bgColor: "bg-blue-100", label: { ku: "کڕیارەکان", en: "Customers", ar: "العملاء", zh: "客户" } },
-  package: { icon: Package, color: "text-purple-600", bgColor: "bg-purple-100", label: { ku: "پاکەتەکان", en: "Packages", ar: "الطرود", zh: "包裹" } },
-  batch: { icon: Truck, color: "text-orange-600", bgColor: "bg-orange-100", label: { ku: "باچەکان", en: "Batches", ar: "الدفعات", zh: "批次" } },
-  full_package: { icon: ShoppingCart, color: "text-green-600", bgColor: "bg-green-100", label: { ku: "پاکێجی تەواو", en: "Full Package", ar: "الباقة الكاملة", zh: "完整套餐" } },
+  customer: { icon: Users, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-950/40", label: { ku: "کڕیارەکان", en: "Customers", ar: "العملاء", zh: "客户" } },
+  package: { icon: Package, color: "text-purple-600", bgColor: "bg-purple-100 dark:bg-purple-950/40", label: { ku: "پاکەتەکان", en: "Packages", ar: "الطرود", zh: "包裹" } },
+  batch: { icon: Truck, color: "text-orange-600", bgColor: "bg-orange-100 dark:bg-orange-950/40", label: { ku: "باچەکان", en: "Batches", ar: "الدفعات", zh: "批次" } },
+  full_package: { icon: ShoppingCart, color: "text-green-600", bgColor: "bg-green-100 dark:bg-green-950/40", label: { ku: "پاکێجی تەواو", en: "Full Package", ar: "الباقة الكاملة", zh: "完整套餐" } },
 
-  commission: { icon: DollarSign, color: "text-yellow-600", bgColor: "bg-yellow-100", label: { ku: "کڕین بە تێچوو", en: "Cost Purchase", ar: "الشراء بالتكلفة", zh: "成本采购" } },
-  finance: { icon: DollarSign, color: "text-emerald-600", bgColor: "bg-emerald-100", label: { ku: "دارایی", en: "Finance", ar: "المالية", zh: "财务" } },
-  settings: { icon: Settings, color: "text-gray-600", bgColor: "bg-gray-100", label: { ku: "ڕێکخستنەکان", en: "Settings", ar: "الإعدادات", zh: "设置" } },
-  user: { icon: User, color: "text-indigo-600", bgColor: "bg-indigo-100", label: { ku: "بەکارهێنەرەکان", en: "Users", ar: "المستخدمون", zh: "用户" } },
-  system: { icon: Activity, color: "text-red-600", bgColor: "bg-red-100", label: { ku: "سیستەم", en: "System", ar: "النظام", zh: "系统" } },
+  commission: { icon: DollarSign, color: "text-yellow-600", bgColor: "bg-yellow-100 dark:bg-yellow-950/40", label: { ku: "کڕین بە تێچوو", en: "Cost Purchase", ar: "الشراء بالتكلفة", zh: "成本采购" } },
+  finance: { icon: DollarSign, color: "text-emerald-600", bgColor: "bg-emerald-100 dark:bg-emerald-950/40", label: { ku: "دارایی", en: "Finance", ar: "المالية", zh: "财务" } },
+  settings: { icon: Settings, color: "text-gray-600", bgColor: "bg-gray-100 dark:bg-gray-950/40", label: { ku: "ڕێکخستنەکان", en: "Settings", ar: "الإعدادات", zh: "设置" } },
+  user: { icon: User, color: "text-indigo-600", bgColor: "bg-indigo-100 dark:bg-indigo-950/40", label: { ku: "بەکارهێنەرەکان", en: "Users", ar: "المستخدمون", zh: "用户" } },
+  system: { icon: Activity, color: "text-red-600", bgColor: "bg-red-100 dark:bg-red-950/40", label: { ku: "سیستەم", en: "System", ar: "النظام", zh: "系统" } },
 };
 
 // Action icons and colors
 const actionConfig: Record<string, { icon: any; color: string; bgColor: string; label: LangLabel }> = {
-  create: { icon: Plus, color: "text-green-600", bgColor: "bg-green-100", label: { ku: "دروستکردن", en: "Create", ar: "إنشاء", zh: "创建" } },
-  update: { icon: Edit, color: "text-blue-600", bgColor: "bg-blue-100", label: { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" } },
-  delete: { icon: Trash2, color: "text-red-600", bgColor: "bg-red-100", label: { ku: "سڕینەوە", en: "Delete", ar: "حذف", zh: "删除" } },
-  status_change: { icon: RefreshCw, color: "text-orange-600", bgColor: "bg-orange-100", label: { ku: "گۆڕینی بارودۆخ", en: "Status Change", ar: "تغيير الحالة", zh: "状态变更" } },
-  charge: { icon: DollarSign, color: "text-purple-600", bgColor: "bg-purple-100", label: { ku: "چارج کردن", en: "Charge", ar: "احتساب رسوم", zh: "扣费" } },
-  payment: { icon: DollarSign, color: "text-emerald-600", bgColor: "bg-emerald-100", label: { ku: "پارەدان", en: "Payment", ar: "دفع", zh: "付款" } },
-  refund: { icon: RotateCcw, color: "text-yellow-600", bgColor: "bg-yellow-100", label: { ku: "گەڕاندنەوە", en: "Refund", ar: "استرداد", zh: "退款" } },
+  create: { icon: Plus, color: "text-green-600", bgColor: "bg-green-100 dark:bg-green-950/40", label: { ku: "دروستکردن", en: "Create", ar: "إنشاء", zh: "创建" } },
+  update: { icon: Edit, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-950/40", label: { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" } },
+  delete: { icon: Trash2, color: "text-red-600", bgColor: "bg-red-100 dark:bg-red-950/40", label: { ku: "سڕینەوە", en: "Delete", ar: "حذف", zh: "删除" } },
+  status_change: { icon: RefreshCw, color: "text-orange-600", bgColor: "bg-orange-100 dark:bg-orange-950/40", label: { ku: "گۆڕینی بارودۆخ", en: "Status Change", ar: "تغيير الحالة", zh: "状态变更" } },
+  charge: { icon: DollarSign, color: "text-purple-600", bgColor: "bg-purple-100 dark:bg-purple-950/40", label: { ku: "چارج کردن", en: "Charge", ar: "احتساب رسوم", zh: "扣费" } },
+  payment: { icon: DollarSign, color: "text-emerald-600", bgColor: "bg-emerald-100 dark:bg-emerald-950/40", label: { ku: "پارەدان", en: "Payment", ar: "دفع", zh: "付款" } },
+  refund: { icon: RotateCcw, color: "text-yellow-600", bgColor: "bg-yellow-100 dark:bg-yellow-950/40", label: { ku: "گەڕاندنەوە", en: "Refund", ar: "استرداد", zh: "退款" } },
 };
 
 // Get action type from action string
@@ -371,11 +371,11 @@ export default function AuditLogs() {
             <div key={field} className="border-b pb-2 last:border-0">
               <div className="font-medium text-sm mb-1">{(fieldLabels[field] ? pickLang(language, fieldLabels[field]) : null) || field}</div>
               <div className="flex items-center gap-2 text-sm">
-                <div className="flex-1 p-2 bg-red-50 rounded border border-red-200">
+                <div className="flex-1 p-2 bg-red-50 dark:bg-red-950/40 rounded border border-red-200 dark:border-red-800/60">
                   <span className="text-red-600 line-through">{formatFieldValue(oldVal)}</span>
                 </div>
                 <ArrowUpRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1 p-2 bg-green-50 rounded border border-green-200">
+                <div className="flex-1 p-2 bg-green-50 dark:bg-green-950/40 rounded border border-green-200 dark:border-green-800/60">
                   <span className="text-green-600">{formatFieldValue(newVal)}</span>
                 </div>
               </div>
@@ -406,11 +406,11 @@ export default function AuditLogs() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-5">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200 dark:border-slate-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-slate-200 rounded-lg">
-                  <History className="h-5 w-5 text-slate-700" />
+                  <History className="h-5 w-5 text-slate-700 dark:text-slate-300" />
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{stats?.total?.toLocaleString() || 0}</div>
@@ -420,14 +420,14 @@ export default function AuditLogs() {
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 dark:border-green-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-200 rounded-lg">
-                  <Plus className="h-5 w-5 text-green-700" />
+                  <Plus className="h-5 w-5 text-green-700 dark:text-green-300" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-green-700">
+                  <div className="text-2xl font-bold text-green-700 dark:text-green-300">
                     {Object.entries(stats?.byAction || {})
                       .filter(([k]) => k.includes('create'))
                       .reduce((sum, [, v]) => sum + (v as number), 0)
@@ -439,14 +439,14 @@ export default function AuditLogs() {
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 dark:border-blue-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-200 rounded-lg">
-                  <Edit className="h-5 w-5 text-blue-700" />
+                  <Edit className="h-5 w-5 text-blue-700 dark:text-blue-300" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-blue-700">
+                  <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
                     {Object.entries(stats?.byAction || {})
                       .filter(([k]) => k.includes('update'))
                       .reduce((sum, [, v]) => sum + (v as number), 0)
@@ -458,14 +458,14 @@ export default function AuditLogs() {
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 dark:border-red-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-red-200 rounded-lg">
-                  <Trash2 className="h-5 w-5 text-red-700" />
+                  <Trash2 className="h-5 w-5 text-red-700 dark:text-red-300" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-red-700">
+                  <div className="text-2xl font-bold text-red-700 dark:text-red-300">
                     {Object.entries(stats?.byAction || {})
                       .filter(([k]) => k.includes('delete'))
                       .reduce((sum, [, v]) => sum + (v as number), 0)
@@ -477,14 +477,14 @@ export default function AuditLogs() {
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 dark:border-purple-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-200 rounded-lg">
-                  <Layers className="h-5 w-5 text-purple-700" />
+                  <Layers className="h-5 w-5 text-purple-700 dark:text-purple-300" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-purple-700">
+                  <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
                     {Object.keys(stats?.byCategory || {}).length}
                   </div>
                   <div className="text-sm text-purple-600">{pickLang(language, { ku: "پۆلەکان", en: "Categories", ar: "الفئات", zh: "类别" })}</div>
@@ -812,9 +812,9 @@ export default function AuditLogs() {
                 
                 {/* Entity Link */}
                 {getEntityLink(selectedLog) && (
-                  <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-800/60">
                     <ArrowUpRight className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm text-blue-700">{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编码" })}: {selectedLog.entityCode || selectedLog.entityId}</span>
+                    <span className="text-sm text-blue-700 dark:text-blue-300">{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编码" })}: {selectedLog.entityCode || selectedLog.entityId}</span>
                     <Link href={getEntityLink(selectedLog)!}>
                       <Button variant="link" size="sm" className="text-blue-600 p-0 h-auto">
                         {pickLang(language, { ku: "بینینی وردەکاری", en: "View details", ar: "عرض التفاصيل", zh: "查看详情" })}

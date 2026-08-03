@@ -251,12 +251,12 @@ const [, setLocation] = useLocation();
     return (
       <DashboardLayout>
         <div className="max-w-2xl mx-auto space-y-6">
-          <Card className="border-green-200 bg-green-50/50">
+          <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
             <CardHeader className="text-center">
-              <div className="mx-auto h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <div className="mx-auto h-16 w-16 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center mb-4">
                 <Check className="h-8 w-8 text-green-600" />
               </div>
-              <CardTitle className="text-green-800">Package Registered Successfully</CardTitle>
+              <CardTitle className="text-green-800 dark:text-green-200">Package Registered Successfully</CardTitle>
               <CardDescription>The package has been added to the system</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -366,7 +366,7 @@ const [, setLocation] = useLocation();
                   </div>
                   
                   {isUnclaimed && (
-                    <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200">
+                    <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800/60">
                       <AlertTriangle className="h-5 w-5 text-amber-600" />
                       <div>
                         <p className="font-medium text-amber-800 dark:text-amber-200">Unclaimed Package</p>
@@ -432,9 +432,9 @@ const [, setLocation] = useLocation();
                     <Label className="text-base font-semibold">Shipping Type *</Label>
                     <div className="grid grid-cols-3 gap-3">
                       {[
-                        { value: "air_regular", label: "Air Regular", icon: Plane, color: "text-blue-600", bg: "bg-blue-50" },
-                        { value: "air_irregular", label: "Air Irregular", icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
-                        { value: "sea", label: "Sea Freight", icon: Ship, color: "text-cyan-600", bg: "bg-cyan-50" },
+                        { value: "air_regular", label: "Air Regular", icon: Plane, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/40" },
+                        { value: "air_irregular", label: "Air Irregular", icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
+                        { value: "sea", label: "Sea Freight", icon: Ship, color: "text-cyan-600", bg: "bg-cyan-50 dark:bg-cyan-950/40" },
                       ].map(type => (
                         <div
                           key={type.value}
@@ -802,9 +802,9 @@ const [, setLocation] = useLocation();
                 )}
 
                 {estimatedPrice && (
-                  <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                  <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/60">
                     <p className="text-xs text-green-600 mb-1">Estimated Cost</p>
-                    <p className="text-2xl font-bold text-green-700">${estimatedPrice.price}</p>
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-300">${estimatedPrice.price}</p>
                     <p className="text-xs text-green-600 mt-1">
                       ${estimatedPrice.rate}/{estimatedPrice.unit}
                     </p>

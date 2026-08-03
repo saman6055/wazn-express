@@ -194,7 +194,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         // sit at the bottom of a short page instead of directly under the
         // content, halfway up the screen.
         "portal-theme min-h-screen flex flex-col transition-colors duration-300",
-        isDark ? "bg-slate-900" : "bg-slate-50",
+        isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40",
         isRTL && "rtl",
         // Bottom room so content (incl. the in-flow news ticker) clears the
         // fixed bottom nav when scrolled to the end.
@@ -376,13 +376,13 @@ function AnnouncementBanner() {
   const styles: Record<string, string> = {
     info: isDark
       ? "bg-sky-950/60 border-sky-800 text-sky-200"
-      : "bg-sky-50 border-sky-200 text-sky-800",
+      : "bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800/60 text-sky-800 dark:text-sky-200",
     warning: isDark
       ? "bg-amber-950/60 border-amber-800 text-amber-200"
-      : "bg-amber-50 border-amber-200 text-amber-800",
+      : "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-200",
     success: isDark
       ? "bg-emerald-950/60 border-emerald-800 text-emerald-200"
-      : "bg-emerald-50 border-emerald-200 text-emerald-800",
+      : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200",
   };
   return (
     <div className={cn("mx-4 mt-3 rounded-2xl border px-4 py-3 text-sm font-medium leading-relaxed", styles[data.type] ?? styles.info)}>

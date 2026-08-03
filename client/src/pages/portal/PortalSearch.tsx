@@ -200,7 +200,7 @@ export default function PortalSearch() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="w-full h-12 pl-12 pr-12 rounded-xl bg-white text-slate-800 placeholder:text-gray-400 border-0"
+            className="w-full h-12 pl-12 pr-12 rounded-xl bg-white text-slate-800 dark:text-slate-200 placeholder:text-gray-400 border-0"
           />
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           {searchQuery && (
@@ -219,7 +219,7 @@ export default function PortalSearch() {
         <Button
           onClick={handleSearch}
           disabled={!searchQuery.trim() || isLoading}
-          className="w-full mt-3 h-12 bg-white text-slate-800 hover:bg-gray-100 font-medium rounded-xl"
+          className="w-full mt-3 h-12 bg-white text-slate-800 dark:text-slate-200 hover:bg-gray-100 font-medium rounded-xl"
         >
           {isLoading ? t("searching") || "Searching..." : t("search") || "Search"}
         </Button>
@@ -261,7 +261,7 @@ export default function PortalSearch() {
       <div className="px-4 py-6">
         {!hasSearched ? (
           <div className="text-center py-12">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-10 h-10 text-gray-300" />
             </div>
             <p className="text-gray-500">
@@ -300,7 +300,7 @@ export default function PortalSearch() {
                 {photos && photos.length > 0 && (
                   <button
                     onClick={openPhotoViewer}
-                    className="flex items-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                    className="flex items-center gap-1 px-3 py-2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
                   >
                     <Camera className="w-4 h-4" />
                     <span>{photos.length}</span>
@@ -311,7 +311,7 @@ export default function PortalSearch() {
 
             {/* Package Photos Preview */}
             {photos && photos.length > 0 && (
-              <div className="p-4 border-b bg-gray-50">
+              <div className="p-4 border-b bg-gray-50 dark:bg-gray-950/40">
                 <button 
                   onClick={openPhotoViewer}
                   className="flex items-center gap-3 w-full"
@@ -320,7 +320,7 @@ export default function PortalSearch() {
                     {photos.slice(0, 4).map((photo, idx) => (
                       <div 
                         key={idx}
-                        className="w-12 h-12 rounded-lg border-2 border-white shadow-sm overflow-hidden bg-gray-100"
+                        className="w-12 h-12 rounded-lg border-2 border-white shadow-sm overflow-hidden bg-gray-100 dark:bg-gray-950/40"
                       >
                         <img loading="lazy" decoding="async" 
                           src={photo} 
@@ -339,7 +339,7 @@ export default function PortalSearch() {
                     )}
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-sm font-medium text-slate-800">{t("packagePhotos") || "Package Photos"}</p>
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{t("packagePhotos") || "Package Photos"}</p>
                     <p className="text-xs text-gray-500">{photos.length} {t("photos") || "photos"}</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -379,7 +379,7 @@ export default function PortalSearch() {
                     <Scale className="w-4 h-4 text-gray-400" />
                     <div>
                       <p className="text-xs text-gray-500">{t("weight") || "Weight"}</p>
-                      <p className="font-medium text-slate-800">{result.weightKg} kg</p>
+                      <p className="font-medium text-slate-800 dark:text-slate-200">{result.weightKg} kg</p>
                     </div>
                   </div>
                 )}
@@ -388,7 +388,7 @@ export default function PortalSearch() {
                     <Ruler className="w-4 h-4 text-gray-400" />
                     <div>
                       <p className="text-xs text-gray-500">{t("dimensions") || "Dimensions"}</p>
-                      <p className="font-medium text-slate-800">{result.lengthCm}×{result.widthCm}×{result.heightCm} cm</p>
+                      <p className="font-medium text-slate-800 dark:text-slate-200">{result.lengthCm}×{result.widthCm}×{result.heightCm} cm</p>
                     </div>
                   </div>
                 )}
@@ -397,14 +397,14 @@ export default function PortalSearch() {
               {/* Shipping Type */}
               <div>
                 <p className="text-xs text-gray-500">{t("shippingType") || "Shipping Type"}</p>
-                <p className="font-medium text-slate-800 capitalize">{result.shippingType.replace("_", " ")}</p>
+                <p className="font-medium text-slate-800 dark:text-slate-200 capitalize">{result.shippingType.replace("_", " ")}</p>
               </div>
 
               {/* Description */}
               {result.description && (
                 <div>
                   <p className="text-xs text-gray-500">{t("description") || "Description"}</p>
-                  <p className="text-slate-800">{result.description}</p>
+                  <p className="text-slate-800 dark:text-slate-200">{result.description}</p>
                 </div>
               )}
 
@@ -412,14 +412,14 @@ export default function PortalSearch() {
               <div className="grid grid-cols-2 gap-4 pt-3 border-t">
                 <div>
                   <p className="text-xs text-gray-500">{t("registered") || "Registered"}</p>
-                  <p className="text-sm text-slate-800">
+                  <p className="text-sm text-slate-800 dark:text-slate-200">
                     {new Date(result.registeredAt).toLocaleDateString()}
                   </p>
                 </div>
                 {result.deliveredAt && (
                   <div>
                     <p className="text-xs text-gray-500">{t("delivered") || "Delivered"}</p>
-                    <p className="text-sm text-slate-800">
+                    <p className="text-sm text-slate-800 dark:text-slate-200">
                       {new Date(result.deliveredAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -470,7 +470,7 @@ export default function PortalSearch() {
           </div>
         ) : extra?.unclaimed ? (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 text-center space-y-3">
-            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 bg-orange-100 dark:bg-orange-950/40 rounded-full flex items-center justify-center mx-auto">
               <AlertTriangle className="w-8 h-8 text-orange-500" />
             </div>
             <div>
@@ -491,7 +491,7 @@ export default function PortalSearch() {
           </div>
         ) : extra?.declared ? (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 text-center space-y-3">
-            <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 bg-teal-100 dark:bg-teal-950/40 rounded-full flex items-center justify-center mx-auto">
               <PackagePlus className="w-8 h-8 text-teal-500" />
             </div>
             <div>
@@ -511,10 +511,10 @@ export default function PortalSearch() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-red-50 dark:bg-red-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
               <Package className="w-10 h-10 text-red-300" />
             </div>
-            <p className="text-gray-800 font-medium">
+            <p className="text-gray-800 dark:text-gray-200 font-medium">
               {pickLang(language, { ku: "هیچ نەدۆزرایەوە", en: "Nothing found", ar: "لم يتم العثور على شيء", zh: "未找到任何结果" })}
             </p>
             <p className="text-sm text-gray-500 mt-1">

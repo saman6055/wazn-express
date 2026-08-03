@@ -96,7 +96,7 @@ export default function PortalGuide() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={pick(guideHeader.searchPlaceholder)}
-              className="h-11 ps-9 rounded-xl bg-white text-slate-800 placeholder:text-slate-400 border-0"
+              className="h-11 ps-9 rounded-xl bg-white text-slate-800 dark:text-slate-200 placeholder:text-slate-400 border-0"
               stepper={false}
             />
           </div>

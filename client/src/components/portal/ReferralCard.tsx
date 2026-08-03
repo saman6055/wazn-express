@@ -77,7 +77,7 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
         "relative overflow-hidden rounded-2xl p-5 shadow-sm",
         isDark
           ? "bg-gradient-to-br from-fuchsia-900/50 to-purple-900/40 border border-fuchsia-800/40"
-          : "bg-gradient-to-br from-fuchsia-50 to-purple-50 border border-fuchsia-200"
+          : "bg-gradient-to-br from-fuchsia-50 to-purple-50 border border-fuchsia-200 dark:border-fuchsia-800/60"
       )}>
         <div className="absolute -top-8 -end-8 w-28 h-28 rounded-full bg-fuchsia-500/10" />
         <div className="relative flex items-start gap-3">
@@ -88,10 +88,10 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
             <Gift className={cn("w-5 h-5", isDark ? "text-fuchsia-300" : "text-fuchsia-600")} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className={cn("font-bold text-base", isDark ? "text-fuchsia-100" : "text-fuchsia-900")}>
+            <h3 className={cn("font-bold text-base", isDark ? "text-fuchsia-100" : "text-fuchsia-900 dark:text-fuchsia-200")}>
               {pickLang(language, { ku: "هاوڕێکەت بانگهێشت بکە", en: "Invite a friend", ar: "ادعُ صديقًا", zh: "邀请好友" })}
             </h3>
-            <p className={cn("text-xs mt-0.5 leading-relaxed", isDark ? "text-fuchsia-300/80" : "text-fuchsia-700")}>
+            <p className={cn("text-xs mt-0.5 leading-relaxed", isDark ? "text-fuchsia-300/80" : "text-fuchsia-700 dark:text-fuchsia-300")}>
               {pickLang(language, {
                 ku: "پەیامی تەواو لەگەڵ کۆدەکەت — هاوڕێکەت لە کاتی تۆمارکردن باسی بکات.",
                 en: "The full message with your code — your friend mentions it when registering.",
@@ -108,7 +108,7 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
                 title={pickLang(language, { ku: "کۆپیکردنی پەیامی تەواو", en: "Copy the full message", ar: "نسخ الرسالة كاملة", zh: "复制完整消息" })}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 font-mono text-sm font-bold transition active:scale-95",
-                  isDark ? "bg-fuchsia-950/60 text-fuchsia-200 hover:bg-fuchsia-950" : "bg-white text-fuchsia-900 hover:bg-fuchsia-100 shadow-sm"
+                  isDark ? "bg-fuchsia-950/60 text-fuchsia-200 hover:bg-fuchsia-950" : "bg-white text-fuchsia-900 dark:text-fuchsia-200 hover:bg-fuchsia-100 shadow-sm"
                 )}
               >
                 {code}

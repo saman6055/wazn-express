@@ -110,11 +110,11 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
                   <DialogTitle>{t("auto.text_fc0eda")} </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                  <div className="bg-amber-50 p-4 rounded-lg">
-                    <p className="text-sm text-amber-800">
+                  <div className="bg-amber-50 dark:bg-amber-950/40 p-4 rounded-lg">
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
                       <strong>{selectedCustomers.length}</strong> {t("auto.text_77fddc")}
                     </p>
-                    <p className="text-lg font-bold text-amber-900 mt-1">
+                    <p className="text-lg font-bold text-amber-900 dark:text-amber-200 mt-1">
                       {t("auto.text_96973f")}: ${selectedDebt.toLocaleString()}
                     </p>
                   </div>
@@ -177,7 +177,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-red-100">
+              <div className="p-3 rounded-xl bg-red-100 dark:bg-red-950/40">
                 <Users className="h-6 w-6 text-red-600" />
               </div>
               <div>
@@ -191,7 +191,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-amber-100">
+              <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-950/40">
                 <DollarSign className="h-6 w-6 text-amber-600" />
               </div>
               <div>
@@ -205,7 +205,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-blue-100">
+              <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-950/40">
                 <CheckCircle className="h-6 w-6 text-blue-600" />
               </div>
               <div>
@@ -219,7 +219,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-green-100">
+              <div className="p-3 rounded-xl bg-green-100 dark:bg-green-950/40">
                 <DollarSign className="h-6 w-6 text-green-600" />
               </div>
               <div>
@@ -272,7 +272,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
                   key={debtor.customerId}
                   className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
                     selectedCustomers.includes(debtor.customerId)
-                      ? "bg-orange-50 border-orange-300"
+                      ? "bg-orange-50 dark:bg-orange-950/40 border-orange-300 dark:border-orange-800/60"
                       : "hover:bg-muted/50"
                   }`}
                   onClick={() => handleSelectCustomer(debtor.customerId)}

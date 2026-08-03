@@ -105,7 +105,7 @@ export default function PortalSecurity() {
     "border focus:ring-2",
     isDark
       ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-cyan-500/40 focus:border-cyan-500"
-      : "bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 focus:ring-cyan-500/30 focus:border-cyan-500",
+      : "bg-white border-slate-200 dark:border-slate-800/60 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:ring-cyan-500/30 focus:border-cyan-500",
   );
 
   const tips: L[] = [
@@ -117,7 +117,7 @@ export default function PortalSecurity() {
   return (
     <CustomerPortalLayout>
       <div
-        className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50")}
+        className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50 dark:bg-gray-950/40")}
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Header */}
@@ -162,7 +162,7 @@ export default function PortalSecurity() {
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white shrink-0">
                 <KeyRound className="w-4.5 h-4.5" />
               </div>
-              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800")}>
+              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                 {pick({ ku: "گۆڕینی وشەی نهێنی", en: "Change Password", ar: "تغيير كلمة المرور", zh: "修改密码" })}
               </h2>
             </div>
@@ -297,7 +297,7 @@ export default function PortalSecurity() {
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white shrink-0">
                 <ShieldCheck className="w-4.5 h-4.5" />
               </div>
-              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800")}>
+              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                 {pick({ ku: "ڕێنماییەکانی ئەمنیەت", en: "Safety tips", ar: "نصائح الأمان", zh: "安全提示" })}
               </h2>
             </div>

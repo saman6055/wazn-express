@@ -64,16 +64,16 @@ import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
 
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800",
-  pending_quote: "bg-amber-100 text-amber-800",
-  ordered: "bg-blue-100 text-blue-800",
-  tracking_added: "bg-cyan-100 text-cyan-800",
-  in_batch: "bg-violet-100 text-violet-800",
-  in_transit: "bg-orange-100 text-orange-800",
-  shipped: "bg-indigo-100 text-indigo-800",
-  delivered: "bg-emerald-100 text-emerald-800",
-  completed: "bg-green-100 text-green-800",
-  cancelled: "bg-gray-100 text-gray-800",
+  pending: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
+  pending_quote: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
+  ordered: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200",
+  tracking_added: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200",
+  in_batch: "bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200",
+  in_transit: "bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200",
+  shipped: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200",
+  delivered: "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200",
+  completed: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200",
+  cancelled: "bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200",
 };
 
 type SortField = "date" | "itemPrice" | "commission" | "total" | "customer";
@@ -551,14 +551,14 @@ export default function CommissionDashboard() {
               <Button
                 variant="outline"
                 onClick={() => navigate("/commission/bulk-create?type=commission")}
-                className="bg-white/80 text-amber-700 hover:bg-amber-50 border-amber-300"
+                className="bg-white/80 text-amber-700 dark:text-amber-300 hover:bg-amber-50 border-amber-300 dark:border-amber-800/60"
               >
                 <PackagePlus className="h-4 w-4 ms-2" />
                 {t("commission.bulkCreate")}
               </Button>
               <Button
                 onClick={() => navigate("/commission/new")}
-                className="bg-white text-amber-700 hover:bg-amber-50"
+                className="bg-white text-amber-700 dark:text-amber-300 hover:bg-amber-50"
               >
                 <Plus className="h-4 w-4 ms-2" />
                 {t("commission.newOrder")}
@@ -569,63 +569,63 @@ export default function CommissionDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200">
+          <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 dark:border-amber-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-amber-600 font-medium">{t("commission.totalOrdersLabel")}</p>
-                  <p className="text-2xl font-bold text-amber-700">{totalOrders}</p>
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{totalOrders}</p>
                 </div>
-                <div className="p-2 bg-amber-100 rounded-xl">
+                <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
                   <Package className="h-5 w-5 text-amber-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
+          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 dark:border-orange-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-orange-600 font-medium">{t("commission.pendingLabel")}</p>
-                  <p className="text-2xl font-bold text-orange-700">{pendingOrders}</p>
+                  <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{pendingOrders}</p>
                 </div>
-                <div className="p-2 bg-orange-100 rounded-xl">
+                <div className="p-2 bg-orange-100 dark:bg-orange-950/40 rounded-xl">
                   <Clock className="h-5 w-5 text-orange-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-sky-50 border-blue-200">
+          <Card className="bg-gradient-to-br from-blue-50 to-sky-50 border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-blue-600 font-medium">{t("commission.orderedLabel")}</p>
-                  <p className="text-2xl font-bold text-blue-700">{orderedOrders}</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{orderedOrders}</p>
                 </div>
-                <div className="p-2 bg-blue-100 rounded-xl">
+                <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
                   <Truck className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 dark:border-green-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-green-600 font-medium">{t("commission.deliveredLabel")}</p>
-                  <p className="text-2xl font-bold text-green-700">{deliveredOrders}</p>
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-300">{deliveredOrders}</p>
                 </div>
-                <div className="p-2 bg-green-100 rounded-xl">
+                <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-xl">
                   <CheckCircle className="h-5 w-5 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200">
+          <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 dark:border-red-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -637,24 +637,24 @@ export default function CommissionDashboard() {
                       (box receipt, invoice, ledger description) lists
                       the two separately. The grand total is still
                       available in the Excel and PDF exports. */}
-                  <p className="text-xl font-bold text-red-700">${totalItemValue.toFixed(2)}</p>
+                  <p className="text-xl font-bold text-red-700 dark:text-red-300">${totalItemValue.toFixed(2)}</p>
                 </div>
-                <div className="p-2 bg-red-100 rounded-xl">
+                <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-xl">
                   <ShoppingCart className="h-5 w-5 text-red-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200">
+          <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200 dark:border-yellow-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-yellow-700 font-medium">{t("commission.totalCommissionLabel")}</p>
-                  <p className="text-xl font-bold text-yellow-800">${totalCommission.toFixed(2)}</p>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-300 font-medium">{t("commission.totalCommissionLabel")}</p>
+                  <p className="text-xl font-bold text-yellow-800 dark:text-yellow-200">${totalCommission.toFixed(2)}</p>
                 </div>
-                <div className="p-2 bg-yellow-100 rounded-xl">
-                  <Percent className="h-5 w-5 text-yellow-700" />
+                <div className="p-2 bg-yellow-100 dark:bg-yellow-950/40 rounded-xl">
+                  <Percent className="h-5 w-5 text-yellow-700 dark:text-yellow-300" />
                 </div>
               </div>
             </CardContent>
@@ -968,7 +968,7 @@ export default function CommissionDashboard() {
                               </>
                             ) : (
                               <>
-                                <Badge variant="outline" className="font-mono text-amber-600 border-amber-300">
+                                <Badge variant="outline" className="font-mono text-amber-600 border-amber-300 dark:border-amber-800/60">
                                   {order.orderCode}
                                 </Badge>
                                 <CopyButton value={order.orderCode} label={pickLang(language, { ku: "کۆپی کۆد", en: "Copy code", ar: "نسخ الرمز", zh: "复制代码" })} />
@@ -996,7 +996,7 @@ export default function CommissionDashboard() {
                                 className="w-10 h-10"
                               />
                             ) : (
-                              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                              <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
                                 <Package className="h-5 w-5 text-amber-600" />
                               </div>
                             )}
@@ -1029,7 +1029,7 @@ export default function CommissionDashboard() {
                               <CopyButton value={(order as any).batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
                             </div>
                           ) : (
-                            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                            <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
                               {t("commission.noBatch")}
                             </Badge>
                           )}
@@ -1049,7 +1049,7 @@ export default function CommissionDashboard() {
                               <CopyButton value={order.trackingNumber} label={pickLang(language, { ku: "کۆپی تراکینگ", en: "Copy tracking", ar: "نسخ التتبع", zh: "复制追踪号" })} />
                             </div>
                           ) : (
-                            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                            <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
                               {t("commission.noTracking")}
                             </Badge>
                           )}

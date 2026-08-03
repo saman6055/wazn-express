@@ -68,7 +68,7 @@ export function CustomerDocumentsTab({
           <div
             className={`border-2 rounded-lg p-6 text-center transition-colors ${
               customer.passportUrl
-                ? "border-blue-300 bg-blue-50 dark:bg-blue-900/20"
+                ? "border-blue-300 dark:border-blue-800/60 bg-blue-50 dark:bg-blue-900/20"
                 : "border-dashed hover:border-primary/50"
             }`}
           >
@@ -117,7 +117,7 @@ export function CustomerDocumentsTab({
           <div
             className={`border-2 rounded-lg p-6 text-center transition-colors ${
               customer.nationalIdUrl
-                ? "border-green-300 bg-green-50 dark:bg-green-900/20"
+                ? "border-green-300 dark:border-green-800/60 bg-green-50 dark:bg-green-900/20"
                 : "border-dashed hover:border-primary/50"
             }`}
           >
@@ -166,7 +166,7 @@ export function CustomerDocumentsTab({
           <div
             className={`border-2 rounded-lg p-6 text-center transition-colors ${
               customer.contractUrl
-                ? "border-amber-300 bg-amber-50 dark:bg-amber-900/20"
+                ? "border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-900/20"
                 : "border-dashed hover:border-primary/50"
             }`}
           >

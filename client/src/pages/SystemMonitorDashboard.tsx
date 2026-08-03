@@ -288,9 +288,9 @@ export default function SystemMonitorDashboard() {
   
   const getSeverityBadge = (severity: string) => {
     const variants: Record<string, string> = {
-      critical: "bg-red-100 text-red-700 border-red-200",
-      warning: "bg-amber-100 text-amber-700 border-amber-200",
-      info: "bg-blue-100 text-blue-700 border-blue-200",
+      critical: "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60",
+      warning: "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60",
+      info: "bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60",
     };
     return variants[severity] || variants.info;
   };
@@ -404,7 +404,7 @@ export default function SystemMonitorDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50 border border-green-200">
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/60">
               <Database className="h-8 w-8 text-green-600" />
               <div>
                 <p className="text-sm text-muted-foreground">{t.databaseStatus}</p>
@@ -415,7 +415,7 @@ export default function SystemMonitorDashboard() {
               </div>
             </div>
             
-            <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50 border border-green-200">
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/60">
               <Server className="h-8 w-8 text-green-600" />
               <div>
                 <p className="text-sm text-muted-foreground">{t.serverStatus}</p>
@@ -426,7 +426,7 @@ export default function SystemMonitorDashboard() {
               </div>
             </div>
             
-            <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50 border border-green-200">
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/60">
               <Shield className="h-8 w-8 text-green-600" />
               <div>
                 <p className="text-sm text-muted-foreground">{t.backupStatus}</p>
@@ -578,16 +578,16 @@ export default function SystemMonitorDashboard() {
                         className={cn(
                           "p-4 rounded-lg border transition-colors",
                           !alert.isRead && "bg-muted/50 border-primary/20",
-                          alert.severity === 'critical' && !alert.isRead && "bg-red-50/50 border-red-200",
-                          alert.severity === 'warning' && !alert.isRead && "bg-amber-50/50 border-amber-200"
+                          alert.severity === 'critical' && !alert.isRead && "bg-red-50/50 border-red-200 dark:border-red-800/60",
+                          alert.severity === 'warning' && !alert.isRead && "bg-amber-50/50 border-amber-200 dark:border-amber-800/60"
                         )}
                       >
                         <div className="flex items-start gap-3">
                           <div className={cn(
                             "p-2 rounded-lg",
-                            alert.severity === 'critical' && "bg-red-100",
-                            alert.severity === 'warning' && "bg-amber-100",
-                            alert.severity === 'info' && "bg-blue-100"
+                            alert.severity === 'critical' && "bg-red-100 dark:bg-red-950/40",
+                            alert.severity === 'warning' && "bg-amber-100 dark:bg-amber-950/40",
+                            alert.severity === 'info' && "bg-blue-100 dark:bg-blue-950/40"
                           )}>
                             <CategoryIcon className={cn(
                               "h-5 w-5",

@@ -123,7 +123,7 @@ export default function PortalTutorials() {
                   "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition active:scale-95 border",
                   category === c.key
                     ? "bg-sky-600 text-white border-sky-600"
-                    : isDark ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-200 text-slate-700",
+                    : isDark ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-white border-slate-200 dark:border-slate-800/60 text-slate-700 dark:text-slate-300",
                 )}
               >
                 {c.key && <PlatformBadge name={c.key} size={16} />}
@@ -139,7 +139,7 @@ export default function PortalTutorials() {
             {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-52 w-full rounded-2xl" />)}
           </div>
         ) : shown.length === 0 ? (
-          <div className={cn("rounded-2xl border p-8 text-center", isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 bg-white")}>
+          <div className={cn("rounded-2xl border p-8 text-center", isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 dark:border-slate-800/60 bg-white")}>
             <GraduationCap className="mx-auto mb-2 h-10 w-10 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">
               {allLanguages
@@ -172,7 +172,7 @@ export default function PortalTutorials() {
             {shown.map((t: any) => (
               <div
                 key={t.id}
-                className={cn("rounded-2xl border overflow-hidden", isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 bg-white")}
+                className={cn("rounded-2xl border overflow-hidden", isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 dark:border-slate-800/60 bg-white")}
               >
                 <button onClick={() => open(t)} className="relative block w-full aspect-video bg-slate-900 group">
                   {t.thumbnailUrl && (

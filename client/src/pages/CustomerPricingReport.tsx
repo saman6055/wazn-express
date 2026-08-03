@@ -251,7 +251,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
                       </TableCell>
                       <TableCell>
                         {difference !== 0 && (
-                          <Badge variant={difference > 0 ? "default" : "destructive"} className={difference > 0 ? "bg-green-100 text-green-800" : ""}>
+                          <Badge variant={difference > 0 ? "default" : "destructive"} className={difference > 0 ? "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200" : ""}>
                             {difference > 0 ? '-' : '+'}${Math.abs(difference).toFixed(2)} ({percentDiff}%)
                           </Badge>
                         )}

@@ -153,7 +153,7 @@ export default function Skin3PortalHome() {
       value: totalPackages,
       icon: Package,
       accent: isDark ? "border-indigo-500/50" : "border-indigo-400",
-      iconBg: isDark ? "bg-indigo-950/60" : "bg-indigo-100",
+      iconBg: isDark ? "bg-indigo-950/60" : "bg-indigo-100 dark:bg-indigo-950/40",
       iconColor: isDark ? "text-indigo-400" : "text-indigo-600",
     },
     {
@@ -161,7 +161,7 @@ export default function Skin3PortalHome() {
       value: inTransit,
       icon: Truck,
       accent: isDark ? "border-amber-500/50" : "border-amber-400",
-      iconBg: isDark ? "bg-amber-950/60" : "bg-amber-100",
+      iconBg: isDark ? "bg-amber-950/60" : "bg-amber-100 dark:bg-amber-950/40",
       iconColor: isDark ? "text-amber-400" : "text-amber-600",
     },
     {
@@ -169,7 +169,7 @@ export default function Skin3PortalHome() {
       value: arrived,
       icon: Plane,
       accent: isDark ? "border-violet-500/50" : "border-violet-400",
-      iconBg: isDark ? "bg-violet-950/60" : "bg-violet-100",
+      iconBg: isDark ? "bg-violet-950/60" : "bg-violet-100 dark:bg-violet-950/40",
       iconColor: isDark ? "text-violet-400" : "text-violet-600",
     },
     {
@@ -177,7 +177,7 @@ export default function Skin3PortalHome() {
       value: delivered,
       icon: CheckCircle,
       accent: isDark ? "border-emerald-500/50" : "border-emerald-400",
-      iconBg: isDark ? "bg-emerald-950/60" : "bg-emerald-100",
+      iconBg: isDark ? "bg-emerald-950/60" : "bg-emerald-100 dark:bg-emerald-950/40",
       iconColor: isDark ? "text-emerald-400" : "text-emerald-600",
     },
   ];
@@ -317,7 +317,7 @@ export default function Skin3PortalHome() {
               <Bell
                 className={cn(
                   "w-5 h-5",
-                  isDark ? "text-zinc-300" : "text-gray-700"
+                  isDark ? "text-zinc-300" : "text-gray-700 dark:text-gray-300"
                 )}
                 strokeWidth={2.5}
               />
@@ -385,7 +385,7 @@ export default function Skin3PortalHome() {
                   className={cn(
                     "mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all",
                     isDark
-                      ? "bg-white text-indigo-700 hover:bg-indigo-50"
+                      ? "bg-white text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50"
                       : "bg-white text-indigo-600 hover:bg-indigo-50 shadow-[3px_3px_0px_rgba(0,0,0,0.1)]"
                   )}
                 >
@@ -609,7 +609,7 @@ export default function Skin3PortalHome() {
                             <p
                               className={cn(
                                 "text-sm font-bold truncate",
-                                isDark ? "text-white" : "text-gray-900"
+                                isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                               )}
                             >
                               {tx.description ||
@@ -651,7 +651,7 @@ export default function Skin3PortalHome() {
               <Clock
                 className={cn(
                   "w-12 h-12 mx-auto mb-3",
-                  isDark ? "text-zinc-700" : "text-gray-300"
+                  isDark ? "text-zinc-700 dark:text-zinc-300" : "text-gray-300"
                 )}
                 strokeWidth={2}
               />

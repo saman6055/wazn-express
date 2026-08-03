@@ -60,16 +60,16 @@ import { useTranslation } from "@/contexts/LanguageContext";
 
 
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800",
-  approved: "bg-blue-100 text-blue-800",
-  ordered: "bg-indigo-100 text-indigo-800",
-  tracking_added: "bg-cyan-100 text-cyan-800",
-  in_china_warehouse: "bg-purple-100 text-purple-800",
-  in_batch: "bg-violet-100 text-violet-800",
-  in_transit: "bg-orange-100 text-orange-800",
-  arrived: "bg-teal-100 text-teal-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
+  pending: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
+  approved: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200",
+  ordered: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200",
+  tracking_added: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200",
+  in_china_warehouse: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200",
+  in_batch: "bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200",
+  in_transit: "bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200",
+  arrived: "bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200",
+  delivered: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200",
+  cancelled: "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200",
 };
 
 const getStatusLabels = (language: string): Record<string, string> => ({
@@ -273,7 +273,7 @@ export default function CommissionOrders() {
               </div>
             </div>
             <Link href="/commission-orders/new">
-              <Button className="bg-white text-emerald-700 hover:bg-emerald-50">
+              <Button className="bg-white text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50">
                 <Plus className="h-4 w-4 ms-2" />
                 {pickLang(language, { ku: "ئۆردەری نوێ", en: "New order", ar: "طلب جديد", zh: "新订单" })}
               </Button>
@@ -283,70 +283,70 @@ export default function CommissionOrders() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200">
+          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 dark:border-emerald-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-emerald-600 font-medium">{pickLang(language, { ku: "کۆی ئۆردەرەکان", en: "Total orders", ar: "إجمالي الطلبات", zh: "订单总数" })}</p>
-                  <p className="text-2xl font-bold text-emerald-700">{totalOrders}</p>
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{totalOrders}</p>
                 </div>
-                <div className="p-3 bg-emerald-100 rounded-xl">
+                <div className="p-3 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
                   <Package className="h-6 w-6 text-emerald-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-200">
+          <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-200 dark:border-amber-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-amber-600 font-medium">{pickLang(language, { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" })}</p>
-                  <p className="text-2xl font-bold text-amber-700">{pendingOrders}</p>
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{pendingOrders}</p>
                 </div>
-                <div className="p-3 bg-amber-100 rounded-xl">
+                <div className="p-3 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
                   <Clock className="h-6 w-6 text-amber-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200">
+          <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-blue-600 font-medium">{pickLang(language, { ku: "لە ڕێگادا", en: "In transit", ar: "قيد الشحن", zh: "运输中" })}</p>
-                  <p className="text-2xl font-bold text-blue-700">{inTransitOrders}</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{inTransitOrders}</p>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-xl">
+                <div className="p-3 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
                   <Clock className="h-6 w-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-white border-green-200">
+          <Card className="bg-gradient-to-br from-green-50 to-white border-green-200 dark:border-green-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-600 font-medium">{pickLang(language, { ku: "قازانجی خاو", en: "Gross profit", ar: "الربح الإجمالي", zh: "毛利润" })}</p>
-                  <p className="text-2xl font-bold text-green-700">${totalGrossProfit.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-300">${totalGrossProfit.toFixed(2)}</p>
                 </div>
-                <div className="p-3 bg-green-100 rounded-xl">
+                <div className="p-3 bg-green-100 dark:bg-green-950/40 rounded-xl">
                   <DollarSign className="h-6 w-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-200">
+          <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-200 dark:border-purple-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-purple-600 font-medium">{pickLang(language, { ku: "قازانجی خاوێن", en: "Net profit", ar: "صافي الربح", zh: "净利润" })}</p>
-                  <p className="text-2xl font-bold text-purple-700">${totalNetProfit.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">${totalNetProfit.toFixed(2)}</p>
                 </div>
-                <div className="p-3 bg-purple-100 rounded-xl">
+                <div className="p-3 bg-purple-100 dark:bg-purple-950/40 rounded-xl">
                   <TrendingUp className="h-6 w-6 text-purple-600" />
                 </div>
               </div>
@@ -618,7 +618,7 @@ export default function CommissionOrders() {
                     >
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300">
+                          <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300 dark:border-emerald-800/60">
                             {order.orderCode}
                           </Badge>
                           <CopyButton value={order.orderCode} label={pickLang(language, { ku: "کۆپی کۆدی ئۆردەر", en: "Copy order code", ar: "نسخ كود الطلب", zh: "复制订单编码" })} />
@@ -644,7 +644,7 @@ export default function CommissionOrders() {
                               className="w-10 h-10"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
                               <Package className="h-5 w-5 text-emerald-600" />
                             </div>
                           )}
@@ -666,7 +666,7 @@ export default function CommissionOrders() {
                             <CopyButton value={(order as any).batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ كود الدفعة", zh: "复制批次编码" })} />
                           </div>
                         ) : (
-                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                          <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
                             {pickLang(language, { ku: "بێ باچ", en: "No batch", ar: "بدون دفعة", zh: "无批次" })}
                           </Badge>
                         )}
@@ -692,7 +692,7 @@ export default function CommissionOrders() {
                             )}
                           </div>
                         ) : (
-                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                          <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
                             {pickLang(language, { ku: "بێ تراکینگ", en: "No tracking", ar: "بدون تتبع", zh: "无追踪号" })}
                           </Badge>
                         )}
@@ -701,7 +701,7 @@ export default function CommissionOrders() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
-                              className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all flex items-center gap-1 ${statusColors[order.status] || "bg-gray-100"}`}
+                              className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all flex items-center gap-1 ${statusColors[order.status] || "bg-gray-100 dark:bg-gray-950/40"}`}
                             >
                               {statusLabels[order.status] || order.status}
                               <ChevronDown className="h-3 w-3" />

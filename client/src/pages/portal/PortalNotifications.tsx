@@ -87,7 +87,7 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
 
   return (
     <CustomerPortalLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950/40">
         {/* Header */}
         <div className="text-white px-4 py-4" style={portalBanner}>
           <div className="flex items-center justify-between">
@@ -147,7 +147,7 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-4">
                 <Bell className="h-10 w-10 text-blue-500" />
               </div>
-              <h3 className="font-semibold text-gray-800 mb-2">No Notifications</h3>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">No Notifications</h3>
               <p className="text-sm text-gray-500 max-w-xs">
                 You're all caught up! We'll notify you when something important happens.
               </p>
@@ -179,7 +179,7 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className={cn(
-                          "font-medium text-gray-800",
+                          "font-medium text-gray-800 dark:text-gray-200",
                           !notification.isRead && "font-semibold"
                         )}>
                           {notification.title}

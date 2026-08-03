@@ -222,7 +222,7 @@ export default function ModernPortalShipments() {
           <h1
             className={cn(
               "text-2xl font-bold tracking-tight mb-1",
-              isDark ? "text-white" : "text-gray-900"
+              isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
             )}
           >
             {language === "ku" ? "بارەکانم" : "My Shipments"}
@@ -241,7 +241,7 @@ export default function ModernPortalShipments() {
               "relative rounded-2xl overflow-hidden shadow-sm",
               isDark
                 ? "bg-zinc-900 border border-zinc-800"
-                : "bg-white border border-gray-200"
+                : "bg-white border border-gray-200 dark:border-gray-800/60"
             )}
           >
             <Search
@@ -264,7 +264,7 @@ export default function ModernPortalShipments() {
                 isRTL ? "pe-4 ps-12" : "ps-12 pe-10",
                 isDark
                   ? "text-white placeholder:text-zinc-500"
-                  : "text-gray-900 placeholder:text-gray-400",
+                  : "text-gray-900 dark:text-gray-200 placeholder:text-gray-400",
                 "focus:outline-none"
               )}
             />
@@ -304,7 +304,7 @@ export default function ModernPortalShipments() {
                     "rounded-2xl p-4 shadow-sm",
                     isDark
                       ? "bg-emerald-950/30 border border-emerald-800/50"
-                      : "bg-emerald-50 border border-emerald-200"
+                      : "bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60"
                   )}
                 >
                   <div className="flex items-center gap-3">
@@ -315,7 +315,7 @@ export default function ModernPortalShipments() {
                       <p
                         className={cn(
                           "text-sm font-semibold truncate",
-                          isDark ? "text-white" : "text-gray-900"
+                          isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                         )}
                       >
                         {(searchResult as any).trackingNumber || (searchResult as any).packageCode}
@@ -337,7 +337,7 @@ export default function ModernPortalShipments() {
                     "rounded-2xl p-4 text-center",
                     isDark
                       ? "bg-zinc-900 border border-zinc-800"
-                      : "bg-gray-50 border border-gray-200"
+                      : "bg-gray-50 dark:bg-gray-950/40 border border-gray-200 dark:border-gray-800/60"
                   )}
                 >
                   <p
@@ -361,7 +361,7 @@ export default function ModernPortalShipments() {
               "flex rounded-2xl p-1 shadow-sm",
               isDark
                 ? "bg-zinc-900 border border-zinc-800"
-                : "bg-gray-100"
+                : "bg-gray-100 dark:bg-gray-950/40"
             )}
           >
             {segmentedTabs.map((tab) => (
@@ -375,7 +375,7 @@ export default function ModernPortalShipments() {
                         "shadow-sm",
                         isDark
                           ? "bg-emerald-600 text-white"
-                          : "bg-white text-emerald-700 shadow-sm"
+                          : "bg-white text-emerald-700 dark:text-emerald-300 shadow-sm"
                       )
                     : isDark
                       ? "text-zinc-400 hover:text-zinc-300"
@@ -416,7 +416,7 @@ export default function ModernPortalShipments() {
                         "rounded-2xl overflow-hidden shadow-sm transition-all duration-200",
                         isDark
                           ? "bg-zinc-900 border border-zinc-800"
-                          : "bg-white border border-gray-100",
+                          : "bg-white border border-gray-100 dark:border-gray-800/60",
                         isExpanded && (isDark ? "ring-1 ring-emerald-800" : "ring-1 ring-emerald-200")
                       )}
                     >
@@ -446,7 +446,7 @@ export default function ModernPortalShipments() {
                               <h3
                                 className={cn(
                                   "font-bold text-sm",
-                                  isDark ? "text-white" : "text-gray-900"
+                                  isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                                 )}
                               >
                                 {batch.batchCode || `B-${batch.id}`}
@@ -552,7 +552,7 @@ export default function ModernPortalShipments() {
                             <div
                               className={cn(
                                 "border-t px-4 pb-3 pt-2",
-                                isDark ? "border-zinc-800" : "border-gray-100"
+                                isDark ? "border-zinc-800" : "border-gray-100 dark:border-gray-800/60"
                               )}
                             >
                               {batchPackagesLoading ? (
@@ -577,7 +577,7 @@ export default function ModernPortalShipments() {
                                           "rounded-xl p-3",
                                           isDark
                                             ? "bg-zinc-800/60"
-                                            : "bg-gray-50"
+                                            : "bg-gray-50 dark:bg-gray-950/40"
                                         )}
                                       >
                                         {/* Warehouse photos taken at registration */}
@@ -601,7 +601,7 @@ export default function ModernPortalShipments() {
                                               "text-sm font-mono font-semibold",
                                               isDark
                                                 ? "text-white"
-                                                : "text-gray-900"
+                                                : "text-gray-900 dark:text-gray-200"
                                             )}
                                           >
                                             {pkg.trackingNumber ||
@@ -690,19 +690,19 @@ export default function ModernPortalShipments() {
                 "rounded-2xl p-10 text-center shadow-sm",
                 isDark
                   ? "bg-zinc-900 border border-zinc-800"
-                  : "bg-white border border-gray-100"
+                  : "bg-white border border-gray-100 dark:border-gray-800/60"
               )}
             >
               <Package
                 className={cn(
                   "w-14 h-14 mx-auto mb-3",
-                  isDark ? "text-zinc-700" : "text-gray-300"
+                  isDark ? "text-zinc-700 dark:text-zinc-300" : "text-gray-300"
                 )}
               />
               <h3
                 className={cn(
                   "font-bold text-base mb-1",
-                  isDark ? "text-white" : "text-gray-900"
+                  isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                 )}
               >
                 {language === "ku" ? "هیچ بارێک نییە" : "No shipments found"}

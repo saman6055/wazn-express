@@ -13,11 +13,11 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 
 const roleColors: Record<string, string> = {
-  super_admin: "bg-yellow-100 text-yellow-800",
-  admin: "bg-red-100 text-red-800",
-  employee: "bg-blue-100 text-blue-800",
-  accountant: "bg-purple-100 text-purple-800",
-  user: "bg-gray-100 text-gray-800",
+  super_admin: "bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-200",
+  admin: "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200",
+  employee: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200",
+  accountant: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200",
+  user: "bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200",
 };
 
 const roleIcons: Record<string, React.ReactNode> = {
@@ -182,13 +182,13 @@ const [search, setSearch] = useState("");
           </CardContent>
         </Card>
 
-        <Card className="border-amber-200 bg-amber-50/50">
+        <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-amber-600 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-amber-800">Role Permissions</p>
-                <ul className="mt-2 space-y-1 text-amber-700">
+                <p className="font-medium text-amber-800 dark:text-amber-200">Role Permissions</p>
+                <ul className="mt-2 space-y-1 text-amber-700 dark:text-amber-300">
                   <li><strong>Admin:</strong> Full system access, user management, settings</li>
                   <li><strong>Employee:</strong> Package management, customer service, basic operations</li>
                   <li><strong>Accountant:</strong> Financial operations, invoices, payments, reports</li>

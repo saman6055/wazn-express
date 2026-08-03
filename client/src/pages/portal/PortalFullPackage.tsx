@@ -34,9 +34,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "چاوەڕوان",
     labelAr: "قيد الانتظار",
     labelZh: "待处理",
-    color: "text-amber-700", 
-    bgColor: "bg-amber-100", 
-    borderColor: "border-amber-200",
+    color: "text-amber-700 dark:text-amber-300", 
+    bgColor: "bg-amber-100 dark:bg-amber-950/40", 
+    borderColor: "border-amber-200 dark:border-amber-800/60",
     icon: Clock,
     gradient: "from-amber-400 to-orange-500"
   },
@@ -45,9 +45,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "داواکراو",
     labelAr: "تم الطلب",
     labelZh: "已下单",
-    color: "text-blue-700", 
-    bgColor: "bg-blue-100", 
-    borderColor: "border-blue-200",
+    color: "text-blue-700 dark:text-blue-300", 
+    bgColor: "bg-blue-100 dark:bg-blue-950/40", 
+    borderColor: "border-blue-200 dark:border-blue-800/60",
     icon: ShoppingCart,
     gradient: "from-blue-400 to-blue-600"
   },
@@ -56,9 +56,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "تراکینگ زیادکرا",
     labelAr: "تمت إضافة التتبع",
     labelZh: "已添加物流单号",
-    color: "text-indigo-700", 
-    bgColor: "bg-indigo-100", 
-    borderColor: "border-indigo-200",
+    color: "text-indigo-700 dark:text-indigo-300", 
+    bgColor: "bg-indigo-100 dark:bg-indigo-950/40", 
+    borderColor: "border-indigo-200 dark:border-indigo-800/60",
     icon: FileText,
     gradient: "from-indigo-400 to-indigo-600"
   },
@@ -67,9 +67,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "لە چین",
     labelAr: "في الصين",
     labelZh: "在中国仓库",
-    color: "text-purple-700", 
-    bgColor: "bg-purple-100", 
-    borderColor: "border-purple-200",
+    color: "text-purple-700 dark:text-purple-300", 
+    bgColor: "bg-purple-100 dark:bg-purple-950/40", 
+    borderColor: "border-purple-200 dark:border-purple-800/60",
     icon: Box,
     gradient: "from-purple-400 to-purple-600"
   },
@@ -78,9 +78,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "لە باچ",
     labelAr: "في الدفعة",
     labelZh: "已组批",
-    color: "text-cyan-700", 
-    bgColor: "bg-cyan-100", 
-    borderColor: "border-cyan-200",
+    color: "text-cyan-700 dark:text-cyan-300", 
+    bgColor: "bg-cyan-100 dark:bg-cyan-950/40", 
+    borderColor: "border-cyan-200 dark:border-cyan-800/60",
     icon: Package,
     gradient: "from-cyan-400 to-cyan-600"
   },
@@ -89,9 +89,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "لە ڕێگادایە",
     labelAr: "في الطريق",
     labelZh: "运输中",
-    color: "text-orange-700", 
-    bgColor: "bg-orange-100", 
-    borderColor: "border-orange-200",
+    color: "text-orange-700 dark:text-orange-300", 
+    bgColor: "bg-orange-100 dark:bg-orange-950/40", 
+    borderColor: "border-orange-200 dark:border-orange-800/60",
     icon: Plane,
     gradient: "from-orange-400 to-orange-600"
   },
@@ -100,9 +100,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "گەیەندراوە",
     labelAr: "تم التسليم",
     labelZh: "已送达",
-    color: "text-emerald-700", 
-    bgColor: "bg-emerald-100", 
-    borderColor: "border-emerald-200",
+    color: "text-emerald-700 dark:text-emerald-300", 
+    bgColor: "bg-emerald-100 dark:bg-emerald-950/40", 
+    borderColor: "border-emerald-200 dark:border-emerald-800/60",
     icon: CheckCircle,
     gradient: "from-emerald-400 to-emerald-600"
   },
@@ -111,9 +111,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "هەڵوەشاوەتەوە",
     labelAr: "ملغى",
     labelZh: "已取消",
-    color: "text-red-700", 
-    bgColor: "bg-red-100", 
-    borderColor: "border-red-200",
+    color: "text-red-700 dark:text-red-300", 
+    bgColor: "bg-red-100 dark:bg-red-950/40", 
+    borderColor: "border-red-200 dark:border-red-800/60",
     icon: AlertCircle,
     gradient: "from-red-400 to-red-600"
   },
@@ -122,9 +122,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "تەواوبوو",
     labelAr: "مكتمل",
     labelZh: "已完成",
-    color: "text-emerald-700", 
-    bgColor: "bg-emerald-100", 
-    borderColor: "border-emerald-200",
+    color: "text-emerald-700 dark:text-emerald-300", 
+    bgColor: "bg-emerald-100 dark:bg-emerald-950/40", 
+    borderColor: "border-emerald-200 dark:border-emerald-800/60",
     icon: CheckCircle,
     gradient: "from-emerald-400 to-emerald-600"
   },
@@ -133,9 +133,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "گەیشت",
     labelAr: "وصلت",
     labelZh: "已到达",
-    color: "text-emerald-700", 
-    bgColor: "bg-emerald-100", 
-    borderColor: "border-emerald-200",
+    color: "text-emerald-700 dark:text-emerald-300", 
+    bgColor: "bg-emerald-100 dark:bg-emerald-950/40", 
+    borderColor: "border-emerald-200 dark:border-emerald-800/60",
     icon: CheckCircle,
     gradient: "from-emerald-400 to-emerald-600"
   },
@@ -144,9 +144,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "لە کڕیندایە",
     labelAr: "جاري الشراء",
     labelZh: "采购中",
-    color: "text-blue-700", 
-    bgColor: "bg-blue-100", 
-    borderColor: "border-blue-200",
+    color: "text-blue-700 dark:text-blue-300", 
+    bgColor: "bg-blue-100 dark:bg-blue-950/40", 
+    borderColor: "border-blue-200 dark:border-blue-800/60",
     icon: ShoppingCart,
     gradient: "from-blue-400 to-blue-600"
   },
@@ -155,9 +155,9 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     labelKu: "کڕدرا",
     labelAr: "تم الشراء",
     labelZh: "已采购",
-    color: "text-indigo-700", 
-    bgColor: "bg-indigo-100", 
-    borderColor: "border-indigo-200",
+    color: "text-indigo-700 dark:text-indigo-300", 
+    bgColor: "bg-indigo-100 dark:bg-indigo-950/40", 
+    borderColor: "border-indigo-200 dark:border-indigo-800/60",
     icon: Package,
     gradient: "from-indigo-400 to-indigo-600"
   },
@@ -171,8 +171,8 @@ const orderTypeConfig: Record<string, { label: string; labelKu: string; labelAr:
     labelAr: "الباقة الكاملة",
     labelZh: "全包套餐",
     color: "bg-emerald-500", 
-    bgColor: "bg-emerald-50",
-    textColor: "text-emerald-700",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
+    textColor: "text-emerald-700 dark:text-emerald-300",
     icon: Package
   },
   commission: { 
@@ -181,8 +181,8 @@ const orderTypeConfig: Record<string, { label: string; labelKu: string; labelAr:
     labelAr: "عمولة",
     labelZh: "代购佣金",
     color: "bg-amber-500", 
-    bgColor: "bg-amber-50",
-    textColor: "text-amber-700",
+    bgColor: "bg-amber-50 dark:bg-amber-950/40",
+    textColor: "text-amber-700 dark:text-amber-300",
     icon: DollarSign
   },
 };
@@ -289,8 +289,8 @@ export default function PortalFullPackage() {
       labelAr: status,
       labelZh: status,
       color: "text-gray-600",
-      bgColor: "bg-gray-100", 
-      borderColor: "border-gray-200",
+      bgColor: "bg-gray-100 dark:bg-gray-950/40", 
+      borderColor: "border-gray-200 dark:border-gray-800/60",
       icon: Package,
       gradient: "from-gray-400 to-gray-600"
     };
@@ -418,7 +418,7 @@ export default function PortalFullPackage() {
       {/* Content Area */}
       <div className={cn(
         "px-4 py-6 min-h-screen",
-        isDark ? "bg-slate-900" : "bg-gray-50"
+        isDark ? "bg-slate-900" : "bg-gray-50 dark:bg-gray-950/40"
       )}>
         {/* Tab Filters */}
         <div className={cn(
@@ -476,7 +476,7 @@ export default function PortalFullPackage() {
                 "w-full pr-12 pl-4 py-4 rounded-2xl border-2 transition-all text-right",
                 isDark
                   ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-purple-500"
-                  : "bg-white border-slate-200 focus:border-purple-500 shadow-sm"
+                  : "bg-white border-slate-200 dark:border-slate-800/60 focus:border-purple-500 shadow-sm"
               )}
             />
           </div>
@@ -488,7 +488,7 @@ export default function PortalFullPackage() {
                 ? "bg-gradient-to-r from-violet-500 to-purple-600 border-purple-500 text-white shadow-lg"
                 : isDark
                   ? "bg-slate-800 border-slate-700 text-slate-400 hover:border-purple-500"
-                  : "bg-white border-slate-200 text-slate-500 hover:border-purple-500 shadow-sm"
+                  : "bg-white border-slate-200 dark:border-slate-800/60 text-slate-500 hover:border-purple-500 shadow-sm"
             )}
           >
             <SlidersHorizontal className="w-5 h-5" />
@@ -512,7 +512,7 @@ export default function PortalFullPackage() {
             >
               <div className={cn(
                 "p-4 rounded-2xl space-y-4",
-                isDark ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200 shadow-sm"
+                isDark ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200 dark:border-slate-800/60 shadow-sm"
               )}>
                 {/* Status Filter */}
                 <div>
@@ -540,7 +540,7 @@ export default function PortalFullPackage() {
                             ? `bg-gradient-to-r ${s.gradient} text-white shadow-md`
                             : isDark
                               ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              : "bg-slate-100 dark:bg-slate-950/40 text-slate-600 hover:bg-slate-200"
                         )}
                       >
                         {pickLang(language, { ku: s.ku, en: s.en, ar: s.ar, zh: s.zh })}
@@ -574,7 +574,7 @@ export default function PortalFullPackage() {
                             ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-md"
                             : isDark
                               ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              : "bg-slate-100 dark:bg-slate-950/40 text-slate-600 hover:bg-slate-200"
                         )}
                       >
                         {pickLang(language, { ku: s.ku, en: s.en, ar: s.ar, zh: s.zh })}
@@ -591,7 +591,7 @@ export default function PortalFullPackage() {
                       "w-full py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2",
                       isDark
                         ? "bg-red-900/30 text-red-400 hover:bg-red-900/50"
-                        : "bg-red-50 text-red-600 hover:bg-red-100"
+                        : "bg-red-50 dark:bg-red-950/40 text-red-600 hover:bg-red-100"
                     )}
                   >
                     <XCircle className="w-4 h-4" />
@@ -631,7 +631,7 @@ export default function PortalFullPackage() {
             </div>
             <h3 className={cn(
               "text-xl font-bold mb-2",
-              isDark ? "text-white" : "text-slate-800"
+              isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
             )}>
 {pickLang(language, { ku: "هیچ داواکارییەک نییە", en: "No orders yet", ar: "لا توجد طلبات بعد", zh: "暂无订单" })}
             </h3>
@@ -673,14 +673,14 @@ export default function PortalFullPackage() {
                       "rounded-2xl overflow-hidden transition-all hover:shadow-lg border",
                       isDark 
                         ? "bg-slate-800 border-slate-700 hover:border-slate-600" 
-                        : "bg-white border-slate-200 hover:shadow-purple-100/50"
+                        : "bg-white border-slate-200 dark:border-slate-800/60 hover:shadow-purple-100/50"
                     )}>
                       <div className="p-4">
                         <div className="flex gap-4">
                           {/* Product Image */}
                           <div className={cn(
                             "w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden",
-                            isDark ? "bg-slate-700" : "bg-slate-100"
+                            isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
                           )}>
                             {order.productImage ? (
                               <img loading="lazy" decoding="async" 
@@ -723,7 +723,7 @@ export default function PortalFullPackage() {
                             {/* Product Name */}
                             <h3 className={cn(
                               "font-semibold text-base mb-1 truncate",
-                              isDark ? "text-white" : "text-slate-800"
+                              isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                             )}>
                               {order.productName}
                             </h3>
@@ -742,7 +742,7 @@ export default function PortalFullPackage() {
                                 "mb-2 inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-sm font-mono font-bold transition active:scale-95",
                                 isDark
                                   ? "border-violet-800 bg-violet-950/40 text-violet-300 hover:bg-violet-900/40"
-                                  : "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
+                                  : "border-violet-200 dark:border-violet-800/60 bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 hover:bg-violet-100"
                               )}
                               dir="ltr"
                             >
@@ -797,7 +797,7 @@ export default function PortalFullPackage() {
                         {/* Date Footer */}
                         <div className={cn(
                           "mt-3 pt-3 border-t flex items-center justify-between",
-                          isDark ? "border-slate-700" : "border-slate-100"
+                          isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
                         )}>
                           <div className="flex items-center gap-2">
                             <Calendar className={cn(
@@ -881,7 +881,7 @@ export default function PortalFullPackage() {
                 <div className="absolute -bottom-10 right-6">
                   <div className={cn(
                     "w-20 h-20 rounded-2xl overflow-hidden border-4 shadow-lg",
-                    isDark ? "border-slate-900 bg-slate-800" : "border-white bg-slate-100"
+                    isDark ? "border-slate-900 bg-slate-800" : "border-white bg-slate-100 dark:bg-slate-950/40"
                   )}>
                     {selectedOrder.productImage ? (
                       <img loading="lazy" decoding="async" 
@@ -906,7 +906,7 @@ export default function PortalFullPackage() {
                 <DialogHeader className="text-right mb-6">
                   <DialogTitle className={cn(
                     "text-xl font-bold",
-                    isDark ? "text-white" : "text-slate-800"
+                    isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                   )}>
                     {selectedOrder.productName}
                   </DialogTitle>
@@ -922,7 +922,7 @@ export default function PortalFullPackage() {
                         "inline-flex w-fit items-center gap-1.5 rounded-lg border px-2 py-1 text-sm font-mono font-bold transition active:scale-95",
                         isDark
                           ? "border-violet-800 bg-violet-950/40 text-violet-300 hover:bg-violet-900/40"
-                          : "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
+                          : "border-violet-200 dark:border-violet-800/60 bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 hover:bg-violet-100"
                       )}
                       dir="ltr"
                     >
@@ -956,7 +956,7 @@ export default function PortalFullPackage() {
                   {/* Price Info */}
                   <div className={cn(
                     "p-4 rounded-2xl",
-                    isDark ? "bg-slate-800" : "bg-slate-50"
+                    isDark ? "bg-slate-800" : "bg-slate-50 dark:bg-slate-950/40"
                   )}>
                     <div className="flex items-center justify-between mb-3">
                       <span className={isDark ? "text-slate-400" : "text-slate-500"}>
@@ -964,7 +964,7 @@ export default function PortalFullPackage() {
                       </span>
                       <span className={cn(
                         "text-xl font-bold",
-                        isDark ? "text-white" : "text-slate-800"
+                        isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                       )}>
                         {selectedOrder.orderType === 'commission'
                           ? formatPrice(selectedOrder.totalPrepaidUsd)
@@ -986,7 +986,7 @@ export default function PortalFullPackage() {
                   {selectedOrder.shippingChargedUsd && parseFloat(selectedOrder.shippingChargedUsd) > 0 && (
                     <div className={cn(
                       "p-4 rounded-2xl",
-                      isDark ? "bg-blue-900/30" : "bg-blue-50"
+                      isDark ? "bg-blue-900/30" : "bg-blue-50 dark:bg-blue-950/40"
                     )}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -1000,7 +1000,7 @@ export default function PortalFullPackage() {
                         </div>
                         <span className={cn(
                           "text-lg font-bold",
-                          isDark ? "text-blue-300" : "text-blue-700"
+                          isDark ? "text-blue-300" : "text-blue-700 dark:text-blue-300"
                         )}>
                           {formatPrice(selectedOrder.shippingChargedUsd)}
                         </span>
@@ -1020,11 +1020,11 @@ export default function PortalFullPackage() {
                     return (
                       <div className={cn(
                         "p-4 rounded-2xl space-y-2",
-                        isDark ? "bg-emerald-900/30" : "bg-emerald-50"
+                        isDark ? "bg-emerald-900/30" : "bg-emerald-50 dark:bg-emerald-950/40"
                       )}>
                         <div className="flex items-center gap-2 mb-1">
                           <DollarSign className={cn("w-4 h-4", isDark ? "text-emerald-400" : "text-emerald-600")} />
-                          <span className={cn("font-semibold", isDark ? "text-emerald-300" : "text-emerald-700")}>
+                          <span className={cn("font-semibold", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
                             {pickLang(language, { ku: "پوختەی پارەدان", en: "Payment Summary", ar: "ملخص الدفع", zh: "付款摘要" })}
                           </span>
                         </div>
@@ -1042,17 +1042,17 @@ export default function PortalFullPackage() {
                         </div>
                         <div className={cn("h-px", isDark ? "bg-emerald-800" : "bg-emerald-200")} />
                         <div className="flex items-center justify-between">
-                          <span className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
+                          <span className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                             {isFullyPaid
                               ? pickLang(language, { ku: "ڕەوش", en: "Status", ar: "الحالة", zh: "状态" })
                               : pickLang(language, { ku: "ماوە بۆ پارەدان", en: "Remaining", ar: "المتبقي", zh: "剩余应付" })}
                           </span>
                           {isFullyPaid ? (
-                            <span className={cn("font-bold", isDark ? "text-emerald-300" : "text-emerald-700")}>
+                            <span className={cn("font-bold", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
                               ✓ {pickLang(language, { ku: "تەواو پارەدراوە", en: "Fully Paid", ar: "مدفوع بالكامل", zh: "已全额付款" })}
                             </span>
                           ) : (
-                            <span className={cn("font-mono font-bold text-lg", isDark ? "text-amber-300" : "text-amber-700")}>
+                            <span className={cn("font-mono font-bold text-lg", isDark ? "text-amber-300" : "text-amber-700 dark:text-amber-300")}>
                               {formatPrice(remaining)}
                             </span>
                           )}
@@ -1065,7 +1065,7 @@ export default function PortalFullPackage() {
                   {selectedOrder.trackingNumber && (
                     <div className={cn(
                       "p-4 rounded-2xl",
-                      isDark ? "bg-slate-800" : "bg-slate-50"
+                      isDark ? "bg-slate-800" : "bg-slate-50 dark:bg-slate-950/40"
                     )}>
                       <div className="flex items-center gap-2 mb-2">
                         <Truck className={cn(
@@ -1078,7 +1078,7 @@ export default function PortalFullPackage() {
                       </div>
                       <p className={cn(
                         "font-mono text-sm",
-                        isDark ? "text-white" : "text-slate-800"
+                        isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                       )}>
                         {selectedOrder.trackingNumber}
                       </p>
@@ -1095,7 +1095,7 @@ export default function PortalFullPackage() {
                         "flex items-center justify-between p-4 rounded-2xl transition-colors",
                         isDark 
                           ? "bg-slate-800 hover:bg-slate-700" 
-                          : "bg-slate-50 hover:bg-slate-100"
+                          : "bg-slate-50 dark:bg-slate-950/40 hover:bg-slate-100"
                       )}
                     >
                       <div className="flex items-center gap-2">
@@ -1117,7 +1117,7 @@ export default function PortalFullPackage() {
                   {/* Date Info */}
                   <div className={cn(
                     "p-4 rounded-2xl",
-                    isDark ? "bg-slate-800" : "bg-slate-50"
+                    isDark ? "bg-slate-800" : "bg-slate-50 dark:bg-slate-950/40"
                   )}>
                     <div className="flex items-center gap-2 mb-2">
                       <Calendar className={cn(
@@ -1130,7 +1130,7 @@ export default function PortalFullPackage() {
                     </div>
                     <p className={cn(
                       "text-sm",
-                      isDark ? "text-white" : "text-slate-800"
+                      isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                     )}>
                       {new Date(selectedOrder.createdAt).toLocaleDateString('en-US', {
                         year: 'numeric',
@@ -1144,7 +1144,7 @@ export default function PortalFullPackage() {
                   {selectedOrder.productDescription && (
                     <div className={cn(
                       "p-4 rounded-2xl",
-                      isDark ? "bg-slate-800" : "bg-slate-50"
+                      isDark ? "bg-slate-800" : "bg-slate-50 dark:bg-slate-950/40"
                     )}>
                       <div className="flex items-center gap-2 mb-2">
                         <FileText className={cn(
@@ -1157,7 +1157,7 @@ export default function PortalFullPackage() {
                       </div>
                       <p className={cn(
                         "text-sm",
-                        isDark ? "text-white" : "text-slate-800"
+                        isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                       )}>
                         {selectedOrder.productDescription}
                       </p>

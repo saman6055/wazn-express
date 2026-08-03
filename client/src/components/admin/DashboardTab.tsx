@@ -86,21 +86,21 @@ export function DashboardTab({
 
   const healthColorMap = {
     good: {
-      bg: "bg-emerald-50",
-      border: "border-emerald-200",
-      text: "text-emerald-700",
+      bg: "bg-emerald-50 dark:bg-emerald-950/40",
+      border: "border-emerald-200 dark:border-emerald-800/60",
+      text: "text-emerald-700 dark:text-emerald-300",
       ring: "text-emerald-500",
     },
     warning: {
-      bg: "bg-amber-50",
-      border: "border-amber-200",
-      text: "text-amber-700",
+      bg: "bg-amber-50 dark:bg-amber-950/40",
+      border: "border-amber-200 dark:border-amber-800/60",
+      text: "text-amber-700 dark:text-amber-300",
       ring: "text-amber-500",
     },
     critical: {
-      bg: "bg-red-50",
-      border: "border-red-200",
-      text: "text-red-700",
+      bg: "bg-red-50 dark:bg-red-950/40",
+      border: "border-red-200 dark:border-red-800/60",
+      text: "text-red-700 dark:text-red-300",
       ring: "text-red-500",
     },
   };
@@ -161,7 +161,7 @@ export function DashboardTab({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-blue-100 rounded-xl">
+              <div className="p-2.5 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
                 <Database className="h-5 w-5 text-blue-600" />
               </div>
               <div>
@@ -174,7 +174,7 @@ export function DashboardTab({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-green-100 rounded-xl">
+              <div className="p-2.5 bg-green-100 dark:bg-green-950/40 rounded-xl">
                 <Save className="h-5 w-5 text-green-600" />
               </div>
               <div>
@@ -187,7 +187,7 @@ export function DashboardTab({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-purple-100 rounded-xl">
+              <div className="p-2.5 bg-purple-100 dark:bg-purple-950/40 rounded-xl">
                 <HardDrive className="h-5 w-5 text-purple-600" />
               </div>
               <div>
@@ -201,11 +201,11 @@ export function DashboardTab({
 
       {/* Row 2: Detailed Counts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="border-blue-100">
+        <Card className="border-blue-100 dark:border-blue-800/60">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-blue-50 rounded-lg">
+                <div className="p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
                   <Users className="h-4 w-4 text-blue-600" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.customers")}</CardTitle>
@@ -227,11 +227,11 @@ export function DashboardTab({
           </CardContent>
         </Card>
 
-        <Card className="border-emerald-100">
+        <Card className="border-emerald-100 dark:border-emerald-800/60">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-emerald-50 rounded-lg">
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg">
                   <Package className="h-4 w-4 text-emerald-600" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.packages")}</CardTitle>
@@ -257,11 +257,11 @@ export function DashboardTab({
           </CardContent>
         </Card>
 
-        <Card className="border-purple-100">
+        <Card className="border-purple-100 dark:border-purple-800/60">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-purple-50 rounded-lg">
+                <div className="p-2 bg-purple-50 dark:bg-purple-950/40 rounded-lg">
                   <Boxes className="h-4 w-4 text-purple-600" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.batches")}</CardTitle>
@@ -283,11 +283,11 @@ export function DashboardTab({
           </CardContent>
         </Card>
 
-        <Card className="border-orange-100">
+        <Card className="border-orange-100 dark:border-orange-800/60">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-orange-50 rounded-lg">
+                <div className="p-2 bg-orange-50 dark:bg-orange-950/40 rounded-lg">
                   <FileText className="h-4 w-4 text-orange-600" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.invoices")}</CardTitle>
@@ -309,11 +309,11 @@ export function DashboardTab({
           </CardContent>
         </Card>
 
-        <Card className="border-teal-100">
+        <Card className="border-teal-100 dark:border-teal-800/60">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-teal-50 rounded-lg">
+                <div className="p-2 bg-teal-50 dark:bg-teal-950/40 rounded-lg">
                   <CreditCard className="h-4 w-4 text-teal-600" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.payments")}</CardTitle>
@@ -333,11 +333,11 @@ export function DashboardTab({
           </CardContent>
         </Card>
 
-        <Card className="border-indigo-100">
+        <Card className="border-indigo-100 dark:border-indigo-800/60">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-indigo-50 rounded-lg">
+                <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg">
                   <Shield className="h-4 w-4 text-indigo-600" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.users")}</CardTitle>
@@ -366,7 +366,7 @@ export function DashboardTab({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-50 rounded-lg">
+                <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg">
                   <TrendingUp className="h-5 w-5 text-indigo-600" />
                 </div>
                 <div>
@@ -433,7 +433,7 @@ export function DashboardTab({
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-50 rounded-lg">
+              <div className="p-2 bg-amber-50 dark:bg-amber-950/40 rounded-lg">
                 <Activity className="h-5 w-5 text-amber-600" />
               </div>
               <div>
@@ -444,10 +444,10 @@ export function DashboardTab({
           </CardHeader>
           <CardContent className="space-y-3">
             {(!backupsList || backupsList.length === 0) && (
-              <Alert className="border-red-200 bg-red-50">
+              <Alert className="border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-950/40">
                 <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertTitle className="text-red-800">{t("dataManagement.noRecentBackup")}</AlertTitle>
-                <AlertDescription className="text-red-700">{t("dataManagement.noRecentBackupDesc")}</AlertDescription>
+                <AlertTitle className="text-red-800 dark:text-red-200">{t("dataManagement.noRecentBackup")}</AlertTitle>
+                <AlertDescription className="text-red-700 dark:text-red-300">{t("dataManagement.noRecentBackupDesc")}</AlertDescription>
               </Alert>
             )}
             {backupsList &&
@@ -457,31 +457,31 @@ export function DashboardTab({
                   new Date().getTime() - new Date(backupsList[0].createdAt ?? 0).getTime();
                 return lastTime > 7 * 24 * 60 * 60 * 1000;
               })() && (
-              <Alert className="border-amber-200 bg-amber-50">
+              <Alert className="border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40">
                 <Clock className="h-4 w-4 text-amber-600" />
-                <AlertTitle className="text-amber-800">{t("dataManagement.noRecentBackup")}</AlertTitle>
-                <AlertDescription className="text-amber-700">{t("dataManagement.noRecentBackupDesc")}</AlertDescription>
+                <AlertTitle className="text-amber-800 dark:text-amber-200">{t("dataManagement.noRecentBackup")}</AlertTitle>
+                <AlertDescription className="text-amber-700 dark:text-amber-300">{t("dataManagement.noRecentBackupDesc")}</AlertDescription>
               </Alert>
             )}
             {totalRecords > 10000 && (
-              <Alert className="border-blue-200 bg-blue-50">
+              <Alert className="border-blue-200 dark:border-blue-800/60 bg-blue-50 dark:bg-blue-950/40">
                 <Database className="h-4 w-4 text-blue-600" />
-                <AlertTitle className="text-blue-800">{t("dataManagement.largeDatabase")}</AlertTitle>
-                <AlertDescription className="text-blue-700">{t("dataManagement.largeDatabaseDesc")}</AlertDescription>
+                <AlertTitle className="text-blue-800 dark:text-blue-200">{t("dataManagement.largeDatabase")}</AlertTitle>
+                <AlertDescription className="text-blue-700 dark:text-blue-300">{t("dataManagement.largeDatabaseDesc")}</AlertDescription>
               </Alert>
             )}
             {(detailedCounts?.packages?.delivered ?? 0) > 500 && (
-              <Alert className="border-green-200 bg-green-50">
+              <Alert className="border-green-200 dark:border-green-800/60 bg-green-50 dark:bg-green-950/40">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertTitle className="text-green-800">{t("dataManagement.cleanupSuggestion")}</AlertTitle>
-                <AlertDescription className="text-green-700">{t("dataManagement.cleanupSuggestionDesc")}</AlertDescription>
+                <AlertTitle className="text-green-800 dark:text-green-200">{t("dataManagement.cleanupSuggestion")}</AlertTitle>
+                <AlertDescription className="text-green-700 dark:text-green-300">{t("dataManagement.cleanupSuggestionDesc")}</AlertDescription>
               </Alert>
             )}
             {healthScore.status === "good" && (
-              <Alert className="border-green-200 bg-green-50">
+              <Alert className="border-green-200 dark:border-green-800/60 bg-green-50 dark:bg-green-950/40">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertTitle className="text-green-800">{t("dataManagement.allGood")}</AlertTitle>
-                <AlertDescription className="text-green-700">{t("dataManagement.allGoodDesc")}</AlertDescription>
+                <AlertTitle className="text-green-800 dark:text-green-200">{t("dataManagement.allGood")}</AlertTitle>
+                <AlertDescription className="text-green-700 dark:text-green-300">{t("dataManagement.allGoodDesc")}</AlertDescription>
               </Alert>
             )}
           </CardContent>

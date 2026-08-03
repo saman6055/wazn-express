@@ -65,12 +65,12 @@ export default function StoreProduct() {
   const label = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-slate-50">
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-slate-50 dark:bg-slate-950/40">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200">
+      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200 dark:border-slate-800/60">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/store">
-            <span className="flex items-center gap-2 font-bold text-slate-800 cursor-pointer">
+            <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
               <StoreIcon className="w-5 h-5 text-violet-600" />
               {label({ ku: "وەزن ستۆر", en: "Wazn Store", ar: "متجر وزن", zh: "Wazn 商店" })}
             </span>
@@ -95,19 +95,19 @@ export default function StoreProduct() {
           </div>
         ) : !product ? (
           <div className="text-center py-20">
-            <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-950/40 flex items-center justify-center mx-auto mb-4">
               <ImageIcon className="w-8 h-8 text-slate-300" />
             </div>
             <p className="font-medium text-slate-600">{label({ ku: "پرۆدیکت نەدۆزرایەوە", en: "Product not found", ar: "المنتج غير موجود", zh: "未找到产品" })}</p>
           </div>
         ) : placed ? (
           <div className="text-center py-16">
-            <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
+            <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center mx-auto mb-5">
               <CheckCircle2 className="w-11 h-11 text-emerald-600" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-800">{label({ ku: "داواکارییەکەت نێردرا!", en: "Order sent!", ar: "تم إرسال طلبك!", zh: "订单已发送！" })}</h1>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">{label({ ku: "داواکارییەکەت نێردرا!", en: "Order sent!", ar: "تم إرسال طلبك!", zh: "订单已发送！" })}</h1>
             <p className="text-slate-500 mt-2">{label({ ku: "لە ڕێگای WhatsApp پەیوەندیت پێوە دەکەین بۆ پشتڕاستکردنەوە.", en: "We'll contact you on WhatsApp to confirm.", ar: "سنتواصل معك عبر واتساب للتأكيد.", zh: "我们将通过 WhatsApp 与您确认。" })}</p>
-            <p className="mt-4 inline-block rounded-full bg-slate-100 px-4 py-1.5 text-sm font-mono text-slate-600">{placed.orderCode}</p>
+            <p className="mt-4 inline-block rounded-full bg-slate-100 dark:bg-slate-950/40 px-4 py-1.5 text-sm font-mono text-slate-600">{placed.orderCode}</p>
             <div className="mt-8">
               <Link href="/store">
                 <button className="rounded-xl bg-violet-600 text-white px-6 py-3 font-medium hover:bg-violet-700 transition">
@@ -124,7 +124,7 @@ export default function StoreProduct() {
               const current = imgs[activeImg] || imgs[0];
               return (
                 <div>
-                  <div className="aspect-square w-full rounded-3xl overflow-hidden bg-white border border-slate-200 flex items-center justify-center">
+                  <div className="aspect-square w-full rounded-3xl overflow-hidden bg-white border border-slate-200 dark:border-slate-800/60 flex items-center justify-center">
                     {current ? (
                       <img src={current} alt={pName(product, language)} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     ) : (
@@ -150,11 +150,11 @@ export default function StoreProduct() {
             {/* Info */}
             <div className="mt-5">
               {product.category && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 text-violet-700 text-xs font-medium px-2.5 py-1 mb-3">
+                <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 text-xs font-medium px-2.5 py-1 mb-3">
                   <Tag className="w-3 h-3" />{product.category}
                 </span>
               )}
-              <h1 className="text-2xl font-bold text-slate-800 leading-snug">{pName(product, language)}</h1>
+              <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200 leading-snug">{pName(product, language)}</h1>
               <div className="flex items-baseline gap-2 mt-3">
                 <span className="text-3xl font-bold text-violet-600">{money(product.price, product.currency)}</span>
                 {product.compareAtPrice && Number(product.compareAtPrice) > Number(product.price) && (
@@ -162,7 +162,7 @@ export default function StoreProduct() {
                 )}
               </div>
               {product.status === "out_of_stock" && (
-                <p className="mt-3 inline-block rounded-lg bg-red-50 text-red-600 text-sm font-medium px-3 py-1.5">
+                <p className="mt-3 inline-block rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 text-sm font-medium px-3 py-1.5">
                   {label({ ku: "ئێستا نەماوە", en: "Out of stock", ar: "غير متوفر حالياً", zh: "暂时缺货" })}
                 </p>
               )}
@@ -173,8 +173,8 @@ export default function StoreProduct() {
 
             {/* Order form */}
             {product.status !== "out_of_stock" && (
-              <div className="mt-8 rounded-3xl bg-white border border-slate-200 p-5">
-                <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="mt-8 rounded-3xl bg-white border border-slate-200 dark:border-slate-800/60 p-5">
+                <h2 className="font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5 text-violet-600" />
                   {label({ ku: "داواکاری", en: "Place order", ar: "إتمام الطلب", zh: "下单" })}
                 </h2>
@@ -183,23 +183,23 @@ export default function StoreProduct() {
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm font-medium text-slate-600">{label({ ku: "عەدەد", en: "Quantity", ar: "الكمية", zh: "数量" })}</span>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center"><Minus className="w-4 h-4" /></button>
-                    <span className="w-8 text-center font-bold text-slate-800">{qty}</span>
-                    <button onClick={() => setQty((q) => Math.min(999, q + 1))} className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center"><Plus className="w-4 h-4" /></button>
+                    <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-950/40 hover:bg-slate-200 flex items-center justify-center"><Minus className="w-4 h-4" /></button>
+                    <span className="w-8 text-center font-bold text-slate-800 dark:text-slate-200">{qty}</span>
+                    <button onClick={() => setQty((q) => Math.min(999, q + 1))} className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-950/40 hover:bg-slate-200 flex items-center justify-center"><Plus className="w-4 h-4" /></button>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <input value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} placeholder={label({ ku: "ناوی تەواو *", en: "Full name *", ar: "الاسم الكامل *", zh: "全名 *" })} className="w-full h-11 rounded-xl border border-slate-200 px-3.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
-                  <input value={form.customerPhone} onChange={(e) => setForm({ ...form, customerPhone: e.target.value })} inputMode="tel" placeholder={label({ ku: "ژمارەی مۆبایل *", en: "Phone number *", ar: "رقم الهاتف *", zh: "电话号码 *" })} className="w-full h-11 rounded-xl border border-slate-200 px-3.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
-                  <input value={form.customerCity} onChange={(e) => setForm({ ...form, customerCity: e.target.value })} placeholder={label({ ku: "شار", en: "City", ar: "المدينة", zh: "城市" })} className="w-full h-11 rounded-xl border border-slate-200 px-3.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
-                  <textarea value={form.customerAddress} onChange={(e) => setForm({ ...form, customerAddress: e.target.value })} rows={2} placeholder={label({ ku: "ناونیشانی گەیاندن", en: "Delivery address", ar: "عنوان التوصيل", zh: "配送地址" })} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none resize-none" />
-                  <textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} rows={2} placeholder={label({ ku: "تێبینی (ئارەزوومەندانە)", en: "Note (optional)", ar: "ملاحظة (اختياري)", zh: "备注（可选）" })} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none resize-none" />
+                  <input value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} placeholder={label({ ku: "ناوی تەواو *", en: "Full name *", ar: "الاسم الكامل *", zh: "全名 *" })} className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-800/60 px-3.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
+                  <input value={form.customerPhone} onChange={(e) => setForm({ ...form, customerPhone: e.target.value })} inputMode="tel" placeholder={label({ ku: "ژمارەی مۆبایل *", en: "Phone number *", ar: "رقم الهاتف *", zh: "电话号码 *" })} className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-800/60 px-3.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
+                  <input value={form.customerCity} onChange={(e) => setForm({ ...form, customerCity: e.target.value })} placeholder={label({ ku: "شار", en: "City", ar: "المدينة", zh: "城市" })} className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-800/60 px-3.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
+                  <textarea value={form.customerAddress} onChange={(e) => setForm({ ...form, customerAddress: e.target.value })} rows={2} placeholder={label({ ku: "ناونیشانی گەیاندن", en: "Delivery address", ar: "عنوان التوصيل", zh: "配送地址" })} className="w-full rounded-xl border border-slate-200 dark:border-slate-800/60 px-3.5 py-2.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none resize-none" />
+                  <textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} rows={2} placeholder={label({ ku: "تێبینی (ئارەزوومەندانە)", en: "Note (optional)", ar: "ملاحظة (اختياري)", zh: "备注（可选）" })} className="w-full rounded-xl border border-slate-200 dark:border-slate-800/60 px-3.5 py-2.5 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none resize-none" />
                 </div>
 
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
                   <span className="text-sm text-slate-500">{label({ ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "总计" })}</span>
-                  <span className="text-xl font-bold text-slate-800">{money(Number(product.price) * qty, product.currency)}</span>
+                  <span className="text-xl font-bold text-slate-800 dark:text-slate-200">{money(Number(product.price) * qty, product.currency)}</span>
                 </div>
 
                 <button onClick={submit} disabled={createOrder.isPending} className="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white py-3.5 font-bold shadow-lg shadow-emerald-500/25 transition active:scale-[0.99] disabled:opacity-60">

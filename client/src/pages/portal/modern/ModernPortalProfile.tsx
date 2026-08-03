@@ -49,11 +49,11 @@ export default function ModernPortalProfile() {
           <div className="text-center px-6">
             <div className={cn(
               "w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center",
-              isDark ? "bg-slate-800" : "bg-slate-100"
+              isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40"
             )}>
               <User className={cn("w-10 h-10", isDark ? "text-slate-600" : "text-slate-300")} />
             </div>
-            <h2 className={cn("text-xl font-bold mb-2", isDark ? "text-white" : "text-slate-900")}>
+            <h2 className={cn("text-xl font-bold mb-2", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
               {language === "ku" ? "چوونەژوورەوە پێویستە" : "Login Required"}
             </h2>
             <Link href={getLoginUrl()}>
@@ -158,7 +158,7 @@ export default function ModernPortalProfile() {
           "rounded-2xl overflow-hidden shadow-sm border divide-y",
           isDark
             ? "bg-slate-800/50 border-slate-700/40 divide-slate-700/40"
-            : "bg-white border-slate-100 divide-slate-50"
+            : "bg-white border-slate-100 dark:border-slate-800/60 divide-slate-50"
         )}
       >
         {items.map((item, i) => {
@@ -175,7 +175,7 @@ export default function ModernPortalProfile() {
               <div
                 className={cn(
                   "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                  isDark ? "bg-emerald-500/10" : "bg-emerald-50"
+                  isDark ? "bg-emerald-500/10" : "bg-emerald-50 dark:bg-emerald-950/40"
                 )}
               >
                 <item.icon className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" />
@@ -183,7 +183,7 @@ export default function ModernPortalProfile() {
               <span
                 className={cn(
                   "flex-1 text-sm font-medium",
-                  isDark ? "text-white" : "text-slate-700"
+                  isDark ? "text-white" : "text-slate-700 dark:text-slate-300"
                 )}
               >
                 {item.label}
@@ -235,7 +235,7 @@ export default function ModernPortalProfile() {
                 "ring-4",
                 isDark
                   ? "bg-emerald-600/20 text-emerald-400 ring-emerald-500/20"
-                  : "bg-emerald-50 text-emerald-700 ring-emerald-100"
+                  : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 ring-emerald-100"
               )}
             >
               {accountLoading ? (
@@ -252,7 +252,7 @@ export default function ModernPortalProfile() {
               <h1
                 className={cn(
                   "text-xl font-bold text-center",
-                  isDark ? "text-white" : "text-slate-900"
+                  isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
                 )}
               >
                 {account?.fullName || user?.name || t("portal.profile")}
@@ -266,7 +266,7 @@ export default function ModernPortalProfile() {
                   "mt-1.5 px-3 py-1 rounded-full text-xs font-mono font-medium",
                   isDark
                     ? "bg-slate-800 text-slate-400 border border-slate-700"
-                    : "bg-slate-100 text-slate-500"
+                    : "bg-slate-100 dark:bg-slate-950/40 text-slate-500"
                 )}
               >
                 {account.customerCode}
@@ -283,7 +283,7 @@ export default function ModernPortalProfile() {
               "rounded-2xl shadow-sm border overflow-hidden",
               isDark
                 ? "bg-slate-800/50 border-slate-700/40"
-                : "bg-white border-slate-100"
+                : "bg-white border-slate-100 dark:border-slate-800/60"
             )}
           >
             {accountLoading ? (
@@ -305,7 +305,7 @@ export default function ModernPortalProfile() {
                     <div
                       className={cn(
                         "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                        isDark ? "bg-slate-700/60" : "bg-slate-50"
+                        isDark ? "bg-slate-700/60" : "bg-slate-50 dark:bg-slate-950/40"
                       )}
                     >
                       <row.icon
@@ -322,7 +322,7 @@ export default function ModernPortalProfile() {
                       <p
                         className={cn(
                           "text-sm font-medium truncate",
-                          isDark ? "text-white" : "text-slate-800"
+                          isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                         )}
                       >
                         {row.value}
@@ -356,7 +356,7 @@ export default function ModernPortalProfile() {
             onClick={handleLogout}
             className={cn(
               "w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl font-medium text-sm transition-colors border",
-              "text-red-500 border-red-200 hover:bg-red-50",
+              "text-red-500 border-red-200 dark:border-red-800/60 hover:bg-red-50",
               "dark:text-red-400 dark:border-red-500/20 dark:hover:bg-red-500/10"
             )}
           >

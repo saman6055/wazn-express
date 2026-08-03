@@ -170,28 +170,28 @@ export default function ProfitDashboardByType() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200">
+          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 dark:border-emerald-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-emerald-600 font-medium">{pickLang(language, { ku: "کۆی قازانج", en: "Total Profit", ar: "إجمالي الربح", zh: "总利润" })}</p>
-                  <p className="text-2xl font-bold text-emerald-700">${(totalProfit || 0).toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">${(totalProfit || 0).toFixed(2)}</p>
                 </div>
-                <div className="p-3 bg-emerald-100 rounded-xl">
+                <div className="p-3 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
                   <DollarSign className="h-6 w-6 text-emerald-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200">
+          <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-blue-600 font-medium">{pickLang(language, { ku: "کۆی ئۆردەرەکان", en: "Total Orders", ar: "إجمالي الطلبات", zh: "订单总数" })}</p>
-                  <p className="text-2xl font-bold text-blue-700">{totalOrders}</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{totalOrders}</p>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-xl">
+                <div className="p-3 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
                   <Package className="h-6 w-6 text-blue-600" />
                 </div>
               </div>

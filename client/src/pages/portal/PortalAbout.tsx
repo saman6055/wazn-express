@@ -172,7 +172,7 @@ export default function PortalAbout() {
 
   return (
     <CustomerPortalLayout>
-      <div className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50")} dir={isRTL ? "rtl" : "ltr"}>
+      <div className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50 dark:bg-gray-950/40")} dir={isRTL ? "rtl" : "ltr"}>
         {/* Hero */}
         <div className="relative overflow-hidden text-white px-4 pt-6 pb-12" style={portalBanner}>
           <div className="absolute -top-16 -end-10 w-56 h-56 rounded-full bg-white/10 blur-3xl" />
@@ -209,7 +209,7 @@ export default function PortalAbout() {
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
                 <Sparkles className="w-4.5 h-4.5" />
               </div>
-              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800")}>
+              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                 {pick({ ku: "ئێمە کێین", en: "Who we are", ar: "من نحن", zh: "关于我们" })}
               </h2>
             </div>
@@ -230,7 +230,7 @@ export default function PortalAbout() {
           )}>
             <div className="flex items-center gap-2.5 mb-2">
               <Target className={cn("w-5 h-5", isDark ? "text-indigo-400" : "text-indigo-600")} />
-              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800")}>
+              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                 {pick({ ku: "ئامانجی ئێمە", en: "Our mission", ar: "مهمتنا", zh: "我们的使命" })}
               </h2>
             </div>
@@ -246,7 +246,7 @@ export default function PortalAbout() {
 
           {/* Services */}
           <div>
-            <h2 className={cn("font-bold text-sm mb-3 px-1", isDark ? "text-white" : "text-slate-800")}>
+            <h2 className={cn("font-bold text-sm mb-3 px-1", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
               {pick({ ku: "خزمەتگوزارییەکانمان", en: "What we offer", ar: "خدماتنا", zh: "我们提供的服务" })}
             </h2>
             <div className="space-y-2.5">
@@ -256,7 +256,7 @@ export default function PortalAbout() {
                     <s.icon className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className={cn("font-bold text-sm", isDark ? "text-white" : "text-slate-800")}>{pick(s.title)}</h3>
+                    <h3 className={cn("font-bold text-sm", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>{pick(s.title)}</h3>
                     <p className={cn("text-xs mt-0.5 leading-relaxed", isDark ? "text-slate-400" : "text-slate-500")}>{pick(s.desc)}</p>
                   </div>
                 </div>
@@ -266,16 +266,16 @@ export default function PortalAbout() {
 
           {/* Why choose us */}
           <div>
-            <h2 className={cn("font-bold text-sm mb-3 px-1", isDark ? "text-white" : "text-slate-800")}>
+            <h2 className={cn("font-bold text-sm mb-3 px-1", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
               {pick({ ku: "بۆچی ئێمە؟", en: "Why choose us", ar: "لماذا نحن؟", zh: "为何选择我们" })}
             </h2>
             <div className="grid grid-cols-2 gap-2.5">
               {values.map((v, i) => (
                 <div key={i} className={cn("rounded-2xl p-4 ring-1", isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-gray-100 shadow-sm")}>
-                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-2", isDark ? "bg-indigo-950/50 text-indigo-400" : "bg-indigo-50 text-indigo-600")}>
+                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-2", isDark ? "bg-indigo-950/50 text-indigo-400" : "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600")}>
                     <v.icon className="w-4.5 h-4.5" />
                   </div>
-                  <h3 className={cn("font-bold text-sm", isDark ? "text-white" : "text-slate-800")}>{pick(v.title)}</h3>
+                  <h3 className={cn("font-bold text-sm", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>{pick(v.title)}</h3>
                   <p className={cn("text-xs mt-0.5 leading-snug", isDark ? "text-slate-400" : "text-slate-500")}>{pick(v.desc)}</p>
                 </div>
               ))}
@@ -288,7 +288,7 @@ export default function PortalAbout() {
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white">
                 <Globe className="w-4.5 h-4.5" />
               </div>
-              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800")}>
+              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                 {pick({ ku: "چۆن کار دەکات", en: "How it works", ar: "كيف تعمل", zh: "运作方式" })}
               </h2>
             </div>
@@ -310,7 +310,7 @@ export default function PortalAbout() {
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white">
                 <Headset className="w-4.5 h-4.5" />
               </div>
-              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800")}>
+              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                 {pick({ ku: "پەیوەندیمان پێوە بکە", en: "Get in touch", ar: "تواصل معنا", zh: "联系我们" })}
               </h2>
             </div>
@@ -318,34 +318,34 @@ export default function PortalAbout() {
             <div className="space-y-2.5">
               {company.phone && (
                 <a href={`tel:${company.phone}`} className="flex items-center gap-3">
-                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", isDark ? "bg-slate-800" : "bg-slate-100")}>
+                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40")}>
                     <Phone className={cn("w-4 h-4", isDark ? "text-slate-300" : "text-slate-600")} />
                   </div>
-                  <span className={cn("text-sm font-medium", isDark ? "text-white" : "text-slate-800")} dir="ltr">{company.phone}</span>
+                  <span className={cn("text-sm font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")} dir="ltr">{company.phone}</span>
                 </a>
               )}
               {company.email && (
                 <a href={`mailto:${company.email}`} className="flex items-center gap-3">
-                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", isDark ? "bg-slate-800" : "bg-slate-100")}>
+                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40")}>
                     <Mail className={cn("w-4 h-4", isDark ? "text-slate-300" : "text-slate-600")} />
                   </div>
-                  <span className={cn("text-sm font-medium break-all", isDark ? "text-white" : "text-slate-800")} dir="ltr">{company.email}</span>
+                  <span className={cn("text-sm font-medium break-all", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")} dir="ltr">{company.email}</span>
                 </a>
               )}
               {company.website && (
                 <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3">
-                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", isDark ? "bg-slate-800" : "bg-slate-100")}>
+                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40")}>
                     <LinkIcon className={cn("w-4 h-4", isDark ? "text-slate-300" : "text-slate-600")} />
                   </div>
-                  <span className={cn("text-sm font-medium break-all", isDark ? "text-white" : "text-slate-800")} dir="ltr">{company.website}</span>
+                  <span className={cn("text-sm font-medium break-all", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")} dir="ltr">{company.website}</span>
                 </a>
               )}
               {(pick({ ku: company.addressKu, en: company.address, ar: company.addressAr, zh: company.address })) && (
                 <div className="flex items-center gap-3">
-                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", isDark ? "bg-slate-800" : "bg-slate-100")}>
+                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40")}>
                     <MapPin className={cn("w-4 h-4", isDark ? "text-slate-300" : "text-slate-600")} />
                   </div>
-                  <span className={cn("text-sm font-medium", isDark ? "text-white" : "text-slate-800")}>
+                  <span className={cn("text-sm font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     {pick({ ku: company.addressKu, en: company.address, ar: company.addressAr, zh: company.address })}
                   </span>
                 </div>

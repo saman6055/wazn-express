@@ -257,7 +257,7 @@ export default function CustomerMessages() {
             rel="noopener noreferrer"
             className={cn(
               "flex items-center gap-2 mb-2 p-2 rounded-lg transition",
-              isStaff ? "bg-blue-500/20 hover:bg-blue-500/30" : "bg-gray-100 hover:bg-gray-200"
+              isStaff ? "bg-blue-500/20 hover:bg-blue-500/30" : "bg-gray-100 dark:bg-gray-950/40 hover:bg-gray-200"
             )}
           >
             <FileText className="w-5 h-5 shrink-0" />
@@ -390,7 +390,7 @@ export default function CustomerMessages() {
                         <span className="text-xs text-gray-500">
                           {chat.lastMessageAt ? formatTime(chat.lastMessageAt) : ""}
                         </span>
-                        <span className="font-semibold text-gray-900 dark:text-white truncate">
+                        <span className="font-semibold text-gray-900 dark:text-gray-200 dark:text-white truncate">
                           {chat.customerName || pickLang(language, { ku: "نەناسراو", en: "Unknown", ar: "غير معروف", zh: "未知" })}
                         </span>
                       </div>
@@ -430,9 +430,9 @@ export default function CustomerMessages() {
                     variant="outline"
                     className={cn(
                       "text-xs",
-                      selectedChat.status === "open" && "border-green-300 text-green-700 bg-green-50",
-                      selectedChat.status === "resolved" && "border-blue-300 text-blue-700 bg-blue-50",
-                      selectedChat.status === "closed" && "border-gray-300 text-gray-700 bg-gray-50"
+                      selectedChat.status === "open" && "border-green-300 dark:border-green-800/60 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/40",
+                      selectedChat.status === "resolved" && "border-blue-300 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40",
+                      selectedChat.status === "closed" && "border-gray-300 dark:border-gray-800/60 text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-950/40"
                     )}
                   >
                     {selectedChat.status === "open" ? pickLang(language, { ku: "کراوە", en: "Open", ar: "مفتوحة", zh: "进行中" }) : selectedChat.status === "resolved" ? pickLang(language, { ku: "چارەسەرکرا", en: "Resolved", ar: "تم الحل", zh: "已解决" }) : selectedChat.status}
@@ -466,7 +466,7 @@ export default function CustomerMessages() {
                             "max-w-[70%] rounded-2xl px-4 py-2",
                             msg.senderType === "staff"
                               ? "bg-blue-600 text-white rounded-bl-md"
-                              : "bg-white dark:bg-slate-800 text-gray-900 dark:text-white rounded-br-md shadow-sm"
+                              : "bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-200 dark:text-white rounded-br-md shadow-sm"
                           )}
                         >
                           {msg.senderType !== "staff" && msg.senderName && (
@@ -489,7 +489,7 @@ export default function CustomerMessages() {
                       {attachmentPreview ? (
                         <img src={attachmentPreview} alt="" className="w-16 h-16 rounded object-cover" />
                       ) : (
-                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-950/40 rounded-lg flex items-center justify-center">
                           <FileText className="w-6 h-6 text-blue-600" />
                         </div>
                       )}
@@ -532,7 +532,7 @@ export default function CustomerMessages() {
                       <div className="flex-1 flex items-center gap-3">
                         <button
                           onClick={cancelRecording}
-                          className="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition"
+                          className="p-2 rounded-lg bg-red-100 dark:bg-red-950/40 text-red-600 hover:bg-red-200 transition"
                         >
                           <X className="w-4 h-4" />
                         </button>

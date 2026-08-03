@@ -179,60 +179,60 @@ const [startDate, setStartDate] = useState<string>("");
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 dark:border-blue-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-600">{t("auto.text_3a3774")} </p>
-                  <p className="text-2xl font-bold text-blue-900">${stats.totalRevenue.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-200">${stats.totalRevenue.toFixed(2)}</p>
                   <p className="text-xs text-blue-600">{stats.serviceCount} {t("auto.text_9e2f33")}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-blue-200 flex items-center justify-center">
-                  <DollarSign className="h-6 w-6 text-blue-700" />
+                  <DollarSign className="h-6 w-6 text-blue-700 dark:text-blue-300" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 dark:border-red-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-red-600">{t("auto.text_d9ab72")} </p>
-                  <p className="text-2xl font-bold text-red-900">${stats.totalCost.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-red-900 dark:text-red-200">${stats.totalCost.toFixed(2)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-red-200 flex items-center justify-center">
-                  <TrendingDown className="h-6 w-6 text-red-700" />
+                  <TrendingDown className="h-6 w-6 text-red-700 dark:text-red-300" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 dark:border-green-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-green-600">{t("auto.text_aa03aa")} </p>
-                  <p className="text-2xl font-bold text-green-900">${stats.totalProfit.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-green-900 dark:text-green-200">${stats.totalProfit.toFixed(2)}</p>
                   <p className="text-xs text-green-600">{stats.profitMargin.toFixed(1)}% margin</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-green-200 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-green-700" />
+                  <TrendingUp className="h-6 w-6 text-green-700 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 dark:border-amber-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-amber-600">{t("auto.text_e2a2cc")} </p>
-                  <p className="text-lg font-bold text-green-700">{stats.paidCount} {t("auto.text_40d446")}</p>
-                  <p className="text-lg font-bold text-red-700">{stats.unpaidCount} {t("auto.text_040176")}</p>
+                  <p className="text-lg font-bold text-green-700 dark:text-green-300">{stats.paidCount} {t("auto.text_40d446")}</p>
+                  <p className="text-lg font-bold text-red-700 dark:text-red-300">{stats.unpaidCount} {t("auto.text_040176")}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-amber-200 flex items-center justify-center">
-                  <Receipt className="h-6 w-6 text-amber-700" />
+                  <Receipt className="h-6 w-6 text-amber-700 dark:text-amber-300" />
                 </div>
               </div>
             </CardContent>

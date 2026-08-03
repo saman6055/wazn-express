@@ -127,7 +127,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     switch (tier) {
       case 'platinum': return 'bg-gradient-to-r from-slate-600 to-slate-800 text-white';
       case 'gold': return 'bg-gradient-to-r from-amber-400 to-orange-500 text-white';
-      default: return 'bg-gradient-to-r from-slate-300 to-slate-400 text-slate-700';
+      default: return 'bg-gradient-to-r from-slate-300 to-slate-400 text-slate-700 dark:text-slate-300';
     }
   };
 
@@ -303,7 +303,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <p className="text-sm font-medium text-muted-foreground">{pickLang(language, { ku: "زیو", en: "Silver", ar: "فضي", zh: "白银" })}</p>
                   <p className="text-3xl font-bold text-slate-500">{silverCount}</p>
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-slate-700 shadow-lg">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-slate-700 dark:text-slate-300 shadow-lg">
                   <Sparkles className="h-6 w-6" />
                 </div>
               </div>

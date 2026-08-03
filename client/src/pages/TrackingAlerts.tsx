@@ -307,7 +307,7 @@ export default function TrackingAlerts() {
       );
     }
     return (
-      <Badge variant="outline" className="gap-1 bg-blue-50 text-blue-700 border-blue-200">
+      <Badge variant="outline" className="gap-1 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60">
         <Clock className="h-3 w-3" />
         {pickLang(language, {
           ku: `نوێ (${daysWaiting} ڕۆژ)`,
@@ -325,9 +325,9 @@ export default function TrackingAlerts() {
     if (!config) return null;
     
     const colorClasses: Record<string, string> = {
-      red: "bg-red-100 text-red-700 border-red-200",
-      purple: "bg-purple-100 text-purple-700 border-purple-200",
-      amber: "bg-amber-100 text-amber-700 border-amber-200",
+      red: "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60",
+      purple: "bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60",
+      amber: "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60",
     };
     
     const Icon = config.icon;
@@ -492,8 +492,8 @@ export default function TrackingAlerts() {
                 <Card 
                   className={`cursor-pointer transition-all duration-300 hover:shadow-lg border-2 ${
                     typeFilter === "full_package" 
-                      ? "border-red-500 bg-red-50" 
-                      : "border-red-200 hover:border-red-300"
+                      ? "border-red-500 bg-red-50 dark:bg-red-950/40" 
+                      : "border-red-200 dark:border-red-800/60 hover:border-red-300"
                   }`}
                   onClick={() => setTypeFilter(typeFilter === "full_package" ? "all" : "full_package")}
                 >
@@ -506,7 +506,7 @@ export default function TrackingAlerts() {
                         <p className="text-sm font-medium text-red-600">
                           {pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الباقة الكاملة", zh: "全包套餐" })}
                         </p>
-                        <p className="text-3xl font-bold text-red-700">{typeStats.full_package}</p>
+                        <p className="text-3xl font-bold text-red-700 dark:text-red-300">{typeStats.full_package}</p>
                       </div>
                       {typeFilter === "full_package" && (
                         <Check className="h-5 w-5 text-red-600" />
@@ -520,8 +520,8 @@ export default function TrackingAlerts() {
                 <Card 
                   className={`cursor-pointer transition-all duration-300 hover:shadow-lg border-2 ${
                     typeFilter === "commission" 
-                      ? "border-amber-500 bg-amber-50" 
-                      : "border-amber-200 hover:border-amber-300"
+                      ? "border-amber-500 bg-amber-50 dark:bg-amber-950/40" 
+                      : "border-amber-200 dark:border-amber-800/60 hover:border-amber-300"
                   }`}
                   onClick={() => setTypeFilter(typeFilter === "commission" ? "all" : "commission")}
                 >
@@ -534,7 +534,7 @@ export default function TrackingAlerts() {
                         <p className="text-sm font-medium text-amber-600">
                           {pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission", ar: "بالعمولة", zh: "代购佣金" })}
                         </p>
-                        <p className="text-3xl font-bold text-amber-700">{typeStats.commission}</p>
+                        <p className="text-3xl font-bold text-amber-700 dark:text-amber-300">{typeStats.commission}</p>
                       </div>
                       {typeFilter === "commission" && (
                         <Check className="h-5 w-5 text-amber-600" />
@@ -546,7 +546,7 @@ export default function TrackingAlerts() {
 
               {/* Filters & Search */}
               <Card className="border-0 shadow-lg">
-                <CardHeader className="border-b border-slate-100 pb-4">
+                <CardHeader className="border-b border-slate-100 dark:border-slate-800/60 pb-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg">
                       <Filter className="h-5 w-5 text-white" />
@@ -627,12 +627,12 @@ export default function TrackingAlerts() {
                   </div>
                   
                   {/* Quick Days Filters */}
-                  <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-100">
+                  <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
                     <Button
                       size="sm"
                       variant={daysStats.critical > 0 && daysFilter === "7+" ? "default" : "outline"}
                       onClick={() => setDaysFilter(daysFilter === "7+" ? "all" : "7+")}
-                      className={`gap-1 ${daysStats.critical > 0 ? "border-red-300 text-red-700 hover:bg-red-50" : ""}`}
+                      className={`gap-1 ${daysStats.critical > 0 ? "border-red-300 dark:border-red-800/60 text-red-700 dark:text-red-300 hover:bg-red-50" : ""}`}
                       disabled={daysStats.critical === 0}
                     >
                       <XCircle className="h-3 w-3" />
@@ -642,7 +642,7 @@ export default function TrackingAlerts() {
                       size="sm"
                       variant={daysStats.urgent > 0 && daysFilter === "5-6" ? "default" : "outline"}
                       onClick={() => setDaysFilter(daysFilter === "5-6" ? "all" : "5-6")}
-                      className={`gap-1 ${daysStats.urgent > 0 ? "border-orange-300 text-orange-700 hover:bg-orange-50" : ""}`}
+                      className={`gap-1 ${daysStats.urgent > 0 ? "border-orange-300 dark:border-orange-800/60 text-orange-700 dark:text-orange-300 hover:bg-orange-50" : ""}`}
                       disabled={daysStats.urgent === 0}
                     >
                       <AlertCircle className="h-3 w-3" />
@@ -652,7 +652,7 @@ export default function TrackingAlerts() {
                       size="sm"
                       variant={daysStats.warning > 0 && daysFilter === "3-4" ? "default" : "outline"}
                       onClick={() => setDaysFilter(daysFilter === "3-4" ? "all" : "3-4")}
-                      className={`gap-1 ${daysStats.warning > 0 ? "border-yellow-400 text-yellow-700 hover:bg-yellow-50" : ""}`}
+                      className={`gap-1 ${daysStats.warning > 0 ? "border-yellow-400 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50" : ""}`}
                       disabled={daysStats.warning === 0}
                     >
                       <AlertTriangle className="h-3 w-3" />
@@ -662,7 +662,7 @@ export default function TrackingAlerts() {
                       size="sm"
                       variant={daysStats.new > 0 && daysFilter === "1-2" ? "default" : "outline"}
                       onClick={() => setDaysFilter(daysFilter === "1-2" ? "all" : "1-2")}
-                      className={`gap-1 ${daysStats.new > 0 ? "border-blue-300 text-blue-700 hover:bg-blue-50" : ""}`}
+                      className={`gap-1 ${daysStats.new > 0 ? "border-blue-300 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 hover:bg-blue-50" : ""}`}
                       disabled={daysStats.new === 0}
                     >
                       <Clock className="h-3 w-3" />
@@ -674,7 +674,7 @@ export default function TrackingAlerts() {
 
               {/* Results Table */}
               <Card className="border-0 shadow-xl">
-                <CardHeader className="border-b border-slate-100">
+                <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg">
@@ -715,10 +715,10 @@ export default function TrackingAlerts() {
                     </div>
                   ) : filteredOrders.length === 0 ? (
                     <div className="p-12 text-center">
-                      <div className="inline-flex p-4 bg-green-100 rounded-full mb-4">
+                      <div className="inline-flex p-4 bg-green-100 dark:bg-green-950/40 rounded-full mb-4">
                         <Check className="h-8 w-8 text-green-600" />
                       </div>
-                      <p className="text-xl font-bold text-green-700">
+                      <p className="text-xl font-bold text-green-700 dark:text-green-300">
                         {pickLang(language, { ku: "هیچ ئەنجامێک نییە", en: "No results found", ar: "لا توجد نتائج", zh: "未找到结果" })}
                       </p>
                       <p className="text-sm text-slate-500 mt-2">
@@ -732,8 +732,8 @@ export default function TrackingAlerts() {
                     <Table pageSticky>
                       {/* Multi-select toolbar */}
                       {selectedOrders.length > 0 && (
-                        <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between gap-3">
-                          <span className="text-sm font-medium text-emerald-800">
+                        <div className="mb-3 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-lg flex items-center justify-between gap-3">
+                          <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
                             {pickLang(language, {
                               ku: `${selectedOrders.length} ئۆردەر هەڵبژاردراوە — یەک تراک بۆ هەمووی`,
                               en: `${selectedOrders.length} orders selected — assign same tracking to all`,
@@ -753,11 +753,11 @@ export default function TrackingAlerts() {
                         </div>
                       )}
                       <TableHeader>
-                        <TableRow className="bg-slate-50">
+                        <TableRow className="bg-slate-50 dark:bg-slate-950/40">
                           <TableHead className="w-10">
                             <input
                               type="checkbox"
-                              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                              className="rounded border-slate-300 dark:border-slate-800/60 text-emerald-600 focus:ring-emerald-500"
                               checked={filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length}
                               onChange={(e) => {
                                 if (e.target.checked) {
@@ -793,7 +793,7 @@ export default function TrackingAlerts() {
                             <TableCell>
                               <input
                                 type="checkbox"
-                                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                className="rounded border-slate-300 dark:border-slate-800/60 text-emerald-600 focus:ring-emerald-500"
                                 checked={isOrderSelected(order.id)}
                                 onChange={() => { toggleOrderSelection(order); setMultiSelectMode(true); }}
                               />
@@ -806,10 +806,10 @@ export default function TrackingAlerts() {
                                 <ZoomImage
                                   src={order.productImage}
                                   alt={order.productName}
-                                  className="w-12 h-12 border border-slate-200"
+                                  className="w-12 h-12 border border-slate-200 dark:border-slate-800/60"
                                 />
                               ) : (
-                                <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-950/40 flex items-center justify-center">
                                   <Package className="h-5 w-5 text-slate-400" />
                                 </div>
                               )}
@@ -903,7 +903,7 @@ export default function TrackingAlerts() {
                 )}
                 {!selectedOrder && selectedOrders.length > 0 && (
                   <div className="space-y-1 mt-1">
-                    <span className="block text-emerald-700 font-semibold text-sm">
+                    <span className="block text-emerald-700 dark:text-emerald-300 font-semibold text-sm">
                       {pickLang(language, {
                         ku: `🔗 یەک تراک بۆ ${selectedOrders.length} ئۆردەر (هەمان کارتۆن)`,
                         en: `🔗 Same tracking for ${selectedOrders.length} orders (same carton)`,

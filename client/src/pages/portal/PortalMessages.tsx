@@ -299,7 +299,7 @@ export default function PortalMessages() {
     <CustomerPortalLayout>
       <div className={cn(
         "flex flex-col h-[calc(100vh-140px)]",
-        isDark ? "bg-slate-900" : "bg-gray-50"
+        isDark ? "bg-slate-900" : "bg-gray-50 dark:bg-gray-950/40"
       )}>
         {/* Header */}
         <div className="relative overflow-hidden" style={portalBanner}>
@@ -384,7 +384,7 @@ export default function PortalMessages() {
             {/* Messages Area */}
             <div className={cn(
               "flex-1 overflow-y-auto px-4 py-4 space-y-4",
-              isDark ? "bg-slate-900" : "bg-gray-50"
+              isDark ? "bg-slate-900" : "bg-gray-50 dark:bg-gray-950/40"
             )}>
               {/* Loading state */}
               {(getOrCreateChat.isPending || messagesQuery.isLoading) && (
@@ -420,7 +420,7 @@ export default function PortalMessages() {
                   </motion.div>
                   <h3 className={cn(
                     "font-bold text-lg mb-2",
-                    isDark ? "text-white" : "text-gray-800"
+                    isDark ? "text-white" : "text-gray-800 dark:text-gray-200"
                   )}>
                     {pickLang(language, { ku: "بەخێربێیت!", en: "Welcome!", ar: "أهلاً بك!", zh: "欢迎！" })}
                   </h3>
@@ -446,7 +446,7 @@ export default function PortalMessages() {
                           "rounded-full text-xs",
                           isDark 
                             ? "border-slate-700 hover:bg-slate-800 text-slate-300" 
-                            : "border-slate-200 hover:bg-slate-50"
+                            : "border-slate-200 dark:border-slate-800/60 hover:bg-slate-50"
                         )}
                       >
                         <span className="me-1">{reply.icon}</span>
@@ -488,7 +488,7 @@ export default function PortalMessages() {
                             <Avatar className="w-8 h-8 me-2 flex-shrink-0">
                               <AvatarFallback className={cn(
                                 "text-xs",
-                                isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600"
+                                isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 dark:bg-purple-950/40 text-purple-600"
                               )}>
                                 {message.senderType === 'bot' ? (
                                   <Bot className="w-4 h-4" />
@@ -508,7 +508,7 @@ export default function PortalMessages() {
                                   : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-br-md"
                                 : isDark
                                   ? "bg-slate-800 text-slate-100 rounded-bl-md"
-                                  : "bg-white text-gray-800 rounded-bl-md border border-gray-100"
+                                  : "bg-white text-gray-800 dark:text-gray-200 rounded-bl-md border border-gray-100 dark:border-gray-800/60"
                             )}
                           >
                             {/* Image attachment */}
@@ -534,7 +534,7 @@ export default function PortalMessages() {
                                     ? "bg-white/10 hover:bg-white/20"
                                     : isDark
                                       ? "bg-slate-700 hover:bg-slate-600"
-                                      : "bg-gray-100 hover:bg-gray-200"
+                                      : "bg-gray-100 dark:bg-gray-950/40 hover:bg-gray-200"
                                 )}
                               >
                                 <FileText className="w-4 h-4 shrink-0" />
@@ -584,7 +584,7 @@ export default function PortalMessages() {
                             <Avatar className="w-8 h-8 ms-2 flex-shrink-0">
                               <AvatarFallback className={cn(
                                 "text-xs",
-                                isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-600"
+                                isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600"
                               )}>
                                 <User className="w-4 h-4" />
                               </AvatarFallback>
@@ -603,16 +603,16 @@ export default function PortalMessages() {
             {attachmentFile && (
               <div className={cn(
                 "px-4 pt-3 border-t",
-                isDark ? "border-slate-700 bg-slate-900" : "border-gray-200 bg-white"
+                isDark ? "border-slate-700 bg-slate-900" : "border-gray-200 dark:border-gray-800/60 bg-white"
               )}>
                 <div className={cn(
                   "flex items-center gap-3 p-2 rounded-lg",
-                  isDark ? "bg-slate-800" : "bg-gray-100"
+                  isDark ? "bg-slate-800" : "bg-gray-100 dark:bg-gray-950/40"
                 )}>
                   {attachmentPreview ? (
                     <img loading="lazy" decoding="async" src={attachmentPreview} alt="" className="w-14 h-14 rounded object-cover" />
                   ) : (
-                    <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", isDark ? "bg-purple-500/20" : "bg-purple-100")}>
+                    <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", isDark ? "bg-purple-500/20" : "bg-purple-100 dark:bg-purple-950/40")}>
                       <FileText className={cn("w-5 h-5", isDark ? "text-purple-400" : "text-purple-600")} />
                     </div>
                   )}
@@ -630,7 +630,7 @@ export default function PortalMessages() {
             {/* Input Area */}
             <div className={cn(
               "border-t px-4 py-3",
-              isDark ? "border-slate-700 bg-slate-900" : "border-gray-200 bg-white"
+              isDark ? "border-slate-700 bg-slate-900" : "border-gray-200 dark:border-gray-800/60 bg-white"
             )}>
               <div className="flex items-center gap-2">
                 {/* Attachment buttons */}
@@ -660,13 +660,13 @@ export default function PortalMessages() {
                   <div className="flex-1 flex items-center gap-3">
                     <button
                       onClick={cancelRecording}
-                      className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition"
+                      className="p-2 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 hover:bg-red-200 transition"
                     >
                       <X className="w-5 h-5" />
                     </button>
                     <div className="flex-1 flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-                      <span className={cn("text-sm font-mono font-medium", isDark ? "text-white" : "text-gray-800")}>
+                      <span className={cn("text-sm font-mono font-medium", isDark ? "text-white" : "text-gray-800 dark:text-gray-200")}>
                         {formattedDuration}
                       </span>
                       <span className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-500")}>
@@ -697,7 +697,7 @@ export default function PortalMessages() {
                         "flex-1 rounded-full",
                         isDark
                           ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
-                          : "border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                          : "border-gray-200 dark:border-gray-800/60 focus:border-purple-500 focus:ring-purple-500"
                       )}
                       disabled={!chatId || sendMessage.isPending || isUploading}
                     />
@@ -753,7 +753,7 @@ export default function PortalMessages() {
         {activeTab === "notifications" && (
           <div className={cn(
             "flex-1 overflow-y-auto px-4 py-4",
-            isDark ? "bg-slate-900" : "bg-gray-50"
+            isDark ? "bg-slate-900" : "bg-gray-50 dark:bg-gray-950/40"
           )}>
             <div className="flex flex-col items-center justify-center h-full text-center">
               <motion.div
@@ -774,7 +774,7 @@ export default function PortalMessages() {
               </motion.div>
               <h3 className={cn(
                 "font-bold text-lg mb-2",
-                isDark ? "text-white" : "text-gray-800"
+                isDark ? "text-white" : "text-gray-800 dark:text-gray-200"
               )}>
                 {pickLang(language, { ku: "ئاگاداری نییە", en: "No Notifications", ar: "لا توجد إشعارات", zh: "暂无通知" })}
               </h3>
@@ -791,7 +791,7 @@ export default function PortalMessages() {
         {/* Contact Info Footer */}
         <div className={cn(
           "border-t px-4 py-3",
-          isDark ? "border-slate-700 bg-slate-800/50" : "border-gray-200 bg-gray-50"
+          isDark ? "border-slate-700 bg-slate-800/50" : "border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-gray-950/40"
         )}>
           <div className="flex items-center justify-center gap-6">
             <a 

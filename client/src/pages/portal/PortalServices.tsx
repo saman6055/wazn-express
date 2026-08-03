@@ -99,49 +99,49 @@ const { banner: portalBanner } = usePortalPalette();
       icon: Banknote,
       title: language === "ku" ? "گواستنەوەی RMB" : language === "ar" ? "تحويل RMB" : "RMB Transfer",
       description: language === "ku" ? "گواستنەوەی پارە بۆ چین" : language === "ar" ? "تحويل الأموال إلى الصين" : "Money transfer to China",
-      color: "bg-red-100 text-red-600",
+      color: "bg-red-100 dark:bg-red-950/40 text-red-600",
     },
     {
       icon: RefreshCw,
       title: language === "ku" ? "گۆڕینی دراو" : language === "ar" ? "صرف العملات" : "Currency Exchange",
       description: language === "ku" ? "گۆڕینی دراوی بیانی" : language === "ar" ? "صرف العملات الأجنبية" : "Foreign currency exchange",
-      color: "bg-green-100 text-green-600",
+      color: "bg-green-100 dark:bg-green-950/40 text-green-600",
     },
     {
       icon: ShoppingCart,
       title: language === "ku" ? "کڕین لە چین" : language === "ar" ? "الشراء من الصين" : "Purchase from China",
       description: language === "ku" ? "ئێمە بۆت دەیکڕین" : language === "ar" ? "نشتري لك" : "We buy for you",
-      color: "bg-purple-100 text-purple-600",
+      color: "bg-purple-100 dark:bg-purple-950/40 text-purple-600",
     },
     {
       icon: Box,
       title: language === "ku" ? "پاکەتکردنی تایبەت" : language === "ar" ? "تغليف خاص" : "Custom Packaging",
       description: language === "ku" ? "پاکەتکردنی پارێزراو" : language === "ar" ? "تغليف آمن" : "Secure packaging",
-      color: "bg-amber-100 text-amber-600",
+      color: "bg-amber-100 dark:bg-amber-950/40 text-amber-600",
     },
     {
       icon: Shield,
       title: language === "ku" ? "بیمە" : language === "ar" ? "التأمين" : "Insurance",
       description: language === "ku" ? "بیمەی تەواوی بار" : language === "ar" ? "تأمين شامل" : "Full cargo insurance",
-      color: "bg-blue-100 text-blue-600",
+      color: "bg-blue-100 dark:bg-blue-950/40 text-blue-600",
     },
     {
       icon: Warehouse,
       title: language === "ku" ? "کرێی کۆگا" : language === "ar" ? "رسوم التخزين" : "Storage Fee",
       description: language === "ku" ? "هێشتنەوەی بار لە کۆگا" : language === "ar" ? "تخزين البضائع" : "Cargo storage",
-      color: "bg-slate-100 text-slate-600",
+      color: "bg-slate-100 dark:bg-slate-950/40 text-slate-600",
     },
     {
       icon: FileCheck,
       title: language === "ku" ? "ڕێکخستنی گومرگ" : language === "ar" ? "التخليص الجمركي" : "Customs Clearance",
       description: language === "ku" ? "ڕێکخستنی کاغەزەکان" : language === "ar" ? "ترتيب الأوراق" : "Document processing",
-      color: "bg-indigo-100 text-indigo-600",
+      color: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600",
     },
     {
       icon: Truck,
       title: language === "ku" ? "گەیاندنی ناوخۆیی" : language === "ar" ? "التوصيل المحلي" : "Domestic Delivery",
       description: language === "ku" ? "گەیاندن بۆ ماڵەوە" : language === "ar" ? "توصيل للمنزل" : "Home delivery",
-      color: "bg-teal-100 text-teal-600",
+      color: "bg-teal-100 dark:bg-teal-950/40 text-teal-600",
     },
   ];
 
@@ -160,7 +160,7 @@ const { banner: portalBanner } = usePortalPalette();
 
   return (
     <CustomerPortalLayout>
-      <div className={`min-h-screen bg-gray-50 ${isRTL ? 'rtl' : 'ltr'}`}>
+      <div className={`min-h-screen bg-gray-50 dark:bg-gray-950/40 ${isRTL ? 'rtl' : 'ltr'}`}>
         {/* Header */}
         <div className="text-white px-4 pt-6 pb-8" style={portalBanner}>
           <div className="flex items-center gap-3 mb-2">
@@ -182,7 +182,7 @@ const { banner: portalBanner } = usePortalPalette();
         <div className="px-4 py-6 space-y-6 pb-24">
           {/* Shipping Services */}
           <div>
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
               <Package className="w-5 h-5 text-indigo-600" />
               {language === "ku" ? "خزمەتگوزاری بارکردن" : language === "ar" ? "خدمات الشحن" : "Shipping Services"}
             </h2>
@@ -209,7 +209,7 @@ const { banner: portalBanner } = usePortalPalette();
                   <div className="p-4">
                     <div className="flex flex-wrap gap-2">
                       {service.features.map((feature, fIndex) => (
-                        <div key={fIndex} className="flex items-center gap-1 text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                        <div key={fIndex} className="flex items-center gap-1 text-sm text-gray-600 bg-gray-100 dark:bg-gray-950/40 px-3 py-1 rounded-full">
                           <CheckCircle2 className="w-3 h-3 text-green-500" />
                           {feature}
                         </div>
@@ -223,7 +223,7 @@ const { banner: portalBanner } = usePortalPalette();
 
           {/* Additional Services */}
           <div>
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-indigo-600" />
               {language === "ku" ? "خزمەتگوزاری زیادە" : language === "ar" ? "خدمات إضافية" : "Additional Services"}
             </h2>
@@ -233,7 +233,7 @@ const { banner: portalBanner } = usePortalPalette();
                   <div className={`w-10 h-10 ${service.color} rounded-xl flex items-center justify-center mb-3`}>
                     <service.icon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 text-sm mb-1">{service.title}</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-200 text-sm mb-1">{service.title}</h3>
                   <p className="text-xs text-gray-500">{service.description}</p>
                 </div>
               ))}

@@ -182,9 +182,9 @@ export default function BusinessAnalytics() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: 'کۆی قازانج', en: 'Total Profit', ar: 'إجمالي الربح', zh: '总利润' })}</p>
-                  <p className="text-3xl font-bold text-emerald-700">{formatCurrency(totalProfit)}</p>
+                  <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(totalProfit)}</p>
                 </div>
-                <div className="rounded-xl bg-emerald-100 p-3">
+                <div className="rounded-xl bg-emerald-100 dark:bg-emerald-950/40 p-3">
                   <TrendingUp className="h-6 w-6 text-emerald-600" />
                 </div>
               </div>
@@ -196,9 +196,9 @@ export default function BusinessAnalytics() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: 'کۆی ئۆردەرەکان', en: 'Total Orders', ar: 'إجمالي الطلبات', zh: '订单总数' })}</p>
-                  <p className="text-3xl font-bold text-blue-700">{totalOrders}</p>
+                  <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">{totalOrders}</p>
                 </div>
-                <div className="rounded-xl bg-blue-100 p-3">
+                <div className="rounded-xl bg-blue-100 dark:bg-blue-950/40 p-3">
                   <Package className="h-6 w-6 text-blue-600" />
                 </div>
               </div>
@@ -210,9 +210,9 @@ export default function BusinessAnalytics() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: 'کۆی قەرز', en: 'Total Debt', ar: 'إجمالي الدين', zh: '欠款总额' })}</p>
-                  <p className="text-3xl font-bold text-amber-700">{formatCurrency(financialSummary?.totalDebtUsd || 0)}</p>
+                  <p className="text-3xl font-bold text-amber-700 dark:text-amber-300">{formatCurrency(financialSummary?.totalDebtUsd || 0)}</p>
                 </div>
-                <div className="rounded-xl bg-amber-100 p-3">
+                <div className="rounded-xl bg-amber-100 dark:bg-amber-950/40 p-3">
                   <Wallet className="h-6 w-6 text-amber-600" />
                 </div>
               </div>
@@ -224,9 +224,9 @@ export default function BusinessAnalytics() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: 'قەرزدارەکان', en: 'Debtors', ar: 'المدينون', zh: '欠款客户' })}</p>
-                  <p className="text-3xl font-bold text-rose-700">{financialSummary?.debtorsCount || 0}</p>
+                  <p className="text-3xl font-bold text-rose-700 dark:text-rose-300">{financialSummary?.debtorsCount || 0}</p>
                 </div>
-                <div className="rounded-xl bg-rose-100 p-3">
+                <div className="rounded-xl bg-rose-100 dark:bg-rose-950/40 p-3">
                   <Users className="h-6 w-6 text-rose-600" />
                 </div>
               </div>
@@ -247,52 +247,52 @@ export default function BusinessAnalytics() {
             <CardContent>
               <div className="space-y-4">
                 {/* Full Package */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-purple-50 border border-purple-100">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-800/60">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-purple-100 p-2">
+                    <div className="rounded-lg bg-purple-100 dark:bg-purple-950/40 p-2">
                       <Boxes className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-purple-900">{pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全套服务' })}</p>
+                      <p className="font-semibold text-purple-900 dark:text-purple-200">{pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全套服务' })}</p>
                       <p className="text-sm text-purple-600">{profitByType?.fullPackage?.count || 0} {pickLang(language, { ku: 'ئۆردەر', en: 'orders', ar: 'طلب', zh: '订单' })}</p>
                     </div>
                   </div>
                   <div className="text-left">
-                    <p className="text-xl font-bold text-purple-700">{formatCurrency(profitByType?.fullPackage?.totalProfit || 0)}</p>
+                    <p className="text-xl font-bold text-purple-700 dark:text-purple-300">{formatCurrency(profitByType?.fullPackage?.totalProfit || 0)}</p>
                     <p className="text-xs text-purple-500">{pickLang(language, { ku: 'تێکڕا', en: 'Avg', ar: 'المتوسط', zh: '平均' })}: {formatCurrency(profitByType?.fullPackage?.avgProfit || 0)}</p>
                   </div>
                 </div>
 
                 {/* Commission */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-orange-50 border border-orange-100">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-100 dark:border-orange-800/60">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-orange-100 p-2">
+                    <div className="rounded-lg bg-orange-100 dark:bg-orange-950/40 p-2">
                       <Percent className="h-5 w-5 text-orange-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-orange-900">{pickLang(language, { ku: 'کڕین بە تێچوو', en: 'Cost-based Purchase', ar: 'الشراء بالتكلفة', zh: '按成本采购' })}</p>
+                      <p className="font-semibold text-orange-900 dark:text-orange-200">{pickLang(language, { ku: 'کڕین بە تێچوو', en: 'Cost-based Purchase', ar: 'الشراء بالتكلفة', zh: '按成本采购' })}</p>
                       <p className="text-sm text-orange-600">{profitByType?.commission?.count || 0} {pickLang(language, { ku: 'ئۆردەر', en: 'orders', ar: 'طلب', zh: '订单' })}</p>
                     </div>
                   </div>
                   <div className="text-left">
-                    <p className="text-xl font-bold text-orange-700">{formatCurrency(profitByType?.commission?.totalProfit || 0)}</p>
+                    <p className="text-xl font-bold text-orange-700 dark:text-orange-300">{formatCurrency(profitByType?.commission?.totalProfit || 0)}</p>
                     <p className="text-xs text-orange-500">{pickLang(language, { ku: 'تێکڕا', en: 'Avg', ar: 'المتوسط', zh: '平均' })}: {formatCurrency(profitByType?.commission?.avgProfit || 0)}</p>
                   </div>
                 </div>
 
                 {/* Regular Packages */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-slate-100 p-2">
+                    <div className="rounded-lg bg-slate-100 dark:bg-slate-950/40 p-2">
                       <Package className="h-5 w-5 text-slate-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">{pickLang(language, { ku: 'پاکەتی ئاسایی', en: 'Regular Package', ar: 'الطرد العادي', zh: '普通包裹' })}</p>
+                      <p className="font-semibold text-slate-900 dark:text-slate-200">{pickLang(language, { ku: 'پاکەتی ئاسایی', en: 'Regular Package', ar: 'الطرد العادي', zh: '普通包裹' })}</p>
                       <p className="text-sm text-slate-600">{profitByType?.packages?.count || 0} {pickLang(language, { ku: 'پاکەت', en: 'packages', ar: 'طرد', zh: '包裹' })}</p>
                     </div>
                   </div>
                   <div className="text-left">
-                    <p className="text-xl font-bold text-slate-700">{formatCurrency(profitByType?.packages?.totalRevenue || 0)}</p>
+                    <p className="text-xl font-bold text-slate-700 dark:text-slate-300">{formatCurrency(profitByType?.packages?.totalRevenue || 0)}</p>
                     <p className="text-xs text-slate-500">{pickLang(language, { ku: 'داهات', en: 'Revenue', ar: 'الإيراد', zh: '收入' })}</p>
                   </div>
                 </div>
@@ -313,13 +313,13 @@ export default function BusinessAnalytics() {
               <div className="space-y-3">
                 {packageStats?.map((stat: any, index: number) => {
                   const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-                    registered: { bg: 'bg-blue-100', text: 'text-blue-700', label: pickLang(language, { ku: 'تۆمارکراو', en: 'Registered', ar: 'مسجل', zh: '已登记' }) },
-                    in_transit: { bg: 'bg-amber-100', text: 'text-amber-700', label: pickLang(language, { ku: 'لە ڕێگادا', en: 'In Transit', ar: 'في الطريق', zh: '运输中' }) },
-                    arrived: { bg: 'bg-purple-100', text: 'text-purple-700', label: pickLang(language, { ku: 'گەیشتووە', en: 'Arrived', ar: 'وصل', zh: '已到达' }) },
-                    delivered: { bg: 'bg-green-100', text: 'text-green-700', label: pickLang(language, { ku: 'گەیەندرا', en: 'Delivered', ar: 'تم التسليم', zh: '已送达' }) },
-                    customs: { bg: 'bg-orange-100', text: 'text-orange-700', label: pickLang(language, { ku: 'گومرک', en: 'Customs', ar: 'الجمارك', zh: '海关' }) },
+                    registered: { bg: 'bg-blue-100 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300', label: pickLang(language, { ku: 'تۆمارکراو', en: 'Registered', ar: 'مسجل', zh: '已登记' }) },
+                    in_transit: { bg: 'bg-amber-100 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300', label: pickLang(language, { ku: 'لە ڕێگادا', en: 'In Transit', ar: 'في الطريق', zh: '运输中' }) },
+                    arrived: { bg: 'bg-purple-100 dark:bg-purple-950/40', text: 'text-purple-700 dark:text-purple-300', label: pickLang(language, { ku: 'گەیشتووە', en: 'Arrived', ar: 'وصل', zh: '已到达' }) },
+                    delivered: { bg: 'bg-green-100 dark:bg-green-950/40', text: 'text-green-700 dark:text-green-300', label: pickLang(language, { ku: 'گەیەندرا', en: 'Delivered', ar: 'تم التسليم', zh: '已送达' }) },
+                    customs: { bg: 'bg-orange-100 dark:bg-orange-950/40', text: 'text-orange-700 dark:text-orange-300', label: pickLang(language, { ku: 'گومرک', en: 'Customs', ar: 'الجمارك', zh: '海关' }) },
                   };
-                  const config = statusColors[stat.status] || { bg: 'bg-gray-100', text: 'text-gray-700', label: stat.status };
+                  const config = statusColors[stat.status] || { bg: 'bg-gray-100 dark:bg-gray-950/40', text: 'text-gray-700 dark:text-gray-300', label: stat.status };
                   
                   return (
                     <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${config.bg}`}>
@@ -482,12 +482,12 @@ export default function BusinessAnalytics() {
                     <div className="w-24 text-sm font-medium text-right">
                       {getMonthName(language, month.month - 1)}
                     </div>
-                    <div className="flex-1 h-8 bg-slate-100 rounded-lg overflow-hidden relative">
+                    <div className="flex-1 h-8 bg-slate-100 dark:bg-slate-950/40 rounded-lg overflow-hidden relative">
                       <div 
                         className={`h-full rounded-lg transition-all ${isPositive ? 'bg-emerald-500' : 'bg-red-500'}`}
                         style={{ width: `${barWidth}%` }}
                       />
-                      <span className={`absolute inset-0 flex items-center justify-center text-sm font-semibold ${barWidth > 50 ? 'text-white' : 'text-slate-700'}`}>
+                      <span className={`absolute inset-0 flex items-center justify-center text-sm font-semibold ${barWidth > 50 ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                         {formatCurrency(profit)}
                       </span>
                     </div>

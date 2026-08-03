@@ -93,7 +93,7 @@ const { banner: portalBanner } = usePortalPalette();
       {/* Header */}
       <div className={cn(
         "sticky top-0 z-10 px-4 py-4 border-b backdrop-blur-lg",
-        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-gray-100"
+        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-gray-100 dark:border-gray-800/60"
       )}>
         <div className="flex items-center gap-3">
           <Link href="/portal">
@@ -101,7 +101,7 @@ const { banner: portalBanner } = usePortalPalette();
               "p-2 rounded-xl transition-colors",
               isDark ? "hover:bg-slate-800" : "hover:bg-gray-100"
             )}>
-              <ArrowLeft className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800")} />
+              <ArrowLeft className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")} />
             </button>
           </Link>
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -109,7 +109,7 @@ const { banner: portalBanner } = usePortalPalette();
               <Newspaper className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h1 className={cn("text-xl font-black", isDark ? "text-white" : "text-slate-800")}>
+              <h1 className={cn("text-xl font-black", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                 {language === "ku" ? "وەزن نیوز" : language === "ar" ? "وزن نيوز" : "Wazn News"}
               </h1>
               <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
@@ -135,7 +135,7 @@ const { banner: portalBanner } = usePortalPalette();
                   "shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors",
                   active
                     ? "bg-orange-600 text-white shadow-sm"
-                    : isDark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                    : isDark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40 text-slate-600 hover:bg-slate-200",
                 )}
               >
                 {cat === "all"
@@ -158,13 +158,13 @@ const { banner: portalBanner } = usePortalPalette();
         ) : !blogPosts || blogPosts.length === 0 ? (
           <div className={cn(
             "text-center py-16 rounded-2xl",
-            isDark ? "bg-slate-800/50" : "bg-gray-50"
+            isDark ? "bg-slate-800/50" : "bg-gray-50 dark:bg-gray-950/40"
           )}>
             <Megaphone className={cn(
               "w-16 h-16 mx-auto mb-4",
               isDark ? "text-slate-600" : "text-gray-300"
             )} />
-            <h3 className={cn("text-lg font-semibold mb-2", isDark ? "text-white" : "text-slate-800")}>
+            <h3 className={cn("text-lg font-semibold mb-2", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
               {language === "ku" ? "هیچ هەواڵێک نییە" : "No announcements yet"}
             </h3>
             <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
@@ -257,7 +257,7 @@ const { banner: portalBanner } = usePortalPalette();
                   <div className="p-4">
                     <h3 className={cn(
                       "font-bold text-lg mb-2 line-clamp-2",
-                      isDark ? "text-white" : "text-slate-800"
+                      isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                     )} dir={isRTL ? "rtl" : "ltr"}>
                       {getTitle(post)}
                     </h3>

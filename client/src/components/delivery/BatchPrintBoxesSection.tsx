@@ -264,7 +264,7 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
   return (
     <Card dir={isRtl ? "rtl" : "ltr"}>
       <CardHeader className="border-b bg-slate-50/60">
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200">
           <Package className="h-5 w-5 text-emerald-600" />
           {pickLang(language, {
             ku: "بۆکسەکانی پرینت بۆ باچ",
@@ -285,28 +285,28 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
       <CardContent className="pt-5 space-y-5">
         {/* Stats chips */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="p-3 rounded-xl bg-blue-50 border border-blue-100">
+          <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-800/60">
             <div className="text-xs text-blue-600 font-medium">{pickLang(language, { ku: "کۆی بۆکس", en: "Total Boxes", ar: "إجمالي الصناديق", zh: "箱子总数" })}</div>
-            <div className="text-2xl font-bold text-blue-700">{totalBoxes}</div>
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{totalBoxes}</div>
           </div>
-          <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-800/60">
             <div className="text-xs text-amber-600 font-medium">{pickLang(language, { ku: "داخراو", en: "Sealed", ar: "مغلق", zh: "已封箱" })}</div>
-            <div className="text-2xl font-bold text-amber-700">{stats.sealed}</div>
+            <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">{stats.sealed}</div>
           </div>
-          <div className="p-3 rounded-xl bg-purple-50 border border-purple-100">
+          <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-800/60">
             <div className="text-xs text-purple-600 font-medium">{pickLang(language, { ku: "لە ڕێگادایە", en: "In Transit", ar: "قيد النقل", zh: "运输中" })}</div>
-            <div className="text-2xl font-bold text-purple-700">{stats.inTransit}</div>
+            <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{stats.inTransit}</div>
           </div>
-          <div className="p-3 rounded-xl bg-green-50 border border-green-100">
+          <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-100 dark:border-green-800/60">
             <div className="text-xs text-green-600 font-medium">{pickLang(language, { ku: "گەیشت", en: "Delivered", ar: "تم التسليم", zh: "已送达" })}</div>
-            <div className="text-2xl font-bold text-green-700">{stats.delivered}</div>
+            <div className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.delivered}</div>
           </div>
         </div>
 
         {/* Action bar */}
-        <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
+        <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/60">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">{pickLang(language, { ku: "جۆری گەیاندن:", en: "Delivery type:", ar: "نوع التوصيل:", zh: "配送类型：" })}</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{pickLang(language, { ku: "جۆری گەیاندن:", en: "Delivery type:", ar: "نوع التوصيل:", zh: "配送类型：" })}</span>
             <Select value={deliveryMethod} onValueChange={(v) => setDeliveryMethod(v as any)}>
               <SelectTrigger className="w-[180px] bg-white">
                 <SelectValue />
@@ -332,7 +332,7 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
             })}
           </Button>
           <div className="ms-auto flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">{pickLang(language, { ku: "جۆری لەیبڵ:", en: "Label type:", ar: "نوع الملصق:", zh: "标签类型：" })}</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{pickLang(language, { ku: "جۆری لەیبڵ:", en: "Label type:", ar: "نوع الملصق:", zh: "标签类型：" })}</span>
             <Select value={labelType} onValueChange={(v) => setLabelType(v as any)}>
               <SelectTrigger className="w-[200px] bg-white">
                 <SelectValue />

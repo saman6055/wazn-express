@@ -663,13 +663,13 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             the staff member from collecting twice. */}
         {hasAdvance && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-center">
-              <p className="text-xs text-emerald-700 font-medium">💰 {pickLang(language, { ku: "پارەی پێشەکی دراو", en: "Advance paid", ar: "الدفعة المقدمة المدفوعة", zh: "已付预付款" })}</p>
-              <p className="text-lg font-bold text-emerald-700">−${advanceTotal.toFixed(2)}</p>
+            <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 p-3 text-center">
+              <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">💰 {pickLang(language, { ku: "پارەی پێشەکی دراو", en: "Advance paid", ar: "الدفعة المقدمة المدفوعة", zh: "已付预付款" })}</p>
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">−${advanceTotal.toFixed(2)}</p>
             </div>
-            <div className="rounded-lg bg-amber-50 border-2 border-amber-300 p-3 text-center">
-              <p className="text-xs text-amber-800 font-medium">{pickLang(language, { ku: "ماوە بۆ دان", en: "Remaining due", ar: "المبلغ المتبقي", zh: "应付余额" })}</p>
-              <p className="text-xl font-extrabold text-amber-700">${remainingDue.toFixed(2)}</p>
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-800/60 p-3 text-center">
+              <p className="text-xs text-amber-800 dark:text-amber-200 font-medium">{pickLang(language, { ku: "ماوە بۆ دان", en: "Remaining due", ar: "المبلغ المتبقي", zh: "应付余额" })}</p>
+              <p className="text-xl font-extrabold text-amber-700 dark:text-amber-300">${remainingDue.toFixed(2)}</p>
             </div>
           </div>
         )}
@@ -709,7 +709,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                 }
               }}
               disabled={reopenBox.isPending}
-              className="text-amber-700 hover:text-amber-800 hover:bg-amber-50 hover:border-amber-200"
+              className="text-amber-700 dark:text-amber-300 hover:text-amber-800 hover:bg-amber-50 hover:border-amber-200"
             >
               {reopenBox.isPending ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Unlock className="h-4 w-4 me-1" />}
               {t("delivery.reopenBox")}
@@ -759,7 +759,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                 }
               }}
               disabled={recomputeItems.isPending}
-              className="text-blue-700 hover:text-blue-800 hover:bg-blue-50 hover:border-blue-200"
+              className="text-blue-700 dark:text-blue-300 hover:text-blue-800 hover:bg-blue-50 hover:border-blue-200"
               title={t("delivery.refreshBoxTooltip")}
             >
               {recomputeItems.isPending ? (
@@ -805,7 +805,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
               <Button
                 variant="outline"
                 size="sm"
-                className="text-red-700 hover:text-red-800 hover:bg-red-50 hover:border-red-200"
+                className="text-red-700 dark:text-red-300 hover:text-red-800 hover:bg-red-50 hover:border-red-200"
               >
                 <FileDown className="h-4 w-4 me-1" />
                 PDF

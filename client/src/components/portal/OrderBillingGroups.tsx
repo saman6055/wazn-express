@@ -121,7 +121,7 @@ export function OrderBillingGroups({
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
         <Receipt className={cn("h-4 w-4", isDark ? "text-indigo-400" : "text-indigo-600")} />
-        <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800")}>
+        <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
           {pick({
             ku: "حیسابی هەر ئۆردەرێک بە یەکەوە",
             en: "Billing grouped per order",
@@ -159,7 +159,7 @@ export function OrderBillingGroups({
             key={g.key}
             className={cn(
               "rounded-2xl border overflow-hidden transition-colors",
-              isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100 shadow-sm",
+              isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100 dark:border-slate-800/60 shadow-sm",
             )}
           >
             <button
@@ -179,7 +179,7 @@ export function OrderBillingGroups({
                   <div
                     className={cn(
                       "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
-                      isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-50 text-indigo-600",
+                      isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600",
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -187,7 +187,7 @@ export function OrderBillingGroups({
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={cn("truncate text-sm font-bold", isDark ? "text-white" : "text-slate-800")}>
+                    <span className={cn("truncate text-sm font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                       {title}
                       {quantity != null && quantity > 1 && (
                         <span className={cn("ms-1.5 font-black", isDark ? "text-amber-400" : "text-amber-600")} dir="ltr">
@@ -196,7 +196,7 @@ export function OrderBillingGroups({
                       )}
                     </span>
                     <span
-                      className={cn("shrink-0 text-base font-black tabular-nums", isDark ? "text-white" : "text-slate-900")}
+                      className={cn("shrink-0 text-base font-black tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}
                       dir="ltr"
                     >
                       ${g.total.toFixed(2)}
@@ -209,7 +209,7 @@ export function OrderBillingGroups({
                           "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-mono font-bold",
                           isDark
                             ? "border-violet-800 bg-violet-950/40 text-violet-300"
-                            : "border-violet-200 bg-violet-50 text-violet-700",
+                            : "border-violet-200 dark:border-violet-800/60 bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300",
                         )}
                         dir="ltr"
                       >
@@ -264,14 +264,14 @@ export function OrderBillingGroups({
             </button>
 
             {open && (
-              <div className={cn("border-t px-3.5 py-2", isDark ? "border-slate-700" : "border-slate-100")}>
+              <div className={cn("border-t px-3.5 py-2", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
                 {g.lines
                   .slice()
                   .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
                   .map((line) => (
                     <div key={line.id} className="flex items-start justify-between gap-3 py-1.5">
                       <div className="min-w-0 flex-1">
-                        <p className={cn("text-xs font-medium leading-snug", isDark ? "text-slate-200" : "text-slate-700")}>
+                        <p className={cn("text-xs font-medium leading-snug", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")}>
                           {line.description ||
                             pick({ ku: "بڕگە", en: "Charge", ar: "بند", zh: "费用" })}
                         </p>
@@ -279,17 +279,17 @@ export function OrderBillingGroups({
                           {new Date(line.createdAt).toLocaleDateString("en-GB")}
                         </p>
                       </div>
-                      <span className={cn("shrink-0 text-xs font-bold tabular-nums", isDark ? "text-slate-200" : "text-slate-700")} dir="ltr">
+                      <span className={cn("shrink-0 text-xs font-bold tabular-nums", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")} dir="ltr">
                         ${(Number(line.amountUsd) || 0).toFixed(2)}
                       </span>
                     </div>
                   ))}
-                <div className={cn("mt-1 flex items-center justify-between border-t pt-2", isDark ? "border-slate-700" : "border-slate-100")}>
-                  <span className={cn("flex items-center gap-1 text-xs font-bold", isDark ? "text-white" : "text-slate-800")}>
+                <div className={cn("mt-1 flex items-center justify-between border-t pt-2", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
+                  <span className={cn("flex items-center gap-1 text-xs font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     <Wallet className="h-3.5 w-3.5" />
                     {pick({ ku: "کۆی گشتی ئەم ئۆردەرە", en: "Order total", ar: "إجمالي الطلب", zh: "订单总计" })}
                   </span>
-                  <span className={cn("text-sm font-black tabular-nums", isDark ? "text-white" : "text-slate-900")} dir="ltr">
+                  <span className={cn("text-sm font-black tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")} dir="ltr">
                     ${g.total.toFixed(2)}
                   </span>
                 </div>

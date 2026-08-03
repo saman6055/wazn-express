@@ -546,7 +546,7 @@ export default function QuickRegister() {
 
       toast.success(
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center">
             <CheckCircle2 className="h-6 w-6 text-green-600" />
           </div>
           <div>
@@ -786,7 +786,7 @@ export default function QuickRegister() {
       case "package":
         return { label: t("quickRegister.sourcePackage"), color: "bg-gradient-to-r from-gray-500 to-gray-600 text-white", icon: "📦" };
       default:
-        return { label: t("quickRegister.unknown"), color: "bg-gray-100 text-gray-800", icon: "❓" };
+        return { label: t("quickRegister.unknown"), color: "bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200", icon: "❓" };
     }
   };
 
@@ -977,8 +977,8 @@ export default function QuickRegister() {
                       <div className={cn(
                         "mt-3 p-3 rounded-lg text-sm",
                         foundOrder.source === "package"
-                          ? "bg-yellow-50 border border-yellow-200"
-                          : "bg-green-50 border border-green-200"
+                          ? "bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-800/60"
+                          : "bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/60"
                       )}>
                         <div className="flex items-center gap-2">
                           {foundOrder.source === "package" ? (
@@ -988,7 +988,7 @@ export default function QuickRegister() {
                           )}
                           <span className={cn(
                             "font-bold",
-                            foundOrder.source === "package" ? "text-yellow-700" : "text-green-700"
+                            foundOrder.source === "package" ? "text-yellow-700 dark:text-yellow-300" : "text-green-700 dark:text-green-300"
                           )}>
                             {getOrderTypeInfo(foundOrder.source).label}
                           </span>
@@ -1006,7 +1006,7 @@ export default function QuickRegister() {
                         the inline panel from BulkRegister but adapted to the
                         single-row, scanner-friendly layout of QuickRegister. */}
                     {expandedLookup && expandedLookup.flags?.customerMismatch && (
-                      <div className="mt-3 p-3 rounded-lg border-2 border-rose-300 bg-rose-50 dark:bg-rose-950/30">
+                      <div className="mt-3 p-3 rounded-lg border-2 border-rose-300 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30">
                         <div className="flex items-start gap-2 text-rose-900 dark:text-rose-200">
                           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                           <div>
@@ -1017,7 +1017,7 @@ export default function QuickRegister() {
                       </div>
                     )}
                     {expandedLookup?.case === 'shared' && !expandedLookup.flags?.customerMismatch && (
-                      <div className="mt-3 p-3 rounded-lg border-2 border-orange-300 bg-orange-50 dark:bg-orange-950/30">
+                      <div className="mt-3 p-3 rounded-lg border-2 border-orange-300 dark:border-orange-800/60 bg-orange-50 dark:bg-orange-950/30">
                         <div className="flex items-center gap-2 text-orange-900 dark:text-orange-200 mb-2">
                           <span>🔗</span>
                           <span className="font-bold">{t("quickRegister.sharedTrackingOrders", { count: expandedLookup.orders.length })}</span>
@@ -1033,7 +1033,7 @@ export default function QuickRegister() {
                               {od.order.quantity > 1 && <span className="text-muted-foreground">×{od.order.quantity}</span>}
                               <span className="text-primary ms-auto font-medium">{od.customer?.customerCode ?? '?'}</span>
                               {od.batch && (
-                                <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px]">
+                                <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 text-[10px]">
                                   {od.batch.batchCode}
                                 </span>
                               )}
@@ -1061,7 +1061,7 @@ export default function QuickRegister() {
                       </div>
                     )}
                     {expandedLookup?.case === 'multi' && expandedLookup.orders[0] && !expandedLookup.flags?.customerMismatch && (
-                      <div className="mt-3 p-3 rounded-lg border-2 border-blue-300 bg-blue-50 dark:bg-blue-950/30">
+                      <div className="mt-3 p-3 rounded-lg border-2 border-blue-300 dark:border-blue-800/60 bg-blue-50 dark:bg-blue-950/30">
                         <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 mb-2">
                           <span>📦</span>
                           <span className="font-bold">
@@ -1078,9 +1078,9 @@ export default function QuickRegister() {
                                 <span className="font-mono truncate">{tr.trackingNumber}</span>
                                 <span className="ms-auto">
                                   {isThis ? (
-                                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px]">{t("quickRegister.cartonNow")}</span>
+                                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-[10px]">{t("quickRegister.cartonNow")}</span>
                                   ) : reg ? (
-                                    <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px]">✅ {reg.packageCode}</span>
+                                    <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 dark:text-slate-300 text-[10px]">✅ {reg.packageCode}</span>
                                   ) : (
                                     <span className="px-1.5 py-0.5 rounded border border-muted text-muted-foreground text-[10px]">⏳ {t("quickRegister.cartonWaiting")}</span>
                                   )}
@@ -1157,12 +1157,12 @@ export default function QuickRegister() {
                         && (foundOrder.source === 'full_package' || foundOrder.source === 'commission');
                       return (
                         <div className={cn("mt-3 p-2 rounded-lg text-sm flex items-center gap-2",
-                          isUnclaimed ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-green-50 text-green-700 border border-green-200"
+                          isUnclaimed ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60" : "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/60"
                         )}>
                           {isUnclaimed ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                           <span className="font-bold">{isUnclaimed ? t("quickRegister.unclaimed") : customers?.find(c => c.id === customerId)?.customerCode}</span>
                           {lockedByOrder && (
-                            <span className="ms-auto text-[11px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-semibold">
+                            <span className="ms-auto text-[11px] bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200 px-2 py-0.5 rounded-full font-semibold">
                               🔒 {t("quickRegister.locked")}
                             </span>
                           )}

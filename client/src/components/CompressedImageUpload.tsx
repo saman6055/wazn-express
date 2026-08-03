@@ -189,19 +189,19 @@ export default function CompressedImageUpload({
 
   const accentClasses = {
     emerald: {
-      border: "border-emerald-300 hover:border-emerald-400",
+      border: "border-emerald-300 dark:border-emerald-800/60 hover:border-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-950/20",
       text: "text-emerald-600 dark:text-emerald-400",
       icon: "text-emerald-500",
-      badge: "bg-emerald-100 text-emerald-700",
+      badge: "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300",
       ring: "ring-emerald-500/20",
     },
     amber: {
-      border: "border-amber-300 hover:border-amber-400",
+      border: "border-amber-300 dark:border-amber-800/60 hover:border-amber-400",
       bg: "bg-amber-50 dark:bg-amber-950/20",
       text: "text-amber-600 dark:text-amber-400",
       icon: "text-amber-500",
-      badge: "bg-amber-100 text-amber-700",
+      badge: "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300",
       ring: "ring-amber-500/20",
     },
   };
@@ -316,7 +316,7 @@ export default function CompressedImageUpload({
                   onClick={() => setPreviewImage(url)}
                   className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
                 >
-                  <ZoomIn className="w-4 h-4 text-gray-700" />
+                  <ZoomIn className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                 </button>
                 <button
                   type="button"

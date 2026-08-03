@@ -89,7 +89,7 @@ export function PortalHeaderControls({
   const light = onLight ?? isLightHeader(mode);
 
   const glass = light
-    ? "bg-slate-900/[0.06] border-slate-900/10 text-slate-800"
+    ? "bg-slate-900/[0.06] border-slate-900/10 text-slate-800 dark:text-slate-200"
     : "bg-white/10 border-white/20 text-white";
 
   const current = LANGUAGES.find((l) => l.code === language);
@@ -204,7 +204,7 @@ export function PortalClock({
   }, []);
 
   const surface = onLight
-    ? "border-slate-900/10 bg-slate-900/[0.06] text-slate-800"
+    ? "border-slate-900/10 bg-slate-900/[0.06] text-slate-800 dark:text-slate-200"
     : "border-white/20 bg-white/10 text-white";
 
   const hint = pickLang(language, {

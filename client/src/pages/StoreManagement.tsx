@@ -31,12 +31,12 @@ const emptyForm = {
 
 const ORDER_STATUSES = ["new", "confirmed", "preparing", "shipped", "delivered", "cancelled"] as const;
 const orderStatusMeta: Record<string, { label: { ku: string; en: string; ar: string; zh: string }; cls: string }> = {
-  new:       { label: { ku: "نوێ", en: "New", ar: "جديد", zh: "新" }, cls: "bg-blue-100 text-blue-700" },
-  confirmed: { label: { ku: "پەسەندکراو", en: "Confirmed", ar: "مؤكد", zh: "已确认" }, cls: "bg-violet-100 text-violet-700" },
-  preparing: { label: { ku: "ئامادەکردن", en: "Preparing", ar: "قيد التحضير", zh: "备货中" }, cls: "bg-amber-100 text-amber-700" },
-  shipped:   { label: { ku: "نێردرا", en: "Shipped", ar: "تم الشحن", zh: "已发货" }, cls: "bg-cyan-100 text-cyan-700" },
-  delivered: { label: { ku: "گەیشت", en: "Delivered", ar: "تم التسليم", zh: "已送达" }, cls: "bg-emerald-100 text-emerald-700" },
-  cancelled: { label: { ku: "هەڵوەشاوە", en: "Cancelled", ar: "ملغى", zh: "已取消" }, cls: "bg-slate-100 text-slate-600" },
+  new:       { label: { ku: "نوێ", en: "New", ar: "جديد", zh: "新" }, cls: "bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" },
+  confirmed: { label: { ku: "پەسەندکراو", en: "Confirmed", ar: "مؤكد", zh: "已确认" }, cls: "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300" },
+  preparing: { label: { ku: "ئامادەکردن", en: "Preparing", ar: "قيد التحضير", zh: "备货中" }, cls: "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300" },
+  shipped:   { label: { ku: "نێردرا", en: "Shipped", ar: "تم الشحن", zh: "已发货" }, cls: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300" },
+  delivered: { label: { ku: "گەیشت", en: "Delivered", ar: "تم التسليم", zh: "已送达" }, cls: "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300" },
+  cancelled: { label: { ku: "هەڵوەشاوە", en: "Cancelled", ar: "ملغى", zh: "已取消" }, cls: "bg-slate-100 dark:bg-slate-950/40 text-slate-600" },
 };
 
 export default function StoreManagement() {

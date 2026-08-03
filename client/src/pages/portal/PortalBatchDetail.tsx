@@ -147,14 +147,14 @@ const { t, language } = useLanguage();
   const getStatusColor = (status: string) => {
     switch (status) {
       case "delivered":
-        return isDark ? "bg-emerald-900/50 text-emerald-400" : "bg-emerald-100 text-emerald-700";
+        return isDark ? "bg-emerald-900/50 text-emerald-400" : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300";
       case "in_transit":
       case "out_for_delivery":
-        return isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 text-blue-700";
+        return isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300";
       case "customs_processing":
-        return isDark ? "bg-amber-900/50 text-amber-400" : "bg-amber-100 text-amber-700";
+        return isDark ? "bg-amber-900/50 text-amber-400" : "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300";
       default:
-        return isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-600";
+        return isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 dark:bg-slate-950/40 text-slate-600";
     }
   };
 
@@ -254,7 +254,7 @@ const { t, language } = useLanguage();
           "rounded-2xl shadow-lg p-5 transition-colors duration-300",
           isDark ? "bg-slate-800" : "bg-white"
         )}>
-          <h3 className={cn("font-semibold mb-4", isDark ? "text-white" : "text-slate-800")}>
+          <h3 className={cn("font-semibold mb-4", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
             {language === "ku" ? "شوێنکەوتنی بار" : "Shipment Progress"}
           </h3>
           
@@ -262,7 +262,7 @@ const { t, language } = useLanguage();
             {/* Timeline line */}
             <div className={cn(
               "absolute top-5 left-5 right-5 h-1 rounded-full",
-              isDark ? "bg-slate-700" : "bg-slate-100"
+              isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
             )} />
             
             {/* Progress line */}
@@ -283,14 +283,14 @@ const { t, language } = useLanguage();
                       ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30" 
                       : step.current 
                         ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 animate-pulse" 
-                        : (isDark ? "bg-slate-700 text-slate-500" : "bg-slate-100 text-slate-400")
+                        : (isDark ? "bg-slate-700 text-slate-500" : "bg-slate-100 dark:bg-slate-950/40 text-slate-400")
                   )}>
                     <step.icon className="w-5 h-5" />
                   </div>
                   <span className={cn(
                     "text-xs font-medium mt-2 text-center max-w-[60px]",
                     step.completed || step.current 
-                      ? (isDark ? "text-white" : "text-slate-800")
+                      ? (isDark ? "text-white" : "text-slate-800 dark:text-slate-200")
                       : (isDark ? "text-slate-500" : "text-slate-400")
                   )}>
                     {pickLang(language, STATUS_LABEL[step.stepKey])}
@@ -309,11 +309,11 @@ const { t, language } = useLanguage();
             return (
               <div className={cn(
                 "mt-5 pt-4 border-t flex items-center gap-3",
-                isDark ? "border-slate-700" : "border-slate-100"
+                isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
               )}>
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center",
-                  isDark ? "bg-blue-900/50" : "bg-blue-50"
+                  isDark ? "bg-blue-900/50" : "bg-blue-50 dark:bg-blue-950/40"
                 )}>
                   <Calendar className={cn("w-5 h-5", isDark ? "text-blue-400" : "text-blue-600")} />
                 </div>
@@ -321,7 +321,7 @@ const { t, language } = useLanguage();
                   <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
                     {language === "ku" ? "کاتی گەیشتنی خەمڵێنراو" : language === "ar" ? "الوصول المتوقع" : language === "zh" ? "预计到达" : "Estimated Arrival"}
                   </p>
-                  <p className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
+                  <p className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     {eta.kind === "exact"
                       ? eta.date.toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
                       : formatBatchEta(eta)}
@@ -336,10 +336,10 @@ const { t, language } = useLanguage();
       {/* Packages List */}
       <div className={cn(
         "px-4 py-6 transition-colors duration-300",
-        isDark ? "bg-slate-900" : "bg-slate-50"
+        isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
       )}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
+          <h2 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
             {language === "ku" ? "پاکەتەکانت" : "Your Packages"}
           </h2>
           <span className={cn(
@@ -378,7 +378,7 @@ const { t, language } = useLanguage();
                   "rounded-2xl p-4 shadow-sm transition-all duration-300 border",
                   isDark
                     ? "bg-slate-800 border-slate-700"
-                    : "bg-white border-slate-100"
+                    : "bg-white border-slate-100 dark:border-slate-800/60"
                 )}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
@@ -390,7 +390,7 @@ const { t, language } = useLanguage();
                         onClick={hasPhotos ? () => openPhotoViewer(pkg.id) : undefined}
                       />
                       <div>
-                        <p className={cn("font-bold", isDark ? "text-white" : "text-slate-800")}>
+                        <p className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                           {pkg.trackingNumber || pkg.packageCode}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
@@ -413,7 +413,7 @@ const { t, language } = useLanguage();
                           "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                           isDark 
                             ? "bg-blue-900/50 text-blue-400 hover:bg-blue-900/70" 
-                            : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                            : "bg-blue-50 dark:bg-blue-950/40 text-blue-600 hover:bg-blue-100"
                         )}
                       >
                         <Camera className="w-4 h-4" />
@@ -425,12 +425,12 @@ const { t, language } = useLanguage();
                   {/* Package Details */}
                   <div className={cn(
                     "mt-4 pt-3 border-t grid grid-cols-2 gap-3",
-                    isDark ? "border-slate-700" : "border-slate-100"
+                    isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
                   )}>
                     {pkg.weightKg && (
                       <div className={cn(
                         "flex items-center gap-2 p-2 rounded-lg",
-                        isDark ? "bg-slate-700/50" : "bg-slate-50"
+                        isDark ? "bg-slate-700/50" : "bg-slate-50 dark:bg-slate-950/40"
                       )}>
                         <Scale className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-500")} />
                         <span className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
@@ -441,7 +441,7 @@ const { t, language } = useLanguage();
                     {pkg.lengthCm && pkg.widthCm && pkg.heightCm && (
                       <div className={cn(
                         "flex items-center gap-2 p-2 rounded-lg",
-                        isDark ? "bg-slate-700/50" : "bg-slate-50"
+                        isDark ? "bg-slate-700/50" : "bg-slate-50 dark:bg-slate-950/40"
                       )}>
                         <Ruler className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-500")} />
                         <span className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
@@ -455,7 +455,7 @@ const { t, language } = useLanguage();
                   {hasPhotos && (
                     <div className={cn(
                       "mt-3 pt-3 border-t",
-                      isDark ? "border-slate-700" : "border-slate-100"
+                      isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
                     )}>
                       <button 
                         onClick={() => openPhotoViewer(pkg.id)}
@@ -467,7 +467,7 @@ const { t, language } = useLanguage();
                               key={idx}
                               className={cn(
                                 "w-12 h-12 rounded-xl border-2 shadow-sm overflow-hidden",
-                                isDark ? "border-slate-700 bg-slate-700" : "border-white bg-slate-100"
+                                isDark ? "border-slate-700 bg-slate-700" : "border-white bg-slate-100 dark:bg-slate-950/40"
                               )}
                             >
                               <img loading="lazy" decoding="async" 
@@ -483,7 +483,7 @@ const { t, language } = useLanguage();
                           {pkgPhotos.length > 3 && (
                             <div className={cn(
                               "w-12 h-12 rounded-xl border-2 shadow-sm flex items-center justify-center",
-                              isDark ? "border-slate-700 bg-slate-700" : "border-white bg-slate-100"
+                              isDark ? "border-slate-700 bg-slate-700" : "border-white bg-slate-100 dark:bg-slate-950/40"
                             )}>
                               <span className={cn("text-xs font-medium", isDark ? "text-slate-400" : "text-slate-500")}>
                                 +{pkgPhotos.length - 3}

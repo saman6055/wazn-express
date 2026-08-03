@@ -151,8 +151,8 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
     return (
       <div className="px-4 mt-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Megaphone className={cn("w-5 h-5", isDark ? "text-slate-300" : "text-slate-700")} />
-          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800")}>
+          <Megaphone className={cn("w-5 h-5", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")} />
+          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
             {t("portal.announcements") || "ڕاگەیاندنەکان"}
           </h2>
         </div>
@@ -166,8 +166,8 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
     return (
       <div className="px-4 mt-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Megaphone className={cn("w-5 h-5", isDark ? "text-slate-300" : "text-slate-700")} />
-          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800")}>
+          <Megaphone className={cn("w-5 h-5", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")} />
+          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
             {t("portal.announcements") || "ڕاگەیاندنەکان"}
           </h2>
         </div>
@@ -224,8 +224,8 @@ const { t, language } = useLanguage();
   // Every surface in this header was written for white-on-colour. In light
   // mode the text and the glass panels have to flip, or the header is a blank
   // pale rectangle.
-  const headStrong = lightHeader ? "text-slate-900" : "text-white";
-  const headSoft = lightHeader ? "text-slate-700" : "text-white/90";
+  const headStrong = lightHeader ? "text-slate-900 dark:text-slate-200" : "text-white";
+  const headSoft = lightHeader ? "text-slate-700 dark:text-slate-300" : "text-white/90";
   const headMuted = lightHeader ? "text-slate-600" : "text-white/70";
   const headGlass = lightHeader
     ? "bg-slate-900/[0.05] border-slate-900/10 hover:bg-slate-900/[0.09]"
@@ -273,13 +273,13 @@ const { t, language } = useLanguage();
     switch (status) {
       case "delivered":
       case "closed":
-        return isDark ? "bg-emerald-900/50 text-emerald-400" : "bg-emerald-100 text-emerald-700";
+        return isDark ? "bg-emerald-900/50 text-emerald-400" : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300";
       case "in_transit":
-        return isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 text-blue-700";
+        return isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300";
       case "customs":
-        return isDark ? "bg-amber-900/50 text-amber-400" : "bg-amber-100 text-amber-700";
+        return isDark ? "bg-amber-900/50 text-amber-400" : "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300";
       default:
-        return isDark ? "bg-slate-700 text-slate-300" : "bg-gray-100 text-gray-600";
+        return isDark ? "bg-slate-700 text-slate-300" : "bg-gray-100 dark:bg-gray-950/40 text-gray-600";
     }
   };
 
@@ -472,7 +472,7 @@ const { t, language } = useLanguage();
         <div className="absolute top-16 -left-20 w-60 h-60 rounded-full" style={{ background: `radial-gradient(circle, rgba(28,77,141,${lightHeader ? 0.14 : 0.5}) 0%, transparent 70%)` }} />
         <div className="absolute -bottom-10 right-0 w-56 h-56 rounded-full" style={{ background: `radial-gradient(circle, rgba(189,232,245,${lightHeader ? 0.5 : 0.3}) 0%, transparent 70%)` }} />
         
-        <div className={cn("relative px-5 pt-14 pb-12", lightHeader ? "text-slate-900" : "text-white")}>
+        <div className={cn("relative px-5 pt-14 pb-12", lightHeader ? "text-slate-900 dark:text-slate-200" : "text-white")}>
           {/* Colour modes, language, and the date — above the greeting so the
               controls read as chrome rather than as part of the account. */}
           <PortalHeaderControls onLight={lightHeader} className="mb-5" />
@@ -491,7 +491,7 @@ const { t, language } = useLanguage();
                 <Skeleton className="h-8 w-40 bg-white/20" />
               ) : (
                 <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <span className={lightHeader ? "text-slate-900" : "bg-clip-text text-transparent"} style={lightHeader ? undefined : { backgroundImage: gradient("to left", "#ffffff", pal.pale, pal.light) }}>
+                  <span className={lightHeader ? "text-slate-900 dark:text-slate-200" : "bg-clip-text text-transparent"} style={lightHeader ? undefined : { backgroundImage: gradient("to left", "#ffffff", pal.pale, pal.light) }}>
                     {account?.fullName || account?.customerCode}
                   </span>
                   <Sparkles className="w-5 h-5" style={paleStyle} />
@@ -532,8 +532,8 @@ const { t, language } = useLanguage();
                   ? "bg-slate-900/[0.06] border-slate-900/10"
                   : ""
               )} style={lightHeader ? undefined : { backgroundImage: gradient("to right", tint(pal.pale, 0.15), tint(pal.light, 0.2)), borderColor: tint(pal.pale, 0.3) }}>
-                <Package className={cn("w-4 h-4", lightHeader && "text-slate-700")} style={paleStyle} />
-                <span className={cn("text-sm font-semibold", lightHeader && "text-slate-800")} style={paleStyle}>
+                <Package className={cn("w-4 h-4", lightHeader && "text-slate-700 dark:text-slate-300")} style={paleStyle} />
+                <span className={cn("text-sm font-semibold", lightHeader && "text-slate-800 dark:text-slate-200")} style={paleStyle}>
                   {account.customerCode}
                 </span>
               </div>
@@ -583,7 +583,7 @@ const { t, language } = useLanguage();
               <div className="flex-1 min-w-0 pe-5">
                 <h4 className={cn("text-sm font-bold", headStrong)}>{quickActions[openTileInfo].info.title}</h4>
                 <p className={cn("text-xs mt-0.5 leading-relaxed", headSoft)}>{quickActions[openTileInfo].info.desc}</p>
-                <span className={cn("inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium", lightHeader && "bg-slate-900/[0.07] text-slate-700")} style={lightHeader ? undefined : { backgroundColor: tint(pal.pale, 0.2), color: pal.pale }}>
+                <span className={cn("inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium", lightHeader && "bg-slate-900/[0.07] text-slate-700 dark:text-slate-300")} style={lightHeader ? undefined : { backgroundColor: tint(pal.pale, 0.2), color: pal.pale }}>
                   {quickActions[openTileInfo].info.example}
                 </span>
               </div>
@@ -674,13 +674,13 @@ const { t, language } = useLanguage();
               "rounded-2xl border p-4 cursor-pointer flex items-center gap-3 transition-all hover:scale-[1.01]",
               prohibitedPending > 0
                 ? "wazn-prohibited-flash border-red-400"
-                : isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200",
+                : isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60",
             )}>
               <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white shrink-0 shadow-lg">
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className={cn("font-bold", isDark ? "text-white" : "text-slate-900")}>
+                <p className={cn("font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
                   {pickLang(language, { ku: "کەل و پەلی قەدەغە", en: "Prohibited packages", ar: "طرود ممنوعة", zh: "违禁包裹" })}
                 </p>
                 <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
@@ -703,7 +703,7 @@ const { t, language } = useLanguage();
         {/* Section heading — accent bar */}
         <div className="flex items-center gap-2.5 mb-3">
           <div className="w-1.5 h-6 rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-500" />
-          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800")}>
+          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
             {pickLang(language, { ku: "بارەکانم", en: "My shipments", ar: "شحناتي", zh: "我的货件" })}
           </h2>
         </div>
@@ -729,7 +729,7 @@ const { t, language } = useLanguage();
                 {batchesLoading ? (
                   <Skeleton className={cn("h-7 w-8 mx-auto mb-1", isDark && "bg-slate-600")} />
                 ) : (
-                  <p className={cn("text-xl font-bold", isDark ? "text-white" : "text-slate-800")}>
+                  <p className={cn("text-xl font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     <AnimatedCounter value={totalBatches} />
                   </p>
                 )}
@@ -831,7 +831,7 @@ const { t, language } = useLanguage();
               "relative overflow-hidden rounded-2xl p-5 shadow-lg cursor-pointer hover:scale-[1.01] transition-all",
               isDark
                 ? "bg-gradient-to-br from-amber-900/60 to-orange-900/60 border border-amber-700/50"
-                : "bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200"
+                : "bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 dark:border-amber-800/60"
             )}>
               <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
               <div className="relative flex items-start justify-between">
@@ -841,13 +841,13 @@ const { t, language } = useLanguage();
                       "p-2 rounded-xl",
                       isDark ? "bg-amber-600/30" : "bg-amber-500/20"
                     )}>
-                      <Clock className={cn("w-5 h-5", isDark ? "text-amber-300" : "text-amber-700")} />
+                      <Clock className={cn("w-5 h-5", isDark ? "text-amber-300" : "text-amber-700 dark:text-amber-300")} />
                     </div>
                     <div>
-                      <h3 className={cn("font-bold text-base", isDark ? "text-amber-100" : "text-amber-900")}>
+                      <h3 className={cn("font-bold text-base", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
                         {t("portal.pendingOrdersTitle")}
                       </h3>
-                      <p className={cn("text-xs", isDark ? "text-amber-300/80" : "text-amber-700")}>
+                      <p className={cn("text-xs", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
                         {t("portal.pendingOrdersSubtitle")}
                       </p>
                     </div>
@@ -855,26 +855,26 @@ const { t, language } = useLanguage();
 
                   <div className="grid grid-cols-3 gap-2 mt-4">
                     <div className="text-center">
-                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700")}>
+                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
                         📦 {pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "حزمة كاملة", zh: "完整套餐" })}
                       </p>
-                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900")}>
+                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
                         <AnimatedCounter value={pendingOrders.byType.full_package} />
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700")}>
+                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
                         🛍️ {pickLang(language, { ku: "کڕین بە تێچوو", en: "Markup purchase", ar: "شراء بهامش", zh: "加价采购" })}
                       </p>
-                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900")}>
+                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
                         <AnimatedCounter value={pendingOrders.byType.commission} />
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700")}>
+                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
                         📝 {pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" })}
                       </p>
-                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900")}>
+                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
                         <AnimatedCounter value={pendingOrders.byType.purchase_request} />
                       </p>
                     </div>
@@ -882,15 +882,15 @@ const { t, language } = useLanguage();
                 </div>
 
                 <div className="text-end">
-                  <p className={cn("text-xs font-medium mb-1", isDark ? "text-amber-300/80" : "text-amber-700")}>
+                  <p className={cn("text-xs font-medium mb-1", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
                     {t("portal.estimatedTotal")}
                   </p>
-                  <p className={cn("text-2xl font-bold font-mono", isDark ? "text-amber-100" : "text-amber-900")}>
+                  <p className={cn("text-2xl font-bold font-mono", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
                     ${pendingOrders.totalPriceUsd.toFixed(2)}
                   </p>
                   <div className={cn(
                     "mt-2 px-2 py-0.5 rounded-full text-xs font-semibold inline-block",
-                    isDark ? "bg-amber-600/30 text-amber-200" : "bg-amber-200 text-amber-900"
+                    isDark ? "bg-amber-600/30 text-amber-200" : "bg-amber-200 text-amber-900 dark:text-amber-200"
                   )}>
                     {pendingOrders.count} {t("portal.orders")}
                   </div>
@@ -907,7 +907,7 @@ const { t, language } = useLanguage();
       {declaredPackages && declaredPackages.length > 0 && (
         <div className="px-4 mt-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className={cn("text-lg font-bold flex items-center gap-2", isDark ? "text-white" : "text-slate-800")}>
+            <h2 className={cn("text-lg font-bold flex items-center gap-2", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
               <Package className="w-5 h-5 text-blue-500" />
               {pickLang(language, { ku: "بارە خۆدەرخستووەکانم", en: "My declared packages", ar: "طرودي المُعلنة", zh: "我申报的包裹" })}
             </h2>
@@ -939,7 +939,7 @@ const { t, language } = useLanguage();
                     {/* Thumbnail */}
                     <div className={cn(
                       "w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center",
-                      isDark ? "bg-slate-700" : "bg-slate-100"
+                      isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
                     )}>
                       {img ? (
                         <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -949,7 +949,7 @@ const { t, language } = useLanguage();
                     </div>
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className={cn("font-mono text-sm font-bold truncate", isDark ? "text-white" : "text-slate-800")}>
+                      <p className={cn("font-mono text-sm font-bold truncate", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                         {d.trackingNumber}
                       </p>
                       {d.productName && (
@@ -957,7 +957,7 @@ const { t, language } = useLanguage();
                       )}
                       <div className="flex items-center gap-1.5 mt-1">
                         {d.platform && (
-                          <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md", isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-600")}>
+                          <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md", isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 dark:bg-slate-950/40 text-slate-600")}>
                             {d.platform}
                           </span>
                         )}
@@ -978,7 +978,7 @@ const { t, language } = useLanguage();
       {/* Recent Shipments */}
       <div className="px-4 mt-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800")}>
+          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
             {t("portal.recentShipments") || "گواستنەوە نوێیەکان"}
           </h2>
           <Link href="/portal/shipments">
@@ -1002,7 +1002,7 @@ const { t, language } = useLanguage();
           )}>
             <div className={cn(
               "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4",
-              isDark ? "bg-slate-700" : "bg-slate-100"
+              isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
             )}>
               <Package className={cn("w-8 h-8", isDark ? "text-slate-500" : "text-slate-400")} />
             </div>
@@ -1021,15 +1021,15 @@ const { t, language } = useLanguage();
                   "rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border",
                   isDark 
                     ? "bg-slate-800 border-slate-700 hover:bg-slate-750" 
-                    : "bg-white border-slate-100"
+                    : "bg-white border-slate-100 dark:border-slate-800/60"
                 )}>
                   <div className="flex items-center gap-4">
                     {/* Icon */}
                     <div className={cn(
                       "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
                       batch.shippingType?.includes("sea") 
-                        ? (isDark ? "bg-cyan-900/50 text-cyan-400" : "bg-cyan-100 text-cyan-600")
-                        : (isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 text-blue-600")
+                        ? (isDark ? "bg-cyan-900/50 text-cyan-400" : "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-600")
+                        : (isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 dark:bg-blue-950/40 text-blue-600")
                     )}>
                       {getShippingIcon(batch.shippingType || "")}
                     </div>
@@ -1037,7 +1037,7 @@ const { t, language } = useLanguage();
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className={cn("font-bold", isDark ? "text-white" : "text-slate-800")}>
+                        <p className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                           {batch.batchCode}
                         </p>
                         <span className={cn(

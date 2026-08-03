@@ -244,8 +244,8 @@ export default function SafeDeleteOrderDialog({
 
         {/* Financial impact preview */}
         {hasFinancialImpact && (
-          <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4 space-y-2">
-            <div className="font-bold text-amber-900 text-sm">
+          <div className="rounded-lg border-2 border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40 p-4 space-y-2">
+            <div className="font-bold text-amber-900 dark:text-amber-200 text-sm">
               {pickLang(language, {
                 ku: "کاریگەری دارایی",
                 en: "Financial Impact Preview",
@@ -263,7 +263,7 @@ export default function SafeDeleteOrderDialog({
                     zh: "订单费用冲销",
                   })}:
                 </span>
-                <span className="font-mono font-bold text-green-700">
+                <span className="font-mono font-bold text-green-700 dark:text-green-300">
                   −${previewCharge.toFixed(2)}
                 </span>
               </div>
@@ -278,13 +278,13 @@ export default function SafeDeleteOrderDialog({
                     zh: "预付款退回",
                   })}:
                 </span>
-                <span className="font-mono font-bold text-red-700">
+                <span className="font-mono font-bold text-red-700 dark:text-red-300">
                   {refundAdvance ? `+$${advance.toFixed(2)}` : "—"}
                 </span>
               </div>
             )}
-            <div className="border-t border-amber-200 pt-2 flex justify-between">
-              <span className="font-bold text-amber-900">
+            <div className="border-t border-amber-200 dark:border-amber-800/60 pt-2 flex justify-between">
+              <span className="font-bold text-amber-900 dark:text-amber-200">
                 {pickLang(language, {
                   ku: "کۆی گۆڕانکاری لە باڵانس",
                   en: "Net ledger change",
@@ -292,13 +292,13 @@ export default function SafeDeleteOrderDialog({
                   zh: "账本净变动",
                 })}:
               </span>
-              <span className="font-mono font-bold text-amber-900">
+              <span className="font-mono font-bold text-amber-900 dark:text-amber-200">
                 {totalReversal >= 0 ? "+" : ""}
                 ${Math.abs(totalReversal).toFixed(2)}
               </span>
             </div>
             {advance > 0 && (
-              <label className="flex items-center gap-2 text-xs text-amber-900 pt-1 cursor-pointer">
+              <label className="flex items-center gap-2 text-xs text-amber-900 dark:text-amber-200 pt-1 cursor-pointer">
                 <Checkbox
                   checked={refundAdvance}
                   onCheckedChange={(v) => setRefundAdvance(v === true)}

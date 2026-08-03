@@ -84,21 +84,21 @@ export default function PortalUnclaimedPackages() {
     switch (status) {
       case "pending":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300">
             <Clock className="w-3 h-3" />
             {t("pending") || "Pending"}
           </span>
         );
       case "approved":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300">
             <CheckCircle className="w-3 h-3" />
             {t("approved") || "Approved"}
           </span>
         );
       case "rejected":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300">
             <XCircle className="w-3 h-3" />
             {t("rejected") || "Rejected"}
           </span>
@@ -144,7 +144,7 @@ export default function PortalUnclaimedPackages() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={cn(
-                "pl-10 h-12 bg-gray-50 border-0 rounded-xl text-base",
+                "pl-10 h-12 bg-gray-50 dark:bg-gray-950/40 border-0 rounded-xl text-base",
                 isRTL && "pr-10 pl-4 text-right"
               )}
             />
@@ -155,7 +155,7 @@ export default function PortalUnclaimedPackages() {
       {/* Tabs */}
       <div className="px-4 mt-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full bg-gray-100 p-1 rounded-xl h-auto">
+          <TabsList className="w-full bg-gray-100 dark:bg-gray-950/40 p-1 rounded-xl h-auto">
             <TabsTrigger 
               value="unclaimed" 
               className="flex-1 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
@@ -192,7 +192,7 @@ export default function PortalUnclaimedPackages() {
               </div>
             ) : !unclaimedData?.packages.length ? (
               <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Package className="w-8 h-8 text-gray-400" />
                 </div>
                 <p className="text-gray-600 font-medium">
@@ -219,7 +219,7 @@ export default function PortalUnclaimedPackages() {
                           <img loading="lazy" decoding="async"
                             src={pkg.photos[0]}
                             alt=""
-                            className="w-12 h-12 rounded-xl object-cover border border-orange-100 shrink-0 cursor-zoom-in"
+                            className="w-12 h-12 rounded-xl object-cover border border-orange-100 dark:border-orange-800/60 shrink-0 cursor-zoom-in"
                             onClick={() => window.open(pkg.photos![0], "_blank", "noopener,noreferrer")}
                           />
                         ) : (
@@ -231,17 +231,17 @@ export default function PortalUnclaimedPackages() {
                           {/* Tracking Number - Main Display */}
                           {pkg.trackingNumber && (
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                              <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-xs font-medium rounded">
                                 {t("trackingNumber") || "Tracking"}
                               </span>
-                              <p className="font-bold text-slate-800 text-base font-mono">
+                              <p className="font-bold text-slate-800 dark:text-slate-200 text-base font-mono">
                                 {pkg.trackingNumber}
                               </p>
                             </div>
                           )}
                           {/* Package Code */}
                           <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
+                            <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-950/40 text-gray-600 text-xs font-medium rounded">
                               {t("packageCode") || "Code"}
                             </span>
                             <p className="text-sm text-gray-600 font-mono">
@@ -293,7 +293,7 @@ export default function PortalUnclaimedPackages() {
               </div>
             ) : !myClaimRequests?.length ? (
               <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Send className="w-8 h-8 text-gray-400" />
                 </div>
                 <p className="text-gray-600 font-medium">
@@ -314,8 +314,8 @@ export default function PortalUnclaimedPackages() {
                       <div className="flex items-start gap-3">
                         <div className={cn(
                           "w-12 h-12 rounded-xl flex items-center justify-center",
-                          request.status === "pending" ? "bg-yellow-100" :
-                          request.status === "approved" ? "bg-green-100" : "bg-red-100"
+                          request.status === "pending" ? "bg-yellow-100 dark:bg-yellow-950/40" :
+                          request.status === "approved" ? "bg-green-100 dark:bg-green-950/40" : "bg-red-100 dark:bg-red-950/40"
                         )}>
                           {request.status === "pending" ? (
                             <Clock className="w-6 h-6 text-yellow-600" />
@@ -326,7 +326,7 @@ export default function PortalUnclaimedPackages() {
                           )}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-800 text-sm">
+                          <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
                             {request.trackingNumber}
                           </p>
                           <p className="text-xs text-gray-500 mt-0.5">
@@ -348,7 +348,7 @@ export default function PortalUnclaimedPackages() {
                     {request.adminNote && (
                       <div className={cn(
                         "mt-3 p-3 rounded-xl text-sm",
-                        request.status === "approved" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+                        request.status === "approved" ? "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300" : "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300"
                       )}>
                         <p className="font-medium mb-1">
                           {t("adminResponse") || "Admin Response"}:
@@ -359,8 +359,8 @@ export default function PortalUnclaimedPackages() {
                     
                     {/* Customer Note */}
                     {request.customerNote && (
-                      <div className="mt-3 p-3 bg-gray-50 rounded-xl text-sm text-gray-600">
-                        <p className="font-medium mb-1 text-gray-700">
+                      <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-950/40 rounded-xl text-sm text-gray-600">
+                        <p className="font-medium mb-1 text-gray-700 dark:text-gray-300">
                           {t("yourNote") || "Your Note"}:
                         </p>
                         <p>{request.customerNote}</p>
@@ -379,7 +379,7 @@ export default function PortalUnclaimedPackages() {
         <DialogContent className="sm:max-w-md mx-4 rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-slate-800" />
+              <Package className="w-5 h-5 text-slate-800 dark:text-slate-200" />
               {t("claimPackage") || "Claim Package"}
             </DialogTitle>
             <DialogDescription>
@@ -390,7 +390,7 @@ export default function PortalUnclaimedPackages() {
           {selectedPackage && (
             <div className="space-y-4">
               {/* Package Info */}
-              <div className="bg-gray-50 rounded-xl p-4">
+              <div className="bg-gray-50 dark:bg-gray-950/40 rounded-xl p-4">
                 <div className="flex items-center gap-3">
                   {selectedPackage.photos?.[0] ? (
                     <img loading="lazy" decoding="async" src={selectedPackage.photos[0]} alt="" className="w-12 h-12 rounded-xl object-cover shadow-sm shrink-0" />
@@ -400,7 +400,7 @@ export default function PortalUnclaimedPackages() {
                     </div>
                   )}
                   <div>
-                    <p className="font-semibold text-slate-800">
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">
                       {selectedPackage.trackingNumber || selectedPackage.packageCode}
                     </p>
                     <p className="text-sm text-gray-500">
@@ -414,7 +414,7 @@ export default function PortalUnclaimedPackages() {
               
               {/* Note Input (required) */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                   {pickLang(language, { ku: "هۆکاری خاوەنداری", en: "Reason for ownership", ar: "سبب الملكية", zh: "归属原因" })}
                   <span className="text-red-500"> *</span>
                 </label>
@@ -428,7 +428,7 @@ export default function PortalUnclaimedPackages() {
 
               {/* Proof images (required) */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                   {pickLang(language, { ku: "بەڵگە / سکرینشۆتی کڕین", en: "Proof / purchase screenshot", ar: "الإثبات / لقطة الشراء", zh: "凭证 / 购买截图" })}
                   <span className="text-red-500"> *</span>
                 </label>
@@ -450,7 +450,7 @@ export default function PortalUnclaimedPackages() {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl border border-green-500 bg-green-50 px-4 py-2.5 text-sm font-semibold text-green-700 transition-colors hover:bg-green-100"
+                className="flex items-center justify-center gap-2 rounded-xl border border-green-500 bg-green-50 dark:bg-green-950/40 px-4 py-2.5 text-sm font-semibold text-green-700 dark:text-green-300 transition-colors hover:bg-green-100"
               >
                 <MessageCircle className="w-4 h-4" />
                 {pickLang(language, { ku: "بەڵگەی زیاتر بنێرە بە واتساپ", en: "Send more proof via WhatsApp", ar: "أرسل إثباتاً إضافياً عبر واتساب", zh: "通过 WhatsApp 发送更多凭证" })}

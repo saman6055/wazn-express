@@ -104,7 +104,7 @@ export default function HomeModern() {
   const btnWhats = "inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:-translate-y-0.5 transition-all";
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen overflow-x-hidden bg-white text-slate-900 antialiased">
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen overflow-x-hidden bg-white text-slate-900 dark:text-slate-200 antialiased">
       <style>{`
         @keyframes wxfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
         @keyframes wxdrift{0%{transform:translateX(0)}100%{transform:translateX(40px)}}
@@ -129,7 +129,7 @@ export default function HomeModern() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/customer-login" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:inline-block">
+            <Link href="/customer-login" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 sm:inline-block">
               {L({ ku: "چوونەژوورەوە", en: "Sign in", ar: "تسجيل الدخول", zh: "登录" })}
             </Link>
             <a href={waLink} target="_blank" rel="noreferrer" className={btnPrimary + " !px-5 !py-2"}>
@@ -146,7 +146,7 @@ export default function HomeModern() {
         <div className="pointer-events-none absolute top-40 start-0 h-80 w-80 rounded-full bg-violet-300/25 blur-3xl" />
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 md:px-6 lg:grid-cols-2 lg:py-20">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-sky-700">
+            <span className="inline-flex items-center gap-2 rounded-full border border-sky-200 dark:border-sky-800/60 bg-sky-50 dark:bg-sky-950/40 px-3 py-1 text-xs font-bold uppercase tracking-widest text-sky-700 dark:text-sky-300">
               <Sparkles className="h-3.5 w-3.5" /> {L({ ku: "چین → عێراق", en: "China → Iraq", ar: "الصين ← العراق", zh: "中国 → 伊拉克" })}
             </span>
             <h1 className="mt-5 text-4xl font-black leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
@@ -169,7 +169,7 @@ export default function HomeModern() {
               </a>
             </div>
             {/* Tracking bar */}
-            <div className="mt-7 flex max-w-md items-center gap-2 rounded-full border border-slate-200 bg-white p-1.5 shadow-sm">
+            <div className="mt-7 flex max-w-md items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800/60 bg-white p-1.5 shadow-sm">
               <Search className="ms-3 h-4 w-4 shrink-0 text-slate-400" />
               <input
                 value={tracking}
@@ -229,11 +229,11 @@ export default function HomeModern() {
       </section>
 
       {/* ================= Stats ================= */}
-      <section className="border-y border-slate-100 bg-white">
+      <section className="border-y border-slate-100 dark:border-slate-800/60 bg-white">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-10 md:grid-cols-4 md:px-6">
           {stats.map((s, i) => (
             <div key={i} className="text-center">
-              <p className="text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
+              <p className="text-3xl font-black tracking-tight text-slate-900 dark:text-slate-200 md:text-4xl">
                 <CountUp value={s.value} />{s.suffix}
               </p>
               <p className="mt-1 text-sm text-slate-500">{L(s.label)}</p>
@@ -264,7 +264,7 @@ export default function HomeModern() {
         <section className="relative overflow-hidden bg-gradient-to-b from-sky-50 to-white py-16 md:py-24">
           <Cloud className="wxdrift absolute top-8 end-[12%] h-12 w-28 text-white" />
           <div className="mx-auto max-w-3xl px-4 text-center md:px-6">
-            <h2 className="text-3xl font-black text-slate-900 md:text-5xl">
+            <h2 className="text-3xl font-black text-slate-900 dark:text-slate-200 md:text-5xl">
               {L({ ku: "چارەسەری", en: "Global", ar: "حلول", zh: "全球" })}{" "}
               <span className="bg-gradient-to-r from-cyan-500 to-sky-600 bg-clip-text text-transparent">{L({ ku: "گواستنەوەی دەریایی", en: "sea freight", ar: "الشحن البحري", zh: "海运方案" })}</span>{" "}
               {L({ ku: "جیهانی", en: "solutions", ar: "عالمية", zh: "" })}
@@ -283,7 +283,7 @@ export default function HomeModern() {
         {/* Road */}
         <section className="relative overflow-hidden bg-gradient-to-b from-white to-slate-50 py-16 md:py-24">
           <div className="mx-auto max-w-3xl px-4 text-center md:px-6">
-            <h2 className="text-3xl font-black text-slate-900 md:text-5xl">
+            <h2 className="text-3xl font-black text-slate-900 dark:text-slate-200 md:text-5xl">
               {L({ ku: "گەیاندنی ناوخۆیی", en: "Comprehensive road delivery" , ar: "توصيل بري شامل", zh: "全面的陆运派送" })}{" "}
               <span className="bg-gradient-to-r from-violet-500 to-purple-600 bg-clip-text text-transparent">{L({ ku: "بۆ هەموو عێراق", en: "across all Iraq", ar: "لكل العراق", zh: "覆盖全伊拉克" })}</span>
             </h2>
@@ -300,16 +300,16 @@ export default function HomeModern() {
       {/* ================= Services ================= */}
       <section id="services" className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
         <div className="mb-12 text-center">
-          <h2 className="text-3xl font-black text-slate-900 md:text-4xl">{L({ ku: "خزمەتگوزارییەکانی گواستنەوە", en: "Transport services", ar: "خدمات النقل", zh: "运输服务" })}</h2>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-slate-200 md:text-4xl">{L({ ku: "خزمەتگوزارییەکانی گواستنەوە", en: "Transport services", ar: "خدمات النقل", zh: "运输服务" })}</h2>
           <p className="mx-auto mt-3 max-w-xl text-slate-600">{L({ ku: "خزمەتگوزاری تەواو کە هەموو ڕێگای چین بۆ عێراق دەگرێتەوە.", en: "Comprehensive services spanning the whole China-to-Iraq journey.", ar: "خدمات شاملة تغطي كامل رحلة الصين إلى العراق.", zh: "覆盖中国到伊拉克全程的综合服务。" })}</p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((s, i) => (
-            <div key={i} className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-sky-200">
+            <div key={i} className="group rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-sky-200">
               <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-violet-600 text-white shadow-lg transition-transform group-hover:scale-105">
                 <s.icon className="h-6 w-6" />
               </span>
-              <h3 className="text-lg font-bold text-slate-900">{L(s.t)}</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-200">{L(s.t)}</h3>
               <p className="mt-2 text-sm text-slate-600">{L(s.d)}</p>
             </div>
           ))}
@@ -345,16 +345,16 @@ export default function HomeModern() {
       {/* ================= Why us ================= */}
       <section id="why" className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
         <div className="mb-12 text-center">
-          <h2 className="text-3xl font-black text-slate-900 md:text-4xl">{L({ ku: "بۆچی وەزن هەڵبژێریت؟", en: "Why choose us?", ar: "لماذا تختارنا؟", zh: "为什么选择我们？" })}</h2>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-slate-200 md:text-4xl">{L({ ku: "بۆچی وەزن هەڵبژێریت؟", en: "Why choose us?", ar: "لماذا تختارنا؟", zh: "为什么选择我们？" })}</h2>
         </div>
         <div className="grid gap-5 md:grid-cols-2">
           {why.map((w, i) => (
-            <div key={i} className="flex gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div key={i} className="flex gap-4 rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white p-6 shadow-sm">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-violet-100 text-violet-600">
                 <w.icon className="h-6 w-6" />
               </span>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">{L(w.t)}</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-200">{L(w.t)}</h3>
                 <p className="mt-1 text-sm text-slate-600">{L(w.d)}</p>
               </div>
             </div>
@@ -363,20 +363,20 @@ export default function HomeModern() {
       </section>
 
       {/* ================= How it works ================= */}
-      <section id="how" className="bg-slate-50 py-16 md:py-24">
+      <section id="how" className="bg-slate-50 dark:bg-slate-950/40 py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-black text-slate-900 md:text-4xl">{L({ ku: "چۆن کاردەکات", en: "How it works", ar: "كيف يعمل", zh: "运作方式" })}</h2>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-slate-200 md:text-4xl">{L({ ku: "چۆن کاردەکات", en: "How it works", ar: "كيف يعمل", zh: "运作方式" })}</h2>
             <p className="mx-auto mt-3 max-w-xl text-slate-600">{L({ ku: "چوار هەنگاوی سادە لە چینەوە تا دەرگای ماڵت.", en: "Four simple steps from China to your door.", ar: "أربع خطوات بسيطة من الصين إلى بابك.", zh: "从中国到您家门口，仅需四步。" })}</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((s, i) => (
-              <div key={i} className="relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div key={i} className="relative rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white p-6 shadow-sm">
                 <span className="absolute -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-violet-600 text-sm font-black text-white shadow-lg" style={isRTL ? { right: "1.5rem" } : { left: "1.5rem" }}>{i + 1}</span>
-                <span className="mb-4 mt-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                <span className="mb-4 mt-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300">
                   <s.icon className="h-6 w-6" />
                 </span>
-                <h3 className="font-bold text-slate-900">{L(s.t)}</h3>
+                <h3 className="font-bold text-slate-900 dark:text-slate-200">{L(s.t)}</h3>
                 <p className="mt-1 text-sm text-slate-600">{L(s.d)}</p>
               </div>
             ))}
@@ -391,7 +391,7 @@ export default function HomeModern() {
           <h2 className="text-3xl font-black md:text-4xl">{L({ ku: "ئامادەیت بارەکەت بگوازیتەوە؟", en: "Ready to ship your cargo?", ar: "جاهز لشحن بضاعتك؟", zh: "准备好发货了吗？" })}</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/85">{L({ ku: "پەیوەندیمان پێوە بکە بۆ نرخێکی بێبەرامبەر و ڕاوێژکاری.", en: "Talk to us for a free quote and a consultation.", ar: "تواصل معنا للحصول على عرض سعر مجاني واستشارة.", zh: "联系我们获取免费报价与咨询。" })}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a href={waLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-900 shadow-lg hover:-translate-y-0.5 transition-all">
+            <a href={waLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-900 dark:text-slate-200 shadow-lg hover:-translate-y-0.5 transition-all">
               <MessageCircle className="h-4 w-4 text-emerald-500" /> {L({ ku: "واتساپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" })}
             </a>
             <Link href="/customer-login" className="inline-flex items-center gap-2 rounded-full bg-white/15 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/30 backdrop-blur hover:bg-white/25 transition-all">

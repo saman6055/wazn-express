@@ -146,7 +146,7 @@ export default function Skin3PortalFinancial() {
       label: t("portal.totalPaid"),
       value: formatCurrency(totalPaid),
       accent: "text-emerald-600 dark:text-emerald-400",
-      bg: isDark ? "bg-emerald-500/15" : "bg-emerald-50",
+      bg: isDark ? "bg-emerald-500/15" : "bg-emerald-50 dark:bg-emerald-950/40",
     },
     {
       icon: CreditCard,
@@ -158,14 +158,14 @@ export default function Skin3PortalFinancial() {
           : "Total Debit",
       value: formatCurrency((summary as any)?.totalCharged ?? summary?.totalPaid ?? 0),
       accent: "text-red-500 dark:text-red-400",
-      bg: isDark ? "bg-red-500/15" : "bg-red-50",
+      bg: isDark ? "bg-red-500/15" : "bg-red-50 dark:bg-red-950/40",
     },
     {
       icon: AlertCircle,
       label: t("portal.pending"),
       value: String(unpaidInvoices.length),
       accent: "text-amber-600 dark:text-amber-400",
-      bg: isDark ? "bg-amber-500/15" : "bg-amber-50",
+      bg: isDark ? "bg-amber-500/15" : "bg-amber-50 dark:bg-amber-950/40",
     },
     {
       icon: FileText,
@@ -177,7 +177,7 @@ export default function Skin3PortalFinancial() {
           : "Paid",
       value: formatCurrency(summary?.totalPaid ?? 0),
       accent: "text-indigo-600 dark:text-indigo-400",
-      bg: isDark ? "bg-indigo-500/15" : "bg-indigo-50",
+      bg: isDark ? "bg-indigo-500/15" : "bg-indigo-50 dark:bg-indigo-950/40",
     },
   ];
 
@@ -294,7 +294,7 @@ export default function Skin3PortalFinancial() {
                     <p
                       className={cn(
                         "text-lg font-black tabular-nums",
-                        isDark ? "text-white" : "text-zinc-900"
+                        isDark ? "text-white" : "text-zinc-900 dark:text-zinc-200"
                       )}
                     >
                       {stat.value}
@@ -330,7 +330,7 @@ export default function Skin3PortalFinancial() {
                       : "bg-yellow-400 text-black border-yellow-500 shadow-[3px_3px_0px_rgba(0,0,0,0.1)]"
                     : isDark
                     ? "bg-zinc-900 text-zinc-400 border-zinc-700 hover:border-zinc-500"
-                    : "bg-white text-zinc-500 border-zinc-200 hover:border-zinc-400"
+                    : "bg-white text-zinc-500 border-zinc-200 dark:border-zinc-800/60 hover:border-zinc-400"
                 )}
               >
                 {tab.label}
@@ -343,7 +343,7 @@ export default function Skin3PortalFinancial() {
             <h2
               className={cn(
                 "text-lg font-black mb-3",
-                isDark ? "text-white" : "text-zinc-900"
+                isDark ? "text-white" : "text-zinc-900 dark:text-zinc-200"
               )}
             >
               {t("portal.paymentHistory")}
@@ -385,10 +385,10 @@ export default function Skin3PortalFinancial() {
                               credit
                                 ? isDark
                                   ? "bg-emerald-500/10 border-emerald-500/30"
-                                  : "bg-emerald-50 border-emerald-200"
+                                  : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60"
                                 : isDark
                                 ? "bg-red-500/10 border-red-500/30"
-                                : "bg-red-50 border-red-200"
+                                : "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800/60"
                             )}
                           >
                             {credit ? (
@@ -415,7 +415,7 @@ export default function Skin3PortalFinancial() {
                             <p
                               className={cn(
                                 "text-sm font-bold truncate",
-                                isDark ? "text-white" : "text-zinc-900"
+                                isDark ? "text-white" : "text-zinc-900 dark:text-zinc-200"
                               )}
                             >
                               {tx.description ||
@@ -451,7 +451,7 @@ export default function Skin3PortalFinancial() {
                                 "w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-all",
                                 isDark
                                   ? "border-zinc-700 hover:border-indigo-500 hover:bg-indigo-500/10 text-zinc-500 hover:text-indigo-400"
-                                  : "border-zinc-200 hover:border-indigo-400 hover:bg-indigo-50 text-zinc-400 hover:text-indigo-600"
+                                  : "border-zinc-200 dark:border-zinc-800/60 hover:border-indigo-400 hover:bg-indigo-50 text-zinc-400 hover:text-indigo-600"
                               )}
                               title={t("portal.downloadInvoice")}
                             >
@@ -478,13 +478,13 @@ export default function Skin3PortalFinancial() {
                 <Receipt
                   className={cn(
                     "w-14 h-14 mx-auto mb-3",
-                    isDark ? "text-zinc-700" : "text-zinc-300"
+                    isDark ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-300"
                   )}
                 />
                 <h3
                   className={cn(
                     "font-black text-lg mb-1",
-                    isDark ? "text-white" : "text-zinc-900"
+                    isDark ? "text-white" : "text-zinc-900 dark:text-zinc-200"
                   )}
                 >
                   {t("portal.noTransactions")}
@@ -525,7 +525,7 @@ export default function Skin3PortalFinancial() {
                 <h2
                   className={cn(
                     "text-lg font-black",
-                    isDark ? "text-white" : "text-zinc-900"
+                    isDark ? "text-white" : "text-zinc-900 dark:text-zinc-200"
                   )}
                 >
                   {t("portal.unpaidInvoices")}
@@ -535,7 +535,7 @@ export default function Skin3PortalFinancial() {
                     "px-2.5 py-0.5 rounded-full text-xs font-black border-2",
                     isDark
                       ? "bg-red-500/15 text-red-400 border-red-500/30"
-                      : "bg-red-50 text-red-600 border-red-200"
+                      : "bg-red-50 dark:bg-red-950/40 text-red-600 border-red-200 dark:border-red-800/60"
                   )}
                 >
                   {unpaidInvoices.length}
@@ -564,7 +564,7 @@ export default function Skin3PortalFinancial() {
                           "w-11 h-11 rounded-lg flex items-center justify-center shrink-0 border-2",
                           isDark
                             ? "bg-amber-500/10 border-amber-500/30"
-                            : "bg-amber-50 border-amber-200"
+                            : "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60"
                         )}
                       >
                         <AlertCircle
@@ -579,7 +579,7 @@ export default function Skin3PortalFinancial() {
                         <p
                           className={cn(
                             "text-sm font-bold",
-                            isDark ? "text-white" : "text-zinc-900"
+                            isDark ? "text-white" : "text-zinc-900 dark:text-zinc-200"
                           )}
                         >
                           {inv.invoiceNumber}
@@ -608,10 +608,10 @@ export default function Skin3PortalFinancial() {
                             inv.status === "overdue"
                               ? isDark
                                 ? "bg-red-500/15 text-red-400 border-red-500/40"
-                                : "bg-red-100 text-red-700 border-red-300"
+                                : "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-300 dark:border-red-800/60"
                               : isDark
                               ? "bg-amber-500/15 text-amber-400 border-amber-500/40"
-                              : "bg-amber-100 text-amber-700 border-amber-300"
+                              : "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800/60"
                           )}
                         >
                           {inv.status === "overdue"

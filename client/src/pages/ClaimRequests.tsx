@@ -102,21 +102,21 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
     switch (status) {
       case "pending":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800/60">
             <Clock className="w-3.5 h-3.5" />
             {t("common.pending")}
           </span>
         );
       case "approved":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/60">
             <CheckCircle className="w-3.5 h-3.5" />
             {t("common.approved")}
           </span>
         );
       case "rejected":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/60">
             <XCircle className="w-3.5 h-3.5" />
             {t("common.rejected")}
           </span>
@@ -143,7 +143,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center">
                 <Package className="w-5 h-5 text-white" />
               </div>
@@ -156,14 +156,14 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
           
           {/* Stats */}
           <div className="flex gap-3">
-            <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200">
+            <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 dark:border-yellow-800/60">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-950/40 rounded-lg flex items-center justify-center">
                     <Clock className="w-5 h-5 text-yellow-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-yellow-700">{pendingCount || 0}</p>
+                    <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{pendingCount || 0}</p>
                     <p className="text-xs text-yellow-600">{t("common.pending")}</p>
                   </div>
                 </div>
@@ -223,10 +223,10 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
           </div>
         ) : filteredRequests.length === 0 ? (
           <Card className="p-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
               <Package className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-700">No claim requests found</h3>
+            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">No claim requests found</h3>
             <p className="text-gray-500 mt-1">
               {statusFilter === "pending" 
                 ? "There are no pending claim requests at the moment."
@@ -245,8 +245,8 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                         <div className="flex items-center gap-3">
                           <div className={cn(
                             "w-12 h-12 rounded-xl flex items-center justify-center",
-                            request.status === "pending" ? "bg-yellow-100" :
-                            request.status === "approved" ? "bg-green-100" : "bg-red-100"
+                            request.status === "pending" ? "bg-yellow-100 dark:bg-yellow-950/40" :
+                            request.status === "approved" ? "bg-green-100 dark:bg-green-950/40" : "bg-red-100 dark:bg-red-950/40"
                           )}>
                             <Package className={cn(
                               "w-6 h-6",
@@ -255,7 +255,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                             )} />
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-800">
+                            <p className="font-semibold text-slate-800 dark:text-slate-200">
                               {request.trackingNumber}
                             </p>
                             <p className="text-sm text-gray-500">
@@ -287,18 +287,18 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                       
                       {/* Customer Note */}
                       {request.customerNote && (
-                        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg">
                           <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
                             <MessageSquare className="w-4 h-4" />
                             Customer Note
                           </div>
-                          <p className="text-sm text-gray-700">{request.customerNote}</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">{request.customerNote}</p>
                         </div>
                       )}
 
                       {/* Proof of ownership images */}
                       {request.proofImages && request.proofImages.length > 0 && (
-                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg">
                           <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
                             <ImageIcon className="w-4 h-4" />
                             {t("claimRequests.proofImages") || "Proof of ownership"} ({request.proofImages.length})
@@ -321,7 +321,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                       {request.adminNote && (
                         <div className={cn(
                           "mt-3 p-3 rounded-lg",
-                          request.status === "approved" ? "bg-green-50" : "bg-red-50"
+                          request.status === "approved" ? "bg-green-50 dark:bg-green-950/40" : "bg-red-50 dark:bg-red-950/40"
                         )}>
                           <div className={cn(
                             "flex items-center gap-2 text-sm mb-1",
@@ -336,7 +336,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                           </div>
                           <p className={cn(
                             "text-sm",
-                            request.status === "approved" ? "text-green-700" : "text-red-700"
+                            request.status === "approved" ? "text-green-700 dark:text-green-300" : "text-red-700 dark:text-red-300"
                           )}>
                             {request.adminNote}
                           </p>
@@ -346,7 +346,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                     
                     {/* Actions */}
                     {request.status === "pending" && (
-                      <div className="flex md:flex-col gap-2 p-5 bg-gray-50 border-t md:border-t-0 md:border-l">
+                      <div className="flex md:flex-col gap-2 p-5 bg-gray-50 dark:bg-gray-950/40 border-t md:border-t-0 md:border-l">
                         <Button
                           onClick={() => {
                             setSelectedRequest(request);
@@ -363,7 +363,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                             setActionType("reject");
                           }}
                           variant="outline"
-                          className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+                          className="flex-1 border-red-200 dark:border-red-800/60 text-red-600 hover:bg-red-50"
                         >
                           <XCircle className="w-4 h-4 me-2" />
                           Reject
@@ -408,13 +408,13 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
             {selectedRequest && (
               <div className="space-y-4">
                 {/* Request Info */}
-                <div className="bg-gray-50 rounded-lg p-4">
+                <div className="bg-gray-50 dark:bg-gray-950/40 rounded-lg p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
                       <Package className="w-5 h-5 text-slate-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-slate-800">
+                      <p className="font-medium text-slate-800 dark:text-slate-200">
                         {selectedRequest.trackingNumber}
                       </p>
                       <p className="text-sm text-gray-500">
@@ -426,7 +426,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                 
                 {/* Admin Note */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                     Add a note (optional)
                   </label>
                   <Textarea

@@ -141,11 +141,11 @@ export default function StaffManagement() {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case "admin":
-        return <Badge className="bg-red-100 text-red-700">{t('roles.admin')}</Badge>;
+        return <Badge className="bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300">{t('roles.admin')}</Badge>;
       case "employee":
-        return <Badge className="bg-blue-100 text-blue-700">{t('roles.employee')}</Badge>;
+        return <Badge className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">{t('roles.employee')}</Badge>;
       case "accountant":
-        return <Badge className="bg-purple-100 text-purple-700">{t('roles.accountant')}</Badge>;
+        return <Badge className="bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300">{t('roles.accountant')}</Badge>;
       default:
         return <Badge>{role}</Badge>;
     }
@@ -280,7 +280,7 @@ export default function StaffManagement() {
                 {staffList.map((staff) => (
                   <div key={staff.id} className="flex items-center justify-between py-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                      <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950/40 rounded-full flex items-center justify-center">
                         <Shield className="w-5 h-5 text-emerald-600" />
                       </div>
                       <div>
@@ -291,12 +291,12 @@ export default function StaffManagement() {
                     <div className="flex items-center gap-4">
                       {getRoleBadge(staff.role)}
                       {staff.isActive ? (
-                        <Badge variant="outline" className="text-green-600 border-green-200">
+                        <Badge variant="outline" className="text-green-600 border-green-200 dark:border-green-800/60">
                           <CheckCircle className="w-3 h-3 me-1" />
                           {t('status.active')}
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-red-600 border-red-200">
+                        <Badge variant="outline" className="text-red-600 border-red-200 dark:border-red-800/60">
                           <XCircle className="w-3 h-3 me-1" />
                           {t('status.inactive')}
                         </Badge>

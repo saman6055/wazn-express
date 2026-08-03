@@ -48,13 +48,13 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
   // time, so this stays silent rather than showing an empty box.
   if (isLoading || !boxes || boxes.length === 0) return null;
 
-  const card = isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 bg-white";
+  const card = isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 dark:border-slate-800/60 bg-white";
 
   return (
     <div className={cn("px-4", className)}>
       <div className="mb-2 flex items-center gap-2">
         <PackageCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-        <h2 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800")}>
+        <h2 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
           {label({ ku: "بۆکسەکانی من", en: "My boxes", ar: "صناديقي", zh: "我的箱子" })}
         </h2>
       </div>

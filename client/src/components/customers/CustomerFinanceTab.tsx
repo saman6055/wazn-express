@@ -149,8 +149,8 @@ export function CustomerFinanceTab({
                         variant="outline"
                         className={`capitalize text-xs ${
                           isCredit
-                            ? "bg-green-50 text-green-700 border-green-200"
-                            : "bg-red-50 text-red-700 border-red-200"
+                            ? "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60"
+                            : "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60"
                         }`}
                       >
                         {entry.transactionType
@@ -221,8 +221,8 @@ export function CustomerFinanceTab({
                       variant="outline"
                       className={`capitalize text-xs ${
                         invoice.status === "paid"
-                          ? "bg-green-50 text-green-700 border-green-200"
-                          : "bg-amber-50 text-amber-700 border-amber-200"
+                          ? "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60"
+                          : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60"
                       }`}
                     >
                       {invoice.status}

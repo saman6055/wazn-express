@@ -1094,7 +1094,7 @@ export default function Finance() {
                     return (
                       <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${isDebit ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                          <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${isDebit ? 'bg-red-100 dark:bg-red-950/40 text-red-600' : 'bg-green-100 dark:bg-green-950/40 text-green-600'}`}>
                             {isDebit ? <ArrowUp className="w-5 h-5" /> : <ArrowDown className="w-5 h-5" />}
                           </div>
                           <div>
@@ -1136,7 +1136,7 @@ export default function Finance() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {debtors?.slice(0, 4).map((debtor) => (
-                    <div key={debtor.customerId} className="p-4 border rounded-xl bg-gradient-to-br from-red-50 to-rose-50 border-red-200 hover:shadow-md transition-shadow">
+                    <div key={debtor.customerId} className="p-4 border rounded-xl bg-gradient-to-br from-red-50 to-rose-50 border-red-200 dark:border-red-800/60 hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between mb-2">
                         <Badge variant="outline" className="bg-white">{debtor.customer?.customerCode}</Badge>
                         <span className="text-red-600 font-bold">{formatCurrency(String(debtor.balanceUsd || 0))}</span>

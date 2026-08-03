@@ -161,13 +161,13 @@ const { t, language } = useLanguage();
   const getTransactionColor = (type: string, isDark: boolean) => {
     if (type.startsWith("CREDIT_")) {
       return { 
-        bg: isDark ? "bg-emerald-900/50" : "bg-emerald-100", 
+        bg: isDark ? "bg-emerald-900/50" : "bg-emerald-100 dark:bg-emerald-950/40", 
         icon: "text-emerald-500", 
         amount: "text-emerald-500" 
       };
     }
     return { 
-      bg: isDark ? "bg-red-900/50" : "bg-red-100", 
+      bg: isDark ? "bg-red-900/50" : "bg-red-100 dark:bg-red-950/40", 
       icon: "text-red-500", 
       amount: "text-red-500" 
     };
@@ -270,8 +270,8 @@ const { t, language } = useLanguage();
               <div className={cn(
                 "w-16 h-16 rounded-2xl flex items-center justify-center",
                 isDebt 
-                  ? isDark ? "bg-red-900/30" : "bg-red-100" 
-                  : isDark ? "bg-emerald-900/30" : "bg-emerald-100"
+                  ? isDark ? "bg-red-900/30" : "bg-red-100 dark:bg-red-950/40" 
+                  : isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
                 {isDebt ? (
                   <TrendingDown className={cn("w-8 h-8", isDebt ? "text-red-500" : "text-emerald-500")} />
@@ -285,8 +285,8 @@ const { t, language } = useLanguage();
             <div className={cn(
               "mt-4 px-4 py-2 rounded-xl inline-flex items-center gap-2",
               isDebt 
-                ? isDark ? "bg-red-900/30" : "bg-red-50" 
-                : isDark ? "bg-emerald-900/30" : "bg-emerald-50"
+                ? isDark ? "bg-red-900/30" : "bg-red-50 dark:bg-red-950/40" 
+                : isDark ? "bg-emerald-900/30" : "bg-emerald-50 dark:bg-emerald-950/40"
             )}>
               {isDebt ? (
                 <>
@@ -309,21 +309,21 @@ const { t, language } = useLanguage();
           {/* Stats Row */}
           <div className={cn(
             "grid grid-cols-3 border-t",
-            isDark ? "border-slate-700" : "border-slate-100"
+            isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
           )}>
-            <div className={cn("p-4 text-center border-r", isDark ? "border-slate-700" : "border-slate-100")}>
+            <div className={cn("p-4 text-center border-r", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
               <p className={cn("text-xs mb-1", isDark ? "text-slate-500" : "text-slate-500")}>
                 {language === "ku" ? "سنووری قەرز" : "Credit Limit"}
               </p>
               {summaryLoading ? (
                 <Skeleton className="h-6 w-16 mx-auto" />
               ) : (
-                <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800")}>
+                <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                   {formatCurrency(summary?.creditLimitUsd || 0)}
                 </p>
               )}
             </div>
-            <div className={cn("p-4 text-center border-r", isDark ? "border-slate-700" : "border-slate-100")}>
+            <div className={cn("p-4 text-center border-r", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
               <p className={cn("text-xs mb-1", isDark ? "text-slate-500" : "text-slate-500")}>
                 {language === "ku" ? "کۆی پارەدان" : "Total Paid"}
               </p>
@@ -339,7 +339,7 @@ const { t, language } = useLanguage();
               <p className={cn("text-xs mb-1", isDark ? "text-slate-500" : "text-slate-500")}>
                 {language === "ku" ? "ئەم مانگە" : "This Month"}
               </p>
-              <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800")}>
+              <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                 {monthlyStats.count} {language === "ku" ? "مامەڵە" : "txns"}
               </p>
             </div>
@@ -351,7 +351,7 @@ const { t, language } = useLanguage();
       <div className="px-4 mt-6">
         <div className={cn(
           "flex rounded-2xl p-1.5",
-          isDark ? "bg-slate-800" : "bg-slate-100"
+          isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40"
         )}>
           {tabs.map((tab) => (
             <button
@@ -362,7 +362,7 @@ const { t, language } = useLanguage();
                 activeTab === tab.id
                   ? isDark 
                     ? "bg-slate-700 text-white shadow-lg" 
-                    : "bg-white text-slate-800 shadow-md"
+                    : "bg-white text-slate-800 dark:text-slate-200 shadow-md"
                   : isDark 
                     ? "text-slate-400 hover:text-slate-300" 
                     : "text-slate-500 hover:text-slate-700"
@@ -399,7 +399,7 @@ const { t, language } = useLanguage();
               )}>
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center mb-3",
-                  isDark ? "bg-emerald-900/30" : "bg-emerald-100"
+                  isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
                 )}>
                   <ArrowDownLeft className="w-5 h-5 text-emerald-500" />
                 </div>
@@ -416,7 +416,7 @@ const { t, language } = useLanguage();
               )}>
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center mb-3",
-                  isDark ? "bg-red-900/30" : "bg-red-100"
+                  isDark ? "bg-red-900/30" : "bg-red-100 dark:bg-red-950/40"
                 )}>
                   <ArrowUpRight className="w-5 h-5 text-red-500" />
                 </div>
@@ -435,7 +435,7 @@ const { t, language } = useLanguage();
               isDark ? "bg-slate-800" : "bg-white shadow-sm"
             )}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
+                <h3 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                   {language === "ku" ? "چارتی ٦ مانگی ڕابردوو" : "Last 6 Months"}
                 </h3>
                 <BarChart3 className={cn("w-5 h-5", isDark ? "text-slate-500" : "text-slate-400")} />
@@ -487,7 +487,7 @@ const { t, language } = useLanguage();
               isDark ? "bg-slate-800" : "bg-white shadow-sm"
             )}>
               <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-700">
-                <h3 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
+                <h3 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                   {language === "ku" ? "دوایین مامەڵەکان" : "Recent Transactions"}
                 </h3>
                 <button 
@@ -513,7 +513,7 @@ const { t, language } = useLanguage();
                         <span className={colors.icon}>{getTransactionIcon(tx.transactionType)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={cn("font-medium text-sm", isDark ? "text-white" : "text-slate-800")}>
+                        <p className={cn("font-medium text-sm", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                           {getTransactionTypeName(tx.transactionType)}
                         </p>
                         <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
@@ -571,7 +571,7 @@ const { t, language } = useLanguage();
               )}>
                 <div className={cn(
                   "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4",
-                  isDark ? "bg-slate-700" : "bg-slate-100"
+                  isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
                 )}>
                   <Receipt className={cn("w-8 h-8", isDark ? "text-slate-500" : "text-slate-400")} />
                 </div>
@@ -602,7 +602,7 @@ const { t, language } = useLanguage();
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <p className={cn("font-semibold", isDark ? "text-white" : "text-slate-800")}>
+                          <p className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                             {getTransactionTypeName(tx.transactionType)}
                           </p>
                           <p className={cn("text-sm", isDark ? "text-slate-500" : "text-slate-500")}>
@@ -625,7 +625,7 @@ const { t, language } = useLanguage();
                                 "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
                                 isDark 
                                   ? "bg-indigo-900/50 hover:bg-indigo-800/50" 
-                                  : "bg-indigo-100 hover:bg-indigo-200"
+                                  : "bg-indigo-100 dark:bg-indigo-950/40 hover:bg-indigo-200"
                               )}
                               title={language === "ku" ? "بینینی وەسڵ" : "View Invoice"}
                             >
@@ -638,7 +638,7 @@ const { t, language } = useLanguage();
                               "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
                               isDark
                                 ? "bg-slate-700 hover:bg-slate-600"
-                                : "bg-slate-100 hover:bg-slate-200"
+                                : "bg-slate-100 dark:bg-slate-950/40 hover:bg-slate-200"
                             )}
                             title={language === "ku" ? "داگرتنی وەسڵ" : "Download Receipt"}
                           >
@@ -909,7 +909,7 @@ const { t, language } = useLanguage();
                     <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
                       {language === "ku" ? "کۆی گشتی" : "Total Amount"}
                     </p>
-                    <p className={cn("text-4xl font-bold mt-1", isDark ? "text-white" : "text-slate-800")}>
+                    <p className={cn("text-4xl font-bold mt-1", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                       ${Number(invoice.totalUsd).toFixed(2)}
                     </p>
                     {invoice.totalIqd && (
@@ -969,7 +969,7 @@ const { t, language } = useLanguage();
                       we render with `whitespace-pre-line` and a bordered card per
                       row to keep it scannable. */}
                   {invoice.lineItems && invoice.lineItems.length > 0 && (
-                    <div className={cn("rounded-xl p-3", isDark ? "bg-slate-700" : "bg-slate-50")}>
+                    <div className={cn("rounded-xl p-3", isDark ? "bg-slate-700" : "bg-slate-50 dark:bg-slate-950/40")}>
                       <p className={cn("text-xs font-medium mb-2", isDark ? "text-slate-400" : "text-slate-500")}>
                         {language === "ku" ? "بەندەکان" : "Items"}
                       </p>
@@ -981,18 +981,18 @@ const { t, language } = useLanguage();
                               "flex justify-between items-start gap-3 text-sm p-2.5 rounded-lg border",
                               isDark
                                 ? "bg-slate-800 border-slate-600"
-                                : "bg-white border-slate-200",
+                                : "bg-white border-slate-200 dark:border-slate-800/60",
                             )}
                           >
                             <span className={cn(
                               "whitespace-pre-line leading-relaxed flex-1 min-w-0",
-                              isDark ? "text-slate-300" : "text-slate-700",
+                              isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300",
                             )}>
                               {item.description}
                             </span>
                             <span className={cn(
                               "font-mono font-semibold text-sm shrink-0",
-                              isDark ? "text-white" : "text-slate-900",
+                              isDark ? "text-white" : "text-slate-900 dark:text-slate-200",
                             )}>
                               ${Number(item.total).toFixed(2)}
                             </span>
@@ -1004,13 +1004,13 @@ const { t, language } = useLanguage();
 
                   {/* Notes */}
                   {invoice.notes && (
-                    <div className={cn("rounded-xl p-3", isDark ? "bg-slate-700" : "bg-slate-50")}>
+                    <div className={cn("rounded-xl p-3", isDark ? "bg-slate-700" : "bg-slate-50 dark:bg-slate-950/40")}>
                       <p className={cn("text-xs font-medium mb-1", isDark ? "text-slate-400" : "text-slate-500")}>
                         {language === "ku" ? "تێبینی" : "Notes"}
                       </p>
                       <p className={cn(
                         "text-sm whitespace-pre-line leading-relaxed",
-                        isDark ? "text-slate-300" : "text-slate-700",
+                        isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300",
                       )}>
                         {invoice.notes}
                       </p>

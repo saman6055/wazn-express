@@ -76,7 +76,7 @@ export default function Skin3PortalProfile() {
                 "w-24 h-24 rounded-full mx-auto mb-5 flex items-center justify-center border-4",
                 isDark
                   ? "bg-zinc-900 border-zinc-700"
-                  : "bg-white border-zinc-200 shadow-[4px_4px_0px_rgba(0,0,0,0.1)]"
+                  : "bg-white border-zinc-200 dark:border-zinc-800/60 shadow-[4px_4px_0px_rgba(0,0,0,0.1)]"
               )}
             >
               <User
@@ -89,7 +89,7 @@ export default function Skin3PortalProfile() {
             <h2
               className={cn(
                 "text-xl font-black mb-2",
-                isDark ? "text-white" : "text-zinc-900"
+                isDark ? "text-white" : "text-zinc-900 dark:text-zinc-200"
               )}
             >
               {language === "ku" ? "چوونەژوورەوە پێویستە" : "Login Required"}
@@ -289,7 +289,7 @@ export default function Skin3PortalProfile() {
                 "flex items-center gap-3 px-4 py-3.5 cursor-pointer transition-colors",
                 isDark ? "hover:bg-zinc-800/80" : "hover:bg-amber-50/60",
                 !isLast &&
-                  (isDark ? "border-b border-zinc-800" : "border-b border-zinc-100")
+                  (isDark ? "border-b border-zinc-800" : "border-b border-zinc-100 dark:border-zinc-800/60")
               )}
             >
               <div
@@ -297,7 +297,7 @@ export default function Skin3PortalProfile() {
                   "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border-2",
                   isDark
                     ? "bg-indigo-500/10 border-indigo-500/30"
-                    : "bg-indigo-50 border-indigo-200"
+                    : "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60"
                 )}
               >
                 <item.icon
@@ -310,7 +310,7 @@ export default function Skin3PortalProfile() {
               <span
                 className={cn(
                   "flex-1 text-sm font-bold",
-                  isDark ? "text-white" : "text-zinc-700"
+                  isDark ? "text-white" : "text-zinc-700 dark:text-zinc-300"
                 )}
               >
                 {item.label}
@@ -373,7 +373,7 @@ export default function Skin3PortalProfile() {
                 "ring-[5px] ring-offset-4",
                 isDark
                   ? "bg-indigo-950/60 text-indigo-400 ring-indigo-500/40 ring-offset-zinc-950"
-                  : "bg-gradient-to-br from-indigo-100 to-violet-100 text-indigo-700 ring-indigo-400/50 ring-offset-amber-50/50"
+                  : "bg-gradient-to-br from-indigo-100 to-violet-100 text-indigo-700 dark:text-indigo-300 ring-indigo-400/50 ring-offset-amber-50/50"
               )}
             >
               {accountLoading ? (
@@ -390,7 +390,7 @@ export default function Skin3PortalProfile() {
               <h1
                 className={cn(
                   "text-2xl font-black text-center mt-5",
-                  isDark ? "text-white" : "text-zinc-900"
+                  isDark ? "text-white" : "text-zinc-900 dark:text-zinc-200"
                 )}
               >
                 {account?.fullName || user?.name || t("portal.profile")}
@@ -407,7 +407,7 @@ export default function Skin3PortalProfile() {
                   "mt-2 px-4 py-1.5 rounded-full text-xs font-black tabular-nums tracking-wide border-2",
                   isDark
                     ? "bg-zinc-900 text-indigo-400 border-indigo-500/30"
-                    : "bg-indigo-50 text-indigo-700 border-indigo-200 shadow-[2px_2px_0px_rgba(0,0,0,0.06)]"
+                    : "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60 shadow-[2px_2px_0px_rgba(0,0,0,0.06)]"
                 )}
               >
                 {account.customerCode}
@@ -444,7 +444,7 @@ export default function Skin3PortalProfile() {
                         "w-8 h-8 rounded-lg flex items-center justify-center mb-2 border",
                         isDark
                           ? "bg-zinc-800 border-zinc-700"
-                          : "bg-zinc-50 border-zinc-200"
+                          : "bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800/60"
                       )}
                     >
                       <row.icon
@@ -465,7 +465,7 @@ export default function Skin3PortalProfile() {
                     <p
                       className={cn(
                         "text-sm font-bold truncate mt-0.5",
-                        isDark ? "text-white" : "text-zinc-800"
+                        isDark ? "text-white" : "text-zinc-800 dark:text-zinc-200"
                       )}
                     >
                       {row.value}
@@ -502,7 +502,7 @@ export default function Skin3PortalProfile() {
               "w-full flex items-center justify-center gap-2.5 py-4 rounded-xl font-black text-sm border-2 transition-all",
               isDark
                 ? "bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20 shadow-[4px_4px_0px_rgba(239,68,68,0.1)]"
-                : "bg-red-50 text-red-600 border-red-300 hover:bg-red-100 shadow-[4px_4px_0px_rgba(0,0,0,0.08)]"
+                : "bg-red-50 dark:bg-red-950/40 text-red-600 border-red-300 dark:border-red-800/60 hover:bg-red-100 shadow-[4px_4px_0px_rgba(0,0,0,0.08)]"
             )}
           >
             <LogOut className="w-5 h-5" />
@@ -513,7 +513,7 @@ export default function Skin3PortalProfile() {
           <p
             className={cn(
               "text-center text-[11px] font-bold pb-4",
-              isDark ? "text-zinc-700" : "text-zinc-300"
+              isDark ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-300"
             )}
           >
             Wazn Express v{APP_VERSION}

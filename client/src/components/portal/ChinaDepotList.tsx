@@ -152,12 +152,12 @@ export function ChinaDepotList({
     <div className={cn("mt-6", className)}>
       <div className="mb-3 flex items-center gap-2">
         <Warehouse className={cn("h-5 w-5", isDark ? "text-emerald-400" : "text-emerald-600")} />
-        <h3 className={cn("font-bold", isDark ? "text-white" : "text-slate-800")}>
+        <h3 className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
           {pickLang(language, STATUS_LABEL.preparing)}
         </h3>
         <span className={cn(
           "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
-          isDark ? "bg-emerald-900/50 text-emerald-300" : "bg-emerald-100 text-emerald-700",
+          isDark ? "bg-emerald-900/50 text-emerald-300" : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300",
         )}>
           {visible.length}
         </span>
@@ -165,7 +165,7 @@ export function ChinaDepotList({
 
       <div className={cn(
         "divide-y overflow-hidden rounded-2xl border",
-        isDark ? "divide-slate-700 border-slate-700 bg-slate-800/50" : "divide-slate-100 border-slate-200 bg-white",
+        isDark ? "divide-slate-700 border-slate-700 bg-slate-800/50" : "divide-slate-100 border-slate-200 dark:border-slate-800/60 bg-white",
       )}>
         {visible.map((item) => (
           <div key={item.key} className="flex items-center gap-3 p-3">
@@ -183,7 +183,7 @@ export function ChinaDepotList({
             ) : (
               <div className={cn(
                 "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
-                isDark ? "bg-emerald-900/40" : "bg-emerald-50",
+                isDark ? "bg-emerald-900/40" : "bg-emerald-50 dark:bg-emerald-950/40",
               )}>
                 <Package className={cn("h-4 w-4", isDark ? "text-emerald-400" : "text-emerald-600")} />
               </div>
@@ -205,7 +205,7 @@ export function ChinaDepotList({
                   // text and disappears in dark mode.
                   className={cn(
                     "truncate font-mono text-sm font-semibold",
-                    isDark ? "text-slate-100" : "text-slate-800",
+                    isDark ? "text-slate-100" : "text-slate-800 dark:text-slate-200",
                   )}
                   dir="ltr"
                 >

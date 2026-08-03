@@ -47,7 +47,7 @@ const orderTypeConfig = {
     labelKu: "پاکێجی تەواو",
     color: "bg-emerald-500",
     textColor: "text-emerald-600",
-    bgLight: "bg-emerald-50",
+    bgLight: "bg-emerald-50 dark:bg-emerald-950/40",
     icon: Package 
   },
 
@@ -56,7 +56,7 @@ const orderTypeConfig = {
     labelKu: "عمولە",
     color: "bg-amber-500",
     textColor: "text-amber-600",
-    bgLight: "bg-amber-50",
+    bgLight: "bg-amber-50 dark:bg-amber-950/40",
     icon: Handshake 
   },
 };
@@ -341,7 +341,7 @@ export default function UnifiedProfitDashboard() {
                     {orderCounts.full_package} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950/40 rounded-lg flex items-center justify-center">
                   <Package className="w-5 h-5 text-emerald-600" />
                 </div>
               </div>
@@ -368,7 +368,7 @@ export default function UnifiedProfitDashboard() {
                     {orderCounts.commission} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-amber-100 dark:bg-amber-950/40 rounded-lg flex items-center justify-center">
                   <Handshake className="w-5 h-5 text-amber-600" />
                 </div>
               </div>

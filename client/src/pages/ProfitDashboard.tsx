@@ -406,7 +406,7 @@ const [timeRange, setTimeRange] = useState("all");
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-blue-100 text-blue-600">
+              <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-950/40 text-blue-600">
                 <Package className="h-5 w-5" />
               </div>
               <div>
@@ -419,7 +419,7 @@ const [timeRange, setTimeRange] = useState("all");
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-purple-100 text-purple-600">
+              <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-950/40 text-purple-600">
                 <Layers className="h-5 w-5" />
               </div>
               <div>
@@ -432,7 +432,7 @@ const [timeRange, setTimeRange] = useState("all");
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-orange-100 text-orange-600">
+              <div className="p-3 rounded-lg bg-orange-100 dark:bg-orange-950/40 text-orange-600">
                 <DollarSign className="h-5 w-5" />
               </div>
               <div>

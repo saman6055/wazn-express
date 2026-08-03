@@ -435,7 +435,7 @@ function Toggle({
       onClick={onClick}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-medium ring-1 transition-all duration-200",
-        active ? "bg-white text-blue-700 shadow-lg ring-white/40" : "bg-white/10 text-white/85 ring-white/20 hover:bg-white/20",
+        active ? "bg-white text-blue-700 dark:text-blue-300 shadow-lg ring-white/40" : "bg-white/10 text-white/85 ring-white/20 hover:bg-white/20",
       )}
     >
       <Icon className="h-4 w-4" />

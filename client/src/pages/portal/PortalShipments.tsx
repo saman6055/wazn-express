@@ -180,28 +180,28 @@ function ClassicPortalShipments() {
       case "delivered":
       case "closed":
         return { 
-          bg: isDark ? "bg-emerald-900/50" : "bg-emerald-100", 
-          text: isDark ? "text-emerald-400" : "text-emerald-700", 
+          bg: isDark ? "bg-emerald-900/50" : "bg-emerald-100 dark:bg-emerald-950/40", 
+          text: isDark ? "text-emerald-400" : "text-emerald-700 dark:text-emerald-300", 
           icon: isDark ? "text-emerald-400" : "text-emerald-500",
           progress: "bg-emerald-500"
         };
       case "in_transit":
         return { 
-          bg: isDark ? "bg-blue-900/50" : "bg-blue-100", 
-          text: isDark ? "text-blue-400" : "text-blue-700", 
+          bg: isDark ? "bg-blue-900/50" : "bg-blue-100 dark:bg-blue-950/40", 
+          text: isDark ? "text-blue-400" : "text-blue-700 dark:text-blue-300", 
           icon: isDark ? "text-blue-400" : "text-blue-500",
           progress: "bg-blue-500"
         };
       case "customs":
         return { 
-          bg: isDark ? "bg-amber-900/50" : "bg-amber-100", 
-          text: isDark ? "text-amber-400" : "text-amber-700", 
+          bg: isDark ? "bg-amber-900/50" : "bg-amber-100 dark:bg-amber-950/40", 
+          text: isDark ? "text-amber-400" : "text-amber-700 dark:text-amber-300", 
           icon: isDark ? "text-amber-400" : "text-amber-500",
           progress: "bg-amber-500"
         };
       default:
         return { 
-          bg: isDark ? "bg-slate-700" : "bg-slate-100", 
+          bg: isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40", 
           text: isDark ? "text-slate-300" : "text-slate-600", 
           icon: isDark ? "text-slate-400" : "text-slate-400",
           progress: "bg-slate-400"
@@ -245,9 +245,9 @@ function ClassicPortalShipments() {
   };
 
   const getShippingColor = (type: string) => {
-    if (type === "sea") return isDark ? "bg-cyan-900/50 text-cyan-400" : "bg-cyan-100 text-cyan-600";
-    if (type === "air_irregular") return isDark ? "bg-amber-900/50 text-amber-400" : "bg-amber-100 text-amber-600";
-    return isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 text-blue-600";
+    if (type === "sea") return isDark ? "bg-cyan-900/50 text-cyan-400" : "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-600";
+    if (type === "air_irregular") return isDark ? "bg-amber-900/50 text-amber-400" : "bg-amber-100 dark:bg-amber-950/40 text-amber-600";
+    return isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 dark:bg-blue-950/40 text-blue-600";
   };
 
   // Shipping type tabs
@@ -352,7 +352,7 @@ function ClassicPortalShipments() {
               className={cn(
                 "p-3 rounded-xl transition-all duration-300",
                 showFilters 
-                  ? "bg-white text-slate-800" 
+                  ? "bg-white text-slate-800 dark:text-slate-200" 
                   : "bg-white/10 text-white hover:bg-white/20"
               )}
             >
@@ -396,7 +396,7 @@ function ClassicPortalShipments() {
       <div className={cn(
         "sticky top-14 z-20 border-b backdrop-blur-md transition-all duration-300",
         compactFilters ? "px-3 py-2" : "px-4 py-3",
-        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-100"
+        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-100 dark:border-slate-800/60"
       )}>
         {!compactFilters && (
           <p className={cn("mb-2 text-[11px] font-medium", isDark ? "text-slate-500" : "text-slate-400")}>
@@ -426,7 +426,7 @@ function ClassicPortalShipments() {
                     ? "text-white"
                     : (isDark
                         ? "bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-600"
-                        : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300")
+                        : "bg-white text-slate-600 border border-slate-200 dark:border-slate-800/60 hover:border-slate-300")
                 )}
                 style={isActive ? {
                   backgroundImage: gradient("135deg", pal.light, pal.brand),
@@ -450,7 +450,7 @@ function ClassicPortalShipments() {
         {!compactFilters && (
           <div className={cn(
             "mt-2 flex items-start gap-2 rounded-xl px-3 py-2",
-            isDark ? "bg-slate-800/60" : "bg-slate-50"
+            isDark ? "bg-slate-800/60" : "bg-slate-50 dark:bg-slate-950/40"
           )}>
             <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", isDark ? "text-slate-500" : "text-slate-400")} />
             <p className={cn("text-[11.5px] leading-relaxed", isDark ? "text-slate-400" : "text-slate-500")}>
@@ -480,7 +480,7 @@ function ClassicPortalShipments() {
                     ? "text-white"
                     : (isDark
                         ? "bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-600"
-                        : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300")
+                        : "bg-white text-slate-600 border border-slate-200 dark:border-slate-800/60 hover:border-slate-300")
                 )}
                 style={isActive ? {
                   // The glow is the mode's own brand colour, so the row stays
@@ -499,7 +499,7 @@ function ClassicPortalShipments() {
                     "px-1.5 py-0.5 rounded-full text-xs font-bold tabular-nums",
                     isActive
                       ? "bg-black/25 text-white"
-                      : (isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-500")
+                      : (isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 dark:bg-slate-950/40 text-slate-500")
                   )}
                 >
                   {filter.count}
@@ -514,7 +514,7 @@ function ClassicPortalShipments() {
       {showFilters && (
         <div className={cn(
           "px-4 py-3 border-b transition-colors duration-300",
-          isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100"
+          isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100 dark:border-slate-800/60"
         )}>
           <div className="flex items-center gap-2">
             <ArrowUpDown className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-500")} />
@@ -533,8 +533,8 @@ function ClassicPortalShipments() {
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                     sortBy === option.value
-                      ? (isDark ? "bg-white text-slate-900" : "bg-slate-800 text-white")
-                      : (isDark ? "bg-slate-700 text-slate-400" : "bg-slate-100 text-slate-600")
+                      ? (isDark ? "bg-white text-slate-900 dark:text-slate-200" : "bg-slate-800 text-white")
+                      : (isDark ? "bg-slate-700 text-slate-400" : "bg-slate-100 dark:bg-slate-950/40 text-slate-600")
                   )}
                 >
                   {option.label}
@@ -552,7 +552,7 @@ function ClassicPortalShipments() {
           reads the page's scroll position when its container isn't the thing
           scrolling. */}
       <div
-        className={cn("transition-colors duration-300", isDark ? "bg-slate-900" : "bg-slate-50")}
+        className={cn("transition-colors duration-300", isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40")}
         {...pullToRefreshProps}
       >
         {/* Pull indicator */}
@@ -583,7 +583,7 @@ function ClassicPortalShipments() {
         {/* Batches List */}
         <div className={cn(
           "px-4 py-4 pb-24 transition-colors duration-300",
-          isDark ? "bg-slate-900" : "bg-slate-50"
+          isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
         )}>
           {isLoading ? (
           <PortalListSkeleton rows={4} />
@@ -594,7 +594,7 @@ function ClassicPortalShipments() {
           )}>
             <div className={cn(
               "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4",
-              isDark ? "bg-slate-700" : "bg-slate-100"
+              isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
             )}>
               <Package className={cn("w-8 h-8", isDark ? "text-slate-500" : "text-slate-400")} />
             </div>
@@ -616,7 +616,7 @@ function ClassicPortalShipments() {
                     "rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border",
                     isDark 
                       ? "bg-slate-800 border-slate-700 hover:bg-slate-750" 
-                      : "bg-white border-slate-100"
+                      : "bg-white border-slate-100 dark:border-slate-800/60"
                   )}>
                     {/* Top Row */}
                     <div className="flex items-start gap-4">
@@ -631,7 +631,7 @@ function ClassicPortalShipments() {
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <p className={cn("font-bold text-lg", isDark ? "text-white" : "text-slate-800")}>
+                          <p className={cn("font-bold text-lg", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                             {batch.batchCode}
                           </p>
                           <ChevronRight className={cn(
@@ -681,7 +681,7 @@ function ClassicPortalShipments() {
                       </div>
                       <div className={cn(
                         "flex-1 border-t-2 border-dashed relative",
-                        isDark ? "border-slate-600" : "border-slate-200"
+                        isDark ? "border-slate-600" : "border-slate-200 dark:border-slate-800/60"
                       )}>
                         <div className={cn(
                           "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center",
@@ -709,7 +709,7 @@ function ClassicPortalShipments() {
                     {/* Bottom Stats */}
                     <div className={cn(
                       "flex items-center justify-between mt-4 pt-3 border-t",
-                      isDark ? "border-slate-700" : "border-slate-100"
+                      isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
                     )}>
                       <div className="flex items-center gap-4">
                         <div className={cn("flex items-center gap-1.5 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
@@ -732,7 +732,7 @@ function ClassicPortalShipments() {
                           return (
                             <div className={cn(
                               "text-xs font-medium px-2 py-1 rounded-full",
-                              isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-50 text-blue-600"
+                              isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-50 dark:bg-blue-950/40 text-blue-600"
                             )}>
                               {language === "ku" ? "گەیشتن: " : language === "ar" ? "الوصول: " : language === "zh" ? "预计: " : "ETA: "}
                               {formatBatchEta(eta)}

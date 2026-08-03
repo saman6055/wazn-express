@@ -24,13 +24,13 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 
 const statusColors: Record<string, string> = {
-  preparing: "bg-blue-100 text-blue-800",
-  in_transit: "bg-amber-100 text-amber-800",
-  arrived: "bg-green-100 text-green-800",
-  customs: "bg-purple-100 text-purple-800",
-  at_depot: "bg-teal-100 text-teal-800",
-  delivered: "bg-green-200 text-green-900",
-  closed: "bg-gray-100 text-gray-800",
+  preparing: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200",
+  in_transit: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
+  arrived: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200",
+  customs: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200",
+  at_depot: "bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200",
+  delivered: "bg-green-200 text-green-900 dark:text-green-200",
+  closed: "bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200",
 };
 
 interface PricingTier {
@@ -417,7 +417,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       <div className="flex items-center gap-1">
         {priceText}
         {batch.hasCustomerPricing && (
-          <span title={`${batch.customerPricingCount} ${t('batches.vipCustomers')}`} className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-purple-600 bg-purple-100 rounded-full">
+          <span title={`${batch.customerPricingCount} ${t('batches.vipCustomers')}`} className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-purple-600 bg-purple-100 dark:bg-purple-950/40 rounded-full">
             <Users className="h-3 w-3" />
           </span>
         )}
@@ -498,7 +498,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </div>
                     {/* Shipping Details - Dynamic based on type */}
                     {shippingType && shippingType !== "sea" && (
-                      <Card className="border-blue-100 bg-blue-50/30">
+                      <Card className="border-blue-100 dark:border-blue-800/60 bg-blue-50/30">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
                             <Plane className="h-4 w-4 text-blue-600" />
@@ -525,7 +525,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     )}
                     
                     {shippingType === "sea" && (
-                      <Card className="border-cyan-100 bg-cyan-50/30">
+                      <Card className="border-cyan-100 dark:border-cyan-800/60 bg-cyan-50/30">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
                             <Ship className="h-4 w-4 text-cyan-600" />
@@ -582,7 +582,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <TabsContent value="volume" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
                     {shippingType ? (
                       <>
-                        <Card className="border-blue-200 bg-blue-50/50">
+                        <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm flex items-center gap-2">
                               <Package className="h-4 w-4" />
@@ -608,7 +608,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           </CardContent>
                         </Card>
                         
-                        <Card className="border-amber-200 bg-amber-50/50">
+                        <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm flex items-center gap-2">
                               <Calculator className="h-4 w-4" />
@@ -634,7 +634,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           </CardContent>
                         </Card>
                         
-                        <Card className="border-red-200 bg-red-50/50">
+                        <Card className="border-red-200 dark:border-red-800/60 bg-red-50/50">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm flex items-center gap-2">
                               <DollarSign className="h-4 w-4" />
@@ -690,7 +690,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         )}
                         
                         {!useTieredPricing ? (
-                          <Card className="border-green-200 bg-green-50/50">
+                          <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
                             <CardHeader className="pb-2">
                               <CardTitle className="text-sm flex items-center gap-2">
                                 <DollarSign className="h-4 w-4 text-green-600" />
@@ -720,7 +720,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             </CardContent>
                           </Card>
                         ) : (
-                          <Card className="border-green-200 bg-green-50/50">
+                          <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
                             <CardHeader className="pb-2">
                               <CardTitle className="text-sm flex items-center gap-2">
                                 <Layers className="h-4 w-4 text-green-600" />
@@ -800,7 +800,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         )}
                         
                         {/* Customer-Specific Pricing Section */}
-                        <Card className="border-purple-200 bg-purple-50/50 mt-4">
+                        <Card className="border-purple-200 dark:border-purple-800/60 bg-purple-50/50 mt-4">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm flex items-center gap-2">
                               <Users className="h-4 w-4 text-purple-600" />
@@ -1012,7 +1012,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       {(() => {
                         const isCompleted = batch.status === "arrived" || batch.status === "delivered" || batch.status === "closed";
                         if (isCompleted) {
-                          return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">{t("auto.text_4c0d23")} </Badge>;
+                          return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">{t("auto.text_4c0d23")} </Badge>;
                         }
                         
                         if (batch.estimatedArrival) {
@@ -1024,9 +1024,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           if (daysOverdue > 5) {
                             return <Badge variant="destructive" className="animate-pulse">🔴 {daysOverdue} ڕ{t("auto.text_d4f9af")}</Badge>;
                           } else if (daysOverdue > 0) {
-                            return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">⚠️ {daysOverdue} ڕ{t("auto.text_d4f9af")}</Badge>;
+                            return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">⚠️ {daysOverdue} ڕ{t("auto.text_d4f9af")}</Badge>;
                           } else if (daysUntil <= 2) {
-                            return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">⏰ {daysUntil} ڕ{t("auto.text_60c814")}</Badge>;
+                            return <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60">⏰ {daysUntil} ڕ{t("auto.text_60c814")}</Badge>;
                           }
                         }
                         
@@ -1038,12 +1038,12 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           if (daysSince > 30) {
                             return <Badge variant="destructive" className="animate-pulse">🔴 {daysSince} ڕ{t("auto.text_0145a3")}</Badge>;
                           } else if (daysSince > 15) {
-                            return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">⚠️ {daysSince} ڕ{t("auto.text_0145a3")}</Badge>;
+                            return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">⚠️ {daysSince} ڕ{t("auto.text_0145a3")}</Badge>;
                           }
-                          return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">✅ {daysSince} ڕ{t("auto.text_0145a3")}</Badge>;
+                          return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {daysSince} ڕ{t("auto.text_0145a3")}</Badge>;
                         }
                         
-                        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">{t("auto.text_ed2a98")} </Badge>;
+                        return <Badge variant="outline" className="bg-gray-50 dark:bg-gray-950/40 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800/60">{t("auto.text_ed2a98")} </Badge>;
                       })()}
                     </TableCell>
                     <TableCell className="text-right">
@@ -1185,7 +1185,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             <div className="flex items-center gap-1">
                               <span>{chargeableWeight.toFixed(2)} kg</span>
                               {isVolumetric && (
-                                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 text-purple-600 border-purple-200">
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 dark:bg-purple-950/40 text-purple-600 border-purple-200 dark:border-purple-800/60">
                                   {t('batches.volumetric')}
                                 </Badge>
                               )}
@@ -1247,15 +1247,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-4 gap-4">
-                  <Card className="border-red-200 bg-gradient-to-br from-red-50 to-red-100">
+                  <Card className="border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 to-red-100">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm text-red-700 flex items-center gap-1">
+                      <CardTitle className="text-sm text-red-700 dark:text-red-300 flex items-center gap-1">
                         <DollarSign className="h-4 w-4" />
                         {t('batches.totalCost')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-2xl font-bold text-red-700">${financialSummary.totalCost.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-red-700 dark:text-red-300">${financialSummary.totalCost.toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {financialSummary.shippingType === 'sea' 
                           ? `${financialSummary.chargedCbm} CBM × $${financialSummary.costPerCbm}`
@@ -1264,15 +1264,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </p>
                     </CardContent>
                   </Card>
-                  <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100">
+                  <Card className="border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 to-green-100">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm text-green-700 flex items-center gap-1">
+                      <CardTitle className="text-sm text-green-700 dark:text-green-300 flex items-center gap-1">
                         <TrendingUp className="h-4 w-4" />
                         {t('batches.totalRevenue')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-2xl font-bold text-green-700">${financialSummary.totalRevenue.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-green-700 dark:text-green-300">${financialSummary.totalRevenue.toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground mt-1">{t('batches.fromPackages', { count: financialSummary.totalPackages })}</p>
                     </CardContent>
                   </Card>
@@ -1284,7 +1284,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className={`text-2xl font-bold ${financialSummary.profit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      <p className={`text-2xl font-bold ${financialSummary.profit >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
                         ${Math.abs(financialSummary.profit).toFixed(2)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -1292,15 +1292,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </p>
                     </CardContent>
                   </Card>
-                  <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
+                  <Card className="border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 to-blue-100">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm text-blue-700 flex items-center gap-1">
+                      <CardTitle className="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-1">
                         <Package className="h-4 w-4" />
                         {financialSummary.shippingType === 'sea' ? t('batches.cbm') : t('batches.weight')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-2xl font-bold text-blue-700">
+                      <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
                         {financialSummary.shippingType === 'sea' 
                           ? `${financialSummary.chargedCbm}`
                           : `${financialSummary.chargedWeight} KG`
@@ -1432,7 +1432,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   
                   {/* Tab 2: Volume & Cost */}
                   <TabsContent value="volume" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
-                    <Card className="border-blue-200 bg-blue-50/50">
+                    <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm flex items-center gap-2">
                           <Package className="h-4 w-4" />
@@ -1457,7 +1457,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </CardContent>
                     </Card>
                     
-                    <Card className="border-amber-200 bg-amber-50/50">
+                    <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm flex items-center gap-2">
                           <Calculator className="h-4 w-4" />
@@ -1482,7 +1482,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </CardContent>
                     </Card>
                     
-                    <Card className="border-red-200 bg-red-50/50">
+                    <Card className="border-red-200 dark:border-red-800/60 bg-red-50/50">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm flex items-center gap-2">
                           <DollarSign className="h-4 w-4" />
@@ -1529,7 +1529,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     )}
                     
                     {!useTieredPricing ? (
-                      <Card className="border-green-200 bg-green-50/50">
+                      <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
                             <DollarSign className="h-4 w-4 text-green-600" />
@@ -1559,7 +1559,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </CardContent>
                       </Card>
                     ) : (
-                      <Card className="border-green-200 bg-green-50/50">
+                      <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
                             <Layers className="h-4 w-4 text-green-600" />
@@ -1682,7 +1682,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
                 {/* No findings — green light */}
                 {!auditData.summary.blocking && !auditData.summary.warning && (
-                  <div className="p-3 rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
+                  <div className="p-3 rounded-lg border border-emerald-300 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/30 flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
                     <ShieldCheck className="h-4 w-4" />
                     <span className="font-semibold">{pickLang(language, { ku: "هیچ هەشداریەک نییە — کۆمەڵە ئامادەیە", en: "No warnings — batch is ready", ar: "لا توجد تحذيرات — الدفعة جاهزة", zh: "无警告 — 批次已就绪" })}</span>
                   </div>
@@ -1690,7 +1690,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
                 {/* Blocking: customer mismatch */}
                 {auditData.findings.customerMismatch?.length > 0 && (
-                  <div className="p-3 rounded-lg border-2 border-rose-300 bg-rose-50 dark:bg-rose-950/30">
+                  <div className="p-3 rounded-lg border-2 border-rose-300 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30">
                     <div className="font-bold text-rose-900 dark:text-rose-200 mb-2 flex items-center gap-1">
                       <AlertTriangle className="h-4 w-4" />
                       {pickLang(language, { ku: "هەڵەی کڕیار", en: "Customer mismatch", ar: "عدم تطابق العميل", zh: "客户不匹配" })} ({auditData.findings.customerMismatch.length}) — {pickLang(language, { ku: "submit بەردەست نییە", en: "submit unavailable", ar: "الإرسال غير متاح", zh: "无法提交" })}
@@ -1716,7 +1716,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
                 {/* Warning: shared-tracking siblings outside batch */}
                 {auditData.findings.sharedSiblingNotInBatch?.length > 0 && (
-                  <div className="p-3 rounded-lg border-2 border-orange-300 bg-orange-50 dark:bg-orange-950/30">
+                  <div className="p-3 rounded-lg border-2 border-orange-300 dark:border-orange-800/60 bg-orange-50 dark:bg-orange-950/30">
                     <div className="font-bold text-orange-900 dark:text-orange-200 mb-2 flex items-center gap-1">
                       🔗 {pickLang(language, { ku: "ئۆردەری هاوبەش لە دەرەوەی کۆمەڵە", en: "Shared orders outside the batch", ar: "طلبات مشتركة خارج الدفعة", zh: "批次外的共享订单" })} ({auditData.findings.sharedSiblingNotInBatch.length})
                     </div>
@@ -1750,7 +1750,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
                 {/* Warning: incomplete multi-carton orders */}
                 {auditData.findings.multiCartonIncomplete?.length > 0 && (
-                  <div className="p-3 rounded-lg border-2 border-blue-300 bg-blue-50 dark:bg-blue-950/30">
+                  <div className="p-3 rounded-lg border-2 border-blue-300 dark:border-blue-800/60 bg-blue-50 dark:bg-blue-950/30">
                     <div className="font-bold text-blue-900 dark:text-blue-200 mb-2 flex items-center gap-1">
                       📦 {pickLang(language, { ku: "ئۆردەری چەند-کارتۆن کە کارتۆنی چاوەڕیی ماوە", en: "Multi-carton orders with cartons still pending", ar: "طلبات متعددة الكراتين لا تزال بعض كراتينها معلّقة", zh: "仍有纸箱待处理的多箱订单" })} ({auditData.findings.multiCartonIncomplete.length})
                     </div>

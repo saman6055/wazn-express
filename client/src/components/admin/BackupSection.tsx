@@ -73,21 +73,21 @@ function getBackupStatusBadge(status: string, t: (key: string) => string) {
   switch (status) {
     case "completed":
       return (
-        <Badge className="bg-green-100 text-green-800 border-green-200">
+        <Badge className="bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800/60">
           <CheckCircle2 className="h-3 w-3 me-1" />
           {t("dataManagement.completed")}
         </Badge>
       );
     case "in_progress":
       return (
-        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+        <Badge className="bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800/60">
           <RefreshCw className="h-3 w-3 me-1 animate-spin" />
           {t("dataManagement.inProgress")}
         </Badge>
       );
     case "failed":
       return (
-        <Badge className="bg-red-100 text-red-800 border-red-200">
+        <Badge className="bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800/60">
           <AlertCircle className="h-3 w-3 me-1" />
           {t("dataManagement.failed")}
         </Badge>
@@ -101,21 +101,21 @@ function getBackupTypeBadge(type: string, t: (key: string) => string) {
   switch (type) {
     case "database_only":
       return (
-        <Badge variant="outline" className="text-blue-600 border-blue-200">
+        <Badge variant="outline" className="text-blue-600 border-blue-200 dark:border-blue-800/60">
           <Database className="h-3 w-3 me-1" />
           {t("dataManagement.databaseOnly")}
         </Badge>
       );
     case "files_only":
       return (
-        <Badge variant="outline" className="text-purple-600 border-purple-200">
+        <Badge variant="outline" className="text-purple-600 border-purple-200 dark:border-purple-800/60">
           <FolderArchive className="h-3 w-3 me-1" />
           {t("dataManagement.filesOnly")}
         </Badge>
       );
     case "full":
       return (
-        <Badge variant="outline" className="text-green-600 border-green-200">
+        <Badge variant="outline" className="text-green-600 border-green-200 dark:border-green-800/60">
           <Cloud className="h-3 w-3 me-1" />
           {t("dataManagement.fullBackup")}
         </Badge>
@@ -152,10 +152,10 @@ export function BackupSection({
 
   return (
     <>
-      <Card className="border-green-200">
+      <Card className="border-green-200 dark:border-green-800/60">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-50 rounded-lg">
+            <div className="p-2 bg-green-50 dark:bg-green-950/40 rounded-lg">
               <Save className="h-5 w-5 text-green-600" />
             </div>
             <div>
@@ -168,7 +168,7 @@ export function BackupSection({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card
               className={`cursor-pointer transition-all ${
-                backupType === "database_only" ? "border-blue-500 bg-blue-50" : "hover:border-blue-300"
+                backupType === "database_only" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40" : "hover:border-blue-300"
               }`}
               onClick={() => setBackupType("database_only")}
             >
@@ -180,7 +180,7 @@ export function BackupSection({
             </Card>
             <Card
               className={`cursor-pointer transition-all ${
-                backupType === "files_only" ? "border-purple-500 bg-purple-50" : "hover:border-purple-300"
+                backupType === "files_only" ? "border-purple-500 bg-purple-50 dark:bg-purple-950/40" : "hover:border-purple-300"
               }`}
               onClick={() => setBackupType("files_only")}
             >
@@ -192,7 +192,7 @@ export function BackupSection({
             </Card>
             <Card
               className={`cursor-pointer transition-all ${
-                backupType === "full" ? "border-green-500 bg-green-50" : "hover:border-green-300"
+                backupType === "full" ? "border-green-500 bg-green-50 dark:bg-green-950/40" : "hover:border-green-300"
               }`}
               onClick={() => setBackupType("full")}
             >
@@ -200,7 +200,7 @@ export function BackupSection({
                 <FolderArchive className="h-8 w-8 mx-auto mb-2 text-green-600" />
                 <div className="font-medium">{t("dataManagement.fullBackup")}</div>
                 <div className="text-xs text-muted-foreground mt-1">{t("dataManagement.fullBackupDesc")}</div>
-                <Badge variant="outline" className="mt-2 text-green-600 border-green-300">
+                <Badge variant="outline" className="mt-2 text-green-600 border-green-300 dark:border-green-800/60">
                   <Download className="h-3 w-3 me-1" />
                   ZIP
                 </Badge>
@@ -229,7 +229,7 @@ export function BackupSection({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
+              <div className="p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
                 <FolderArchive className="h-5 w-5 text-blue-600" />
               </div>
               <div>
@@ -251,17 +251,17 @@ export function BackupSection({
           ) : backupsList && backupsList.length > 0 ? (
             <div className="space-y-3">
               {backupsList.map((backup) => (
-                <Card key={backup.id} className="border-slate-200">
+                <Card key={backup.id} className="border-slate-200 dark:border-slate-800/60">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
                         <div
                           className={`p-2 rounded-lg ${
                             backup.status === "completed"
-                              ? "bg-green-100"
+                              ? "bg-green-100 dark:bg-green-950/40"
                               : backup.status === "in_progress"
-                                ? "bg-blue-100"
-                                : "bg-red-100"
+                                ? "bg-blue-100 dark:bg-blue-950/40"
+                                : "bg-red-100 dark:bg-red-950/40"
                           }`}
                         >
                           {backup.status === "completed" ? (
@@ -278,7 +278,7 @@ export function BackupSection({
                             {getBackupStatusBadge(backup.status, t)}
                             {getBackupTypeBadge(backup.backupContent, t)}
                             {backup.backupType === "scheduled" && (
-                              <Badge variant="outline" className="text-amber-600 border-amber-200">
+                              <Badge variant="outline" className="text-amber-600 border-amber-200 dark:border-amber-800/60">
                                 <Clock className="h-3 w-3 me-1" />
                                 {t("dataManagement.scheduled")}
                               </Badge>
@@ -313,7 +313,7 @@ export function BackupSection({
                             <Button
                               variant="outline"
                               size="sm"
-                              className="text-amber-600 border-amber-200 hover:bg-amber-50"
+                              className="text-amber-600 border-amber-200 dark:border-amber-800/60 hover:bg-amber-50"
                               onClick={() => {
                                 setSelectedBackupId(backup.id);
                                 setShowRestoreDialog(true);
@@ -335,7 +335,7 @@ export function BackupSection({
                       </div>
                     </div>
                     {backup.errorMessage && (
-                      <div className="mt-3 p-2 bg-red-50 rounded text-sm text-red-700">{backup.errorMessage}</div>
+                      <div className="mt-3 p-2 bg-red-50 dark:bg-red-950/40 rounded text-sm text-red-700 dark:text-red-300">{backup.errorMessage}</div>
                     )}
                   </CardContent>
                 </Card>
@@ -350,10 +350,10 @@ export function BackupSection({
         </CardContent>
       </Card>
 
-      <Card className="border-amber-200">
+      <Card className="border-amber-200 dark:border-amber-800/60">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-50 rounded-lg">
+            <div className="p-2 bg-amber-50 dark:bg-amber-950/40 rounded-lg">
               <Clock className="h-5 w-5 text-amber-600" />
             </div>
             <div>
@@ -365,7 +365,7 @@ export function BackupSection({
         <CardContent>
           <div className="space-y-3">
             {scheduleConfig?.map((config) => (
-              <div key={config.schedule} className="flex items-center justify-between p-4 bg-amber-50 rounded-lg">
+              <div key={config.schedule} className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950/40 rounded-lg">
                 <div>
                   <div className="font-medium">{t(`dataManagement.${config.schedule}`)}</div>
                   <div className="text-sm text-muted-foreground">
@@ -409,12 +409,12 @@ export function BackupSection({
             <DialogDescription>{t("dataManagement.restoreBackupDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex items-center gap-2 text-amber-800 font-medium mb-2">
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200 font-medium mb-2">
                 <AlertTriangle className="h-4 w-4" />
                 {t("dataManagement.warning")}
               </div>
-              <p className="text-sm text-amber-700">{t("dataManagement.restoreWarning")}</p>
+              <p className="text-sm text-amber-700 dark:text-amber-300">{t("dataManagement.restoreWarning")}</p>
             </div>
             <div className="space-y-2">
               <Label>

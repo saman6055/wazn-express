@@ -48,15 +48,15 @@ export function ActivityLogTab({
 
   return (
     <>
-      <Card className="border-red-200">
+      <Card className="border-red-200 dark:border-red-800/60">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-50 rounded-lg">
+              <div className="p-2 bg-red-50 dark:bg-red-950/40 rounded-lg">
                 <RotateCcw className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <CardTitle className="text-red-700">{t("dataManagement.resetHistory")}</CardTitle>
+                <CardTitle className="text-red-700 dark:text-red-300">{t("dataManagement.resetHistory")}</CardTitle>
                 <CardDescription>{t("dataManagement.resetHistoryDesc")}</CardDescription>
               </div>
             </div>
@@ -74,21 +74,21 @@ export function ActivityLogTab({
           ) : resetHistory?.resets && resetHistory.resets.length > 0 ? (
             <div className="space-y-4">
               {resetHistory.resets.map((reset) => (
-                <Card key={String(reset.id)} className="border-red-100 bg-red-50/30">
+                <Card key={String(reset.id)} className="border-red-100 dark:border-red-800/60 bg-red-50/30">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-red-100">
+                        <div className="p-2 rounded-lg bg-red-100 dark:bg-red-950/40">
                           <AlertTriangle className="h-4 w-4 text-red-600" />
                         </div>
                         <div>
-                          <div className="font-medium text-red-700">{t("dataManagement.factoryReset")}</div>
+                          <div className="font-medium text-red-700 dark:text-red-300">{t("dataManagement.factoryReset")}</div>
                           <div className="text-sm text-muted-foreground">
                             {t("dataManagement.deletedBy")}: {reset.deletedByName ?? "Unknown"}
                           </div>
                           {reset.backupCreated && (
                             <div className="mt-2 space-y-1">
-                              <span className="inline-flex items-center rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+                              <span className="inline-flex items-center rounded-md border border-green-200 dark:border-green-800/60 bg-green-50 dark:bg-green-950/40 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-300">
                                 <CheckCircle2 className="h-3 w-3 me-1" />
                                 {t("dataManagement.backupCreatedBeforeReset")}
                               </span>
@@ -108,7 +108,7 @@ export function ActivityLogTab({
                             </div>
                           )}
                           {!reset.backupCreated && (
-                            <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 mt-2">
+                            <span className="inline-flex items-center rounded-md border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300 mt-2">
                               <AlertCircle className="h-3 w-3 me-1" />
                               {t("dataManagement.noBackupCreated")}
                             </span>
@@ -142,7 +142,7 @@ export function ActivityLogTab({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-50 rounded-lg">
+              <div className="p-2 bg-purple-50 dark:bg-purple-950/40 rounded-lg">
                 <History className="h-5 w-5 text-purple-600" />
               </div>
               <div>
@@ -164,17 +164,17 @@ export function ActivityLogTab({
           ) : deletionLogs?.logs && deletionLogs.logs.length > 0 ? (
             <div className="space-y-4">
               {deletionLogs.logs.map((log) => (
-                <Card key={String(log.id)} className="border-slate-200">
+                <Card key={String(log.id)} className="border-slate-200 dark:border-slate-800/60">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
                         <div
                           className={`p-2 rounded-lg ${
                             log.deletionType === "factory_reset"
-                              ? "bg-red-100"
+                              ? "bg-red-100 dark:bg-red-950/40"
                               : log.deletionType === "old_data"
-                                ? "bg-amber-100"
-                                : "bg-slate-100"
+                                ? "bg-amber-100 dark:bg-amber-950/40"
+                                : "bg-slate-100 dark:bg-slate-950/40"
                           }`}
                         >
                           <Trash2
@@ -199,7 +199,7 @@ export function ActivityLogTab({
                             {t("dataManagement.deletedBy")}: {log.deletedByName ?? "Unknown"}
                           </div>
                           {log.backupCreated && (
-                            <span className="inline-flex items-center rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 mt-2">
+                            <span className="inline-flex items-center rounded-md border border-green-200 dark:border-green-800/60 bg-green-50 dark:bg-green-950/40 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-300 mt-2">
                               <CheckCircle2 className="h-3 w-3 me-1" />
                               {t("dataManagement.backupCreated")}
                             </span>

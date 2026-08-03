@@ -247,7 +247,7 @@ export function TutorialsTab({ p }: { p: (v: L) => string }) {
               type="button"
               onClick={() => setForm({ ...form, isPublished: !form.isPublished })}
               className={cn("mt-5 inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition",
-                form.isPublished ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-muted/40")}
+                form.isPublished ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300" : "bg-muted/40")}
             >
               {form.isPublished ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               {form.isPublished
@@ -258,7 +258,7 @@ export function TutorialsTab({ p }: { p: (v: L) => string }) {
               type="button"
               onClick={() => setForm({ ...form, isFeatured: !form.isFeatured })}
               className={cn("mt-5 inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition",
-                form.isFeatured ? "bg-amber-50 border-amber-300 text-amber-700" : "bg-muted/40")}
+                form.isFeatured ? "bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-300" : "bg-muted/40")}
             >
               <Star className={cn("h-4 w-4", form.isFeatured && "fill-amber-500 text-amber-500")} />
               {p({ ku: "سەرەکی", en: "Featured", ar: "مميّز", zh: "推荐" })}

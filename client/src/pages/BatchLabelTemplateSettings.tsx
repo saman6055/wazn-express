@@ -202,7 +202,7 @@ export default function BatchLabelTemplateSettings() {
               </div>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-1 text-[10px] border-t border-gray-200 pt-2 mt-2">
+          <div className="grid grid-cols-2 gap-1 text-[10px] border-t border-gray-200 dark:border-gray-800/60 pt-2 mt-2">
             {template.showTotalPackages && <div>📦 {pickLang(language, { ku: "پاکەت", en: "Packages", ar: "طرود", zh: "包裹" })}: <strong>{sampleBatchLabel.totalPackages}</strong></div>}
             {template.showTotalWeight && <div>⚖️ {pickLang(language, { ku: "کیلۆ", en: "Weight", ar: "الوزن", zh: "重量" })}: <strong>{sampleBatchLabel.totalWeight}</strong></div>}
             {template.showTotalVolume && <div>📐 CBM: <strong>{sampleBatchLabel.totalVolume}</strong></div>}

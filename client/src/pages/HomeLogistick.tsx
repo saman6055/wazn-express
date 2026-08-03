@@ -103,7 +103,7 @@ export default function HomeLogistick() {
   const btnWhats = "inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:-translate-y-0.5 transition-all";
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen overflow-x-hidden bg-white text-slate-900 antialiased">
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen overflow-x-hidden bg-white text-slate-900 dark:text-slate-200 antialiased">
       <style>{`
         @keyframes lkdrift{0%{transform:translateX(0) translateY(0)}50%{transform:translateX(28px) translateY(-10px)}100%{transform:translateX(0) translateY(0)}}
         @keyframes lkfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
@@ -128,7 +128,7 @@ export default function HomeLogistick() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/customer-login" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:inline-block">
+            <Link href="/customer-login" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 sm:inline-block">
               {L({ ku: "چوونەژوورەوە", en: "Sign in", ar: "تسجيل الدخول", zh: "登录" })}
             </Link>
             <a href={waLink} target="_blank" rel="noreferrer" className={btnRed + " !px-5 !py-2"}>
@@ -140,7 +140,7 @@ export default function HomeLogistick() {
       </header>
 
       {/* ================= Hero ================= */}
-      <section className="relative overflow-hidden bg-neutral-50">
+      <section className="relative overflow-hidden bg-neutral-50 dark:bg-neutral-950/40">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.06]"
           style={{ backgroundImage: "url(/theme/bg-pattern.png)", backgroundSize: "480px" }}
@@ -155,7 +155,7 @@ export default function HomeLogistick() {
         />
         <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 md:px-6 lg:grid-cols-2 lg:py-20">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-red-700">
+            <span className="inline-flex items-center gap-2 rounded-full border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-950/40 px-3 py-1 text-xs font-bold uppercase tracking-widest text-red-700 dark:text-red-300">
               <Plane className="h-3.5 w-3.5" /> {L({ ku: "چین → عێراق", en: "China → Iraq", ar: "الصين ← العراق", zh: "中国 → 伊拉克" })}
             </span>
             <h1 className="mt-5 text-4xl font-black leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
@@ -178,7 +178,7 @@ export default function HomeLogistick() {
               </a>
             </div>
             {/* Tracking bar */}
-            <div className="mt-7 flex max-w-md items-center gap-2 rounded-full border border-slate-200 bg-white p-1.5 shadow-sm">
+            <div className="mt-7 flex max-w-md items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800/60 bg-white p-1.5 shadow-sm">
               <Search className="ms-3 h-4 w-4 shrink-0 text-slate-400" />
               <input
                 value={tracking}
@@ -238,14 +238,14 @@ export default function HomeLogistick() {
       </section>
 
       {/* ================= Features strip ================= */}
-      <section className="border-y border-slate-100 bg-white">
+      <section className="border-y border-slate-100 dark:border-slate-800/60 bg-white">
         <div className="mx-auto grid max-w-7xl gap-5 px-4 py-14 md:grid-cols-2 md:px-6 lg:grid-cols-4">
           {features.map((f, i) => (
-            <div key={i} className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
+            <div key={i} className="group rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
               <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg transition-transform group-hover:scale-105">
                 <f.icon className="h-6 w-6" />
               </span>
-              <h3 className="text-base font-bold text-slate-900">{L(f.t)}</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-200">{L(f.t)}</h3>
               <p className="mt-2 text-sm text-slate-600">{L(f.d)}</p>
             </div>
           ))}
@@ -253,7 +253,7 @@ export default function HomeLogistick() {
       </section>
 
       {/* ================= About ================= */}
-      <section className="relative overflow-hidden bg-neutral-50 py-16 md:py-24">
+      <section className="relative overflow-hidden bg-neutral-50 dark:bg-neutral-950/40 py-16 md:py-24">
         <img
           src="/theme/about-plane.png"
           alt=""
@@ -267,7 +267,7 @@ export default function HomeLogistick() {
               <span className="text-6xl font-black text-red-600 md:text-7xl"><CountUp value={12} />+</span>
               <span className="max-w-[10rem] text-sm font-semibold text-slate-500">{L({ ku: "ساڵ ئەزموون لە گواستنەوەی چین بۆ عێراق", en: "years of China-to-Iraq shipping experience", ar: "سنوات خبرة في الشحن من الصين إلى العراق", zh: "年中国至伊拉克运输经验" })}</span>
             </div>
-            <h2 className="mt-6 text-3xl font-black text-slate-900 md:text-4xl">{L({ ku: "بۆچی ئێمە بە باشترین دادەنرێین", en: "Why we're considered the best", ar: "لماذا نُعتبر الأفضل", zh: "为何我们被视为最佳之选" })}</h2>
+            <h2 className="mt-6 text-3xl font-black text-slate-900 dark:text-slate-200 md:text-4xl">{L({ ku: "بۆچی ئێمە بە باشترین دادەنرێین", en: "Why we're considered the best", ar: "لماذا نُعتبر الأفضل", zh: "为何我们被视为最佳之选" })}</h2>
             <p className="mt-4 max-w-xl text-slate-600">{L({ ku: "لە بنکەکەمانەوە لە چین تا دەرگای ماڵت لە عێراق، هەموو هەنگاوێک بە شەفافیەت و کوالیتییەوە بەڕێوە دەبەین.", en: "From our hub in China to your door in Iraq, we manage every step with transparency and quality.", ar: "من مركزنا في الصين إلى بابك في العراق، ندير كل خطوة بشفافية وجودة.", zh: "从我们在中国的仓库到您在伊拉克的家门口，我们以透明和品质管理每一步。" })}</p>
             <ul className="mt-6 space-y-3">
               {[
@@ -276,7 +276,7 @@ export default function HomeLogistick() {
                 { ku: "شوێنکەوتنی زیندوو بۆ هەموو بارێک", en: "Live tracking for every shipment", ar: "تتبع مباشر لكل شحنة", zh: "每票货物的实时追踪" },
                 { ku: "پشتگیری بە چوار زمان", en: "Support in four languages", ar: "دعم بأربع لغات", zh: "四种语言的客户支持" },
               ].map((b, i) => (
-                <li key={i} className="flex items-start gap-3 text-slate-700">
+                <li key={i} className="flex items-start gap-3 text-slate-700 dark:text-slate-300">
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
                   <span className="text-sm font-medium">{L(b)}</span>
                 </li>
@@ -314,16 +314,16 @@ export default function HomeLogistick() {
       <section id="services" className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
         <div className="mb-12 text-center">
           <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-600">{L({ ku: "خزمەتگوزارییەکانمان", en: "Our services", ar: "خدماتنا", zh: "我们的服务" })}</span>
-          <h2 className="mt-3 text-3xl font-black text-slate-900 md:text-4xl">{L({ ku: "خزمەتگوزارییەکانی گواستنەوە", en: "Transport services", ar: "خدمات النقل", zh: "运输服务" })}</h2>
+          <h2 className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-200 md:text-4xl">{L({ ku: "خزمەتگوزارییەکانی گواستنەوە", en: "Transport services", ar: "خدمات النقل", zh: "运输服务" })}</h2>
           <p className="mx-auto mt-3 max-w-xl text-slate-600">{L({ ku: "خزمەتگوزاری تەواو کە هەموو ڕێگای چین بۆ عێراق دەگرێتەوە.", en: "Comprehensive services spanning the whole China-to-Iraq journey.", ar: "خدمات شاملة تغطي كامل رحلة الصين إلى العراق.", zh: "覆盖中国到伊拉克全程的综合服务。" })}</p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((s, i) => (
-            <div key={i} className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
+            <div key={i} className="group rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
               <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg transition-transform group-hover:scale-105">
                 <s.icon className="h-6 w-6" />
               </span>
-              <h3 className="text-lg font-bold text-slate-900">{L(s.t)}</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-200">{L(s.t)}</h3>
               <p className="mt-2 text-sm text-slate-600">{L(s.d)}</p>
             </div>
           ))}
@@ -353,16 +353,16 @@ export default function HomeLogistick() {
       <section id="why" className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
         <div className="mb-12 text-center">
           <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-600">{L({ ku: "بۆچی ئێمە", en: "Why us", ar: "لماذا نحن", zh: "为何选我们" })}</span>
-          <h2 className="mt-3 text-3xl font-black text-slate-900 md:text-4xl">{L({ ku: "بۆچی وەزن هەڵبژێریت؟", en: "Why choose us?", ar: "لماذا تختارنا؟", zh: "为什么选择我们？" })}</h2>
+          <h2 className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-200 md:text-4xl">{L({ ku: "بۆچی وەزن هەڵبژێریت؟", en: "Why choose us?", ar: "لماذا تختارنا؟", zh: "为什么选择我们？" })}</h2>
         </div>
         <div className="grid gap-5 md:grid-cols-2">
           {why.map((w, i) => (
-            <div key={i} className="flex gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+            <div key={i} className="flex gap-4 rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600">
                 <w.icon className="h-6 w-6" />
               </span>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">{L(w.t)}</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-200">{L(w.t)}</h3>
                 <p className="mt-1 text-sm text-slate-600">{L(w.d)}</p>
               </div>
             </div>
@@ -371,21 +371,21 @@ export default function HomeLogistick() {
       </section>
 
       {/* ================= How it works ================= */}
-      <section id="how" className="bg-neutral-50 py-16 md:py-24">
+      <section id="how" className="bg-neutral-50 dark:bg-neutral-950/40 py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="mb-12 text-center">
             <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-600">{L({ ku: "پرۆسەکە", en: "The process", ar: "العملية", zh: "流程" })}</span>
-            <h2 className="mt-3 text-3xl font-black text-slate-900 md:text-4xl">{L({ ku: "چۆن کاردەکات", en: "How it works", ar: "كيف يعمل", zh: "运作方式" })}</h2>
+            <h2 className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-200 md:text-4xl">{L({ ku: "چۆن کاردەکات", en: "How it works", ar: "كيف يعمل", zh: "运作方式" })}</h2>
             <p className="mx-auto mt-3 max-w-xl text-slate-600">{L({ ku: "چوار هەنگاوی سادە لە چینەوە تا دەرگای ماڵت.", en: "Four simple steps from China to your door.", ar: "أربع خطوات بسيطة من الصين إلى بابك.", zh: "从中国到您家门口，仅需四步。" })}</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((s, i) => (
-              <div key={i} className="relative rounded-3xl border border-slate-200 bg-white p-6 pt-8 shadow-sm">
+              <div key={i} className="relative rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white p-6 pt-8 shadow-sm">
                 <span className="absolute -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-sm font-black text-white shadow-lg" style={isRTL ? { right: "1.5rem" } : { left: "1.5rem" }}>{i + 1}</span>
                 <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl text-white" style={{ backgroundColor: NAVY }}>
                   <s.icon className="h-6 w-6" />
                 </span>
-                <h3 className="font-bold text-slate-900">{L(s.t)}</h3>
+                <h3 className="font-bold text-slate-900 dark:text-slate-200">{L(s.t)}</h3>
                 <p className="mt-1 text-sm text-slate-600">{L(s.d)}</p>
               </div>
             ))}
@@ -406,7 +406,7 @@ export default function HomeLogistick() {
           <h2 className="text-3xl font-black md:text-4xl">{L({ ku: "ئامادەیت بارەکەت بگوازیتەوە؟", en: "Ready to ship your cargo?", ar: "جاهز لشحن بضاعتك؟", zh: "准备好发货了吗？" })}</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/85">{L({ ku: "پەیوەندیمان پێوە بکە بۆ نرخێکی بێبەرامبەر و ڕاوێژکاری.", en: "Talk to us for a free quote and a consultation.", ar: "تواصل معنا للحصول على عرض سعر مجاني واستشارة.", zh: "联系我们获取免费报价与咨询。" })}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a href={waLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-900 shadow-lg hover:-translate-y-0.5 transition-all">
+            <a href={waLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-900 dark:text-slate-200 shadow-lg hover:-translate-y-0.5 transition-all">
               <MessageCircle className="h-4 w-4 text-emerald-500" /> {L({ ku: "واتساپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" })}
             </a>
             <Link href="/customer-login" className="inline-flex items-center gap-2 rounded-full bg-white/15 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/30 backdrop-blur hover:bg-white/25 transition-all">

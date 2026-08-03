@@ -120,7 +120,7 @@ export default function ScanDashboard() {
                           {count}
                         </Badge>
                       </div>
-                      <h3 className="font-bold text-lg text-slate-800 mb-1">
+                      <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 mb-1">
                         {pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}
                       </h3>
                       <p className="text-sm text-slate-500">
@@ -141,7 +141,7 @@ export default function ScanDashboard() {
           <div className="grid lg:grid-cols-2 gap-6 mb-8">
             {/* Pie Chart - Module Distribution */}
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
-              <CardHeader className="border-b border-slate-100">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg">
                     <BarChart3 className="h-5 w-5 text-white" />
@@ -193,7 +193,7 @@ export default function ScanDashboard() {
             
             {/* Area Chart - Daily Trend */}
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
-              <CardHeader className="border-b border-slate-100">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg">
                     <TrendingUp className="h-5 w-5 text-white" />
@@ -244,7 +244,7 @@ export default function ScanDashboard() {
           <div className="grid lg:grid-cols-3 gap-6 mb-8">
             {/* Today's Performance */}
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur lg:col-span-2">
-              <CardHeader className="border-b border-slate-100">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg">
                     <TrendingUp className="h-5 w-5 text-white" />
@@ -267,11 +267,11 @@ export default function ScanDashboard() {
                     const percentage = totalScans > 0 ? Math.round((count / totalScans) * 100) : 0;
                     
                     return (
-                      <div key={module.id} className="text-center p-4 rounded-xl bg-slate-50">
+                      <div key={module.id} className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-950/40">
                         <div className={`inline-flex p-2 bg-gradient-to-br ${module.color} rounded-lg mb-2`}>
                           <Icon className="h-4 w-4 text-white" />
                         </div>
-                        <p className="text-2xl font-bold text-slate-800">{count}</p>
+                        <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{count}</p>
                         <p className="text-xs text-slate-500 mb-2">
                           {pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}
                         </p>
@@ -332,7 +332,7 @@ export default function ScanDashboard() {
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Recent Scans */}
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
-              <CardHeader className="border-b border-slate-100">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg">
@@ -359,7 +359,7 @@ export default function ScanDashboard() {
                 {isLoading ? (
                   <div className="space-y-3">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />
+                      <div key={i} className="h-14 bg-slate-100 dark:bg-slate-950/40 rounded-lg animate-pulse" />
                     ))}
                   </div>
                 ) : latestScans.length === 0 ? (
@@ -372,13 +372,13 @@ export default function ScanDashboard() {
                     {latestScans.map((scan: any, index: number) => (
                       <div 
                         key={scan.id || index}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                        className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-950/40 hover:bg-slate-100 transition-colors"
                       >
-                        <div className="p-2 bg-blue-100 rounded-lg">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
                           <Package className="h-4 w-4 text-blue-600" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-mono text-sm font-medium text-slate-800 truncate">
+                          <p className="font-mono text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
                             {scan.trackingNumber || scan.packageCode || "N/A"}
                           </p>
                           <p className="text-xs text-slate-500">
@@ -397,7 +397,7 @@ export default function ScanDashboard() {
             
             {/* Alerts & Missing Info */}
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
-              <CardHeader className="border-b border-slate-100">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg">
                     <AlertTriangle className="h-5 w-5 text-white" />
@@ -415,12 +415,12 @@ export default function ScanDashboard() {
               <CardContent className="pt-4">
                 <div className="space-y-4">
                   {/* Missing Weight */}
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
-                    <div className="p-3 bg-amber-100 rounded-xl">
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60">
+                    <div className="p-3 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
                       <AlertTriangle className="h-5 w-5 text-amber-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-amber-800">
+                      <p className="font-medium text-amber-800 dark:text-amber-200">
                         {pickLang(language, { ku: "بێ کێش", en: "Missing Weight", ar: "بدون وزن", zh: "缺少重量" })}
                       </p>
                       <p className="text-sm text-amber-600">
@@ -428,19 +428,19 @@ export default function ScanDashboard() {
                       </p>
                     </div>
                     <Link href="/packages?filter=missing_weight">
-                      <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
+                      <Button size="sm" variant="outline" className="border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100">
                         {pickLang(language, { ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
                       </Button>
                     </Link>
                   </div>
                   
                   {/* Missing Customer */}
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-red-50 border border-red-200">
-                    <div className="p-3 bg-red-100 rounded-xl">
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60">
+                    <div className="p-3 bg-red-100 dark:bg-red-950/40 rounded-xl">
                       <Users className="h-5 w-5 text-red-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-red-800">
+                      <p className="font-medium text-red-800 dark:text-red-200">
                         {pickLang(language, { ku: "بێ کڕیار", en: "Missing Customer", ar: "بدون عميل", zh: "缺少客户" })}
                       </p>
                       <p className="text-sm text-red-600">
@@ -448,19 +448,19 @@ export default function ScanDashboard() {
                       </p>
                     </div>
                     <Link href="/packages?filter=missing_customer">
-                      <Button size="sm" variant="outline" className="border-red-300 text-red-700 hover:bg-red-100">
+                      <Button size="sm" variant="outline" className="border-red-300 dark:border-red-800/60 text-red-700 dark:text-red-300 hover:bg-red-100">
                         {pickLang(language, { ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
                       </Button>
                     </Link>
                   </div>
                   
                   {/* Missing Batch */}
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-purple-50 border border-purple-200">
-                    <div className="p-3 bg-purple-100 rounded-xl">
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60">
+                    <div className="p-3 bg-purple-100 dark:bg-purple-950/40 rounded-xl">
                       <Boxes className="h-5 w-5 text-purple-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-purple-800">
+                      <p className="font-medium text-purple-800 dark:text-purple-200">
                         {pickLang(language, { ku: "بێ باچ", en: "Missing Batch", ar: "بدون دفعة", zh: "缺少批次" })}
                       </p>
                       <p className="text-sm text-purple-600">
@@ -468,7 +468,7 @@ export default function ScanDashboard() {
                       </p>
                     </div>
                     <Link href="/packages?filter=missing_batch">
-                      <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-100">
+                      <Button size="sm" variant="outline" className="border-purple-300 dark:border-purple-800/60 text-purple-700 dark:text-purple-300 hover:bg-purple-100">
                         {pickLang(language, { ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
                       </Button>
                     </Link>

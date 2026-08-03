@@ -77,7 +77,7 @@ export function WaznNewsCarousel({ language, isDark }: { language: string; isDar
             <div className="p-1.5 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-sm">
               <Newspaper className="w-4 h-4" />
             </div>
-            <h2 className={cn("text-lg font-black group-hover:opacity-80 transition", isDark ? "text-white" : "text-slate-800")}>
+            <h2 className={cn("text-lg font-black group-hover:opacity-80 transition", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
               {pick({ ku: "وەزن نیوز", en: "Wazn News", ar: "وزن نيوز", zh: "Wazn 新闻" })}
             </h2>
           </div>

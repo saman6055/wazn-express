@@ -117,7 +117,7 @@ export default function ModernPortalFinancial() {
               "rounded-2xl p-6 shadow-sm relative overflow-hidden",
               isDark
                 ? "bg-gradient-to-br from-emerald-900/60 to-teal-900/40 border border-emerald-800/40"
-                : "bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100"
+                : "bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 dark:border-emerald-800/60"
             )}
           >
             <div className="absolute top-0 end-0 w-32 h-32 rounded-full bg-emerald-400/10 -translate-y-1/2 translate-x-1/2" />
@@ -132,7 +132,7 @@ export default function ModernPortalFinancial() {
                 <div>
                   <p className={cn(
                     "text-sm",
-                    isDark ? "text-emerald-300/70" : "text-emerald-700/70"
+                    isDark ? "text-emerald-300/70" : "text-emerald-700 dark:text-emerald-300/70"
                   )}>
                     {t("portal.totalBalance")}
                   </p>
@@ -145,7 +145,7 @@ export default function ModernPortalFinancial() {
                 <>
                   <h1 className={cn(
                     "text-4xl font-bold font-mono tracking-tight",
-                    isDark ? "text-white" : "text-slate-900"
+                    isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
                   )}>
                     ${(summary?.balanceUsd ?? 0).toFixed(2)}
                     <span className={cn(
@@ -158,7 +158,7 @@ export default function ModernPortalFinancial() {
                   {(summary?.balanceIqd ?? 0) !== 0 && (
                     <p className={cn(
                       "text-sm font-mono mt-1",
-                      isDark ? "text-emerald-300/50" : "text-emerald-700/50"
+                      isDark ? "text-emerald-300/50" : "text-emerald-700 dark:text-emerald-300/50"
                     )}>
                       {new Intl.NumberFormat("en-US").format(Number(summary?.balanceIqd ?? 0))} IQD
                     </p>
@@ -176,24 +176,24 @@ export default function ModernPortalFinancial() {
                 label: t("portal.totalPaid"),
                 value: formatCurrency(totalPaid),
                 color: "text-emerald-600 dark:text-emerald-400",
-                bg: isDark ? "bg-emerald-500/10" : "bg-emerald-50",
-                iconBg: isDark ? "bg-emerald-500/20" : "bg-emerald-100",
+                bg: isDark ? "bg-emerald-500/10" : "bg-emerald-50 dark:bg-emerald-950/40",
+                iconBg: isDark ? "bg-emerald-500/20" : "bg-emerald-100 dark:bg-emerald-950/40",
               },
               {
                 icon: FileText,
                 label: t("portal.unpaidInvoices"),
                 value: String(unpaidInvoices.length),
                 color: "text-amber-600 dark:text-amber-400",
-                bg: isDark ? "bg-amber-500/10" : "bg-amber-50",
-                iconBg: isDark ? "bg-amber-500/20" : "bg-amber-100",
+                bg: isDark ? "bg-amber-500/10" : "bg-amber-50 dark:bg-amber-950/40",
+                iconBg: isDark ? "bg-amber-500/20" : "bg-amber-100 dark:bg-amber-950/40",
               },
               {
                 icon: CreditCard,
                 label: t("portal.balance"),
                 value: formatCurrency(summary?.creditLimitUsd ?? 0),
                 color: "text-sky-600 dark:text-sky-400",
-                bg: isDark ? "bg-sky-500/10" : "bg-sky-50",
-                iconBg: isDark ? "bg-sky-500/20" : "bg-sky-100",
+                bg: isDark ? "bg-sky-500/10" : "bg-sky-50 dark:bg-sky-950/40",
+                iconBg: isDark ? "bg-sky-500/20" : "bg-sky-100 dark:bg-sky-950/40",
               },
             ].map((stat, i) => (
               <motion.div
@@ -203,14 +203,14 @@ export default function ModernPortalFinancial() {
                 transition={{ delay: 0.1 + i * 0.08 }}
                 className={cn(
                   "rounded-2xl p-3 shadow-sm border",
-                  isDark ? "border-slate-700/50" : "border-slate-100",
+                  isDark ? "border-slate-700/50" : "border-slate-100 dark:border-slate-800/60",
                   stat.bg
                 )}
               >
                 <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-2", stat.iconBg)}>
                   <stat.icon className={cn("w-4 h-4", stat.color)} />
                 </div>
-                <p className={cn("text-lg font-bold font-mono", isDark ? "text-white" : "text-slate-900")}>
+                <p className={cn("text-lg font-bold font-mono", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
                   {stat.value}
                 </p>
                 <p className={cn("text-[11px] leading-tight", isDark ? "text-slate-400" : "text-slate-500")}>
@@ -227,7 +227,7 @@ export default function ModernPortalFinancial() {
             transition={{ delay: 0.3 }}
             className={cn(
               "flex rounded-xl p-1 gap-1",
-              isDark ? "bg-slate-800/60" : "bg-slate-100"
+              isDark ? "bg-slate-800/60" : "bg-slate-100 dark:bg-slate-950/40"
             )}
           >
             {tabs.map((tab) => (
@@ -241,7 +241,7 @@ export default function ModernPortalFinancial() {
                         "shadow-sm",
                         isDark
                           ? "bg-emerald-600 text-white"
-                          : "bg-white text-emerald-700 shadow-sm"
+                          : "bg-white text-emerald-700 dark:text-emerald-300 shadow-sm"
                       )
                     : isDark
                     ? "text-slate-400 hover:text-slate-200"
@@ -257,7 +257,7 @@ export default function ModernPortalFinancial() {
           <div>
             <h2 className={cn(
               "text-lg font-bold mb-3",
-              isDark ? "text-white" : "text-slate-900"
+              isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
             )}>
               {t("portal.paymentHistory")}
             </h2>
@@ -286,7 +286,7 @@ export default function ModernPortalFinancial() {
                           "rounded-2xl p-4 shadow-sm border transition-colors",
                           isDark
                             ? "bg-slate-800/50 border-slate-700/40 hover:bg-slate-800/70"
-                            : "bg-white border-slate-100 hover:border-slate-200"
+                            : "bg-white border-slate-100 dark:border-slate-800/60 hover:border-slate-200"
                         )}
                       >
                         <div className="flex items-center gap-3">
@@ -297,10 +297,10 @@ export default function ModernPortalFinancial() {
                               credit
                                 ? isDark
                                   ? "bg-emerald-500/15"
-                                  : "bg-emerald-50"
+                                  : "bg-emerald-50 dark:bg-emerald-950/40"
                                 : isDark
                                 ? "bg-red-500/15"
-                                : "bg-red-50"
+                                : "bg-red-50 dark:bg-red-950/40"
                             )}
                           >
                             {credit ? (
@@ -325,7 +325,7 @@ export default function ModernPortalFinancial() {
                             <p
                               className={cn(
                                 "text-sm font-medium truncate",
-                                isDark ? "text-white" : "text-slate-900"
+                                isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
                               )}
                             >
                               {tx.description ||
@@ -382,7 +382,7 @@ export default function ModernPortalFinancial() {
                   "rounded-2xl p-10 text-center shadow-sm border",
                   isDark
                     ? "bg-slate-800/50 border-slate-700/40"
-                    : "bg-white border-slate-100"
+                    : "bg-white border-slate-100 dark:border-slate-800/60"
                 )}
               >
                 <Receipt
@@ -394,7 +394,7 @@ export default function ModernPortalFinancial() {
                 <h3
                   className={cn(
                     "font-bold mb-1",
-                    isDark ? "text-white" : "text-slate-900"
+                    isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
                   )}
                 >
                   {t("portal.noTransactions")}
@@ -427,13 +427,13 @@ export default function ModernPortalFinancial() {
               transition={{ delay: 0.4 }}
             >
               <div className="flex items-center gap-2 mb-3">
-                <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-900")}>
+                <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
                   {t("portal.unpaidInvoices")}
                 </h2>
                 <span
                   className={cn(
                     "px-2 py-0.5 rounded-full text-xs font-bold",
-                    isDark ? "bg-red-500/20 text-red-400" : "bg-red-50 text-red-600"
+                    isDark ? "bg-red-500/20 text-red-400" : "bg-red-50 dark:bg-red-950/40 text-red-600"
                   )}
                 >
                   {unpaidInvoices.length}
@@ -451,14 +451,14 @@ export default function ModernPortalFinancial() {
                       "rounded-2xl p-4 shadow-sm border",
                       isDark
                         ? "bg-slate-800/50 border-slate-700/40"
-                        : "bg-white border-slate-100"
+                        : "bg-white border-slate-100 dark:border-slate-800/60"
                     )}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={cn(
                           "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-                          isDark ? "bg-amber-500/15" : "bg-amber-50"
+                          isDark ? "bg-amber-500/15" : "bg-amber-50 dark:bg-amber-950/40"
                         )}
                       >
                         <AlertCircle
@@ -473,7 +473,7 @@ export default function ModernPortalFinancial() {
                         <p
                           className={cn(
                             "text-sm font-medium",
-                            isDark ? "text-white" : "text-slate-900"
+                            isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
                           )}
                         >
                           {inv.invoiceNumber}

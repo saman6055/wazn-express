@@ -187,7 +187,7 @@ const [activeTab, setActiveTab] = useState("pnl");
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-900 border-green-200">
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-900 border-green-200 dark:border-green-800/60">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("finance.income")}</CardTitle>
               <TrendingUp className="h-5 w-5 text-green-600" />
@@ -201,7 +201,7 @@ const [activeTab, setActiveTab] = useState("pnl");
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-red-50 to-rose-100 dark:from-red-950 dark:to-rose-900 border-red-200">
+          <Card className="bg-gradient-to-br from-red-50 to-rose-100 dark:from-red-950 dark:to-rose-900 border-red-200 dark:border-red-800/60">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("auto.text_481d09")} </CardTitle>
               <TrendingDown className="h-5 w-5 text-red-600" />
@@ -217,8 +217,8 @@ const [activeTab, setActiveTab] = useState("pnl");
           </Card>
           <Card className={`bg-gradient-to-br ${
             (profitLoss?.netProfit || 0) >= 0 
-              ? 'from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 border-blue-200'
-              : 'from-orange-50 to-amber-100 dark:from-orange-950 dark:to-amber-900 border-orange-200'
+              ? 'from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 border-blue-200 dark:border-blue-800/60'
+              : 'from-orange-50 to-amber-100 dark:from-orange-950 dark:to-amber-900 border-orange-200 dark:border-orange-800/60'
           }`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("auto.text_723f22")} </CardTitle>

@@ -13,15 +13,15 @@ import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 const statusColors: Record<string, string> = {
-  registered: "bg-blue-100 text-blue-800 border-blue-200",
-  in_batch: "bg-purple-100 text-purple-800 border-purple-200",
-  in_transit: "bg-amber-100 text-amber-800 border-amber-200",
-  customs_processing: "bg-orange-100 text-orange-800 border-orange-200",
-  ready_for_delivery: "bg-cyan-100 text-cyan-800 border-cyan-200",
-  out_for_delivery: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  delivered: "bg-green-100 text-green-800 border-green-200",
-  cancelled: "bg-red-100 text-red-800 border-red-200",
-  returned: "bg-gray-100 text-gray-800 border-gray-200",
+  registered: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800/60",
+  in_batch: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800/60",
+  in_transit: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800/60",
+  customs_processing: "bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-800/60",
+  ready_for_delivery: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200 border-cyan-200 dark:border-cyan-800/60",
+  out_for_delivery: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200 border-indigo-200 dark:border-indigo-800/60",
+  delivered: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800/60",
+  cancelled: "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800/60",
+  returned: "bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-800/60",
 };
 
 const statusSteps = [

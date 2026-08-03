@@ -13,29 +13,29 @@ const accentClasses = {
     ring: "ring-emerald-500",
     bg: "bg-emerald-500",
     text: "text-emerald-600",
-    border: "border-emerald-200",
-    lightBg: "bg-emerald-50",
+    border: "border-emerald-200 dark:border-emerald-800/60",
+    lightBg: "bg-emerald-50 dark:bg-emerald-950/40",
   },
   amber: {
     ring: "ring-amber-500",
     bg: "bg-amber-500",
     text: "text-amber-600",
-    border: "border-amber-200",
-    lightBg: "bg-amber-50",
+    border: "border-amber-200 dark:border-amber-800/60",
+    lightBg: "bg-amber-50 dark:bg-amber-950/40",
   },
   blue: {
     ring: "ring-blue-500",
     bg: "bg-blue-500",
     text: "text-blue-600",
-    border: "border-blue-200",
-    lightBg: "bg-blue-50",
+    border: "border-blue-200 dark:border-blue-800/60",
+    lightBg: "bg-blue-50 dark:bg-blue-950/40",
   },
   indigo: {
     ring: "ring-indigo-500",
     bg: "bg-indigo-500",
     text: "text-indigo-600",
-    border: "border-indigo-200",
-    lightBg: "bg-indigo-50",
+    border: "border-indigo-200 dark:border-indigo-800/60",
+    lightBg: "bg-indigo-50 dark:bg-indigo-950/40",
   },
 };
 
@@ -91,18 +91,18 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
       {images.length === 1 ? (
         /* Single image - large display */
         <div
-          className="relative group cursor-pointer rounded-xl overflow-hidden border-2 border-gray-100 hover:border-gray-200 transition-all duration-300 shadow-sm hover:shadow-md"
+          className="relative group cursor-pointer rounded-xl overflow-hidden border-2 border-gray-100 dark:border-gray-800/60 hover:border-gray-200 transition-all duration-300 shadow-sm hover:shadow-md"
           onClick={() => openLightbox(0)}
         >
           <img
             src={images[0]}
             alt={t('common.productImage')}
-            className="w-full max-h-80 object-contain bg-gray-50"
+            className="w-full max-h-80 object-contain bg-gray-50 dark:bg-gray-950/40"
             loading="lazy"
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
             <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg">
-              <ZoomIn className="h-6 w-6 text-gray-700" />
+              <ZoomIn className="h-6 w-6 text-gray-700 dark:text-gray-300" />
             </div>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
           {images.map((img, idx) => (
             <div
               key={idx}
-              className="relative group cursor-pointer rounded-xl overflow-hidden border-2 border-gray-100 hover:border-gray-200 transition-all duration-300 shadow-sm hover:shadow-md"
+              className="relative group cursor-pointer rounded-xl overflow-hidden border-2 border-gray-100 dark:border-gray-800/60 hover:border-gray-200 transition-all duration-300 shadow-sm hover:shadow-md"
               onClick={() => openLightbox(idx)}
             >
               <img
@@ -123,7 +123,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg">
-                  <ZoomIn className="h-5 w-5 text-gray-700" />
+                  <ZoomIn className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                 </div>
               </div>
             </div>
@@ -134,7 +134,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
         <div className="grid grid-cols-3 gap-3">
           {/* Featured image */}
           <div
-            className="col-span-2 row-span-2 relative group cursor-pointer rounded-xl overflow-hidden border-2 border-gray-100 hover:border-gray-200 transition-all duration-300 shadow-sm hover:shadow-md"
+            className="col-span-2 row-span-2 relative group cursor-pointer rounded-xl overflow-hidden border-2 border-gray-100 dark:border-gray-800/60 hover:border-gray-200 transition-all duration-300 shadow-sm hover:shadow-md"
             onClick={() => openLightbox(0)}
           >
             <img
@@ -145,7 +145,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
               <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg">
-                <Maximize2 className="h-6 w-6 text-gray-700" />
+                <Maximize2 className="h-6 w-6 text-gray-700 dark:text-gray-300" />
               </div>
             </div>
             <div className={cn("absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-bold text-white", accent.bg)}>
@@ -157,7 +157,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
           {images.slice(1).map((img, idx) => (
             <div
               key={idx + 1}
-              className="relative group cursor-pointer rounded-xl overflow-hidden border-2 border-gray-100 hover:border-gray-200 transition-all duration-300 shadow-sm hover:shadow-md"
+              className="relative group cursor-pointer rounded-xl overflow-hidden border-2 border-gray-100 dark:border-gray-800/60 hover:border-gray-200 transition-all duration-300 shadow-sm hover:shadow-md"
               onClick={() => openLightbox(idx + 1)}
             >
               <img
@@ -168,7 +168,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
-                  <ZoomIn className="h-4 w-4 text-gray-700" />
+                  <ZoomIn className="h-4 w-4 text-gray-700 dark:text-gray-300" />
                 </div>
               </div>
             </div>

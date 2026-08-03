@@ -117,7 +117,7 @@ export function PackageThumb({
     <div
       className={cn(
         "flex shrink-0 items-center justify-center overflow-hidden rounded-xl",
-        isDark ? "bg-slate-700" : "bg-slate-100",
+        isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40",
       )}
       style={{ width: size, height: size }}
     >

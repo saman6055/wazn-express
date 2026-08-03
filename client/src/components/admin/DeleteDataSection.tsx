@@ -112,15 +112,15 @@ export function DeleteDataSection({
 
         {/* Section 2: Advanced — Old Data + Factory Reset side by side */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="border-amber-200">
+        <Card className="border-amber-200 dark:border-amber-800/60">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-50 rounded-lg">
+              <div className="p-2 bg-amber-50 dark:bg-amber-950/40 rounded-lg">
                 <Clock className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <CardTitle className="text-lg text-amber-800">{t("dataManagement.deleteOldData")}</CardTitle>
-                <CardDescription className="text-amber-700">{t("dataManagement.deleteOldDataDesc")}</CardDescription>
+                <CardTitle className="text-lg text-amber-800 dark:text-amber-200">{t("dataManagement.deleteOldData")}</CardTitle>
+                <CardDescription className="text-amber-700 dark:text-amber-300">{t("dataManagement.deleteOldDataDesc")}</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -154,7 +154,7 @@ export function DeleteDataSection({
             </div>
             <Button
               variant="outline"
-              className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+              className="w-full border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 hover:bg-amber-50"
               onClick={() => setShowOldDataDialog(true)}
             >
               <Clock className="h-4 w-4 me-2" />
@@ -163,25 +163,25 @@ export function DeleteDataSection({
           </CardContent>
         </Card>
 
-        <Card className="border-red-200">
+        <Card className="border-red-200 dark:border-red-800/60">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-50 rounded-lg">
+              <div className="p-2 bg-red-50 dark:bg-red-950/40 rounded-lg">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <CardTitle className="text-lg text-red-800">{t("dataManagement.factoryReset")}</CardTitle>
-                <CardDescription className="text-red-700">{t("dataManagement.factoryResetDesc")}</CardDescription>
+                <CardTitle className="text-lg text-red-800 dark:text-red-200">{t("dataManagement.factoryReset")}</CardTitle>
+                <CardDescription className="text-red-700 dark:text-red-300">{t("dataManagement.factoryResetDesc")}</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="p-4 bg-red-100 rounded-lg mb-4">
-              <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
+            <div className="p-4 bg-red-100 dark:bg-red-950/40 rounded-lg mb-4">
+              <div className="flex items-center gap-2 text-red-800 dark:text-red-200 font-medium mb-2">
                 <AlertTriangle className="h-4 w-4" />
                 {t("dataManagement.dangerZone")}
               </div>
-              <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
+              <ul className="text-sm text-red-700 dark:text-red-300 space-y-1 list-disc list-inside">
                 <li>{t("dataManagement.resetWarning1")}</li>
                 <li>{t("dataManagement.resetWarning2")}</li>
                 <li>{t("dataManagement.resetWarning3")}</li>
@@ -217,12 +217,12 @@ export function DeleteDataSection({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex items-center gap-2 text-amber-800 font-medium mb-2">
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200 font-medium mb-2">
                 <AlertTriangle className="h-4 w-4" />
                 {t("dataManagement.warning")}
               </div>
-              <p className="text-sm text-amber-700">
+              <p className="text-sm text-amber-700 dark:text-amber-300">
                 {getCount(selectedCategory?.id ?? "")} {t("dataManagement.recordsWillBeDeleted")}
               </p>
             </div>
@@ -295,8 +295,8 @@ export function DeleteDataSection({
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-sm text-amber-700">{t("dataManagement.oldDataWarning")}</p>
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-lg">
+              <p className="text-sm text-amber-700 dark:text-amber-300">{t("dataManagement.oldDataWarning")}</p>
             </div>
           </div>
           <DialogFooter className="gap-2">
@@ -337,12 +337,12 @@ export function DeleteDataSection({
             <DialogDescription>{t("dataManagement.factoryResetConfirm")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
+            <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 rounded-lg">
+              <div className="flex items-center gap-2 text-red-800 dark:text-red-200 font-medium mb-2">
                 <AlertTriangle className="h-4 w-4" />
                 {t("dataManagement.dangerZone")}
               </div>
-              <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
+              <ul className="text-sm text-red-700 dark:text-red-300 space-y-1 list-disc list-inside">
                 <li>{t("dataManagement.allCustomers")}</li>
                 <li>{t("dataManagement.allPackages")}</li>
                 <li>{t("dataManagement.allBatches")}</li>

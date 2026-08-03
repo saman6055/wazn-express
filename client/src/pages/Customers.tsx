@@ -471,7 +471,7 @@ const [, setLocation] = useLocation();
                           id="useCustomCode"
                           checked={formData.useCustomCode}
                           onChange={(e) => updateFormData("useCustomCode", e.target.checked)}
-                          className="h-4 w-4 rounded border-gray-300"
+                          className="h-4 w-4 rounded border-gray-300 dark:border-gray-800/60"
                         />
                         <Label htmlFor="useCustomCode" className="cursor-pointer">
                           {t("customers.form.useCustomCode") || "Use manual customer code"}
@@ -1202,7 +1202,7 @@ const [, setLocation] = useLocation();
                               <Badge className={`text-[10px] px-1.5 py-0 border-0 ${
                                 getVipTier(customer.id) === 'platinum' ? 'bg-gradient-to-r from-slate-600 to-slate-800 text-white' :
                                 getVipTier(customer.id) === 'gold' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' :
-                                'bg-gradient-to-r from-slate-300 to-slate-400 text-slate-700'
+                                'bg-gradient-to-r from-slate-300 to-slate-400 text-slate-700 dark:text-slate-300'
                               }`}>
                                 <Crown className="h-2.5 w-2.5 me-0.5" />
                                 {getVipTier(customer.id)?.toUpperCase()}

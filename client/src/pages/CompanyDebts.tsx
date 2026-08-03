@@ -258,13 +258,13 @@ const [showAddDebt, setShowAddDebt] = useState(false);
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-700">{t("common.active")}</Badge>;
+        return <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">{t("common.active")}</Badge>;
       case "paid":
-        return <Badge variant="secondary" className="bg-green-100 text-green-700">{t("debts.paid")}</Badge>;
+        return <Badge variant="secondary" className="bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300">{t("debts.paid")}</Badge>;
       case "overdue":
-        return <Badge variant="secondary" className="bg-red-100 text-red-700">{t("invoices.overdue")}</Badge>;
+        return <Badge variant="secondary" className="bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300">{t("invoices.overdue")}</Badge>;
       case "restructured":
-        return <Badge variant="secondary" className="bg-orange-100 text-orange-700">{t("debts.restructured")}</Badge>;
+        return <Badge variant="secondary" className="bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300">{t("debts.restructured")}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }

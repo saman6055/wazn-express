@@ -143,7 +143,7 @@ function PackageTypeBadge({
   // see "this carton has 3 orders" before seeing "it's a full-package order".
   if (expanded?.case === 'shared') {
     return (
-      <Badge className="text-[10px] px-1.5 py-0 font-normal bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 border-orange-300">
+      <Badge className="text-[10px] px-1.5 py-0 font-normal bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 border-orange-300 dark:border-orange-800/60">
         🔗 {pickLang(language, { ku: "هاوبەش", en: "Shared", ar: "مشترك", zh: "共享" })} • {expanded.orders.length} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })}
       </Badge>
     );
@@ -151,7 +151,7 @@ function PackageTypeBadge({
   if (expanded?.case === 'multi' && expanded.flags.cartonsTotal) {
     const got = expanded.flags.cartonsRegistered ?? 0;
     return (
-      <Badge className="text-[10px] px-1.5 py-0 font-normal bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300">
+      <Badge className="text-[10px] px-1.5 py-0 font-normal bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300 dark:border-blue-800/60">
         📦 {pickLang(language, { ku: "کارتۆن", en: "Carton", ar: "كرتون", zh: "纸箱" })} {got + 1}/{expanded.flags.cartonsTotal}
       </Badge>
     );
@@ -175,7 +175,7 @@ function PackageTypeBadge({
 
   if (lookup.type === 'commission') {
     return (
-      <Badge className="text-[10px] px-1.5 py-0 font-normal bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 border-amber-300">
+      <Badge className="text-[10px] px-1.5 py-0 font-normal bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-800/60">
         💰 {pickLang(language, { ku: "کڕین بە تێچوو", en: "Purchase by cost", ar: "شراء بالتكلفة", zh: "代购" })}
       </Badge>
     );
@@ -183,7 +183,7 @@ function PackageTypeBadge({
 
   if (lookup.type === 'full_package') {
     return (
-      <Badge className="text-[10px] px-1.5 py-0 font-normal bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 border-purple-300">
+      <Badge className="text-[10px] px-1.5 py-0 font-normal bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 border-purple-300 dark:border-purple-800/60">
         📦 {pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "حزمة كاملة", zh: "全包" })}
       </Badge>
     );
@@ -1053,7 +1053,7 @@ export default function BulkRegister() {
                               )}>
                                 <td colSpan={9} className="px-3 py-2 text-xs">
                                   {customerMismatch && (
-                                    <div className="mb-2 p-2 rounded border border-rose-300 bg-rose-100/80 text-rose-900 dark:bg-rose-900/40 dark:text-rose-100 flex items-start gap-2">
+                                    <div className="mb-2 p-2 rounded border border-rose-300 dark:border-rose-800/60 bg-rose-100/80 text-rose-900 dark:bg-rose-900/40 dark:text-rose-100 flex items-start gap-2">
                                       <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                                       <div>
                                         <div className="font-bold">{pickLang(language, { ku: "تراکینگی هاوبەش بۆ کڕیاری جیاواز", en: "Shared tracking for different customers", ar: "تتبع مشترك لعملاء مختلفين", zh: "不同客户共享的运单号" })}</div>
@@ -1062,7 +1062,7 @@ export default function BulkRegister() {
                                     </div>
                                   )}
                                   {batchConflict && !customerMismatch && (
-                                    <div className="mb-2 p-2 rounded border border-amber-300 bg-amber-100/80 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100 flex items-start gap-2">
+                                    <div className="mb-2 p-2 rounded border border-amber-300 dark:border-amber-800/60 bg-amber-100/80 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100 flex items-start gap-2">
                                       <Info className="h-4 w-4 shrink-0 mt-0.5" />
                                       <div>
                                         <div className="font-bold">{pickLang(language, { ku: "کۆمەڵەی جیاواز", en: "Different batch", ar: "دفعة مختلفة", zh: "不同批次" })}</div>
@@ -1125,7 +1125,7 @@ export default function BulkRegister() {
                                               <span className="text-[11px] font-mono">{tr.trackingNumber}</span>
                                               <span className="ms-auto">
                                                 {isThis ? (
-                                                  <Badge className="text-[9px] bg-emerald-100 text-emerald-800 border-emerald-300">{pickLang(language, { ku: "ئێستا تۆمار دەکرێ", en: "Registering now", ar: "يتم التسجيل الآن", zh: "正在登记" })}</Badge>
+                                                  <Badge className="text-[9px] bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800/60">{pickLang(language, { ku: "ئێستا تۆمار دەکرێ", en: "Registering now", ar: "يتم التسجيل الآن", zh: "正在登记" })}</Badge>
                                                 ) : reg ? (
                                                   <Badge variant="secondary" className="text-[9px]">✅ {pickLang(language, { ku: "تۆمار کراوە", en: "Registered", ar: "تم التسجيل", zh: "已登记" })} ({reg.packageCode})</Badge>
                                                 ) : (

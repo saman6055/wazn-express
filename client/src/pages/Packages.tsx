@@ -55,15 +55,15 @@ import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
 
 const statusColors: Record<string, string> = {
-  registered: "bg-blue-100 text-blue-800",
-  in_batch: "bg-purple-100 text-purple-800",
-  in_transit: "bg-amber-100 text-amber-800",
-  customs_processing: "bg-orange-100 text-orange-800",
-  ready_for_delivery: "bg-cyan-100 text-cyan-800",
-  out_for_delivery: "bg-indigo-100 text-indigo-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
-  returned: "bg-gray-100 text-gray-800",
+  registered: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200",
+  in_batch: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200",
+  in_transit: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
+  customs_processing: "bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200",
+  ready_for_delivery: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200",
+  out_for_delivery: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200",
+  delivered: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200",
+  cancelled: "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200",
+  returned: "bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200",
 };
 
 const statusLabels: Record<string, string> = {
@@ -122,14 +122,14 @@ type Package = {
 // Package type colors and labels
 const packageTypeConfig: Record<string, { color: string; label: string; labelKu: string; icon: string; tKey: string }> = {
   regular: {
-    color: "bg-slate-100 text-slate-700 border-slate-200",
+    color: "bg-slate-100 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800/60",
     label: "Regular",
     labelKu: "ئاسایی",
     icon: "📦",
     tKey: "packages.regular"
   },
   full_package: {
-    color: "bg-purple-100 text-purple-700 border-purple-200",
+    color: "bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60",
     label: "Full Package",
     labelKu: "پاکێجی تەواو",
     icon: "📦",
@@ -137,7 +137,7 @@ const packageTypeConfig: Record<string, { color: string; label: string; labelKu:
   },
 
   commission: {
-    color: "bg-orange-100 text-orange-700 border-orange-200",
+    color: "bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800/60",
     label: "Commission",
     labelKu: "کڕین بە تێچوو",
     icon: "💰",
@@ -205,7 +205,7 @@ const PackageTableRow = memo(function PackageTableRow({
             <CopyButton value={pkg.trackingNumber} label="کۆپی تراکینگ" />
           </div>
         ) : (
-          <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+          <Badge variant="outline" className="text-xs bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60">
             <Link2Off className="h-3 w-3 me-1" />
             {t('packages.noTracking')}
           </Badge>
@@ -225,7 +225,7 @@ const PackageTableRow = memo(function PackageTableRow({
             <CopyButton value={getBatchCode(pkg.batchId)} label="کۆپی کۆدی باچ" />
           </div>
         ) : (
-          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+          <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
             <PackageX className="h-3 w-3 me-1" />
             {t('packages.noBatch')}
           </Badge>
@@ -245,7 +245,7 @@ const PackageTableRow = memo(function PackageTableRow({
             <div className="flex items-center gap-1">
               <span>{chargeableWeight.toFixed(2)} kg</span>
               {isVolumetric && (
-                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 text-purple-700 border-purple-200">
+                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
                   {t('packages.volumetric')}
                 </Badge>
               )}
@@ -286,10 +286,10 @@ const PackageTableRow = memo(function PackageTableRow({
           const now = new Date();
           const daysSince = Math.floor((now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60 * 24));
           const isDelivered = pkg.status === "delivered" || pkg.status === "cancelled" || pkg.status === "returned";
-          if (isDelivered) return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">✅ {t("packages.delivered")}</Badge>;
+          if (isDelivered) return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {t("packages.delivered")}</Badge>;
           if (daysSince > 20) return <Badge variant="destructive" className="animate-pulse">🔴 {daysSince} {t("common.days")}</Badge>;
-          if (daysSince > 10) return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">⚠️ {daysSince} {t("common.days")}</Badge>;
-          return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">✅ {daysSince} {t("common.days")}</Badge>;
+          if (daysSince > 10) return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">⚠️ {daysSince} {t("common.days")}</Badge>;
+          return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {daysSince} {t("common.days")}</Badge>;
         })()}
       </TableCell>
       <TableCell className="text-sm text-muted-foreground">
@@ -2170,13 +2170,13 @@ const [, setLocation] = useLocation();
                         const isDelivered = viewPackage.status === "delivered" || viewPackage.status === "cancelled" || viewPackage.status === "returned";
                         
                         if (isDelivered) {
-                          return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mt-1">✅ {t("packages.delivered")}</Badge>;
+                          return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60 mt-1">✅ {t("packages.delivered")}</Badge>;
                         } else if (daysSince > 20) {
                           return <Badge variant="destructive" className="mt-1">🔴 {t("packages.danger")} - {daysSince} {t("common.days")}</Badge>;
                         } else if (daysSince > 10) {
-                          return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 mt-1">⚠️ {t("packages.warning")} - {daysSince} {t("common.days")}</Badge>;
+                          return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60 mt-1">⚠️ {t("packages.warning")} - {daysSince} {t("common.days")}</Badge>;
                         } else {
-                          return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mt-1">✅ {t("packages.normal")} - {daysSince} {t("common.days")}</Badge>;
+                          return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60 mt-1">✅ {t("packages.normal")} - {daysSince} {t("common.days")}</Badge>;
                         }
                       })()}
                     </div>

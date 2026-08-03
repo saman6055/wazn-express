@@ -84,16 +84,16 @@ const STATUS_STAGE: Record<string, number> = {
 };
 
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800 border-amber-200",
-  approved: "bg-blue-100 text-blue-800 border-blue-200",
-  ordered: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  tracking_added: "bg-cyan-100 text-cyan-800 border-cyan-200",
-  in_china_warehouse: "bg-purple-100 text-purple-800 border-purple-200",
-  in_batch: "bg-violet-100 text-violet-800 border-violet-200",
-  in_transit: "bg-orange-100 text-orange-800 border-orange-200",
-  arrived: "bg-teal-100 text-teal-800 border-teal-200",
-  delivered: "bg-green-100 text-green-800 border-green-200",
-  cancelled: "bg-red-100 text-red-800 border-red-200",
+  pending: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800/60",
+  approved: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800/60",
+  ordered: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200 border-indigo-200 dark:border-indigo-800/60",
+  tracking_added: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200 border-cyan-200 dark:border-cyan-800/60",
+  in_china_warehouse: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800/60",
+  in_batch: "bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200 border-violet-200 dark:border-violet-800/60",
+  in_transit: "bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-800/60",
+  arrived: "bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 border-teal-200 dark:border-teal-800/60",
+  delivered: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800/60",
+  cancelled: "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800/60",
 };
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -435,10 +435,10 @@ export default function FullPackageDetail() {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center h-96">
-          <div className="p-6 bg-gray-100 rounded-full mb-6">
+          <div className="p-6 bg-gray-100 dark:bg-gray-950/40 rounded-full mb-6">
             <Package className="h-16 w-16 text-muted-foreground" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("fullPackage.orderNotFound")}</h2>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">{t("fullPackage.orderNotFound")}</h2>
           <p className="text-muted-foreground mb-6">{t("fullPackage.orderNotFoundDesc")}</p>
           <Button onClick={() => navigate("/full-package")} size="lg">
             <ArrowRight className="h-4 w-4 ms-2" />
@@ -507,7 +507,7 @@ export default function FullPackageDetail() {
                   <Hash className="h-4 w-4" />
                   {t("fullPackage.orderCode")}: <span className="font-mono font-bold">{order.orderCode}</span>
                   {isPendingCharge && (
-                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 ms-2">
+                    <Badge className="bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800/60 ms-2">
                       <Clock className="h-3 w-3 me-1" />
                       {t("fullPackage.pendingCharge")}
                     </Badge>
@@ -520,7 +520,7 @@ export default function FullPackageDetail() {
                 <>
                   <Button
                     onClick={() => navigate(`/full-package/${id}/edit`)}
-                    className="bg-white text-emerald-700 hover:bg-emerald-50 shadow-md"
+                    className="bg-white text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-md"
                   >
                     <Pencil className="h-4 w-4 ms-2" />
                     {t("common.edit")}
@@ -546,9 +546,9 @@ export default function FullPackageDetail() {
 
         {/* Pending charge banner — shown for both view and edit mode */}
         {isPendingCharge && (
-          <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
-            <Clock className="h-5 w-5 text-amber-700 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-amber-900">
+          <div className="rounded-xl border-2 border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40 p-4 flex items-start gap-3">
+            <Clock className="h-5 w-5 text-amber-700 dark:text-amber-300 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-900 dark:text-amber-200">
               <p className="font-semibold mb-1">{t("fullPackage.pendingChargeTitle")}</p>
               <p>{t("fullPackage.pendingChargeDesc")}</p>
             </div>
@@ -574,7 +574,7 @@ export default function FullPackageDetail() {
             <Card className="shadow-sm border-0 bg-white">
               <CardHeader className="border-b bg-gray-50/50">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-100 rounded-lg">
+                  <div className="p-2 bg-emerald-100 dark:bg-emerald-950/40 rounded-lg">
                     <User className="h-5 w-5 text-emerald-600" />
                   </div>
                   <div>
@@ -631,7 +631,7 @@ export default function FullPackageDetail() {
             <Card className="shadow-sm border-0 bg-white">
               <CardHeader className="border-b bg-gray-50/50">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
                     <Package className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -771,7 +771,7 @@ export default function FullPackageDetail() {
             <Card className="shadow-sm border-0 bg-white">
               <CardHeader className="border-b bg-gray-50/50">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
+                  <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
                     <DollarSign className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
@@ -812,7 +812,7 @@ export default function FullPackageDetail() {
             <Card className="shadow-sm border-0 bg-white">
               <CardHeader className="border-b bg-gray-50/50">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
                     <FileText className="h-5 w-5 text-purple-600" />
                   </div>
                   <CardTitle>{t("fullPackage.notes")}</CardTitle>
@@ -830,14 +830,14 @@ export default function FullPackageDetail() {
 
             {/* Plan v3: reason card shown ONLY when the edit would shift the customer ledger */}
             {moneyChangeDetected && (
-              <Card className="shadow-sm border-2 border-amber-300 bg-amber-50">
-                <CardHeader className="border-b border-amber-200 bg-amber-100">
+              <Card className="shadow-sm border-2 border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40">
+                <CardHeader className="border-b border-amber-200 dark:border-amber-800/60 bg-amber-100 dark:bg-amber-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-amber-200 rounded-lg">
-                      <AlertCircle className="h-5 w-5 text-amber-800" />
+                      <AlertCircle className="h-5 w-5 text-amber-800 dark:text-amber-200" />
                     </div>
                     <div>
-                      <CardTitle className="text-amber-900">
+                      <CardTitle className="text-amber-900 dark:text-amber-200">
                         {pickLang(language, {
                           ku: "هۆکاری گۆڕینی نرخ",
                           en: "Reason for Price Change",
@@ -845,7 +845,7 @@ export default function FullPackageDetail() {
                           zh: "价格变更原因",
                         })}
                       </CardTitle>
-                      <CardDescription className="text-amber-800">
+                      <CardDescription className="text-amber-800 dark:text-amber-200">
                         {pickLang(language, {
                           ku: "گۆڕانکاریت لە نرخ یان ژمارە کردووە، بۆیە پێویستە هۆکارێک بنووسیت بۆ ئەوەی دەفتەری هەژماری کڕیار ڕێکبخرێتەوە.",
                           en: "You changed a price or quantity, so we need a reason to log the customer-ledger adjustment.",
@@ -869,7 +869,7 @@ export default function FullPackageDetail() {
                     rows={2}
                     dir="auto"
                   />
-                  <div className="text-xs text-amber-800 mt-2 text-right">
+                  <div className="text-xs text-amber-800 dark:text-amber-200 mt-2 text-right">
                     {editReason.trim().length < 3
                       ? pickLang(language, {
                           ku: `بەلایەنی کەم ٣ پیت (${editReason.trim().length}/3)`,
@@ -923,7 +923,7 @@ export default function FullPackageDetail() {
               <Card className="shadow-sm border-0 bg-white overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-blue-50 to-white">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
                       <Package className="h-5 w-5 text-blue-600" />
                     </div>
                     <CardTitle>{pickLang(language, { ku: "زانیاری کاڵا", en: "Product information", ar: "معلومات المنتج", zh: "产品信息" })}</CardTitle>
@@ -940,7 +940,7 @@ export default function FullPackageDetail() {
                         <Hash className="h-3 w-3" /> {t("fullPackage.orderNumber") || pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order number", ar: "رقم الطلب", zh: "订单编号" })}
                       </p>
                       {(order as any).orderNumber ? (
-                        <Badge variant="secondary" className="font-mono text-sm px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200">
+                        <Badge variant="secondary" className="font-mono text-sm px-3 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60">
                           # {(order as any).orderNumber}
                         </Badge>
                       ) : (
@@ -963,7 +963,7 @@ export default function FullPackageDetail() {
                               <Badge
                                 key={idx}
                                 variant="secondary"
-                                className="font-mono text-sm px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 cursor-default"
+                                className="font-mono text-sm px-3 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 hover:bg-blue-100 cursor-default"
                               >
                                 {tn}
                               </Badge>
@@ -1006,7 +1006,7 @@ export default function FullPackageDetail() {
                     <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
                       <FileText className="h-3 w-3" /> {t("fullPackage.productDescription")}
                     </p>
-                    <p className={`leading-relaxed ${order.productDescription ? "text-gray-700" : "text-gray-400 italic"}`}>
+                    <p className={`leading-relaxed ${order.productDescription ? "text-gray-700 dark:text-gray-300" : "text-gray-400 italic"}`}>
                       {order.productDescription || pickLang(language, { ku: "وەسفی کاڵا نییە", en: "No product description", ar: "لا يوجد وصف للمنتج", zh: "无产品描述" })}
                     </p>
                   </div>
@@ -1032,7 +1032,7 @@ export default function FullPackageDetail() {
               <Card className="shadow-sm border-0 bg-white overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-indigo-50 to-white">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-100 rounded-lg">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
                       <Image className="h-5 w-5 text-indigo-600" />
                     </div>
                     <div>
@@ -1062,7 +1062,7 @@ export default function FullPackageDetail() {
               <Card className="shadow-sm border-0 bg-white overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-emerald-50 to-white">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-emerald-100 rounded-lg">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-950/40 rounded-lg">
                       <User className="h-5 w-5 text-emerald-600" />
                     </div>
                     <CardTitle>{t("fullPackage.customer")}</CardTitle>
@@ -1101,7 +1101,7 @@ export default function FullPackageDetail() {
               <Card className="shadow-sm border-0 bg-white overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-green-50 to-white">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-lg">
+                    <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
                       <DollarSign className="h-5 w-5 text-green-600" />
                     </div>
                     <CardTitle>{t("fullPackage.prices")}</CardTitle>
@@ -1109,7 +1109,7 @@ export default function FullPackageDetail() {
                 </CardHeader>
                 <CardContent className="p-4 space-y-3">
                   {/* Purchase Price */}
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-950/40 rounded-xl">
                     <span className="text-sm text-muted-foreground">{t("fullPackage.purchasePrice")}</span>
                     <div className="text-right">
                       <span className="font-mono font-semibold">${Number(order.purchasePriceUsd || 0).toFixed(2)}</span>
@@ -1120,7 +1120,7 @@ export default function FullPackageDetail() {
                   </div>
 
                   {/* Selling Price */}
-                  <div className="flex justify-between items-center p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                  <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-800/60">
                     <span className="text-sm text-muted-foreground">{t("fullPackage.sellingPrice")}</span>
                     <div className="text-right">
                       <span className="font-mono font-semibold text-emerald-600">${Number(order.sellingPriceUsd || 0).toFixed(2)}</span>
@@ -1131,11 +1131,11 @@ export default function FullPackageDetail() {
                   </div>
                   
                   {/* Shipping Cost */}
-                  <div className="flex justify-between items-center p-3 bg-orange-50 rounded-xl border border-orange-100">
+                  <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950/40 rounded-xl border border-orange-100 dark:border-orange-800/60">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">{t("fullPackage.shippingCost")}</span>
                       {hasSharedTracking && (
-                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60">
                           <Split className="h-3 w-3 me-1" />
                           {sharedOrders?.length} {t("fullPackage.orders")}
                         </Badge>
@@ -1147,7 +1147,7 @@ export default function FullPackageDetail() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                          className="h-7 text-xs bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60"
                           onClick={() => setSplitDialogOpen(true)}
                         >
                           <Split className="h-3 w-3 me-1" />
@@ -1161,7 +1161,7 @@ export default function FullPackageDetail() {
                   <div className="border-t border-dashed my-3"></div>
                   
                   {/* Cost Breakdown */}
-                  <div className="bg-gray-100 rounded-xl p-4 space-y-2">
+                  <div className="bg-gray-100 dark:bg-gray-950/40 rounded-xl p-4 space-y-2">
                     <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{t("fullPackage.costBreakdown")}</p>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{t("fullPackage.purchasePrice")} × {t("fullPackage.quantity")}</span>
@@ -1171,7 +1171,7 @@ export default function FullPackageDetail() {
                       <span className="text-muted-foreground">+ {t("fullPackage.shipping")}</span>
                       <span className="font-mono">${shippingCost.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-sm font-semibold border-t border-gray-200 pt-2 mt-2">
+                    <div className="flex justify-between text-sm font-semibold border-t border-gray-200 dark:border-gray-800/60 pt-2 mt-2">
                       <span>{t("fullPackage.totalCost")}</span>
                       <span className="font-mono">${totalCost.toFixed(2)}</span>
                     </div>
@@ -1188,7 +1188,7 @@ export default function FullPackageDetail() {
                   </div>
 
                   {/* Profit */}
-                  <div className={`p-4 rounded-xl ${totalProfit >= 0 ? "bg-gradient-to-l from-green-100 to-green-50 border border-green-200" : "bg-gradient-to-l from-red-100 to-red-50 border border-red-200"}`}>
+                  <div className={`p-4 rounded-xl ${totalProfit >= 0 ? "bg-gradient-to-l from-green-100 to-green-50 border border-green-200 dark:border-green-800/60" : "bg-gradient-to-l from-red-100 to-red-50 border border-red-200 dark:border-red-800/60"}`}>
                     <div className="flex justify-between items-center">
                       <div>
                         <span className="font-semibold block">{t("fullPackage.profit")}</span>
@@ -1196,7 +1196,7 @@ export default function FullPackageDetail() {
                           {profitMargin}% {t("fullPackage.profitMargin")}
                         </span>
                       </div>
-                      <span className={`font-mono font-bold text-2xl ${totalProfit >= 0 ? "text-green-700" : "text-red-700"}`}>
+                      <span className={`font-mono font-bold text-2xl ${totalProfit >= 0 ? "text-green-700 dark:text-green-300" : "text-red-700 dark:text-red-300"}`}>
                         ${totalProfit.toFixed(2)}
                       </span>
                     </div>
@@ -1209,26 +1209,26 @@ export default function FullPackageDetail() {
                     const isFullyPaid = advancePaid >= totalSelling && totalSelling > 0;
                     if (advancePaid <= 0) return null;
                     return (
-                      <div className="rounded-xl border-2 border-teal-200 bg-gradient-to-l from-teal-50 to-emerald-50 p-4 space-y-2">
+                      <div className="rounded-xl border-2 border-teal-200 dark:border-teal-800/60 bg-gradient-to-l from-teal-50 to-emerald-50 p-4 space-y-2">
                         <div className="flex items-center gap-2 mb-1">
                           <DollarSign className="h-4 w-4 text-teal-600" />
-                          <span className="text-sm font-bold text-teal-800">{pickLang(language, { ku: "پوختەی پارەدان", en: "Payment summary", ar: "ملخص الدفع", zh: "付款摘要" })}</span>
+                          <span className="text-sm font-bold text-teal-800 dark:text-teal-200">{pickLang(language, { ku: "پوختەی پارەدان", en: "Payment summary", ar: "ملخص الدفع", zh: "付款摘要" })}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-slate-600">{pickLang(language, { ku: "کۆی فرۆشتن", en: "Total selling", ar: "إجمالي البيع", zh: "销售总额" })}</span>
                           <span className="font-mono font-semibold">${totalSelling.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-teal-700">{pickLang(language, { ku: "پارەی پێشەکی دراو", en: "Advance paid", ar: "الدفعة المقدمة المدفوعة", zh: "已付预付款" })}</span>
-                          <span className="font-mono font-semibold text-teal-700">-${advancePaid.toFixed(2)}</span>
+                          <span className="text-teal-700 dark:text-teal-300">{pickLang(language, { ku: "پارەی پێشەکی دراو", en: "Advance paid", ar: "الدفعة المقدمة المدفوعة", zh: "已付预付款" })}</span>
+                          <span className="font-mono font-semibold text-teal-700 dark:text-teal-300">-${advancePaid.toFixed(2)}</span>
                         </div>
                         <div className="h-px bg-teal-200" />
                         <div className="flex justify-between text-base">
                           <span className="font-semibold">{isFullyPaid ? pickLang(language, { ku: "ڕەوشی پارەدان", en: "Payment status", ar: "حالة الدفع", zh: "付款状态" }) : pickLang(language, { ku: "ماوە بۆ پارەدان", en: "Remaining to pay", ar: "المتبقي للدفع", zh: "待付余额" })}</span>
                           {isFullyPaid ? (
-                            <span className="font-bold text-emerald-700">✓ {pickLang(language, { ku: "تەواو پارەدراوە", en: "Fully paid", ar: "مدفوع بالكامل", zh: "已全额付款" })}</span>
+                            <span className="font-bold text-emerald-700 dark:text-emerald-300">✓ {pickLang(language, { ku: "تەواو پارەدراوە", en: "Fully paid", ar: "مدفوع بالكامل", zh: "已全额付款" })}</span>
                           ) : (
-                            <span className="font-mono font-bold text-xl text-amber-700">${remaining.toFixed(2)}</span>
+                            <span className="font-mono font-bold text-xl text-amber-700 dark:text-amber-300">${remaining.toFixed(2)}</span>
                           )}
                         </div>
                         {(order as any).advancePaymentMethod && (
@@ -1239,7 +1239,7 @@ export default function FullPackageDetail() {
                   })()}
 
                   {/* Formula Explanation */}
-                  <div className="text-xs text-muted-foreground text-center bg-blue-50 p-3 rounded-xl border border-blue-100">
+                  <div className="text-xs text-muted-foreground text-center bg-blue-50 dark:bg-blue-950/40 p-3 rounded-xl border border-blue-100 dark:border-blue-800/60">
                     <AlertCircle className="h-3 w-3 inline-block ms-1" />
                     {t("fullPackage.profit")} = {t("fullPackage.sellingPrice")} - ({t("fullPackage.purchasePrice")} × {t("fullPackage.quantity")}) - {t("fullPackage.shipping")}
                   </div>
@@ -1250,7 +1250,7 @@ export default function FullPackageDetail() {
               <Card className="shadow-sm border-0 bg-white overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-blue-50 to-white">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
                       <Calendar className="h-5 w-5 text-blue-600" />
                     </div>
                     <CardTitle>{t("fullPackage.statusColumn")} & {t("fullPackage.dateColumn")}</CardTitle>
@@ -1291,14 +1291,14 @@ export default function FullPackageDetail() {
               <Card className="shadow-sm border-0 bg-white overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 rounded-lg">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
                       <FileText className="h-5 w-5 text-purple-600" />
                     </div>
                     <CardTitle>{t("fullPackage.notes")}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <p className={`leading-relaxed ${order.notes ? "text-gray-700" : "text-gray-400 italic"}`}>
+                  <p className={`leading-relaxed ${order.notes ? "text-gray-700 dark:text-gray-300" : "text-gray-400 italic"}`}>
                     {order.notes || pickLang(language, { ku: "تێبینی نییە", en: "No notes", ar: "لا توجد ملاحظات", zh: "无备注" })}
                   </p>
                 </CardContent>
@@ -1359,7 +1359,7 @@ export default function FullPackageDetail() {
 
           <div className="space-y-4 py-2">
             {/* Tracking Number */}
-            <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg">
               <p className="text-xs text-muted-foreground">{t("fullPackage.trackingNumber")}</p>
               <p className="font-mono font-semibold">{trackingForQuery}</p>
             </div>
@@ -1398,7 +1398,7 @@ export default function FullPackageDetail() {
                 <Label className="text-sm font-semibold">{t("fullPackage.splitPreview")}</Label>
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50 dark:bg-gray-950/40">
                       <tr>
                         <th className="p-2 text-start text-xs text-muted-foreground">{t("fullPackage.orderCode")}</th>
                         <th className="p-2 text-center text-xs text-muted-foreground">
@@ -1422,17 +1422,17 @@ export default function FullPackageDetail() {
                           <td className="p-2 text-center">
                             <Badge variant="outline" className="text-xs">{item.ratio}%</Badge>
                           </td>
-                          <td className="p-2 text-end font-mono font-semibold text-emerald-700">
+                          <td className="p-2 text-end font-mono font-semibold text-emerald-700 dark:text-emerald-300">
                             ${item.share.toFixed(2)}
                           </td>
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-gray-50 border-t-2">
+                    <tfoot className="bg-gray-50 dark:bg-gray-950/40 border-t-2">
                       <tr>
                         <td className="p-2 font-semibold" colSpan={2}>{t("common.total")}</td>
                         <td className="p-2 text-center font-semibold">100%</td>
-                        <td className="p-2 text-end font-mono font-bold text-emerald-800">
+                        <td className="p-2 text-end font-mono font-bold text-emerald-800 dark:text-emerald-200">
                           ${parseFloat(splitShippingCost || "0").toFixed(2)}
                         </td>
                       </tr>
@@ -1440,7 +1440,7 @@ export default function FullPackageDetail() {
                   </table>
                 </div>
                 {splitPreview.every(p => p.measure === 0) && (
-                  <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                  <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/40 p-2 rounded">
                     <AlertCircle className="h-3 w-3 inline me-1" />
                     {t("fullPackage.noWeightData")}
                   </p>

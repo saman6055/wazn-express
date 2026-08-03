@@ -79,7 +79,7 @@ function BatchCard({
         <p className="text-gray-500 text-sm mb-3">CTN Quantity: {ctnQuantity}</p>
 
         {/* Tracking numbers box */}
-        <div className="bg-gray-100 rounded-lg p-3 mb-3">
+        <div className="bg-gray-100 dark:bg-gray-950/40 rounded-lg p-3 mb-3">
           <p className="text-gray-600 text-sm break-all">
             {trackingNumbers.join(",")}
           </p>
@@ -148,18 +148,18 @@ function AirBatchDetail({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto bg-gray-100 p-4">
+      <div className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-950/40 p-4">
         {/* Arrival Card */}
         <Card className="bg-white rounded-2xl mb-4">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-lg bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center">
                 <Calendar className="h-5 w-5 text-orange-500" />
               </div>
               <div className="flex-1">
                 {batch?.estimatedArrival && (
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge className="bg-blue-100 text-blue-700">
+                    <Badge className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
                       {pickLang(language, {
                         ku: "بەرواری گەیشتنی چاوەڕوانکراو",
                         en: "Estimated arrival date",
@@ -174,7 +174,7 @@ function AirBatchDetail({
                 )}
                 {batch?.actualArrival ? (
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-green-100 text-green-700">
+                    <Badge className="bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300">
                       {pickLang(language, {
                         ku: "گەیشتووە",
                         en: "Arrived",
@@ -235,11 +235,11 @@ function AirBatchDetail({
               <CardContent className="p-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">City</span>
-                  <span className="text-gray-800">Guangzhou</span>
+                  <span className="text-gray-800 dark:text-gray-200">Guangzhou</span>
                 </div>
                 <div className="flex justify-between mt-2">
                   <span className="text-gray-400">Describe</span>
-                  <span className="text-gray-800">---</span>
+                  <span className="text-gray-800 dark:text-gray-200">---</span>
                 </div>
               </CardContent>
             </Card>
@@ -254,7 +254,7 @@ function AirBatchDetail({
 
             <Card className="bg-white rounded-xl">
               <CardContent className="p-3">
-                <p className="text-gray-800 font-medium">Track No.:</p>
+                <p className="text-gray-800 dark:text-gray-200 font-medium">Track No.:</p>
               </CardContent>
             </Card>
           </div>
@@ -314,16 +314,16 @@ function SeaBatchDetail({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto bg-gray-100 p-4">
+      <div className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-950/40 p-4">
         {/* ETA Card */}
         <Card className="bg-white rounded-2xl mb-4">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-lg bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center">
                 <ChevronRight className="h-5 w-5 text-orange-500 rotate-180" />
               </div>
               <div>
-                <p className="text-gray-800">
+                <p className="text-gray-800 dark:text-gray-200">
                   ETA: {batch?.estimatedArrival ? new Date(batch.estimatedArrival).toLocaleString() : "2025-12-16 02:37:00"}
                 </p>
                 <p className="text-blue-500">
@@ -401,7 +401,7 @@ function SeaBatchDetail({
               const pricePerCbm = parseFloat(batch?.pricePerCbm) || 0;
               const pkgCost = pkgCbm * pricePerCbm;
               return (
-                <div key={idx} className="grid grid-cols-4 gap-2 text-center py-2 border-b border-gray-100 text-sm">
+                <div key={idx} className="grid grid-cols-4 gap-2 text-center py-2 border-b border-gray-100 dark:border-gray-800/60 text-sm">
                   <span className="font-mono text-xs">{pkg.packageCode || idx + 1}</span>
                   <span>{pkg.weightKg ? `${pkg.weightKg}kg` : "-"}</span>
                   <span className="font-medium text-cyan-600">{pkgCbm.toFixed(4)}</span>
@@ -410,7 +410,7 @@ function SeaBatchDetail({
               );
             })}
             {/* Total Row */}
-            <div className="grid grid-cols-4 gap-2 text-center py-3 bg-gray-50 rounded-lg mt-2 font-bold">
+            <div className="grid grid-cols-4 gap-2 text-center py-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg mt-2 font-bold">
               <span>{pickLang(language, { ku: "کۆی", en: "Total", ar: "الإجمالي", zh: "合计" })}</span>
               <span>{packages.reduce((sum: number, pkg: any) => sum + (parseFloat(pkg.weightKg) || 0), 0).toFixed(2)}kg</span>
               <span className="text-cyan-600">
@@ -474,14 +474,14 @@ function TransactionCard({
           {number && <span className="font-bold text-lg">{number}</span>}
         </div>
 
-        <div className="bg-gray-50 rounded-lg p-3 mb-3">
+        <div className="bg-gray-50 dark:bg-gray-950/40 rounded-lg p-3 mb-3">
           <div className="flex justify-between mb-1">
             <span className="text-gray-500">Amount</span>
             <span className="text-red-500 font-semibold">${amount.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Date</span>
-            <span className="text-gray-800">{date}</span>
+            <span className="text-gray-800 dark:text-gray-200">{date}</span>
           </div>
         </div>
 
@@ -516,12 +516,12 @@ function MenuItem({
 }) {
   return (
     <button 
-      className="w-full flex items-center justify-between p-4 hover:bg-gray-50 border-b border-gray-100"
+      className="w-full flex items-center justify-between p-4 hover:bg-gray-50 border-b border-gray-100 dark:border-gray-800/60"
       onClick={onClick}
     >
       <div className="flex items-center gap-3">
         {icon}
-        <span className="text-gray-800">{label}</span>
+        <span className="text-gray-800 dark:text-gray-200">{label}</span>
       </div>
       <div className="flex items-center gap-2">
         {badge !== undefined && badge > 0 && (
@@ -549,7 +549,7 @@ function NavItem({
 }) {
   return (
     <button 
-      className={`flex flex-col items-center gap-1 px-4 py-2 ${active ? "text-slate-800" : "text-gray-400"}`}
+      className={`flex flex-col items-center gap-1 px-4 py-2 ${active ? "text-slate-800 dark:text-slate-200" : "text-gray-400"}`}
       onClick={onClick}
     >
       {icon}
@@ -668,7 +668,7 @@ const { user, loading, logout } = useAuth();
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col pb-20">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950/40 flex flex-col pb-20">
       {/* Tran Tab */}
       {activeTab === "tran" && (
         <>
@@ -722,7 +722,7 @@ const { user, loading, logout } = useAuth();
                 className={`rounded-full px-4 py-1 h-auto text-sm ${
                   statusFilter === filter.key 
                     ? "bg-slate-800 text-white" 
-                    : "bg-white text-gray-600 border-gray-300"
+                    : "bg-white text-gray-600 border-gray-300 dark:border-gray-800/60"
                 }`}
                 onClick={() => setStatusFilter(filter.key as StatusFilter)}
               >
@@ -769,7 +769,7 @@ const { user, loading, logout } = useAuth();
             {/* Balance Card */}
             <Card className="bg-white rounded-2xl mb-4">
               <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-14 w-14 rounded-xl bg-red-100 flex items-center justify-center">
+                <div className="h-14 w-14 rounded-xl bg-red-100 dark:bg-red-950/40 flex items-center justify-center">
                   <Wallet className="h-7 w-7 text-red-500" />
                 </div>
                 <div>
@@ -840,39 +840,39 @@ const { user, loading, logout } = useAuth();
             <Card className="bg-white rounded-2xl">
               <CardContent className="p-0">
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-yellow-100 flex items-center justify-center"><MessageSquare className="h-5 w-5 text-yellow-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-yellow-100 dark:bg-yellow-950/40 flex items-center justify-center"><MessageSquare className="h-5 w-5 text-yellow-600" /></div>}
                   label="Message center"
                   badge={2}
                   onClick={() => toast.info("Message center coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center"><Bell className="h-5 w-5 text-blue-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center"><Bell className="h-5 w-5 text-blue-600" /></div>}
                   label="Notification"
                   badge={7074}
                   onClick={() => toast.info("Notifications coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-teal-100 flex items-center justify-center"><MapPin className="h-5 w-5 text-teal-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center"><MapPin className="h-5 w-5 text-teal-600" /></div>}
                   label="Address"
                   onClick={() => toast.info("Address management coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center"><FileText className="h-5 w-5 text-blue-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center"><FileText className="h-5 w-5 text-blue-600" /></div>}
                   label="Terms & Conditions"
                   onClick={() => toast.info("Terms & Conditions coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-yellow-100 flex items-center justify-center"><Handshake className="h-5 w-5 text-yellow-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-yellow-100 dark:bg-yellow-950/40 flex items-center justify-center"><Handshake className="h-5 w-5 text-yellow-600" /></div>}
                   label="Our Services"
                   onClick={() => toast.info("Our Services coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center"><AlertTriangle className="h-5 w-5 text-red-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-950/40 flex items-center justify-center"><AlertTriangle className="h-5 w-5 text-red-600" /></div>}
                   label="without shipping mark"
                   onClick={() => toast.info("Feature coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-teal-100 flex items-center justify-center"><Globe className="h-5 w-5 text-teal-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center"><Globe className="h-5 w-5 text-teal-600" /></div>}
                   label="Online Order Details"
                   onClick={() => toast.info("Online Order Details coming soon")}
                 />
@@ -882,7 +882,7 @@ const { user, loading, logout } = useAuth();
             <Card className="bg-white rounded-2xl mt-4">
               <CardContent className="p-0">
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-pink-100 flex items-center justify-center"><Lock className="h-5 w-5 text-pink-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-pink-100 dark:bg-pink-950/40 flex items-center justify-center"><Lock className="h-5 w-5 text-pink-600" /></div>}
                   label="Change Password"
                   onClick={() => setShowPasswordDialog(true)}
                 />
@@ -891,7 +891,7 @@ const { user, loading, logout } = useAuth();
 
             <Button 
               variant="outline" 
-              className="w-full mt-4 text-red-500 border-red-200 hover:bg-red-50 rounded-full"
+              className="w-full mt-4 text-red-500 border-red-200 dark:border-red-800/60 hover:bg-red-50 rounded-full"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4 me-2" />

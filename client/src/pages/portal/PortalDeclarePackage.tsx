@@ -132,7 +132,7 @@ export default function PortalDeclarePackage() {
         </div>
 
         {/* Form card */}
-        <div className={cn("rounded-2xl border p-4 space-y-4", isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-200")}>
+        <div className={cn("rounded-2xl border p-4 space-y-4", isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60")}>
           {/* Tracking (required) */}
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5 text-sm font-semibold">
@@ -219,7 +219,7 @@ export default function PortalDeclarePackage() {
           {isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           ) : !declared || declared.length === 0 ? (
-            <div className={cn("rounded-2xl border border-dashed py-8 text-center text-sm text-muted-foreground", isDark ? "border-slate-700" : "border-slate-300")}>
+            <div className={cn("rounded-2xl border border-dashed py-8 text-center text-sm text-muted-foreground", isDark ? "border-slate-700" : "border-slate-300 dark:border-slate-800/60")}>
               {label({ ku: "هێشتا هیچ تراکێکت تۆمار نەکردووە", en: "You haven't registered any tracking yet", ar: "لم تسجّل أي رقم تتبع بعد", zh: "您还没有登记任何运单号" })}
             </div>
           ) : (
@@ -228,7 +228,7 @@ export default function PortalDeclarePackage() {
               const StIcon = st.icon;
               const platformLabel = d.platform || null;
               return (
-                <div key={d.id} className={cn("flex items-center gap-3 rounded-2xl border p-3", isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-200")}>
+                <div key={d.id} className={cn("flex items-center gap-3 rounded-2xl border p-3", isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60")}>
                   {d.productImages?.[0] ? (
                     <img loading="lazy" decoding="async" src={d.productImages[0]} alt="" className="h-14 w-14 shrink-0 rounded-xl border object-cover" />
                   ) : (
