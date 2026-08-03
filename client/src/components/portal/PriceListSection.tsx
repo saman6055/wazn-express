@@ -941,7 +941,7 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
                         tabIndex={0}
                         aria-label="info"
                         onClick={(e) => { e.stopPropagation(); setInfoOpen((o) => !o); }}
-                        className={cn("shrink-0 ms-0.5 transition-colors", infoOpen ? "text-[#1C4D8D]" : "text-[#4988C4] hover:text-[#1C4D8D]")}
+                        className={cn("shrink-0 ms-0.5 transition-colors", infoOpen ? "text-[#1C4D8D] dark:text-[#8FC0F0]" : "text-[#4988C4] dark:text-[#B4D6F5] hover:text-[#1C4D8D]")}
                       >
                         <Info className="w-3.5 h-3.5" />
                       </span>

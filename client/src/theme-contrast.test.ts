@@ -91,6 +91,33 @@ describe('dark mode is not optional', () => {
   });
 });
 
+describe('raw hex text colours', () => {
+  it('never leaves one without a dark counterpart', () => {
+    // text-[#34322d] is near-black and adapts to nothing, so on the dark theme
+    // it is black on black. Choosing a hex is opting out of the token system,
+    // which is fine only when both themes are handled.
+    const offenders: string[] = [];
+
+    for (const file of FILES) {
+      const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+      lines.forEach((line, i) => {
+        for (const m of line.matchAll(/(?<![:\w-])(text-\[#[0-9a-fA-F]{3,8}\])/g)) {
+          if (/dark:text-/.test(line)) continue;
+          // A hex sitting on a hardcoded fill is deliberate and stays readable,
+          // because the fill does not adapt either.
+          if (/bg-/.test(line)) continue;
+          // Some components branch on an isDark flag in JS rather than using
+          // the dark: variant. That is a counterpart, just written differently.
+          if (/\bisDark\b/.test(line)) continue;
+          offenders.push(`${path.relative(ROOT, file)}:${i + 1}  ${m[1]}`);
+        }
+      });
+    }
+
+    expect(offenders, `give these a dark: pair or use a token:\n${offenders.slice(0, 20).join('\n')}`).toEqual([]);
+  });
+});
+
 describe('no class list contradicts itself', () => {
   it('declares each property at most once per theme', () => {
     // Two dark: backgrounds in one class list means whichever Tailwind emits

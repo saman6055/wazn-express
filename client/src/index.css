@@ -90,6 +90,15 @@
 }
 
 :root {
+  /* Tell the browser which way its own controls should render.
+     Without this, every <input type="date"> paints its digits and its little
+     calendar button in the light-mode palette — near-black glyphs on a dark
+     field, which is why the date range looked like an empty box. It also
+     governs scrollbars, <select> popups and the native date picker panel.
+     49 date/time inputs across the app were affected; this fixes all of them
+     in one place rather than per input. */
+  color-scheme: light;
+
   /* Deep teal/navy for logistics professionalism */
   --primary: oklch(0.45 0.12 220);
   --primary-foreground: oklch(0.98 0 0);
@@ -136,6 +145,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --primary: oklch(0.60 0.15 220);
   --primary-foreground: oklch(0.98 0 0);
   --sidebar-primary: oklch(0.60 0.15 220);
@@ -509,6 +519,61 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+  }
+
+  /* ---- Native controls that do not follow the theme on their own ---- */
+
+  /* A date/time field renders its own digits and its calendar button. In dark
+     mode the browser paints both near-black unless color-scheme says
+     otherwise (declared on :root / .dark above), and the button glyph stays
+     dark even then. Force both to the current text colour so the field reads
+     the same as every other input beside it. */
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="week"] {
+    color: hsl(var(--foreground));
+  }
+
+  .dark input[type="date"]::-webkit-calendar-picker-indicator,
+  .dark input[type="time"]::-webkit-calendar-picker-indicator,
+  .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  .dark input[type="month"]::-webkit-calendar-picker-indicator,
+  .dark input[type="week"]::-webkit-calendar-picker-indicator {
+    /* invert() turns the browser's black glyph white; without it the button
+       is a dark square on a dark field. */
+    filter: invert(1) opacity(0.7);
+    cursor: pointer;
+  }
+
+  /* An empty date field shows a placeholder built from these parts. Chrome
+     renders them at the same colour as a filled value, so an empty field
+     looked filled-in-but-unreadable rather than empty. */
+  .dark input[type="date"]:not(:focus):invalid::-webkit-datetime-edit,
+  .dark input[type="time"]:not(:focus):invalid::-webkit-datetime-edit {
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Number spinners have the same problem as the calendar button. */
+  .dark input[type="number"]::-webkit-inner-spin-button,
+  .dark input[type="number"]::-webkit-outer-spin-button {
+    filter: invert(1) opacity(0.6);
+  }
+
+  /* A <select>'s dropdown panel is drawn by the OS. color-scheme handles most
+     of it; this covers the closed control and its options in engines that
+     still paint them from the page's own colours. */
+  select option {
+    background-color: hsl(var(--popover));
+    color: hsl(var(--popover-foreground));
+  }
+
+  /* ::placeholder inherits the input's colour in some engines, which made a
+     placeholder as loud as a real value. */
+  ::placeholder {
+    color: hsl(var(--muted-foreground));
+    opacity: 1;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
