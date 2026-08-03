@@ -1,4 +1,4 @@
-import { notifyOwner } from "../_core/notification";
+import { notifyStaffAlert } from "../_core/notifyStaff";
 import * as db from "../db";
 import { appLogger } from "../utils/logger";
 
@@ -89,17 +89,16 @@ export async function checkAndNotifyTrackingAlerts(): Promise<void> {
     content += `\n**کۆی پاکەتەکان**: ${alertingPackages.length}\n`;
     content += "بڕۆ بۆ ئاگادارکردنەوەی تراکینگ بۆ تێڕوانین و تراکینگ نەمبەرەکان زیاد بکە.";
 
-    // Send notification
-    const success = await notifyOwner({
+    // Goes to the staff activity feed, which staff actually read, and onward
+    // to the external service only when that is configured.
+    await notifyStaffAlert({
+      action: "tracking_alert_digest",
+      category: "full_package",
+      severity: "warning",
       title: `⚠️ ئاگادارکردنەوەی تراکینگ - ${alertingPackages.length} پاکەت بێ تراکینگ`,
       content,
     });
-
-    if (success) {
-      appLogger.info("[Tracking Alerts] Notification sent for packages", { count: alertingPackages.length });
-    } else {
-      appLogger.warn("[Tracking Alerts] Failed to send notification");
-    }
+    appLogger.info("[Tracking Alerts] Alert raised", { count: alertingPackages.length });
   } catch (error) {
     appLogger.error("[Tracking Alerts] Error checking and notifying", { error: error instanceof Error ? error.message : String(error) });
   }

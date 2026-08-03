@@ -119,11 +119,14 @@ async function createDatabaseBackup(options: BackupOptions) {
       })
       .where(eq(backups.id, backupId));
 
-    // Notify owner of successful backup
+    // Notify staff of successful backup
     try {
-      const { notifyOwner } = await import("../_core/notification.js");
+      const { notifyStaffAlert } = await import("../_core/notifyStaff.js");
       const tableCount = exportResult.tableCount || Object.keys(exportResult.data).length;
-      await notifyOwner({
+      await notifyStaffAlert({
+        action: "backup_succeeded",
+        category: "system",
+        severity: "info",
         title: "✅ بەکاپی داتابەیس سەرکەوتوو بوو",
         content: `بەکاپێکی تەواو بە سەرکەوتوویی دروستکرا:\n\nناوی فایل: ${filename}\nقەبارە: ${(fileSize / 1024).toFixed(2)} KB\nخشتەکان: ${tableCount} خشتە\nتۆمارەکان: ${exportResult.totalRecords}\nجۆر: ${options.backupType}${options.schedule ? ` (${options.schedule})` : ""}`,
       });
@@ -143,10 +146,14 @@ async function createDatabaseBackup(options: BackupOptions) {
       })
       .where(eq(backups.id, backupId));
 
-    // Notify owner of backup failure
+    // A backup that fails silently is the worst outcome in this file: the
+    // system looks protected and is not. This has to reach a person.
     try {
-      const { notifyOwner } = await import("../_core/notification.js");
-      await notifyOwner({
+      const { notifyStaffAlert } = await import("../_core/notifyStaff.js");
+      await notifyStaffAlert({
+        action: "backup_failed",
+        category: "system",
+        severity: "critical",
         title: "❌ بەکاپی داتابەیس شکستی هێنا",
         content: `بەکاپێک شکستی هێنا:\n\nناوی فایل: ${filename}\nجۆر: ${options.backupType}${options.schedule ? ` (${options.schedule})` : ""}\n\nهەڵە: ${error instanceof Error ? error.message : String(error)}`,
       });

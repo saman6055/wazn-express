@@ -1,4 +1,4 @@
-import { notifyOwner } from "../_core/notification";
+import { notifyStaffAlert } from "../_core/notifyStaff";
 import * as db from "../db";
 import { appLogger } from "../utils/logger";
 
@@ -131,7 +131,13 @@ export async function checkAndNotifyOpenBoxes(): Promise<void> {
     const second = await Promise.all(stale.filter(s => s.step === "second").map(toStale));
 
     const { title, content } = buildReminderMessage(first, second);
-    await notifyOwner({ title, content });
+    await notifyStaffAlert({
+      action: "open_box_reminder",
+      category: "delivery",
+      severity: "warning",
+      title,
+      content,
+    });
 
     appLogger.info("[Open Boxes] Reminder sent", { first: first.length, second: second.length });
   } catch (error) {
