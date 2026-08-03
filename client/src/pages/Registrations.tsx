@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ import {
   ClipboardList, LayoutGrid, Table2, CameraOff, Copy, Search, ImageOff,
   Plane, Ship, AlertTriangle, Users, Package as PackageIcon, DollarSign,
   ExternalLink, Warehouse, ShoppingBag, UserCircle, Layers, ChevronLeft, ChevronRight, ShieldAlert,
-  Scale, MessageCircle, CheckCircle2,
+  Scale, MessageCircle, CheckCircle2, Grid2x2, Grid3x3,
 } from "lucide-react";
 import { buildVolumetricMessage, buildWhatsAppLink } from "@shared/volumetricAlert";
 
@@ -95,6 +96,22 @@ const ORDER_TYPE: Record<string, { label: L; path: string }> = {
   },
 };
 
+type ViewSize = "xl" | "large" | "medium" | "list";
+
+/** How many cards fit across, per density. */
+const VIEW_GRID: Record<Exclude<ViewSize, "list">, string> = {
+  xl: "grid gap-3",
+  large: "grid gap-3 2xl:grid-cols-2",
+  medium: "grid gap-2.5 xl:grid-cols-2 2xl:grid-cols-3",
+};
+
+const VIEW_LABEL: Record<ViewSize, L> = {
+  xl: { ku: "زۆر گەورە", en: "Extra large", ar: "كبير جداً", zh: "超大" },
+  large: { ku: "گەورە", en: "Large", ar: "كبير", zh: "大" },
+  medium: { ku: "ناوەند", en: "Medium", ar: "متوسط", zh: "中" },
+  list: { ku: "لیست", en: "List", ar: "قائمة", zh: "列表" },
+};
+
 const SELF_ORDER: L = { ku: "سێلف ئۆردەر", en: "Self order", ar: "طلب ذاتي", zh: "自购订单" };
 
 const PHOTO_SOURCE: Record<PhotoSource, { label: L; icon: typeof Warehouse }> = {
@@ -151,7 +168,10 @@ export default function Registrations() {
   const label = (v: L) => pickLang(language, v);
   const [, setLocation] = useLocation();
 
-  const [view, setView] = useState<"cards" | "table">("cards");
+  // Four densities, the way a file manager offers them: the same rows, more
+  // or fewer per screen. "list" is the compact table; the other three are
+  // cards at three widths.
+  const [view, setView] = useState<ViewSize>("medium");
   const [groupByCustomer, setGroupByCustomer] = useState(false);
   const [rangeKey, setRangeKey] = useState<RangeKey>("today");
   const [customFrom, setCustomFrom] = useState(toInputDate(startOfDay(new Date())));
@@ -258,6 +278,7 @@ export default function Registrations() {
   };
 
   return (
+    <DashboardLayout>
     <div className="space-y-5 p-4 md:p-6">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-600 via-blue-600 to-cyan-500 p-5 text-white shadow-xl ring-1 ring-white/20 md:p-6">
         <div className="pointer-events-none absolute -end-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
@@ -285,11 +306,18 @@ export default function Registrations() {
             <Toggle active={groupByCustomer} onClick={() => setGroupByCustomer((v) => !v)} icon={Users}>
               {label({ ku: "بە کڕیار", en: "By customer", ar: "حسب العميل", zh: "按客户" })}
             </Toggle>
-            <Toggle active={view === "cards"} onClick={() => setView("cards")} icon={LayoutGrid}>
-              {label({ ku: "کارت", en: "Cards", ar: "بطاقات", zh: "卡片" })}
+            {/* Four sizes, like a file manager's view menu. */}
+            <Toggle active={view === "xl"} onClick={() => setView("xl")} icon={Grid2x2}>
+              {label(VIEW_LABEL.xl)}
             </Toggle>
-            <Toggle active={view === "table"} onClick={() => setView("table")} icon={Table2}>
-              {label({ ku: "خشتە", en: "Table", ar: "جدول", zh: "表格" })}
+            <Toggle active={view === "large"} onClick={() => setView("large")} icon={LayoutGrid}>
+              {label(VIEW_LABEL.large)}
+            </Toggle>
+            <Toggle active={view === "medium"} onClick={() => setView("medium")} icon={Grid3x3}>
+              {label(VIEW_LABEL.medium)}
+            </Toggle>
+            <Toggle active={view === "list"} onClick={() => setView("list")} icon={Table2}>
+              {label(VIEW_LABEL.list)}
             </Toggle>
           </div>
         </div>
@@ -385,9 +413,9 @@ export default function Registrations() {
                     {g.items.length} · {cbm > 0 ? `${cbm.toFixed(2)} CBM` : `${kg.toFixed(2)} kg`} · ${Math.round(value)}
                   </span>
                 </div>
-                {view === "cards"
+                {view !== "list"
                   ? (
-                    <div className="grid gap-2.5 xl:grid-cols-2 2xl:grid-cols-3">
+                    <div className={VIEW_GRID[view]}>
                       {g.items.map((r) => <RegistrationCard key={r.id} row={r} {...cardProps} />)}
                     </div>
                   )
@@ -396,12 +424,12 @@ export default function Registrations() {
             );
           })}
         </div>
-      ) : view === "cards" ? (
-        <div className="space-y-2">
+      ) : view !== "list" ? (
+        <div>
           {/* A grid, not a stack: one card per full-width row left the middle of
               every card empty on a desktop screen, which is what made the page
-              look unfinished. */}
-          <div className="grid gap-2.5 xl:grid-cols-2 2xl:grid-cols-3">
+              look unfinished. The column count follows the chosen density. */}
+          <div className={VIEW_GRID[view]}>
             {rows.map((r) => <RegistrationCard key={r.id} row={r} {...cardProps} />)}
           </div>
         </div>
@@ -411,6 +439,7 @@ export default function Registrations() {
 
       <PhotoGallery gallery={gallery} onChange={setGallery} language={language} />
     </div>
+    </DashboardLayout>
   );
 }
 
@@ -919,43 +948,43 @@ function RegistrationTable({
   const label = (v: L) => pickLang(language, v);
   return (
     <div className="overflow-x-auto rounded-2xl border shadow-sm">
-      <table className="w-full text-sm">
-        <thead className="bg-gradient-to-b from-muted/70 to-muted/30 text-xs text-muted-foreground">
+      <table className="w-full text-[13.5px]">
+        <thead className="bg-blue-100/70 text-[12.5px] font-semibold text-blue-900 dark:bg-blue-950/60 dark:text-blue-100">
           <tr>
-            <th className="px-3 py-2 text-start font-medium">{label({ ku: "وێنە", en: "Photo", ar: "صورة", zh: "照片" })}</th>
-            <th className="px-3 py-2 text-start font-medium">{label({ ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</th>
-            <th className="px-3 py-2 text-start font-medium">{label({ ku: "تراک", en: "Tracking", ar: "التتبّع", zh: "追踪号" })}</th>
-            <th className="px-3 py-2 text-start font-medium">{label({ ku: "ئۆردەر", en: "Order", ar: "الطلب", zh: "订单" })}</th>
-            <th className="px-3 py-2 text-start font-medium">{label({ ku: "ڕێگا", en: "Route", ar: "المسار", zh: "路线" })}</th>
-            <th className="px-3 py-2 text-end font-medium">{label({ ku: "کێش", en: "Weight", ar: "الوزن", zh: "重量" })}</th>
-            <th className="px-3 py-2 text-end font-medium">CBM</th>
-            <th className="px-3 py-2 text-end font-medium">{label({ ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })}</th>
-            <th className="px-3 py-2 text-start font-medium">{label({ ku: "تۆمارکەر", en: "By", ar: "بواسطة", zh: "登记人" })}</th>
-            <th className="px-3 py-2 text-start font-medium">{label({ ku: "کات", en: "Time", ar: "الوقت", zh: "时间" })}</th>
+            <th className="px-3 py-2.5 text-start font-semibold">{label({ ku: "وێنە", en: "Photo", ar: "صورة", zh: "照片" })}</th>
+            <th className="px-3 py-2.5 text-start font-semibold">{label({ ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</th>
+            <th className="px-3 py-2.5 text-start font-semibold">{label({ ku: "تراک", en: "Tracking", ar: "التتبّع", zh: "追踪号" })}</th>
+            <th className="px-3 py-2.5 text-start font-semibold">{label({ ku: "ئۆردەر", en: "Order", ar: "الطلب", zh: "订单" })}</th>
+            <th className="px-3 py-2.5 text-start font-semibold">{label({ ku: "ڕێگا", en: "Route", ar: "المسار", zh: "路线" })}</th>
+            <th className="px-3 py-2.5 text-end font-semibold">{label({ ku: "کێش", en: "Weight", ar: "الوزن", zh: "重量" })}</th>
+            <th className="px-3 py-2.5 text-end font-semibold">CBM</th>
+            <th className="px-3 py-2.5 text-end font-semibold">{label({ ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })}</th>
+            <th className="px-3 py-2.5 text-start font-semibold">{label({ ku: "تۆمارکەر", en: "By", ar: "بواسطة", zh: "登记人" })}</th>
+            <th className="px-3 py-2.5 text-start font-semibold">{label({ ku: "کات", en: "Time", ar: "الوقت", zh: "时间" })}</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => {
             const orderType = r.order ? ORDER_TYPE[r.order.orderType] : null;
             return (
-              <tr key={r.id} className="border-t transition-colors hover:bg-sky-50/50 dark:hover:bg-sky-950/20">
+              <tr key={r.id} className="border-t border-blue-100 text-foreground transition-colors hover:bg-blue-50/70 dark:border-blue-950/60 dark:hover:bg-blue-950/30">
                 <td className="px-3 py-2">
                   {r.photos[0]
                     ? <Thumb photo={r.photos[0]} language={language} className="h-9 w-9" onClick={() => { /* table view keeps it compact */ }} />
                     : <CameraOff className="h-4 w-4 text-muted-foreground" />}
                 </td>
                 <td className="px-3 py-2">
-                  <div className="font-mono text-xs">{r.customerCode || label({ ku: "بێ خاوەن", en: "Unclaimed", ar: "بلا مالك", zh: "无主" })}</div>
-                  <div className="truncate text-xs text-muted-foreground">{r.customerName || "—"}</div>
+                  <div className="font-mono text-[13px] font-medium text-foreground">{r.customerCode || label({ ku: "بێ خاوەن", en: "Unclaimed", ar: "بلا مالك", zh: "无主" })}</div>
+                  <div className="truncate text-[12.5px] text-foreground/70">{r.customerName || "—"}</div>
                 </td>
                 <td className="px-3 py-2">
-                  <button type="button" onClick={() => r.trackingNumber && onCopy(r.trackingNumber)} className="font-mono text-xs hover:text-sky-600 dark:hover:text-sky-400" dir="ltr">
+                  <button type="button" onClick={() => r.trackingNumber && onCopy(r.trackingNumber)} className="font-mono text-[13px] text-foreground hover:text-blue-700 dark:hover:text-blue-300" dir="ltr">
                     {r.trackingNumber || "—"}
                   </button>
                 </td>
-                <td className="px-3 py-2 text-xs">
+                <td className="px-3 py-2.5 text-[12.5px]">
                   {r.order && orderType ? (
-                    <button type="button" onClick={() => onOpenOrder(r)} className="inline-flex items-center gap-1 text-violet-700 hover:underline dark:text-violet-300">
+                    <button type="button" onClick={() => onOpenOrder(r)} className="inline-flex items-center gap-1 font-medium text-violet-800 hover:underline dark:text-violet-200">
                       {label(orderType.label)}
                       <ExternalLink className="h-3 w-3" />
                     </button>
@@ -965,15 +994,15 @@ function RegistrationTable({
                       {label(SELF_ORDER)}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">{label(SELF_ORDER)}</span>
+                    <span className="text-foreground/70">{label(SELF_ORDER)}</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-xs">{pickLang(language, SHIPPING_TYPE_LABEL[r.shippingType])}</td>
-                <td className="px-3 py-2 text-end font-mono text-xs" dir="ltr">{num(r.weightKg) > 0 ? num(r.weightKg).toFixed(2) : "—"}</td>
-                <td className="px-3 py-2 text-end font-mono text-xs" dir="ltr">{num(r.volumeCbm) > 0 ? num(r.volumeCbm).toFixed(3) : "—"}</td>
-                <td className="px-3 py-2 text-end font-mono text-xs" dir="ltr">{num(r.calculatedCostUsd) > 0 ? `$${num(r.calculatedCostUsd).toFixed(2)}` : "—"}</td>
-                <td className="px-3 py-2 text-xs text-muted-foreground">{r.registeredByName || "—"}</td>
-                <td className="px-3 py-2 font-mono text-xs text-muted-foreground" dir="ltr">{shortDateTime(r.registeredAt)}</td>
+                <td className="px-3 py-2.5 text-[12.5px] text-foreground/85">{pickLang(language, SHIPPING_TYPE_LABEL[r.shippingType])}</td>
+                <td className="px-3 py-2.5 text-end font-mono text-[13px] text-foreground" dir="ltr">{num(r.weightKg) > 0 ? num(r.weightKg).toFixed(2) : "—"}</td>
+                <td className="px-3 py-2.5 text-end font-mono text-[13px] text-foreground" dir="ltr">{num(r.volumeCbm) > 0 ? num(r.volumeCbm).toFixed(3) : "—"}</td>
+                <td className="px-3 py-2.5 text-end font-mono text-[13px] font-semibold text-blue-800 dark:text-blue-200" dir="ltr">{num(r.calculatedCostUsd) > 0 ? `$${num(r.calculatedCostUsd).toFixed(2)}` : "—"}</td>
+                <td className="px-3 py-2.5 text-[12.5px] text-foreground/75">{r.registeredByName || "—"}</td>
+                <td className="px-3 py-2.5 font-mono text-[12.5px] text-foreground/75" dir="ltr">{shortDateTime(r.registeredAt)}</td>
               </tr>
             );
           })}

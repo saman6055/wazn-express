@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
@@ -108,6 +109,7 @@ export default function AwaitingArrival() {
   ];
 
   return (
+    <DashboardLayout>
     <div className="space-y-5 p-4 md:p-6">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-5 text-white shadow-xl ring-1 ring-white/20 md:p-6">
         <div className="pointer-events-none absolute -end-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
@@ -210,6 +212,7 @@ export default function AwaitingArrival() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 }
 
