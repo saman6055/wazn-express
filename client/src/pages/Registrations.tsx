@@ -229,8 +229,19 @@ export default function Registrations() {
 
   const { from, to } = useMemo(() => {
     if (rangeKey !== "custom") return rangeFor(rangeKey);
+    // A half-typed or cleared date field yields an Invalid Date, and
+    // toISOString() on one throws — which took the whole page down while
+    // somebody was still picking the day. Fall back to today until both ends
+    // are real dates.
+    const today = rangeFor("today");
+    const f = startOfDay(new Date(customFrom));
+    const t = startOfDay(new Date(customTo));
+    if (Number.isNaN(f.getTime()) || Number.isNaN(t.getTime())) return today;
+    // Typing the end before the start is normal; read the pair either way
+    // round rather than returning nothing.
+    const [lo, hi] = f <= t ? [f, t] : [t, f];
     // The picker's end date is inclusive; the query bound is exclusive.
-    return { from: startOfDay(new Date(customFrom)), to: addDays(startOfDay(new Date(customTo)), 1) };
+    return { from: lo, to: addDays(hi, 1) };
   }, [rangeKey, customFrom, customTo]);
 
   const { data, isLoading } = trpc.packages.registrations.useQuery({
