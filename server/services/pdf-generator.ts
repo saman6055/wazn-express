@@ -1,3 +1,4 @@
+import { getCompanyDetails } from "./companyDetails";
 import PDFDocument from "pdfkit";
 import { storagePut } from "./storage.service";
 import { nanoid } from "nanoid";
@@ -10,13 +11,30 @@ interface CompanyInfo {
   website: string;
 }
 
-const COMPANY_INFO: CompanyInfo = {
+/**
+ * Filled at the top of each generator from settings. It was a literal, so
+ * every PDF carried "+964 750 XXX XXXX" — a placeholder at the top of a page
+ * staff see daily and have stopped reading.
+ */
+let COMPANY_INFO: CompanyInfo = {
   name: "Wazn Express",
   address: "Erbil, Kurdistan Region, Iraq",
-  phone: "+964 750 XXX XXXX",
+  phone: "",
   email: "info@waznexpress.com",
   website: "www.waznexpress.com",
 };
+
+/** Refresh the header block from settings before drawing a document. */
+async function loadCompanyInfo(): Promise<void> {
+  const c = await getCompanyDetails();
+  COMPANY_INFO = {
+    name: c.name,
+    address: c.address,
+    phone: c.phone,
+    email: c.email,
+    website: c.website ?? COMPANY_INFO.website,
+  };
+}
 
 // Colors
 const COLORS = {
@@ -88,6 +106,7 @@ interface InvoiceData {
 }
 
 export async function generateBatchFinancialPDF(data: BatchFinancialData): Promise<string> {
+  await loadCompanyInfo();
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({ size: "A4", margin: 50 });
@@ -244,6 +263,7 @@ export async function generateBatchFinancialPDF(data: BatchFinancialData): Promi
 }
 
 export async function generateInvoicePDF(data: InvoiceData): Promise<string> {
+  await loadCompanyInfo();
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({ size: "A4", margin: 50 });
@@ -450,6 +470,7 @@ export async function generateCustomerStatementPDF(data: {
     balance: number;
   }>;
 }): Promise<string> {
+  await loadCompanyInfo();
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({ size: "A4", margin: 50 });
@@ -584,6 +605,7 @@ interface ProfitLossData {
 }
 
 export async function generateProfitLossPDF(data: ProfitLossData): Promise<string> {
+  await loadCompanyInfo();
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({ size: "A4", margin: 50 });

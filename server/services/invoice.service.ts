@@ -1,3 +1,4 @@
+import { getCompanyDetails } from "./companyDetails";
 import PDFDocument from "pdfkit";
 import { Readable } from "stream";
 
@@ -236,14 +237,17 @@ export async function generatePackageInvoice(params: {
   priceUsd: number;
   currency: string;
 }): Promise<Buffer> {
+  // From settings, not from a literal: the placeholder phone number that used
+  // to sit here went out on every invoice.
+  const company = await getCompanyDetails();
   const data: InvoiceData = {
     invoiceNumber: params.invoiceNumber,
     invoiceDate: new Date(),
-    companyName: "Wazn Express",
-    companyNameKu: "وەزن ئێکسپرێس",
-    companyAddress: "Iraq, Kurdistan",
-    companyPhone: "+964 XXX XXX XXXX",
-    companyEmail: "info@waznexpress.com",
+    companyName: company.name,
+    companyNameKu: company.nameKu,
+    companyAddress: company.address,
+    companyPhone: company.phone,
+    companyEmail: company.email,
     customerName: params.customerName,
     customerCode: params.customerCode,
     items: [
@@ -278,14 +282,17 @@ export async function generatePaymentReceipt(params: {
   referenceNumber?: string;
   balanceAfter: number;
 }): Promise<Buffer> {
+  // From settings, not from a literal: the placeholder phone number that used
+  // to sit here went out on every invoice.
+  const company = await getCompanyDetails();
   const data: InvoiceData = {
     invoiceNumber: params.invoiceNumber,
     invoiceDate: new Date(),
-    companyName: "Wazn Express",
-    companyNameKu: "وەزن ئێکسپرێس",
-    companyAddress: "Iraq, Kurdistan",
-    companyPhone: "+964 XXX XXX XXXX",
-    companyEmail: "info@waznexpress.com",
+    companyName: company.name,
+    companyNameKu: company.nameKu,
+    companyAddress: company.address,
+    companyPhone: company.phone,
+    companyEmail: company.email,
     customerName: params.customerName,
     customerCode: params.customerCode,
     items: [
