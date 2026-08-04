@@ -14,7 +14,6 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
-import { missingMeasurements } from "@shared/measurementGuard";
 
 import { soundManager } from "@/lib/soundManager";
 
@@ -676,38 +675,6 @@ export default function QuickRegister() {
       return;
     }
 
-    // A parcel with no measurements cannot be priced or batched, and once the
-    // box is on a pile in the China warehouse nobody can go back and weigh it.
-    // The server refuses this too; catching it here keeps the operator from
-    // losing the form they just filled in.
-    const missing = missingMeasurements({
-      shippingType,
-      weightKg,
-      lengthCm,
-      widthCm,
-      heightCm,
-      // Sea can take a CBM typed straight in; air derives it from the sides.
-      volumeCbm: shippingType === "sea" ? directCbm : undefined,
-    });
-    if (missing.length > 0) {
-      soundManager.playError();
-      toast.error(
-        <div className="flex items-start gap-2">
-          <Scale className="h-5 w-5 shrink-0 text-red-500" />
-          <div>
-            <div className="font-medium">
-              {missing.includes("weight")
-                ? t("quickRegister.measureMissingWeight")
-                : t("quickRegister.measureMissingVolume")}
-            </div>
-            <div className="text-sm">{t("quickRegister.measureWhy")}</div>
-          </div>
-        </div>,
-        { duration: 7000 },
-      );
-      weightRef.current?.focus();
-      return;
-    }
 
     // Soft, non-blocking batch reminder. Batch stays optional: on the FIRST
     // Save with no batch selected we warn and stop so staff can pick one — but

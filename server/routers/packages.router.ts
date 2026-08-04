@@ -11,7 +11,6 @@ import type { InsertPackage, InsertFullPackageOrder } from "../../drizzle/schema
 import { fullPackageOrders, fullPackageOrderTrackings, packages } from "../../drizzle/schema";
 import { signQrData, verifyQrSignature } from "../utils/qr";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
-import { missingMeasurements, missingMeasurementMessage } from "@shared/measurementGuard";
 import { chargeableWeight, isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { assessVolumetric } from "@shared/volumetricAlert";
 
@@ -462,22 +461,12 @@ export const packagesRouter = router({
           }
         }
 
-        // A parcel with no measurements cannot be priced or batched, and by the
-        // time anyone notices, the box is somewhere in a pile in the China
-        // warehouse and nobody can go back and weigh it. Refuse here, where it
-        // is still on the scale. Air needs weight and dimensions (chargeable
-        // weight is the greater of the two); sea needs only its volume.
-        const missing = missingMeasurements({
-          shippingType: input.shippingType,
-          weightKg: input.weightKg,
-          lengthCm: input.lengthCm,
-          widthCm: input.widthCm,
-          heightCm: input.heightCm,
-          volumeCbm: input.volumeCbm,
-        });
-        if (missing.length > 0) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: missingMeasurementMessage(missing) });
-        }
+        // No measurement guard here any more. It was refusing sea parcels with
+        // no volume, and stopping the counter to type three numbers costs more
+        // than it saves — staff can see which boxes need measuring. A parcel
+        // that cannot be priced is surfaced on the registrations page instead,
+        // as "no weight" / "not priced", where it can be fixed without holding
+        // anyone up at the scanner.
 
         // ----- Resolve & validate linked orders -----
         // Caller may pass either the new linkedOrderIds[] or the legacy
