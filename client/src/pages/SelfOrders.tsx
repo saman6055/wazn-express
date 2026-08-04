@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -64,7 +65,13 @@ export default function SelfOrders() {
     days: days === "all" ? undefined : Number(days),
   });
   const s = data?.summary;
-  const recent = data?.recent ?? [];
+  const allRecent = data?.recent ?? [];
+  const {
+    route: routeFilter,
+    setRoute: setRouteFilter,
+    counts: routeCounts,
+    filtered: recent,
+  } = useShippingRouteFilter(allRecent, (r: any) => r.shippingType);
 
   return (
     <DashboardLayout>
@@ -203,8 +210,14 @@ export default function SelfOrders() {
         {/* Recent self orders table */}
         <Card>
           <CardContent className="p-0">
-            <div className="border-b p-4">
+            <div className="flex flex-wrap items-center gap-3 border-b p-4">
               <h3 className="text-sm font-semibold">{pickLang(language, { ku: "دوایین سێلف ئۆردەرەکان", en: "Recent Self Orders", ar: "أحدث الطلبات الذاتية", zh: "最近的自助订单" })}</h3>
+              <ShippingRouteFilter
+                className="ms-auto"
+                value={routeFilter}
+                onChange={setRouteFilter}
+                counts={routeCounts}
+              />
             </div>
             <Table>
               <TableHeader>

@@ -46,6 +46,7 @@ import { useState, useMemo, useEffect, useCallback, memo } from "react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { useLocation } from "wouter";
+import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -621,6 +622,15 @@ const [, setLocation] = useLocation();
     }
   }, [filteredPackages, activeTab]);
 
+  // Applied after the tab split, so the counts on the control describe the tab
+  // in front of you rather than the whole table.
+  const {
+    route: routeFilter,
+    setRoute: setRouteFilter,
+    counts: routeCounts,
+    filtered: routedPackages,
+  } = useShippingRouteFilter(tabFilteredPackages ?? [], (p: any) => p.shippingType);
+
   /**
    * Registrations taken in today, and the ones that cannot go any further
    * until somebody fills a gap.
@@ -1152,6 +1162,11 @@ const [, setLocation] = useLocation();
                     className="pl-9"
                   />
                 </div>
+                <ShippingRouteFilter
+                  value={routeFilter}
+                  onChange={setRouteFilter}
+                  counts={routeCounts}
+                />
                 <Button 
                   variant={showFilters ? "default" : "outline"} 
                   onClick={() => setShowFilters(!showFilters)}
@@ -1403,7 +1418,7 @@ const [, setLocation] = useLocation();
                     </TableCell>
                   </TableRow>
                 ) : (
-                  tabFilteredPackages?.map((pkg) => (
+                  routedPackages.map((pkg) => (
                     <PackageTableRow
                       key={pkg.id}
                       pkg={pkg as Package}
@@ -1418,7 +1433,7 @@ const [, setLocation] = useLocation();
                     />
                   ))
                 )}
-                {!isLoadingPackages && (!tabFilteredPackages || tabFilteredPackages.length === 0) && (
+                {!isLoadingPackages && routedPackages.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={12} className="p-4">
                       <EmptyState

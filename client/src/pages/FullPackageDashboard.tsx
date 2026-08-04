@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -237,6 +238,15 @@ export default function FullPackageDashboard() {
   }, [orders, customerFilter, batchFilter, dateFrom, dateTo, minPrice, maxPrice, shippingFilter, trackingFilter, imageFilter, sortField, sortDirection]);
 
   // Calculate stats
+  // Route is applied last, so the counts on the control describe what the
+  // other filters have already left rather than the whole table.
+  const {
+    route: routeFilter,
+    setRoute: setRouteFilter,
+    counts: routeCounts,
+    filtered: routedOrders,
+  } = useShippingRouteFilter(filteredOrders, (o: any) => o.shippingType);
+
   const totalOrders = filteredOrders.length;
   const pendingOrders = filteredOrders.filter(o => ["pending", "ordered", "tracking_added"].includes(o.status)).length;
   const inTransitOrders = filteredOrders.filter(o => ["in_batch", "in_transit"].includes(o.status)).length;
@@ -714,6 +724,13 @@ export default function FullPackageDashboard() {
                     ))}
                   </SelectContent>
                 </Select>
+                {/* Route first: it is the question asked most often, and it
+                    answers without opening a panel. */}
+                <ShippingRouteFilter
+                  value={routeFilter}
+                  onChange={setRouteFilter}
+                  counts={routeCounts}
+                />
                 <Button 
                   variant={showFilters ? "secondary" : "outline"} 
                   onClick={() => setShowFilters(!showFilters)}
@@ -1011,7 +1028,7 @@ export default function FullPackageDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredOrders.map((order) => (
+                    {routedOrders.map((order) => (
                       <TableRow
                         key={order.id}
                         className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"
