@@ -1,6 +1,4 @@
 import { RegistrationsSummaryCard } from "@/components/dashboard/RegistrationsSummaryCard";
-import { StaleDepotCard } from "@/components/dashboard/StaleDepotCard";
-import { VolumetricWatchCard } from "@/components/dashboard/VolumetricWatchCard";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
@@ -341,8 +339,6 @@ export default function Dashboard() {
 
         {/* Today's intake at the scanner — sums and the busiest customers;
             the Registrations tab on /packages is where the rows get worked. */}
-        <VolumetricWatchCard />
-            <StaleDepotCard />
             <RegistrationsSummaryCard className="mb-4" />
 
         {/* Financial overview */}

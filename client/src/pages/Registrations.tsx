@@ -19,6 +19,8 @@ import {
   Scale, MessageCircle, CheckCircle2, Grid2x2, Grid3x3,
 } from "lucide-react";
 import { buildVolumetricMessage, buildWhatsAppLink } from "@shared/volumetricAlert";
+import { VolumetricWatchCard } from "@/components/registrations/VolumetricWatchCard";
+import { StaleDepotCard } from "@/components/registrations/StaleDepotCard";
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
@@ -479,6 +481,17 @@ export default function Registrations() {
             className="h-10 rounded-xl ps-9"
           />
         </div>
+      </div>
+
+      {/* Standing problems, not today's intake.
+          These two do not belong under a date filter: a parcel billed on
+          volume that nobody has settled with the customer, or one that has sat
+          fifteen days without a batch, is outstanding whatever day it arrived.
+          Under "today" they would simply vanish. They lived on the dashboard,
+          which meant leaving this page to see them and coming back to act. */}
+      <div className="grid gap-2.5 2xl:grid-cols-2">
+        <VolumetricWatchCard />
+        <StaleDepotCard />
       </div>
 
       {isLoading ? (

@@ -2,7 +2,6 @@ import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
-import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Warehouse, Clock, ChevronLeft } from "lucide-react";
@@ -43,11 +42,11 @@ export function StaleDepotCard({ className }: { className?: string }) {
   const oldest = rows[0]?.daysInDepot ?? 0;
 
   return (
-    <Card className={cn("overflow-hidden rounded-2xl border-amber-300/80 dark:border-amber-800/70", className)}>
-      <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
+    <Card className={cn("overflow-hidden rounded-2xl border-red-300/80 dark:border-red-800/70", className)}>
+      <div className="h-1 bg-gradient-to-r from-red-500 to-rose-600" />
       <CardContent className="pt-4">
         <div className="mb-3 flex items-center gap-2">
-          <Warehouse className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          <Warehouse className="h-5 w-5 text-red-600 dark:text-red-400" />
           <h3 className="font-bold">
             {label({
               ku: "لە کۆگای چین ماونەتەوە",
@@ -56,16 +55,9 @@ export function StaleDepotCard({ className }: { className?: string }) {
               zh: "滞留在中国仓库",
             })}
           </h3>
-          <span className="rounded-lg bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+          <span className="rounded-lg bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-950/50 dark:text-red-200">
             {rows.length}
           </span>
-          <Link
-            href="/packages/registrations"
-            className="ms-auto inline-flex items-center gap-0.5 text-xs font-medium text-sky-600 dark:text-sky-400"
-          >
-            {label({ ku: "بینینی هەمووی", en: "See all", ar: "عرض الكل", zh: "查看全部" })}
-            <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
-          </Link>
         </div>
 
         <p className="mb-3 text-xs text-muted-foreground">
@@ -80,14 +72,14 @@ export function StaleDepotCard({ className }: { className?: string }) {
         <div className="space-y-1.5">
           {rows.slice(0, 4).map((r) => (
             <div key={r.id} className="flex items-center gap-2 rounded-xl border px-3 py-2">
-              <span className="shrink-0 rounded-md bg-sky-50 px-1.5 py-0.5 font-mono text-[11px] text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+              <span className="shrink-0 rounded-md bg-blue-100 px-1.5 py-0.5 font-mono text-[11px] text-blue-900 dark:bg-blue-950/50 dark:text-blue-100">
                 {r.customerCode ?? "—"}
               </span>
               <span className="min-w-0 flex-1 truncate text-xs">{r.customerName ?? "—"}</span>
               <span className="shrink-0 font-mono text-[11px] text-muted-foreground" dir="ltr">
                 {r.trackingNumber ?? r.packageCode}
               </span>
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[11px] font-medium text-red-800 dark:bg-red-950/50 dark:text-red-200">
                 <Clock className="h-3 w-3" />
                 <span dir="ltr">{r.daysInDepot}</span>
               </span>

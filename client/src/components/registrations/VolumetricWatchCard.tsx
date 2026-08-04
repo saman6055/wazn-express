@@ -3,11 +3,10 @@ import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
-import { Link } from "wouter";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Scale, MessageCircle, CheckCircle2, ChevronLeft, AlertTriangle } from "lucide-react";
+import { Scale, MessageCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { buildVolumetricMessage, buildWhatsAppLink } from "@shared/volumetricAlert";
 
 type L = { ku: string; en: string; ar: string; zh: string };
@@ -99,13 +98,6 @@ export function VolumetricWatchCard({ className }: { className?: string }) {
           <span className="rounded-lg bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-950/50 dark:text-red-200">
             {rows.length}
           </span>
-          <Link
-            href="/packages/registrations"
-            className="ms-auto inline-flex items-center gap-0.5 text-xs font-medium text-sky-600 dark:text-sky-400"
-          >
-            {label({ ku: "تۆمارەکان", en: "Registrations", ar: "التسجيلات", zh: "登记记录" })}
-            <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
-          </Link>
         </div>
 
         <p className="mb-3 text-xs text-muted-foreground">
@@ -143,7 +135,7 @@ export function VolumetricWatchCard({ className }: { className?: string }) {
             return (
               <div key={r.id} className="rounded-xl border border-red-200 bg-red-50/40 px-3 py-2 dark:border-red-900/60 dark:bg-red-950/20">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="shrink-0 rounded-md bg-sky-50 px-1.5 py-0.5 font-mono text-[11px] text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+                  <span className="shrink-0 rounded-md bg-blue-100 px-1.5 py-0.5 font-mono text-[11px] text-blue-900 dark:bg-blue-950/50 dark:text-blue-100">
                     {r.customerCode ?? "—"}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-xs">{r.customerName ?? "—"}</span>
