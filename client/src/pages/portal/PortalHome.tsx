@@ -27,6 +27,7 @@ import { ReferralCard } from "@/components/portal/ReferralCard";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalHeaderControls, PortalClock, usePortalMode } from "@/components/portal/PortalHeaderControls";
 import { headerGradient, isLightHeader, modeDef, tint, gradient } from "@/lib/portalModes";
+import { PhotoStack } from "@/components/PhotoStack";
 
 // Animated Counter Component
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
@@ -921,7 +922,7 @@ const { t, language } = useLanguage();
 
           <div className="space-y-2.5">
             {declaredPackages.slice(0, 5).map((d: any) => {
-              const img = Array.isArray(d.productImages) ? d.productImages[0] : undefined;
+              const imgs: string[] = Array.isArray(d.productImages) ? d.productImages : [];
               const status = d.status as "pending" | "matched" | "received" | "cancelled";
               const statusMeta: Record<string, { label: { ku: string; en: string; ar: string; zh: string }; cls: string }> = {
                 pending:  { label: { ku: "چاوەڕوانی گەیشتن", en: "Awaiting arrival", ar: "بانتظار الوصول", zh: "等待到达" }, cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
@@ -937,16 +938,18 @@ const { t, language } = useLanguage();
                     isDark ? "bg-slate-800 hover:bg-slate-700/70" : "bg-white hover:bg-slate-50"
                   )}>
                     {/* Thumbnail */}
-                    <div className={cn(
-                      "w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center",
-                      isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
-                    )}>
-                      {img ? (
-                        <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
-                      ) : (
-                        <Package className={cn("w-6 h-6", isDark ? "text-slate-500" : "text-slate-400")} />
-                      )}
-                    </div>
+                    <PhotoStack
+                      photos={imgs}
+                      className="w-14 h-14 rounded-xl"
+                      fallback={
+                        <div className={cn(
+                          "w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center",
+                          isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
+                        )}>
+                          <Package className={cn("w-6 h-6", isDark ? "text-slate-500" : "text-slate-400")} />
+                        </div>
+                      }
+                    />
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className={cn("font-mono text-sm font-bold truncate", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>

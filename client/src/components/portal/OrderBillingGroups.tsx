@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { ChevronDown, Hash, Package, ShoppingBag, Receipt, Truck, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { WhatsAppHelpButton } from "./WhatsAppHelpButton";
+import { PhotoStack } from "@/components/PhotoStack";
 
 // ---------------------------------------------------------------------------
 // OrderBillingGroups — presentation-only fix for "one item, three receipts".
@@ -149,7 +150,14 @@ export function OrderBillingGroups({
         // Client-side join to the source order/package for identity info.
         const fp = g.refType !== "package" ? orderById.get(g.refId) : undefined;
         const pkg = g.refType === "package" ? pkgById.get(g.refId) : undefined;
-        const image = fp?.productImage || (Array.isArray(pkg?.photos) ? pkg.photos[0] : undefined);
+        // Every picture of the thing being billed, not just the first: the
+        // warehouse shots and the product shot are all evidence of what the
+        // customer is paying for.
+        const images: string[] = [
+          ...(Array.isArray(pkg?.photos) ? (pkg.photos as string[]) : []),
+          ...(fp?.productImage ? [fp.productImage as string] : []),
+          ...(Array.isArray((fp as any)?.productImages) ? ((fp as any).productImages as string[]) : []),
+        ];
         const code = fp?.orderCode || pkg?.packageCode || null;
         const tracking = fp?.trackingNumber || pkg?.trackingNumber || null;
         const quantity = fp?.quantity != null && Number(fp.quantity) > 0 ? Number(fp.quantity) : null;
@@ -162,20 +170,14 @@ export function OrderBillingGroups({
               isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100 dark:border-slate-800/60 shadow-sm",
             )}
           >
-            <button
-              type="button"
-              onClick={() => setOpenKey(open ? null : g.key)}
-              className="w-full p-3.5 text-start"
-            >
-              <div className="flex items-center gap-3">
-                {image ? (
-                  <img
-                    src={image}
-                    alt=""
-                    loading="lazy"
-                    className="h-12 w-12 shrink-0 rounded-xl object-cover ring-1 ring-black/5 dark:ring-white/10"
-                  />
-                ) : (
+            {/* The thumbnail sits outside the expand button rather than inside
+                it: opening the photos and opening the row are two different
+                actions, and a button inside a button is not valid markup. */}
+            <div className="flex items-center gap-3 p-3.5">
+              <PhotoStack
+                photos={images}
+                className="h-12 w-12 rounded-xl ring-1 ring-black/5 dark:ring-white/10"
+                fallback={
                   <div
                     className={cn(
                       "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
@@ -184,7 +186,14 @@ export function OrderBillingGroups({
                   >
                     <Icon className="h-5 w-5" />
                   </div>
-                )}
+                }
+              />
+              <button
+                type="button"
+                onClick={() => setOpenKey(open ? null : g.key)}
+                className="min-w-0 flex-1 text-start"
+              >
+                <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className={cn("truncate text-sm font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
@@ -261,7 +270,8 @@ export function OrderBillingGroups({
                   })}
                 </p>
               )}
-            </button>
+              </button>
+            </div>
 
             {open && (
               <div className={cn("border-t px-3.5 py-2", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>

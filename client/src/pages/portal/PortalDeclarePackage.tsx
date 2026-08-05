@@ -30,6 +30,7 @@ import {
   StickyNote,
   CalendarDays,
 } from "lucide-react";
+import { PhotoStack } from "@/components/PhotoStack";
 
 // Platforms come from productAttributes — the same list the staff order forms
 // use — so a shop the admin adds shows up here too. These are only the
@@ -229,13 +230,15 @@ export default function PortalDeclarePackage() {
               const platformLabel = d.platform || null;
               return (
                 <div key={d.id} className={cn("flex items-center gap-3 rounded-2xl border p-3", isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60")}>
-                  {d.productImages?.[0] ? (
-                    <img loading="lazy" decoding="async" src={d.productImages[0]} alt="" className="h-14 w-14 shrink-0 rounded-xl border object-cover" />
-                  ) : (
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-muted/50">
-                      <Package className="h-6 w-6 text-muted-foreground/50" />
-                    </div>
-                  )}
+                  <PhotoStack
+                    photos={d.productImages ?? []}
+                    className="h-14 w-14 rounded-xl border"
+                    fallback={
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-muted/50">
+                        <Package className="h-6 w-6 text-muted-foreground/50" />
+                      </div>
+                    }
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-mono text-sm font-bold" dir="ltr">{d.trackingNumber}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">

@@ -555,7 +555,7 @@ export default function Registrations() {
                       {g.items.map((r) => <RegistrationCard key={r.id} row={r} {...cardProps} />)}
                     </div>
                   )
-                  : <RegistrationTable rows={g.items} language={language} onCopy={copyTracking} onOpenOrder={openOrder} />}
+                  : <RegistrationTable rows={g.items} language={language} onCopy={copyTracking} onOpenOrder={openOrder} onGallery={setGallery} />}
               </div>
             );
           })}
@@ -570,7 +570,7 @@ export default function Registrations() {
           </div>
         </div>
       ) : (
-        <RegistrationTable rows={rows} language={language} onCopy={copyTracking} onOpenOrder={openOrder} />
+        <RegistrationTable rows={rows} language={language} onCopy={copyTracking} onOpenOrder={openOrder} onGallery={setGallery} />
       )}
 
       <PhotoGallery gallery={gallery} onChange={setGallery} language={language} />
@@ -1092,12 +1092,13 @@ function PhotoGallery({
 }
 
 function RegistrationTable({
-  rows, language, onCopy, onOpenOrder,
+  rows, language, onCopy, onOpenOrder, onGallery,
 }: {
   rows: Registration[];
   language: string;
   onCopy: (tn: string) => void;
   onOpenOrder: (r: Registration) => void;
+  onGallery: (g: { photos: Photo[]; index: number }) => void;
 }) {
   const label = (v: L) => pickLang(language, v);
   return (
@@ -1123,9 +1124,30 @@ function RegistrationTable({
             return (
               <tr key={r.id} className="border-t border-blue-100 text-foreground transition-colors hover:bg-blue-50/70 dark:border-blue-950/60 dark:hover:bg-blue-950/30">
                 <td className="px-3 py-2">
-                  {r.photos[0]
-                    ? <Thumb photo={r.photos[0]} language={language} className="h-9 w-9" onClick={() => { /* table view keeps it compact */ }} />
-                    : <CameraOff className="h-4 w-4 text-muted-foreground" />}
+                  {/* One thumbnail keeps the row compact, but it now says how
+                      many photos there are and opens all of them — the table
+                      used to show the first and swallow the click, so a parcel
+                      photographed from six sides looked like it had one. */}
+                  {r.photos[0] ? (
+                    <div className="relative w-9">
+                      <Thumb
+                        photo={r.photos[0]}
+                        language={language}
+                        className="h-9 w-9"
+                        onClick={() => onGallery({ photos: r.photos, index: 0 })}
+                      />
+                      {r.photos.length > 1 && (
+                        <span
+                          className="pointer-events-none absolute -bottom-1 -start-1 min-w-[1.1rem] rounded-full bg-blue-600 px-1 text-center text-[10px] font-bold leading-[1.1rem] text-white ring-2 ring-background"
+                          dir="ltr"
+                        >
+                          {r.photos.length}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <CameraOff className="h-4 w-4 text-muted-foreground" />
+                  )}
                 </td>
                 <td className="px-3 py-2">
                   <div className="font-mono text-[13px] font-medium text-foreground">{r.customerCode || label({ ku: "بێ خاوەن", en: "Unclaimed", ar: "بلا مالك", zh: "无主" })}</div>

@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
+import { PhotoStack } from "@/components/PhotoStack";
 import { pickLang } from "@/lib/lang";
 
 // Company WhatsApp for extra proof / questions when claiming a package.
@@ -215,18 +216,18 @@ export default function PortalUnclaimedPackages() {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
-                        {pkg.photos?.[0] ? (
-                          <img loading="lazy" decoding="async"
-                            src={pkg.photos[0]}
-                            alt=""
-                            className="w-12 h-12 rounded-xl object-cover border border-orange-100 dark:border-orange-800/60 shrink-0 cursor-zoom-in"
-                            onClick={() => window.open(pkg.photos![0], "_blank", "noopener,noreferrer")}
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center shrink-0">
-                            <Package className="w-6 h-6 text-orange-600" />
-                          </div>
-                        )}
+                        {/* An unclaimed parcel is identified by its photos, so
+                            all of them matter — this used to open only the
+                            first one, in a new browser tab. */}
+                        <PhotoStack
+                          photos={pkg.photos ?? []}
+                          className="w-12 h-12 rounded-xl border border-orange-100 dark:border-orange-800/60"
+                          fallback={
+                            <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center shrink-0">
+                              <Package className="w-6 h-6 text-orange-600" />
+                            </div>
+                          }
+                        />
                         <div className="flex-1">
                           {/* Tracking Number - Main Display */}
                           {pkg.trackingNumber && (
@@ -392,13 +393,15 @@ export default function PortalUnclaimedPackages() {
               {/* Package Info */}
               <div className="bg-gray-50 dark:bg-gray-950/40 rounded-xl p-4">
                 <div className="flex items-center gap-3">
-                  {selectedPackage.photos?.[0] ? (
-                    <img loading="lazy" decoding="async" src={selectedPackage.photos[0]} alt="" className="w-12 h-12 rounded-xl object-cover shadow-sm shrink-0" />
-                  ) : (
-                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
-                      <Package className="w-6 h-6 text-slate-600" />
-                    </div>
-                  )}
+                  <PhotoStack
+                    photos={selectedPackage.photos ?? []}
+                    className="w-12 h-12 rounded-xl shadow-sm"
+                    fallback={
+                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                        <Package className="w-6 h-6 text-slate-600" />
+                      </div>
+                    }
+                  />
                   <div>
                     <p className="font-semibold text-slate-800 dark:text-slate-200">
                       {selectedPackage.trackingNumber || selectedPackage.packageCode}

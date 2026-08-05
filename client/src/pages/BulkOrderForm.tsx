@@ -50,6 +50,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { PhotoStack } from "@/components/PhotoStack";
 
 type AdvancePaymentMethod = "CASH" | "BANK_TRANSFER" | "FIB" | "FASTPAY" | "ZAINCASH" | "ASIAHAWALA" | "CARD" | "OTHER";
 
@@ -616,8 +617,8 @@ export default function BulkOrderForm() {
 
                   {/* Image thumbnail indicator */}
                   {item.productImages.length > 0 && (
-                    <div className="w-8 h-8 rounded-lg overflow-hidden border shrink-0" onClick={e => e.stopPropagation()}>
-                      <img src={item.productImages[0]} alt="" className="w-full h-full object-cover" />
+                    <div onClick={e => e.stopPropagation()}>
+                      <PhotoStack photos={item.productImages} className="w-8 h-8 rounded-lg border" />
                     </div>
                   )}
                   

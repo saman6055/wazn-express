@@ -16,6 +16,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
 
 import { soundManager } from "@/lib/soundManager";
+import { PhotoStack } from "@/components/PhotoStack";
 
 export default function QuickRegister() {
   const { t, language } = useTranslation();
@@ -1325,13 +1326,18 @@ export default function QuickRegister() {
               {declaredMatch?.customer && (
                 <Card className="border-2 border-emerald-300 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-card rounded-2xl shadow-sm overflow-hidden">
                   <CardContent className="p-4 flex items-center gap-4">
-                    {declaredMatch.productImages?.[0] ? (
-                      <img src={declaredMatch.productImages[0]} alt="" className="w-16 h-16 rounded-xl object-cover border-2 border-emerald-200 dark:border-emerald-800 shrink-0" />
-                    ) : (
-                      <div className="w-16 h-16 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
-                        <Package className="h-7 w-7 text-emerald-500" />
-                      </div>
-                    )}
+                    {/* The customer often sends several shots of what they
+                        ordered; matching a parcel to it is easier with all of
+                        them than with whichever happened to be first. */}
+                    <PhotoStack
+                      photos={declaredMatch.productImages ?? []}
+                      className="w-16 h-16 rounded-xl border-2 border-emerald-200 dark:border-emerald-800"
+                      fallback={
+                        <div className="w-16 h-16 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                          <Package className="h-7 w-7 text-emerald-500" />
+                        </div>
+                      }
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-600 text-white">
@@ -1365,17 +1371,15 @@ export default function QuickRegister() {
                   <CardContent className="p-5 space-y-4">
                     {/* Header: product image + type + order code + product name */}
                     <div className="flex items-center gap-4 min-w-0">
-                      {(foundOrder.order.productImage || foundOrder.order.productImages?.[0]) ? (
-                        <img
-                          src={foundOrder.order.productImage || foundOrder.order.productImages[0]}
-                          alt=""
-                          className="w-20 h-20 rounded-xl object-cover border-2 border-indigo-200 dark:border-indigo-800 shadow-sm shrink-0"
-                        />
-                      ) : (
-                        <div className="w-20 h-20 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
-                          <Package className="h-8 w-8 text-indigo-400" />
-                        </div>
-                      )}
+                      <PhotoStack
+                        photos={[foundOrder.order.productImage, ...(foundOrder.order.productImages ?? [])]}
+                        className="w-20 h-20 rounded-xl border-2 border-indigo-200 dark:border-indigo-800 shadow-sm"
+                        fallback={
+                          <div className="w-20 h-20 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
+                            <Package className="h-8 w-8 text-indigo-400" />
+                          </div>
+                        }
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-600 text-white">

@@ -2,7 +2,9 @@ import { pickLang } from "@/lib/lang";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { Box } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { PhotoLightbox } from "@/components/PhotoStack";
+import { dedupePhotos } from "@/lib/photoList";
 
 // ---------------------------------------------------------------------------
 // PackageThumb — a package's best available picture, with a small badge saying
@@ -28,6 +30,10 @@ export type ThumbSource = "warehouse" | "product" | "declared" | null;
 interface Resolved {
   url: string | null;
   source: ThumbSource;
+  /** Every photo from the winning source, not just the one on the thumbnail.
+   *  Staff shoot a parcel from several sides; the customer could only ever see
+   *  the first of them. */
+  urls: string[];
 }
 
 /** Hook: builds tracking→image lookups once, returns a per-package resolver.
@@ -42,31 +48,35 @@ export function usePackageImages() {
     retry: false,
   });
 
+  // Each map holds the whole set of images for a tracking number, so a
+  // thumbnail can say how many there are and open all of them.
   const productByTracking = useMemo(() => {
-    const m = new Map<string, string>();
+    const m = new Map<string, string[]>();
     for (const o of (fpOrders as any[]) ?? []) {
-      const img = o.productImage || (Array.isArray(o.productImages) ? o.productImages[0] : null);
-      if (o.trackingNumber && img) m.set(String(o.trackingNumber), img);
+      const imgs = dedupePhotos(o.productImage, o.productImages);
+      if (o.trackingNumber && imgs.length) m.set(String(o.trackingNumber), imgs);
     }
     return m;
   }, [fpOrders]);
 
   const declaredByTracking = useMemo(() => {
-    const m = new Map<string, string>();
+    const m = new Map<string, string[]>();
     for (const d of (declared as any[]) ?? []) {
-      const img = Array.isArray(d.productImages) ? d.productImages[0] : null;
-      if (d.trackingNumber && img) m.set(String(d.trackingNumber), img);
+      const imgs = dedupePhotos(d.productImages);
+      if (d.trackingNumber && imgs.length) m.set(String(d.trackingNumber), imgs);
     }
     return m;
   }, [declared]);
 
   const resolve = (pkg: PackageLike): Resolved => {
-    const photos = Array.isArray(pkg.photos) ? (pkg.photos as string[]) : [];
-    if (photos.length > 0) return { url: photos[0], source: "warehouse" };
+    const photos = dedupePhotos(pkg.photos);
+    if (photos.length > 0) return { url: photos[0], source: "warehouse", urls: photos };
     const tn = pkg.trackingNumber ? String(pkg.trackingNumber) : "";
-    if (tn && productByTracking.has(tn)) return { url: productByTracking.get(tn)!, source: "product" };
-    if (tn && declaredByTracking.has(tn)) return { url: declaredByTracking.get(tn)!, source: "declared" };
-    return { url: null, source: null };
+    const product = tn ? productByTracking.get(tn) : undefined;
+    if (product?.length) return { url: product[0], source: "product", urls: product };
+    const dec = tn ? declaredByTracking.get(tn) : undefined;
+    if (dec?.length) return { url: dec[0], source: "declared", urls: dec };
+    return { url: null, source: null, urls: [] };
   };
 
   return { resolve };
@@ -111,12 +121,14 @@ export function PackageThumb({
   className?: string;
 }) {
   const pick = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
-  const { url, source } = resolved;
+  const { url, source, urls } = resolved;
+  const count = urls?.length ?? (url ? 1 : 0);
+  const [viewer, setViewer] = useState<number | null>(null);
 
   const box = (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center overflow-hidden rounded-xl",
+        "relative flex shrink-0 items-center justify-center overflow-visible rounded-xl",
         isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40",
       )}
       style={{ width: size, height: size }}
@@ -126,7 +138,7 @@ export function PackageThumb({
           src={url}
           alt=""
           loading="lazy"
-          className="h-full w-full object-cover"
+          className="h-full w-full rounded-xl object-cover"
           onError={(e) => {
             (e.currentTarget.style.display = "none");
           }}
@@ -134,13 +146,31 @@ export function PackageThumb({
       ) : (
         <Box className={cn(isDark ? "text-slate-400" : "text-slate-500")} style={{ width: size * 0.5, height: size * 0.5 }} />
       )}
+      {/* How many pictures exist of this parcel. Without it a customer has no
+          way to know there is anything behind the one they can see. */}
+      {count > 1 && (
+        <span
+          className="pointer-events-none absolute -bottom-1 -start-1 min-w-[1.1rem] rounded-full bg-blue-600 px-1 text-center text-[10px] font-bold leading-[1.1rem] text-white ring-2 ring-white dark:ring-slate-900"
+          dir="ltr"
+        >
+          {count}
+        </span>
+      )}
     </div>
   );
 
-  const content = (
+  // A caller with its own viewer keeps it; otherwise the thumbnail opens the
+  // whole set itself rather than being a picture that does nothing.
+  const handleClick = onClick ?? (count > 0 ? () => setViewer(0) : undefined);
+
+  return (
     <div className={cn("flex flex-col items-center gap-1", className)}>
-      {onClick && url ? (
-        <button type="button" onClick={onClick} className="transition active:scale-95">
+      {handleClick && url ? (
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleClick(); }}
+          className="transition active:scale-95"
+        >
           {box}
         </button>
       ) : (
@@ -152,8 +182,14 @@ export function PackageThumb({
           {pick(SOURCE_META[source].label)}
         </span>
       )}
+      {viewer !== null && (
+        <PhotoLightbox
+          photos={urls?.length ? urls : url ? [url] : []}
+          index={viewer}
+          onIndexChange={setViewer}
+          onClose={() => setViewer(null)}
+        />
+      )}
     </div>
   );
-
-  return content;
 }

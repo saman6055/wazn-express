@@ -6,6 +6,7 @@ import { Star, X, Package as PackageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { PhotoStack } from "@/components/PhotoStack";
 
 // ---------------------------------------------------------------------------
 // DeliveryRatingCard — after a delivery, asks the customer to rate it (1–5
@@ -48,7 +49,7 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
   };
 
   const code = pkg.trackingNumber || pkg.packageCode || `#${pkg.id}`;
-  const photo = Array.isArray((pkg as any).photos) && (pkg as any).photos.length ? (pkg as any).photos[0] as string : null;
+  const photos: string[] = Array.isArray((pkg as any).photos) ? (pkg as any).photos : [];
   const name = (pkg as any).description as string | null;
 
   return (
@@ -70,14 +71,18 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
 
         {/* Package identity: thumbnail + name + tracking */}
         <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-14 h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center",
-            isDark ? "bg-slate-900" : "bg-amber-50 dark:bg-amber-950/40",
-          )}>
-            {photo
-              ? <img src={photo} alt="" className="w-full h-full object-cover" loading="lazy" />
-              : <PackageIcon className={cn("w-6 h-6", isDark ? "text-slate-500" : "text-amber-500")} />}
-          </div>
+          <PhotoStack
+            photos={photos}
+            className="w-14 h-14 rounded-xl"
+            fallback={
+              <div className={cn(
+                "w-14 h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center",
+                isDark ? "bg-slate-900" : "bg-amber-50 dark:bg-amber-950/40",
+              )}>
+                <PackageIcon className={cn("w-6 h-6", isDark ? "text-slate-500" : "text-amber-500")} />
+              </div>
+            }
+          />
           <div className="flex-1 min-w-0 pe-6">
             <h3 className={cn("text-base font-bold leading-tight", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
               {pickLang(language, { ku: "گەیاندنەکەمان چۆن بوو؟", en: "How was your delivery?", ar: "كيف كان التسليم؟", zh: "配送体验如何？" })}
