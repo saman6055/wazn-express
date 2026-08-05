@@ -118,6 +118,30 @@ describe('raw hex text colours', () => {
   });
 });
 
+describe('the document shell', () => {
+  // The worst readability bug in this app's history was one attribute:
+  // <body style="color:#0f172a; font-family: system-ui">. An inline colour
+  // outranks every stylesheet rule, so everything that did not name its own
+  // colour inherited near-black — invisible on the dark theme, on every
+  // screen — and the inline font-family kept Rudaw off the page entirely.
+  // Nothing about it looked wrong in the file, which is why it survived so
+  // long. This is the tripwire.
+  const html = fs.readFileSync(path.resolve(ROOT, '../index.html'), 'utf8');
+  const bodyTag = html.match(/<body[^>]*>/)?.[0] ?? '';
+
+  it('never puts an inline colour or typeface on <body>', () => {
+    expect(bodyTag).not.toMatch(/\bcolor\s*:/);
+    expect(bodyTag).not.toMatch(/font-family\s*:/);
+    expect(bodyTag).not.toMatch(/\bbackground\b\s*:/);
+  });
+
+  it('applies the saved theme before the first paint', () => {
+    // Otherwise the page paints light and flips, and the boot screen has no
+    // way to know which colours to use.
+    expect(html).toContain('localStorage.getItem("theme")');
+  });
+});
+
 describe('the runtime readability net', () => {
   // The tests above only see literal class names in .tsx. A class assembled at
   // runtime — `text-${accent}-600`, a colour looked up in a map — is invisible
