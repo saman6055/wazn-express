@@ -1004,19 +1004,22 @@ export default function FullPackageDashboard() {
             ) : (
               <div className="overflow-x-auto">
                 <Table>
+                  {/* Same treatment as the markup-purchase table: headings
+                      centred over their columns, money columns right-aligned
+                      with their figures, one padding value throughout. */}
                   <TableHeader>
-                    <TableRow>
+                    <TableRow className="[&>th]:h-11 [&>th]:px-3 [&>th]:text-center [&>th]:align-middle [&>th]:font-semibold [&>th]:whitespace-nowrap">
                       <TableHead>{pickLang(language, { ku: "کۆدی ئۆردەر", en: "Order Code", ar: "رمز الطلب", zh: "订单编码" })}</TableHead>
                       <TableHead>{t("fullPackage.customer")}</TableHead>
                       <TableHead>{t("fullPackage.productName")}</TableHead>
                       <TableHead>{t("fullPackage.batchLabel")}</TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("purchase")}>
+                      <TableHead className="cursor-pointer text-end hover:bg-muted/50" onClick={() => toggleSort("purchase")}>
                         {t("fullPackage.purchaseColumn")} {sortField === "purchase" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("selling")}>
+                      <TableHead className="cursor-pointer text-end hover:bg-muted/50" onClick={() => toggleSort("selling")}>
                         {t("fullPackage.sellingColumn")} {sortField === "selling" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("profit")}>
+                      <TableHead className="cursor-pointer text-end hover:bg-muted/50" onClick={() => toggleSort("profit")}>
                         {t("fullPackage.profit")} {sortField === "profit" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead>{t("fullPackage.tracking")}</TableHead>
@@ -1024,14 +1027,14 @@ export default function FullPackageDashboard() {
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("date")}>
                         {t("fullPackage.dateColumn")} {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead className="text-left">{t("fullPackage.actionsColumn")}</TableHead>
+                      <TableHead>{t("fullPackage.actionsColumn")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {routedOrders.map((order) => (
                       <TableRow
                         key={order.id}
-                        className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"
+                        className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50 [&>td]:px-3 [&>td]:py-2.5 [&>td]:align-middle [&>td:not(:nth-child(2)):not(:nth-child(3))]:text-center [&>td>div]:justify-center [&>td:nth-child(2)>div]:justify-start [&>td:nth-child(3)>div]:justify-start"
                       >
                         <TableCell>
                           <div className="space-y-1">

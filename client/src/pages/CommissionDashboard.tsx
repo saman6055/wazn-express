@@ -939,18 +939,23 @@ export default function CommissionDashboard() {
             ) : (
               <div className="overflow-x-auto">
                 <Table>
+                  {/* Headings sat flush to one edge while their columns were a
+                      mix of text, badges and figures, so nothing lined up with
+                      the thing it named. Every heading is centred except the
+                      two money columns, which stay with their right-aligned
+                      figures — a number and its label should share an edge. */}
                   <TableHeader>
-                    <TableRow>
+                    <TableRow className="[&>th]:h-11 [&>th]:px-3 [&>th]:text-center [&>th]:align-middle [&>th]:font-semibold [&>th]:whitespace-nowrap">
                       <TableHead>{pickLang(language, { ku: "کۆدی ئۆردەر", en: "Order Code", ar: "رمز الطلب", zh: "订单代码" })}</TableHead>
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("customer")}>
                         {t("commission.customer")} {sortField === "customer" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead>{t("commission.productName")}</TableHead>
                       <TableHead>{t("commission.batchLabel")}</TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("itemPrice")}>
+                      <TableHead className="cursor-pointer text-end hover:bg-muted/50" onClick={() => toggleSort("itemPrice")}>
                         {t("commission.itemPrice")} {sortField === "itemPrice" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("commission")}>
+                      <TableHead className="cursor-pointer text-end hover:bg-muted/50" onClick={() => toggleSort("commission")}>
                         {t("commission.commissionAmount")} {sortField === "commission" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead>{t("commission.tracking")}</TableHead>
@@ -958,14 +963,18 @@ export default function CommissionDashboard() {
                       <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("date")}>
                         {t("commission.dateColumn")} {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead className="text-left">{t("commission.actionsColumn")}</TableHead>
+                      <TableHead>{t("commission.actionsColumn")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {routedOrders.map((order) => (
                       <TableRow
                         key={order.id}
-                        className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"
+                        // Cells centre with their headings, and one padding
+                        // value throughout: the columns were a mix of defaults,
+                        // so the gaps between them changed from column to
+                        // column and the rows read as ragged.
+                        className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50 [&>td]:px-3 [&>td]:py-2.5 [&>td]:align-middle [&>td:not(:nth-child(2)):not(:nth-child(3))]:text-center [&>td>div]:justify-center [&>td:nth-child(2)>div]:justify-start [&>td:nth-child(3)>div]:justify-start"
                       >
                         {/* The shop's order number is what staff actually work
                             from, so it leads with the copy button. The internal
@@ -1027,11 +1036,6 @@ export default function CommissionDashboard() {
                               </div>
                               {order.quantity > 1 && (
                                 <p className="text-xs text-muted-foreground">{order.quantity} {t("commission.quantityUnit")}</p>
-                              )}
-                              {(order as any).orderNumber && (
-                                <p className="text-xs text-blue-600 font-mono mt-0.5">
-                                  # {(order as any).orderNumber}
-                                </p>
                               )}
                             </div>
                           </div>
