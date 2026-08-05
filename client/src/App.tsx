@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { AppearanceProvider } from "./contexts/AppearanceContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { PortalThemeProvider } from "./contexts/PortalThemeContext";
 import { LandingThemeProvider } from "./contexts/LandingThemeContext";
@@ -372,6 +373,7 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light" switchable={true}>
+        <AppearanceProvider>
         <LanguageProvider>
           <OfflineProvider>
             <PortalThemeProvider>
@@ -395,6 +397,7 @@ function App() {
             </PortalThemeProvider>
           </OfflineProvider>
         </LanguageProvider>
+        </AppearanceProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

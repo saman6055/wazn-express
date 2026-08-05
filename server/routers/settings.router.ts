@@ -6,6 +6,13 @@ import { staffProcedure, adminProcedure, accountantProcedure } from "../middlewa
 import * as db from "../db";
 import { cacheGetOrSet, cacheInvalidate, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
+import {
+  APPEARANCE_SETTING_KEY,
+  MAX_FONT_BYTES,
+  fontFormatFor,
+  normalizeAppearance,
+  parseAppearance,
+} from "../lib/uiAppearance";
 
 export const countriesRouter = router({
     list: staffProcedure
@@ -286,6 +293,98 @@ export const settingsRouter = router({
     list: adminProcedure.query(async () => {
       return db.getAllSettings();
     }),
+
+    /**
+     * Public: the company's text size, text colour and uploaded fonts.
+     *
+     * Public because the login screen and the landing page render with the
+     * same typeface, and because a 401 here would bounce a signed-out visitor
+     * to /login. Nothing in it is private — it is a font URL and a hex colour.
+     */
+    getAppearance: publicProcedure.query(async () => {
+      return parseAppearance(await db.getSetting(APPEARANCE_SETTING_KEY));
+    }),
+
+    /** Admin: the default every browser starts from. */
+    setAppearance: adminProcedure
+      .input(
+        z.object({
+          fontScale: z.number(),
+          textLight: z.string().nullable(),
+          textDark: z.string().nullable(),
+          mutedLight: z.string().nullable(),
+          mutedDark: z.string().nullable(),
+          fontFamily: z.string(),
+          autoFix: z.boolean(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        // Keep the uploaded fonts: this call only carries the defaults, and a
+        // blind overwrite would drop every font in the same breath.
+        const current = parseAppearance(await db.getSetting(APPEARANCE_SETTING_KEY));
+        const next = normalizeAppearance({ defaults: input, fonts: current.fonts });
+        await db.setSetting(APPEARANCE_SETTING_KEY, JSON.stringify(next), ctx.user.id);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "update_setting",
+          entityType: "setting",
+          newValues: { key: APPEARANCE_SETTING_KEY, value: JSON.stringify(next.defaults) },
+        });
+        return next;
+      }),
+
+    /** Admin: add a font file. Base64 in, a hosted URL out, same as any image. */
+    uploadFont: adminProcedure
+      .input(
+        z.object({
+          fileName: z.string().min(1),
+          label: z.string().min(1).max(60),
+          base64Data: z.string().min(1),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const format = fontFormatFor(input.fileName);
+        if (!format) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Only ttf, otf, woff or woff2 files" });
+        }
+        const buffer = Buffer.from(input.base64Data, "base64");
+        if (!buffer.length) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Empty file" });
+        }
+        if (buffer.length > MAX_FONT_BYTES) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Font file is too large" });
+        }
+
+        const { localUpload } = await import("../services/localUpload");
+        const { url } = localUpload(input.fileName, buffer, "font/" + format);
+
+        const current = parseAppearance(await db.getSetting(APPEARANCE_SETTING_KEY));
+        // Derived from the stored filename, so the id and the file on disk
+        // cannot drift apart.
+        const id = (url.split("/").pop() ?? "").replace(/\.[^.]+$/, "").replace(/[^A-Za-z0-9_-]/g, "");
+        const next = normalizeAppearance({
+          defaults: current.defaults,
+          fonts: [...current.fonts, { id, label: input.label, url, format }],
+        });
+        await db.setSetting(APPEARANCE_SETTING_KEY, JSON.stringify(next), ctx.user.id);
+        return next;
+      }),
+
+    /** Admin: remove a font. The file itself is left on disk — a browser that
+     *  cached the old default should still find it rather than 404 mid-page. */
+    deleteFont: adminProcedure
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const current = parseAppearance(await db.getSetting(APPEARANCE_SETTING_KEY));
+        const next = normalizeAppearance({
+          defaults: current.defaults,
+          fonts: current.fonts.filter((f) => f.id !== input.id),
+        });
+        await db.setSetting(APPEARANCE_SETTING_KEY, JSON.stringify(next), ctx.user.id);
+        return next;
+      }),
+
     /** Public: company name/logo/contact for login, home, and portal. No auth required. */
     getCompanyInfo: publicProcedure.query(async () => {
       try {

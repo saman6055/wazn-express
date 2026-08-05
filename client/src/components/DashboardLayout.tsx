@@ -90,6 +90,7 @@ import { ScrollButtons } from "./ScrollButtons";
 import { ThemePicker } from "./ThemePicker";
 import { QuickCreate } from "./QuickCreate";
 import { DensityToggle } from "./DensityToggle";
+import { AppearanceDialog } from "./AppearanceDialog";
 import { TopBarClock } from "./TopBarClock";
 import { useLanguage, Language } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -1042,6 +1043,9 @@ function DashboardLayoutContent({
 
             {/* Accent theme (skin) picker */}
             <ThemePicker />
+
+            {/* Text size, text colour and typeface */}
+            <AppearanceDialog />
 
             {/* Dark / light mode — one-click toggle */}
             <Button

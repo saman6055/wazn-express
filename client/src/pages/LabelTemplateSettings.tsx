@@ -226,7 +226,9 @@ const [editingTemplate, setEditingTemplate] = useState<any>(null);
     return (
       <div 
         ref={previewRef}
-        className="border-2 border-dashed rounded-lg bg-white p-4 mx-auto"
+        /* wazn-paper: a preview of a printed label — white paper and dark ink
+           are correct in both themes, so the readability net skips it. */
+        className="wazn-paper border-2 border-dashed rounded-lg bg-white p-4 mx-auto"
         style={{ 
           width: `${width}px`, 
           height: `${height}px`,

@@ -137,7 +137,7 @@ export default function InvoiceView() {
         {/* Invoice Preview — ALL INLINE STYLES for print compatibility */}
         <Card className="overflow-hidden shadow-lg">
           <CardContent className="p-0">
-            <div ref={printRef} style={{ maxWidth:'800px',margin:'0 auto',padding:'40px',background:'white',fontFamily:"'Noto Sans Arabic','Noto Sans SC',Arial,sans-serif",direction:direction,color:'#1e293b' }}>
+            <div ref={printRef} className="wazn-paper" style={{ maxWidth:'800px',margin:'0 auto',padding:'40px',background:'white',fontFamily:"'Noto Sans Arabic','Noto Sans SC',Arial,sans-serif",direction:direction,color:'#1e293b' }}>
 
               {/* HEADER */}
               <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',paddingBottom:'24px',borderBottom:`3px solid ${primaryColor}`,marginBottom:'28px' }}>

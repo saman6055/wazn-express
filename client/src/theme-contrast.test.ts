@@ -118,6 +118,38 @@ describe('raw hex text colours', () => {
   });
 });
 
+describe('the runtime readability net', () => {
+  // The tests above only see literal class names in .tsx. A class assembled at
+  // runtime — `text-${accent}-600`, a colour looked up in a map — is invisible
+  // to them and lands on screen as unreadable text anyway. index.css carries a
+  // net that catches those in dark mode; these keep the two in step.
+  const css = fs.readFileSync(path.join(ROOT, 'index.css'), 'utf8');
+
+  it('covers every colour family the rules above police', () => {
+    const missing = SEMANTIC.split('|').filter((family) => !css.includes(`text-${family}-800`));
+
+    expect(missing, `index.css must lighten these in dark mode:\n${missing.join('\n')}`).toEqual([]);
+  });
+
+  it('covers every neutral family too', () => {
+    const missing = GREY.split('|').filter((family) => !css.includes(`text-${family}-900`));
+
+    expect(missing, `index.css must lighten these in dark mode:\n${missing.join('\n')}`).toEqual([]);
+  });
+
+  it('leaves printed paper alone', () => {
+    // Invoices and labels are white with dark ink in both themes. Lightening
+    // their text would hand staff a blank sheet.
+    expect(css).toContain('.wazn-paper');
+  });
+
+  it('stays switchable', () => {
+    // If the net ever makes a screen worse, an admin has to be able to turn it
+    // off from the Appearance panel without a deploy.
+    expect(css).toContain('[data-textfix="on"]');
+  });
+});
+
 describe('no class list contradicts itself', () => {
   it('declares each property at most once per theme', () => {
     // Two dark: backgrounds in one class list means whichever Tailwind emits

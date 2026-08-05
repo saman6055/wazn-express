@@ -168,7 +168,10 @@ export default function BatchLabelTemplateSettings() {
     const scale = 2;
     return (
       <div
-        className="border-2 rounded-lg bg-white p-3 mx-auto"
+        /* wazn-paper: this is a preview of a printed label, so its white and
+           its dark ink are the real thing — the dark-mode readability net in
+           index.css must leave both alone. */
+        className="wazn-paper border-2 rounded-lg bg-white p-3 mx-auto"
         style={{
           width: `${(template.widthMm || 100) * scale}px`,
           height: `${(template.heightMm || 150) * scale}px`,

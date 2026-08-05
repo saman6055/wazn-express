@@ -513,6 +513,18 @@
   --color-slate-900: oklch(20.8% 0.055 70); --color-slate-950: oklch(12.9% 0.05 70);
 }
 
+/* ---------------------------------------------------------------------------
+   Reader-controlled text colour.
+
+   Everything that paints text reads these two, not --foreground directly, so
+   the Appearance panel can repoint the whole app's text colour with two
+   custom properties. Unset, they are exactly the theme's own values.
+--------------------------------------------------------------------------- */
+:root {
+  --wazn-fg: var(--foreground);
+  --wazn-fg-muted: var(--muted-foreground);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -1294,4 +1306,81 @@ a:focus-visible,
   /* Deliberate: a reader who asked the system for less motion gets a still
      strip showing the latest headlines rather than no headlines at all. */
   .wazn-ticker-track { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Dark-mode readability net.
+
+   theme-contrast.test.ts stops new unpaired colours entering the codebase, but
+   it can only see literal class names in .tsx. Anything assembled at runtime —
+   `text-${tone}-800`, a colour pulled from a settings row, a class string built
+   in a helper — slips past it and lands as near-black text on the near-black
+   dark canvas. That is the "I cannot read this screen" bug.
+
+   This is the runtime half: in dark mode, any element whose own class list
+   asks for dark text and offers no dark: counterpart is repainted to the
+   readable foreground. `~=` matches whole class tokens only, so `hover:` and
+   `group-hover:` variants are left alone — their base colour is not the thing
+   on screen at rest.
+
+   One escape: .wazn-paper. Put it on anything that renders as printed paper —
+   an invoice, a shipping label, a receipt preview — where white really is the
+   colour of the thing and not a missing dark variant. Nothing inside a
+   .wazn-paper is touched by any rule in this section.
+
+   Toggled by <html data-textfix>, so an admin can switch the whole net off
+   from the Appearance panel if a screen ever looks wrong.
+--------------------------------------------------------------------------- */
+
+/* The other half of the same bug, and the one behind the unreadable shipping
+   cards on the commission form: `bg-white` with no dark:bg counterpart. The
+   panel stays white while the text on it flips to its light dark-mode colour,
+   so the label disappears into the box. There are ~570 of these. Sending the
+   surface to the theme's card colour fixes every one, and puts the text back
+   on the dark canvas where the rules below expect it. */
+html.dark[data-textfix="on"] [class~="bg-white"]:not([class*="dark:bg"]):not(:where(.wazn-paper, .wazn-paper *)) {
+  background-color: var(--card) !important;
+}
+html.dark[data-textfix="on"] :is([class~="text-black"], [class*="text-[#"], [class~="text-gray-700"], [class~="text-gray-800"], [class~="text-gray-900"], [class~="text-gray-950"], [class~="text-slate-700"], [class~="text-slate-800"], [class~="text-slate-900"], [class~="text-slate-950"], [class~="text-zinc-700"], [class~="text-zinc-800"], [class~="text-zinc-900"], [class~="text-zinc-950"], [class~="text-neutral-700"], [class~="text-neutral-800"], [class~="text-neutral-900"], [class~="text-neutral-950"], [class~="text-stone-700"], [class~="text-stone-800"], [class~="text-stone-900"], [class~="text-stone-950"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) {
+  color: var(--wazn-fg) !important;
+}
+
+/* The mid greys are the quiet-label shades. They are not invisible on the dark
+   canvas, just too dim to read comfortably, so they land on the muted tone
+   rather than full-strength text. */
+html.dark[data-textfix="on"] :is([class~="text-gray-500"], [class~="text-gray-600"], [class~="text-slate-500"], [class~="text-slate-600"], [class~="text-zinc-500"], [class~="text-zinc-600"], [class~="text-neutral-500"], [class~="text-neutral-600"], [class~="text-stone-500"], [class~="text-stone-600"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) {
+  color: var(--wazn-fg-muted) !important;
+}
+
+/* A coloured label carries meaning — a red warning that turned grey has lost
+   the only thing it was saying. Each family is lifted to its own 400 shade,
+   which is the same colour read against a dark background. */
+html.dark[data-textfix="on"] :is([class~="text-red-700"], [class~="text-red-800"], [class~="text-red-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-red-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-orange-700"], [class~="text-orange-800"], [class~="text-orange-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-orange-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-amber-700"], [class~="text-amber-800"], [class~="text-amber-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-amber-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-yellow-700"], [class~="text-yellow-800"], [class~="text-yellow-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-yellow-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-lime-700"], [class~="text-lime-800"], [class~="text-lime-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-lime-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-green-700"], [class~="text-green-800"], [class~="text-green-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-green-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-emerald-700"], [class~="text-emerald-800"], [class~="text-emerald-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-emerald-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-teal-700"], [class~="text-teal-800"], [class~="text-teal-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-teal-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-cyan-700"], [class~="text-cyan-800"], [class~="text-cyan-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-cyan-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-sky-700"], [class~="text-sky-800"], [class~="text-sky-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-sky-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-blue-700"], [class~="text-blue-800"], [class~="text-blue-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-blue-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-indigo-700"], [class~="text-indigo-800"], [class~="text-indigo-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-indigo-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-violet-700"], [class~="text-violet-800"], [class~="text-violet-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-violet-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-purple-700"], [class~="text-purple-800"], [class~="text-purple-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-purple-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-fuchsia-700"], [class~="text-fuchsia-800"], [class~="text-fuchsia-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-fuchsia-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-pink-700"], [class~="text-pink-800"], [class~="text-pink-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-pink-400) !important; }
+html.dark[data-textfix="on"] :is([class~="text-rose-700"], [class~="text-rose-800"], [class~="text-rose-900"]):not([class*="dark:text"]):not(:where(.wazn-paper, .wazn-paper *)) { color: var(--color-rose-400) !important; }
+
+/* Inline colours (style="color: #333") are deliberately left alone. They are
+   set from JS — a label template's brand colour, the landing page's own ink —
+   and always come with a matching background, so overriding them breaks the
+   pairing rather than fixing it. Mark those surfaces .wazn-paper instead.
+
+   The default text colour follows the reader's choice, so a custom colour
+   reaches ordinary body text and not only the hardcoded palette classes.
+   Anything with its own text- class still wins, as it should. */
+body {
+  color: var(--wazn-fg);
 }
