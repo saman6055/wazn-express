@@ -5,6 +5,7 @@ import {
   INVOICE_STATE_PRINT,
   invoiceState,
   isCreditTx,
+  LEDGER_TYPE_LABEL,
   isDebt,
   isInvoiceOutstanding,
 } from "./portalMoney";
@@ -86,6 +87,34 @@ describe("whether an invoice is settled", () => {
     expect(isInvoiceOutstanding("partially_paid")).toBe(true);
     expect(isInvoiceOutstanding("paid")).toBe(false);
     expect(isInvoiceOutstanding("cancelled")).toBe(false);
+  });
+});
+
+describe("every ledger line has a name the customer can read", () => {
+  // The map knew five of fourteen. The rest printed the raw column —
+  // "DEBIT FULL PACKAGE", "ADJUSTMENT CREDIT" — in Latin capitals, in the
+  // middle of an Arabic statement about the customer's own money.
+  const SCHEMA = path.resolve(__dirname, "../../../drizzle/schema/finance.schema.ts");
+
+  it("covers every value the database can store", () => {
+    const src = fs.readFileSync(SCHEMA, "utf8");
+    const block = src.slice(src.indexOf('mysqlEnum("transactionType"'));
+    const values = [...block.slice(0, block.indexOf("])")).matchAll(/"([A-Z_]+)"/g)]
+      .map((m) => m[1])
+      .filter((v) => v !== "transactionType");
+
+    expect(values.length, "the enum should have been found").toBeGreaterThan(5);
+
+    const missing = values.filter((v) => !LEDGER_TYPE_LABEL[v]);
+    expect(missing, `add these to LEDGER_TYPE_LABEL:\n${missing.join("\n")}`).toEqual([]);
+  });
+
+  it("names them in all four languages", () => {
+    for (const [type, label] of Object.entries(LEDGER_TYPE_LABEL)) {
+      for (const lang of ["ku", "en", "ar", "zh"] as const) {
+        expect(label[lang], `${type} is missing ${lang}`).toBeTruthy();
+      }
+    }
   });
 });
 

@@ -28,6 +28,7 @@ import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { pickLang } from "@/lib/lang";
 import {
   isDebt as isDebtBalance,
+  LEDGER_TYPE_LABEL,
   isCredit as isCreditBalance,
   INVOICE_STATE_LABEL,
   INVOICE_STATE_PRINT,
@@ -193,15 +194,12 @@ const { t, language } = useLanguage();
     };
   };
 
+  // Five of the enum's fourteen values used to be named here and the rest fell
+  // through to the raw column — "DEBIT FULL PACKAGE" in Latin capitals in the
+  // middle of an Arabic statement. All fourteen live in lib/portalMoney now.
   const getTransactionTypeName = (type: string) => {
-    switch (type) {
-      case "DEBIT_PACKAGE": return pickLang(language, { ku: "کرێی گەیاندن", en: "Delivery Charge", ar: "رسوم التوصيل", zh: "配送费" });
-      case "DEBIT_SERVICE": return pickLang(language, { ku: "کرێی خزمەتگوزاری", en: "Service Fee", ar: "رسوم الخدمة", zh: "服务费" });
-      case "CREDIT_PAYMENT": return pickLang(language, { ku: "پارەدان", en: "Payment", ar: "دفعة", zh: "付款" });
-      case "CREDIT_REFUND": return pickLang(language, { ku: "گەڕاندنەوە", en: "Refund", ar: "استرداد", zh: "退款" });
-      case "CREDIT_DISCOUNT": return pickLang(language, { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" });
-      default: return type.replace(/_/g, " ");
-    }
+    const label = LEDGER_TYPE_LABEL[type];
+    return label ? pickLang(language, label) : type.replace(/_/g, " ");
   };
 
   const downloadReceipt = () => {

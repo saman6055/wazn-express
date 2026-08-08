@@ -81,6 +81,35 @@ export function isInvoiceOutstanding(status: string | null | undefined): boolean
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
+/**
+ * What each ledger line is called, in the customer's language.
+ *
+ * The enum holds fourteen values and the money page knew five of them; the
+ * rest fell through to `type.replace(/_/g, " ")` and printed the raw column —
+ * "DEBIT FULL PACKAGE", "ADJUSTMENT CREDIT" — in Latin capitals, in the middle
+ * of an Arabic or Kurdish statement. The customer's own money, labelled in a
+ * language they did not choose, in the internal vocabulary of our database.
+ *
+ * All fourteen live here now, and portalMoney.test.ts fails if the enum grows
+ * a value this map does not know.
+ */
+export const LEDGER_TYPE_LABEL: Record<string, L> = {
+  DEBIT_PACKAGE: { ku: "کرێی گەیاندن", en: "Delivery charge", ar: "رسوم التوصيل", zh: "配送费" },
+  DEBIT_FULL_PACKAGE: { ku: "پاکێجی تەواو", en: "Full package order", ar: "طلب الطرد الكامل", zh: "全包订单" },
+  DEBIT_PURCHASE_REQUEST: { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" },
+  DEBIT_COMMISSION: { ku: "کڕین بە تێچوو", en: "Markup purchase", ar: "شراء بهامش", zh: "加价采购" },
+  DEBIT_SERVICE: { ku: "کرێی خزمەتگوزاری", en: "Service fee", ar: "رسوم الخدمة", zh: "服务费" },
+  DEBIT_PENALTY: { ku: "غەرامەی دواکەوتن", en: "Late fee", ar: "رسوم تأخير", zh: "滞纳金" },
+  DEBIT_OTHER: { ku: "کرێیەکی تر", en: "Other charge", ar: "رسوم أخرى", zh: "其他费用" },
+  CREDIT_PAYMENT: { ku: "پارەدان", en: "Payment", ar: "دفعة", zh: "付款" },
+  CREDIT_DEPOSIT: { ku: "پارەی پێشەکی", en: "Deposit", ar: "إيداع", zh: "预存款" },
+  CREDIT_REFUND: { ku: "گەڕاندنەوەی پارە", en: "Refund", ar: "استرداد", zh: "退款" },
+  CREDIT_DISCOUNT: { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" },
+  CREDIT_OTHER: { ku: "بڕێکی تری واردە", en: "Other credit", ar: "دائن آخر", zh: "其他入账" },
+  ADJUSTMENT_DEBIT: { ku: "ڕاستکردنەوە (زیادکردن)", en: "Adjustment — added", ar: "تسوية — إضافة", zh: "调整 — 增加" },
+  ADJUSTMENT_CREDIT: { ku: "ڕاستکردنەوە (کەمکردنەوە)", en: "Adjustment — deducted", ar: "تسوية — خصم", zh: "调整 — 减少" },
+};
+
 export const INVOICE_STATE_LABEL: Record<InvoiceState, L> = {
   paid: { ku: "پارەدراو", en: "Paid", ar: "مدفوعة", zh: "已支付" },
   unpaid: { ku: "نەدراو", en: "Unpaid", ar: "غير مدفوعة", zh: "未支付" },

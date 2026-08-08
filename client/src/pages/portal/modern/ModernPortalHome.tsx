@@ -33,8 +33,14 @@ import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { ProhibitedDecisionAlert } from "@/components/portal/ProhibitedDecisionAlert";
 import { PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
-import { isDebt, isCreditTx } from "@/lib/portalMoney";
+import { isDebt, isCreditTx, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
 import { pickLang } from "@/lib/lang";
+
+// A ledger line named in the reader's language rather than the raw column.
+function ledgerTypeName(type: string | null | undefined, language: string): string {
+  const label = LEDGER_TYPE_LABEL[String(type ?? "")];
+  return label ? pickLang(language, label) : String(type ?? "").replace(/_/g, " ");
+}
 
 // Bold ¥ glyph styled like a lucide icon (lucide has no CNY symbol).
 function YuanGlyphIcon({ className }: { className?: string }) {
@@ -629,7 +635,7 @@ export default function ModernPortalHome() {
                           )}
                         >
                           {tx.description ||
-                            tx.transactionType?.replace(/_/g, " ")}
+                            ledgerTypeName(tx.transactionType, language)}
                         </p>
                         <p
                           className={cn(
