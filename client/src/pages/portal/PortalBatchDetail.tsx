@@ -1,5 +1,6 @@
 ﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { pickLang } from "@/lib/lang";
+import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { STATUS_LABEL, SHIPPING_TYPE_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
@@ -130,29 +131,12 @@ const { t, language } = useLanguage();
     }
   };
 
+  // Shared map, all nine statuses, all four languages. The private copy here
+  // knew seven of them in two languages — an Arabic reader got English, and a
+  // returned or cancelled parcel showed the raw column value.
   const getStatusText = (status: string) => {
-    if (language === "ku") {
-      const statusMap: Record<string, string> = {
-        registered: "تۆمارکراوە",
-        in_batch: "لە باچدا",
-        in_transit: "لە ڕێگادا",
-        customs_processing: "گومرگ",
-        ready_for_delivery: "ئامادەیە",
-        out_for_delivery: "لە ڕێگای گەیاندن",
-        delivered: "گەیشتووە",
-      };
-      return statusMap[status] || status;
-    }
-    const statusMap: Record<string, string> = {
-      registered: "Registered",
-      in_batch: "In Batch",
-      in_transit: "In Transit",
-      customs_processing: "Customs",
-      ready_for_delivery: "Ready",
-      out_for_delivery: "Out for Delivery",
-      delivered: "Delivered",
-    };
-    return statusMap[status] || status;
+    const label = PACKAGE_STATUS_LABEL[status];
+    return label ? pickLang(language, label) : status;
   };
 
   const getStatusColor = (status: string) => {

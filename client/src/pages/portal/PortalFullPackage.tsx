@@ -151,16 +151,108 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     icon: ShoppingCart,
     gradient: "from-blue-400 to-blue-600"
   },
-  purchased: { 
+  purchased: {
     label: "Purchased",
     labelKu: "کڕدرا",
     labelAr: "تم الشراء",
     labelZh: "已采购",
-    color: "text-indigo-700 dark:text-indigo-300", 
-    bgColor: "bg-indigo-100 dark:bg-indigo-950/40", 
+    color: "text-indigo-700 dark:text-indigo-300",
+    bgColor: "bg-indigo-100 dark:bg-indigo-950/40",
     borderColor: "border-indigo-200 dark:border-indigo-800/60",
     icon: Package,
     gradient: "from-indigo-400 to-indigo-600"
+  },
+  // The remaining statuses the orders enum can actually hold. They were
+  // missing, and the fallback shows the raw column value — a customer whose
+  // order was ready for pickup saw "ready_for_delivery" in Latin letters.
+  // portal-audit.test.ts now fails if the enum grows past this map again.
+  pending_quote: {
+    label: "Awaiting quote",
+    labelKu: "چاوەڕوانی نرخە",
+    labelAr: "بانتظار التسعير",
+    labelZh: "等待报价",
+    color: "text-amber-700 dark:text-amber-300",
+    bgColor: "bg-amber-100 dark:bg-amber-950/40",
+    borderColor: "border-amber-200 dark:border-amber-800/60",
+    icon: Clock,
+    gradient: "from-amber-400 to-orange-500"
+  },
+  quoted: {
+    label: "Quoted",
+    labelKu: "نرخ دانرا",
+    labelAr: "تم التسعير",
+    labelZh: "已报价",
+    color: "text-sky-700 dark:text-sky-300",
+    bgColor: "bg-sky-100 dark:bg-sky-950/40",
+    borderColor: "border-sky-200 dark:border-sky-800/60",
+    icon: FileText,
+    gradient: "from-sky-400 to-sky-600"
+  },
+  approved: {
+    label: "Approved",
+    labelKu: "پەسەندکرا",
+    labelAr: "تمت الموافقة",
+    labelZh: "已批准",
+    color: "text-blue-700 dark:text-blue-300",
+    bgColor: "bg-blue-100 dark:bg-blue-950/40",
+    borderColor: "border-blue-200 dark:border-blue-800/60",
+    icon: ThumbsUp,
+    gradient: "from-blue-400 to-blue-600"
+  },
+  rejected: {
+    label: "Rejected",
+    labelKu: "ڕەتکرایەوە",
+    labelAr: "مرفوض",
+    labelZh: "已拒绝",
+    color: "text-red-700 dark:text-red-300",
+    bgColor: "bg-red-100 dark:bg-red-950/40",
+    borderColor: "border-red-200 dark:border-red-800/60",
+    icon: ThumbsDown,
+    gradient: "from-red-400 to-red-600"
+  },
+  quality_check: {
+    label: "Quality check",
+    labelKu: "پشکنینی جۆرایەتی",
+    labelAr: "فحص الجودة",
+    labelZh: "质检中",
+    color: "text-purple-700 dark:text-purple-300",
+    bgColor: "bg-purple-100 dark:bg-purple-950/40",
+    borderColor: "border-purple-200 dark:border-purple-800/60",
+    icon: Eye,
+    gradient: "from-purple-400 to-purple-600"
+  },
+  ready_for_delivery: {
+    label: "Ready for pickup",
+    labelKu: "ئامادەیە بۆ وەرگرتن",
+    labelAr: "جاهز للاستلام",
+    labelZh: "可取件",
+    color: "text-cyan-700 dark:text-cyan-300",
+    bgColor: "bg-cyan-100 dark:bg-cyan-950/40",
+    borderColor: "border-cyan-200 dark:border-cyan-800/60",
+    icon: Gift,
+    gradient: "from-cyan-400 to-cyan-600"
+  },
+  refunded: {
+    label: "Refunded",
+    labelKu: "پارە گەڕێندرایەوە",
+    labelAr: "تم استرداد المبلغ",
+    labelZh: "已退款",
+    color: "text-slate-700 dark:text-slate-300",
+    bgColor: "bg-slate-100 dark:bg-slate-950/40",
+    borderColor: "border-slate-200 dark:border-slate-800/60",
+    icon: Wallet,
+    gradient: "from-slate-400 to-slate-600"
+  },
+  returned: {
+    label: "Returned",
+    labelKu: "گەڕێندراوەتەوە",
+    labelAr: "مُرتجع",
+    labelZh: "已退回",
+    color: "text-rose-700 dark:text-rose-300",
+    bgColor: "bg-rose-100 dark:bg-rose-950/40",
+    borderColor: "border-rose-200 dark:border-rose-800/60",
+    icon: XCircle,
+    gradient: "from-rose-400 to-rose-600"
   },
 };
 
@@ -272,10 +364,14 @@ export default function PortalFullPackage() {
     return true;
   }).filter(order => {
     if (statusFilter === "all") return true;
-    if (statusFilter === "pending") return ["pending", "purchasing", "purchased", "ordered"].includes(order.status);
-    if (statusFilter === "in_transit") return ["tracking_added", "in_china_warehouse", "in_batch", "in_transit"].includes(order.status);
+    // Every enum status belongs to exactly one bucket. Statuses left out of
+    // all of them (quality_check, ready_for_delivery, the quote flow…) used to
+    // vanish under every filter except "all" — an order that existed a moment
+    // ago seemed to disappear when the customer tapped a pill.
+    if (statusFilter === "pending") return ["pending", "pending_quote", "quoted", "approved", "purchasing", "purchased", "ordered"].includes(order.status);
+    if (statusFilter === "in_transit") return ["tracking_added", "in_china_warehouse", "quality_check", "in_batch", "in_transit", "ready_for_delivery"].includes(order.status);
     if (statusFilter === "delivered") return ["delivered", "completed", "arrived"].includes(order.status);
-    if (statusFilter === "cancelled") return order.status === "cancelled";
+    if (statusFilter === "cancelled") return ["cancelled", "rejected", "refunded", "returned"].includes(order.status);
     return true;
   }).filter(order => {
     if (!searchQuery) return true;
@@ -350,7 +446,7 @@ export default function PortalFullPackage() {
   // every time an admin linked a parcel to a late-entered order.
   const stats = {
     total: allOrders.length + allSelfOrders.length,
-    pending: allOrders.filter(o => ["pending", "ordered", "purchasing", "tracking_added", "in_china_warehouse", "in_batch", "in_transit"].includes(o.status)).length
+    pending: allOrders.filter(o => ["pending", "pending_quote", "quoted", "approved", "ordered", "purchasing", "purchased", "tracking_added", "in_china_warehouse", "quality_check", "in_batch", "in_transit", "ready_for_delivery"].includes(o.status)).length
       + allSelfOrders.filter(p => SELF_STATUS_BUCKET[p.status] === "pending" || SELF_STATUS_BUCKET[p.status] === "in_transit").length,
     delivered: allOrders.filter(o => ["delivered", "completed", "arrived"].includes(o.status)).length
       + allSelfOrders.filter(p => p.status === "delivered").length,
@@ -708,7 +804,7 @@ export default function PortalFullPackage() {
             "text-sm mb-3",
             isDark ? "text-slate-400" : "text-slate-500"
           )}>
-            {filteredOrders.length} {pickLang(language, { ku: "ئەنجام", en: "results", ar: "نتيجة", zh: "条结果" })}
+            {visibleCount} {pickLang(language, { ku: "ئەنجام", en: "results", ar: "نتيجة", zh: "条结果" })}
           </p>
         )}
 
@@ -728,25 +824,52 @@ export default function PortalFullPackage() {
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center mx-auto mb-6">
               <ShoppingBag className="w-12 h-12 text-purple-400" />
             </div>
-            <h3 className={cn(
-              "text-xl font-bold mb-2",
-              isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
-            )}>
+            {/* Two different truths need two different sentences: having no
+                orders at all is an invitation; having orders the current
+                filter hides is not — telling that customer to "start by
+                creating a request" reads as if their orders were lost. */}
+            {(allOrders.length + allSelfOrders.length) > 0 ? (
+              <>
+                <h3 className={cn(
+                  "text-xl font-bold mb-2",
+                  isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+                )}>
+{pickLang(language, { ku: "هیچ ئەنجامێک بۆ ئەم فلتەرە نییە", en: "Nothing matches this filter", ar: "لا نتائج لهذا الفلتر", zh: "没有符合筛选的结果" })}
+                </h3>
+                <p className={cn("mb-6", isDark ? "text-slate-400" : "text-slate-500")}>
+{pickLang(language, { ku: "فلتەر یان گەڕانەکە بگۆڕە بۆ بینینی ئۆردەرەکانت", en: "Change the filter or search to see your orders", ar: "غيّر الفلتر أو البحث لرؤية طلباتك", zh: "更改筛选或搜索以查看您的订单" })}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => { setActiveTab("all"); setStatusFilter("all"); setSearchQuery(""); }}
+                  className="rounded-xl px-6 py-3"
+                >
+{pickLang(language, { ku: "لابردنی فلتەرەکان", en: "Clear filters", ar: "مسح الفلاتر", zh: "清除筛选" })}
+                </Button>
+              </>
+            ) : (
+              <>
+                <h3 className={cn(
+                  "text-xl font-bold mb-2",
+                  isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+                )}>
 {pickLang(language, { ku: "هیچ داواکارییەک نییە", en: "No orders yet", ar: "لا توجد طلبات بعد", zh: "暂无订单" })}
-            </h3>
-            <p className={cn(
-              "mb-6",
-              isDark ? "text-slate-400" : "text-slate-500"
-            )}>
+                </h3>
+                <p className={cn(
+                  "mb-6",
+                  isDark ? "text-slate-400" : "text-slate-500"
+                )}>
 {pickLang(language, { ku: "دەستپێبکە بە داواکاری نوێ", en: "Start by creating a new request", ar: "ابدأ بإنشاء طلب جديد", zh: "从创建新订单开始" })}
-            </p>
-            <Button
-              onClick={requestNewOrder}
-              className="bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl px-6 py-3 shadow-lg hover:shadow-xl transition-all hover:scale-105"
-            >
-              <Plus className="w-5 h-5 ms-2" />
+                </p>
+                <Button
+                  onClick={requestNewOrder}
+                  className="bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl px-6 py-3 shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                >
+                  <Plus className="w-5 h-5 ms-2" />
 {pickLang(language, { ku: "داواکاری نوێ", en: "New Order", ar: "طلب جديد", zh: "新订单" })}
-            </Button>
+                </Button>
+              </>
+            )}
           </div>
         ) : (
           /* Orders Grid */

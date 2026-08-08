@@ -19,8 +19,7 @@ import { PhotoStack } from "@/components/PhotoStack";
 import { pickLang } from "@/lib/lang";
 
 // Company WhatsApp for extra proof / questions when claiming a package.
-// 07709183535 → international (Iraq +964, drop leading 0) for wa.me.
-const SUPPORT_WHATSAPP = "9647709183535";
+import { TERMS_WHATSAPP_NUMBER as SUPPORT_WHATSAPP } from "@/constants/portalTerms";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function PortalUnclaimedPackages() {

@@ -21,13 +21,22 @@ export default function PortalNotifications() {
 const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNotifications.useQuery();
   // Tapping a notification expands it in place to show the full message.
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  
+
+  // The bell badge on home reads getNotificationCount, a separate query.
+  // Refetching only the list left the badge stuck at its old number — and the
+  // bell kept ringing — after the customer had read everything.
+  const utils = trpc.useUtils();
+  const onRead = () => {
+    refetch();
+    utils.customerPortal.getNotificationCount.invalidate();
+  };
+
   const markAsReadMutation = trpc.customerPortal.markNotificationAsRead.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: onRead,
   });
-  
+
   const markAllAsReadMutation = trpc.customerPortal.markAllNotificationsAsRead.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: onRead,
   });
   
   const getNotificationIcon = (type: string) => {

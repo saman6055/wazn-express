@@ -1,6 +1,7 @@
 import { Copy, Package as PackageIcon, Plane, Ship, Scale, Box, Calendar, CheckCircle2, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoStack } from "@/components/PhotoStack";
+import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 
@@ -36,52 +37,18 @@ export interface SelfOrderPackage {
   deliveredAt: string | Date | null;
 }
 
-const STATUS: Record<string, { label: L; cls: string; icon: typeof Truck }> = {
-  registered: {
-    label: { ku: "لە کۆگای چین", en: "At China depot", ar: "في مستودع الصين", zh: "在中国仓库" },
-    cls: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-    icon: PackageIcon,
-  },
-  in_batch: {
-    label: { ku: "لە باچدایە", en: "In batch", ar: "في الدفعة", zh: "已入批次" },
-    cls: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
-    icon: Box,
-  },
-  in_transit: {
-    label: { ku: "لە ڕێگادایە", en: "In transit", ar: "في الطريق", zh: "运输中" },
-    cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-    icon: Truck,
-  },
-  customs_processing: {
-    label: { ku: "لە گومرگ", en: "At customs", ar: "في الجمارك", zh: "清关中" },
-    cls: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
-    icon: Truck,
-  },
-  ready_for_delivery: {
-    label: { ku: "ئامادەیە بۆ وەرگرتن", en: "Ready for pickup", ar: "جاهز للاستلام", zh: "可取件" },
-    cls: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
-    icon: CheckCircle2,
-  },
-  out_for_delivery: {
-    label: { ku: "لە ڕێگای گەیاندن", en: "Out for delivery", ar: "خرج للتسليم", zh: "派送中" },
-    cls: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300",
-    icon: Truck,
-  },
-  delivered: {
-    label: { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" },
-    cls: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-    icon: CheckCircle2,
-  },
-  returned: {
-    label: { ku: "گەڕێندراوەتەوە", en: "Returned", ar: "مُرتجع", zh: "已退回" },
-    cls: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
-    icon: PackageIcon,
-  },
-  cancelled: {
-    label: { ku: "هەڵوەشێنراوە", en: "Cancelled", ar: "ملغى", zh: "已取消" },
-    cls: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-    icon: PackageIcon,
-  },
+// Labels come from the shared map (lib/packageStatus); only the colour and
+// icon per status are this card's own.
+const STATUS: Record<string, { cls: string; icon: typeof Truck }> = {
+  registered: { cls: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300", icon: PackageIcon },
+  in_batch: { cls: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300", icon: Box },
+  in_transit: { cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300", icon: Truck },
+  customs_processing: { cls: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300", icon: Truck },
+  ready_for_delivery: { cls: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300", icon: CheckCircle2 },
+  out_for_delivery: { cls: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300", icon: Truck },
+  delivered: { cls: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300", icon: CheckCircle2 },
+  returned: { cls: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300", icon: PackageIcon },
+  cancelled: { cls: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300", icon: PackageIcon },
 };
 
 const SHIPPING: Record<string, { label: L; icon: typeof Plane }> = {
@@ -107,6 +74,7 @@ export function SelfOrderCard({
 }) {
   const pick = (v: L) => pickLang(language, v);
   const status = STATUS[pkg.status] ?? STATUS.registered;
+  const statusLabel = PACKAGE_STATUS_LABEL[pkg.status] ?? PACKAGE_STATUS_LABEL.registered;
   const StatusIcon = status.icon;
   const shipping = pkg.shippingType ? SHIPPING[pkg.shippingType] : undefined;
   const ShippingIcon = shipping?.icon;
@@ -154,7 +122,7 @@ export function SelfOrderCard({
             </p>
             <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold", status.cls)}>
               <StatusIcon className="h-3 w-3" />
-              {pick(status.label)}
+              {pick(statusLabel)}
             </span>
           </div>
 

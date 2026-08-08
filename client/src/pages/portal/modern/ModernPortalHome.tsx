@@ -30,6 +30,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PriceListSection } from "@/components/portal/PriceListSection";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
+import { PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
 
 // Bold ¥ glyph styled like a lucide icon (lucide has no CNY symbol).
 function YuanGlyphIcon({ className }: { className?: string }) {
@@ -143,18 +144,17 @@ export default function ModernPortalHome() {
   const { data: notificationCount } =
     trpc.customerPortal.getNotificationCount.useQuery();
 
-  // Calculate stats from packages
+  // Calculate stats from packages. The groups live in lib/packageStatus —
+  // this used to test against "arrived"/"customs"/"closed", which are batch
+  // statuses a package row can never hold, so the arrived tile was pinned at
+  // zero however much was waiting in Erbil.
   const totalPackages = packages?.length || 0;
   const inTransit =
-    packages?.filter((p: any) => p.status === "in_transit").length || 0;
+    packages?.filter((p: any) => (PACKAGE_STAGE_GROUPS.inTransit as readonly string[]).includes(p.status)).length || 0;
   const arrived =
-    packages?.filter(
-      (p: any) => p.status === "arrived" || p.status === "customs"
-    ).length || 0;
+    packages?.filter((p: any) => (PACKAGE_STAGE_GROUPS.arrived as readonly string[]).includes(p.status)).length || 0;
   const delivered =
-    packages?.filter(
-      (p: any) => p.status === "delivered" || p.status === "closed"
-    ).length || 0;
+    packages?.filter((p: any) => (PACKAGE_STAGE_GROUPS.delivered as readonly string[]).includes(p.status)).length || 0;
 
   const greeting = getGreeting(language);
   const firstName =

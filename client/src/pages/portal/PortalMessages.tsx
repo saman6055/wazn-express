@@ -527,7 +527,7 @@ export default function PortalMessages() {
                                   src={message.attachmentUrl}
                                   alt={message.attachmentName || "image"}
                                   className="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition"
-                                  onClick={() => window.open(message.attachmentUrl, "_blank")}
+                                  onClick={() => window.open(message.attachmentUrl, "_blank", "noopener,noreferrer")}
                                 />
                               </div>
                             )}

@@ -57,7 +57,7 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
         // fall through to WhatsApp when the user cancels or share fails
       }
     }
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
   };
 
   // Copy the whole message, not just the code — the point of the card is to

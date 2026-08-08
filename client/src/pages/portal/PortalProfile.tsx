@@ -100,7 +100,7 @@ const { t, language, setLanguage } = useLanguage();
       iconBg: "bg-gradient-to-br from-indigo-400 to-purple-500",
       // The company WhatsApp — was a placeholder number, so "Support" opened
       // a chat with nobody. Use the shared constant so it can never drift.
-      action: () => window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}`, "_blank"),
+      action: () => window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}`, "_blank", "noopener,noreferrer"),
     },
     {
       icon: HelpCircle,

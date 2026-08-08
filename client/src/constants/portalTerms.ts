@@ -41,7 +41,15 @@ export interface TermsSection {
   items: TermsItem[];
 }
 
-/** WhatsApp support number in international (wa.me) format: +964 770 918 3535. */
+/**
+ * WhatsApp support number in international (wa.me) format: +964 770 918 3535.
+ *
+ * The one copy. It had been re-declared in four files and inlined raw in a
+ * fifth, which meant changing the company's number would have updated some
+ * screens and silently left the rest messaging the old one — the kind of
+ * split nobody notices until a customer does. portal-audit.test.ts fails on
+ * any new hardcoded wa.me number outside this file.
+ */
 export const TERMS_WHATSAPP_NUMBER = "9647709183535";
 
 /** Badge text beside each point. */

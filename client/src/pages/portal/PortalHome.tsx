@@ -28,6 +28,8 @@ import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalHeaderControls, PortalClock, usePortalMode } from "@/components/portal/PortalHeaderControls";
 import { headerGradient, isLightHeader, modeDef, tint, gradient } from "@/lib/portalModes";
 import { PhotoStack } from "@/components/PhotoStack";
+import { stageOf } from "@/lib/shipmentFilters";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 
 // Animated Counter Component
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
@@ -246,11 +248,17 @@ const { t, language } = useLanguage();
   // Get recent batches (last 3)
   const recentBatches = batches?.slice(0, 3) || [];
   
-  // Calculate stats
+  // Calculate stats.
+  //
+  // Grouped with stageOf — the same grouping the shipments page filters by —
+  // because each tile deep-links to that page with its stage. This page used
+  // to keep a private grouping (customs counted as "pending" here but as
+  // "in transit" there, and arrived/at_depot counted nowhere), so the number
+  // on the tile and the list the tap landed on disagreed.
   const totalBatches = batches?.length || 0;
-  const inTransitCount = batches?.filter(b => b.status === "in_transit").length || 0;
-  const deliveredCount = batches?.filter(b => b.status === "delivered" || b.status === "closed").length || 0;
-  const pendingCount = batches?.filter(b => b.status === "preparing" || b.status === "customs").length || 0;
+  const inTransitCount = batches?.filter(b => stageOf(b.status) === "in_transit").length || 0;
+  const deliveredCount = batches?.filter(b => stageOf(b.status) === "delivered").length || 0;
+  const pendingCount = batches?.filter(b => stageOf(b.status) === "in_china").length || 0;
   
   // Balance info
   const balance = financialSummary?.balanceUsd || 0;
@@ -654,7 +662,7 @@ const { t, language } = useLanguage();
                       ar: `مرحبًا، أودّ دفع رصيدي ($${Math.abs(balance).toFixed(2)}). الرجاء إرسال طرق الدفع.`,
                       zh: `您好，我想支付我的余额（$${Math.abs(balance).toFixed(2)}）。请发送付款方式。`,
                     });
-                    window.open(`https://wa.me/9647709183535?text=${encodeURIComponent(msg)}`, "_blank");
+                    window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
                   }}
                   className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-[0.98] transition py-2 text-sm font-bold text-white"
                 >
@@ -767,8 +775,10 @@ const { t, language } = useLanguage();
               </div>
             </Link>
 
-            {/* Pending */}
-            <Link href="/portal/shipments?status=pending">
+            {/* Pending — the in_china stage: registered or preparing, not yet
+                moving. `?status=pending` was never a stage the shipments page
+                understood, so this tile used to land on an empty list. */}
+            <Link href="/portal/shipments?status=in_china">
               <div className={cn(
                 "text-center p-3 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105",
                 isDark 
