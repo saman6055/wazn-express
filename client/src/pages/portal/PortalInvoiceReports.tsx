@@ -350,7 +350,10 @@ function ClassicPortalInvoiceReports() {
             </div>
             
             <div className="flex gap-2 items-center">
+              {/* Had no accessible name at all, so a screen reader announced
+                  an unlabelled combo box in the middle of the report header. */}
               <select
+                aria-label={pickLang(language, { ku: "ساڵ هەڵبژێرە", en: "Choose year", ar: "اختر السنة", zh: "选择年份" })}
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                 className={cn(
