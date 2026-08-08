@@ -27,6 +27,7 @@ import {
   Loader2, Check, AlertTriangle, Gift, Zap, ThumbsUp, ThumbsDown,
   Image as ImageIcon, ExternalLink, Hash, SlidersHorizontal, ArrowUpDown, Copy, HelpCircle
 } from "lucide-react";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 // Status configuration with beautiful colors
 const statusConfig: Record<string, { label: string; labelKu: string; labelAr: string; labelZh: string; color: string; bgColor: string; borderColor: string; icon: any; gradient: string }> = {
@@ -300,7 +301,7 @@ export default function PortalFullPackage() {
   // asking the server for a subset only made the three counters at the top of
   // the page mean something different depending on which tab was open — "total"
   // dropped when you tapped "Commission". They now count the same thing always.
-  const { data: fullPackageOrders, isLoading } = trpc.customerPortal.getMyFullPackageOrders.useQuery({});
+  const { data: fullPackageOrders, isLoading, isError: ordersError, isFetching: ordersFetching, refetch: refetchOrders } = trpc.customerPortal.getMyFullPackageOrders.useQuery({});
 
   /**
    * Goods the customer bought themselves — parcels we only shipped.
@@ -815,6 +816,10 @@ export default function PortalFullPackage() {
               <Skeleton key={i} className="h-36 rounded-2xl" />
             ))}
           </div>
+        ) : ordersError ? (
+          /* Previously this failure rendered "no orders yet — start by
+             creating a new request", to a customer who has plenty. */
+          <PortalErrorState onRetry={() => void refetchOrders()} isRetrying={ordersFetching} />
         ) : visibleCount === 0 ? (
           /* Empty State */
           <div className={cn(

@@ -29,6 +29,7 @@ import { matchesStage, countByStage, STATUS_LABEL, orderStageOf, type ShipmentSt
 import { tint, gradient } from "@/lib/portalModes";
 import { formatClockDate } from "@/lib/portalClock";
 import { filterChinaDepot, matchesRoute } from "@/lib/chinaDepotFilter";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 // "" is no filter — which is what the old "All" chip meant. Dropping the chip
 // and letting nothing-selected mean everything is one less thing to explain.
 type StatusFilter = ShipmentStage;
@@ -69,7 +70,7 @@ function ClassicPortalShipments() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   
-  const { data: batches, isLoading, refetch } = trpc.customerPortal.getMyBatches.useQuery();
+  const { data: batches, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyBatches.useQuery();
   const { data: unbatchedPackages, refetch: refetchUnbatched } = trpc.customerPortal.getMyUnbatchedPackages.useQuery();
   // Full-package and commission orders travel the same road but live in their
   // own table with their own status names. Leaving them out is why an order
@@ -587,6 +588,11 @@ function ClassicPortalShipments() {
         )}>
           {isLoading ? (
           <PortalListSkeleton rows={4} />
+        ) : isError ? (
+          /* Without this the failure fell through to "no shipments found" —
+             telling a customer their goods are gone because a request timed
+             out, with nothing to tap. */
+          <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : totalResults === 0 ? (
           <div className={cn(
             "rounded-2xl p-10 text-center shadow-sm transition-colors duration-300",
@@ -602,7 +608,16 @@ function ClassicPortalShipments() {
               {language === "ku" ? "هیچ بارێک نەدۆزرایەوە" : language === "ar" ? "لا توجد شحنات" : "No shipments found"}
             </p>
             <p className={cn("text-sm mt-1", isDark ? "text-slate-500" : "text-slate-400")}>
-              {language === "ku" ? "فلتەرێکی تر تاقی بکەرەوە" : language === "ar" ? "جرب فلتر مختلف" : "Try a different filter"}
+              {/* A customer with no shipments at all was told to try a
+                  different filter. The filter was never the problem. */}
+              {statusFilter || shippingType || searchQuery
+                ? pickLang(language, { ku: "فلتەرێکی تر تاقی بکەرەوە", en: "Try a different filter", ar: "جرب فلتر مختلف", zh: "换一个筛选条件" })
+                : pickLang(language, {
+                    ku: "کاتێک یەکەم بارت بگاتە کۆگاکەمان لێرە دەردەکەوێت.",
+                    en: "Your first shipment will appear here once it reaches our depot.",
+                    ar: "ستظهر أول شحنة لك هنا فور وصولها إلى مستودعنا.",
+                    zh: "您的第一批货物抵达我们仓库后会显示在这里。",
+                  })}
             </p>
           </div>
         ) : (

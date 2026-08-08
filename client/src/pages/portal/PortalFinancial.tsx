@@ -34,6 +34,7 @@ import {
   isCreditTx,
   isInvoiceOutstanding,
 } from "@/lib/portalMoney";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 // Deep-link a ledger transaction to the section it was raised for, so tapping a
 // row jumps straight to the relevant package/order/prohibited item.
@@ -77,7 +78,7 @@ const { t, language } = useLanguage();
   const [animatedBalance, setAnimatedBalance] = useState(0);
   
   const { data: summary, isLoading: summaryLoading } = trpc.customerPortal.getMyFinancialSummary.useQuery();
-  const { data: transactions, isLoading: transactionsLoading } = trpc.customerPortal.getMyTransactions.useQuery({ limit: 50 });
+  const { data: transactions, isLoading: transactionsLoading, isError: transactionsError, isFetching: transactionsFetching, refetch: refetchTransactions } = trpc.customerPortal.getMyTransactions.useQuery({ limit: 50 });
   const { data: receiptData, isLoading: receiptLoading } = trpc.customerPortal.getReceiptData.useQuery(
     { transactionId: selectedTransaction! },
     { enabled: !!selectedTransaction }
@@ -573,6 +574,10 @@ const { t, language } = useLanguage();
                   <Skeleton key={i} className="h-20 w-full rounded-2xl" />
                 ))}
               </div>
+            ) : transactionsError ? (
+              /* A failed request used to render as "no transactions yet" — on
+                 the money screen, of all places. */
+              <PortalErrorState onRetry={() => void refetchTransactions()} isRetrying={transactionsFetching} />
             ) : !transactions || transactions.length === 0 ? (
               <div className={cn(
                 "rounded-2xl p-10 text-center",
@@ -585,7 +590,7 @@ const { t, language } = useLanguage();
                   <Receipt className={cn("w-8 h-8", isDark ? "text-slate-500" : "text-slate-400")} />
                 </div>
                 <p className={cn("font-medium", isDark ? "text-slate-400" : "text-slate-600")}>
-                  {language === "ku" ? "هیچ مامەڵەیەک نییە" : "No transactions yet"}
+                  {pickLang(language, { ku: "هیچ مامەڵەیەک نییە", en: "No transactions yet", ar: "لا توجد معاملات بعد", zh: "暂无交易记录" })}
                 </p>
               </div>
             ) : (
