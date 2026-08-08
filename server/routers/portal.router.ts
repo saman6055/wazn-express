@@ -600,8 +600,11 @@ export const customerPortalRouter = router({
           (await db.getCustomerByUserId(ctx.user.id))?.id;
         if (!customerId) throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
         
-        const pkg = await db.getPackageById(input.packageId);
-        if (!pkg || pkg.customerId !== customerId) {
+        // Allow-listed, and scoped inside the query. Returning the row
+        // whole handed over the office notes and the signed qrCodeData /
+        // qrCodeSignature a scanner verifies.
+        const pkg = await db.getCustomerPackageDetail(input.packageId, customerId);
+        if (!pkg) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Package not found" });
         }
 

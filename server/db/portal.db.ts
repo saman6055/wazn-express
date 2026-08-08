@@ -1499,3 +1499,42 @@ export async function setDefaultAddress(addressId: number, customerId: number): 
     .where(eq(customerAddresses.id, addressId));
 }
 
+
+/**
+ * One of the customer's own parcels, in detail.
+ *
+ * `getPackageById` returns `select()`, and the portal's detail endpoint
+ * returned it whole. Alongside the office's `notes` and the staff user ids on
+ * every timestamp, that included `qrCodeData` and `qrCodeSignature` — the
+ * signed payload a scanner verifies. Handing that to the browser gives away
+ * the shape of a valid label for anyone who thinks to look.
+ *
+ * The allow-list the two list queries share, plus the fields a detail view
+ * genuinely adds: the delivery proof, which is the customer's own, and the
+ * recipient name it was handed to.
+ */
+export async function getCustomerPackageDetail(packageId: number, customerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const rows = await db.select({
+    ...CUSTOMER_PACKAGE_FIELDS,
+    deliveryType: packages.deliveryType,
+    packageOwnership: packages.packageOwnership,
+    categoryId: packages.categoryId,
+    claimedAt: packages.claimedAt,
+    recipientName: packages.recipientName,
+    recipientSignature: packages.recipientSignature,
+    deliveryPhoto: packages.deliveryPhoto,
+    volumetricNotifiedAt: packages.volumetricNotifiedAt,
+    volumetricAckAt: packages.volumetricAckAt,
+  }).from(packages)
+    .where(and(
+      eq(packages.id, packageId),
+      // Scoped in the query, not checked after it.
+      eq(packages.customerId, customerId),
+    ))
+    .limit(1);
+
+  return rows[0] ?? null;
+}

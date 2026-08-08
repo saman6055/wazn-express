@@ -271,3 +271,37 @@ describe("a customer confirming a box does not fan out", () => {
       .not.toMatch(/for \(const \w+ of items\)/);
   });
 });
+
+describe("what a parcel tells the customer", () => {
+  const portal = read("db/portal.db.ts");
+  const router = read("routers/portal.router.ts");
+
+  /**
+   * `getPackageDetails` returned the row whole. Alongside the office's `notes`
+   * and the staff user id on every timestamp, that included `qrCodeData` and
+   * `qrCodeSignature` — the signed payload a scanner verifies. Publishing it
+   * to the browser gives away the shape of a valid label to anyone who opens
+   * the network tab on their own parcel.
+   */
+  it("the detail view never returns the signed QR payload", () => {
+    const fn = portal.slice(portal.indexOf("export async function getCustomerPackageDetail"));
+    for (const secret of ["qrCodeData", "qrCodeSignature", "notes:", "registeredById", "deliveredById", "claimedById", "appliedPricingRuleId"]) {
+      expect(fn.slice(0, 1600), `${secret} is ours, not the customer's`).not.toContain(secret);
+    }
+    // The delivery proof is theirs; a detail view is the right place for it.
+    expect(fn.slice(0, 1600)).toContain("deliveryPhoto");
+    expect(fn.slice(0, 1600)).toContain("recipientSignature");
+  });
+
+  it("scopes the parcel to its owner inside the query", () => {
+    const fn = portal.slice(portal.indexOf("export async function getCustomerPackageDetail"));
+    expect(fn.slice(0, 1600)).toContain("eq(packages.customerId, customerId)");
+    // And the router must go through it rather than back to the raw getter.
+    const proc = router.slice(
+      router.indexOf("getPackageDetails: protectedProcedure"),
+      router.indexOf("getPackageTimeline"),
+    );
+    expect(proc).toContain("getCustomerPackageDetail");
+    expect(proc, "the raw row must not come back").not.toMatch(/db\.getPackageById/);
+  });
+});
