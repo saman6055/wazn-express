@@ -8,6 +8,7 @@ import {
   LEDGER_TYPE_LABEL,
   isDebt,
   isInvoiceOutstanding,
+  formatIqdAmount,
 } from "./portalMoney";
 
 /**
@@ -173,5 +174,63 @@ describe("one copy of the rules", () => {
       offenders,
       `use isDebt / isCredit from lib/portalMoney — positive means owed:\n${offenders.join("\n")}`,
     ).toEqual([]);
+  });
+});
+
+describe("the dinar a customer actually pays in", () => {
+  const SKIN_ROOT = path.resolve(__dirname, "../pages/portal");
+  const SKINS = [
+    "PortalFinancial.tsx",
+    "modern/ModernPortalFinancial.tsx",
+    "skin3/Skin3PortalFinancial.tsx",
+  ];
+
+  /**
+   * The books have carried IQD all along — `invoices.totalIqd` written against
+   * the rate on the day the invoice was raised, `ledgerTransactions.amountIqd`
+   * against the rate on the day the line was posted. Only the classic skin
+   * showed the invoice figure; the other two dropped it, and none of the three
+   * showed it on a transaction. A customer in Erbil pays in dinar and was
+   * being handed dollars to convert in their head at whatever rate they last
+   * heard, which is how someone arrives at the counter short.
+   */
+  for (const skin of SKINS) {
+    const src = fs.readFileSync(path.join(SKIN_ROOT, skin), "utf8");
+
+    it(`${skin} shows the dinar on invoices and transactions`, () => {
+      expect(src, "must use the shared formatter").toContain("formatIqdAmount");
+      expect(src, "the invoice's own dinar figure").toMatch(/formatIqdAmount\((?:inv|invoice)\.totalIqd\)/);
+      expect(src, "the transaction's own dinar figure").toMatch(/formatIqdAmount\(tx\.amountIqd\)/);
+    });
+
+    /**
+     * The one thing worse than showing dollars alone is showing a dinar figure
+     * that disagrees with the paper receipt in the customer's hand. Today's
+     * rate applied to an invoice raised in March is exactly that. Nothing here
+     * may multiply by a rate — the number is read, never derived.
+     */
+    it(`${skin} never recomputes the dinar from a live rate`, () => {
+      expect(src).not.toMatch(/(totalUsd|amountUsd|balanceUsd)[^\n]{0,40}\*\s*\w*[Rr]ate/);
+      expect(src).not.toMatch(/\*\s*(iqdRate|exchangeRate|usdToIqd)\b/);
+    });
+  }
+
+  it("returns nothing rather than a bare zero", () => {
+    // A row booked in dollars has no dinar figure, and "0 IQD" beside a real
+    // dollar amount reads as a price of nothing.
+    expect(formatIqdAmount(null)).toBeNull();
+    expect(formatIqdAmount(undefined)).toBeNull();
+    expect(formatIqdAmount("")).toBeNull();
+    expect(formatIqdAmount(0)).toBeNull();
+    expect(formatIqdAmount("0")).toBeNull();
+    expect(formatIqdAmount("not a number")).toBeNull();
+  });
+
+  it("prints a grouped, unsigned figure", () => {
+    // The sign is already carried by the +/- beside the dollar amount; a
+    // second minus in front of the dinar reads as a different transaction.
+    expect(formatIqdAmount(374500)).toBe("374,500 IQD");
+    expect(formatIqdAmount("-374500")).toBe("374,500 IQD");
+    expect(formatIqdAmount(1250000)).toBe("1,250,000 IQD");
   });
 });

@@ -15,7 +15,7 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { pickLang } from "@/lib/lang";
-import { isCreditTx, isDebt, isInvoiceOutstanding } from "@/lib/portalMoney";
+import { isCreditTx, isDebt, isInvoiceOutstanding, formatIqdAmount } from "@/lib/portalMoney";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
 
@@ -354,6 +354,13 @@ export default function ModernPortalFinancial() {
                             >
                               {credit ? "+" : "-"}
                               {formatCurrency(tx.amountUsd)}
+                              {/* The dinar posted with this line, at that
+                                  day's rate — not recomputed from today's. */}
+                              {formatIqdAmount(tx.amountIqd) && (
+                                <span className="block text-[10px] font-normal text-muted-foreground" dir="ltr">
+                                  {formatIqdAmount(tx.amountIqd)}
+                                </span>
+                              )}
                             </span>
                             <button
                               onClick={() => handleDownloadReceipt(tx.id)}
@@ -496,6 +503,13 @@ export default function ModernPortalFinancial() {
                         >
                           ${Number(inv.totalUsd || 0).toFixed(2)}
                         </p>
+                        {/* The dinar the invoice was raised at — not a
+                            conversion, so it matches their paper copy. */}
+                        {formatIqdAmount(inv.totalIqd) && (
+                          <p className="text-[10px] font-mono text-muted-foreground" dir="ltr">
+                            {formatIqdAmount(inv.totalIqd)}
+                          </p>
+                        )}
                         <span
                           className={cn(
                             "text-[10px] px-1.5 py-0.5 rounded-full font-medium",

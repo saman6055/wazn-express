@@ -36,6 +36,7 @@ import {
   invoiceState,
   isCreditTx,
   isInvoiceOutstanding,
+  formatIqdAmount,
 } from "@/lib/portalMoney";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
@@ -208,7 +209,7 @@ const { t, language } = useLanguage();
     if (!receiptData) return;
     const { transaction, customer, companyName, generatedAt } = receiptData;
     
-    const receiptHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt - ${transaction.transactionNumber}</title><style>body{font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}.logo{font-size:24px;font-weight:bold;color:#1e3a5f}.receipt-title{font-size:18px;margin-top:10px}.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #ccc}.label{color:#666}.value{font-weight:500}.amount{font-size:24px;font-weight:bold;text-align:center;padding:20px 0}.amount.credit{color:#16a34a}.amount.debit{color:#dc2626}.footer{text-align:center;margin-top:30px;font-size:12px;color:#666}.barcode{text-align:center;font-family:monospace;font-size:14px;letter-spacing:2px;margin:20px 0}</style></head><body><div class="header"><div class="logo">📦 ${companyName}</div><div class="receipt-title">Payment Receipt</div></div><div class="info-row"><span class="label">Receipt #</span><span class="value">${transaction.transactionNumber}</span></div><div class="info-row"><span class="label">Date</span><span class="value">${formatPortalDate(transaction.createdAt, language)}</span></div><div class="info-row"><span class="label">Customer</span><span class="value">${customer.fullName}</span></div><div class="info-row"><span class="label">Customer Code</span><span class="value">${customer.customerCode || "-"}</span></div><div class="info-row"><span class="label">Type</span><span class="value">${getTransactionTypeName(transaction.transactionType)}</span></div><div class="amount ${isCreditTx(transaction.transactionType) ? "credit" : "debit"}">${isCreditTx(transaction.transactionType) ? "-" : "+"}$${Number(transaction.amountUsd).toFixed(2)}</div><div class="barcode">${transaction.transactionNumber}</div><div class="footer"><p>Thank you for your business!</p><p>Generated: ${new Date(generatedAt).toLocaleString()}</p></div></body></html>`;
+    const receiptHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt - ${transaction.transactionNumber}</title><style>body{font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}.logo{font-size:24px;font-weight:bold;color:#1e3a5f}.receipt-title{font-size:18px;margin-top:10px}.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #ccc}.label{color:#666}.value{font-weight:500}.amount{font-size:24px;font-weight:bold;text-align:center;padding:20px 0}.amount.credit{color:#16a34a}.amount.debit{color:#dc2626}.footer{text-align:center;margin-top:30px;font-size:12px;color:#666}.barcode{text-align:center;font-family:monospace;font-size:14px;letter-spacing:2px;margin:20px 0}</style></head><body><div class="header"><div class="logo">📦 ${companyName}</div><div class="receipt-title">Payment Receipt</div></div><div class="info-row"><span class="label">Receipt #</span><span class="value">${transaction.transactionNumber}</span></div><div class="info-row"><span class="label">Date</span><span class="value">${formatPortalDate(transaction.createdAt, language)}</span></div><div class="info-row"><span class="label">Customer</span><span class="value">${customer.fullName}</span></div><div class="info-row"><span class="label">Customer Code</span><span class="value">${customer.customerCode || "-"}</span></div><div class="info-row"><span class="label">Type</span><span class="value">${getTransactionTypeName(transaction.transactionType)}</span></div><div class="amount ${isCreditTx(transaction.transactionType) ? "credit" : "debit"}">${isCreditTx(transaction.transactionType) ? "-" : "+"}${Number(transaction.amountUsd).toFixed(2)}</div>${formatIqdAmount(transaction.amountIqd) ? `<div style="text-align:center;font-size:14px;color:#64748b;margin-top:-12px;padding-bottom:12px">${formatIqdAmount(transaction.amountIqd)}</div>` : ""}<div class="barcode">${transaction.transactionNumber}</div><div class="footer"><p>Thank you for your business!</p><p>Generated: ${new Date(generatedAt).toLocaleString()}</p></div></body></html>`;
     
     const blob = new Blob([receiptHTML], { type: "text/html" });
     const url = URL.createObjectURL(blob);
@@ -543,10 +544,18 @@ const { t, language } = useLanguage();
                           {formatPortalDate(tx.createdAt, language)}
                         </p>
                       </div>
+                      <div className="text-end">
                       <p className={cn("font-bold", colors.amount)}>
                         {isCreditTx(tx.transactionType) ? "-" : "+"}
                         {formatCurrency(Number(tx.amountUsd))}
                       </p>
+                      {/* The dinar posted with this line, at that day's rate. */}
+                      {formatIqdAmount(tx.amountIqd) && (
+                        <p className="text-[10px] font-mono text-muted-foreground" dir="ltr">
+                          {formatIqdAmount(tx.amountIqd)}
+                        </p>
+                      )}
+                      </div>
                     </div>
                   );
                 })}
@@ -932,9 +941,9 @@ const { t, language } = useLanguage();
                     <p className={cn("text-4xl font-bold mt-1", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                       ${Number(invoice.totalUsd).toFixed(2)}
                     </p>
-                    {invoice.totalIqd && (
-                      <p className={cn("text-sm mt-1", isDark ? "text-slate-500" : "text-slate-400")}>
-                        {Number(invoice.totalIqd).toLocaleString()} IQD
+                    {formatIqdAmount(invoice.totalIqd) && (
+                      <p className={cn("text-sm mt-1", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
+                        {formatIqdAmount(invoice.totalIqd)}
                       </p>
                     )}
                   </div>
