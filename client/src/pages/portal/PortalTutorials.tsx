@@ -11,6 +11,7 @@ import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { LANGUAGE_NAME } from "@/constants/tutorialLanguages";
 import { tutorialTitle, tutorialSummary } from "@/lib/tutorialText";
 import { GraduationCap, Play, X, ThumbsUp, ThumbsDown, MessageCircle, Star, Languages } from "lucide-react";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 /**
  * Tutorials — short how-to videos, grouped into admin-defined sections.
@@ -41,7 +42,7 @@ export default function PortalTutorials() {
   // language of their title — a Kurdish narration helps nobody reading in
   // Arabic. Once the customer asks for other languages we stop sending it.
   const [allLanguages, setAllLanguages] = useState(false);
-  const { data: tutorials, isLoading } = trpc.tutorials.list.useQuery(
+  const { data: tutorials, isLoading, isError, isFetching, refetch } = trpc.tutorials.list.useQuery(
     allLanguages ? {} : { language },
   );
   const recordEvent = trpc.tutorials.recordEvent.useMutation();
@@ -138,6 +139,8 @@ export default function PortalTutorials() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-52 w-full rounded-2xl" />)}
           </div>
+        ) : isError ? (
+          <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : shown.length === 0 ? (
           <div className={cn("rounded-2xl border p-8 text-center", isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 dark:border-slate-800/60 bg-white")}>
             <GraduationCap className="mx-auto mb-2 h-10 w-10 text-muted-foreground/50" />

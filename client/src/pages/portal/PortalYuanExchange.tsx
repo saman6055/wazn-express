@@ -19,6 +19,7 @@ import {
   Send,
   XCircle,
 } from "lucide-react";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { formatPortalDate } from "@/lib/portalClock";
@@ -338,6 +339,8 @@ export default function PortalYuanExchange() {
                   <div className="p-6 flex justify-center">
                     <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
                   </div>
+                ) : ordersQuery.isError ? (
+                  <PortalErrorState onRetry={() => void ordersQuery.refetch()} isRetrying={ordersQuery.isFetching} />
                 ) : !ordersQuery.data?.length ? (
                   <p className="p-6 text-center text-sm text-gray-400">
                     {pick({ ku: "هێشتا هیچ داواکارییەکت نییە", en: "No orders yet", ar: "لا توجد طلبات بعد", zh: "暂无订单" })}

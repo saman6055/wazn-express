@@ -7,6 +7,7 @@ import {
   Megaphone, ChevronRight, Calendar, Eye, Star,
   Newspaper, Gift, RefreshCw, BookOpen, ArrowLeft, PlayCircle, Pin
 } from "lucide-react";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { Link } from "wouter";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,7 +26,7 @@ const { banner: portalBanner } = usePortalPalette();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
   
-  const { data: allPosts, isLoading } = trpc.blog.published.useQuery();
+  const { data: allPosts, isLoading, isError, isFetching, refetch } = trpc.blog.published.useQuery();
   const [categoryFilter, setCategoryFilter] = useState<"all" | "news" | "promotion" | "announcement" | "update" | "guide">("all");
   // Only posts written in the reader's language, then filter by category — a
   // Kurdish-only post never appears in the Arabic/English feed and vice-versa.
@@ -161,6 +162,8 @@ const { banner: portalBanner } = usePortalPalette();
               <Skeleton key={i} className="h-48 w-full rounded-2xl" />
             ))}
           </div>
+        ) : isError ? (
+          <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : !blogPosts || blogPosts.length === 0 ? (
           <div className={cn(
             "text-center py-16 rounded-2xl",

@@ -112,8 +112,7 @@ export default function PortalMessages() {
     }
   );
   
-  // Get old customer messages (legacy system)
-  const legacyMessagesQuery = trpc.customerPortal.getMyMessages.useQuery();
+  // (The legacy getMyMessages thread was fetched here and never rendered.)
   
   // Send message mutation
   const sendMessage = trpc.supportChat.sendMessage.useMutation({

@@ -219,14 +219,13 @@ export async function getCustomerPackagesInBatch(customerId: number, batchId: nu
     // Compute this customer's total chargeable kg/cbm in the batch (needed
     // to pick the right tier and to mirror billing math exactly).
     let customerTotal = 0;
+    // The same shared rule and the same admin-set divisor the invoice uses.
+    // This was `/ 6000` written out by hand, so an admin who changed the
+    // divisor moved the invoice and left this preview where it was.
+    const divisor = await getVolumetricDivisor();
     for (const p of customerPackages) {
       if (unit === 'kg') {
-        const actualKg = Number(p.weightKg) || 0;
-        const lengthCm = Number(p.lengthCm) || 0;
-        const widthCm = Number(p.widthCm) || 0;
-        const heightCm = Number(p.heightCm) || 0;
-        const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-        customerTotal += Math.max(actualKg, volumetricKg);
+        customerTotal += chargeableWeight(p, divisor).chargeableKg;
       } else {
         customerTotal += Number(p.volumeCbm) || 0;
       }

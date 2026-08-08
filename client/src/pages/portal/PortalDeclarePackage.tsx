@@ -30,6 +30,7 @@ import {
   StickyNote,
   CalendarDays,
 } from "lucide-react";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { PhotoStack } from "@/components/PhotoStack";
 
 // Platforms come from productAttributes — the same list the staff order forms
@@ -60,7 +61,7 @@ export default function PortalDeclarePackage() {
   const [notes, setNotes] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
 
-  const { data: declared, isLoading } = trpc.customerPortal.getMyDeclaredPackages.useQuery();
+  const { data: declared, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyDeclaredPackages.useQuery();
 
   const resetForm = () => {
     setTrackingNumber("");
@@ -219,6 +220,8 @@ export default function PortalDeclarePackage() {
 
           {isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          ) : isError ? (
+            <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
           ) : !declared || declared.length === 0 ? (
             <div className={cn("rounded-2xl border border-dashed py-8 text-center text-sm text-muted-foreground", isDark ? "border-slate-700" : "border-slate-300 dark:border-slate-800/60")}>
               {label({ ku: "هێشتا هیچ تراکێکت تۆمار نەکردووە", en: "You haven't registered any tracking yet", ar: "لم تسجّل أي رقم تتبع بعد", zh: "您还没有登记任何运单号" })}

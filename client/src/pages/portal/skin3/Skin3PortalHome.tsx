@@ -125,8 +125,8 @@ export default function Skin3PortalHome() {
     trpc.customerPortal.getMyAccount.useQuery();
   const { data: balance, isLoading: balanceLoading } =
     trpc.customerPortal.getMyBalance.useQuery();
-  const { data: batches } =
-    trpc.customerPortal.getMyBatches.useQuery();
+  // (getMyBatches was fetched here and never rendered — every visit paid for
+  //  the whole batch list to display nothing.)
   const { data: packages, isLoading: packagesLoading } =
     trpc.customerPortal.getMyPackages.useQuery();
   const { data: transactions, isLoading: transactionsLoading } =
