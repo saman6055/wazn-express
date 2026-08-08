@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { pickLang } from "@/lib/lang";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 export default function PortalAddresses() {
   // Banner colour follows the mode the customer picked, like every other page.
@@ -45,7 +46,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
     isDefault: false,
   });
   
-  const { data: addresses, isLoading, refetch } = trpc.customerPortal.getMyAddresses.useQuery();
+  const { data: addresses, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyAddresses.useQuery();
   
   // All four of these used to fail in total silence: no toast, no message, the
   // dialog simply staying open with the button re-enabled. A customer would
@@ -238,6 +239,9 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 </div>
               ))}
             </div>
+          ) : isError ? (
+            /* A customer with saved addresses was told they had none. */
+            <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
           ) : addresses?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-100 to-teal-200 flex items-center justify-center mb-4">

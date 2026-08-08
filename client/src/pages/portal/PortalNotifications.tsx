@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { pickLang } from "@/lib/lang";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useState } from "react";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 // Destinations that aren't worth a "View" link — landing on the portal home
 // from the notifications page reads as "nothing happened".
@@ -23,7 +24,7 @@ export default function PortalNotifications() {
   const { banner: portalBanner } = usePortalPalette();
   // Was entirely English, including the timestamps every customer reads.
   const { language } = useLanguage();
-const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNotifications.useQuery();
+const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyNotifications.useQuery();
   // Tapping a notification expands it in place to show the full message.
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -168,6 +169,9 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
                 </div>
               ))}
             </div>
+          ) : isError ? (
+            /* Was indistinguishable from having no notifications. */
+            <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
           ) : notifications?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-4">

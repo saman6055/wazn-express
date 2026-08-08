@@ -69,6 +69,21 @@ describe("what an order tells the customer", () => {
     }
   });
 
+  it("does not send the photo gallery with every list row", () => {
+    // productImages is a JSON array of base64 data URIs — 200–330 KB per photo
+    // — and this list is loaded by five portal screens. Twenty orders with two
+    // photos each was 8–13 MB downloaded to draw 48-pixel thumbnails. The card
+    // reads productImage; the gallery comes with the detail.
+    const withGallery = { ...rawOrder, productImage: "data:image/jpeg;base64,AAA", productImages: ["data:image/jpeg;base64,BBB"] };
+    const [listed] = toCustomerVisibleOrders([withGallery as any]) as any[];
+    expect(listed.productImages).toBeUndefined();
+    expect(listed.productImage, "the thumbnail must survive").toBe("data:image/jpeg;base64,AAA");
+
+    // The detail view is where a customer asked to see them.
+    const detail = toCustomerVisibleOrder(withGallery as any) as any;
+    expect(detail.productImages).toEqual(["data:image/jpeg;base64,BBB"]);
+  });
+
   it("survives a row with nothing in it", () => {
     expect(() => toCustomerVisibleOrders([])).not.toThrow();
     expect(toCustomerVisibleOrder({ id: 1, createdAt: new Date(0) } as any)).toBeTruthy();

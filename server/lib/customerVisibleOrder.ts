@@ -41,8 +41,21 @@ export function toCustomerVisibleOrder(order: AnyRow) {
   };
 }
 
+/**
+ * The list form. Same fields, minus the gallery.
+ *
+ * `productImages` is a JSON array of base64 data URIs — one photo is 200–330 KB
+ * once encoded — and this list is loaded by five portal screens. A customer
+ * with twenty orders carrying two photos each was downloading 8–13 MB to
+ * render 48-pixel thumbnails. The card only ever reads `productImage`; the
+ * full set is fetched with the order detail, when the customer has actually
+ * asked to look at it.
+ */
 export function toCustomerVisibleOrders(orders: AnyRow[] | null | undefined) {
-  return (orders ?? []).map(customerVisibleOrderFields);
+  return (orders ?? []).map((o) => {
+    const { productImages, ...rest } = customerVisibleOrderFields(o);
+    return rest;
+  });
 }
 
 function customerVisibleOrderFields(o: AnyRow) {
