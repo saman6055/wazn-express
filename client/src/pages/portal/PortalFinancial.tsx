@@ -37,6 +37,7 @@ import {
   isCreditTx,
   isInvoiceOutstanding,
   formatIqdAmount,
+  describeLedgerRef,
 } from "@/lib/portalMoney";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
@@ -222,10 +223,13 @@ const { t, language } = useLanguage();
     URL.revokeObjectURL(url);
   };
 
+  // Was { label, labelKu } read by a two-way ternary, so Arabic and Chinese
+  // customers saw "All Time / This Month / This Year" in English on an
+  // otherwise translated page.
   const dateFilters = [
-    { value: "all", label: "All Time", labelKu: "هەموو کات" },
-    { value: "month", label: "This Month", labelKu: "ئەم مانگە" },
-    { value: "year", label: "This Year", labelKu: "ئەم ساڵە" },
+    { value: "all",   label: { ku: "هەموو کات", en: "All Time",   ar: "كل الفترات", zh: "全部时间" } },
+    { value: "month", label: { ku: "ئەم مانگە", en: "This Month", ar: "هذا الشهر",  zh: "本月" } },
+    { value: "year",  label: { ku: "ئەم ساڵە",  en: "This Year",  ar: "هذه السنة",  zh: "今年" } },
   ];
 
   const isDebt = isDebtBalance(balance);
@@ -584,7 +588,7 @@ const { t, language } = useLanguage();
                         : "bg-white text-slate-600 shadow-sm"
                   )}
                 >
-                  {language === "ku" ? filter.labelKu : filter.label}
+                  {pickLang(language, filter.label)}
                 </button>
               ))}
             </div>
@@ -685,7 +689,7 @@ const { t, language } = useLanguage();
                       
                       {tx.description && (
                         <p className={cn("text-sm mt-2 pl-16", isDark ? "text-slate-500" : "text-slate-500")}>
-                          {tx.description}
+                          {describeLedgerRef(tx.description, language)}
                         </p>
                       )}
                     </div>

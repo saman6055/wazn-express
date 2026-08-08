@@ -84,6 +84,57 @@ describe("no customer reads a language the portal only half speaks", () => {
   }
 
   /**
+   * The second dialect of the same bug, and the one that hid longest:
+   *
+   *   { value: "all", label: "All Time", labelKu: "هەموو کات" }
+   *   …
+   *   {language === "ku" ? filter.labelKu : filter.label}
+   *
+   * The ternary reads field names rather than string literals, so the chain
+   * check above walks straight past it, and the object looks translated
+   * because it has a `labelKu` in it. It shipped "All Time / This Month /
+   * This Year" in English on a page that was otherwise fully Chinese.
+   *
+   * Any `xxxKu`/`xxxAr` field must be accompanied by its `xxxZh` sibling.
+   */
+  it("parallel label fields carry all four languages", () => {
+    const offenders: string[] = [];
+    for (const file of FILES) {
+      const src = fs.readFileSync(file, "utf8");
+      const bases = new Set<string>();
+      for (const m of src.matchAll(/\b([a-z][A-Za-z0-9]*)(Ku|Ar)\s*:/g)) bases.add(m[1]);
+      for (const base of bases) {
+        // `titleKu`/`messageKu` on notification rows are server columns being
+        // read, not label objects being declared; they are covered by the
+        // server-side guard instead.
+        if (!new RegExp(`\\b${base}Zh\\s*:`).test(src)) {
+          offenders.push(`${path.basename(file)}: ${base}Ku/${base}Ar exists but ${base}Zh does not`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  /**
+   * And the ternary that reads them. Even with all four fields present,
+   * `language === "ku" ? x.labelKu : x.label` still drops two of them.
+   */
+  it("parallel label fields are read through pickLang", () => {
+    const offenders: string[] = [];
+    const BAD = /language === "(?:ku|ar|zh|en)"\s*\?\s*[\w.]+\s*:/g;
+    for (const file of FILES) {
+      const src = fs.readFileSync(file, "utf8");
+      for (const m of src.matchAll(BAD)) {
+        const tail = src.slice(m.index, m.index + 220);
+        // A chain that goes on to test the other languages is fine.
+        const langs = new Set((tail.match(/language === "(ku|ar|zh|en)"/g) ?? []).map((s) => s.slice(-3, -1)));
+        if (langs.size < 3) offenders.push(`${path.basename(file)}: ${tail.split("\n")[0].trim().slice(0, 90)}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  /**
    * pickLang's own type would catch a missing key at compile time, but only
    * for callers that pass an object literal. This catches the other way a
    * language goes missing: an empty string, which reads as "translated" to

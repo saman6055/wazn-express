@@ -260,32 +260,35 @@ function ClassicPortalShipments() {
    */
   const shippingTabs: {
     value: Exclude<ShippingFilter, "">;
-    label: string; labelKu: string; labelAr: string;
-    descKu: string; descEn: string; descAr: string;
+    label: string; labelKu: string; labelAr: string; labelZh: string;
+    descKu: string; descEn: string; descAr: string; descZh: string;
     icon: any;
   }[] = [
     {
       value: "air_regular",
-      label: "Air · standard", labelKu: "ئاسمانی ئاسایی", labelAr: "جوي عادي",
+      label: "Air · standard", labelKu: "ئاسمانی ئاسایی", labelAr: "جوي عادي", labelZh: "空运 · 普货",
       descKu: "جل و بەرگ، جانتا، پێڵاو و کەلوپەلی ئاسایی. خێراترین ڕێگا.",
       descEn: "Clothes, bags, shoes and everyday goods. The fastest route.",
       descAr: "ملابس وحقائب وأحذية وبضائع اعتيادية. أسرع طريق.",
+      descZh: "衣服、箱包、鞋子等日常货物。最快的路线。",
       icon: Plane,
     },
     {
       value: "air_irregular",
-      label: "Air · special", labelKu: "ئاسمانی نائاسایی", labelAr: "جوي خاص",
+      label: "Air · special", labelKu: "ئاسمانی نائاسایی", labelAr: "جوي خاص", labelZh: "空运 · 特货",
       descKu: "شلەمەنی، پاتری، ماگنێت و هاوشێوەکانیان. ڕێگایەکی تایبەت و کاتی زیاتری دەوێت.",
       descEn: "Liquids, batteries, magnets and the like. A special route, and slower.",
       descAr: "سوائل وبطاريات ومغناطيس وما شابه. مسار خاص ويستغرق وقتًا أطول.",
+      descZh: "液体、电池、磁性物品等。特殊渠道，用时更久。",
       icon: AlertTriangle,
     },
     {
       value: "sea",
-      label: "Sea", labelKu: "دەریایی", labelAr: "بحري",
+      label: "Sea", labelKu: "دەریایی", labelAr: "بحري", labelZh: "海运",
       descKu: "کاڵای قەبارە گەورە کە پەلەت لە گەیشتنی نییە. هەرزانترین ڕێگا.",
       descEn: "Bulky goods you are not in a hurry for. The cheapest route.",
       descAr: "بضائع كبيرة الحجم لا تستعجلها. أرخص طريق.",
+      descZh: "体积大、不着急的货物。最便宜的路线。",
       icon: Ship,
     },
   ];
@@ -312,15 +315,15 @@ function ClassicPortalShipments() {
       in_china: counts.in_china + inChinaItems.filter(i => inRoute(i.shippingType)).length,
     };
   }, [batches, inChinaItems, shippingType]);
-  const statusFilters: { value: Exclude<StatusFilter, "">; label: string; labelKu: string; labelAr: string; count: number }[] = [
-    { value: "in_china", label: "In China", labelKu: "لە کۆگای چین", labelAr: "في مستودع الصين", count: stageCounts.in_china },
-    { value: "in_transit", label: "On the way", labelKu: "لە ڕێگادا", labelAr: "في الطريق", count: stageCounts.in_transit },
-    { value: "delivered", label: "Arrived", labelKu: "گەیشتوو", labelAr: "تم التسليم", count: stageCounts.delivered },
+  const statusFilters: { value: Exclude<StatusFilter, "">; label: string; labelKu: string; labelAr: string; labelZh: string; count: number }[] = [
+    { value: "in_china", label: "In China", labelKu: "لە کۆگای چین", labelAr: "في مستودع الصين", labelZh: "在中国仓库", count: stageCounts.in_china },
+    { value: "in_transit", label: "On the way", labelKu: "لە ڕێگادا", labelAr: "في الطريق", labelZh: "在途中", count: stageCounts.in_transit },
+    { value: "delivered", label: "Arrived", labelKu: "گەیشتوو", labelAr: "تم التسليم", labelZh: "已到达", count: stageCounts.delivered },
   ];
 
   const activeShipping = shippingTabs.find(t => t.value === shippingType);
   const shippingHint = activeShipping
-    ? (language === "ku" ? activeShipping.descKu : language === "ar" ? activeShipping.descAr : activeShipping.descEn)
+    ? pickLang(language, { ku: activeShipping.descKu, en: activeShipping.descEn, ar: activeShipping.descAr, zh: activeShipping.descZh })
     : (pickLang(language, { ku: "هەموو بارەکانت — یەکێک هەڵبژێرە بۆ پاڵاوتن.", en: "All your shipments — pick one to filter.", ar: "كل شحناتك — اختر واحدًا للتصفية.", zh: "您的所有运单 — 选择一个进行筛选。" }));
 
   return (
@@ -437,7 +440,7 @@ function ClassicPortalShipments() {
                 }}
               >
                 <tab.icon className={cn("shrink-0", compactFilters ? "w-3.5 h-3.5" : "w-4 h-4")} />
-                <span>{language === "ku" ? tab.labelKu : language === "ar" ? tab.labelAr : tab.label}</span>
+                <span>{pickLang(language, { ku: tab.labelKu, en: tab.label, ar: tab.labelAr, zh: tab.labelZh })}</span>
               </button>
             );
           })}
@@ -492,7 +495,7 @@ function ClassicPortalShipments() {
                     : "0 2px 5px -2px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.9)",
                 }}
               >
-                {language === "ku" ? filter.labelKu : language === "ar" ? filter.labelAr : filter.label}
+                {pickLang(language, { ku: filter.labelKu, en: filter.label, ar: filter.labelAr, zh: filter.labelZh })}
                 <span
                   className={cn(
                     "px-1.5 py-0.5 rounded-full text-xs font-bold tabular-nums",

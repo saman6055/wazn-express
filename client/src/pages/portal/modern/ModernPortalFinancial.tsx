@@ -15,7 +15,7 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { pickLang } from "@/lib/lang";
-import { isCreditTx, isDebt, isInvoiceOutstanding, formatIqdAmount } from "@/lib/portalMoney";
+import { isCreditTx, isDebt, isInvoiceOutstanding, formatIqdAmount, describeLedgerRef } from "@/lib/portalMoney";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
 
@@ -328,7 +328,7 @@ export default function ModernPortalFinancial() {
                                 isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
                               )}
                             >
-                              {tx.description ||
+                              {describeLedgerRef(tx.description, language) ||
                                 tx.transactionNumber ||
                                 (pickLang(language, { ku: "مامەڵە", en: "Transaction", ar: "معاملة", zh: "交易" }))}
                             </p>

@@ -52,6 +52,7 @@ import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { notificationText } from "@/lib/portalNotificationText";
 import { formatPortalDate } from "@/lib/portalClock";
 
 export default function PortalMessages() {
@@ -855,10 +856,10 @@ export default function PortalMessages() {
                       : "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30"
                   )}>
                     <p className={cn("text-sm font-bold", isDark ? "text-white" : "text-gray-800 dark:text-gray-200")}>
-                      {n.titleKu && language === "ku" ? n.titleKu : n.titleAr && language === "ar" ? n.titleAr : n.title}
+                      {notificationText(n, "title", language)}
                     </p>
                     <p className={cn("text-xs mt-0.5", isDark ? "text-slate-400" : "text-gray-600")}>
-                      {n.messageKu && language === "ku" ? n.messageKu : n.messageAr && language === "ar" ? n.messageAr : n.message}
+                      {notificationText(n, "message", language)}
                     </p>
                   </div>
                 ))}

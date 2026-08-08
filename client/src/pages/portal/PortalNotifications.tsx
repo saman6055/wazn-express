@@ -15,6 +15,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useState } from "react";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
+import { notificationText } from "@/lib/portalNotificationText";
 
 // Destinations that aren't worth a "View" link — landing on the portal home
 // from the notifications page reads as "nothing happened".
@@ -111,17 +112,11 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
     return formatPortalDate(d, language);
   };
   
-  // The schema carries titleKu/titleAr/titleZh and the matching messages,
-  // written by whoever raised the notification — and nothing rendered them, so
-  // a Kurdish customer read the default-language text even when a translation
-  // existed. Chinese was missing from the table entirely: a customer who chose
-  // 中文 got every movement alert, the ones that wake a phone at night, in
-  // English. `title`/`message` stay the fallback for older rows.
-  const localised = (n: any, field: "title" | "message"): string => {
-    const suffix = language === "ku" ? "Ku" : language === "ar" ? "Ar" : language === "zh" ? "Zh" : null;
-    return (suffix && n[field + suffix]) || n[field] || "";
-  };
-
+  // One reader, shared with the panel on the messages page — see
+  // lib/portalNotificationText. The two screens had written their own and
+  // disagreed about both Chinese and empty translations.
+  const localised = (n: any, field: "title" | "message"): string =>
+    notificationText(n, field, language);
   const unreadCount = notifications?.filter(n => !n.isRead).length || 0;
 
   return (

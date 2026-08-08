@@ -182,3 +182,59 @@ export function formatIqdAmount(value: number | string | null | undefined): stri
   if (!Number.isFinite(n) || n === 0) return null;
   return `${Math.abs(n).toLocaleString("en-US")} IQD`;
 }
+
+/**
+ * A ledger line's description, in the customer's language.
+ *
+ * The description is written in Kurdish when the charge is posted and stored
+ * as a sentence — `پاکەت YT8845140653126 - باچ SEA-2026-004`. That is
+ * accounting data, already written on rows going back years, and the posting
+ * side is not something to reach into. But a Chinese customer opening their
+ * statement was reading a Chinese page with a Kurdish sentence in the middle
+ * of every row, which is worse than it sounds: it is the row that tells them
+ * *which parcel* a charge was for.
+ *
+ * The sentence has no prose in it. Everything that carries meaning is a code —
+ * a tracking number and a batch code — so the stored shapes are recognised
+ * here and written out again around the same codes in the language being read.
+ *
+ * Anything that does not match a known shape is returned exactly as stored. A
+ * description we cannot parse is still the only record of what a charge was
+ * for, and dropping it to avoid showing Kurdish would be the worse trade.
+ */
+export function describeLedgerRef(
+  description: string | null | undefined,
+  language: string,
+): string {
+  const raw = (description ?? "").trim();
+  if (!raw) return "";
+
+  const PARCEL: L = { ku: "پاکەت", en: "Parcel", ar: "طرد", zh: "包裹" };
+  const BATCH: L = { ku: "باچ", en: "Shipment", ar: "شحنة", zh: "批次" };
+  const LATE: L = {
+    ku: "چارجی دواکەوتوو",
+    en: "late charge",
+    ar: "رسم متأخر",
+    zh: "补收费用",
+  };
+  const pick = (l: L) => l[(["ku", "en", "ar", "zh"].includes(language) ? language : "en") as keyof L];
+
+  // `پاکەت <tracking> - باچ <batch>`, optionally trailed by `(چارجی دواکەوتوو)`.
+  const both = raw.match(/^پاکەت\s+(\S+)\s*-\s*باچ\s*(\S*)\s*(\(چارجی دواکەوتوو\))?$/);
+  if (both) {
+    const [, tracking, batch, late] = both;
+    const parts = [`${pick(PARCEL)} ${tracking}`];
+    if (batch) parts.push(`${pick(BATCH)} ${batch}`);
+    const text = parts.join(" · ");
+    return late ? `${text} (${pick(LATE)})` : text;
+  }
+
+  // `باچ <batch>` on its own, and the no-batch case it is paired with.
+  const only = raw.match(/^باچ\s+(\S+)$/);
+  if (only) return `${pick(BATCH)} ${only[1]}`;
+  if (raw === "بێ باچ") {
+    return pick({ ku: "بێ باچ", en: "No shipment", ar: "بدون شحنة", zh: "无批次" });
+  }
+
+  return raw;
+}
