@@ -513,23 +513,30 @@ export async function searchCustomerOrder(customerId: number, query: string) {
 }
 
 // Get customer notification count
+/**
+ * The number on the bell — the customer's unread notifications.
+ *
+ * It used to count rows in `packageStatusHistory` from the last seven days,
+ * while the notifications page listed `customerNotifications`. Two unrelated
+ * tables. So the bell could read 17 while the page showed three items, and
+ * marking everything read could not move it: nothing the customer did touched
+ * the table being counted. The number only ever decayed as status-history rows
+ * aged past a week, and the bell kept ringing in the meantime.
+ *
+ * It counts the same rows the page lists now, so reading them clears it.
+ */
 export async function getCustomerNotificationCount(customerId: number) {
   const db = await getDb();
   if (!db) return 0;
-  
-  // Count unread notifications (status changes in last 7 days)
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  
+
   const result = await db.select({
     count: sql<number>`COUNT(*)`
-  }).from(packageStatusHistory)
-    .innerJoin(packages, eq(packageStatusHistory.packageId, packages.id))
+  }).from(customerNotifications)
     .where(and(
-      eq(packages.customerId, customerId),
-      gte(packageStatusHistory.changedAt, sevenDaysAgo)
+      eq(customerNotifications.customerId, customerId),
+      eq(customerNotifications.isRead, false),
     ));
-  
+
   return result[0]?.count || 0;
 }
 

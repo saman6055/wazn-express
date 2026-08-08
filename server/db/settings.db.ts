@@ -253,6 +253,28 @@ export interface PortalCalcSettings {
   seaSurchargePct: number;
 }
 
+/**
+ * How many cm³ make one volumetric kilogram — read from one place.
+ *
+ * There were two settings for this. Billing read `cbm_divisor` (see
+ * batches.db); the portal's price calculator read its own
+ * `portal_calc_settings.volumetricDivisor` with its own default. Nothing kept
+ * them equal, so an admin changing one moved the price the customer was
+ * quoted without moving the price on their invoice.
+ *
+ * `cbm_divisor` wins, because it is the one that decides money. The quote
+ * follows the invoice, never the reverse.
+ */
+export async function getVolumetricDivisor(): Promise<number> {
+  try {
+    const raw = await getSetting("cbm_divisor");
+    const n = parseInt(raw ?? "", 10);
+    return n > 0 ? n : 6000;
+  } catch {
+    return 6000;
+  }
+}
+
 const CALC_SETTINGS_KEY = "portal_calc_settings";
 export const DEFAULT_CALC_SETTINGS: PortalCalcSettings = {
   volumetricDivisor: 6000,
@@ -271,7 +293,10 @@ export async function getPortalCalcSettings(): Promise<PortalCalcSettings> {
       return Number.isFinite(n) && n > 0 ? n : fallback;
     };
     return {
-      volumetricDivisor: posNum(parsed.volumetricDivisor, DEFAULT_CALC_SETTINGS.volumetricDivisor),
+      // Not the stored copy: the divisor billing actually uses. A quote that
+      // disagrees with the invoice is the only kind of wrong price that
+      // reaches the customer twice.
+      volumetricDivisor: await getVolumetricDivisor(),
       airMinKg: posNum(parsed.airMinKg, DEFAULT_CALC_SETTINGS.airMinKg),
       seaMinCbm: posNum(parsed.seaMinCbm, DEFAULT_CALC_SETTINGS.seaMinCbm),
       // 0 is a valid surcharge (disables it), so allow >= 0 here.

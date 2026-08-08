@@ -1,6 +1,6 @@
 import { getDb } from './connection';
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from '@shared/chargeableWeight';
-import { getSetting } from './settings.db';
+import { getSetting, getVolumetricDivisor } from './settings.db';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import {
   InsertUser, users,
@@ -314,15 +314,7 @@ export async function getApplicableTierPrice(batchId: number, customerTotalValue
  * form read it from settings, so changing the setting would have moved the
  * quoted price and left the invoice where it was. One reader, one answer.
  */
-async function getVolumetricDivisor(): Promise<number> {
-  try {
-    const raw = await getSetting('cbm_divisor');
-    const n = parseInt(raw ?? '', 10);
-    return n > 0 ? n : DEFAULT_VOLUMETRIC_DIVISOR;
-  } catch {
-    return DEFAULT_VOLUMETRIC_DIVISOR;
-  }
-}
+// The divisor now has one reader, in settings.db — see getVolumetricDivisor there.
 
 // Calculate customer's total weight/CBM in a batch
 // For kg unit, uses chargeable weight (max of actual weight and volumetric weight)

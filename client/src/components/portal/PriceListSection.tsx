@@ -5,6 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
+import { chargeableWeight } from "@shared/chargeableWeight";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -372,17 +373,35 @@ function PriceCalculator({
   const L = num(len), W = num(wid), H = num(hei);
   const volCm3 = L > 0 && W > 0 && H > 0 ? L * W * H : 0;
 
-  // ---- Air: chargeable = max(actual, volumetric), min airMinKg ----
+  /**
+   * The quote must be the invoice.
+   *
+   * This calculator ran its own arithmetic and reached a different number from
+   * the one the customer is actually charged, in two ways:
+   *
+   *   • it applied `airMinKg`, `seaMinCbm` and `seaSurchargePct` — three
+   *     settings that appear nowhere in any charging path on the server. A
+   *     0.4 kg parcel was quoted as 1 kg and billed as 0.4; a 0.1 CBM sea
+   *     parcel was quoted +25% and billed flat.
+   *   • it divided by its own copy of the volumetric divisor, while billing
+   *     read a different setting entirely.
+   *
+   * It now uses `chargeableWeight` from shared/, the same function the batch
+   * and package charges are computed with, against the same divisor. Whatever
+   * this quotes is what the invoice will say.
+   */
   const actualKg = num(weight);
-  const volumetricKg = volCm3 > 0 ? volCm3 / calc.volumetricDivisor : 0;
-  const airBase = Math.max(actualKg, volumetricKg);
-  const airChargeable = airBase > 0 ? Math.max(airBase, calc.airMinKg) : 0;
-  const usedVolumetric = volumetricKg > actualKg && volumetricKg > 0;
+  const air = chargeableWeight(
+    { weightKg: actualKg, lengthCm: L, widthCm: W, heightCm: H },
+    calc.volumetricDivisor,
+  );
+  const volumetricKg = air.volumetricKg;
+  const airChargeable = air.chargeableKg;
+  const usedVolumetric = air.billedOnVolume;
 
-  // ---- Sea: CBM from dims or direct; below seaMinCbm carries the surcharge ----
+  // ---- Sea: billed on volume outright, exactly as portal.db computes it ----
   const cbm = num(cbmDirect) > 0 ? num(cbmDirect) : volCm3 > 0 ? volCm3 / 1_000_000 : 0;
-  const seaSurcharge = cbm > 0 && cbm < calc.seaMinCbm && calc.seaSurchargePct > 0;
-  const seaTotal = cbm > 0 ? cbm * price * (seaSurcharge ? 1 + calc.seaSurchargePct / 100 : 1) : 0;
+  const seaTotal = cbm > 0 ? cbm * price : 0;
 
   const total = isSea ? seaTotal : airChargeable * price;
   const iqdTotal = iqdRate && total > 0 ? total * iqdRate : null;
@@ -509,11 +528,6 @@ function PriceCalculator({
                     {pickLang(lang, { ku: "قەبارە: ", en: "Volume: ", ar: "الحجم: ", zh: "体积：" })}
                     <span className="font-mono">{cbm.toFixed(3)} m³</span>
                   </div>
-                  {seaSurcharge && (
-                    <div className={cn("font-semibold", accent)}>
-                      {pickLang(lang, { ku: `+${calc.seaSurchargePct}٪ بۆ کەمتر لە ${calc.seaMinCbm} م³`, en: `+${calc.seaSurchargePct}% for below ${calc.seaMinCbm} m³`, ar: `+${calc.seaSurchargePct}٪ لأقل من ${calc.seaMinCbm} م³`, zh: `低于 ${calc.seaMinCbm} m³ 加收 ${calc.seaSurchargePct}%` })}
-                    </div>
-                  )}
                 </>
               ) : (
                 <>
@@ -529,11 +543,6 @@ function PriceCalculator({
                     {usedVolumetric && (
                       <span className={cn("ms-1", accent)}>
                         {pickLang(lang, { ku: "(قەبارەیی)", en: "(volumetric)", ar: "(حجمي)", zh: "（体积重）" })}
-                      </span>
-                    )}
-                    {airBase > 0 && airBase < calc.airMinKg && (
-                      <span className={cn("ms-1", accent)}>
-                        {pickLang(lang, { ku: `(کەمترین ${calc.airMinKg} کگ)`, en: `(min ${calc.airMinKg} kg)`, ar: `(الحد الأدنى ${calc.airMinKg} كغ)`, zh: `（最低 ${calc.airMinKg} 公斤）` })}
                       </span>
                     )}
                   </div>
