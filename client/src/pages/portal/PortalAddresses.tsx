@@ -384,6 +384,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 </div>
                 <Input
                   placeholder={pickLang(language, { ku: "یان ناوێکی خۆت بنووسە", en: "Or enter your own", ar: "أو اكتب اسماً خاصاً", zh: "或自定义名称" })}
+                  maxLength={100}
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                 />
@@ -394,6 +395,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Label>{pickLang(language, { ku: "ناوی وەرگر *", en: "Recipient name *", ar: "اسم المستلم *", zh: "收件人姓名 *" })}</Label>
                 <Input
                   placeholder={pickLang(language, { ku: "ناوی تەواوی وەرگر", en: "Recipient's full name", ar: "الاسم الكامل للمستلم", zh: "收件人全名" })}
+                  maxLength={255}
                   value={formData.recipientName}
                   onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
                 />
@@ -404,6 +406,13 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Label>{pickLang(language, { ku: "ژمارەی مۆبایل *", en: "Phone number *", ar: "رقم الهاتف *", zh: "手机号码 *" })}</Label>
                 <Input
                   placeholder="07XX XXX XXXX"
+                  // A phone number typed on a QWERTY keyboard is three extra
+                  // taps and a wrong digit. tel opens the dialpad, and keeps
+                  // the + and spaces that number formats use.
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  maxLength={20}
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
@@ -414,6 +423,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Label>{pickLang(language, { ku: "شار *", en: "City *", ar: "المدينة *", zh: "城市 *" })}</Label>
                 <Input
                   placeholder={pickLang(language, { ku: "وەک هەولێر، سلێمانی، بەغدا", en: "e.g., Erbil, Sulaymaniyah, Baghdad", ar: "مثل أربيل، السليمانية، بغداد", zh: "例如：埃尔比勒、苏莱曼尼亚、巴格达" })}
+                  maxLength={100}
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 />
@@ -424,6 +434,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Label>{pickLang(language, { ku: "گەڕەک", en: "District", ar: "الحي", zh: "区/街道" })}</Label>
                 <Input
                   placeholder={pickLang(language, { ku: "وەک عەنکاوە، ژیان", en: "e.g., Ankawa, Zhyan", ar: "مثل عنكاوة، جيان", zh: "例如：安卡瓦、日扬" })}
+                  maxLength={100}
                   value={formData.district}
                   onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                 />
@@ -434,18 +445,28 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Label>{pickLang(language, { ku: "شەقام", en: "Street", ar: "الشارع", zh: "街道" })}</Label>
                 <Input
                   placeholder={pickLang(language, { ku: "ناو یان ژمارەی شەقام", en: "Street name or number", ar: "اسم أو رقم الشارع", zh: "街道名称或号码" })}
+                  maxLength={255}
                   value={formData.street}
                   onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                 />
               </div>
               
-              {/* Building Details */}
+              {/* maxLength on every field matches the column width in
+                  users.schema.ts. Without it the form accepted a street name
+                  longer than varchar(255), the router accepted it too, and
+                  MySQL decided — either an error the customer could not read,
+                  or a silent truncation that cut their address mid-word.
+                  Building Details — building, floor and apartment are
+                  numbers everywhere they are used, so they open the digits
+                  keyboard rather than the alphabet. */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-2">
                   <Label>{pickLang(language, { ku: "بینا", en: "Building", ar: "المبنى", zh: "楼" })}</Label>
                   <Input
                     placeholder={pickLang(language, { ku: "ژمارە", en: "No.", ar: "رقم", zh: "号" })}
-                    value={formData.building}
+                    inputMode="numeric"
+                    maxLength={100}
+                  value={formData.building}
                     onChange={(e) => setFormData({ ...formData, building: e.target.value })}
                   />
                 </div>
@@ -453,7 +474,9 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                   <Label>{pickLang(language, { ku: "نهۆم", en: "Floor", ar: "الطابق", zh: "层" })}</Label>
                   <Input
                     placeholder={pickLang(language, { ku: "نهۆم", en: "Floor", ar: "الطابق", zh: "层" })}
-                    value={formData.floor}
+                    inputMode="numeric"
+                    maxLength={20}
+                  value={formData.floor}
                     onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
                   />
                 </div>
@@ -461,7 +484,9 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                   <Label>{pickLang(language, { ku: "شوقە", en: "Apt", ar: "الشقة", zh: "单元" })}</Label>
                   <Input
                     placeholder={pickLang(language, { ku: "شوقە", en: "Apt", ar: "الشقة", zh: "单元" })}
-                    value={formData.apartment}
+                    inputMode="numeric"
+                    maxLength={20}
+                  value={formData.apartment}
                     onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
                   />
                 </div>
@@ -472,6 +497,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Label>{pickLang(language, { ku: "نیشانەی نزیک", en: "Landmark", ar: "علامة مميزة", zh: "附近标志" })}</Label>
                 <Input
                   placeholder={pickLang(language, { ku: "نزیک لە شوێنێکی ناسراو", en: "Near a well-known place", ar: "بالقرب من مكان معروف", zh: "靠近知名地点" })}
+                  maxLength={2000}
                   value={formData.landmark}
                   onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
                 />
@@ -482,6 +508,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Label>{pickLang(language, { ku: "تێبینی گەیاندن", en: "Delivery notes", ar: "ملاحظات التسليم", zh: "配送备注" })}</Label>
                 <Textarea
                   placeholder={pickLang(language, { ku: "هەر ڕێنماییەکی تایبەت بۆ گەیاندن", en: "Any special delivery instructions", ar: "أي تعليمات خاصة للتسليم", zh: "任何特殊配送说明" })}
+                  maxLength={2000}
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={2}

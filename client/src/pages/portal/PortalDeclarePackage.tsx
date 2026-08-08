@@ -60,6 +60,8 @@ export default function PortalDeclarePackage() {
   const [images, setImages] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
+  // Which declaration is one tap away from being cancelled.
+  const [confirmCancelId, setConfirmCancelId] = useState<number | null>(null);
 
   const { data: declared, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyDeclaredPackages.useQuery();
 
@@ -143,6 +145,7 @@ export default function PortalDeclarePackage() {
               <span className="text-red-500">*</span>
             </Label>
             <Input
+              maxLength={100}
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
               placeholder={label({ ku: "بۆ نموونە: 78123456789", en: "e.g. 78123456789", ar: "مثال: 78123456789", zh: "例如：78123456789" })}
@@ -191,6 +194,7 @@ export default function PortalDeclarePackage() {
               {label({ ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" })}
             </Label>
             <Input
+              maxLength={2000}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={label({ ku: "بۆ نموونە: ٢ دانە، ڕەنگی ڕەش", en: "e.g. 2 pcs, black", ar: "مثال: قطعتان، أسود", zh: "例如：2件，黑色" })}
@@ -258,15 +262,44 @@ export default function PortalDeclarePackage() {
                     {d.notes && <p className="mt-0.5 truncate text-xs text-muted-foreground">{d.notes}</p>}
                   </div>
                   {d.status === "pending" && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 shrink-0 text-destructive hover:text-destructive"
-                      onClick={() => cancelMutation.mutate({ id: d.id })}
-                      disabled={cancelMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    /* Was one tap on a 36-pixel icon, sitting beside the row
+                       the customer was reading, and the declaration was gone.
+                       The first tap now asks; the second does it. */
+                    confirmCancelId === d.id ? (
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="h-9"
+                          onClick={() => {
+                            setConfirmCancelId(null);
+                            cancelMutation.mutate({ id: d.id });
+                          }}
+                          disabled={cancelMutation.isPending}
+                        >
+                          {label({ ku: "دڵنیام", en: "Cancel it", ar: "نعم، ألغِه", zh: "确认取消" })}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-9"
+                          onClick={() => setConfirmCancelId(null)}
+                        >
+                          {label({ ku: "نەخێر", en: "Keep", ar: "لا", zh: "保留" })}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 shrink-0 text-destructive hover:text-destructive"
+                        onClick={() => setConfirmCancelId(d.id)}
+                        disabled={cancelMutation.isPending}
+                        aria-label={label({ ku: "هەڵوەشاندنەوە", en: "Cancel declaration", ar: "إلغاء التصريح", zh: "取消申报" })}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )
                   )}
                 </div>
               );

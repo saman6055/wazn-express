@@ -706,7 +706,9 @@ export const customerPortalRouter = router({
     // auto-own it at registration. Only the tracking number is required.
     declareIncomingPackage: protectedProcedure
       .input(z.object({
-        trackingNumber: z.string().trim().min(1),
+        // varchar(100) in the packages table; the router accepted any
+        // length and let MySQL decide.
+        trackingNumber: z.string().trim().min(1).max(100),
         platform: z.string().max(100).optional(),
         productName: z.string().max(255).optional(),
         productImages: z.array(z.string()).optional(),
@@ -925,18 +927,18 @@ export const customerPortalRouter = router({
     
     createAddress: protectedProcedure
       .input(z.object({
-        label: z.string().min(1),
-        recipientName: z.string().min(1),
-        phone: z.string().min(1),
-        country: z.string().default('Iraq'),
-        city: z.string().min(1),
-        district: z.string().optional(),
-        street: z.string().optional(),
-        building: z.string().optional(),
-        floor: z.string().optional(),
-        apartment: z.string().optional(),
-        landmark: z.string().optional(),
-        notes: z.string().optional(),
+        label: z.string().min(1).max(100),
+        recipientName: z.string().min(1).max(255),
+        phone: z.string().min(1).max(20),
+        country: z.string().max(100).default('Iraq'),
+        city: z.string().min(1).max(100),
+        district: z.string().max(100).optional(),
+        street: z.string().max(255).optional(),
+        building: z.string().max(100).optional(),
+        floor: z.string().max(20).optional(),
+        apartment: z.string().max(20).optional(),
+        landmark: z.string().max(2000).optional(),
+        notes: z.string().max(2000).optional(),
         isDefault: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -954,17 +956,17 @@ export const customerPortalRouter = router({
     updateAddress: protectedProcedure
       .input(z.object({
         addressId: z.number(),
-        label: z.string().optional(),
-        recipientName: z.string().optional(),
-        phone: z.string().optional(),
-        city: z.string().optional(),
-        district: z.string().optional(),
-        street: z.string().optional(),
-        building: z.string().optional(),
-        floor: z.string().optional(),
-        apartment: z.string().optional(),
-        landmark: z.string().optional(),
-        notes: z.string().optional(),
+        label: z.string().max(100).optional(),
+        recipientName: z.string().max(255).optional(),
+        phone: z.string().max(20).optional(),
+        city: z.string().max(100).optional(),
+        district: z.string().max(100).optional(),
+        street: z.string().max(255).optional(),
+        building: z.string().max(100).optional(),
+        floor: z.string().max(20).optional(),
+        apartment: z.string().max(20).optional(),
+        landmark: z.string().max(2000).optional(),
+        notes: z.string().max(2000).optional(),
         isDefault: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
