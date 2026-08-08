@@ -364,14 +364,14 @@ function ClassicPortalShipments() {
 
           {/* Search Bar */}
           <div className="mt-4 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={pickLang(language, { ku: "گەڕان بە کۆدی باچ...", en: "Search by batch code...", ar: "البحث برمز الدفعة...", zh: "按批次编号搜索..." })}
               className={cn(
-                "w-full pl-12 pr-4 py-3.5 rounded-xl text-sm transition-all duration-300",
+                "w-full ps-12 pe-4 py-3.5 rounded-xl text-sm transition-all duration-300",
                 isDark 
                   ? "bg-slate-800 text-white placeholder-slate-500 focus:bg-slate-700" 
                   : "bg-white/10 text-white placeholder-slate-400 focus:bg-white/20"
@@ -380,7 +380,7 @@ function ClassicPortalShipments() {
             {searchQuery && (
               <button 
                 onClick={() => setSearchQuery("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full bg-slate-600 hover:bg-slate-500"
+                className="absolute end-4 top-1/2 -translate-y-1/2 p-1 rounded-full bg-slate-600 hover:bg-slate-500"
               >
                 <X className="w-3 h-3 text-white" />
               </button>

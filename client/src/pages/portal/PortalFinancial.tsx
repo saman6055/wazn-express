@@ -688,7 +688,7 @@ const { t, language } = useLanguage();
                       </div>
                       
                       {tx.description && (
-                        <p className={cn("text-sm mt-2 pl-16", isDark ? "text-slate-500" : "text-slate-500")}>
+                        <p className={cn("text-sm mt-2 ps-16", isDark ? "text-slate-500" : "text-slate-500")}>
                           {describeLedgerRef(tx.description, language)}
                         </p>
                       )}

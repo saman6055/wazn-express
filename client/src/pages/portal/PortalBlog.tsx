@@ -208,7 +208,7 @@ const { banner: portalBanner } = usePortalPalette();
                       )}
                       
                       {/* Category Badge */}
-                      <div className="absolute top-3 left-3 flex items-center gap-2">
+                      <div className="absolute top-3 start-3 flex items-center gap-2">
                         <span className={cn(
                           "px-3 py-1 rounded-full text-xs font-medium text-white flex items-center gap-1.5 backdrop-blur-sm",
                           `bg-gradient-to-r ${getCategoryGradient(post.category)}`
@@ -231,7 +231,7 @@ const { banner: portalBanner } = usePortalPalette();
                       
                       {/* Featured Badge */}
                       {post.isFeatured && (
-                        <div className="absolute top-3 right-3">
+                        <div className="absolute top-3 end-3">
                           <span className="p-2 bg-amber-500 rounded-full">
                             <Star className="w-4 h-4 text-white fill-white" />
                           </span>
@@ -247,7 +247,7 @@ const { banner: portalBanner } = usePortalPalette();
                         {getCategoryIcon(post.category)}
                         <span className="font-medium">{getCategoryLabel(post.category)}</span>
                       </div>
-                      <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                      <div className="absolute top-2.5 start-2.5 flex items-center gap-1.5">
                         {post.isPinned && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-500 rounded-full text-[11px] font-bold text-white">
                             <Pin className="w-3 h-3" />

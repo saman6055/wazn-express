@@ -210,16 +210,16 @@ export default function PortalSearch() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="w-full h-12 pl-12 pr-12 rounded-xl bg-white text-slate-800 dark:text-slate-200 placeholder:text-gray-400 border-0"
+            className="w-full h-12 ps-12 pe-12 rounded-xl bg-white text-slate-800 dark:text-slate-200 placeholder:text-gray-400 border-0"
           />
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           {searchQuery && (
             <button
               onClick={() => {
                 setSearchQuery("");
                 setHasSearched(false);
               }}
-              className="absolute right-4 top-1/2 -translate-y-1/2"
+              className="absolute end-4 top-1/2 -translate-y-1/2"
             >
               <X className="w-5 h-5 text-gray-400" />
             </button>
@@ -348,7 +348,7 @@ export default function PortalSearch() {
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 text-left">
+                  <div className="flex-1 text-start">
                     <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{t("packagePhotos") || "Package Photos"}</p>
                     <p className="text-xs text-gray-500">{photos.length} {t("photos") || "photos"}</p>
                   </div>
@@ -553,7 +553,7 @@ export default function PortalSearch() {
           {result && photos && photos.length > 0 && (
             <div className="relative">
               {/* Header */}
-              <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/60 to-transparent p-4">
+              <div className="absolute top-0 inset-x-0 z-10 bg-gradient-to-b from-black/60 to-transparent p-4">
                 <div className="flex items-center justify-between text-white">
                   <div>
                     <p className="font-medium">{result.trackingNumber || result.packageCode}</p>

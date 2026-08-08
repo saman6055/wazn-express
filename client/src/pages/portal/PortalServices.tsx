@@ -217,7 +217,7 @@ const { banner: portalBanner } = usePortalPalette();
                         <p className="text-sm text-white/80">{service.description}</p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-end">
                       <div className="flex items-center gap-1 text-white/80 text-sm">
                         <Clock className="w-4 h-4" />
                         {service.time}

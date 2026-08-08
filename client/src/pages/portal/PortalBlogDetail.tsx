@@ -196,7 +196,7 @@ const { id } = useParams<{ id: string }>();
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             
             {/* Category Badge */}
-            <div className="absolute bottom-4 left-4 flex items-center gap-2">
+            <div className="absolute bottom-4 start-4 flex items-center gap-2">
               <span className={cn(
                 "px-3 py-1.5 rounded-full text-sm font-medium text-white flex items-center gap-1.5 backdrop-blur-sm",
                 `bg-gradient-to-r ${getCategoryGradient(post.category)}`

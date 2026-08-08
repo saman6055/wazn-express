@@ -282,13 +282,13 @@ const { t, language } = useLanguage();
           <div className="relative">
             {/* Timeline line */}
             <div className={cn(
-              "absolute top-5 left-5 right-5 h-1 rounded-full",
+              "absolute top-5 start-5 end-5 h-1 rounded-full",
               isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
             )} />
             
             {/* Progress line */}
             <div 
-              className="absolute top-5 left-5 h-1 rounded-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500"
+              className="absolute top-5 start-5 h-1 rounded-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500"
               style={{
                 // A status outside statusOrder — `cancelled` — put indexOf at
                 // -1, so nothing was completed or current and this computed
@@ -571,7 +571,7 @@ const { t, language } = useLanguage();
           {selectedPkg && photos && photos.length > 0 && (
             <div className="relative">
               {/* Header */}
-              <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/60 to-transparent p-4">
+              <div className="absolute top-0 inset-x-0 z-10 bg-gradient-to-b from-black/60 to-transparent p-4">
                 <div className="flex items-center justify-between text-white">
                   <div>
                     <p className="font-medium">{selectedPkg.trackingNumber || selectedPkg.packageCode}</p>

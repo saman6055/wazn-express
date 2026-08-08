@@ -136,14 +136,14 @@ export default function PortalUnclaimedPackages() {
       <div className="px-4 -mt-4">
         <div className="bg-white rounded-2xl shadow-lg p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <Input
               type="text"
               placeholder={t("searchByTrackingNumber") || "Search by tracking number..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={cn(
-                "pl-10 h-12 bg-gray-50 dark:bg-gray-950/40 border-0 rounded-xl text-base",
+                "ps-10 h-12 bg-gray-50 dark:bg-gray-950/40 border-0 rounded-xl text-base",
                 isRTL && "pr-10 pl-4 text-right"
               )}
             />
@@ -350,7 +350,7 @@ export default function PortalUnclaimedPackages() {
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-end">
                         <p className="text-xs text-gray-400">
                           {formatDate(request.createdAt)}
                         </p>

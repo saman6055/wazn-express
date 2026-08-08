@@ -382,13 +382,13 @@ function ClassicPortalInvoiceReports() {
                 
                 {showExportMenu && (
                   <div className={cn(
-                    "absolute right-0 mt-2 w-40 rounded-lg shadow-lg z-50",
+                    "absolute end-0 mt-2 w-40 rounded-lg shadow-lg z-50",
                     isDark ? "bg-slate-700" : "bg-white border"
                   )}>
                     <button
                       onClick={exportToCSV}
                       className={cn(
-                        "w-full px-4 py-2 text-sm text-left flex items-center gap-2",
+                        "w-full px-4 py-2 text-sm text-start flex items-center gap-2",
                         isDark ? "hover:bg-slate-600 text-white" : "hover:bg-gray-100"
                       )}
                     >
@@ -398,7 +398,7 @@ function ClassicPortalInvoiceReports() {
                     <button
                       onClick={exportToPDF}
                       className={cn(
-                        "w-full px-4 py-2 text-sm text-left flex items-center gap-2",
+                        "w-full px-4 py-2 text-sm text-start flex items-center gap-2",
                         isDark ? "hover:bg-slate-600 text-white" : "hover:bg-gray-100"
                       )}
                     >
@@ -598,7 +598,7 @@ function ClassicPortalInvoiceReports() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-end">
                       <p className={cn(
                         "text-sm font-semibold",
                         isDark ? "text-white" : "text-gray-900 dark:text-gray-200"

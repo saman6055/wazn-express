@@ -555,7 +555,7 @@ export default function PortalFullPackage() {
           <div className="grid grid-cols-3 gap-3">
             {/* Total */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500/40 to-purple-600/40 backdrop-blur-sm border border-white/20 p-4">
-              <div className="absolute top-2 right-2">
+              <div className="absolute top-2 end-2">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
                   <Package className="w-5 h-5 text-white" />
                 </div>
@@ -568,7 +568,7 @@ export default function PortalFullPackage() {
             
             {/* Pending */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/40 to-orange-600/40 backdrop-blur-sm border border-amber-400/30 p-4">
-              <div className="absolute top-2 right-2">
+              <div className="absolute top-2 end-2">
                 <div className="w-10 h-10 rounded-xl bg-amber-400/30 flex items-center justify-center">
                   <Clock className="w-5 h-5 text-amber-200" />
                 </div>
@@ -581,7 +581,7 @@ export default function PortalFullPackage() {
             
             {/* Delivered */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/40 to-teal-600/40 backdrop-blur-sm border border-emerald-400/30 p-4">
-              <div className="absolute top-2 right-2">
+              <div className="absolute top-2 end-2">
                 <div className="w-10 h-10 rounded-xl bg-emerald-400/30 flex items-center justify-center">
                   <CheckCircle className="w-5 h-5 text-emerald-200" />
                 </div>
@@ -669,7 +669,7 @@ export default function PortalFullPackage() {
         <div className="flex items-center gap-2 mb-4">
           <div className="relative flex-1">
             <Search className={cn(
-              "absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5",
+              "absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5",
               isDark ? "text-slate-500" : "text-slate-400"
             )} />
             <input
@@ -678,7 +678,7 @@ export default function PortalFullPackage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn(
-                "w-full pr-12 pl-4 py-4 rounded-2xl border-2 transition-all text-right",
+                "w-full pe-12 ps-4 py-4 rounded-2xl border-2 transition-all text-start",
                 isDark
                   ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-purple-500"
                   : "bg-white border-slate-200 dark:border-slate-800/60 focus:border-purple-500 shadow-sm"
@@ -1125,7 +1125,7 @@ export default function PortalFullPackage() {
           type="button"
           onClick={requestNewOrder}
           aria-label={pickLang(language, { ku: "داواکاری نوێ", en: "New Order", ar: "طلب جديد", zh: "新订单" })}
-          className="fixed bottom-24 left-6 w-14 h-14 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-all hover:scale-110 z-50"
+          className="fixed bottom-24 start-6 w-14 h-14 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-all hover:scale-110 z-50"
         >
           <MessageCircle className="w-6 h-6" />
         </button>
@@ -1153,7 +1153,7 @@ export default function PortalFullPackage() {
                 </button>
                 
                 {/* Product Image Overlay */}
-                <div className="absolute -bottom-10 right-6">
+                <div className="absolute -bottom-10 end-6">
                   <div className={cn(
                     "w-20 h-20 rounded-2xl overflow-hidden border-4 shadow-lg",
                     isDark ? "border-slate-900 bg-slate-800" : "border-white bg-slate-100 dark:bg-slate-950/40"
@@ -1178,7 +1178,7 @@ export default function PortalFullPackage() {
               
               {/* Dialog Content */}
               <div className="p-6 pt-14">
-                <DialogHeader className="text-right mb-6">
+                <DialogHeader className="text-start mb-6">
                   <DialogTitle className={cn(
                     "text-xl font-bold",
                     isDark ? "text-white" : "text-slate-800 dark:text-slate-200"

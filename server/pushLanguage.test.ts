@@ -77,9 +77,24 @@ describe("the phone is woken in the customer's own language", () => {
     expect(hook).toContain("useLanguage");
   });
 
-  it("renders the Chinese title in the notification centre", () => {
-    const page = fs.readFileSync(
-      path.resolve(__dirname, "../client/src/pages/portal/PortalNotifications.tsx"), "utf8");
-    expect(page).toMatch(/language === "zh" \? "Zh"/);
+  /**
+   * Two screens render a notification row: the notifications centre and the
+   * panel on the messages page. They had a picker each, and disagreed — so
+   * the reader lives in one lib now and both must go through it.
+   */
+  it("renders the Chinese title wherever a notification is shown", () => {
+    const lib = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/lib/portalNotificationText.ts"), "utf8");
+    expect(lib, "must pick a Chinese translation").toMatch(/language === "zh" \? "Zh"/);
+    // An empty translation is not a translation; it must fall back, not blank.
+    expect(lib).toMatch(/translated\.trim\(\)/);
+
+    for (const screen of ["PortalNotifications.tsx", "PortalMessages.tsx"]) {
+      const src = fs.readFileSync(
+        path.resolve(__dirname, "../client/src/pages/portal", screen), "utf8");
+      expect(src, `${screen} must use the shared reader`).toContain("notificationText");
+      expect(src, `${screen} must not pick a language itself`)
+        .not.toMatch(/\bn\.title(?:Ku|Ar|Zh)\b/);
+    }
   });
 });

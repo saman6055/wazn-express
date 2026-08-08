@@ -219,7 +219,7 @@ export default function PortalYuanExchange() {
                       {pick({ ku: "بڕی دۆلار دەدەیت", en: "You pay (USD)", ar: "تدفع (دولار)", zh: "您支付（美元）" })}
                     </label>
                     <div className="relative" dir="ltr">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-emerald-500">$</span>
+                      <span className="absolute start-3 top-1/2 -translate-y-1/2 font-bold text-emerald-500">$</span>
                       <Input
                         type="number"
                         min="0"
@@ -229,7 +229,7 @@ export default function PortalYuanExchange() {
                         value={usd}
                         onChange={(e) => syncFromUsd(e.target.value)}
                         placeholder="100"
-                        className="h-12 pl-8 text-lg font-bold font-mono"
+                        className="h-12 ps-8 text-lg font-bold font-mono"
                       />
                     </div>
                   </div>
@@ -241,7 +241,7 @@ export default function PortalYuanExchange() {
                       {pick({ ku: "بڕی یوان وەردەگریت", en: "You receive (CNY)", ar: "تستلم (يوان)", zh: "您收到（人民币）" })}
                     </label>
                     <div className="relative" dir="ltr">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-red-500">¥</span>
+                      <span className="absolute start-3 top-1/2 -translate-y-1/2 font-bold text-red-500">¥</span>
                       <Input
                         type="number"
                         min="0"
@@ -251,7 +251,7 @@ export default function PortalYuanExchange() {
                         value={cny}
                         onChange={(e) => syncFromCny(e.target.value)}
                         placeholder="640"
-                        className="h-12 pl-8 text-lg font-bold font-mono"
+                        className="h-12 ps-8 text-lg font-bold font-mono"
                       />
                     </div>
                   </div>
