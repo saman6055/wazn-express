@@ -1,5 +1,5 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
@@ -171,7 +171,7 @@ export default function PortalAbout() {
   const card = cn("rounded-3xl p-5 ring-1", isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-gray-100 shadow-sm");
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50 dark:bg-gray-950/40")} dir={isRTL ? "rtl" : "ltr"}>
         {/* Hero */}
         <div className="relative overflow-hidden text-white px-4 pt-6 pb-12" style={portalBanner}>
@@ -382,6 +382,6 @@ export default function PortalAbout() {
           </div>
         </div>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

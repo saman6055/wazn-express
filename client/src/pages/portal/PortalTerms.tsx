@@ -1,5 +1,5 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { FileText } from "lucide-react";
@@ -41,7 +41,7 @@ export default function PortalTerms() {
     waHref(`«${point}»\n\n${pick(termsClosing)}`);
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div
         className={`min-h-screen bg-gray-50 dark:bg-gray-950 ${isRTL ? "rtl" : "ltr"}`}
         dir={isRTL ? "rtl" : "ltr"}
@@ -153,6 +153,6 @@ export default function PortalTerms() {
           </div>
         </div>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

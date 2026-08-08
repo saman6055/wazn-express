@@ -1,6 +1,6 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { trpc } from "@/lib/trpc";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { Button } from "@/components/ui/button";
 import { 
   Bell, ArrowLeft, Package, CreditCard, Megaphone, 
@@ -113,7 +113,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
   const unreadCount = notifications?.filter(n => !n.isRead).length || 0;
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950/40">
         {/* Header */}
         <div className="text-white px-4 py-4" style={portalBanner}>
@@ -250,6 +250,6 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
           )}
         </div>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

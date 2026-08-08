@@ -1,5 +1,5 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -131,7 +131,7 @@ export default function PortalYuanExchange() {
     );
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950" dir={isRTL ? "rtl" : "ltr"}>
         {/* Header */}
         <div className="relative overflow-hidden text-white px-4 pt-8 pb-12" style={portalBanner}>
@@ -377,6 +377,6 @@ export default function PortalYuanExchange() {
           )}
         </div>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

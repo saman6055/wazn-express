@@ -1,7 +1,7 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -187,7 +187,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
   };
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950/40">
         {/* Header */}
         <div className="text-white px-4 py-4" style={portalBanner}>
@@ -529,6 +529,6 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
           </DialogContent>
         </Dialog>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

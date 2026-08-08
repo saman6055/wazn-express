@@ -30,6 +30,7 @@ import { motion } from "framer-motion";
 import { PriceListSection } from "@/components/portal/PriceListSection";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
+import { ProhibitedDecisionAlert } from "@/components/portal/ProhibitedDecisionAlert";
 import { PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
 import { isDebt, isCreditTx } from "@/lib/portalMoney";
 import { pickLang } from "@/lib/lang";
@@ -423,6 +424,13 @@ export default function Skin3PortalHome() {
             <PortalWelcomeCard customerCode={account?.customerCode} isDark={isDark} />
           </motion.div>
         )}
+
+        {/* A parcel held at the depot awaiting the customer's return-or-destroy
+            decision. This existed only on the classic skin, so on the other two
+            it was invisible and unreachable. */}
+        <motion.div variants={itemVariants} className="mb-4">
+          <ProhibitedDecisionAlert isDark={isDark} />
+        </motion.div>
 
         {/* ===== Stats 2x2 Grid ===== */}
         <motion.div variants={itemVariants} className="mb-8">

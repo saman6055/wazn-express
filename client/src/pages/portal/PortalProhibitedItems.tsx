@@ -1,4 +1,4 @@
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { PackageX } from "lucide-react";
@@ -30,7 +30,7 @@ export default function PortalProhibitedItems() {
   const itemHref = (item: string) => waHref(`${pick(prohibitedAsk)}\n\n«${item}»`);
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div
         className={`min-h-screen bg-gray-50 dark:bg-gray-950 ${isRTL ? "rtl" : "ltr"}`}
         dir={isRTL ? "rtl" : "ltr"}
@@ -115,6 +115,6 @@ export default function PortalProhibitedItems() {
           </div>
         </div>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

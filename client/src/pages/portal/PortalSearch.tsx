@@ -1,4 +1,4 @@
-﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+﻿import { PortalLayout } from "@/components/portal/PortalLayout";
 import { PackageTrackingTimeline } from "@/components/portal/PackageTrackingTimeline";
 import { PortalSearchSkeleton } from "@/components/portal/PortalListSkeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -181,7 +181,7 @@ export default function PortalSearch() {
   };
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       {/* Header */}
       <div className="bg-slate-800 text-white px-4 pt-12 pb-8">
         <h1 className="text-xl font-bold mb-2">{t("trackPackage") || "Track Package"}</h1>
@@ -647,6 +647,6 @@ export default function PortalSearch() {
           )}
         </DialogContent>
       </Dialog>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

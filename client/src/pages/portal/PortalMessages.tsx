@@ -2,7 +2,7 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { trpc } from "@/lib/trpc";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -321,7 +321,7 @@ export default function PortalMessages() {
   ];
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div className={cn(
         "flex flex-col h-[calc(100vh-140px)]",
         isDark ? "bg-slate-900" : "bg-gray-50 dark:bg-gray-950/40"
@@ -882,6 +882,6 @@ export default function PortalMessages() {
           </div>
         </div>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

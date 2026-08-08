@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearch } from "wouter";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -87,7 +87,7 @@ export default function PortalProhibitedPackages() {
   };
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div dir={isRTL ? "rtl" : "ltr"} className="px-4 pt-5 pb-24">
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
@@ -217,6 +217,6 @@ export default function PortalProhibitedPackages() {
           </div>
         )}
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

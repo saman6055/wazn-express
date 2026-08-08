@@ -1,6 +1,6 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useState } from "react";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { pickLang } from "@/lib/lang";
@@ -115,7 +115,7 @@ export default function PortalSecurity() {
   ];
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div
         className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50 dark:bg-gray-950/40")}
         dir={isRTL ? "rtl" : "ltr"}
@@ -314,6 +314,6 @@ export default function PortalSecurity() {
           </div>
         </div>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

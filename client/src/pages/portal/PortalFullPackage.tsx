@@ -4,7 +4,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { Button } from "@/components/ui/button";
@@ -503,7 +503,7 @@ export default function PortalFullPackage() {
   };
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       {/* Beautiful Gradient Header */}
       <div className="relative overflow-hidden">
         {/* Gradient Background */}
@@ -1454,6 +1454,6 @@ export default function PortalFullPackage() {
           )}
         </DialogContent>
       </Dialog>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

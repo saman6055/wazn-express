@@ -1,4 +1,4 @@
-﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+﻿import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -106,7 +106,7 @@ const { id } = useParams<{ id: string }>();
 
   if (isLoading) {
     return (
-      <CustomerPortalLayout>
+      <PortalLayout>
         <div className="px-4 py-6">
           <Skeleton className="h-8 w-32 mb-4" />
           <Skeleton className="h-48 w-full rounded-2xl mb-4" />
@@ -114,13 +114,13 @@ const { id } = useParams<{ id: string }>();
           <Skeleton className="h-4 w-1/2 mb-6" />
           <Skeleton className="h-32 w-full" />
         </div>
-      </CustomerPortalLayout>
+      </PortalLayout>
     );
   }
 
   if (!post) {
     return (
-      <CustomerPortalLayout>
+      <PortalLayout>
         <div className={cn(
           "text-center py-16 px-4",
           isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
@@ -135,12 +135,12 @@ const { id } = useParams<{ id: string }>();
             </button>
           </Link>
         </div>
-      </CustomerPortalLayout>
+      </PortalLayout>
     );
   }
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       {/* Header */}
       <div className={cn(
         "sticky top-0 z-10 px-4 py-4 border-b backdrop-blur-lg",
@@ -352,6 +352,6 @@ const { id } = useParams<{ id: string }>();
           </Link>
         </div>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

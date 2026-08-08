@@ -24,6 +24,7 @@ interface CustomerPortalLayoutProps {
 export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   useDynamicFavicon();
   const [location, setLocation] = useLocation();
+  const isSearchPage = location.startsWith("/portal/search");
   const searchString = useSearch();
   const { language, t } = useLanguage();
   const { theme } = useTheme();
@@ -214,6 +215,10 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
           {/* Company logo (uploaded in Settings) at the leading edge */}
           <CompanyLogo size={36} className="shrink-0" />
           <PortalNavButtons />
+          {/* The search page has its own, larger search field. Two stacked
+              search boxes with different placeholders on one screen reads as
+              a mistake, so the chrome yields to the page that owns the job. */}
+          {!isSearchPage && (
           <form onSubmit={handleSearchSubmit} className="flex-1">
             <div className="relative">
               <Search className={cn(
@@ -232,6 +237,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
               />
             </div>
           </form>
+          )}
         </div>
       </div>
       {/* Main Content. Grows to fill the viewport so the news strip below can

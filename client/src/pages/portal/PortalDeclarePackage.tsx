@@ -1,5 +1,5 @@
 ﻿import { useState } from "react";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -114,7 +114,7 @@ export default function PortalDeclarePackage() {
   const label = (o: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, o);
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div dir={isRTL ? "rtl" : "ltr"} className="px-3 py-4 space-y-5">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -271,6 +271,6 @@ export default function PortalDeclarePackage() {
           )}
         </div>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

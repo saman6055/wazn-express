@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { pickLang } from "@/lib/lang";
@@ -51,7 +51,7 @@ export default function PortalContact() {
   const valueOf = (c: ContactChannel) => (c.id === "address" ? label(CONTACT_ADDRESS) : c.value);
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div dir={isRTL ? "rtl" : "ltr"} className="px-3 py-4 space-y-5">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -156,6 +156,6 @@ export default function PortalContact() {
           })}
         </p>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

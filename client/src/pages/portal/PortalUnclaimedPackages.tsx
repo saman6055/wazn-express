@@ -1,4 +1,4 @@
-﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+﻿import { PortalLayout } from "@/components/portal/PortalLayout";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -118,7 +118,7 @@ export default function PortalUnclaimedPackages() {
   };
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       {/* Header */}
       <div className="text-white px-4 pt-12 pb-8" style={portalBanner}>
         <div className="flex items-center gap-3 mb-2">
@@ -496,6 +496,6 @@ export default function PortalUnclaimedPackages() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

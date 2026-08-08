@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -89,7 +89,7 @@ export default function PortalTutorials() {
   };
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div dir={isRTL ? "rtl" : "ltr"} className="px-3 py-4 space-y-5">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -293,6 +293,6 @@ export default function PortalTutorials() {
           </div>
         </div>
       )}
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

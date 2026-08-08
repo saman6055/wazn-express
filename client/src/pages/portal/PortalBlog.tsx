@@ -1,4 +1,4 @@
-﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+﻿import { PortalLayout } from "@/components/portal/PortalLayout";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -89,7 +89,7 @@ const { banner: portalBanner } = usePortalPalette();
   };
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       {/* Header */}
       <div className={cn(
         "sticky top-0 z-10 px-4 py-4 border-b backdrop-blur-lg",
@@ -303,6 +303,6 @@ const { banner: portalBanner } = usePortalPalette();
           </div>
         )}
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
-import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { pickLang } from "@/lib/lang";
@@ -172,7 +172,7 @@ const { banner: portalBanner } = usePortalPalette();
   ];
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       <div className={`min-h-screen bg-gray-50 dark:bg-gray-950/40 ${isRTL ? 'rtl' : 'ltr'}`}>
         {/* Header */}
         <div className="text-white px-4 pt-6 pb-8" style={portalBanner}>
@@ -277,6 +277,6 @@ const { banner: portalBanner } = usePortalPalette();
           </div>
         </div>
       </div>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

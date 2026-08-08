@@ -1,4 +1,4 @@
-﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+﻿import { PortalLayout } from "@/components/portal/PortalLayout";
 import { pickLang } from "@/lib/lang";
 import { copyText } from "@/lib/copyText";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
@@ -193,7 +193,7 @@ const { t, language } = useLanguage();
   const timelineSteps = getTimelineSteps();
 
   return (
-    <CustomerPortalLayout>
+    <PortalLayout>
       {/* Header */}
       <div className="text-white px-4 pt-12 pb-8" style={portalBanner}>
         <Link href="/portal/shipments">
@@ -645,6 +645,6 @@ const { t, language } = useLanguage();
           )}
         </DialogContent>
       </Dialog>
-    </CustomerPortalLayout>
+    </PortalLayout>
   );
 }

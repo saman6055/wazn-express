@@ -11,7 +11,7 @@ import {
   User, MessageSquare, Bell, MapPin, FileText, HelpCircle, 
   AlertTriangle, ChevronRight, LogOut, Settings, Shield, Phone, Mail,
   Package, CreditCard, Star, Moon, Sun, Headphones, MessageCircle, PhoneCall,
-  Globe, Languages, Info, Heart, Share2, ExternalLink, BookOpen, Check
+  Globe, Languages, Info, Heart, Share2, ExternalLink, BookOpen, Check, Truck
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -91,6 +91,22 @@ const { t, language, setLanguage } = useLanguage();
   ];
 
   const supportItems = [
+    {
+      // Two finished pages had no link anywhere in the app — 271 and 614
+      // lines a customer could never reach.
+      icon: Truck,
+      label: pickLang(language, { ku: "خزمەتگوزارییەکان", en: "Our services", ar: "خدماتنا", zh: "我们的服务" }),
+      description: pickLang(language, { ku: "نرخ و ماوەی گەیاندن", en: "Prices and delivery times", ar: "الأسعار وأوقات التسليم", zh: "价格与时效" }),
+      path: "/portal/services",
+      iconBg: "bg-gradient-to-br from-teal-400 to-cyan-500",
+    },
+    {
+      icon: FileText,
+      label: pickLang(language, { ku: "ڕاپۆرتی پسووڵەکانم", en: "My invoice reports", ar: "تقارير فواتيري", zh: "我的发票报表" }),
+      description: pickLang(language, { ku: "پوختەی مانگانە و ساڵانە", en: "Monthly and yearly summary", ar: "ملخص شهري وسنوي", zh: "月度与年度汇总" }),
+      path: "/portal/invoice-reports",
+      iconBg: "bg-gradient-to-br from-sky-400 to-blue-500",
+    },
     {
       icon: BookOpen,
       label: language === "ku" ? "ڕێبەری پۆرتاڵ" : language === "ar" ? "دليل البوابة" : language === "zh" ? "门户指南" : "Portal guide",
