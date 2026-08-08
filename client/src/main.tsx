@@ -17,6 +17,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { getLoginUrl } from "./const";
+import { loadLocale } from "@/lib/i18nRegistry";
 import "./index.css";
 
 // Register Service Worker for PWA
@@ -131,10 +132,33 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-createRoot(document.getElementById("root")!).render(
-  <trpc.Provider client={trpcClient} queryClient={queryClient}>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </trpc.Provider>
-);
+/**
+ * Fetch the reader's own language before mounting, and only that one.
+ *
+ * All four locale files used to be static imports — about 1 MB of JSON, close
+ * to two thirds of the entry chunk, three quarters of it a language this
+ * visitor will never read. Awaiting one file here keeps `t()` synchronous for
+ * every component while the boot screen in index.html covers the wait, and
+ * that wait is shorter than the one it replaces.
+ */
+async function mount() {
+  const stored = (() => {
+    try {
+      return localStorage.getItem("wazn-express-language");
+    } catch {
+      return null;
+    }
+  })();
+  const initial = (["ku", "en", "ar", "zh"] as const).find((l) => l === stored) ?? "ku";
+  await loadLocale(initial);
+
+  createRoot(document.getElementById("root")!).render(
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </trpc.Provider>
+  );
+}
+
+void mount();

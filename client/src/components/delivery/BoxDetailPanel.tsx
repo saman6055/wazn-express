@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation, createTranslator, getLanguageDirection, LANGUAGES, type Language } from "@/contexts/LanguageContext";
+import { loadLocale } from "@/lib/i18nRegistry";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { soundManager } from "@/lib/soundManager";
@@ -408,12 +409,16 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         : null,
     ] as const;
 
-  const handlePrintReceipt = (lang: Language) => {
+  const handlePrintReceipt = async (lang: Language) => {
+    // Locales load on demand now; fetch the chosen one before translating a
+    // document that is about to be printed.
+    await loadLocale(lang);
     const [b, its, c] = buildReceiptPayload();
     printBoxReceipt(b, its, c, createTranslator(lang), { direction: getLanguageDirection(lang) });
   };
 
-  const handleDownloadReceiptPDF = (lang: Language) => {
+  const handleDownloadReceiptPDF = async (lang: Language) => {
+    await loadLocale(lang);
     const [b, its, c] = buildReceiptPayload();
     downloadBoxReceiptPDF(b, its, c, createTranslator(lang), { direction: getLanguageDirection(lang) });
   };

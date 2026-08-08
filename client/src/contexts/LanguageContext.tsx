@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 
-// Import language files
-import kuTranslations from '../locales/ku.json';
-import enTranslations from '../locales/en.json';
-import arTranslations from '../locales/ar.json';
-import zhTranslations from '../locales/zh.json';
+// The four locale files are ~1 MB of JSON and used to be static imports, so
+// every visitor downloaded all four — three of them a language they will never
+// read — before the app could paint. They are fetched one at a time now; see
+// lib/i18nRegistry. main.tsx awaits the active one before mounting React, so
+// everything below stays synchronous.
+import { getLocale, loadLocale, warmFallbackLocales } from '../lib/i18nRegistry';
 
 // Language types
 export type Language = 'ku' | 'en' | 'ar' | 'zh';
@@ -28,12 +29,11 @@ export const LANGUAGES: LanguageInfo[] = [
 type TranslationValue = string | { [key: string]: TranslationValue };
 type Translations = { [key: string]: TranslationValue };
 
-const translations: Record<Language, Translations> = {
-  ku: kuTranslations as Translations,
-  en: enTranslations as Translations,
-  ar: arTranslations as Translations,
-  zh: zhTranslations as Translations,
-};
+/** Whatever is loaded right now. A locale that has not arrived reads as empty,
+ *  which sends `t()` down its normal fallback chain rather than throwing. */
+const translations = new Proxy({} as Record<Language, Translations>, {
+  get: (_t, lang: string) => getLocale(lang as Language) ?? {},
+});
 
 // Context type
 interface LanguageContextType {
@@ -122,10 +122,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const direction = languageInfo.direction;
   const isRTL = direction === 'rtl';
 
-  // Set language and persist to localStorage
+  // Set language and persist to localStorage. The file is fetched first, so
+  // the switch lands on translated text rather than flashing raw keys.
   const setLanguage = useCallback((lang: Language) => {
-    setLanguageState(lang);
     localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+    void loadLocale(lang).then(() => setLanguageState(lang));
+  }, []);
+
+  // The fallback chain (ku, then en) only fires on a missing key, and the
+  // locale files are in four-language parity — so it is fetched once the app
+  // is already interactive rather than ahead of the first paint.
+  useEffect(() => {
+    warmFallbackLocales();
   }, []);
 
   // Translation function

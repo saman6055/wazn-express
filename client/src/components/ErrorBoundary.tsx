@@ -1,10 +1,54 @@
 import { cn } from "@/lib/utils";
 import { AlertTriangle, RotateCcw, Home, Copy, Check } from "lucide-react";
 import { Component, ReactNode } from "react";
-import ku from "@/locales/ku.json";
-import en from "@/locales/en.json";
-import ar from "@/locales/ar.json";
-import zh from "@/locales/zh.json";
+/**
+ * The six strings this screen needs, written out here rather than read from
+ * the locale files.
+ *
+ * Two reasons. It is the screen that runs when something has already gone
+ * wrong, so it must not depend on a translation file having downloaded
+ * successfully. And importing all four locales for six strings was pinning
+ * ~1 MB of JSON into the entry chunk — the single largest thing every visitor
+ * downloaded before anything could render, and the reason splitting them in
+ * i18nRegistry had no effect until this was found.
+ */
+const ERROR_STRINGS: Record<string, {
+  title: string; description: string; tryAgain: string;
+  goHome: string; copyDetails: string; copied: string;
+}> = {
+  ku: {
+    title: "هەڵەیەک ڕوویدا",
+    description: "پەردەکەین، هەڵەیەکی چاوەڕواننەکراو ڕوویدا. دەتوانیت دووبارە هەوڵ بدەیتەوە یان بگەڕێیتەوە سەرەکی.",
+    tryAgain: "دووبارە هەوڵ بدەرەوە",
+    goHome: "گەڕانەوە بۆ سەرەکی",
+    copyDetails: "کۆپیکردنی وردەکاری بۆ پشتگیری",
+    copied: "کۆپیکرا",
+  },
+  en: {
+    title: "Something went wrong",
+    description: "We're sorry, an unexpected error occurred. You can try again or go back home.",
+    tryAgain: "Try again",
+    goHome: "Go home",
+    copyDetails: "Copy error details for support",
+    copied: "Copied",
+  },
+  ar: {
+    title: "حدث خطأ ما",
+    description: "عذراً، حدث خطأ غير متوقع. يمكنك المحاولة مرة أخرى أو العودة للرئيسية.",
+    tryAgain: "حاول مرة أخرى",
+    goHome: "العودة للرئيسية",
+    copyDetails: "نسخ تفاصيل الخطأ للدعم",
+    copied: "تم النسخ",
+  },
+  zh: {
+    title: "出错了",
+    description: "抱歉，发生未预期的错误。您可以重试或返回首页。",
+    tryAgain: "重试",
+    goHome: "返回首页",
+    copyDetails: "复制错误详情以便支持",
+    copied: "已复制",
+  },
+};
 
 const LANGUAGE_STORAGE_KEY = "wazn-express-language";
 
@@ -17,13 +61,7 @@ function getErrorBoundaryStrings(): {
   copied: string;
 } {
   const lang = (typeof localStorage !== "undefined" && localStorage.getItem(LANGUAGE_STORAGE_KEY)) || "ku";
-  const maps: Record<string, Record<string, string>> = {
-    ku: (ku as unknown as Record<string, Record<string, string>>).errorBoundary,
-    en: (en as unknown as Record<string, Record<string, string>>).errorBoundary,
-    ar: (ar as unknown as Record<string, Record<string, string>>).errorBoundary,
-    zh: (zh as unknown as Record<string, Record<string, string>>).errorBoundary,
-  };
-  const s = maps[lang] || maps.ku;
+  const s = ERROR_STRINGS[lang] || ERROR_STRINGS.ku;
   return {
     title: s?.title ?? "Something went wrong",
     description: s?.description ?? "An unexpected error occurred.",

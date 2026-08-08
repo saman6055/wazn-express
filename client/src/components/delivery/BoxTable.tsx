@@ -1,4 +1,5 @@
 import { useTranslation, createTranslator, getLanguageDirection, LANGUAGES, type Language } from "@/contexts/LanguageContext";
+import { loadLocale } from "@/lib/i18nRegistry";
 import { cn } from "@/lib/utils";
 import {
   Table,
@@ -158,7 +159,9 @@ export function BoxTable({
     );
   };
 
-  const handlePrintReceipt = (box: DeliveryBox, lang: Language) => {
+  const handlePrintReceipt = async (box: DeliveryBox, lang: Language) => {
+    // Locales load on demand now; fetch the chosen one before translating.
+    await loadLocale(lang);
     const customer = getCustomer(box.customerId);
     printBoxReceipt(
       {
