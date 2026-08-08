@@ -945,15 +945,80 @@ export async function recomputeBoxItems(
  * and showing a customer a half-filled box invites "where is the rest of it?".
  * Cancelled boxes are hidden for the same reason.
  */
-export async function getCustomerVisibleBoxes(customerId: number): Promise<DeliveryBox[]> {
+/**
+ * The columns of a delivery box a customer may see.
+ *
+ * This was `select()`. Two of the columns it returned are what the company
+ * paid and what the company made — `deliveryCostUsd` and `deliveryProfitUsd`
+ * — sitting in the portal's own response next to the price the customer was
+ * charged. `notes` is the office's, not theirs. And `signature` and
+ * `deliveryPhoto` are base64 images, sent for every box in the list to draw a
+ * row that shows neither; they now come from `getCustomerBoxProof` when the
+ * customer opens a single box.
+ */
+const CUSTOMER_BOX_FIELDS = {
+  id: deliveryBoxes.id,
+  boxCode: deliveryBoxes.boxCode,
+  customerId: deliveryBoxes.customerId,
+  batchId: deliveryBoxes.batchId,
+  deliveryMethod: deliveryBoxes.deliveryMethod,
+  destinationCity: deliveryBoxes.destinationCity,
+  destinationAddress: deliveryBoxes.destinationAddress,
+  recipientName: deliveryBoxes.recipientName,
+  recipientPhone: deliveryBoxes.recipientPhone,
+  deliveryChargeUsd: deliveryBoxes.deliveryChargeUsd,
+  totalPackages: deliveryBoxes.totalPackages,
+  totalWeightKg: deliveryBoxes.totalWeightKg,
+  totalValueUsd: deliveryBoxes.totalValueUsd,
+  status: deliveryBoxes.status,
+  isCharged: deliveryBoxes.isCharged,
+  customerConfirmedAt: deliveryBoxes.customerConfirmedAt,
+  sealedAt: deliveryBoxes.sealedAt,
+  inTransitAt: deliveryBoxes.inTransitAt,
+  deliveredAt: deliveryBoxes.deliveredAt,
+  createdAt: deliveryBoxes.createdAt,
+} as const;
+
+export async function getCustomerVisibleBoxes(customerId: number, limit = 100) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(deliveryBoxes)
+  return db.select(CUSTOMER_BOX_FIELDS).from(deliveryBoxes)
     .where(and(
       eq(deliveryBoxes.customerId, customerId),
       inArray(deliveryBoxes.status, ['ready', 'in_transit', 'delivered']),
     ))
-    .orderBy(desc(deliveryBoxes.id));
+    .orderBy(desc(deliveryBoxes.id))
+    .limit(limit);
+}
+
+/**
+ * The proof of delivery for one box: the photo taken at handover and the
+ * signature given for it.
+ *
+ * The customer is the one person with a right to see these and the only one
+ * who could not — they lived in the admin screens alone. On the day someone
+ * disputes a delivery, this is the evidence, and it should not take a phone
+ * call to the office to look at it.
+ *
+ * Fetched per box rather than with the list: both are base64 images.
+ */
+export async function getCustomerBoxProof(
+  boxId: number,
+  customerId: number,
+): Promise<{ signature: string | null; deliveryPhoto: string | null; deliveredAt: Date | null } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select({
+    signature: deliveryBoxes.signature,
+    deliveryPhoto: deliveryBoxes.deliveryPhoto,
+    deliveredAt: deliveryBoxes.deliveredAt,
+  }).from(deliveryBoxes)
+    .where(and(
+      eq(deliveryBoxes.id, boxId),
+      eq(deliveryBoxes.customerId, customerId),
+    ))
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 /**
@@ -989,15 +1054,21 @@ export async function confirmBoxReceivedByCustomer(
     .where(eq(deliveryBoxes.id, boxId));
 
   // The packages inside travel with it.
+  //
+  // One statement, not one per parcel. A customer confirming a forty-parcel
+  // box was firing forty sequential round trips while their phone waited on
+  // the spinner; the box is also then marked atomically, so a connection
+  // that drops halfway can no longer leave half a box delivered.
   const items = await getBoxItems(boxId);
-  for (const item of items) {
-    if (!item.packageId) continue;
+  const packageIds = items.map((i) => i.packageId).filter((id): id is number => !!id);
+  if (packageIds.length > 0) {
     try {
       await db.update(packages)
         .set({ status: 'delivered', deliveredAt: now })
-        .where(eq(packages.id, item.packageId));
-    } catch {
-      // One bad row must not stop the rest of the box being marked.
+        .where(inArray(packages.id, packageIds));
+    } catch (err) {
+      // The box is already marked; a failure here must not fail the receipt.
+      appLogger.error("confirmBoxReceivedByCustomer: package status update failed", { boxId, err });
     }
   }
 

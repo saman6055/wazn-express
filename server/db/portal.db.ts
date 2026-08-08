@@ -105,21 +105,31 @@ export async function upsertNotificationPrefs(customerId: number, prefs: Partial
 
 // ============ CUSTOMER PORTAL FUNCTIONS ============
 
-// Get batches that contain packages for a specific customer
-export async function getCustomerBatches(customerId: number) {
+/**
+ * Batches that carried something of this customer's.
+ *
+ * Bounded to the most recent 100. Five years of monthly shipments is sixty
+ * cards nobody scrolls to, and the screen that calls this renders them all at
+ * once; without a ceiling the payload only ever grew.
+ */
+export async function getCustomerBatches(customerId: number, limit = 100) {
   const db = await getDb();
   if (!db) return [];
-  
-  // Get distinct batch IDs for this customer's packages
+
+  // Distinct batch IDs for this customer's packages — newest first, so the
+  // ceiling drops the oldest shipments rather than an arbitrary hundred.
   const customerPackages = await db.select({
-    batchId: packages.batchId
+    batchId: packages.batchId,
+    latest: sql<string>`MAX(${packages.createdAt})`,
   }).from(packages)
     .where(and(
       eq(packages.customerId, customerId),
       isNotNull(packages.batchId)
     ))
-    .groupBy(packages.batchId);
-  
+    .groupBy(packages.batchId)
+    .orderBy(desc(sql`MAX(${packages.createdAt})`))
+    .limit(limit);
+
   if (customerPackages.length === 0) return [];
   
   const batchIds = customerPackages.map(p => p.batchId).filter((id): id is number => id !== null);
@@ -333,16 +343,55 @@ export async function getCustomerPackagesInBatch(customerId: number, batchId: nu
 }
 
 // Get customer's recent packages (not in batch yet)
-export async function getCustomerUnbatchedPackages(customerId: number) {
+/**
+ * The parcel columns a customer is allowed to see. Shared by both list
+ * queries so one of them cannot quietly start returning the signature and
+ * delivery-photo data URIs again.
+ */
+const CUSTOMER_PACKAGE_FIELDS = {
+  id: packages.id,
+  packageCode: packages.packageCode,
+  trackingNumber: packages.trackingNumber,
+  description: packages.description,
+  photos: packages.photos,
+  status: packages.status,
+  shippingType: packages.shippingType,
+  weightKg: packages.weightKg,
+  volumeCbm: packages.volumeCbm,
+  lengthCm: packages.lengthCm,
+  widthCm: packages.widthCm,
+  heightCm: packages.heightCm,
+  calculatedCostUsd: packages.calculatedCostUsd,
+  isCharged: packages.isCharged,
+  batchId: packages.batchId,
+  fullPackageOrderId: packages.fullPackageOrderId,
+  isUnclaimed: packages.isUnclaimed,
+  customerId: packages.customerId,
+  createdAt: packages.createdAt,
+  updatedAt: packages.updatedAt,
+  registeredAt: packages.registeredAt,
+  deliveredAt: packages.deliveredAt,
+} as const;
+
+/**
+ * Parcels not yet loaded into a shipment.
+ *
+ * Was `select()` with no ceiling — the same two faults as the list below it:
+ * every column (including the delivery signature and photo data URIs, which
+ * this screen never renders) and every row a long-standing account has ever
+ * had. It now borrows the allow-list and takes a bound.
+ */
+export async function getCustomerUnbatchedPackages(customerId: number, limit = 200) {
   const db = await getDb();
   if (!db) return [];
-  
-  return db.select().from(packages)
+
+  return db.select(CUSTOMER_PACKAGE_FIELDS).from(packages)
     .where(and(
       eq(packages.customerId, customerId),
       isNull(packages.batchId)
     ))
-    .orderBy(desc(packages.createdAt));
+    .orderBy(desc(packages.createdAt))
+    .limit(limit);
 }
 
 /**
@@ -365,30 +414,7 @@ export async function getCustomerVisiblePackages(customerId: number, limit = 200
   if (!db) return [];
 
   return db
-    .select({
-      id: packages.id,
-      packageCode: packages.packageCode,
-      trackingNumber: packages.trackingNumber,
-      description: packages.description,
-      photos: packages.photos,
-      status: packages.status,
-      shippingType: packages.shippingType,
-      weightKg: packages.weightKg,
-      volumeCbm: packages.volumeCbm,
-      lengthCm: packages.lengthCm,
-      widthCm: packages.widthCm,
-      heightCm: packages.heightCm,
-      calculatedCostUsd: packages.calculatedCostUsd,
-      isCharged: packages.isCharged,
-      batchId: packages.batchId,
-      fullPackageOrderId: packages.fullPackageOrderId,
-      isUnclaimed: packages.isUnclaimed,
-      customerId: packages.customerId,
-      createdAt: packages.createdAt,
-      updatedAt: packages.updatedAt,
-      registeredAt: packages.registeredAt,
-      deliveredAt: packages.deliveredAt,
-    })
+    .select(CUSTOMER_PACKAGE_FIELDS)
     .from(packages)
     .where(eq(packages.customerId, customerId))
     .orderBy(desc(packages.createdAt))

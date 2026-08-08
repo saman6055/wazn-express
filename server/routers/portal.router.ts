@@ -109,6 +109,23 @@ export const customerPortalRouter = router({
     }),
 
     /**
+     * The photo and signature taken when a box was handed over.
+     *
+     * Scoped by customerId inside the query itself, not checked after: a box
+     * id is guessable, and this is the one endpoint that returns a picture of
+     * somebody's front door.
+     */
+    getMyBoxProof: protectedProcedure
+      .input(z.object({ boxId: z.number().int() }))
+      .query(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer
+          ? ctx.user.id
+          : (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) return null;
+        return db.getCustomerBoxProof(input.boxId, customerId);
+      }),
+
+    /**
      * "I have received it." Confirms one of the customer's own boxes.
      *
      * One direction only: there is no way back from here. If it was tapped by

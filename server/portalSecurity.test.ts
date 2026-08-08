@@ -179,3 +179,95 @@ describe("a customer only ever touches their own rows", () => {
     expect(router).toMatch(/code:\s*"CONFLICT"/);
   });
 });
+
+describe("what a delivery box tells the customer", () => {
+  const src = read("db/deliveryBoxes.db.ts");
+
+  /**
+   * `getCustomerVisibleBoxes` was `select()`. Alongside the price the customer
+   * pays, every box in the portal carried what the delivery had cost us and
+   * what we had made on it — the company's margin, in a response the customer
+   * can open in their browser's network tab.
+   */
+  it("never sends the company's delivery cost or profit", () => {
+    const fields = src.slice(
+      src.indexOf("const CUSTOMER_BOX_FIELDS"),
+      src.indexOf("export async function getCustomerVisibleBoxes"),
+    );
+    expect(fields.length, "CUSTOMER_BOX_FIELDS must exist").toBeGreaterThan(0);
+    for (const secret of ["deliveryCostUsd", "deliveryProfitUsd", "notes", "createdById", "sealedById", "deliveredById"]) {
+      expect(fields, `${secret} is ours, not the customer's`).not.toContain(secret);
+    }
+    expect(fields, "the price they were charged is theirs to see").toContain("deliveryChargeUsd");
+  });
+
+  it("builds the customer's list from the allow-list, with a ceiling", () => {
+    const fn = src.slice(
+      src.indexOf("export async function getCustomerVisibleBoxes"),
+      src.indexOf("export async function getCustomerBoxProof"),
+    );
+    expect(fn).toContain("db.select(CUSTOMER_BOX_FIELDS)");
+    expect(fn, "an account with years of boxes must not return all of them").toContain(".limit(limit)");
+  });
+
+  /**
+   * The photo and signature are the evidence in a "I never got it" dispute,
+   * so the customer should be able to see them — but a box id is a small
+   * integer. The ownership check belongs inside the WHERE clause, not in a
+   * caller that a later refactor can forget.
+   */
+  it("scopes the delivery proof to the customer inside the query", () => {
+    const fn = src.slice(src.indexOf("export async function getCustomerBoxProof"));
+    expect(fn).toContain("eq(deliveryBoxes.customerId, customerId)");
+    expect(fn).toContain("eq(deliveryBoxes.id, boxId)");
+  });
+});
+
+describe("the portal's list queries are bounded", () => {
+  const portal = read("db/portal.db.ts");
+
+  /**
+   * Every one of these ran without a ceiling. They are the queries whose cost
+   * grows with how long someone has been a customer — the accounts we most
+   * want to keep are the ones the portal got slowest for.
+   */
+  for (const fn of ["getCustomerBatches", "getCustomerUnbatchedPackages", "getCustomerVisiblePackages"]) {
+    it(`${fn} takes a limit`, () => {
+      const body = portal.slice(portal.indexOf(`export async function ${fn}(`));
+      expect(body.slice(0, 200), "must accept a bound").toMatch(/limit = \d+/);
+      expect(body.slice(0, 2500), "must apply it").toContain(".limit(limit)");
+    });
+  }
+
+  /**
+   * The signature and delivery-photo columns are base64 images. A list screen
+   * renders neither, and one of these queries used to send both for every
+   * parcel the customer had ever had.
+   */
+  it("both parcel lists share one allow-list", () => {
+    expect(portal).toContain("const CUSTOMER_PACKAGE_FIELDS");
+    const uses = portal.match(/db\s*\n?\s*\.?select\(CUSTOMER_PACKAGE_FIELDS\)/g) ?? [];
+    expect(uses.length, "both list queries must use it").toBeGreaterThanOrEqual(2);
+    const konst = portal.slice(
+      portal.indexOf("const CUSTOMER_PACKAGE_FIELDS"),
+      portal.indexOf("} as const;", portal.indexOf("const CUSTOMER_PACKAGE_FIELDS")),
+    );
+    for (const heavy of ["recipientSignature", "deliveryPhoto", "qrCodeData", "qrCodeSignature", "notes"]) {
+      expect(konst, `${heavy} does not belong in a customer's list`).not.toContain(heavy);
+    }
+  });
+});
+
+describe("a customer confirming a box does not fan out", () => {
+  const src = read("db/deliveryBoxes.db.ts");
+  const fn = src.slice(src.indexOf("export async function confirmBoxReceivedByCustomer"));
+
+  // Was one UPDATE per parcel, awaited in sequence, while the customer's
+  // phone sat on a spinner — and a dropped connection halfway left half a
+  // box delivered.
+  it("marks the parcels in one statement", () => {
+    expect(fn).toContain("inArray(packages.id, packageIds)");
+    expect(fn.slice(0, fn.indexOf("return { ok: true }")))
+      .not.toMatch(/for \(const \w+ of items\)/);
+  });
+});

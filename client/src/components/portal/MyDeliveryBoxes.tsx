@@ -5,7 +5,113 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { PackageCheck, CheckCircle2, Loader2, Truck } from "lucide-react";
+import { PackageCheck, CheckCircle2, Loader2, Truck, Camera, PenLine } from "lucide-react";
+
+type Label = (t: { ku: string; en: string; ar: string; zh: string }) => string;
+
+/**
+ * The photo and the signature taken when the box was handed over.
+ *
+ * Only fetched when the customer opens it — both are base64 images, and
+ * sending them with every row would put megabytes on a phone to render a
+ * button nobody pressed. Silent when there is nothing to show: most boxes
+ * are collected from the warehouse and were never photographed, and an empty
+ * "Proof of delivery" heading reads like something went missing.
+ */
+function DeliveryProof({ boxId, label }: { boxId: number; label: Label }) {
+  const [open, setOpen] = useState(false);
+  const proof = trpc.customerPortal.getMyBoxProof.useQuery(
+    { boxId },
+    { enabled: open, staleTime: 5 * 60 * 1000 },
+  );
+
+  const has = proof.data?.deliveryPhoto || proof.data?.signature;
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-sky-600 hover:underline dark:text-sky-400"
+      >
+        <Camera className="h-3.5 w-3.5" />
+        {label({
+          ku: "بەڵگەی گەیاندن ببینە",
+          en: "View delivery proof",
+          ar: "عرض إثبات التسليم",
+          zh: "查看签收凭证",
+        })}
+      </button>
+    );
+  }
+
+  if (proof.isLoading) {
+    return <Loader2 className="mt-2 h-4 w-4 animate-spin text-muted-foreground" />;
+  }
+
+  if (proof.isError) {
+    return (
+      <button
+        onClick={() => void proof.refetch()}
+        className="mt-2 text-[11px] font-semibold text-rose-600 hover:underline dark:text-rose-400"
+      >
+        {label({
+          ku: "نەیتوانی بەڵگەکە بهێنێت — دووبارە هەوڵبدەرەوە",
+          en: "Could not load the proof — try again",
+          ar: "تعذّر تحميل الإثبات — أعد المحاولة",
+          zh: "无法加载凭证 — 请重试",
+        })}
+      </button>
+    );
+  }
+
+  if (!has) {
+    return (
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        {label({
+          ku: "وێنە یان واژوویەک بۆ ئەم بۆکسە تۆمار نەکراوە",
+          en: "No photo or signature was recorded for this box",
+          ar: "لم تُسجَّل صورة أو توقيع لهذا الصندوق",
+          zh: "此箱子未记录照片或签名",
+        })}
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-2 grid grid-cols-2 gap-2">
+      {proof.data?.deliveryPhoto && (
+        <figure className="min-w-0">
+          <img
+            src={proof.data.deliveryPhoto}
+            alt={label({ ku: "وێنەی گەیاندن", en: "Delivery photo", ar: "صورة التسليم", zh: "签收照片" })}
+            className="h-28 w-full rounded-lg border object-cover"
+            loading="lazy"
+          />
+          <figcaption className="mt-1 flex items-center gap-1 text-[10.5px] text-muted-foreground">
+            <Camera className="h-3 w-3" />
+            {label({ ku: "وێنەی گەیاندن", en: "Delivery photo", ar: "صورة التسليم", zh: "签收照片" })}
+          </figcaption>
+        </figure>
+      )}
+      {proof.data?.signature && (
+        <figure className="min-w-0">
+          {/* Signatures are drawn in black ink on transparent canvas, so they
+              need a light plate of their own or they vanish in dark mode. */}
+          <img
+            src={proof.data.signature}
+            alt={label({ ku: "واژوو", en: "Signature", ar: "التوقيع", zh: "签名" })}
+            className="h-28 w-full rounded-lg border bg-white object-contain p-1"
+            loading="lazy"
+          />
+          <figcaption className="mt-1 flex items-center gap-1 text-[10.5px] text-muted-foreground">
+            <PenLine className="h-3 w-3" />
+            {label({ ku: "واژوو", en: "Signature", ar: "التوقيع", zh: "签名" })}
+          </figcaption>
+        </figure>
+      )}
+    </div>
+  );
+}
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
@@ -90,6 +196,7 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
               </div>
 
               {isDone ? (
+                <>
                 <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                   {confirmedByCustomer
@@ -106,6 +213,8 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
                         zh: "由 Wazn 团队交付",
                       })}
                 </p>
+                <DeliveryProof boxId={box.id} label={label} />
+                </>
               ) : (
                 <>
                   <button
