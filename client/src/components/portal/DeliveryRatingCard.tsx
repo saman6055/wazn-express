@@ -25,13 +25,21 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
-  const [closed, setClosed] = useState(false);
+  // Keyed by package, not a bare boolean. `closed` used to latch for the whole
+  // session, so a second delivery worth rating in the same visit was never
+  // offered — and the stars and comment kept the previous parcel's values.
+  const [closedFor, setClosedFor] = useState<number | null>(null);
   const isRTL = language === "ku" || language === "ar";
 
   const submit = trpc.customerPortal.submitDeliveryRating.useMutation({
     onSuccess: () => {
       toast.success(pickLang(language, { ku: "سوپاس بۆ هەڵسەنگاندنەکەت!", en: "Thanks for your rating!", ar: "شكرًا لتقييمك!", zh: "感谢您的评价！" }));
-      setClosed(true);
+      setClosedFor(pkg?.id ?? null);
+      // The stars and comment kept the previous parcel's values, so the next
+      // delivery arrived pre-rated with someone else's words in the box.
+      setRating(0);
+      setHover(0);
+      setComment("");
       utils.customerPortal.getRatablePackage.invalidate();
     },
     onError: () => {
@@ -39,13 +47,13 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
     },
   });
 
-  if (!pkg || closed) return null;
+  if (!pkg || closedFor === pkg.id) return null;
   const dismissKey = `rating-dismissed-${pkg.id}`;
   if (typeof window !== "undefined" && localStorage.getItem(dismissKey)) return null;
 
   const dismiss = () => {
     if (typeof window !== "undefined") localStorage.setItem(dismissKey, "1");
-    setClosed(true);
+    setClosedFor(pkg.id);
   };
 
   const code = pkg.trackingNumber || pkg.packageCode || `#${pkg.id}`;

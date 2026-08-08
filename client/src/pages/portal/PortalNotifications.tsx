@@ -110,6 +110,14 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
     return d.toLocaleDateString();
   };
   
+  // The schema carries titleKu/titleAr and messageKu/messageAr, written by
+  // whoever raised the notification — and nothing rendered them, so a Kurdish
+  // customer read the default-language text even when a translation existed.
+  const localised = (n: any, field: "title" | "message"): string => {
+    const suffix = language === "ku" ? "Ku" : language === "ar" ? "Ar" : null;
+    return (suffix && n[field + suffix]) || n[field] || "";
+  };
+
   const unreadCount = notifications?.filter(n => !n.isRead).length || 0;
 
   return (
@@ -212,7 +220,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
                           "font-medium text-gray-800 dark:text-gray-200",
                           !notification.isRead && "font-semibold"
                         )}>
-                          {notification.title}
+                          {localised(notification, "title")}
                         </h3>
                         {!notification.isRead && (
                           <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-2" />
@@ -223,7 +231,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
                         "text-sm text-gray-600 mt-1 whitespace-pre-wrap",
                         expandedId !== notification.id && "line-clamp-2"
                       )}>
-                        {notification.message}
+                        {localised(notification, "message")}
                       </p>
 
                       <div className="flex items-center justify-between mt-2">

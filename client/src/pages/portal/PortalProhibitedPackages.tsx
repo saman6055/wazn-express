@@ -164,7 +164,10 @@ export default function PortalProhibitedPackages() {
                     </div>
 
                     {/* Fee (if charged) */}
-                    {it.feeUsd && (
+                    {/* A decimal column arrives as the string "0.00", which is
+                        truthy — so a customer charged nothing was shown an
+                        amber fee row reading zero. */}
+                    {Number(it.feeUsd) > 0 && (
                       <div className={cn("mt-3 text-sm flex items-center justify-between rounded-xl px-3 py-2", isDark ? "bg-amber-950/30 text-amber-300" : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300")}>
                         <span>{label({ ku: "کولفە (قەرز لەسەر باڵانس)", en: "Fee (added to balance)", ar: "الرسوم (على الرصيد)", zh: "费用（已计入余额）" })}</span>
                         <span className="font-bold">${Number(it.feeUsd).toFixed(2)}</span>

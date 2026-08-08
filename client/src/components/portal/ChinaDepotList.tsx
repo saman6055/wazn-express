@@ -227,9 +227,9 @@ export function ChinaDepotList({
               </div>
             </div>
 
-            {item.weightKg != null && (
+            {Number.isFinite(Number(item.weightKg)) && Number(item.weightKg) > 0 && (
               <span className="shrink-0 text-xs text-muted-foreground tabular-nums" dir="ltr">
-                {item.weightKg.toFixed(2)} kg
+                {Number(item.weightKg).toFixed(2)} kg
               </span>
             )}
           </div>

@@ -28,7 +28,12 @@ const { banner: portalBanner } = usePortalPalette();
   const [categoryFilter, setCategoryFilter] = useState<"all" | "news" | "promotion" | "announcement" | "update" | "guide">("all");
   // Only posts written in the reader's language, then filter by category — a
   // Kurdish-only post never appears in the Arabic/English feed and vice-versa.
-  const blogPosts = filterPostsByLanguage(allPosts as any[], language)
+  // Two lists, deliberately. The chips are drawn from everything available;
+  // gating them on the filtered list meant that choosing a category with no
+  // posts unmounted the chips themselves, leaving "no announcements yet" and
+  // no way back to "All".
+  const availablePosts = filterPostsByLanguage(allPosts as any[], language);
+  const blogPosts = availablePosts
     .filter((p: any) => categoryFilter === "all" || p.category === categoryFilter);
 
   // Title/summary in the reader's language only (no cross-language fallback).
@@ -123,7 +128,7 @@ const { banner: portalBanner } = usePortalPalette();
       </div>
 
       {/* Category filter chips */}
-      {!isLoading && blogPosts && blogPosts.length > 0 && (
+      {!isLoading && availablePosts.length > 0 && (
         <div className="px-4 pt-3 -mb-2 flex gap-1.5 overflow-x-auto">
           {(["all", "news", "promotion", "announcement", "update", "guide"] as const).map((cat) => {
             const active = categoryFilter === cat;

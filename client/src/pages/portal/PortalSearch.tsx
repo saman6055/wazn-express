@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TutorialHint } from "@/components/TutorialHint";
 import { pickLang } from "@/lib/lang";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 function getInitialSearchQuery(): string {
@@ -39,26 +40,32 @@ export default function PortalSearch() {
   const [searchQuery, setSearchQuery] = useState(getInitialSearchQuery);
   const initialQ = getInitialSearchQuery();
   const [hasSearched, setHasSearched] = useState(!!initialQ);
+  // Once a search had been run, hasSearched stayed true — so every further
+  // keystroke changed the query key and fired all three lookups again, and
+  // searchPackage writes an activity-audit row on each one. Debouncing the
+  // value the requests are keyed on leaves typing instant and the network
+  // quiet.
+  const debouncedQuery = useDebouncedValue(searchQuery.trim(), 400);
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   const { data: result, isLoading, refetch } = trpc.customerPortal.searchPackage.useQuery(
-    { trackingNumber: searchQuery },
-    { enabled: hasSearched && !!searchQuery.trim() }
+    { trackingNumber: debouncedQuery },
+    { enabled: hasSearched && !!debouncedQuery }
   );
 
   // Unified-search fallback: when the tracking isn't one of the customer's own
   // packages, surface whether it's unclaimed (claimable) or pre-declared.
   const { data: extra, isLoading: extraLoading } = trpc.customerPortal.searchTrackingExtra.useQuery(
-    { trackingNumber: searchQuery.trim() },
-    { enabled: hasSearched && !!searchQuery.trim() && !result }
+    { trackingNumber: debouncedQuery },
+    { enabled: hasSearched && !!debouncedQuery && !result }
   );
 
   // Order-number search: the same box also finds the customer's own
   // full-package/commission orders by order code (FP-...) or tracking.
   const { data: orderResult } = trpc.customerPortal.searchOrder.useQuery(
-    { query: searchQuery.trim() },
-    { enabled: hasSearched && !!searchQuery.trim() && !result, retry: false }
+    { query: debouncedQuery },
+    { enabled: hasSearched && !!debouncedQuery && !result, retry: false }
   );
 
   // Real movement events for the found package — feeds actual dates into the

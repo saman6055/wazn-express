@@ -54,8 +54,11 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
       try {
         await navigator.share({ text: shareText });
         return;
-      } catch {
-        // fall through to WhatsApp when the user cancels or share fails
+      } catch (err) {
+        // Dismissing the share sheet rejects with AbortError. Treating that as
+        // a failure meant tapping Share, changing your mind, and having
+        // WhatsApp open anyway.
+        if ((err as { name?: string })?.name === "AbortError") return;
       }
     }
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");

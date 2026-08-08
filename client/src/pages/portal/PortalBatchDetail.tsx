@@ -178,15 +178,30 @@ const { t, language } = useLanguage();
 
   const handleShare = async () => {
     try {
-      await navigator.share({
-        title: `Batch ${batch?.batchCode}`,
-        text: `Track my shipment: ${batch?.batchCode}`,
-        url: window.location.href
-      });
-    } catch {
-      // Fallback to copy
-      void copyText(window.location.href);
-      toast.success(language === "ku" ? "لینک کۆپی کرا" : "Link copied!");
+      if (navigator.share) {
+        await navigator.share({
+          title: `${batch?.batchCode ?? ""}`,
+          text: pickLang(language, {
+            ku: "شوێنی بارەکەم بکەرەوە",
+            en: "Track my shipment",
+            ar: "تتبّع شحنتي",
+            zh: "追踪我的货物",
+          }),
+          url: window.location.href,
+        });
+        return;
+      }
+    } catch (err) {
+      // Dismissing the share sheet rejects with AbortError. Treating that as
+      // a failure meant a customer who changed their mind got the link copied
+      // and a toast telling them so.
+      if ((err as { name?: string })?.name === "AbortError") return;
+    }
+    const ok = await copyText(window.location.href);
+    if (ok) {
+      toast.success(pickLang(language, { ku: "لینک کۆپی کرا", en: "Link copied", ar: "تم نسخ الرابط", zh: "链接已复制" }));
+    } else {
+      toast.error(pickLang(language, { ku: "نەتوانرا کۆپی بکرێت", en: "Could not copy", ar: "تعذّر النسخ", zh: "复制失败" }));
     }
   };
 

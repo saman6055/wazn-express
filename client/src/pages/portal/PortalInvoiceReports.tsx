@@ -3,6 +3,7 @@ import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { invoiceState, isInvoiceOutstanding } from "@/lib/portalMoney";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { 
@@ -59,16 +60,16 @@ function ClassicPortalInvoiceReports() {
     switch (dateRange) {
       case "month":
         start = new Date(now.getFullYear(), now.getMonth(), 1);
-        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
         break;
       case "quarter":
         const quarter = Math.floor(now.getMonth() / 3);
         start = new Date(now.getFullYear(), quarter * 3, 1);
-        end = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
+        end = new Date(now.getFullYear(), (quarter + 1) * 3, 0, 23, 59, 59, 999);
         break;
       case "year":
         start = new Date(selectedYear, 0, 1);
-        end = new Date(selectedYear, 11, 31);
+        end = new Date(selectedYear, 11, 31, 23, 59, 59, 999);
         break;
       default:
         start = undefined;
@@ -100,9 +101,9 @@ function ClassicPortalInvoiceReports() {
     const paidInvoices = filtered.filter((inv: any) => inv.status === 'paid').length;
     const unpaidInvoices = filtered.filter((inv: any) => inv.status !== 'paid').length;
     const totalAmountUsd = filtered.reduce((sum: number, inv: any) => sum + Number(inv.totalUsd || 0), 0);
-    const paidAmountUsd = filtered.filter((inv: any) => inv.status === 'paid')
+    const paidAmountUsd = filtered.filter((inv: any) => invoiceState(inv.status) === "paid")
       .reduce((sum: number, inv: any) => sum + Number(inv.totalUsd || 0), 0);
-    const unpaidAmountUsd = filtered.filter((inv: any) => inv.status !== 'paid')
+    const unpaidAmountUsd = filtered.filter((inv: any) => isInvoiceOutstanding(inv.status))
       .reduce((sum: number, inv: any) => sum + Number(inv.totalUsd || 0), 0);
     const averageInvoiceUsd = totalInvoices > 0 ? totalAmountUsd / totalInvoices : 0;
     

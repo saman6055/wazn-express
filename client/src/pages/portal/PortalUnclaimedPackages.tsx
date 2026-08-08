@@ -175,9 +175,12 @@ export default function PortalUnclaimedPackages() {
             >
               <Send className="w-4 h-4 me-2" />
               {t("myRequests") || "My Requests"}
-              {myClaimRequests?.length ? (
+              {/* Was gated on having any requests at all, then printed
+                  `length || ""` — an empty yellow pill whenever none were
+                  pending. Gate on the number actually being shown. */}
+              {(myClaimRequests?.filter(r => r.status === "pending").length ?? 0) > 0 ? (
                 <span className="ms-2 px-2 py-0.5 bg-yellow-500 text-white text-xs rounded-full">
-                  {myClaimRequests.filter(r => r.status === "pending").length || ""}
+                  {myClaimRequests!.filter(r => r.status === "pending").length}
                 </span>
               ) : null}
             </TabsTrigger>
