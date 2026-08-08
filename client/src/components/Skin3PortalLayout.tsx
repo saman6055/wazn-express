@@ -99,7 +99,7 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
       <div
         className={cn(
           "fixed bottom-0 left-0 right-0 z-50 flex justify-center",
-          isInstalled ? "pb-safe" : "pb-4"
+          "pb-safe"
         )}
       >
         <motion.nav
@@ -143,7 +143,7 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
                   />
                   <span
                     className={cn(
-                      "text-[9px] font-bold mt-0.5 transition-colors duration-200",
+                      "text-[11px] font-bold mt-0.5 transition-colors duration-200",
                       active
                         ? "text-white"
                         : isDark

@@ -99,7 +99,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
       <nav
         className={cn(
           "fixed bottom-0 left-0 right-0 z-50",
-          isInstalled && "pb-safe"
+          "pb-safe"
         )}
       >
         {/* Glass background */}
@@ -144,7 +144,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
                     {/* Label */}
                     <span
                       className={cn(
-                        "text-[10px] font-medium transition-colors duration-200",
+                        "text-[11px] font-medium transition-colors duration-200",
                         active
                           ? "text-emerald-600 dark:text-emerald-400"
                           : isDark

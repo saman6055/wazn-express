@@ -564,7 +564,7 @@ const { t, language } = useLanguage();
                     tabIndex={0}
                     aria-label="info"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenTileInfo(openTileInfo === index ? null : index); }}
-                    className={cn("absolute top-2 end-2 transition-colors", lightHeader ? "text-slate-500 hover:text-slate-900" : "opacity-70 hover:opacity-100")} style={paleStyle}
+                    className={cn("absolute top-0 end-0 flex h-11 w-11 items-center justify-center transition-colors", lightHeader ? "text-slate-500 hover:text-slate-900" : "opacity-70 hover:opacity-100")} style={paleStyle}
                   >
                     <Info className="w-3.5 h-3.5" />
                   </span>

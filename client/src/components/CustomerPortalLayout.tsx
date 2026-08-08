@@ -178,7 +178,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
           )}
         </div>
         <span className={cn(
-          "text-[10px] font-medium transition-all duration-300",
+          "text-[11px] font-medium transition-all duration-300",
           isActive && "font-bold"
         )}>
           {item.label}
@@ -261,7 +261,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       {/* Bottom Navigation - fixed with smooth transitions */}
       <nav className={cn(
         "fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-out",
-        isInstalled && "pb-safe"
+        "pb-safe"
       )}>
         {/* Curved background effect */}
         <div className={cn(

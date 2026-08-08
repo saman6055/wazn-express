@@ -3,6 +3,7 @@ import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { pickLang } from "@/lib/lang";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 
 import { 
   Plane, 
@@ -158,16 +159,20 @@ const { banner: portalBanner } = usePortalPalette();
     },
   ];
 
+  // Both of these were the placeholder "+964 750 123 4567", printed on a
+  // customer-facing page as though it were the company's number. The real one
+  // lives in one constant, which is also what the WhatsApp buttons dial.
+  const supportNumber = "+" + TERMS_WHATSAPP_NUMBER;
   const contactInfo = [
     {
       icon: Phone,
       label: pickLang(language, { ku: "تەلەفۆن", en: "Phone", ar: "الهاتف", zh: "电话" }),
-      value: "+964 750 123 4567",
+      value: supportNumber,
     },
     {
       icon: MessageCircle,
       label: pickLang(language, { ku: "واتسئەپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" }),
-      value: "+964 750 123 4567",
+      value: supportNumber,
     },
   ];
 

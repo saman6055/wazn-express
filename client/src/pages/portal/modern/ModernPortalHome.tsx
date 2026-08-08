@@ -411,18 +411,25 @@ export default function ModernPortalHome() {
           </div>
         </motion.div>
 
-        {/* ===== Price List Section — admin-curated ===== */}
-        <motion.div variants={itemVariants} className="-mx-5">        {/* The customer's own boxes, with the button to confirm receipt.
+        {/* The customer's own boxes, with the button to confirm receipt.
             It existed only on the classic skin, so a customer here had no way
-            to confirm at all. Renders nothing when there are none. */}
-        <MyDeliveryBoxes className="-mx-5 mb-6" />
+            to confirm at all. Renders nothing when there are none.
 
+            It used to sit inside the price-list wrapper and carry -mx-5 of
+            its own on top of the wrapper's, so on a 375px phone the card with
+            the confirm button bled 40px off both edges and the whole page
+            scrolled sideways. */}
+        <motion.div variants={itemVariants}>
+          <MyDeliveryBoxes className="mb-6" />
+        </motion.div>
 
+        {/* ===== Price List Section — admin-curated ===== */}
+        <motion.div variants={itemVariants} className="-mx-5">
           <PriceListSection />
         </motion.div>
 
         {/* A brand-new customer met four zeroes and, on this skin, a large
-            "Pay Now" button over a /usr/bin/bash.00 balance. Tell them how to start
+            "Pay Now" button over a zero balance. Tell them how to start
             instead. Shown only while they genuinely have nothing. */}
         {!packagesLoading && totalPackages === 0 && (
           <motion.div variants={itemVariants} className="mb-6">
@@ -503,7 +510,7 @@ export default function ModernPortalHome() {
                 ? "الإجراءات السريعة"
                 : "Quick Actions"}
           </h2>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {quickActions.map((action) => {
               const Icon = action.icon;
               return (

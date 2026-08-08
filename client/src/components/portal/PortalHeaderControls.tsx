@@ -99,6 +99,11 @@ export function PortalHeaderControls({
       {/* Colour modes */}
       <div className={cn("flex items-center gap-1.5 rounded-full border px-2 py-1.5 backdrop-blur-sm", glass)}>
         {PORTAL_MODES.map((m) => (
+          /* The swatch stays 20px because that is the design, but the thing a
+             finger has to hit does not: five 20px circles side by side, in the
+             header of every page, made a mis-tap near certain. The padded
+             button around it brings the target to 36px without changing what
+             is on screen. */
           <button
             key={m.id}
             type="button"
@@ -106,14 +111,18 @@ export function PortalHeaderControls({
             aria-pressed={mode === m.id}
             aria-label={pickLang(language, m.label)}
             title={pickLang(language, m.label)}
-            className={cn(
-              "h-5 w-5 rounded-full border-2 transition-transform duration-200 active:scale-90",
-              mode === m.id
-                ? light ? "border-slate-800 scale-110" : "border-white scale-110"
-                : "border-transparent opacity-80 hover:opacity-100",
-            )}
-            style={{ backgroundImage: `linear-gradient(135deg, ${m.swatch[0]}, ${m.swatch[1]})` }}
-          />
+            className="flex h-9 w-9 items-center justify-center -m-2"
+          >
+            <span
+              className={cn(
+                "block h-5 w-5 rounded-full border-2 transition-transform duration-200 active:scale-90",
+                mode === m.id
+                  ? light ? "border-slate-800 scale-110" : "border-white scale-110"
+                  : "border-transparent opacity-80 hover:opacity-100",
+              )}
+              style={{ backgroundImage: `linear-gradient(135deg, ${m.swatch[0]}, ${m.swatch[1]})` }}
+            />
+          </button>
         ))}
       </div>
 
