@@ -136,11 +136,11 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
   
   const getCategoryLabel = (category: string) => {
     switch (category) {
-      case "announcement": return language === "ku" ? "ڕاگەیاندن" : "Announcement";
-      case "news": return language === "ku" ? "هەواڵ" : "News";
-      case "promotion": return language === "ku" ? "داشکاندن" : "Promotion";
-      case "update": return language === "ku" ? "نوێکردنەوە" : "Update";
-      case "guide": return language === "ku" ? "ڕێنمایی" : "Guide";
+      case "announcement": return pickLang(language, { ku: "ڕاگەیاندن", en: "Announcement", ar: "إعلان", zh: "公告" });
+      case "news": return pickLang(language, { ku: "هەواڵ", en: "News", ar: "أخبار", zh: "新闻" });
+      case "promotion": return pickLang(language, { ku: "داشکاندن", en: "Promotion", ar: "عرض", zh: "促销" });
+      case "update": return pickLang(language, { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" });
+      case "guide": return pickLang(language, { ku: "ڕێنمایی", en: "Guide", ar: "دليل", zh: "指南" });
       default: return category;
     }
   };
@@ -400,7 +400,7 @@ const { t, language } = useLanguage();
     },
     {
       icon: AlertTriangle,
-      label: language === "ku" ? "بێ خاوەن" : "Unclaimed",
+      label: pickLang(language, { ku: "بێ خاوەن", en: "Unclaimed", ar: "غير مُطالب به", zh: "无主" }),
       href: "/portal/no-mark",
       info: {
         title: pickLang(language, { ku: "پاکێجی بێ‌خاوەن", en: "Unclaimed packages", ar: "طرود بلا مالك", zh: "无主包裹" }),

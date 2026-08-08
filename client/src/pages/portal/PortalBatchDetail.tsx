@@ -224,7 +224,7 @@ const { t, language } = useLanguage();
         <Link href="/portal/shipments">
           <button className="flex items-center gap-1 text-slate-300 mb-3 hover:text-white transition-colors">
             <ChevronLeft className={cn("w-5 h-5", isRTL && "rotate-180")} />
-            <span className="text-sm">{language === "ku" ? "گەڕانەوە" : "Back"}</span>
+            <span className="text-sm">{pickLang(language, { ku: "گەڕانەوە", en: "Back", ar: "رجوع", zh: "返回" })}</span>
           </button>
         </Link>
         
@@ -245,7 +245,7 @@ const { t, language } = useLanguage();
                     : batch.shippingType?.replace("_", " ")}
                 </span>
                 <span className="text-slate-400 text-sm">
-                  • {packages?.length || 0} {language === "ku" ? "پاکەت" : "packages"}
+                  • {packages?.length || 0} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرود", zh: "件包裹" })}
                 </span>
               </div>
             )}
@@ -276,7 +276,7 @@ const { t, language } = useLanguage();
           isDark ? "bg-slate-800" : "bg-white"
         )}>
           <h3 className={cn("font-semibold mb-4", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-            {language === "ku" ? "شوێنکەوتنی بار" : "Shipment Progress"}
+            {pickLang(language, { ku: "شوێنکەوتنی بار", en: "Shipment Progress", ar: "تقدّم الشحنة", zh: "运输进度" })}
           </h3>
           
           <div className="relative">
@@ -368,7 +368,7 @@ const { t, language } = useLanguage();
       )}>
         <div className="flex items-center justify-between mb-4">
           <h2 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-            {language === "ku" ? "پاکەتەکانت" : "Your Packages"}
+            {pickLang(language, { ku: "پاکەتەکانت", en: "Your Packages", ar: "طرودك", zh: "您的包裹" })}
           </h2>
           <span className={cn(
             "px-3 py-1 rounded-full text-sm font-medium",
@@ -393,7 +393,7 @@ const { t, language } = useLanguage();
           )}>
             <Package className={cn("w-12 h-12 mx-auto mb-3", isDark ? "text-slate-600" : "text-slate-300")} />
             <p className={cn(isDark ? "text-slate-400" : "text-slate-500")}>
-              {language === "ku" ? "هیچ پاکەتێک نییە" : "No packages"}
+              {pickLang(language, { ku: "هیچ پاکەتێک نییە", en: "No packages", ar: "لا توجد طرود", zh: "暂无包裹" })}
             </p>
           </div>
         ) : (
@@ -539,7 +539,7 @@ const { t, language } = useLanguage();
                           "text-sm font-medium",
                           isDark ? "text-blue-400" : "text-blue-600"
                         )}>
-                          {language === "ku" ? "بینینی وێنەکان" : "View Photos"} →
+                          {pickLang(language, { ku: "بینینی وێنەکان", en: "View Photos", ar: "عرض الصور", zh: "查看照片" })} →
                         </span>
                       </button>
                     </div>
@@ -565,7 +565,7 @@ const { t, language } = useLanguage();
       <Dialog open={!!selectedPackage} onOpenChange={closePhotoViewer}>
         <DialogContent className="max-w-lg p-0 overflow-hidden bg-black/95">
           <DialogTitle className="sr-only">
-            {language === "ku" ? "وێنەکانی پاکەت" : "Package Photos"}
+            {pickLang(language, { ku: "وێنەکانی پاکەت", en: "Package Photos", ar: "صور الطرد", zh: "包裹照片" })}
           </DialogTitle>
           
           {selectedPkg && photos && photos.length > 0 && (

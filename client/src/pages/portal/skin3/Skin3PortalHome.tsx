@@ -164,7 +164,7 @@ export default function Skin3PortalHome() {
   const firstName =
     (account as any)?.fullNameKurdish?.split(" ")[0] ||
     account?.fullName?.split(" ")[0] ||
-    (language === "ku" ? "کڕیار" : "Customer");
+    (pickLang(language, { ku: "کڕیار", en: "Customer", ar: "عميل", zh: "客户" }));
 
   const balanceValue =
     typeof balance === "number"
@@ -175,7 +175,7 @@ export default function Skin3PortalHome() {
 
   const statsCards = [
     {
-      label: language === "ku" ? "کۆی بارەکان" : "Total",
+      label: pickLang(language, { ku: "کۆی بارەکان", en: "Total", ar: "الإجمالي", zh: "总计" }),
       value: totalPackages,
       icon: Package,
       accent: isDark ? "border-indigo-500/50" : "border-indigo-400",
@@ -183,7 +183,7 @@ export default function Skin3PortalHome() {
       iconColor: isDark ? "text-indigo-400" : "text-indigo-600",
     },
     {
-      label: language === "ku" ? "لەڕێگا" : "In Transit",
+      label: pickLang(language, { ku: "لەڕێگا", en: "In Transit", ar: "قيد الشحن", zh: "运输中" }),
       value: inTransit,
       icon: Truck,
       accent: isDark ? "border-amber-500/50" : "border-amber-400",
@@ -191,7 +191,7 @@ export default function Skin3PortalHome() {
       iconColor: isDark ? "text-amber-400" : "text-amber-600",
     },
     {
-      label: language === "ku" ? "گەیشتوو" : "Arrived",
+      label: pickLang(language, { ku: "گەیشتوو", en: "Arrived", ar: "وصل", zh: "已到达" }),
       value: arrived,
       icon: Plane,
       accent: isDark ? "border-violet-500/50" : "border-violet-400",
@@ -199,7 +199,7 @@ export default function Skin3PortalHome() {
       iconColor: isDark ? "text-violet-400" : "text-violet-600",
     },
     {
-      label: language === "ku" ? "گەیاندرا" : "Delivered",
+      label: pickLang(language, { ku: "گەیاندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }),
       value: delivered,
       icon: CheckCircle,
       accent: isDark ? "border-emerald-500/50" : "border-emerald-400",
@@ -210,19 +210,19 @@ export default function Skin3PortalHome() {
 
   const quickActions = [
     {
-      label: language === "ku" ? "شوێنکەوتن" : "Track",
+      label: pickLang(language, { ku: "شوێنکەوتن", en: "Track", ar: "تتبع", zh: "追踪" }),
       icon: Search,
       href: "/portal/search",
       bg: isDark ? "bg-indigo-600 hover:bg-indigo-500" : "bg-indigo-500 hover:bg-indigo-600",
     },
     {
-      label: language === "ku" ? "داواکاری" : "Order",
+      label: pickLang(language, { ku: "داواکاری", en: "Order", ar: "طلب", zh: "订单" }),
       icon: ShoppingBag,
       href: "/portal/full-package",
       bg: isDark ? "bg-amber-500 hover:bg-amber-400" : "bg-amber-400 hover:bg-amber-500",
     },
     {
-      label: language === "ku" ? "پشتگیری" : "Support",
+      label: pickLang(language, { ku: "پشتگیری", en: "Support", ar: "الدعم", zh: "客服" }),
       icon: Headphones,
       href: "/portal/messages",
       bg: isDark ? "bg-emerald-600 hover:bg-emerald-500" : "bg-emerald-500 hover:bg-emerald-600",
@@ -312,7 +312,7 @@ export default function Skin3PortalHome() {
                   isDark ? "text-white" : "text-gray-950"
                 )}
               >
-                {language === "ku" ? "سڵاو" : "Hey"},{" "}
+                {pickLang(language, { ku: "سڵاو", en: "Hey", ar: "مرحبًا", zh: "你好" })},{" "}
                 <span className="text-indigo-500">{firstName}</span>{" "}
                 <span className="inline-block animate-[wave_1.5s_ease-in-out_infinite]">
                   {"👋"}
@@ -325,9 +325,7 @@ export default function Skin3PortalHome() {
                 isDark ? "text-zinc-500" : "text-gray-500"
               )}
             >
-              {language === "ku"
-                ? "بەخێربێیتەوە بۆ پۆرتاڵی وەزن"
-                : "Welcome back to Wazn Express"}
+              {pickLang(language, { ku: "بەخێربێیتەوە بۆ پۆرتاڵی وەزن", en: "Welcome back to Wazn Express", ar: "أهلًا بعودتك إلى وزن إكسبريس", zh: "欢迎回到 Wazn Express" })}
             </p>
           </div>
           <Link href="/portal/notifications">
@@ -381,11 +379,7 @@ export default function Skin3PortalHome() {
                 "text-sm font-bold uppercase tracking-wider mb-2",
                 isDark ? "text-indigo-300/70" : "text-white/70"
               )}>
-                {language === "ku"
-                  ? "باڵانسی ئێستا"
-                  : language === "ar"
-                    ? "الرصيد الحالي"
-                    : "Current Balance"}
+                {pickLang(language, { ku: "باڵانسی ئێستا", en: "Current Balance", ar: "الرصيد الحالي", zh: "当前余额" })}
               </p>
               {balanceLoading ? (
                 <Skeleton className="h-12 w-40 bg-white/20" />
@@ -418,11 +412,7 @@ export default function Skin3PortalHome() {
                   )}
                 >
                   <CreditCard className="w-4 h-4" strokeWidth={2.5} />
-                  {language === "ku"
-                    ? "پارەدان"
-                    : language === "ar"
-                      ? "الدفع"
-                      : "Pay Now"}
+                  {pickLang(language, { ku: "پارەدان", en: "Pay Now", ar: "الدفع", zh: "去支付" })}
                 </motion.button>
               </Link>
             </div>
@@ -529,11 +519,7 @@ export default function Skin3PortalHome() {
               isDark ? "text-white" : "text-gray-950"
             )}
           >
-            {language === "ku"
-              ? "کردارە خێراکان"
-              : language === "ar"
-                ? "الإجراءات السريعة"
-                : "Quick Actions"}
+            {pickLang(language, { ku: "کردارە خێراکان", en: "Quick Actions", ar: "الإجراءات السريعة", zh: "快捷操作" })}
           </h2>
           <div className="flex gap-3">
             {quickActions.map((action) => {
@@ -569,11 +555,7 @@ export default function Skin3PortalHome() {
                 isDark ? "text-white" : "text-gray-950"
               )}
             >
-              {language === "ku"
-                ? "چالاکی دوایی"
-                : language === "ar"
-                  ? "النشاط الأخير"
-                  : "Recent Activity"}
+              {pickLang(language, { ku: "چالاکی دوایی", en: "Recent Activity", ar: "النشاط الأخير", zh: "最近动态" })}
             </h2>
             <Link href="/portal/financial">
               <button
@@ -582,7 +564,7 @@ export default function Skin3PortalHome() {
                   "text-indigo-500 hover:text-indigo-600"
                 )}
               >
-                {language === "ku" ? "هەموو" : "View All"}
+                {pickLang(language, { ku: "هەموو", en: "View All", ar: "عرض الكل", zh: "查看全部" })}
                 <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
               </button>
             </Link>
@@ -709,9 +691,7 @@ export default function Skin3PortalHome() {
                   isDark ? "text-zinc-500" : "text-gray-400"
                 )}
               >
-                {language === "ku"
-                  ? "هیچ چالاکییەک نییە"
-                  : "No recent activity"}
+                {pickLang(language, { ku: "هیچ چالاکییەک نییە", en: "No recent activity", ar: "لا يوجد نشاط حديث", zh: "暂无动态" })}
               </p>
             </div>
           )}

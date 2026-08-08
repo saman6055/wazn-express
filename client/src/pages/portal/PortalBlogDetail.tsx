@@ -6,6 +6,7 @@ import {
   ArrowLeft, Calendar, Eye, Star, Share2, Clock,
   Megaphone, Newspaper, Gift, RefreshCw, BookOpen, Link as LinkIcon
 } from "lucide-react";
+import { pickLang } from "@/lib/lang";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { WhatsAppGlyph } from "@/components/portal/WhatsAppHelpButton";
 import { Link, useParams } from "wouter";
@@ -63,11 +64,11 @@ const { id } = useParams<{ id: string }>();
   
   const getCategoryLabel = (category: string) => {
     switch (category) {
-      case "announcement": return language === "ku" ? "ڕاگەیاندن" : "Announcement";
-      case "news": return language === "ku" ? "هەواڵ" : "News";
-      case "promotion": return language === "ku" ? "داشکاندن" : "Promotion";
-      case "update": return language === "ku" ? "نوێکردنەوە" : "Update";
-      case "guide": return language === "ku" ? "ڕێنمایی" : "Guide";
+      case "announcement": return pickLang(language, { ku: "ڕاگەیاندن", en: "Announcement", ar: "إعلان", zh: "公告" });
+      case "news": return pickLang(language, { ku: "هەواڵ", en: "News", ar: "أخبار", zh: "新闻" });
+      case "promotion": return pickLang(language, { ku: "داشکاندن", en: "Promotion", ar: "عرض", zh: "促销" });
+      case "update": return pickLang(language, { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" });
+      case "guide": return pickLang(language, { ku: "ڕێنمایی", en: "Guide", ar: "دليل", zh: "指南" });
       default: return category;
     }
   };
@@ -103,7 +104,7 @@ const { id } = useParams<{ id: string }>();
     } else {
       // Fallback: copy to clipboard
       void copyText(window.location.href);
-      toast.success(language === "ku" ? "لینک کۆپی کرا" : "Link copied!");
+      toast.success(pickLang(language, { ku: "لینک کۆپی کرا", en: "Link copied!", ar: "تم نسخ الرابط", zh: "链接已复制" }));
     }
   };
 
@@ -141,11 +142,11 @@ const { id } = useParams<{ id: string }>();
         )}>
           <Megaphone className="w-16 h-16 mx-auto mb-4 opacity-30" />
           <h2 className="text-xl font-bold mb-2">
-            {language === "ku" ? "بابەت نەدۆزرایەوە" : "Post not found"}
+            {pickLang(language, { ku: "بابەت نەدۆزرایەوە", en: "Post not found", ar: "لم يُعثر على المقال", zh: "未找到文章" })}
           </h2>
           <Link href="/portal/blog">
             <button className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-xl font-medium">
-              {language === "ku" ? "گەڕانەوە" : "Go Back"}
+              {pickLang(language, { ku: "گەڕانەوە", en: "Go Back", ar: "رجوع", zh: "返回" })}
             </button>
           </Link>
         </div>
@@ -240,7 +241,7 @@ const { id } = useParams<{ id: string }>();
               isDark ? "text-slate-400" : "text-slate-500"
             )}>
               <Eye className="w-4 h-4" />
-              {post.viewCount} {language === "ku" ? "بینین" : "views"}
+              {post.viewCount} {pickLang(language, { ku: "بینین", en: "views", ar: "مشاهدة", zh: "次浏览" })}
             </div>
             
             <div className={cn(
@@ -248,7 +249,7 @@ const { id } = useParams<{ id: string }>();
               isDark ? "text-slate-400" : "text-slate-500"
             )}>
               <Clock className="w-4 h-4" />
-              {getReadTime(getContent(post))} {language === "ku" ? "خولەک" : "min read"}
+              {getReadTime(getContent(post))} {pickLang(language, { ku: "خولەک", en: "min read", ar: "دقيقة قراءة", zh: "分钟阅读" })}
             </div>
           </div>
           
@@ -305,7 +306,7 @@ const { id } = useParams<{ id: string }>();
           {/* Follow-us channels */}
           <div className={cn("mt-8 pt-6 border-t", isDark ? "border-slate-700" : "border-gray-200 dark:border-gray-800/60")}>
             <p className={cn("text-sm font-semibold mb-3", isDark ? "text-slate-300" : "text-slate-600")}>
-              {language === "ku" ? "لە کەناڵەکانمان بمانبینە" : language === "ar" ? "تابعنا على قنواتنا" : "Follow us on our channels"}
+              {pickLang(language, { ku: "لە کەناڵەکانمان بمانبینە", en: "Follow us on our channels", ar: "تابعنا على قنواتنا", zh: "关注我们的频道" })}
             </p>
             <SocialChannels />
           </div>
@@ -316,7 +317,7 @@ const { id } = useParams<{ id: string }>();
             isDark ? "border-slate-700" : "border-gray-200 dark:border-gray-800/60"
           )}>
             <p className={cn("text-sm font-semibold mb-3", isDark ? "text-slate-300" : "text-slate-600")}>
-              {language === "ku" ? "ئەم بابەتە هاوبەش بکە" : language === "ar" ? "شارك هذا المنشور" : "Share this post"}
+              {pickLang(language, { ku: "ئەم بابەتە هاوبەش بکە", en: "Share this post", ar: "شارك هذا المنشور", zh: "分享这篇文章" })}
             </p>
             <div className="grid grid-cols-3 gap-2">
               <a
@@ -331,7 +332,7 @@ const { id } = useParams<{ id: string }>();
               <button
                 onClick={() => {
                   navigator.clipboard?.writeText(window.location.href);
-                  toast.success(language === "ku" ? "لینک کۆپی کرا" : language === "ar" ? "تم نسخ الرابط" : "Link copied!");
+                  toast.success(pickLang(language, { ku: "لینک کۆپی کرا", en: "Link copied!", ar: "تم نسخ الرابط", zh: "链接已复制" }));
                 }}
                 className={cn(
                   "flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition active:scale-95",
@@ -339,7 +340,7 @@ const { id } = useParams<{ id: string }>();
                 )}
               >
                 <LinkIcon className="w-5 h-5" />
-                {language === "ku" ? "کۆپی" : language === "ar" ? "نسخ" : "Copy"}
+                {pickLang(language, { ku: "کۆپی", en: "Copy", ar: "نسخ", zh: "复制" })}
               </button>
               <button
                 onClick={handleShare}
@@ -349,7 +350,7 @@ const { id } = useParams<{ id: string }>();
                 )}
               >
                 <Share2 className="w-5 h-5" />
-                {language === "ku" ? "زیاتر" : language === "ar" ? "المزيد" : "More"}
+                {pickLang(language, { ku: "زیاتر", en: "More", ar: "المزيد", zh: "更多" })}
               </button>
             </div>
           </div>
@@ -361,7 +362,7 @@ const { id } = useParams<{ id: string }>();
               "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:opacity-90"
             )}>
               <ArrowLeft className="w-5 h-5" />
-              {language === "ku" ? "گەڕانەوە بۆ هەواڵەکان" : "Back to all posts"}
+              {pickLang(language, { ku: "گەڕانەوە بۆ هەواڵەکان", en: "Back to all posts", ar: "العودة إلى المقالات", zh: "返回全部文章" })}
             </button>
           </Link>
         </div>

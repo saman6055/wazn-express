@@ -23,6 +23,7 @@ import {
   Ban,
   BookOpen,
 } from "lucide-react";
+import { pickLang } from "@/lib/lang";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -103,7 +104,7 @@ export default function Skin3PortalProfile() {
                 isDark ? "text-white" : "text-zinc-900 dark:text-zinc-200"
               )}
             >
-              {language === "ku" ? "چوونەژوورەوە پێویستە" : "Login Required"}
+              {pickLang(language, { ku: "چوونەژوورەوە پێویستە", en: "Login Required", ar: "تسجيل الدخول مطلوب", zh: "需要登录" })}
             </h2>
             <Link href={getLoginUrl()}>
               <button
@@ -136,7 +137,7 @@ export default function Skin3PortalProfile() {
     },
     {
       icon: MapPin,
-      label: language === "ku" ? "شار" : "City",
+      label: pickLang(language, { ku: "شار", en: "City", ar: "المدينة", zh: "城市" }),
       value: account?.city || "-",
     },
     {

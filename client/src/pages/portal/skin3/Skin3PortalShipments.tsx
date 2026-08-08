@@ -195,7 +195,7 @@ export default function Skin3PortalShipments() {
         };
       case "scanned":
         return {
-          label: language === "ku" ? "سکان کراو" : "Scanned",
+          label: pickLang(language, { ku: "سکان کراو", en: "Scanned", ar: "تم المسح", zh: "已扫描" }),
           color: isDark ? "text-cyan-400" : "text-cyan-700 dark:text-cyan-300",
           bg: isDark ? "bg-cyan-500/20" : "bg-cyan-100 dark:bg-cyan-950/40",
         };
@@ -209,10 +209,10 @@ export default function Skin3PortalShipments() {
   };
 
   const filterChips: { value: StatusFilter; label: string }[] = [
-    { value: "all", label: language === "ku" ? "هەموو" : "All" },
+    { value: "all", label: pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" }) },
     { value: "in_china", label: pickLang(language, { ku: "لە چین", en: "In China", ar: "في الصين", zh: "在中国" }) },
     { value: "in_transit", label: pickLang(language, { ku: "لەڕێگا", en: "On the way", ar: "في الطريق", zh: "运输中" }) },
-    { value: "delivered", label: language === "ku" ? "گەیاندرا" : "Delivered" },
+    { value: "delivered", label: pickLang(language, { ku: "گەیاندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }) },
   ];
 
   const handleBatchToggle = (batchId: number) => {
@@ -239,7 +239,7 @@ export default function Skin3PortalShipments() {
               isDark ? "text-white" : "text-gray-950"
             )}
           >
-            {language === "ku" ? "بارەکانم" : "My Shipments"}
+            {pickLang(language, { ku: "بارەکانم", en: "My Shipments", ar: "شحناتي", zh: "我的运单" })}
           </h1>
           <p
             className={cn(
@@ -247,9 +247,7 @@ export default function Skin3PortalShipments() {
               isDark ? "text-zinc-500" : "text-gray-500"
             )}
           >
-            {language === "ku"
-              ? "شوێنکەوتنی هەموو بارەکانت"
-              : "Track all your shipments"}
+            {pickLang(language, { ku: "شوێنکەوتنی هەموو بارەکانت", en: "Track all your shipments", ar: "تتبّع كل شحناتك", zh: "追踪您的所有运单" })}
           </p>
         </div>
 
@@ -274,9 +272,7 @@ export default function Skin3PortalShipments() {
             <input
               type="text"
               placeholder={
-                language === "ku"
-                  ? "گەڕان بە ژمارەی تراکینگ..."
-                  : "Search by tracking number..."
+                pickLang(language, { ku: "گەڕان بە ژمارەی تراکینگ...", en: "Search by tracking number...", ar: "ابحث برقم التتبع...", zh: "按运单号搜索..." })
               }
               value={searchQuery}
               onChange={(e) => handleTrackingSearch(e.target.value)}
@@ -363,7 +359,7 @@ export default function Skin3PortalShipments() {
                           isDark ? "text-emerald-400" : "text-emerald-600"
                         )}
                       >
-                        {language === "ku" ? "دۆزرایەوە!" : "Found!"}{" "}
+                        {pickLang(language, { ku: "دۆزرایەوە!", en: "Found!", ar: "تم العثور عليه!", zh: "已找到！" })}{" "}
                         {"--- "}
                         {getPackageStatusConfig((searchResult as any).status).label}
                       </p>
@@ -393,7 +389,7 @@ export default function Skin3PortalShipments() {
                       isDark ? "text-zinc-500" : "text-gray-400"
                     )}
                   >
-                    {language === "ku" ? "هیچ نەدۆزرایەوە" : "No package found"}
+                    {pickLang(language, { ku: "هیچ نەدۆزرایەوە", en: "No package found", ar: "لم يُعثر على طرد", zh: "未找到包裹" })}
                   </p>
                 </div>
               )}
@@ -527,7 +523,7 @@ export default function Skin3PortalShipments() {
                               >
                                 <Box className="w-3.5 h-3.5" strokeWidth={2.5} />
                                 {batch.customerPackageCount || 0}{" "}
-                                {language === "ku" ? "بار" : "pkgs"}
+                                {pickLang(language, { ku: "بار", en: "pkgs", ar: "طرود", zh: "件" })}
                               </span>
                               <span
                                 className={cn(
@@ -547,9 +543,7 @@ export default function Skin3PortalShipments() {
                                   isDark ? "text-zinc-600" : "text-gray-400"
                                 )}
                               >
-                                {language === "ku"
-                                  ? "گەیشتنی چاوەڕوانکراو:"
-                                  : "ETA:"}{" "}
+                                {pickLang(language, { ku: "گەیشتنی چاوەڕوانکراو:", en: "ETA:", ar: "الوصول المتوقع:", zh: "预计到达：" })}{" "}
                                 {formatPortalDate(batch.estimatedArrival, language)}
                               </p>
                             )}
@@ -730,9 +724,7 @@ export default function Skin3PortalShipments() {
                                                   : "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300"
                                               )}
                                             >
-                                              {language === "ku"
-                                                ? "فول پاکەج"
-                                                : "Full Pkg"}
+                                              {pickLang(language, { ku: "فول پاکەج", en: "Full Pkg", ar: "الطلب الكامل", zh: "整包代购" })}
                                             </span>
                                           )}
                                         </div>
@@ -747,9 +739,7 @@ export default function Skin3PortalShipments() {
                                     isDark ? "text-zinc-600" : "text-gray-400"
                                   )}
                                 >
-                                  {language === "ku"
-                                    ? "هیچ بارێک نییە"
-                                    : "No packages in this batch"}
+                                  {pickLang(language, { ku: "هیچ بارێک نییە", en: "No packages in this batch", ar: "لا توجد طرود في هذه الدفعة", zh: "此批次没有包裹" })}
                                 </p>
                               )}
                             </div>
@@ -786,9 +776,7 @@ export default function Skin3PortalShipments() {
                   isDark ? "text-white" : "text-gray-950"
                 )}
               >
-                {language === "ku"
-                  ? "هیچ بارێک نییە!"
-                  : "No shipments yet!"}
+                {pickLang(language, { ku: "هیچ بارێک نییە!", en: "No shipments yet!", ar: "لا توجد شحنات بعد!", zh: "还没有运单！" })}
               </h3>
               <p
                 className={cn(
@@ -796,9 +784,7 @@ export default function Skin3PortalShipments() {
                   isDark ? "text-zinc-500" : "text-gray-400"
                 )}
               >
-                {language === "ku"
-                  ? "کاتێک بارت هەبێت لێرە دەردەکەوێت"
-                  : "Your shipments will show up here once they are on the way"}
+                {pickLang(language, { ku: "کاتێک بارت هەبێت لێرە دەردەکەوێت", en: "Your shipments will show up here once they are on the way", ar: "ستظهر شحناتك هنا بمجرد أن تكون في الطريق", zh: "运单上路后会显示在这里" })}
               </p>
             </motion.div>
           )}

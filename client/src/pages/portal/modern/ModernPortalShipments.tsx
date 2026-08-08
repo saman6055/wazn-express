@@ -183,7 +183,7 @@ export default function ModernPortalShipments() {
         };
       case "scanned":
         return {
-          label: language === "ku" ? "سکان کراو" : "Scanned",
+          label: pickLang(language, { ku: "سکان کراو", en: "Scanned", ar: "تم المسح", zh: "已扫描" }),
           color: "text-cyan-600 dark:text-cyan-400",
           bg: "bg-cyan-50 dark:bg-cyan-950/40",
         };
@@ -197,10 +197,10 @@ export default function ModernPortalShipments() {
   };
 
   const segmentedTabs: { value: StatusFilter; label: string }[] = [
-    { value: "all", label: language === "ku" ? "هەموو" : "All" },
+    { value: "all", label: pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" }) },
     { value: "in_china", label: pickLang(language, { ku: "لە چین", en: "In China", ar: "في الصين", zh: "在中国" }) },
     { value: "in_transit", label: pickLang(language, { ku: "لەڕێگا", en: "On the way", ar: "في الطريق", zh: "运输中" }) },
-    { value: "delivered", label: language === "ku" ? "گەیاندرا" : "Delivered" },
+    { value: "delivered", label: pickLang(language, { ku: "گەیاندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }) },
   ];
 
   const handleBatchToggle = (batchId: number) => {
@@ -227,12 +227,10 @@ export default function ModernPortalShipments() {
               isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
             )}
           >
-            {language === "ku" ? "بارەکانم" : "My Shipments"}
+            {pickLang(language, { ku: "بارەکانم", en: "My Shipments", ar: "شحناتي", zh: "我的运单" })}
           </h1>
           <p className={cn("text-sm", isDark ? "text-zinc-500" : "text-gray-500")}>
-            {language === "ku"
-              ? "شوێنکەوتنی هەموو بارەکانت"
-              : "Track all your shipments"}
+            {pickLang(language, { ku: "شوێنکەوتنی هەموو بارەکانت", en: "Track all your shipments", ar: "تتبّع كل شحناتك", zh: "追踪您的所有运单" })}
           </p>
         </div>
 
@@ -255,9 +253,7 @@ export default function ModernPortalShipments() {
             <input
               type="text"
               placeholder={
-                language === "ku"
-                  ? "گەڕان بە ژمارەی تراکینگ..."
-                  : "Search by tracking number..."
+                pickLang(language, { ku: "گەڕان بە ژمارەی تراکینگ...", en: "Search by tracking number...", ar: "ابحث برقم التتبع...", zh: "按运单号搜索..." })
               }
               value={searchQuery}
               onChange={(e) => handleTrackingSearch(e.target.value)}
@@ -323,7 +319,7 @@ export default function ModernPortalShipments() {
                         {(searchResult as any).trackingNumber || (searchResult as any).packageCode}
                       </p>
                       <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                        {language === "ku" ? "دۆزرایەوە!" : "Found!"}
+                        {pickLang(language, { ku: "دۆزرایەوە!", en: "Found!", ar: "تم العثور عليه!", zh: "已找到！" })}
                         {" — "}
                         {getPackageStatusConfig((searchResult as any).status).label}
                       </p>
@@ -348,7 +344,7 @@ export default function ModernPortalShipments() {
                       isDark ? "text-zinc-500" : "text-gray-400"
                     )}
                   >
-                    {language === "ku" ? "هیچ نەدۆزرایەوە" : "No package found"}
+                    {pickLang(language, { ku: "هیچ نەدۆزرایەوە", en: "No package found", ar: "لم يُعثر على طرد", zh: "未找到包裹" })}
                   </p>
                 </div>
               )}
@@ -478,7 +474,7 @@ export default function ModernPortalShipments() {
                               >
                                 <Box className="w-3.5 h-3.5" />
                                 {batch.customerPackageCount || 0}{" "}
-                                {language === "ku" ? "بار" : "pkgs"}
+                                {pickLang(language, { ku: "بار", en: "pkgs", ar: "طرود", zh: "件" })}
                               </span>
                               <span
                                 className={cn(
@@ -498,9 +494,7 @@ export default function ModernPortalShipments() {
                                   isDark ? "text-zinc-600" : "text-gray-400"
                                 )}
                               >
-                                {language === "ku"
-                                  ? "گەیشتنی چاوەڕوانکراو:"
-                                  : "ETA:"}{" "}
+                                {pickLang(language, { ku: "گەیشتنی چاوەڕوانکراو:", en: "ETA:", ar: "الوصول المتوقع:", zh: "预计到达：" })}{" "}
                                 {formatPortalDate(batch.estimatedArrival, language)}
                               </p>
                             )}
@@ -655,9 +649,7 @@ export default function ModernPortalShipments() {
                                           )}
                                           {pkg.isFullPackage && (
                                             <span className="text-[10px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/40 px-1.5 py-0.5 rounded">
-                                              {language === "ku"
-                                                ? "فول پاکەج"
-                                                : "Full Pkg"}
+                                              {pickLang(language, { ku: "فول پاکەج", en: "Full Pkg", ar: "الطلب الكامل", zh: "整包代购" })}
                                             </span>
                                           )}
                                         </div>
@@ -672,9 +664,7 @@ export default function ModernPortalShipments() {
                                     isDark ? "text-zinc-600" : "text-gray-400"
                                   )}
                                 >
-                                  {language === "ku"
-                                    ? "هیچ بارێک نییە"
-                                    : "No packages in this batch"}
+                                  {pickLang(language, { ku: "هیچ بارێک نییە", en: "No packages in this batch", ar: "لا توجد طرود في هذه الدفعة", zh: "此批次没有包裹" })}
                                 </p>
                               )}
                             </div>
@@ -709,7 +699,7 @@ export default function ModernPortalShipments() {
                   isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                 )}
               >
-                {language === "ku" ? "هیچ بارێک نییە" : "No shipments found"}
+                {pickLang(language, { ku: "هیچ بارێک نییە", en: "No shipments found", ar: "لا توجد شحنات", zh: "没有运单" })}
               </h3>
               <p
                 className={cn(
@@ -717,9 +707,7 @@ export default function ModernPortalShipments() {
                   isDark ? "text-zinc-500" : "text-gray-400"
                 )}
               >
-                {language === "ku"
-                  ? "کاتێک بارت هەبێت لێرە دەردەکەوێت"
-                  : "Your shipments will appear here"}
+                {pickLang(language, { ku: "کاتێک بارت هەبێت لێرە دەردەکەوێت", en: "Your shipments will appear here", ar: "ستظهر شحناتك هنا", zh: "您的运单将显示在这里" })}
               </p>
             </motion.div>
           )}

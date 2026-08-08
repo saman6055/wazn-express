@@ -7,6 +7,7 @@ import {
   Megaphone, ChevronRight, Calendar, Eye, Star,
   Newspaper, Gift, RefreshCw, BookOpen, ArrowLeft, PlayCircle, Pin
 } from "lucide-react";
+import { pickLang } from "@/lib/lang";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { Link } from "wouter";
 import { useState } from "react";
@@ -69,11 +70,11 @@ const { banner: portalBanner } = usePortalPalette();
   
   const getCategoryLabel = (category: string) => {
     switch (category) {
-      case "announcement": return language === "ku" ? "ڕاگەیاندن" : "Announcement";
-      case "news": return language === "ku" ? "هەواڵ" : "News";
-      case "promotion": return language === "ku" ? "داشکاندن" : "Promotion";
-      case "update": return language === "ku" ? "نوێکردنەوە" : "Update";
-      case "guide": return language === "ku" ? "ڕێنمایی" : "Guide";
+      case "announcement": return pickLang(language, { ku: "ڕاگەیاندن", en: "Announcement", ar: "إعلان", zh: "公告" });
+      case "news": return pickLang(language, { ku: "هەواڵ", en: "News", ar: "أخبار", zh: "新闻" });
+      case "promotion": return pickLang(language, { ku: "داشکاندن", en: "Promotion", ar: "عرض", zh: "促销" });
+      case "update": return pickLang(language, { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" });
+      case "guide": return pickLang(language, { ku: "ڕێنمایی", en: "Guide", ar: "دليل", zh: "指南" });
       default: return category;
     }
   };
@@ -117,10 +118,10 @@ const { banner: portalBanner } = usePortalPalette();
             </div>
             <div className="min-w-0">
               <h1 className={cn("text-xl font-black", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                {language === "ku" ? "وەزن نیوز" : language === "ar" ? "وزن نيوز" : "Wazn News"}
+                {pickLang(language, { ku: "وەزن نیوز", en: "Wazn News", ar: "وزن نيوز", zh: "Wazn 资讯" })}
               </h1>
               <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                {language === "ku" ? "هەواڵ، ڕیکلام و ڤیدیۆ" : language === "ar" ? "أخبار وإعلانات وفيديو" : "News, promos & videos"}
+                {pickLang(language, { ku: "هەواڵ، ڕیکلام و ڤیدیۆ", en: "News, promos & videos", ar: "أخبار وإعلانات وفيديو", zh: "新闻、优惠与视频" })}
               </p>
             </div>
           </div>
@@ -146,7 +147,7 @@ const { banner: portalBanner } = usePortalPalette();
                 )}
               >
                 {cat === "all"
-                  ? (language === "ku" ? "هەموو" : language === "ar" ? "الكل" : "All")
+                  ? (pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" }))
                   : getCategoryLabel(cat)}
               </button>
             );
@@ -174,10 +175,10 @@ const { banner: portalBanner } = usePortalPalette();
               isDark ? "text-slate-600" : "text-gray-300"
             )} />
             <h3 className={cn("text-lg font-semibold mb-2", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-              {language === "ku" ? "هیچ هەواڵێک نییە" : "No announcements yet"}
+              {pickLang(language, { ku: "هیچ هەواڵێک نییە", en: "No announcements yet", ar: "لا توجد إعلانات بعد", zh: "暂无公告" })}
             </h3>
             <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
-              {language === "ku" ? "هەواڵەکان لێرە دەردەکەون" : "Announcements will appear here"}
+              {pickLang(language, { ku: "هەواڵەکان لێرە دەردەکەون", en: "Announcements will appear here", ar: "ستظهر الإعلانات هنا", zh: "公告将显示在这里" })}
             </p>
           </div>
         ) : (
@@ -218,12 +219,12 @@ const { banner: portalBanner } = usePortalPalette();
                         {post.isPinned && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-500 rounded-full text-xs font-bold text-white">
                             <Pin className="w-3 h-3" />
-                            {language === "ku" ? "چەسپاو" : language === "ar" ? "مثبّت" : "Pinned"}
+                            {pickLang(language, { ku: "چەسپاو", en: "Pinned", ar: "مثبّت", zh: "置顶" })}
                           </span>
                         )}
                         {isNew(post.publishedAt || post.createdAt) && (
                           <span className="px-2 py-1 bg-red-500 rounded-full text-xs font-medium text-white">
-                            {language === "ku" ? "نوێ" : "New"}
+                            {pickLang(language, { ku: "نوێ", en: "New", ar: "جديد", zh: "最新" })}
                           </span>
                         )}
                       </div>
@@ -250,12 +251,12 @@ const { banner: portalBanner } = usePortalPalette();
                         {post.isPinned && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-500 rounded-full text-[11px] font-bold text-white">
                             <Pin className="w-3 h-3" />
-                            {language === "ku" ? "چەسپاو" : language === "ar" ? "مثبّت" : "Pinned"}
+                            {pickLang(language, { ku: "چەسپاو", en: "Pinned", ar: "مثبّت", zh: "置顶" })}
                           </span>
                         )}
                         {isNew(post.publishedAt || post.createdAt) && (
                           <span className="px-2 py-0.5 bg-red-500 rounded-full text-[11px] font-bold text-white">
-                            {language === "ku" ? "نوێ" : "New"}
+                            {pickLang(language, { ku: "نوێ", en: "New", ar: "جديد", zh: "最新" })}
                           </span>
                         )}
                       </div>
@@ -301,7 +302,7 @@ const { banner: portalBanner } = usePortalPalette();
                         "flex items-center gap-1 text-sm font-medium",
                         isDark ? "text-blue-400" : "text-blue-600"
                       )}>
-                        <span>{language === "ku" ? "بخوێنەوە" : "Read"}</span>
+                        <span>{pickLang(language, { ku: "بخوێنەوە", en: "Read", ar: "اقرأ", zh: "阅读" })}</span>
                         <ChevronRight className="w-4 h-4" />
                       </div>
                     </div>

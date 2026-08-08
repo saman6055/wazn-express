@@ -8,6 +8,7 @@ import {
   User, Mail, Phone, MapPin, Bell, ChevronRight, LogOut,
   MessageSquare, Headphones, HelpCircle, FileText, Banknote, Ban, BookOpen
 } from "lucide-react";
+import { pickLang } from "@/lib/lang";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,7 +63,7 @@ export default function ModernPortalProfile() {
               <User className={cn("w-10 h-10", isDark ? "text-slate-600" : "text-slate-300")} />
             </div>
             <h2 className={cn("text-xl font-bold mb-2", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
-              {language === "ku" ? "چوونەژوورەوە پێویستە" : "Login Required"}
+              {pickLang(language, { ku: "چوونەژوورەوە پێویستە", en: "Login Required", ar: "تسجيل الدخول مطلوب", zh: "需要登录" })}
             </h2>
             <Link href={getLoginUrl()}>
               <button className="mt-4 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-colors">
@@ -88,7 +89,7 @@ export default function ModernPortalProfile() {
     },
     {
       icon: MapPin,
-      label: language === "ku" ? "شار" : "City",
+      label: pickLang(language, { ku: "شار", en: "City", ar: "المدينة", zh: "城市" }),
       value: account?.city || "-",
     },
     {

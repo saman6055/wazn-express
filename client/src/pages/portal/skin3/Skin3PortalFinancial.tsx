@@ -411,7 +411,7 @@ export default function Skin3PortalFinancial() {
                             >
                               {tx.description ||
                                 tx.transactionNumber ||
-                                (language === "ku" ? "مامەڵە" : "Transaction")}
+                                (pickLang(language, { ku: "مامەڵە", en: "Transaction", ar: "معاملة", zh: "交易" }))}
                             </p>
                             <p
                               className={cn(
@@ -493,9 +493,7 @@ export default function Skin3PortalFinancial() {
                     isDark ? "text-zinc-600" : "text-zinc-400"
                   )}
                 >
-                  {language === "ku"
-                    ? "مامەڵەکانت لێرە دەردەکەون"
-                    : "Your transactions will appear here"}
+                  {pickLang(language, { ku: "مامەڵەکانت لێرە دەردەکەون", en: "Your transactions will appear here", ar: "ستظهر معاملاتك هنا", zh: "您的交易将显示在这里" })}
                 </p>
               </motion.div>
             )}
@@ -620,9 +618,7 @@ export default function Skin3PortalFinancial() {
                           )}
                         >
                           {inv.status === "overdue"
-                            ? language === "ku"
-                              ? "دواکەوتوو"
-                              : "Overdue"
+                            ? pickLang(language, { ku: "دواکەوتوو", en: "Overdue", ar: "متأخر", zh: "已逾期" })
                             : t("portal.pending")}
                         </span>
                       </div>

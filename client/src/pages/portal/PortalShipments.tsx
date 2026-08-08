@@ -321,9 +321,7 @@ function ClassicPortalShipments() {
   const activeShipping = shippingTabs.find(t => t.value === shippingType);
   const shippingHint = activeShipping
     ? (language === "ku" ? activeShipping.descKu : language === "ar" ? activeShipping.descAr : activeShipping.descEn)
-    : (language === "ku" ? "هەموو بارەکانت — یەکێک هەڵبژێرە بۆ پاڵاوتن."
-      : language === "ar" ? "كل شحناتك — اختر واحدًا للتصفية."
-      : "All your shipments — pick one to filter.");
+    : (pickLang(language, { ku: "هەموو بارەکانت — یەکێک هەڵبژێرە بۆ پاڵاوتن.", en: "All your shipments — pick one to filter.", ar: "كل شحناتك — اختر واحدًا للتصفية.", zh: "您的所有运单 — 选择一个进行筛选。" }));
 
   return (
     <CustomerPortalLayout>
@@ -334,11 +332,11 @@ function ClassicPortalShipments() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
-                {language === "ku" ? "بارەکان" : language === "ar" ? "الشحنات" : "Shipments"}
+                {pickLang(language, { ku: "بارەکان", en: "Shipments", ar: "الشحنات", zh: "运单" })}
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-slate-400 text-sm">
-                  {language === "ku" ? "شوێنکەوتنی پاکەتەکانت" : language === "ar" ? "تتبع شحناتك" : "Track your packages"}
+                  {pickLang(language, { ku: "شوێنکەوتنی پاکەتەکانت", en: "Track your packages", ar: "تتبع شحناتك", zh: "追踪您的包裹" })}
                 </p>
                 <Link href="/portal/guide#shipments">
                   <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white/80 hover:bg-white/20 transition cursor-pointer">
@@ -368,7 +366,7 @@ function ClassicPortalShipments() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={language === "ku" ? "گەڕان بە کۆدی باچ..." : language === "ar" ? "البحث برمز الدفعة..." : "Search by batch code..."}
+              placeholder={pickLang(language, { ku: "گەڕان بە کۆدی باچ...", en: "Search by batch code...", ar: "البحث برمز الدفعة...", zh: "按批次编号搜索..." })}
               className={cn(
                 "w-full pl-12 pr-4 py-3.5 rounded-xl text-sm transition-all duration-300",
                 isDark 
@@ -401,7 +399,7 @@ function ClassicPortalShipments() {
       )}>
         {!compactFilters && (
           <p className={cn("mb-2 text-[11px] font-medium", isDark ? "text-slate-500" : "text-slate-400")}>
-            {language === "ku" ? "چۆن دەنێردرێت" : language === "ar" ? "كيف تُشحن" : "How it ships"}
+            {pickLang(language, { ku: "چۆن دەنێردرێت", en: "How it ships", ar: "كيف تُشحن", zh: "运输方式" })}
           </p>
         )}
 
@@ -520,13 +518,13 @@ function ClassicPortalShipments() {
           <div className="flex items-center gap-2">
             <ArrowUpDown className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-500")} />
             <span className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
-              {language === "ku" ? "ڕیزکردن:" : language === "ar" ? "الترتيب:" : "Sort by:"}
+              {pickLang(language, { ku: "ڕیزکردن:", en: "Sort by:", ar: "الترتيب:", zh: "排序：" })}
             </span>
             <div className="flex gap-2">
               {[
-                { value: "newest" as SortOption, label: language === "ku" ? "نوێترین" : language === "ar" ? "الأحدث" : "Newest" },
-                { value: "oldest" as SortOption, label: language === "ku" ? "کۆنترین" : language === "ar" ? "الأقدم" : "Oldest" },
-                { value: "status" as SortOption, label: language === "ku" ? "بارودۆخ" : language === "ar" ? "الحالة" : "Status" },
+                { value: "newest" as SortOption, label: pickLang(language, { ku: "نوێترین", en: "Newest", ar: "الأحدث", zh: "最新" }) },
+                { value: "oldest" as SortOption, label: pickLang(language, { ku: "کۆنترین", en: "Oldest", ar: "الأقدم", zh: "最早" }) },
+                { value: "status" as SortOption, label: pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" }) },
               ].map((option) => (
                 <button
                   key={option.value}
@@ -563,8 +561,8 @@ function ClassicPortalShipments() {
             isDark ? "text-slate-400" : "text-slate-500"
           )}>
             {pullDistance >= 80
-              ? (language === "ku" ? "فڕێبدە بۆ نوێکردنەوە" : "Release to refresh")
-              : (language === "ku" ? "بڕێوە بۆ نوێکردنەوە" : "Pull to refresh")}
+              ? (pickLang(language, { ku: "فڕێبدە بۆ نوێکردنەوە", en: "Release to refresh", ar: "أفلت للتحديث", zh: "松开以刷新" }))
+              : (pickLang(language, { ku: "بڕێوە بۆ نوێکردنەوە", en: "Pull to refresh", ar: "اسحب للتحديث", zh: "下拉以刷新" }))}
           </div>
         )}
         {/* Results Count */}
@@ -605,7 +603,7 @@ function ClassicPortalShipments() {
               <Package className={cn("w-8 h-8", isDark ? "text-slate-500" : "text-slate-400")} />
             </div>
             <p className={cn("font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
-              {language === "ku" ? "هیچ بارێک نەدۆزرایەوە" : language === "ar" ? "لا توجد شحنات" : "No shipments found"}
+              {pickLang(language, { ku: "هیچ بارێک نەدۆزرایەوە", en: "No shipments found", ar: "لا توجد شحنات", zh: "未找到运单" })}
             </p>
             <p className={cn("text-sm mt-1", isDark ? "text-slate-500" : "text-slate-400")}>
               {/* A customer with no shipments at all was told to try a
@@ -692,7 +690,7 @@ function ClassicPortalShipments() {
                     <div className="flex items-center gap-2 mt-4 px-2">
                       <div className={cn("flex items-center gap-1 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
                         <span className="text-lg">🇨🇳</span>
-                        <span>{language === "ku" ? "چین" : language === "ar" ? "الصين" : "China"}</span>
+                        <span>{pickLang(language, { ku: "چین", en: "China", ar: "الصين", zh: "中国" })}</span>
                       </div>
                       <div className={cn(
                         "flex-1 border-t-2 border-dashed relative",
@@ -717,7 +715,7 @@ function ClassicPortalShipments() {
                       </div>
                       <div className={cn("flex items-center gap-1 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
                         <span className="text-lg">🇮🇶</span>
-                        <span>{language === "ku" ? "عێراق" : language === "ar" ? "العراق" : "Iraq"}</span>
+                        <span>{pickLang(language, { ku: "عێراق", en: "Iraq", ar: "العراق", zh: "伊拉克" })}</span>
                       </div>
                     </div>
 
@@ -729,7 +727,7 @@ function ClassicPortalShipments() {
                       <div className="flex items-center gap-4">
                         <div className={cn("flex items-center gap-1.5 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
                           <Package className="w-4 h-4" />
-                          <span>{batch.customerPackageCount} {language === "ku" ? "پاکەت" : language === "ar" ? "طرد" : "pkgs"}</span>
+                          <span>{batch.customerPackageCount} {pickLang(language, { ku: "پاکەت", en: "pkgs", ar: "طرد", zh: "件" })}</span>
                         </div>
                         {/* The customer's own total, in the unit this batch is
                             billed by. This used to print batch.totalWeight —

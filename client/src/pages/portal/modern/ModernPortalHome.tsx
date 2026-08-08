@@ -187,7 +187,7 @@ export default function ModernPortalHome() {
   const firstName =
     (account as any)?.fullNameKurdish?.split(" ")[0] ||
     account?.fullName?.split(" ")[0] ||
-    (language === "ku" ? "کڕیار" : "Customer");
+    (pickLang(language, { ku: "کڕیار", en: "Customer", ar: "عميل", zh: "客户" }));
 
   const balanceValue =
     typeof balance === "number"
@@ -198,28 +198,28 @@ export default function ModernPortalHome() {
 
   const statsCards = [
     {
-      label: language === "ku" ? "کۆی بارەکان" : "Total",
+      label: pickLang(language, { ku: "کۆی بارەکان", en: "Total", ar: "الإجمالي", zh: "总计" }),
       value: totalPackages,
       icon: Package,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-950/40",
     },
     {
-      label: language === "ku" ? "لەڕێگا" : "In Transit",
+      label: pickLang(language, { ku: "لەڕێگا", en: "In Transit", ar: "قيد الشحن", zh: "运输中" }),
       value: inTransit,
       icon: Truck,
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-50 dark:bg-amber-950/40",
     },
     {
-      label: language === "ku" ? "گەیشتوو" : "Arrived",
+      label: pickLang(language, { ku: "گەیشتوو", en: "Arrived", ar: "وصل", zh: "已到达" }),
       value: arrived,
       icon: Plane,
       color: "text-violet-600 dark:text-violet-400",
       bg: "bg-violet-50 dark:bg-violet-950/40",
     },
     {
-      label: language === "ku" ? "گەیاندرا" : "Delivered",
+      label: pickLang(language, { ku: "گەیاندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }),
       value: delivered,
       icon: CheckCircle,
       color: "text-emerald-600 dark:text-emerald-400",
@@ -229,28 +229,28 @@ export default function ModernPortalHome() {
 
   const quickActions = [
     {
-      label: language === "ku" ? "شوێنکەوتن" : "Track",
+      label: pickLang(language, { ku: "شوێنکەوتن", en: "Track", ar: "تتبع", zh: "追踪" }),
       icon: Search,
       href: "/portal/search",
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-950/40",
     },
     {
-      label: language === "ku" ? "داواکاری" : "Full Pkg",
+      label: pickLang(language, { ku: "داواکاری", en: "Full Pkg", ar: "طلب كامل", zh: "整包" }),
       icon: ShoppingBag,
       href: "/portal/full-package",
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-950/40",
     },
     {
-      label: language === "ku" ? "نامەکان" : "Messages",
+      label: pickLang(language, { ku: "نامەکان", en: "Messages", ar: "الرسائل", zh: "消息" }),
       icon: MessageSquare,
       href: "/portal/messages",
       color: "text-violet-600 dark:text-violet-400",
       bg: "bg-violet-50 dark:bg-violet-950/40",
     },
     {
-      label: language === "ku" ? "پشتگیری" : "Support",
+      label: pickLang(language, { ku: "پشتگیری", en: "Support", ar: "الدعم", zh: "客服" }),
       icon: Headphones,
       href: "/portal/faq",
       color: "text-amber-600 dark:text-amber-400",
@@ -387,11 +387,7 @@ export default function ModernPortalHome() {
 
             <div className="relative">
               <p className="text-emerald-100 text-sm mb-1">
-                {language === "ku"
-                  ? "باڵانسی ئێستا"
-                  : language === "ar"
-                    ? "الرصيد الحالي"
-                    : "Current Balance"}
+                {pickLang(language, { ku: "باڵانسی ئێستا", en: "Current Balance", ar: "الرصيد الحالي", zh: "当前余额" })}
               </p>
               {balanceLoading ? (
                 <Skeleton className="h-10 w-36 bg-white/20" />
@@ -423,11 +419,7 @@ export default function ModernPortalHome() {
               <Link href="/portal/financial">
                 <button className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-emerald-700 dark:text-emerald-300 font-semibold text-sm hover:bg-white/90 transition-colors shadow-sm">
                   <CreditCard className="w-4 h-4" />
-                  {language === "ku"
-                    ? "پارەدان"
-                    : language === "ar"
-                      ? "الدفع"
-                      : "Pay Now"}
+                  {pickLang(language, { ku: "پارەدان", en: "Pay Now", ar: "الدفع", zh: "去支付" })}
                 </button>
               </Link>
             </div>
@@ -533,11 +525,7 @@ export default function ModernPortalHome() {
               isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
             )}
           >
-            {language === "ku"
-              ? "کردارە خێراکان"
-              : language === "ar"
-                ? "الإجراءات السريعة"
-                : "Quick Actions"}
+            {pickLang(language, { ku: "کردارە خێراکان", en: "Quick Actions", ar: "الإجراءات السريعة", zh: "快捷操作" })}
           </h2>
           <div className="grid grid-cols-4 gap-2">
             {quickActions.map((action) => {
@@ -582,11 +570,7 @@ export default function ModernPortalHome() {
                 isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
               )}
             >
-              {language === "ku"
-                ? "چالاکی دوایی"
-                : language === "ar"
-                  ? "النشاط الأخير"
-                  : "Recent Activity"}
+              {pickLang(language, { ku: "چالاکی دوایی", en: "Recent Activity", ar: "النشاط الأخير", zh: "最近动态" })}
             </h2>
             <Link href="/portal/financial">
               <button
@@ -595,7 +579,7 @@ export default function ModernPortalHome() {
                   "text-emerald-600 dark:text-emerald-400"
                 )}
               >
-                {language === "ku" ? "هەموو" : "View All"}
+                {pickLang(language, { ku: "هەموو", en: "View All", ar: "عرض الكل", zh: "查看全部" })}
                 <ChevronRight className="w-4 h-4" />
               </button>
             </Link>
@@ -696,9 +680,7 @@ export default function ModernPortalHome() {
                     isDark ? "text-zinc-500" : "text-gray-400"
                   )}
                 >
-                  {language === "ku"
-                    ? "هیچ چالاکییەک نییە"
-                    : "No recent activity"}
+                  {pickLang(language, { ku: "هیچ چالاکییەک نییە", en: "No recent activity", ar: "لا يوجد نشاط حديث", zh: "暂无动态" })}
                 </p>
               </div>
             )}
