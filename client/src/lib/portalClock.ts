@@ -128,3 +128,26 @@ export function formatPortalDate(value: string | Date | null | undefined, langua
 export function msUntilNextMinute(date: Date): number {
   return 60_000 - (date.getSeconds() * 1000 + date.getMilliseconds());
 }
+
+/**
+ * A month by name, in the language being read.
+ *
+ * The invoice report kept its own two arrays — Kurdish and English — and the
+ * CSV and the printed table both took the English one unconditionally. An
+ * Arabic customer exported a spreadsheet of their own year and got
+ * "January, February, March" down the first column of an otherwise Arabic
+ * document.
+ *
+ * Arabic and Chinese come from Intl, which knows them; Kurdish does not exist
+ * as an Intl locale, so it stays a written list — the same list the date
+ * formatter above uses, rather than a second copy that could drift from it.
+ *
+ * `index` is 0–11, matching Date#getMonth.
+ */
+export function monthName(index: number, language: string): string {
+  const i = ((index % 12) + 12) % 12;
+  if (language === "ku") return KU_MONTHS[i];
+  const locale = language === "ar" ? "ar" : language === "zh" ? "zh-CN" : "en-GB";
+  // Any year works; only the month is read out.
+  return new Intl.DateTimeFormat(locale, { month: "long" }).format(new Date(2000, i, 1));
+}

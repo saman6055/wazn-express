@@ -413,7 +413,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               <div className="space-y-2">
                 <Label>{pickLang(language, { ku: "شار *", en: "City *", ar: "المدينة *", zh: "城市 *" })}</Label>
                 <Input
-                  placeholder="e.g., Erbil, Sulaymaniyah, Baghdad"
+                  placeholder={pickLang(language, { ku: "وەک هەولێر، سلێمانی، بەغدا", en: "e.g., Erbil, Sulaymaniyah, Baghdad", ar: "مثل أربيل، السليمانية، بغداد", zh: "例如：埃尔比勒、苏莱曼尼亚、巴格达" })}
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 />
@@ -423,7 +423,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               <div className="space-y-2">
                 <Label>{pickLang(language, { ku: "گەڕەک", en: "District", ar: "الحي", zh: "区/街道" })}</Label>
                 <Input
-                  placeholder="e.g., Ankawa, Ainkawa"
+                  placeholder={pickLang(language, { ku: "وەک عەنکاوە، ژیان", en: "e.g., Ankawa, Zhyan", ar: "مثل عنكاوة، جيان", zh: "例如：安卡瓦、日扬" })}
                   value={formData.district}
                   onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                 />

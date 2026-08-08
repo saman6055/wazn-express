@@ -588,7 +588,7 @@ const { t, language } = useLanguage();
                   <span
                     role="button"
                     tabIndex={0}
-                    aria-label="info"
+                    aria-label={pickLang(language, { ku: "زانیاری", en: "info", ar: "معلومات", zh: "信息" })}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenTileInfo(openTileInfo === index ? null : index); }}
                     className={cn("absolute top-0 end-0 flex h-11 w-11 items-center justify-center transition-colors", lightHeader ? "text-slate-500 hover:text-slate-900" : "opacity-70 hover:opacity-100")} style={paleStyle}
                   >
@@ -624,7 +624,7 @@ const { t, language } = useLanguage();
                   {quickActions[openTileInfo].info.example}
                 </span>
               </div>
-              <button onClick={() => setOpenTileInfo(null)} aria-label="close"
+              <button onClick={() => setOpenTileInfo(null)} aria-label={pickLang(language, { ku: "داخستن", en: "close", ar: "إغلاق", zh: "关闭" })}
                 className={cn("absolute top-2 end-2 p-1 rounded-full transition-colors", lightHeader ? "text-slate-500 hover:bg-slate-900/10" : "text-white/60 hover:bg-white/10")}>
                 <X className="w-4 h-4" />
               </button>
@@ -1106,7 +1106,11 @@ const { t, language } = useLanguage();
                         </span>
                       </div>
                       <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
-                        {batch.customerPackageCount} {t("packages") || "packages"}
+                        {/* `t("packages")` is not a key in any of the four
+                            locale files, so this always fell through to the
+                            English literal beside it. */}
+                        {batch.customerPackageCount}{" "}
+                        {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرد", zh: "件包裹" })}
                       </p>
                     </div>
                     

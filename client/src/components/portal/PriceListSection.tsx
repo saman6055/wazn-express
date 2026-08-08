@@ -948,7 +948,7 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
                       <span
                         role="button"
                         tabIndex={0}
-                        aria-label="info"
+                        aria-label={pickLang(language, { ku: "زانیاری", en: "info", ar: "معلومات", zh: "信息" })}
                         onClick={(e) => { e.stopPropagation(); setInfoOpen((o) => !o); }}
                         className={cn("shrink-0 ms-0.5 transition-colors", infoOpen ? "text-[#1C4D8D] dark:text-[#8FC0F0]" : "text-[#4988C4] dark:text-[#B4D6F5] hover:text-[#1C4D8D]")}
                       >
@@ -978,7 +978,7 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
                     {tabInfo[activeTabKey].example}
                   </span>
                 </div>
-                <button onClick={() => setInfoOpen(false)} aria-label="close"
+                <button onClick={() => setInfoOpen(false)} aria-label={pickLang(language, { ku: "داخستن", en: "close", ar: "إغلاق", zh: "关闭" })}
                   className={cn("absolute top-2 end-2 p-1 rounded-full transition-colors", isDark ? "text-slate-500 hover:bg-slate-700" : "text-slate-400 hover:bg-black/5")}>
                   <X className="w-4 h-4" />
                 </button>

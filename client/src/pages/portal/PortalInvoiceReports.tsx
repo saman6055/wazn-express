@@ -25,20 +25,12 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { formatPortalDate } from "@/lib/portalClock";
+import { formatPortalDate, monthName } from "@/lib/portalClock";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
-// Kurdish month names
-const kurdishMonths = [
-  "کانوونی دووەم", "شوبات", "ئازار", "نیسان", "ئایار", "حوزەیران",
-  "تەممووز", "ئاب", "ئەیلوول", "تشرینی یەکەم", "تشرینی دووەم", "کانوونی یەکەم"
-];
-
-// English month names for export
-const englishMonths = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
-];
+// The two month-name lists that used to live here — one Kurdish, one English,
+// with no Arabic or Chinese anywhere — are now monthName() in lib/portalClock,
+// beside the date formatter that shares the Kurdish list.
 
 function ClassicPortalInvoiceReports() {
   // Banner colour follows the mode the customer picked, like every other page.
@@ -133,8 +125,12 @@ function ClassicPortalInvoiceReports() {
       });
       
       months.push({
-        month: kurdishMonths[i],
-        monthEn: englishMonths[i],
+        // One name, in the reader's language. The CSV and the printed table
+        // both took the English list unconditionally, so an Arabic customer
+        // exported their own year and got "January, February, March" down the
+        // first column of an otherwise Arabic document.
+        month: monthName(i, language),
+        monthEn: monthName(i, language),
         monthNumber: i + 1,
         count: monthInvoices.length,
         total: monthInvoices.reduce((sum: number, inv: any) => sum + Number(inv.totalUsd || 0), 0),
@@ -176,7 +172,15 @@ function ClassicPortalInvoiceReports() {
       return;
     }
 
-    const headers = ['Month', 'Invoice Count', 'Total Amount (USD)', 'Paid Amount (USD)', 'Unpaid Amount (USD)'];
+    // The spreadsheet a customer opens should have headings they can
+    // read; the figures are numbers either way.
+    const headers = [
+      pickLang(language, { ku: 'مانگ', en: 'Month', ar: 'الشهر', zh: '月份' }),
+      pickLang(language, { ku: 'ژمارەی پسووڵە', en: 'Invoice Count', ar: 'عدد الفواتير', zh: '发票数量' }),
+      pickLang(language, { ku: 'کۆی بڕ (USD)', en: 'Total Amount (USD)', ar: 'المبلغ الإجمالي (USD)', zh: '总金额 (USD)' }),
+      pickLang(language, { ku: 'دراوە (USD)', en: 'Paid Amount (USD)', ar: 'المبلغ المدفوع (USD)', zh: '已付金额 (USD)' }),
+      pickLang(language, { ku: 'نەدراوە (USD)', en: 'Unpaid Amount (USD)', ar: 'المبلغ غير المدفوع (USD)', zh: '未付金额 (USD)' }),
+    ];
     const data = monthlyReport.map(m => [
       m.monthEn,
       m.count,
@@ -210,7 +214,7 @@ function ClassicPortalInvoiceReports() {
 
     const htmlContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="${language}" dir="${language === "ku" || language === "ar" ? "rtl" : "ltr"}">
       <head>
         <title>Invoice Report - ${selectedYear}</title>
         <style>
@@ -228,33 +232,33 @@ function ClassicPortalInvoiceReports() {
         </style>
       </head>
       <body>
-        <h1>My Invoice Report - ${selectedYear}</h1>
+        <h1>${pickLang(language, { ku: "ڕاپۆرتی پسووڵەکانم", en: "My Invoice Report", ar: "تقرير فواتيري", zh: "我的发票报告" })} - ${selectedYear}</h1>
         <div class="summary">
           <div class="summary-card">
-            <h3>Total Invoices</h3>
+            <h3>${pickLang(language, { ku: "کۆی پسووڵەکان", en: "Total Invoices", ar: "إجمالي الفواتير", zh: "发票总数" })}</h3>
             <p>${summary?.totalInvoices || 0}</p>
           </div>
           <div class="summary-card">
-            <h3>Total Amount</h3>
+            <h3>${pickLang(language, { ku: "کۆی بڕ", en: "Total Amount", ar: "المبلغ الإجمالي", zh: "总金额" })}</h3>
             <p>$${(summary?.totalAmountUsd || 0).toFixed(2)}</p>
           </div>
           <div class="summary-card">
-            <h3>Paid</h3>
+            <h3>${pickLang(language, { ku: "دراوە", en: "Paid", ar: "مدفوع", zh: "已付" })}</h3>
             <p style="color: green;">$${(summary?.paidAmountUsd || 0).toFixed(2)}</p>
           </div>
           <div class="summary-card">
-            <h3>Unpaid</h3>
+            <h3>${pickLang(language, { ku: "نەدراوە", en: "Unpaid", ar: "غير مدفوع", zh: "未付" })}</h3>
             <p style="color: orange;">$${(summary?.unpaidAmountUsd || 0).toFixed(2)}</p>
           </div>
         </div>
         <table>
           <thead>
             <tr>
-              <th>Month</th>
-              <th>Invoice Count</th>
-              <th>Total Amount</th>
-              <th>Paid</th>
-              <th>Unpaid</th>
+              <th>${pickLang(language, { ku: "مانگ", en: "Month", ar: "الشهر", zh: "月份" })}</th>
+              <th>${pickLang(language, { ku: "ژمارەی پسووڵە", en: "Invoice Count", ar: "عدد الفواتير", zh: "发票数量" })}</th>
+              <th>${pickLang(language, { ku: "کۆی بڕ", en: "Total Amount", ar: "المبلغ الإجمالي", zh: "总金额" })}</th>
+              <th>${pickLang(language, { ku: "دراوە", en: "Paid", ar: "مدفوع", zh: "已付" })}</th>
+              <th>${pickLang(language, { ku: "نەدراوە", en: "Unpaid", ar: "غير مدفوع", zh: "未付" })}</th>
             </tr>
           </thead>
           <tbody>
@@ -269,7 +273,7 @@ function ClassicPortalInvoiceReports() {
             `).join('')}
           </tbody>
         </table>
-        <p class="footer">Generated on ${formatPortalDate(new Date(), language)}</p>
+        <p class="footer">${pickLang(language, { ku: "دروستکرا لە", en: "Generated on", ar: "أُنشئ في", zh: "生成于" })} ${formatPortalDate(new Date(), language)}</p>
         <script>window.onload = function() { window.print(); }</script>
       </body>
       </html>

@@ -111,7 +111,7 @@ export default function PortalContact() {
               {c.copyable && (
                 <button
                   onClick={() => copy(c)}
-                  aria-label="copy"
+                  aria-label={pickLang(language, { ku: "کۆپی کردن", en: "copy", ar: "نسخ", zh: "复制" })}
                   className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition hover:bg-black/5 active:scale-90 dark:hover:bg-white/10"
                 >
                   {copied === c.id

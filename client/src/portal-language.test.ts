@@ -61,9 +61,15 @@ describe("no customer reads a language the portal only half speaks", () => {
    */
   const LOCALE_TAGS = new RegExp(`\\?\\s*${Q}[a-z]{2}(?:-[A-Za-z]{2,4})?${Q}\\s*:\\s*${Q}[a-z]{2}(?:-[A-Za-z]{2,4})?${Q}`);
 
+  /**
+   * Nor is `dir="rtl" : "ltr"`. Text direction genuinely has two values, and
+   * Kurdish and Arabic share one of them.
+   */
+  const DIRECTION = new RegExp(`${Q}(?:rtl|ltr)${Q}\\s*:\\s*${Q}(?:rtl|ltr)${Q}`);
+
   const incomplete = (src: string): string[] =>
     (src.match(CHAIN) ?? []).filter((chain) => {
-      if (LOCALE_TAGS.test(chain)) return false;
+      if (LOCALE_TAGS.test(chain) || DIRECTION.test(chain)) return false;
       const langs = new Set((chain.match(LANG_OF) ?? []).map((m) => m.slice(-3, -1)));
       return langs.size < 3;
     });

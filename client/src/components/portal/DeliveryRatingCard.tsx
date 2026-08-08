@@ -72,7 +72,7 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
             "absolute top-3 end-3 p-1 rounded-full transition-colors",
             isDark ? "hover:bg-slate-700 text-slate-500" : "hover:bg-slate-100 text-slate-400",
           )}
-          aria-label="dismiss"
+          aria-label={pickLang(language, { ku: "لابردن", en: "dismiss", ar: "تجاهل", zh: "关闭" })}
         >
           <X className="w-4 h-4" />
         </button>

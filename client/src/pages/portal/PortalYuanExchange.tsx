@@ -329,7 +329,7 @@ export default function PortalYuanExchange() {
                     type="button"
                     onClick={() => ordersQuery.refetch()}
                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
-                    aria-label="refresh"
+                    aria-label={pickLang(language, { ku: "نوێکردنەوە", en: "refresh", ar: "تحديث", zh: "刷新" })}
                   >
                     <RefreshCw className={`w-4 h-4 ${ordersQuery.isFetching ? "animate-spin" : ""}`} />
                   </button>
