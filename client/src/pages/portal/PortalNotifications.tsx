@@ -111,11 +111,14 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
     return formatPortalDate(d, language);
   };
   
-  // The schema carries titleKu/titleAr and messageKu/messageAr, written by
-  // whoever raised the notification — and nothing rendered them, so a Kurdish
-  // customer read the default-language text even when a translation existed.
+  // The schema carries titleKu/titleAr/titleZh and the matching messages,
+  // written by whoever raised the notification — and nothing rendered them, so
+  // a Kurdish customer read the default-language text even when a translation
+  // existed. Chinese was missing from the table entirely: a customer who chose
+  // 中文 got every movement alert, the ones that wake a phone at night, in
+  // English. `title`/`message` stay the fallback for older rows.
   const localised = (n: any, field: "title" | "message"): string => {
-    const suffix = language === "ku" ? "Ku" : language === "ar" ? "Ar" : null;
+    const suffix = language === "ku" ? "Ku" : language === "ar" ? "Ar" : language === "zh" ? "Zh" : null;
     return (suffix && n[field + suffix]) || n[field] || "";
   };
 

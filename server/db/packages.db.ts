@@ -649,24 +649,29 @@ export async function updatePackage(id: number, data: Partial<InsertPackage>) {
       }
 
       if (data.status && data.status !== pkg.status) {
-        const L: Record<string, { en: string; ku: string; ar: string; ok?: boolean }> = {
-          received_china:     { en: "Arrived at China warehouse",  ku: "گەیشتە کۆگای چین",     ar: "وصل إلى مستودع الصين" },
-          in_transit:         { en: "In transit",                  ku: "لە ڕێگادایە",          ar: "قيد الشحن" },
-          customs_processing: { en: "In customs",                  ku: "لە گومرگە",            ar: "في الجمارك" },
-          received_local:     { en: "Arrived at local warehouse",  ku: "گەیشتە کۆگای ناوخۆ",    ar: "وصل إلى المستودع المحلي" },
-          ready_for_delivery: { en: "Ready for delivery",          ku: "ئامادەیە بۆ گەیاندن",   ar: "جاهز للتسليم" },
-          out_for_delivery:   { en: "Out for delivery",            ku: "لە ڕێی گەیاندنە",       ar: "خرج للتسليم" },
-          delivered:          { en: "Delivered",                   ku: "گەیێنرا",              ar: "تم التسليم", ok: true },
-          returned:           { en: "Returned",                    ku: "گەڕێندرایەوە",         ar: "تم الإرجاع" },
+        // Chinese was absent here, so a customer who chose 中文 got these in
+        // English — and `cancelled` was absent altogether, which is the one
+        // movement a customer most needs to be told about.
+        const L: Record<string, { en: string; ku: string; ar: string; zh: string; ok?: boolean }> = {
+          received_china:     { en: "Arrived at China warehouse",  ku: "گەیشتە کۆگای چین",     ar: "وصل إلى مستودع الصين",     zh: "已到达中国仓库" },
+          in_transit:         { en: "In transit",                  ku: "لە ڕێگادایە",          ar: "قيد الشحن",                zh: "运输中" },
+          customs_processing: { en: "In customs",                  ku: "لە گومرگە",            ar: "في الجمارك",               zh: "清关中" },
+          received_local:     { en: "Arrived at local warehouse",  ku: "گەیشتە کۆگای ناوخۆ",    ar: "وصل إلى المستودع المحلي", zh: "已到达本地仓库" },
+          ready_for_delivery: { en: "Ready for delivery",          ku: "ئامادەیە بۆ گەیاندن",   ar: "جاهز للتسليم",            zh: "待派送" },
+          out_for_delivery:   { en: "Out for delivery",            ku: "لە ڕێی گەیاندنە",       ar: "خرج للتسليم",             zh: "派送中" },
+          delivered:          { en: "Delivered",                   ku: "گەیێنرا",              ar: "تم التسليم",               zh: "已送达", ok: true },
+          returned:           { en: "Returned",                    ku: "گەڕێندرایەوە",         ar: "تم الإرجاع",               zh: "已退回" },
+          cancelled:          { en: "Cancelled",                   ku: "هەڵوەشێنرایەوە",       ar: "تم الإلغاء",               zh: "已取消" },
         };
         const m = L[data.status as string];
         if (m) {
           await createCustomerNotification({
             customerId: pkg.customerId, type: m.ok ? "success" : "package", relatedType: "package", relatedId: pkg.id, actionUrl: trackUrl,
-            title: m.en, titleKu: m.ku, titleAr: m.ar,
+            title: m.en, titleKu: m.ku, titleAr: m.ar, titleZh: m.zh,
             message: `Package ${code}: ${m.en}.`,
             messageKu: `پاکەتی ${code}: ${m.ku}.`,
             messageAr: `الطرد ${code}: ${m.ar}.`,
+            messageZh: `包裹 ${code}：${m.zh}。`,
           });
         }
       }

@@ -2295,6 +2295,12 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "customerNotifications.actionLabel", sql: "ALTER TABLE customerNotifications ADD COLUMN actionLabel VARCHAR(100)" },
   { name: "customerNotifications.typeExtended", sql: "ALTER TABLE customerNotifications MODIFY COLUMN type ENUM('info','success','warning','error','package','payment','promotion') NOT NULL DEFAULT 'info'" },
 
+  // The portal speaks four languages; its notifications spoke three. A
+  // Chinese-speaking customer picked 中文 in the app and then got every
+  // movement alert — the ones that wake their phone at night — in English.
+  { name: "customerNotifications.titleZh", sql: "ALTER TABLE customerNotifications ADD COLUMN titleZh VARCHAR(255)" },
+  { name: "customerNotifications.messageZh", sql: "ALTER TABLE customerNotifications ADD COLUMN messageZh TEXT" },
+
   { name: "pricingRules.showOnPortal",       sql: "ALTER TABLE pricingRules ADD COLUMN showOnPortal BOOLEAN NOT NULL DEFAULT FALSE" },
   { name: "pricingRules.portalLabelKu",      sql: "ALTER TABLE pricingRules ADD COLUMN portalLabelKu VARCHAR(150)" },
   { name: "pricingRules.portalLabelEn",      sql: "ALTER TABLE pricingRules ADD COLUMN portalLabelEn VARCHAR(150)" },

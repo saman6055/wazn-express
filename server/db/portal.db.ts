@@ -1068,10 +1068,20 @@ export async function createCustomerNotification(
     if (opts?.push !== false) {
       try {
         const { sendPushToCustomer } = await import("../services/push.service");
+        // The row already holds this text in four languages. Hand all of them
+        // over so each device is woken in the language its owner reads,
+        // rather than everyone getting the English.
+        const tr = (t: string | null | undefined, m: string | null | undefined) =>
+          t || m ? { title: t || notification.title || "Wazn Express", body: m || notification.message || "" } : undefined;
         void sendPushToCustomer(data.customerId, {
           title: notification.title || "Wazn Express",
           body: notification.message || "",
           url: notification.actionUrl || "/portal",
+          i18n: {
+            ku: tr(notification.titleKu, notification.messageKu),
+            ar: tr(notification.titleAr, notification.messageAr),
+            zh: tr(notification.titleZh, notification.messageZh),
+          },
         }).catch(() => { /* best-effort */ });
       } catch {
         // Push must never block notification storage either.

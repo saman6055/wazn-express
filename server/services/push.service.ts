@@ -42,6 +42,19 @@ export type PushPayload = {
   url?: string;
   tag?: string;
   data?: Record<string, unknown>;
+  /**
+   * The same text in the other three languages, when the caller has it.
+   *
+   * Every notification in this system is written four times and stored four
+   * times, and then the push — the one that lights up a locked phone at two
+   * in the morning — went out in English to everybody. A subscription records
+   * the language of the browser it was created from, so each device can be
+   * told in the language its owner reads.
+   *
+   * Optional throughout: a caller with only one string still works, and a
+   * device that never reported a language still gets the default.
+   */
+  i18n?: Partial<Record<"ku" | "ar" | "zh" | "en", { title: string; body: string }>>;
 };
 
 export async function sendPushToCustomer(
@@ -53,13 +66,25 @@ export async function sendPushToCustomer(
   const subs = await db.getActivePushSubscriptionsForCustomer(customerId);
   if (subs.length === 0) return { sent: 0, failed: 0, removed: 0 };
 
-  const body = JSON.stringify({
-    title: payload.title,
-    body: payload.body,
-    url: payload.url || "/portal",
-    tag: payload.tag,
-    data: payload.data || {},
-  });
+  /**
+   * One body per language rather than one for everybody.
+   *
+   * `sub.language` is whatever the browser reported when the customer turned
+   * notifications on — "ku", "en-GB", "zh-CN". Only the first tag matters,
+   * and anything we do not have a translation for falls back to the payload
+   * as given.
+   */
+  const bodyFor = (language: string | null | undefined): string => {
+    const tag = (language || "").slice(0, 2).toLowerCase();
+    const t = payload.i18n?.[tag as "ku" | "ar" | "zh" | "en"];
+    return JSON.stringify({
+      title: t?.title || payload.title,
+      body: t?.body || payload.body,
+      url: payload.url || "/portal",
+      tag: payload.tag,
+      data: payload.data || {},
+    });
+  };
 
   let sent = 0;
   let failed = 0;
@@ -72,7 +97,7 @@ export async function sendPushToCustomer(
           endpoint: sub.endpoint,
           keys: { p256dh: sub.p256dh, auth: sub.auth },
         },
-        body,
+        bodyFor(sub.language),
         { TTL: 24 * 60 * 60 }
       );
       await db.markPushSubscriptionUsed(sub.id);

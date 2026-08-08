@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const STORAGE_KEY_DISMISSED = "wazn_push_dismissed_at";
 const DISMISS_COOLDOWN_DAYS = 7;
@@ -58,6 +59,7 @@ export function usePushSubscription(opts: { enabled: boolean }) {
     staleTime: 60 * 60 * 1000,
   });
 
+  const { language } = useLanguage();
   const subscribeMutation = trpc.customerPortal.subscribePush.useMutation();
   const unsubscribeMutation = trpc.customerPortal.unsubscribePush.useMutation();
   const testPushMutation = trpc.customerPortal.sendTestPush.useMutation();
@@ -110,7 +112,10 @@ export function usePushSubscription(opts: { enabled: boolean }) {
         auth: json.keys.auth,
         userAgent: navigator.userAgent.slice(0, 500),
         platform: getPlatform(),
-        language: navigator.language?.slice(0, 10),
+        // The language the customer picked in the portal, not the one
+        // their phone happens to be set to. A Kurdish customer on an
+        // English handset was being woken up in English.
+        language: language || navigator.language?.slice(0, 10),
       });
 
       setIsSubscribed(true);
@@ -121,7 +126,7 @@ export function usePushSubscription(opts: { enabled: boolean }) {
     } finally {
       setIsWorking(false);
     }
-  }, [publicKeyQuery.data, subscribeMutation]);
+  }, [publicKeyQuery.data, subscribeMutation, language]);
 
   const unsubscribe = useCallback(async (): Promise<boolean> => {
     if (!isPushSupported()) return false;

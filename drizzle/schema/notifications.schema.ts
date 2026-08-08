@@ -128,11 +128,13 @@ export const customerNotifications = mysqlTable("customerNotifications", {
   title: varchar("title", { length: 255 }).notNull(),
   titleKu: varchar("titleKu", { length: 255 }), // Kurdish
   titleAr: varchar("titleAr", { length: 255 }), // Arabic
-  
+  titleZh: varchar("titleZh", { length: 255 }), // Chinese
+
   message: text("message").notNull(),
   messageKu: text("messageKu"), // Kurdish
   messageAr: text("messageAr"), // Arabic
-  
+  messageZh: text("messageZh"), // Chinese
+
   // Type
   type: mysqlEnum("type", ["info", "success", "warning", "error", "package", "payment", "promotion"]).default("info").notNull(),
   
