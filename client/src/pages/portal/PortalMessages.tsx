@@ -53,7 +53,7 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { notificationText } from "@/lib/portalNotificationText";
-import { formatPortalDate } from "@/lib/portalClock";
+import { formatPortalDate, formatClockTime } from "@/lib/portalClock";
 
 export default function PortalMessages() {
   // Banner colour follows the mode the customer picked, like every other page.
@@ -287,11 +287,18 @@ export default function PortalMessages() {
     setIsUploading(false);
   };
   
+  /**
+   * The timestamp on a chat bubble.
+   *
+   * Was `toLocaleTimeString(isKurdish ? 'ku' : 'en-US')` — 'ku' is not a
+   * locale any browser has data for, so Kurdish silently fell back to
+   * whatever the device was set to, and Arabic and Chinese were handed en-US
+   * outright. formatClockTime is what the rest of the portal reads its clock
+   * from; a message sent at 14:05 now says so on every screen.
+   */
   const formatTime = (date: Date | string) => {
-    return new Date(date).toLocaleTimeString(isKurdish ? 'ku' : 'en-US', { 
-      hour: "2-digit", 
-      minute: "2-digit" 
-    });
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? "" : formatClockTime(d, language);
   };
   
   const formatDate = (date: Date | string) => {

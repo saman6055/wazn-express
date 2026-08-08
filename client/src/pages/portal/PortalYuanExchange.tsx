@@ -115,10 +115,10 @@ export default function PortalYuanExchange() {
   const canSubmit = usdNum > 0 && rate > 0 && !limitError && !createOrder.isPending;
 
   const waMessage = pick({
-    ku: `سڵاو، دەمەوێت یوانی چینی بکڕم:\n💵 ${usdNum.toLocaleString()} دۆلار → ¥${cnyNum.toLocaleString()} یوان\n(نرخ: ١$ = ${rate}¥)`,
-    en: `Hello, I want to buy Chinese Yuan:\n💵 $${usdNum.toLocaleString()} → ¥${cnyNum.toLocaleString()}\n(Rate: 1$ = ${rate}¥)`,
-    ar: `مرحباً، أريد شراء اليوان الصيني:\n💵 ${usdNum.toLocaleString()}$ → ¥${cnyNum.toLocaleString()}\n(السعر: 1$ = ${rate}¥)`,
-    zh: `您好，我想购买人民币：\n💵 ${usdNum.toLocaleString()} 美元 → ¥${cnyNum.toLocaleString()}\n（汇率：1$ = ${rate}¥）`,
+    ku: `سڵاو، دەمەوێت یوانی چینی بکڕم:\n💵 ${usdNum.toLocaleString("en-US")} دۆلار → ¥${cnyNum.toLocaleString("en-US")} یوان\n(نرخ: ١$ = ${rate}¥)`,
+    en: `Hello, I want to buy Chinese Yuan:\n💵 $${usdNum.toLocaleString("en-US")} → ¥${cnyNum.toLocaleString("en-US")}\n(Rate: 1$ = ${rate}¥)`,
+    ar: `مرحباً، أريد شراء اليوان الصيني:\n💵 ${usdNum.toLocaleString("en-US")}$ → ¥${cnyNum.toLocaleString("en-US")}\n(السعر: 1$ = ${rate}¥)`,
+    zh: `您好，我想购买人民币：\n💵 ${usdNum.toLocaleString("en-US")} 美元 → ¥${cnyNum.toLocaleString("en-US")}\n（汇率：1$ = ${rate}¥）`,
   });
   const waHref = `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(waMessage)}`;
 
@@ -207,7 +207,7 @@ export default function PortalYuanExchange() {
                         onClick={() => syncFromUsd(String(q))}
                         className="rounded-full border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-3.5 py-1.5 text-sm font-bold text-red-600 dark:text-red-400 transition hover:bg-red-100 dark:hover:bg-red-900/40 active:scale-95"
                       >
-                        {q.toLocaleString()}$
+                        {q.toLocaleString("en-US")}$
                       </button>
                     ))}
                   </div>
@@ -314,7 +314,7 @@ export default function PortalYuanExchange() {
                 </div>
                 {usdNum > 0 && cnyNum > 0 && (
                   <p className="text-center text-sm font-bold text-gray-600 dark:text-gray-300 tabular-nums" dir="ltr">
-                    ${usdNum.toLocaleString()} → ¥{cnyNum.toLocaleString()}
+                    ${usdNum.toLocaleString("en-US")} → ¥{cnyNum.toLocaleString("en-US")}
                   </p>
                 )}
               </section>
@@ -356,7 +356,7 @@ export default function PortalYuanExchange() {
                           <div className={`w-2 h-2 rounded-full shrink-0 ${style.dot}`} />
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-gray-800 dark:text-gray-100 tabular-nums" dir="ltr">
-                              ${Number(o.usdAmount).toLocaleString()} → ¥{Number(o.cnyAmount).toLocaleString()}
+                              ${Number(o.usdAmount).toLocaleString("en-US")} → ¥{Number(o.cnyAmount).toLocaleString("en-US")}
                             </p>
                             <p className="text-xs text-gray-400 tabular-nums" dir="ltr">
                               1$ = {Number(o.rate)}¥ · {formatPortalDate(o.createdAt, language)}

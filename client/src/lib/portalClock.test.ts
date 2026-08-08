@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { formatClockTime, formatClockDate, msUntilNextMinute } from "./portalClock";
+import fs from "fs";
+import path from "path";
+import { formatClockTime, formatClockDate, msUntilNextMinute, monthName } from "./portalClock";
 
 // Friday 31 July 2026, 09:41:30 local time.
 const friday = new Date(2026, 6, 31, 9, 41, 30, 250);
@@ -116,5 +118,76 @@ describe("msUntilNextMinute", () => {
   it("never returns zero, which would spin the timer", () => {
     expect(msUntilNextMinute(new Date(2026, 6, 31, 9, 41, 0, 0))).toBe(60_000);
     expect(msUntilNextMinute(new Date(2026, 6, 31, 9, 41, 59, 999))).toBe(1);
+  });
+});
+
+describe("digits and clocks do not follow the device", () => {
+  const DIRS = [
+    path.resolve(__dirname, "../pages/portal"),
+    path.resolve(__dirname, "../components/portal"),
+  ];
+  const walk = (d: string, o: string[] = []): string[] => {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) walk(p, o);
+      else if (/\.tsx?$/.test(e.name)) o.push(p);
+    }
+    return o;
+  };
+  const FILES = DIRS.flatMap((d) => walk(d));
+
+  /**
+   * `toLocaleString()` with no argument follows the device, not the language
+   * the customer picked. On an Arabic handset that meant a parcel count in
+   * Eastern digits (٤٢) directly beside money the money helpers had already
+   * printed in Western ones — two number systems in one card.
+   */
+  it("every toLocaleString names its locale", () => {
+    const offenders: string[] = [];
+    for (const f of FILES) {
+      const src = fs.readFileSync(f, "utf8");
+      for (const m of src.matchAll(/\.toLocale(?:Date|Time)?String\(\s*\)/g)) {
+        offenders.push(`${path.basename(f)}: ${m[0]}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  /**
+   * "ku" is a valid language subtag with no locale data behind it, so
+   * `toLocaleTimeString("ku")` silently falls back to the device — the same
+   * bug wearing a Kurdish label. Times go through formatClockTime, which
+   * builds them from the parts rather than asking Intl for a language it does
+   * not have.
+   */
+  it("no screen asks Intl for a Kurdish locale", () => {
+    const offenders: string[] = [];
+    for (const f of [...FILES, path.resolve(__dirname, "portalClock.ts")]) {
+      // Comment lines are stripped first: several of these files carry a note
+      // quoting the bug they used to have, and a quotation is not a call.
+      const src = fs.readFileSync(f, "utf8")
+        .split("\n")
+        .filter((l) => !/^\s*(\*|\/\/)/.test(l))
+        .join("\n");
+      for (const m of src.matchAll(/toLocale\w*String\(\s*[^)]*["'`]ku(?:-\w+)?["'`]/g)) {
+        offenders.push(`${path.basename(f)}: ${m[0].slice(0, 60)}`);
+      }
+      for (const m of src.matchAll(/Intl\.\w+\(\s*["'`]ku(?:-\w+)?["'`]/g)) {
+        offenders.push(`${path.basename(f)}: ${m[0].slice(0, 60)}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("names a month in all four languages", () => {
+    // The invoice report kept an English array and a Kurdish array, and the
+    // CSV took the English one whatever the customer was reading.
+    expect(monthName(0, "ku")).toBe("کانوونی دووەم");
+    expect(monthName(0, "en")).toMatch(/January/i);
+    expect(monthName(0, "ar")).toMatch(/[\u0600-\u06FF]/);
+    expect(monthName(0, "zh")).toMatch(/[\u4e00-\u9fff]/);
+    // Out-of-range indices wrap rather than returning undefined.
+    expect(monthName(12, "ku")).toBe(monthName(0, "ku"));
+    expect(monthName(-1, "ku")).toBe(monthName(11, "ku"));
   });
 });

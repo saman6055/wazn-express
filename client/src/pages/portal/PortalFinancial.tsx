@@ -874,7 +874,7 @@ const { t, language } = useLanguage();
         <span>${pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "合计" })}</span>
         <span>$${Number(invoice.totalUsd).toFixed(2)}</span>
       </div>
-      ${invoice.totalIqd ? '<div class="total-row" style="font-size: 12px; color: #64748b;"><span>' + pickLang(language, { ku: "بە دینار", en: "IQD Equivalent", ar: "ما يعادله بالدينار", zh: "折合第纳尔" }) + '</span><span>' + Number(invoice.totalIqd).toLocaleString() + ' IQD</span></div>' : ''}
+      ${invoice.totalIqd ? '<div class="total-row" style="font-size: 12px; color: #64748b;"><span>' + pickLang(language, { ku: "بە دینار", en: "IQD Equivalent", ar: "ما يعادله بالدينار", zh: "折合第纳尔" }) + '</span><span>' + Number(invoice.totalIqd).toLocaleString("en-US") + ' IQD</span></div>' : ''}
     </div>
     
     <div class="qr-section">

@@ -91,7 +91,11 @@ function AnimatedCounter({
   return (
     <>
       {prefix}
-      {count.toLocaleString()}
+      {/* Pinned, not left to the browser: a bare toLocaleString()
+          follows the device locale, so an Arabic handset rendered this
+          counter in Eastern digits beside money the money helpers had
+          already printed in Western ones. */}
+      {count.toLocaleString("en-US")}
       {suffix}
     </>
   );
