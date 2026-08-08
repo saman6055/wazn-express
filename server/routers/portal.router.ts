@@ -175,14 +175,16 @@ export const customerPortalRouter = router({
       }),
 
     getMyPackages: protectedProcedure.query(async ({ ctx }) => {
-      // For merged model, use user.id directly as customerId
-      if (ctx.user.isCustomer) {
-        return db.getPackagesByCustomer(ctx.user.id);
-      }
-      // Legacy
-      const customer = await db.getCustomerByUserId(ctx.user.id);
-      if (!customer) return [];
-      return db.getPackagesByCustomer(customer.id);
+      // Column-listed and capped: the old call returned every column of every
+      // row, including the delivery signature and photo — canvas data URIs
+      // written from uncapped strings — and the staff-only notes and QR
+      // signature. On a long-standing account it was large enough to time out
+      // on a mobile connection, and it grew every month.
+      const customerId = ctx.user.isCustomer
+        ? ctx.user.id
+        : (await db.getCustomerByUserId(ctx.user.id))?.id;
+      if (!customerId) return [];
+      return db.getCustomerVisiblePackages(customerId);
     }),
     getMyInvoices: protectedProcedure.query(async ({ ctx }) => {
       const customerId = ctx.user.isCustomer ? ctx.user.id : (await db.getCustomerByUserId(ctx.user.id))?.id;

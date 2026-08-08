@@ -44,7 +44,9 @@ export async function getDeclaredPackagesByCustomer(
         ne(customerDeclaredPackages.status, "cancelled"),
       ),
     )
-    .orderBy(desc(customerDeclaredPackages.createdAt));
+    .orderBy(desc(customerDeclaredPackages.createdAt))
+    // Capped: these carry base64 images and grow with the account.
+    .limit(200);
 }
 
 /** Guarded update — only the owning customer may edit their own declaration. */

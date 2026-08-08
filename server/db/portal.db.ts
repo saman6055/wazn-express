@@ -302,6 +302,56 @@ export async function getCustomerUnbatchedPackages(customerId: number) {
 }
 
 /**
+ * The customer's parcels, as the portal is allowed to see them.
+ *
+ * `getPackagesByCustomer` returns `select()` — every column, every row. Two of
+ * those columns are the real problem: `recipientSignature` and `deliveryPhoto`
+ * are written from uncapped strings at delivery time and are almost certainly
+ * canvas data URIs, and `qrCodeData`/`qrCodeSignature`/`notes` are ours rather
+ * than the customer's. On a five-year account with two thousand parcels the
+ * response was large enough to time out on a mobile connection, and it grew
+ * every month.
+ *
+ * An allow-list, and a ceiling. Two hundred is far past what any portal screen
+ * renders — the home tiles count, the billing card joins — and it is a bound
+ * rather than a promise, so the number stops growing with the account.
+ */
+export async function getCustomerVisiblePackages(customerId: number, limit = 200) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: packages.id,
+      packageCode: packages.packageCode,
+      trackingNumber: packages.trackingNumber,
+      description: packages.description,
+      photos: packages.photos,
+      status: packages.status,
+      shippingType: packages.shippingType,
+      weightKg: packages.weightKg,
+      volumeCbm: packages.volumeCbm,
+      lengthCm: packages.lengthCm,
+      widthCm: packages.widthCm,
+      heightCm: packages.heightCm,
+      calculatedCostUsd: packages.calculatedCostUsd,
+      isCharged: packages.isCharged,
+      batchId: packages.batchId,
+      fullPackageOrderId: packages.fullPackageOrderId,
+      isUnclaimed: packages.isUnclaimed,
+      customerId: packages.customerId,
+      createdAt: packages.createdAt,
+      updatedAt: packages.updatedAt,
+      registeredAt: packages.registeredAt,
+      deliveredAt: packages.deliveredAt,
+    })
+    .from(packages)
+    .where(eq(packages.customerId, customerId))
+    .orderBy(desc(packages.createdAt))
+    .limit(limit);
+}
+
+/**
  * The customer's own purchases: parcels we ship but never bought for them.
  *
  * Filtered by `selfOrderConditions` — the same rule the self-order revenue
@@ -339,7 +389,8 @@ export async function getSelfOrderPackagesByCustomer(customerId: number) {
     .from(packages)
     .leftJoin(batches, eq(packages.batchId, batches.id))
     .where(selfOrderWhere(eq(packages.customerId, customerId)))
-    .orderBy(desc(packages.createdAt));
+    .orderBy(desc(packages.createdAt))
+    .limit(200);
 }
 
 // Get customer financial summary
@@ -697,7 +748,7 @@ export async function getUnclaimedPackagesWithSearch(options?: {
   search?: string;
   limit?: number;
   offset?: number;
-}): Promise<{ packages: Package[]; total: number }> {
+}) {
   const db = await getDb();
   if (!db) return { packages: [], total: 0 };
   
@@ -718,13 +769,30 @@ export async function getUnclaimedPackagesWithSearch(options?: {
     .from(packages)
     .where(whereClause);
   
-  const result = await db.select()
+  // The unclaimed pool is browsable by any customer — that is the point of
+  // claiming — but the whole row is not. select() was handing out the staff
+  // notes, the delivery signature and photo, and the signed qrCodeData and
+  // qrCodeSignature to anyone who opened the page.
+  const result = await db.select({
+    id: packages.id,
+    packageCode: packages.packageCode,
+    trackingNumber: packages.trackingNumber,
+    description: packages.description,
+    photos: packages.photos,
+    status: packages.status,
+    shippingType: packages.shippingType,
+    weightKg: packages.weightKg,
+    volumeCbm: packages.volumeCbm,
+    isUnclaimed: packages.isUnclaimed,
+    createdAt: packages.createdAt,
+    registeredAt: packages.registeredAt,
+  })
     .from(packages)
     .where(whereClause)
     .orderBy(desc(packages.createdAt))
     .limit(options?.limit || 50)
     .offset(options?.offset || 0);
-  
+
   return { packages: result, total: totalResult?.count || 0 };
 }
 

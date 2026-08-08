@@ -90,6 +90,32 @@ describe("what an order tells the customer", () => {
   });
 });
 
+describe("what the portal sends about a parcel", () => {
+  const portalDb = fs.readFileSync(path.join(ROOT, "db/portal.db.ts"), "utf8");
+
+  it("never carries the delivery signature, photo or QR signature", () => {
+    // getPackagesByCustomer returned select() — every column, including
+    // recipientSignature and deliveryPhoto, which are written from uncapped
+    // strings at delivery and are almost certainly canvas data URIs, plus the
+    // staff notes and the signed QR payload.
+    const fn = portalDb.slice(portalDb.indexOf("getCustomerVisiblePackages"));
+    const body = fn.slice(0, fn.indexOf("\n}"));
+    for (const col of ["recipientSignature", "deliveryPhoto", "qrCodeData", "qrCodeSignature", "notes"]) {
+      expect(body, col + " must not reach the portal").not.toContain(col);
+    }
+    // And it is bounded, so the response stops growing with the account.
+    expect(body).toMatch(/\.limit\(/);
+  });
+
+  it("the unclaimed pool is browsable without the internal columns", () => {
+    const fn = portalDb.slice(portalDb.indexOf("getUnclaimedPackagesWithSearch"));
+    const body = fn.slice(0, fn.indexOf("\n}"));
+    for (const col of ["recipientSignature", "deliveryPhoto", "qrCodeSignature"]) {
+      expect(body, col + " must not reach the portal").not.toContain(col);
+    }
+  });
+});
+
 describe("only staff may touch staff permissions", () => {
   // These sat on bare protectedProcedure, which a portal customer satisfies.
   const src = read("routers/admin.router.ts");
