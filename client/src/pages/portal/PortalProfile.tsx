@@ -49,25 +49,29 @@ const { t, language, setLanguage } = useLanguage();
   const { data: account, isLoading } = trpc.customerPortal.getMyAccount.useQuery();
   const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
   const { data: summary } = trpc.customerPortal.getMyFinancialSummary.useQuery();
+  // The Message Center badge was the literal 2, so every customer carried a red
+  // "2" on their profile for ever and learned to ignore the badge entirely —
+  // while the real count was already an endpoint the layout uses.
+  const { data: unreadMessages } = trpc.customerPortal.getUnreadMessageCount.useQuery();
 
   const menuItems = [
     {
       icon: MessageSquare,
-      label: language === "ku" ? "ناوەندی پەیام" : "Message Center",
+      label: pickLang(language, { ku: "ناوەندی پەیام", en: "Message Center", ar: "مركز الرسائل", zh: "消息中心" }),
       path: "/portal/messages",
-      badge: 2,
+      badge: unreadMessages || 0,
       iconBg: "bg-gradient-to-br from-amber-400 to-orange-500",
     },
     {
       icon: Bell,
-      label: language === "ku" ? "ئاگادارکردنەوەکان" : "Notifications",
+      label: pickLang(language, { ku: "ئاگادارکردنەوەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" }),
       path: "/portal/notifications",
       badge: notificationCount || 0,
       iconBg: "bg-gradient-to-br from-blue-400 to-indigo-500",
     },
     {
       icon: MapPin,
-      label: language === "ku" ? "ناونیشانەکان" : "Addresses",
+      label: pickLang(language, { ku: "ناونیشانەکان", en: "Addresses", ar: "العناوين", zh: "地址" }),
       path: "/portal/addresses",
       iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500",
     },
@@ -95,8 +99,8 @@ const { t, language, setLanguage } = useLanguage();
     },
     {
       icon: Headphones,
-      label: language === "ku" ? "پشتگیری" : "Support",
-      description: language === "ku" ? "پەیوەندیمان پێوە بکە" : "Contact us anytime",
+      label: pickLang(language, { ku: "پشتگیری", en: "Support", ar: "الدعم", zh: "客服" }),
+      description: pickLang(language, { ku: "پەیوەندیمان پێوە بکە", en: "Contact us anytime", ar: "تواصل معنا في أي وقت", zh: "随时联系我们" }),
       iconBg: "bg-gradient-to-br from-indigo-400 to-purple-500",
       // The company WhatsApp — was a placeholder number, so "Support" opened
       // a chat with nobody. Use the shared constant so it can never drift.
@@ -104,15 +108,15 @@ const { t, language, setLanguage } = useLanguage();
     },
     {
       icon: HelpCircle,
-      label: language === "ku" ? "پرسیارە باوەکان" : "FAQ",
-      description: language === "ku" ? "وەڵامی پرسیارەکانت" : "Find answers",
+      label: pickLang(language, { ku: "پرسیارە باوەکان", en: "FAQ", ar: "الأسئلة الشائعة", zh: "常见问题" }),
+      description: pickLang(language, { ku: "وەڵامی پرسیارەکانت", en: "Find answers", ar: "اعثر على إجابات", zh: "查找答案" }),
       path: "/portal/faq",
       iconBg: "bg-gradient-to-br from-cyan-400 to-blue-500",
     },
     {
       icon: FileText,
-      label: language === "ku" ? "مەرج و ڕێساکان" : "Terms & Conditions",
-      description: language === "ku" ? "یاساکانی بەکارهێنان" : "Usage policies",
+      label: pickLang(language, { ku: "مەرج و ڕێساکان", en: "Terms & Conditions", ar: "الشروط والأحكام", zh: "条款与条件" }),
+      description: pickLang(language, { ku: "یاساکانی بەکارهێنان", en: "Usage policies", ar: "سياسات الاستخدام", zh: "使用政策" }),
       path: "/portal/terms",
       iconBg: "bg-gradient-to-br from-purple-400 to-violet-500",
     },
@@ -125,8 +129,8 @@ const { t, language, setLanguage } = useLanguage();
     },
     {
       icon: Info,
-      label: language === "ku" ? "دەربارەی ئێمە" : "About Us",
-      description: language === "ku" ? "زانیاری کۆمپانیا" : "Company info",
+      label: pickLang(language, { ku: "دەربارەی ئێمە", en: "About Us", ar: "من نحن", zh: "关于我们" }),
+      description: pickLang(language, { ku: "زانیاری کۆمپانیا", en: "Company info", ar: "معلومات الشركة", zh: "公司信息" }),
       path: "/portal/about",
       iconBg: "bg-gradient-to-br from-pink-400 to-rose-500",
     },
@@ -136,9 +140,9 @@ const { t, language, setLanguage } = useLanguage();
     {
       icon: theme === "dark" ? Sun : Moon,
       label: theme === "dark" 
-        ? (language === "ku" ? "مۆدی ڕووناک" : "Light Mode") 
-        : (language === "ku" ? "مۆدی تاریک" : "Dark Mode"),
-      description: language === "ku" ? "گۆڕینی تەما" : "Toggle theme",
+        ? (pickLang(language, { ku: "مۆدی ڕووناک", en: "Light Mode", ar: "الوضع الفاتح", zh: "浅色模式" })) 
+        : (pickLang(language, { ku: "مۆدی تاریک", en: "Dark Mode", ar: "الوضع الداكن", zh: "深色模式" })),
+      description: pickLang(language, { ku: "گۆڕینی تەما", en: "Toggle theme", ar: "تبديل المظهر", zh: "切换主题" }),
       iconBg: theme === "dark" 
         ? "bg-gradient-to-br from-yellow-400 to-orange-500" 
         : "bg-gradient-to-br from-slate-600 to-slate-800",
@@ -153,15 +157,15 @@ const { t, language, setLanguage } = useLanguage();
     },
     {
       icon: Bell,
-      label: language === "ku" ? "ئاگادارکردنەوەکان" : "Notifications",
-      description: language === "ku" ? "بینینی ئاگادارکردنەوەکان" : "View alerts",
+      label: pickLang(language, { ku: "ئاگادارکردنەوەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" }),
+      description: pickLang(language, { ku: "بینینی ئاگادارکردنەوەکان", en: "View alerts", ar: "عرض التنبيهات", zh: "查看提醒" }),
       path: "/portal/notifications",
       iconBg: "bg-gradient-to-br from-red-400 to-rose-500",
     },
     {
       icon: Shield,
-      label: language === "ku" ? "پاراستن" : "Security",
-      description: language === "ku" ? "پاسۆرد و ئەمنیەت" : "Password & security",
+      label: pickLang(language, { ku: "پاراستن", en: "Security", ar: "الأمان", zh: "安全" }),
+      description: pickLang(language, { ku: "پاسۆرد و ئەمنیەت", en: "Password & security", ar: "كلمة المرور والأمان", zh: "密码与安全" }),
       path: "/portal/security",
       iconBg: "bg-gradient-to-br from-cyan-400 to-blue-600",
     },
@@ -253,7 +257,7 @@ const { t, language, setLanguage } = useLanguage();
         </div>
         
         <div className="relative px-5 pt-14 pb-6">
-          <h1 className="text-xl font-bold text-white mb-6">{language === "ku" ? "پرۆفایل" : "Profile"}</h1>
+          <h1 className="text-xl font-bold text-white mb-6">{pickLang(language, { ku: "پرۆفایل", en: "Profile", ar: "الملف الشخصي", zh: "个人资料" })}</h1>
           
           {/* Profile Card */}
           <div className="flex items-center gap-4">
@@ -310,7 +314,7 @@ const { t, language, setLanguage } = useLanguage();
                 {summary?.totalPackages || 0}
               </p>
               <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                {language === "ku" ? "پاکەت" : "Packages"}
+                {pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" })}
               </p>
             </div>
             <div className={cn("text-center border-x", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
@@ -322,7 +326,7 @@ const { t, language, setLanguage } = useLanguage();
               </div>
               <p className="text-lg font-bold text-emerald-500">{formatCurrency(summary?.totalPaid || 0)}</p>
               <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                {language === "ku" ? "پارەدان" : "Paid"}
+                {pickLang(language, { ku: "پارەدان", en: "Paid", ar: "المدفوع", zh: "已付" })}
               </p>
             </div>
             <div className="text-center">
@@ -344,7 +348,7 @@ const { t, language, setLanguage } = useLanguage();
                 {formatCurrency(Math.abs(summary?.balanceUsd || 0))}
               </p>
               <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                {language === "ku" ? "باڵانس" : "Balance"}
+                {pickLang(language, { ku: "باڵانس", en: "Balance", ar: "الرصيد", zh: "余额" })}
               </p>
             </div>
           </div>
@@ -368,7 +372,7 @@ const { t, language, setLanguage } = useLanguage();
                 </div>
                 <div>
                   <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
-                    {language === "ku" ? "ژمارەی مۆبایل" : "Mobile"}
+                    {pickLang(language, { ku: "ژمارەی مۆبایل", en: "Mobile", ar: "رقم الهاتف", zh: "手机号" })}
                   </p>
                   <p className={cn("font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     {account.mobileNumber}
@@ -386,7 +390,7 @@ const { t, language, setLanguage } = useLanguage();
                 </div>
                 <div>
                   <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
-                    {language === "ku" ? "ئیمەیل" : "Email"}
+                    {pickLang(language, { ku: "ئیمەیل", en: "Email", ar: "البريد الإلكتروني", zh: "邮箱" })}
                   </p>
                   <p className={cn("font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     {account.email}
@@ -401,7 +405,7 @@ const { t, language, setLanguage } = useLanguage();
       {/* Menu Items */}
       <div className="px-4 py-4">
         <p className={cn("text-sm font-medium mb-3 px-1", isDark ? "text-slate-400" : "text-slate-500")}>
-          {language === "ku" ? "خزمەتگوزارییەکان" : "Services"}
+          {pickLang(language, { ku: "خزمەتگوزارییەکان", en: "Services", ar: "الخدمات", zh: "服务" })}
         </p>
         <div className={cn(
           "rounded-2xl overflow-hidden",
@@ -444,7 +448,7 @@ const { t, language, setLanguage } = useLanguage();
 
         {/* Support Section */}
         <p className={cn("text-sm font-medium mb-3 px-1 mt-6", isDark ? "text-slate-400" : "text-slate-500")}>
-          {language === "ku" ? "پشتگیری و یارمەتی" : "Help & Support"}
+          {pickLang(language, { ku: "پشتگیری و یارمەتی", en: "Help & Support", ar: "المساعدة والدعم", zh: "帮助与支持" })}
         </p>
         <div className={cn(
           "rounded-2xl overflow-hidden",
@@ -499,7 +503,7 @@ const { t, language, setLanguage } = useLanguage();
 
         {/* Settings Section */}
         <p className={cn("text-sm font-medium mb-3 px-1 mt-6", isDark ? "text-slate-400" : "text-slate-500")}>
-          {language === "ku" ? "ڕێکخستنەکان" : "Settings"}
+          {pickLang(language, { ku: "ڕێکخستنەکان", en: "Settings", ar: "الإعدادات", zh: "设置" })}
         </p>
         <div className={cn(
           "rounded-2xl overflow-hidden",
@@ -563,7 +567,7 @@ const { t, language, setLanguage } = useLanguage();
           )}
         >
           <LogOut className="w-5 h-5" />
-          {language === "ku" ? "چوونەدەرەوە" : "Logout"}
+          {pickLang(language, { ku: "چوونەدەرەوە", en: "Logout", ar: "تسجيل الخروج", zh: "退出登录" })}
         </button>
 
         {/* App Info */}

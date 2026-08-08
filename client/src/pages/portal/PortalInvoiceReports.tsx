@@ -2,6 +2,7 @@ import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { 
@@ -158,10 +159,10 @@ function ClassicPortalInvoiceReports() {
   };
 
   const dateFilters = [
-    { value: "all", label: language === "ku" ? "هەموو" : "All Time" },
-    { value: "month", label: language === "ku" ? "ئەم مانگە" : "This Month" },
-    { value: "quarter", label: language === "ku" ? "ئەم چارەکە" : "This Quarter" },
-    { value: "year", label: language === "ku" ? "ئەم ساڵە" : "This Year" },
+    { value: "all", label: pickLang(language, { ku: "هەموو", en: "All Time", ar: "كل الفترات", zh: "全部时间" }) },
+    { value: "month", label: pickLang(language, { ku: "ئەم مانگە", en: "This Month", ar: "هذا الشهر", zh: "本月" }) },
+    { value: "quarter", label: pickLang(language, { ku: "ئەم چارەکە", en: "This Quarter", ar: "هذا الربع", zh: "本季度" }) },
+    { value: "year", label: pickLang(language, { ku: "ئەم ساڵە", en: "This Year", ar: "هذه السنة", zh: "本年" }) },
   ];
 
   // Export to CSV
@@ -289,10 +290,10 @@ function ClassicPortalInvoiceReports() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
-                {language === "ku" ? "ڕاپۆرتی پسوڵەکانم" : "My Invoice Reports"}
+                {pickLang(language, { ku: "ڕاپۆرتی پسوڵەکانم", en: "My Invoice Reports", ar: "تقارير فواتيري", zh: "我的发票报表" })}
               </h1>
               <p className="text-white/70 text-sm mt-1">
-                {language === "ku" ? "پوختەی پسوڵەکان و ئاماری دارایی" : "Invoice summary and financial statistics"}
+                {pickLang(language, { ku: "پوختەی پسوڵەکان و ئاماری دارایی", en: "Invoice summary and financial statistics", ar: "ملخص الفواتير والإحصاءات المالية", zh: "发票汇总与财务统计" })}
               </p>
             </div>
             <div className={cn(
@@ -360,7 +361,7 @@ function ClassicPortalInvoiceReports() {
                   )}
                 >
                   <Download className="w-4 h-4" />
-                  {language === "ku" ? "دابەزاندن" : "Export"}
+                  {pickLang(language, { ku: "دابەزاندن", en: "Export", ar: "تصدير", zh: "导出" })}
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 
@@ -387,7 +388,7 @@ function ClassicPortalInvoiceReports() {
                       )}
                     >
                       <File className="w-4 h-4" />
-                      PDF / {language === "ku" ? "چاپکردن" : "Print"}
+                      PDF / {pickLang(language, { ku: "چاپکردن", en: "Print", ar: "طباعة", zh: "打印" })}
                     </button>
                   </div>
                 )}
@@ -415,7 +416,7 @@ function ClassicPortalInvoiceReports() {
                 "text-xs",
                 isDark ? "text-slate-400" : "text-gray-500"
               )}>
-                {language === "ku" ? "کۆی پسوڵە" : "Total Invoices"}
+                {pickLang(language, { ku: "کۆی پسوڵە", en: "Total Invoices", ar: "إجمالي الفواتير", zh: "发票总数" })}
               </span>
             </div>
             {invoicesLoading ? (
@@ -453,7 +454,7 @@ function ClassicPortalInvoiceReports() {
                 "text-xs",
                 isDark ? "text-slate-400" : "text-gray-500"
               )}>
-                {language === "ku" ? "پارەدراو" : "Paid"}
+                {pickLang(language, { ku: "پارەدراو", en: "Paid", ar: "مدفوعة", zh: "已支付" })}
               </span>
             </div>
             {invoicesLoading ? (
@@ -488,7 +489,7 @@ function ClassicPortalInvoiceReports() {
                 "text-xs",
                 isDark ? "text-slate-400" : "text-gray-500"
               )}>
-                {language === "ku" ? "ناوەندی" : "Average"}
+                {pickLang(language, { ku: "ناوەندی", en: "Average", ar: "المتوسط", zh: "平均" })}
               </span>
             </div>
             {invoicesLoading ? (
@@ -578,7 +579,7 @@ function ClassicPortalInvoiceReports() {
                           "text-xs",
                           isDark ? "text-slate-400" : "text-gray-500"
                         )}>
-                          {m.count} {language === "ku" ? "پسوڵە" : "invoices"}
+                          {m.count} {pickLang(language, { ku: "پسوڵە", en: "invoices", ar: "فاتورة", zh: "张发票" })}
                         </p>
                       </div>
                     </div>

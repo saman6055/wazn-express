@@ -185,11 +185,11 @@ const { t, language } = useLanguage();
 
   const getTransactionTypeName = (type: string) => {
     switch (type) {
-      case "DEBIT_PACKAGE": return language === "ku" ? "کرێی گەیاندن" : "Delivery Charge";
-      case "DEBIT_SERVICE": return language === "ku" ? "کرێی خزمەتگوزاری" : "Service Fee";
-      case "CREDIT_PAYMENT": return language === "ku" ? "پارەدان" : "Payment";
-      case "CREDIT_REFUND": return language === "ku" ? "گەڕاندنەوە" : "Refund";
-      case "CREDIT_DISCOUNT": return language === "ku" ? "داشکاندن" : "Discount";
+      case "DEBIT_PACKAGE": return pickLang(language, { ku: "کرێی گەیاندن", en: "Delivery Charge", ar: "رسوم التوصيل", zh: "配送费" });
+      case "DEBIT_SERVICE": return pickLang(language, { ku: "کرێی خزمەتگوزاری", en: "Service Fee", ar: "رسوم الخدمة", zh: "服务费" });
+      case "CREDIT_PAYMENT": return pickLang(language, { ku: "پارەدان", en: "Payment", ar: "دفعة", zh: "付款" });
+      case "CREDIT_REFUND": return pickLang(language, { ku: "گەڕاندنەوە", en: "Refund", ar: "استرداد", zh: "退款" });
+      case "CREDIT_DISCOUNT": return pickLang(language, { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" });
       default: return type.replace(/_/g, " ");
     }
   };
@@ -220,8 +220,8 @@ const { t, language } = useLanguage();
   const isDebt = balance > 0;
 
   const tabs = [
-    { id: "overview", label: language === "ku" ? "پوختە" : "Overview", icon: PieChart },
-    { id: "transactions", label: language === "ku" ? "مامەڵەکان" : "Transactions", icon: Receipt },
+    { id: "overview", label: pickLang(language, { ku: "پوختە", en: "Overview", ar: "نظرة عامة", zh: "概览" }), icon: PieChart },
+    { id: "transactions", label: pickLang(language, { ku: "مامەڵەکان", en: "Transactions", ar: "المعاملات", zh: "交易记录" }), icon: Receipt },
   ];
 
   return (
@@ -237,10 +237,10 @@ const { t, language } = useLanguage();
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
-                {language === "ku" ? "دارایی" : "Financial"}
+                {pickLang(language, { ku: "دارایی", en: "Financial", ar: "المالية", zh: "财务" })}
               </h1>
               <p className="text-white/70 text-sm mt-1">
-                {language === "ku" ? "باڵانس و مامەڵەکانت" : "Your balance & transactions"}
+                {pickLang(language, { ku: "باڵانس و مامەڵەکانت", en: "Your balance & transactions", ar: "رصيدك ومعاملاتك", zh: "您的余额与交易" })}
               </p>
             </div>
             <div className={cn(
@@ -264,7 +264,7 @@ const { t, language } = useLanguage();
             <div className="flex items-center justify-between">
               <div>
                 <p className={cn("text-sm font-medium", isDark ? "text-slate-400" : "text-slate-500")}>
-                  {language === "ku" ? "باڵانسی ئێستا" : "Current Balance"}
+                  {pickLang(language, { ku: "باڵانسی ئێستا", en: "Current Balance", ar: "الرصيد الحالي", zh: "当前余额" })}
                 </p>
                 {summaryLoading ? (
                   <Skeleton className="h-12 w-40 mt-2" />
@@ -302,14 +302,14 @@ const { t, language } = useLanguage();
                 <>
                   <AlertCircle className="w-4 h-4 text-red-500" />
                   <span className={cn("text-sm font-medium", isDebt ? "text-red-600" : "text-emerald-600")}>
-                    {language === "ku" ? "قەرزت هەیە" : "You have outstanding balance"}
+                    {pickLang(language, { ku: "قەرزت هەیە", en: "You have outstanding balance", ar: "لديك رصيد مستحق", zh: "您有未结余额" })}
                   </span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   <span className="text-sm font-medium text-emerald-600">
-                    {language === "ku" ? "هیچ قەرزێکت نییە" : "No outstanding balance"}
+                    {pickLang(language, { ku: "هیچ قەرزێکت نییە", en: "No outstanding balance", ar: "لا يوجد رصيد مستحق", zh: "无未结余额" })}
                   </span>
                 </>
               )}
@@ -323,7 +323,7 @@ const { t, language } = useLanguage();
           )}>
             <div className={cn("p-4 text-center border-r", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
               <p className={cn("text-xs mb-1", isDark ? "text-slate-500" : "text-slate-500")}>
-                {language === "ku" ? "سنووری قەرز" : "Credit Limit"}
+                {pickLang(language, { ku: "سنووری قەرز", en: "Credit Limit", ar: "حد الائتمان", zh: "信用额度" })}
               </p>
               {summaryLoading ? (
                 <Skeleton className="h-6 w-16 mx-auto" />
@@ -335,7 +335,7 @@ const { t, language } = useLanguage();
             </div>
             <div className={cn("p-4 text-center border-r", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
               <p className={cn("text-xs mb-1", isDark ? "text-slate-500" : "text-slate-500")}>
-                {language === "ku" ? "کۆی پارەدان" : "Total Paid"}
+                {pickLang(language, { ku: "کۆی پارەدان", en: "Total Paid", ar: "إجمالي المدفوع", zh: "已付总额" })}
               </p>
               {summaryLoading ? (
                 <Skeleton className="h-6 w-16 mx-auto" />
@@ -347,10 +347,10 @@ const { t, language } = useLanguage();
             </div>
             <div className="p-4 text-center">
               <p className={cn("text-xs mb-1", isDark ? "text-slate-500" : "text-slate-500")}>
-                {language === "ku" ? "ئەم مانگە" : "This Month"}
+                {pickLang(language, { ku: "ئەم مانگە", en: "This Month", ar: "هذا الشهر", zh: "本月" })}
               </p>
               <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                {monthlyStats.count} {language === "ku" ? "مامەڵە" : "txns"}
+                {monthlyStats.count} {pickLang(language, { ku: "مامەڵە", en: "txns", ar: "معاملة", zh: "笔" })}
               </p>
             </div>
           </div>
@@ -414,7 +414,7 @@ const { t, language } = useLanguage();
                   <ArrowDownLeft className="w-5 h-5 text-emerald-500" />
                 </div>
                 <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                  {language === "ku" ? "پارەدانی ئەم مانگە" : "Payments This Month"}
+                  {pickLang(language, { ku: "پارەدانی ئەم مانگە", en: "Payments This Month", ar: "مدفوعات هذا الشهر", zh: "本月付款" })}
                 </p>
                 <p className="text-xl font-bold text-emerald-500 mt-1">
                   {formatCurrency(monthlyStats.payments)}
@@ -431,7 +431,7 @@ const { t, language } = useLanguage();
                   <ArrowUpRight className="w-5 h-5 text-red-500" />
                 </div>
                 <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                  {language === "ku" ? "کرێی ئەم مانگە" : "Charges This Month"}
+                  {pickLang(language, { ku: "کرێی ئەم مانگە", en: "Charges This Month", ar: "رسوم هذا الشهر", zh: "本月费用" })}
                 </p>
                 <p className="text-xl font-bold text-red-500 mt-1">
                   {formatCurrency(monthlyStats.charges)}
@@ -446,7 +446,7 @@ const { t, language } = useLanguage();
             )}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                  {language === "ku" ? "چارتی ٦ مانگی ڕابردوو" : "Last 6 Months"}
+                  {pickLang(language, { ku: "چارتی ٦ مانگی ڕابردوو", en: "Last 6 Months", ar: "آخر ٦ أشهر", zh: "近 6 个月" })}
                 </h3>
                 <BarChart3 className={cn("w-5 h-5", isDark ? "text-slate-500" : "text-slate-400")} />
               </div>
@@ -479,13 +479,13 @@ const { t, language } = useLanguage();
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-emerald-500" />
                   <span className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                    {language === "ku" ? "پارەدان" : "Payments"}
+                    {pickLang(language, { ku: "پارەدان", en: "Payments", ar: "المدفوعات", zh: "付款" })}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500" />
                   <span className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                    {language === "ku" ? "کرێ" : "Charges"}
+                    {pickLang(language, { ku: "کرێ", en: "Charges", ar: "الرسوم", zh: "费用" })}
                   </span>
                 </div>
               </div>
@@ -498,13 +498,13 @@ const { t, language } = useLanguage();
             )}>
               <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-700">
                 <h3 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                  {language === "ku" ? "دوایین مامەڵەکان" : "Recent Transactions"}
+                  {pickLang(language, { ku: "دوایین مامەڵەکان", en: "Recent Transactions", ar: "أحدث المعاملات", zh: "最近交易" })}
                 </h3>
                 <button 
                   onClick={() => changeTab("transactions")}
                   className="text-sm text-indigo-500 font-medium flex items-center gap-1"
                 >
-                  {language === "ku" ? "هەموو" : "View All"}
+                  {pickLang(language, { ku: "هەموو", en: "View All", ar: "عرض الكل", zh: "查看全部" })}
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -641,7 +641,7 @@ const { t, language } = useLanguage();
                                   ? "bg-indigo-900/50 hover:bg-indigo-800/50" 
                                   : "bg-indigo-100 dark:bg-indigo-950/40 hover:bg-indigo-200"
                               )}
-                              title={language === "ku" ? "بینینی وەسڵ" : "View Invoice"}
+                              title={pickLang(language, { ku: "بینینی وەسڵ", en: "View Invoice", ar: "عرض الفاتورة", zh: "查看发票" })}
                             >
                               <FileText className={cn("w-4 h-4", isDark ? "text-indigo-400" : "text-indigo-600")} />
                             </button>
@@ -654,7 +654,7 @@ const { t, language } = useLanguage();
                                 ? "bg-slate-700 hover:bg-slate-600"
                                 : "bg-slate-100 dark:bg-slate-950/40 hover:bg-slate-200"
                             )}
-                            title={language === "ku" ? "داگرتنی وەسڵ" : "Download Receipt"}
+                            title={pickLang(language, { ku: "داگرتنی وەسڵ", en: "Download Receipt", ar: "تحميل الإيصال", zh: "下载收据" })}
                           >
                             <Download className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-600")} />
                           </button>
@@ -683,7 +683,7 @@ const { t, language } = useLanguage();
           <DialogHeader>
             <DialogTitle className={cn("flex items-center gap-2", isDark ? "text-white" : "")}>
               <Receipt className="w-5 h-5" />
-              {language === "ku" ? "وەسڵ" : "Receipt"}
+              {pickLang(language, { ku: "وەسڵ", en: "Receipt", ar: "إيصال", zh: "收据" })}
             </DialogTitle>
           </DialogHeader>
           
@@ -697,7 +697,7 @@ const { t, language } = useLanguage();
             <div className="space-y-4">
               <div className={cn("text-center py-4 border-b", isDark ? "border-slate-700" : "")}>
                 <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
-                  {language === "ku" ? "بڕ" : "Amount"}
+                  {pickLang(language, { ku: "بڕ", en: "Amount", ar: "المبلغ", zh: "金额" })}
                 </p>
                 <p className={cn(
                   "text-3xl font-bold",
@@ -713,7 +713,7 @@ const { t, language } = useLanguage();
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-                    {language === "ku" ? "ژمارەی وەسڵ" : "Receipt #"}
+                    {pickLang(language, { ku: "ژمارەی وەسڵ", en: "Receipt #", ar: "رقم الإيصال", zh: "收据号" })}
                   </span>
                   <span className={cn("font-medium", isDark ? "text-white" : "")}>
                     {receiptData.transaction.transactionNumber}
@@ -721,7 +721,7 @@ const { t, language } = useLanguage();
                 </div>
                 <div className="flex justify-between">
                   <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-                    {language === "ku" ? "بەروار" : "Date"}
+                    {pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}
                   </span>
                   <span className={cn("font-medium", isDark ? "text-white" : "")}>
                     {new Date(receiptData.transaction.createdAt).toLocaleDateString()}
@@ -729,7 +729,7 @@ const { t, language } = useLanguage();
                 </div>
                 <div className="flex justify-between">
                   <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-                    {language === "ku" ? "جۆر" : "Type"}
+                    {pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}
                   </span>
                   <span className={cn("font-medium", isDark ? "text-white" : "")}>
                     {getTransactionTypeName(receiptData.transaction.transactionType)}
@@ -739,7 +739,7 @@ const { t, language } = useLanguage();
               
               <Button onClick={downloadReceipt} className="w-full">
                 <Download className="w-4 h-4 me-2" />
-                {language === "ku" ? "داگرتنی وەسڵ" : "Download Receipt"}
+                {pickLang(language, { ku: "داگرتنی وەسڵ", en: "Download Receipt", ar: "تحميل الإيصال", zh: "下载收据" })}
               </Button>
             </div>
           )}
@@ -885,7 +885,7 @@ const { t, language } = useLanguage();
                 <DialogHeader>
                   <DialogTitle className={cn("flex items-center gap-2", isDark ? "text-white" : "")}>
                     <FileText className="w-5 h-5" />
-                    {language === "ku" ? "وەسڵ" : "Invoice"} {invoice.invoiceNumber}
+                    {pickLang(language, { ku: "وەسڵ", en: "Invoice", ar: "فاتورة", zh: "发票" })} {invoice.invoiceNumber}
                   </DialogTitle>
                 </DialogHeader>
                 
@@ -914,7 +914,7 @@ const { t, language } = useLanguage();
                   {/* Amount */}
                   <div className={cn("text-center py-4 border-b", isDark ? "border-slate-700" : "")}>
                     <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
-                      {language === "ku" ? "کۆی گشتی" : "Total Amount"}
+                      {pickLang(language, { ku: "کۆی گشتی", en: "Total Amount", ar: "المبلغ الإجمالي", zh: "总金额" })}
                     </p>
                     <p className={cn("text-4xl font-bold mt-1", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                       ${Number(invoice.totalUsd).toFixed(2)}
@@ -931,7 +931,7 @@ const { t, language } = useLanguage();
                     <div className="flex justify-between">
                       <span className={isDark ? "text-slate-400" : "text-slate-500"}>
                         <Hash className="w-4 h-4 inline me-1" />
-                        {language === "ku" ? "ژمارەی وەسڵ" : "Invoice Number"}
+                        {pickLang(language, { ku: "ژمارەی وەسڵ", en: "Invoice Number", ar: "رقم الفاتورة", zh: "发票号" })}
                       </span>
                       <span className={cn("font-medium", isDark ? "text-white" : "")}>
                         {invoice.invoiceNumber}
@@ -940,7 +940,7 @@ const { t, language } = useLanguage();
                     <div className="flex justify-between">
                       <span className={isDark ? "text-slate-400" : "text-slate-500"}>
                         <Calendar className="w-4 h-4 inline me-1" />
-                        {language === "ku" ? "بەروار" : "Date"}
+                        {pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}
                       </span>
                       <span className={cn("font-medium", isDark ? "text-white" : "")}>
                         {new Date(invoice.createdAt).toLocaleDateString()}
@@ -950,7 +950,7 @@ const { t, language } = useLanguage();
                       <div className="flex justify-between">
                         <span className={isDark ? "text-slate-400" : "text-slate-500"}>
                           <Clock className="w-4 h-4 inline me-1" />
-                          {language === "ku" ? "بەرواری دوایی" : "Due Date"}
+                          {pickLang(language, { ku: "بەرواری دوایی", en: "Due Date", ar: "تاريخ الاستحقاق", zh: "到期日" })}
                         </span>
                         <span className={cn("font-medium", isDark ? "text-white" : "")}>
                           {new Date(invoice.dueDate).toLocaleDateString()}
@@ -961,7 +961,7 @@ const { t, language } = useLanguage();
                       <div className="flex justify-between">
                         <span className={isDark ? "text-slate-400" : "text-slate-500"}>
                           <CheckCircle2 className="w-4 h-4 inline me-1" />
-                          {language === "ku" ? "بەرواری پارەدان" : "Paid On"}
+                          {pickLang(language, { ku: "بەرواری پارەدان", en: "Paid On", ar: "تاريخ الدفع", zh: "支付日期" })}
                         </span>
                         <span className={cn("font-medium text-emerald-500")}>
                           {new Date(invoice.paidAt).toLocaleDateString()}
@@ -978,7 +978,7 @@ const { t, language } = useLanguage();
                   {invoice.lineItems && invoice.lineItems.length > 0 && (
                     <div className={cn("rounded-xl p-3", isDark ? "bg-slate-700" : "bg-slate-50 dark:bg-slate-950/40")}>
                       <p className={cn("text-xs font-medium mb-2", isDark ? "text-slate-400" : "text-slate-500")}>
-                        {language === "ku" ? "بەندەکان" : "Items"}
+                        {pickLang(language, { ku: "بەندەکان", en: "Items", ar: "البنود", zh: "项目" })}
                       </p>
                       <div className="space-y-2">
                         {invoice.lineItems.map((item: any, idx: number) => (
@@ -1013,7 +1013,7 @@ const { t, language } = useLanguage();
                   {invoice.notes && (
                     <div className={cn("rounded-xl p-3", isDark ? "bg-slate-700" : "bg-slate-50 dark:bg-slate-950/40")}>
                       <p className={cn("text-xs font-medium mb-1", isDark ? "text-slate-400" : "text-slate-500")}>
-                        {language === "ku" ? "تێبینی" : "Notes"}
+                        {pickLang(language, { ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" })}
                       </p>
                       <p className={cn(
                         "text-sm whitespace-pre-line leading-relaxed",
@@ -1028,11 +1028,11 @@ const { t, language } = useLanguage();
                   <div className="flex gap-2 pt-2">
                     <Button onClick={downloadInvoicePDF} className="flex-1">
                       <Download className="w-4 h-4 me-2" />
-                      {language === "ku" ? "داگرتن" : "Download"}
+                      {pickLang(language, { ku: "داگرتن", en: "Download", ar: "تحميل", zh: "下载" })}
                     </Button>
                     <Button onClick={printInvoice} variant="outline" className="flex-1">
                       <Printer className="w-4 h-4 me-2" />
-                      {language === "ku" ? "چاپکردن" : "Print"}
+                      {pickLang(language, { ku: "چاپکردن", en: "Print", ar: "طباعة", zh: "打印" })}
                     </Button>
                   </div>
                 </div>

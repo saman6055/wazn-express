@@ -2,6 +2,7 @@ import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { pickLang } from "@/lib/lang";
 
 import { 
   Plane, 
@@ -34,9 +35,9 @@ const { banner: portalBanner } = usePortalPalette();
   const shippingServices = [
     {
       icon: Plane,
-      title: language === "ku" ? "بارکردنی ئاسمانی ئاسایی" : language === "ar" ? "الشحن الجوي العادي" : "Air Regular",
-      description: language === "ku" ? "خێرا و پارێزراو" : language === "ar" ? "سريع وآمن" : "Fast and secure",
-      time: language === "ku" ? "7-14 ڕۆژ" : language === "ar" ? "7-14 يوم" : "7-14 days",
+      title: pickLang(language, { ku: "بارکردنی ئاسمانی ئاسایی", en: "Air Regular", ar: "الشحن الجوي العادي", zh: "普通空运" }),
+      description: pickLang(language, { ku: "خێرا و پارێزراو", en: "Fast and secure", ar: "سريع وآمن", zh: "快速且安全" }),
+      time: pickLang(language, { ku: "7-14 ڕۆژ", en: "7-14 days", ar: "7-14 يوم", zh: "7-14 天" }),
       color: "from-blue-500 to-blue-600",
       features: language === "ku" ? [
         "بەدواداچوونی ڕاستەوخۆ",
@@ -46,6 +47,10 @@ const { banner: portalBanner } = usePortalPalette();
         "تتبع مباشر",
         "تأمين أساسي",
         "توصيل للمنزل",
+      ] : language === "zh" ? [
+        "实时追踪",
+        "基础保险",
+        "送货上门",
       ] : [
         "Real-time tracking",
         "Basic insurance",
@@ -54,9 +59,9 @@ const { banner: portalBanner } = usePortalPalette();
     },
     {
       icon: Ship,
-      title: language === "ku" ? "بارکردنی دەریایی" : language === "ar" ? "الشحن البحري" : "Sea Shipping",
-      description: language === "ku" ? "هەرزان بۆ بارە قورسەکان" : language === "ar" ? "اقتصادي للشحنات الثقيلة" : "Economical for heavy cargo",
-      time: language === "ku" ? "30-45 ڕۆژ" : language === "ar" ? "30-45 يوم" : "30-45 days",
+      title: pickLang(language, { ku: "بارکردنی دەریایی", en: "Sea Shipping", ar: "الشحن البحري", zh: "海运" }),
+      description: pickLang(language, { ku: "هەرزان بۆ بارە قورسەکان", en: "Economical for heavy cargo", ar: "اقتصادي للشحنات الثقيلة", zh: "重货更经济" }),
+      time: pickLang(language, { ku: "30-45 ڕۆژ", en: "30-45 days", ar: "30-45 يوم", zh: "30-45 天" }),
       color: "from-cyan-500 to-cyan-600",
       features: language === "ku" ? [
         "نرخی هەرزان",
@@ -66,6 +71,10 @@ const { banner: portalBanner } = usePortalPalette();
         "أسعار منخفضة",
         "للشحنات الثقيلة",
         "بدون حد للوزن",
+      ] : language === "zh" ? [
+        "价格实惠",
+        "适合重货",
+        "无重量限制",
       ] : [
         "Low prices",
         "For heavy cargo",
@@ -74,9 +83,9 @@ const { banner: portalBanner } = usePortalPalette();
     },
     {
       icon: AlertTriangle,
-      title: language === "ku" ? "بارکردنی ئاسمانی نائاسایی" : language === "ar" ? "الشحن الجوي الخاص" : "Air Irregular",
-      description: language === "ku" ? "بۆ کەلوپەلی تایبەت" : language === "ar" ? "للبضائع الخاصة" : "For special items",
-      time: language === "ku" ? "10-20 ڕۆژ" : language === "ar" ? "10-20 يوم" : "10-20 days",
+      title: pickLang(language, { ku: "بارکردنی ئاسمانی نائاسایی", en: "Air Irregular", ar: "الشحن الجوي الخاص", zh: "特殊空运" }),
+      description: pickLang(language, { ku: "بۆ کەلوپەلی تایبەت", en: "For special items", ar: "للبضائع الخاصة", zh: "适用于特殊货物" }),
+      time: pickLang(language, { ku: "10-20 ڕۆژ", en: "10-20 days", ar: "10-20 يوم", zh: "10-20 天" }),
       color: "from-orange-500 to-orange-600",
       features: language === "ku" ? [
         "باتری و شلە",
@@ -86,6 +95,10 @@ const { banner: portalBanner } = usePortalPalette();
         "البطاريات والسوائل",
         "الإلكترونيات",
         "الطرود الخاصة",
+      ] : language === "zh" ? [
+        "电池与液体",
+        "电子产品",
+        "特殊包装货物",
       ] : [
         "Batteries and liquids",
         "Electronics",
@@ -97,50 +110,50 @@ const { banner: portalBanner } = usePortalPalette();
   const additionalServices = [
     {
       icon: Banknote,
-      title: language === "ku" ? "گواستنەوەی RMB" : language === "ar" ? "تحويل RMB" : "RMB Transfer",
-      description: language === "ku" ? "گواستنەوەی پارە بۆ چین" : language === "ar" ? "تحويل الأموال إلى الصين" : "Money transfer to China",
+      title: pickLang(language, { ku: "گواستنەوەی RMB", en: "RMB Transfer", ar: "تحويل RMB", zh: "人民币汇款" }),
+      description: pickLang(language, { ku: "گواستنەوەی پارە بۆ چین", en: "Money transfer to China", ar: "تحويل الأموال إلى الصين", zh: "汇款至中国" }),
       color: "bg-red-100 dark:bg-red-950/40 text-red-600",
     },
     {
       icon: RefreshCw,
-      title: language === "ku" ? "گۆڕینی دراو" : language === "ar" ? "صرف العملات" : "Currency Exchange",
-      description: language === "ku" ? "گۆڕینی دراوی بیانی" : language === "ar" ? "صرف العملات الأجنبية" : "Foreign currency exchange",
+      title: pickLang(language, { ku: "گۆڕینی دراو", en: "Currency Exchange", ar: "صرف العملات", zh: "货币兑换" }),
+      description: pickLang(language, { ku: "گۆڕینی دراوی بیانی", en: "Foreign currency exchange", ar: "صرف العملات الأجنبية", zh: "外币兑换" }),
       color: "bg-green-100 dark:bg-green-950/40 text-green-600",
     },
     {
       icon: ShoppingCart,
-      title: language === "ku" ? "کڕین لە چین" : language === "ar" ? "الشراء من الصين" : "Purchase from China",
-      description: language === "ku" ? "ئێمە بۆت دەیکڕین" : language === "ar" ? "نشتري لك" : "We buy for you",
+      title: pickLang(language, { ku: "کڕین لە چین", en: "Purchase from China", ar: "الشراء من الصين", zh: "中国代购" }),
+      description: pickLang(language, { ku: "ئێمە بۆت دەیکڕین", en: "We buy for you", ar: "نشتري لك", zh: "我们代您采购" }),
       color: "bg-purple-100 dark:bg-purple-950/40 text-purple-600",
     },
     {
       icon: Box,
-      title: language === "ku" ? "پاکەتکردنی تایبەت" : language === "ar" ? "تغليف خاص" : "Custom Packaging",
-      description: language === "ku" ? "پاکەتکردنی پارێزراو" : language === "ar" ? "تغليف آمن" : "Secure packaging",
+      title: pickLang(language, { ku: "پاکەتکردنی تایبەت", en: "Custom Packaging", ar: "تغليف خاص", zh: "定制包装" }),
+      description: pickLang(language, { ku: "پاکەتکردنی پارێزراو", en: "Secure packaging", ar: "تغليف آمن", zh: "安全包装" }),
       color: "bg-amber-100 dark:bg-amber-950/40 text-amber-600",
     },
     {
       icon: Shield,
-      title: language === "ku" ? "بیمە" : language === "ar" ? "التأمين" : "Insurance",
-      description: language === "ku" ? "بیمەی تەواوی بار" : language === "ar" ? "تأمين شامل" : "Full cargo insurance",
+      title: pickLang(language, { ku: "بیمە", en: "Insurance", ar: "التأمين", zh: "保险" }),
+      description: pickLang(language, { ku: "بیمەی تەواوی بار", en: "Full cargo insurance", ar: "تأمين شامل", zh: "全额货物保险" }),
       color: "bg-blue-100 dark:bg-blue-950/40 text-blue-600",
     },
     {
       icon: Warehouse,
-      title: language === "ku" ? "کرێی کۆگا" : language === "ar" ? "رسوم التخزين" : "Storage Fee",
-      description: language === "ku" ? "هێشتنەوەی بار لە کۆگا" : language === "ar" ? "تخزين البضائع" : "Cargo storage",
+      title: pickLang(language, { ku: "کرێی کۆگا", en: "Storage Fee", ar: "رسوم التخزين", zh: "仓储费" }),
+      description: pickLang(language, { ku: "هێشتنەوەی بار لە کۆگا", en: "Cargo storage", ar: "تخزين البضائع", zh: "货物仓储" }),
       color: "bg-slate-100 dark:bg-slate-950/40 text-slate-600",
     },
     {
       icon: FileCheck,
-      title: language === "ku" ? "ڕێکخستنی گومرگ" : language === "ar" ? "التخليص الجمركي" : "Customs Clearance",
-      description: language === "ku" ? "ڕێکخستنی کاغەزەکان" : language === "ar" ? "ترتيب الأوراق" : "Document processing",
+      title: pickLang(language, { ku: "ڕێکخستنی گومرگ", en: "Customs Clearance", ar: "التخليص الجمركي", zh: "清关服务" }),
+      description: pickLang(language, { ku: "ڕێکخستنی کاغەزەکان", en: "Document processing", ar: "ترتيب الأوراق", zh: "单证处理" }),
       color: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600",
     },
     {
       icon: Truck,
-      title: language === "ku" ? "گەیاندنی ناوخۆیی" : language === "ar" ? "التوصيل المحلي" : "Domestic Delivery",
-      description: language === "ku" ? "گەیاندن بۆ ماڵەوە" : language === "ar" ? "توصيل للمنزل" : "Home delivery",
+      title: pickLang(language, { ku: "گەیاندنی ناوخۆیی", en: "Domestic Delivery", ar: "التوصيل المحلي", zh: "本地配送" }),
+      description: pickLang(language, { ku: "گەیاندن بۆ ماڵەوە", en: "Home delivery", ar: "توصيل للمنزل", zh: "送货上门" }),
       color: "bg-teal-100 dark:bg-teal-950/40 text-teal-600",
     },
   ];
@@ -148,12 +161,12 @@ const { banner: portalBanner } = usePortalPalette();
   const contactInfo = [
     {
       icon: Phone,
-      label: language === "ku" ? "تەلەفۆن" : language === "ar" ? "الهاتف" : "Phone",
+      label: pickLang(language, { ku: "تەلەفۆن", en: "Phone", ar: "الهاتف", zh: "电话" }),
       value: "+964 750 123 4567",
     },
     {
       icon: MessageCircle,
-      label: language === "ku" ? "واتسئەپ" : language === "ar" ? "واتساب" : "WhatsApp",
+      label: pickLang(language, { ku: "واتسئەپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" }),
       value: "+964 750 123 4567",
     },
   ];
@@ -169,10 +182,10 @@ const { banner: portalBanner } = usePortalPalette();
             </div>
             <div>
               <h1 className="text-xl font-bold">
-                {language === "ku" ? "خزمەتگوزارییەکانمان" : language === "ar" ? "خدماتنا" : "Our Services"}
+                {pickLang(language, { ku: "خزمەتگوزارییەکانمان", en: "Our Services", ar: "خدماتنا", zh: "我们的服务" })}
               </h1>
               <p className="text-sm text-indigo-100">
-                {language === "ku" ? "هەموو خزمەتگوزارییەکان" : language === "ar" ? "جميع الخدمات" : "All services"}
+                {pickLang(language, { ku: "هەموو خزمەتگوزارییەکان", en: "All services", ar: "جميع الخدمات", zh: "全部服务" })}
               </p>
             </div>
           </div>
@@ -184,7 +197,7 @@ const { banner: portalBanner } = usePortalPalette();
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
               <Package className="w-5 h-5 text-indigo-600" />
-              {language === "ku" ? "خزمەتگوزاری بارکردن" : language === "ar" ? "خدمات الشحن" : "Shipping Services"}
+              {pickLang(language, { ku: "خزمەتگوزاری بارکردن", en: "Shipping Services", ar: "خدمات الشحن", zh: "运输服务" })}
             </h2>
             <div className="space-y-4">
               {shippingServices.map((service, index) => (
@@ -225,7 +238,7 @@ const { banner: portalBanner } = usePortalPalette();
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-indigo-600" />
-              {language === "ku" ? "خزمەتگوزاری زیادە" : language === "ar" ? "خدمات إضافية" : "Additional Services"}
+              {pickLang(language, { ku: "خزمەتگوزاری زیادە", en: "Additional Services", ar: "خدمات إضافية", zh: "增值服务" })}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {additionalServices.map((service, index) => (
@@ -243,12 +256,10 @@ const { banner: portalBanner } = usePortalPalette();
           {/* Contact Section */}
           <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
             <h2 className="text-lg font-bold mb-2">
-              {language === "ku" ? "پەیوەندیمان پێوە بکە" : language === "ar" ? "تواصل معنا" : "Contact Us"}
+              {pickLang(language, { ku: "پەیوەندیمان پێوە بکە", en: "Contact Us", ar: "تواصل معنا", zh: "联系我们" })}
             </h2>
             <p className="text-sm text-gray-300 mb-4">
-              {language === "ku" ? "بۆ زانیاری زیاتر یان داواکاری" : 
-               language === "ar" ? "للمزيد من المعلومات أو الطلبات" : 
-               "For more information or requests"}
+              {pickLang(language, { ku: "بۆ زانیاری زیاتر یان داواکاری", en: "For more information or requests", ar: "للمزيد من المعلومات أو الطلبات", zh: "如需更多信息或下单" })}
             </p>
             <div className="space-y-3">
               {contactInfo.map((info, index) => (
