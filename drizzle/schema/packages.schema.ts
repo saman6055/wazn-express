@@ -215,7 +215,14 @@ export const packageStatusHistory = mysqlTable("packageStatusHistory", {
   
   changedAt: timestamp("changedAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  // This table had a primary key and nothing else, while the portal's
+  // notification badge joins it on packageId and filters on changedAt — on
+  // every home and profile load. Without an access path MySQL nested-loops the
+  // whole table per package row, so a customer with 200 parcels against a
+  // year of history costs millions of reads to render one number.
+  packageChangedIdx: index("idx_psh_package_changed").on(table.packageId, table.changedAt),
+}));
 
 export type PackageStatusHistory = typeof packageStatusHistory.$inferSelect;
 export type InsertPackageStatusHistory = typeof packageStatusHistory.$inferInsert;

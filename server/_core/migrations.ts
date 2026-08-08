@@ -2343,6 +2343,12 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.fpo_batch_id",              sql: "CREATE INDEX idx_fpo_batch_id ON fullPackageOrders (batchId)" },
   { name: "idx.fpo_status",                sql: "CREATE INDEX idx_fpo_status ON fullPackageOrders (status)" },
   { name: "idx.cust_notif_customer_created", sql: "CREATE INDEX idx_cust_notif_customer_created ON customerNotifications (customerId, createdAt)" },
+  // packageStatusHistory shipped with a primary key and nothing else, while
+  // the portal's notification badge joins it on packageId and filters on
+  // changedAt — on every home and profile load. With no access path MySQL
+  // nested-loops the whole table per package: a customer with 200 parcels
+  // against a year of history is already millions of row reads for one badge.
+  { name: "idx.psh_package_changed",       sql: "CREATE INDEX idx_psh_package_changed ON packageStatusHistory (packageId, changedAt)" },
   { name: "idx.cust_msg_customer_created", sql: "CREATE INDEX idx_cust_msg_customer_created ON customerMessages (customerId, createdAt)" },
   { name: "idx.payment_records_account_id", sql: "CREATE INDEX idx_payment_records_account_id ON paymentRecords (accountId)" },
   { name: "idx.invoices_status",           sql: "CREATE INDEX idx_invoices_status ON invoices (status)" },

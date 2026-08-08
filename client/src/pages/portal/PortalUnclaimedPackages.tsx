@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { PhotoStack } from "@/components/PhotoStack";
 import { pickLang } from "@/lib/lang";
+import { toast } from "sonner";
 
 // Company WhatsApp for extra proof / questions when claiming a package.
 import { TERMS_WHATSAPP_NUMBER as SUPPORT_WHATSAPP } from "@/constants/portalTerms";
@@ -48,7 +49,7 @@ export default function PortalUnclaimedPackages() {
   // Mutations
   const createClaimMutation = trpc.customerPortal.createClaimRequest.useMutation({
     onSuccess: () => {
-      alert(t("claimRequestSent") || "Claim request submitted successfully!");
+      toast.success(pickLang(language, { ku: "داواکارییەکەت نێردرا", en: "Claim submitted", ar: "تم إرسال الطلب", zh: "申请已提交" }));
       setIsClaimDialogOpen(false);
       setSelectedPackage(null);
       setClaimNote("");
@@ -57,7 +58,7 @@ export default function PortalUnclaimedPackages() {
       refetchClaims();
     },
     onError: (error) => {
-      alert(error.message);
+      toast.error(error.message);
     },
   });
 
@@ -65,11 +66,11 @@ export default function PortalUnclaimedPackages() {
     if (!selectedPackage) return;
     // Proof is mandatory: a written reason AND at least one evidence image.
     if (!claimNote.trim()) {
-      alert(pickLang(language, { ku: "تکایە هۆکاری خاوەندارییەکە بنووسە", en: "Please write why this package is yours", ar: "يرجى كتابة سبب ملكيتك للطرد", zh: "请说明此包裹归属您的原因" }));
+      toast.error(pickLang(language, { ku: "تکایە هۆکاری خاوەندارییەکە بنووسە", en: "Please write why this package is yours", ar: "يرجى كتابة سبب ملكيتك للطرد", zh: "请说明此包裹归属您的原因" }));
       return;
     }
     if (proofImages.length === 0) {
-      alert(pickLang(language, { ku: "تکایە لانیکەم یەک وێنەی بەڵگە/سکرینشۆتی کڕین دابنێ", en: "Please attach at least one proof/purchase screenshot", ar: "يرجى إرفاق صورة إثبات/لقطة شراء واحدة على الأقل", zh: "请至少附上一张购买凭证/截图" }));
+      toast.error(pickLang(language, { ku: "تکایە لانیکەم یەک وێنەی بەڵگە/سکرینشۆتی کڕین دابنێ", en: "Please attach at least one proof/purchase screenshot", ar: "يرجى إرفاق صورة إثبات/لقطة شراء واحدة على الأقل", zh: "请至少附上一张购买凭证/截图" }));
       return;
     }
     createClaimMutation.mutate({
