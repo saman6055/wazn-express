@@ -18,10 +18,16 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { pickLang } from "@/lib/lang";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function PortalAddresses() {
   // Banner colour follows the mode the customer picked, like every other page.
   const { banner: portalBanner } = usePortalPalette();
+  // This whole page was English — every label, every placeholder, the delete
+  // confirmation — behind a Kurdish-default header.
+  const { language } = useLanguage();
 const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -41,29 +47,61 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const { data: addresses, isLoading, refetch } = trpc.customerPortal.getMyAddresses.useQuery();
   
+  // All four of these used to fail in total silence: no toast, no message, the
+  // dialog simply staying open with the button re-enabled. A customer would
+  // tap Save again and again with no idea anything was wrong.
+  const onError = (e: { message?: string }) =>
+    toast.error(e?.message || pickLang(language, {
+      ku: "هەڵەیەک ڕوویدا، دووبارە هەوڵ بدەرەوە",
+      en: "Something went wrong. Please try again.",
+      ar: "حدث خطأ، يرجى المحاولة مرة أخرى.",
+      zh: "出错了，请重试。",
+    }));
+
+  const savedToast = () =>
+    toast.success(pickLang(language, {
+      ku: "پاشەکەوت کرا", en: "Saved", ar: "تم الحفظ", zh: "已保存",
+    }));
+
   const createMutation = trpc.customerPortal.createAddress.useMutation({
     onSuccess: () => {
       setIsDialogOpen(false);
       resetForm();
       refetch();
+      savedToast();
     },
+    onError,
   });
-  
+
   const updateMutation = trpc.customerPortal.updateAddress.useMutation({
     onSuccess: () => {
       setIsDialogOpen(false);
       setEditingAddress(null);
       resetForm();
       refetch();
+      savedToast();
     },
+    onError,
   });
-  
+
   const deleteMutation = trpc.customerPortal.deleteAddress.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => {
+      refetch();
+      toast.success(pickLang(language, {
+        ku: "ناونیشان سڕایەوە", en: "Address deleted", ar: "تم حذف العنوان", zh: "地址已删除",
+      }));
+    },
+    onError,
   });
-  
+
   const setDefaultMutation = trpc.customerPortal.setDefaultAddress.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => {
+      refetch();
+      toast.success(pickLang(language, {
+        ku: "کرا بە ناونیشانی سەرەکی", en: "Set as default", ar: "تم التعيين كافتراضي", zh: "已设为默认",
+      }));
+    },
+    onError,
   });
   
   const resetForm = () => {
@@ -164,9 +202,9 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                   <MapPin className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="font-semibold">My Addresses</h1>
+                  <h1 className="font-semibold">{pickLang(language, { ku: "ناونیشانەکانم", en: "My addresses", ar: "عناويني", zh: "我的地址" })}</h1>
                   <p className="text-xs text-gray-300">
-                    {addresses?.length || 0} saved addresses
+                    {addresses?.length || 0} {pickLang(language, { ku: "ناونیشانی پاشەکەوتکراو", en: "saved addresses", ar: "عنوان محفوظ", zh: "个已保存地址" })}
                   </p>
                 </div>
               </div>
@@ -178,7 +216,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               className="bg-white/10 hover:bg-white/20 text-white"
             >
               <Plus className="h-4 w-4 me-1" />
-              Add
+              {pickLang(language, { ku: "زیادکردن", en: "Add", ar: "إضافة", zh: "添加" })}
             </Button>
           </div>
         </div>
@@ -205,13 +243,13 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-100 to-teal-200 flex items-center justify-center mb-4">
                 <MapPin className="h-10 w-10 text-teal-500" />
               </div>
-              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">No Addresses Yet</h3>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">{pickLang(language, { ku: "هێشتا هیچ ناونیشانێک نییە", en: "No addresses yet", ar: "لا توجد عناوين بعد", zh: "暂无地址" })}</h3>
               <p className="text-sm text-gray-500 max-w-xs mb-4">
-                Add your delivery addresses for faster checkout
+                {pickLang(language, { ku: "ناونیشانی گەیاندنت زیاد بکە تاکو گەیاندن خێراتر بێت", en: "Add a delivery address so we can reach you faster", ar: "أضف عنوان التسليم لتصلك الشحنات أسرع", zh: "添加配送地址，让我们更快找到您" })}
               </p>
               <Button onClick={openNewDialog} className="bg-teal-500 hover:bg-teal-600">
                 <Plus className="h-4 w-4 me-2" />
-                Add Address
+                {pickLang(language, { ku: "زیادکردنی ناونیشان", en: "Add address", ar: "إضافة عنوان", zh: "添加地址" })}
               </Button>
             </div>
           ) : (
@@ -238,7 +276,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                         {address.isDefault && (
                           <span className="bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
                             <Star className="h-3 w-3 fill-current" />
-                            Default
+                            {pickLang(language, { ku: "سەرەکی", en: "Default", ar: "افتراضي", zh: "默认" })}
                           </span>
                         )}
                       </div>
@@ -278,7 +316,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                         disabled={setDefaultMutation.isPending}
                       >
                         <Check className="h-4 w-4 me-1" />
-                        Set Default
+                        {pickLang(language, { ku: "بیکە بە سەرەکی", en: "Set as default", ar: "تعيين كافتراضي", zh: "设为默认" })}
                       </Button>
                     )}
                     <Button
@@ -288,21 +326,21 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                       onClick={() => openEditDialog(address)}
                     >
                       <Edit2 className="h-4 w-4 me-1" />
-                      Edit
+                      {pickLang(language, { ku: "دەستکاری", en: "Edit", ar: "تعديل", zh: "编辑" })}
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       onClick={() => {
-                        if (confirm("Are you sure you want to delete this address?")) {
+                        if (confirm(pickLang(language, { ku: "دڵنیایت لە سڕینەوەی ئەم ناونیشانە؟", en: "Delete this address?", ar: "هل تريد حذف هذا العنوان؟", zh: "确定删除此地址吗？" }))) {
                           deleteMutation.mutate({ addressId: address.id });
                         }
                       }}
                       disabled={deleteMutation.isPending}
                     >
                       <Trash2 className="h-4 w-4 me-1" />
-                      Delete
+                      {pickLang(language, { ku: "سڕینەوە", en: "Delete", ar: "حذف", zh: "删除" })}
                     </Button>
                   </div>
                 </div>
@@ -316,14 +354,14 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingAddress ? "Edit Address" : "Add New Address"}
+                {editingAddress ? pickLang(language, { ku: "دەستکاری ناونیشان", en: "Edit address", ar: "تعديل العنوان", zh: "编辑地址" }) : pickLang(language, { ku: "زیادکردنی ناونیشان", en: "Add address", ar: "إضافة عنوان", zh: "添加地址" })}
               </DialogTitle>
             </DialogHeader>
             
             <div className="space-y-4 py-4">
               {/* Label */}
               <div className="space-y-2">
-                <Label>Address Label *</Label>
+                <Label>{pickLang(language, { ku: "ناوی ناونیشان *", en: "Address label *", ar: "اسم العنوان *", zh: "地址名称 *" })}</Label>
                 <div className="flex gap-2">
                   {["Home", "Office", "Shop"].map((label) => (
                     <Button
@@ -341,7 +379,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                   ))}
                 </div>
                 <Input
-                  placeholder="Or enter custom label"
+                  placeholder={pickLang(language, { ku: "یان ناوێکی خۆت بنووسە", en: "Or enter your own", ar: "أو اكتب اسماً خاصاً", zh: "或自定义名称" })}
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                 />
@@ -349,9 +387,9 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               
               {/* Recipient Name */}
               <div className="space-y-2">
-                <Label>Recipient Name *</Label>
+                <Label>{pickLang(language, { ku: "ناوی وەرگر *", en: "Recipient name *", ar: "اسم المستلم *", zh: "收件人姓名 *" })}</Label>
                 <Input
-                  placeholder="Full name of recipient"
+                  placeholder={pickLang(language, { ku: "ناوی تەواوی وەرگر", en: "Recipient's full name", ar: "الاسم الكامل للمستلم", zh: "收件人全名" })}
                   value={formData.recipientName}
                   onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
                 />
@@ -359,7 +397,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               
               {/* Phone */}
               <div className="space-y-2">
-                <Label>Phone Number *</Label>
+                <Label>{pickLang(language, { ku: "ژمارەی مۆبایل *", en: "Phone number *", ar: "رقم الهاتف *", zh: "手机号码 *" })}</Label>
                 <Input
                   placeholder="07XX XXX XXXX"
                   value={formData.phone}
@@ -369,7 +407,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               
               {/* City */}
               <div className="space-y-2">
-                <Label>City *</Label>
+                <Label>{pickLang(language, { ku: "شار *", en: "City *", ar: "المدينة *", zh: "城市 *" })}</Label>
                 <Input
                   placeholder="e.g., Erbil, Sulaymaniyah, Baghdad"
                   value={formData.city}
@@ -379,7 +417,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               
               {/* District */}
               <div className="space-y-2">
-                <Label>District / Neighborhood</Label>
+                <Label>{pickLang(language, { ku: "گەڕەک", en: "District", ar: "الحي", zh: "区/街道" })}</Label>
                 <Input
                   placeholder="e.g., Ankawa, Ainkawa"
                   value={formData.district}
@@ -389,9 +427,9 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               
               {/* Street */}
               <div className="space-y-2">
-                <Label>Street</Label>
+                <Label>{pickLang(language, { ku: "شەقام", en: "Street", ar: "الشارع", zh: "街道" })}</Label>
                 <Input
-                  placeholder="Street name or number"
+                  placeholder={pickLang(language, { ku: "ناو یان ژمارەی شەقام", en: "Street name or number", ar: "اسم أو رقم الشارع", zh: "街道名称或号码" })}
                   value={formData.street}
                   onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                 />
@@ -400,25 +438,25 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               {/* Building Details */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-2">
-                  <Label>Building</Label>
+                  <Label>{pickLang(language, { ku: "بینا", en: "Building", ar: "المبنى", zh: "楼" })}</Label>
                   <Input
-                    placeholder="No."
+                    placeholder={pickLang(language, { ku: "ژمارە", en: "No.", ar: "رقم", zh: "号" })}
                     value={formData.building}
                     onChange={(e) => setFormData({ ...formData, building: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Floor</Label>
+                  <Label>{pickLang(language, { ku: "نهۆم", en: "Floor", ar: "الطابق", zh: "层" })}</Label>
                   <Input
-                    placeholder="Floor"
+                    placeholder={pickLang(language, { ku: "نهۆم", en: "Floor", ar: "الطابق", zh: "层" })}
                     value={formData.floor}
                     onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Apt</Label>
+                  <Label>{pickLang(language, { ku: "شوقە", en: "Apt", ar: "الشقة", zh: "单元" })}</Label>
                   <Input
-                    placeholder="Apt"
+                    placeholder={pickLang(language, { ku: "شوقە", en: "Apt", ar: "الشقة", zh: "单元" })}
                     value={formData.apartment}
                     onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
                   />
@@ -427,9 +465,9 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               
               {/* Landmark */}
               <div className="space-y-2">
-                <Label>Landmark</Label>
+                <Label>{pickLang(language, { ku: "نیشانەی نزیک", en: "Landmark", ar: "علامة مميزة", zh: "附近标志" })}</Label>
                 <Input
-                  placeholder="Near a famous place or building"
+                  placeholder={pickLang(language, { ku: "نزیک لە شوێنێکی ناسراو", en: "Near a well-known place", ar: "بالقرب من مكان معروف", zh: "靠近知名地点" })}
                   value={formData.landmark}
                   onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
                 />
@@ -437,9 +475,9 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
               
               {/* Notes */}
               <div className="space-y-2">
-                <Label>Delivery Notes</Label>
+                <Label>{pickLang(language, { ku: "تێبینی گەیاندن", en: "Delivery notes", ar: "ملاحظات التسليم", zh: "配送备注" })}</Label>
                 <Textarea
-                  placeholder="Any special instructions for delivery"
+                  placeholder={pickLang(language, { ku: "هەر ڕێنماییەکی تایبەت بۆ گەیاندن", en: "Any special delivery instructions", ar: "أي تعليمات خاصة للتسليم", zh: "任何特殊配送说明" })}
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={2}
@@ -456,7 +494,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                   className="rounded border-gray-300 dark:border-gray-800/60 text-teal-500 focus:ring-teal-500"
                 />
                 <Label htmlFor="isDefault" className="cursor-pointer">
-                  Set as default address
+                  {pickLang(language, { ku: "بیکە بە ناونیشانی سەرەکی", en: "Set as my default address", ar: "اجعله عنواني الافتراضي", zh: "设为默认地址" })}
                 </Label>
               </div>
             </div>
@@ -467,7 +505,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 className="flex-1"
                 onClick={() => setIsDialogOpen(false)}
               >
-                Cancel
+                {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
               </Button>
               <Button
                 className="flex-1 bg-teal-500 hover:bg-teal-600"
@@ -481,7 +519,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                   updateMutation.isPending
                 }
               >
-                {editingAddress ? "Update" : "Save"}
+                {editingAddress ? pickLang(language, { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" }) : pickLang(language, { ku: "پاشەکەوتکردن", en: "Save", ar: "حفظ", zh: "保存" })}
               </Button>
             </div>
           </DialogContent>

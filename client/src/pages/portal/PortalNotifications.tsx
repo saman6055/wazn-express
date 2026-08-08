@@ -9,6 +9,9 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { pickLang } from "@/lib/lang";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useState } from "react";
 
 // Destinations that aren't worth a "View" link — landing on the portal home
@@ -18,6 +21,8 @@ const DEAD_ACTION_URLS = new Set(["/portal", "/portal/", "/"]);
 export default function PortalNotifications() {
   // Banner colour follows the mode the customer picked, like every other page.
   const { banner: portalBanner } = usePortalPalette();
+  // Was entirely English, including the timestamps every customer reads.
+  const { language } = useLanguage();
 const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNotifications.useQuery();
   // Tapping a notification expands it in place to show the full message.
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -31,12 +36,24 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
     utils.customerPortal.getNotificationCount.invalidate();
   };
 
+  // Both used to fail silently — the only visible effect of a failure was the
+  // button becoming clickable again.
+  const onError = () =>
+    toast.error(pickLang(language, {
+      ku: "نەتوانرا بخوێنرێتەوە، دووبارە هەوڵ بدەرەوە",
+      en: "Couldn't update. Please try again.",
+      ar: "تعذّر التحديث، حاول مرة أخرى.",
+      zh: "更新失败，请重试。",
+    }));
+
   const markAsReadMutation = trpc.customerPortal.markNotificationAsRead.useMutation({
     onSuccess: onRead,
+    onError,
   });
 
   const markAllAsReadMutation = trpc.customerPortal.markAllNotificationsAsRead.useMutation({
     onSuccess: onRead,
+    onError,
   });
   
   const getNotificationIcon = (type: string) => {
@@ -85,10 +102,10 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
     
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return pickLang(language, { ku: "ئێستا", en: "Just now", ar: "الآن", zh: "刚刚" });
+    if (diffMins < 60) return `${diffMins} `+pickLang(language, { ku: "خولەک لەمەوپێش", en: "min ago", ar: "دقيقة مضت", zh: "分钟前" });
+    if (diffHours < 24) return `${diffHours} `+pickLang(language, { ku: "کاتژمێر لەمەوپێش", en: "h ago", ar: "ساعة مضت", zh: "小时前" });
+    if (diffDays < 7) return `${diffDays} `+pickLang(language, { ku: "ڕۆژ لەمەوپێش", en: "d ago", ar: "يوم مضى", zh: "天前" });
     return d.toLocaleDateString();
   };
   
@@ -111,9 +128,9 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
                   <Bell className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="font-semibold">Notifications</h1>
+                  <h1 className="font-semibold">{pickLang(language, { ku: "ئاگادارکردنەوەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" })}</h1>
                   <p className="text-xs text-gray-300">
-                    {unreadCount > 0 ? `${unreadCount} unread` : "All caught up!"}
+                    {unreadCount > 0 ? `${unreadCount} `+pickLang(language, { ku: "نەخوێندراوە", en: "unread", ar: "غير مقروء", zh: "未读" }) : pickLang(language, { ku: "هەمووی خوێندراوەتەوە", en: "All caught up", ar: "لا جديد", zh: "全部已读" })}
                   </p>
                 </div>
               </div>
@@ -128,7 +145,7 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
                 disabled={markAllAsReadMutation.isPending}
               >
                 <CheckCheck className="h-4 w-4 me-1" />
-                Mark all read
+                {pickLang(language, { ku: "هەمووی بخوێنەوە", en: "Mark all read", ar: "تعليم الكل كمقروء", zh: "全部标为已读" })}
               </Button>
             )}
           </div>
@@ -156,9 +173,9 @@ const { data: notifications, isLoading, refetch } = trpc.customerPortal.getMyNot
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-4">
                 <Bell className="h-10 w-10 text-blue-500" />
               </div>
-              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">No Notifications</h3>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">{pickLang(language, { ku: "هیچ ئاگادارکردنەوەیەک نییە", en: "No notifications", ar: "لا توجد إشعارات", zh: "暂无通知" })}</h3>
               <p className="text-sm text-gray-500 max-w-xs">
-                You're all caught up! We'll notify you when something important happens.
+                {pickLang(language, { ku: "هەموو شتێک خوێندراوەتەوە. کاتێک شتێکی گرنگ ڕوودەدات ئاگادارت دەکەینەوە.", en: "You are all caught up. We will let you know when something happens.", ar: "لا يوجد جديد. سنخبرك عند حدوث شيء مهم.", zh: "暂时没有新消息，有重要动态会通知您。" })}
               </p>
             </div>
           ) : (
