@@ -18,6 +18,7 @@ import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { PhotoStack } from "@/components/PhotoStack";
 import { pickLang } from "@/lib/lang";
 import { toast } from "sonner";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 // Company WhatsApp for extra proof / questions when claiming a package.
 import { TERMS_WHATSAPP_NUMBER as SUPPORT_WHATSAPP } from "@/constants/portalTerms";
@@ -40,7 +41,7 @@ export default function PortalUnclaimedPackages() {
   const [activeTab, setActiveTab] = useState("unclaimed");
   
   // Queries
-  const { data: unclaimedData, isLoading: unclaimedLoading, refetch: refetchUnclaimed } = 
+  const { data: unclaimedData, isLoading: unclaimedLoading, isError: unclaimedError, isFetching: unclaimedFetching, refetch: refetchUnclaimed } = 
     trpc.customerPortal.getUnclaimedPackages.useQuery({ search: searchTerm || undefined });
   
   const { data: myClaimRequests, isLoading: claimsLoading, refetch: refetchClaims } = 
@@ -194,6 +195,10 @@ export default function PortalUnclaimedPackages() {
                   <Skeleton key={i} className="h-28 w-full rounded-xl" />
                 ))}
               </div>
+            ) : unclaimedError ? (
+              /* The pool a customer searches for their own missing parcel. Saying
+                 it is empty when the request failed sends them away. */
+              <PortalErrorState onRetry={() => void refetchUnclaimed()} isRetrying={unclaimedFetching} />
             ) : !unclaimedData?.packages.length ? (
               <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
                 <div className="w-16 h-16 bg-gray-100 dark:bg-gray-950/40 rounded-full flex items-center justify-center mx-auto mb-4">

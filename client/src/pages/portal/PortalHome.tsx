@@ -32,6 +32,7 @@ import { isDebt } from "@/lib/portalMoney";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { stageOf } from "@/lib/shipmentFilters";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 // Animated Counter Component
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
@@ -238,13 +239,38 @@ const { t, language } = useLanguage();
   /** The pale brand tint, for icons and small labels on the header. */
   const paleStyle = lightHeader ? undefined : { color: pal.pale };
 
-  const { data: account, isLoading: accountLoading } = trpc.customerPortal.getMyAccount.useQuery();
-  const { data: batches, isLoading: batchesLoading } = trpc.customerPortal.getMyBatches.useQuery();
+  const accountQuery = trpc.customerPortal.getMyAccount.useQuery();
+  const batchesQuery = trpc.customerPortal.getMyBatches.useQuery();
+  const summaryQuery = trpc.customerPortal.getMyFinancialSummary.useQuery();
+  const declaredQuery = trpc.customerPortal.getMyDeclaredPackages.useQuery();
+
+  const { data: account, isLoading: accountLoading } = accountQuery;
+  const { data: batches, isLoading: batchesLoading } = batchesQuery;
   const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
-  const { data: financialSummary } = trpc.customerPortal.getMyFinancialSummary.useQuery();
+  const { data: financialSummary } = summaryQuery;
   const { data: pendingOrders } = trpc.customerPortal.getMyPendingOrders.useQuery();
-  const { data: declaredPackages } = trpc.customerPortal.getMyDeclaredPackages.useQuery();
+  const { data: declaredPackages } = declaredQuery;
   const { data: prohibitedPackages } = trpc.prohibited.getMine.useQuery();
+
+  /**
+   * One banner rather than eight.
+   *
+   * This screen runs eight queries and none of them checked isError, so a
+   * dropped connection showed a customer $0.00, four zero counters and "no
+   * shipments" — their account, apparently emptied. Per-list error cards would
+   * fill the page with the same message repeated; a single line at the top
+   * that says what happened and retries everything is what a person needs.
+   */
+  const homeFailed =
+    accountQuery.isError || batchesQuery.isError || summaryQuery.isError || declaredQuery.isError;
+  const homeRetrying =
+    accountQuery.isFetching || batchesQuery.isFetching || summaryQuery.isFetching || declaredQuery.isFetching;
+  const retryHome = () => {
+    void accountQuery.refetch();
+    void batchesQuery.refetch();
+    void summaryQuery.refetch();
+    void declaredQuery.refetch();
+  };
   const prohibitedPending = (prohibitedPackages || []).filter((p: any) => p.status === "pending").length;
 
   // Get recent batches (last 3)
@@ -703,6 +729,14 @@ const { t, language } = useLanguage();
               <ChevronRight className={cn("w-5 h-5 shrink-0", isDark ? "text-slate-500" : "text-slate-400", isRTL && "rotate-180")} />
             </div>
           </Link>
+        </div>
+      )}
+
+      {/* Something did not load. Say so once, near the top, rather than
+          letting four zero counters imply the account is empty. */}
+      {homeFailed && (
+        <div className="px-4 mt-4">
+          <PortalErrorState compact onRetry={retryHome} isRetrying={homeRetrying} />
         </div>
       )}
 

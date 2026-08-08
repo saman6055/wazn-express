@@ -9,6 +9,7 @@ import { getProhibitedItemLabel } from "@/constants/prohibitedItems";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import {
   Ban, Undo2, Send, Trash2, ImageIcon, AlertTriangle, Loader2, CheckCircle2, MessageCircle, Hash,
 } from "lucide-react";
@@ -27,7 +28,7 @@ export default function PortalProhibitedPackages() {
   const isRTL = language === "ku" || language === "ar";
   const label = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
 
-  const { data: items, isLoading, refetch } = trpc.prohibited.getMine.useQuery();
+  const { data: items, isLoading, isError, isFetching, refetch } = trpc.prohibited.getMine.useQuery();
   const markViewed = trpc.prohibited.markViewed.useMutation();
   const chooseResolution = trpc.prohibited.chooseResolution.useMutation({
     onSuccess: () => { toast.success(label({ ku: "هەڵبژاردەکەت نێردرا", en: "Your choice was sent", ar: "تم إرسال اختيارك", zh: "已发送您的选择" })); refetch(); },
@@ -106,6 +107,10 @@ export default function PortalProhibitedPackages() {
 
         {isLoading ? (
           <div className="space-y-3">{[1, 2].map((i) => <div key={i} className={cn("h-40 rounded-2xl animate-pulse", isDark ? "bg-slate-800" : "bg-slate-200")} />)}</div>
+        ) : isError ? (
+          /* These are decisions the customer has to make about goods we are
+             holding. Reporting a failed request as "nothing here" hides them. */
+          <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : !items || items.length === 0 ? (
           <div className="text-center py-20">
             <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4", isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40")}>

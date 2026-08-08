@@ -1,5 +1,7 @@
 import { getDb } from './connection';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { chargeableWeight, isAirShipping } from '@shared/chargeableWeight';
+import { getVolumetricDivisor } from './settings.db';
 import { getCustomerAccountByCustomerId } from './finance.db';
 import { selfOrderWhere } from './selfOrder.filter';
 import {
@@ -136,11 +138,54 @@ export async function getCustomerBatches(customerId: number) {
   ]);
   const countByBatch = new Map(countRows.map(r => [r.batchId, r.count]));
 
+  /**
+   * The customer's own size in each batch, in the unit they are billed by.
+   *
+   * The card used to print `batch.totalWeight` — the whole batch's weight,
+   * everybody's goods together — beside the customer's own package count, so
+   * it read "3 pkgs · 1,240 kg". And it said kg for sea batches, which are
+   * billed by volume, so the number was both somebody else's and in the wrong
+   * unit.
+   */
+  const divisor = await getVolumetricDivisor();
+  const mine = await db.select({
+    batchId: packages.batchId,
+    weightKg: packages.weightKg,
+    lengthCm: packages.lengthCm,
+    widthCm: packages.widthCm,
+    heightCm: packages.heightCm,
+    volumeCbm: packages.volumeCbm,
+    shippingType: packages.shippingType,
+  }).from(packages)
+    .where(and(
+      eq(packages.customerId, customerId),
+      inArray(packages.batchId, batchIds),
+    ));
+
+  const sizeByBatch = new Map<number, { kg: number; cbm: number }>();
+  for (const p of mine) {
+    if (p.batchId == null) continue;
+    const acc = sizeByBatch.get(p.batchId) ?? { kg: 0, cbm: 0 };
+    if (isAirShipping(String(p.shippingType))) {
+      acc.kg += chargeableWeight(p, divisor).chargeableKg;
+    } else {
+      acc.cbm += Number(p.volumeCbm) || 0;
+    }
+    sizeByBatch.set(p.batchId, acc);
+  }
+
   return batchRows
-    .map(batch => ({
-      ...batch,
-      customerPackageCount: countByBatch.get(batch.id) || 0,
-    }))
+    .map(batch => {
+      const size = sizeByBatch.get(batch.id) ?? { kg: 0, cbm: 0 };
+      const bySea = String(batch.shippingType) === "sea";
+      return {
+        ...batch,
+        customerPackageCount: countByBatch.get(batch.id) || 0,
+        /** This customer's own total, in the unit this batch is billed by. */
+        customerChargeable: Number((bySea ? size.cbm : size.kg).toFixed(bySea ? 3 : 2)),
+        customerUnit: (bySea ? "cbm" : "kg") as "cbm" | "kg",
+      };
+    })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 

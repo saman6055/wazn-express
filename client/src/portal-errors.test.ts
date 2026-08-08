@@ -23,6 +23,9 @@ const MUST_HANDLE_ERRORS = [
   "PortalFullPackage.tsx",
   "PortalNotifications.tsx",
   "PortalAddresses.tsx",
+  "PortalHome.tsx",
+  "PortalProhibitedPackages.tsx",
+  "PortalUnclaimedPackages.tsx",
 ];
 
 describe("a dropped request is not an empty account", () => {

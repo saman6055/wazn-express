@@ -731,10 +731,17 @@ function ClassicPortalShipments() {
                           <Package className="w-4 h-4" />
                           <span>{batch.customerPackageCount} {language === "ku" ? "پاکەت" : language === "ar" ? "طرد" : "pkgs"}</span>
                         </div>
-                        {batch.totalWeight && (
+                        {/* The customer's own total, in the unit this batch is
+                            billed by. This used to print batch.totalWeight —
+                            the whole batch, everybody's goods — and always in
+                            kg, including for sea batches billed by volume. */}
+                        {(batch as any).customerChargeable > 0 && (
                           <div className={cn("flex items-center gap-1.5 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
-                            <span>⚖️</span>
-                            <span>{batch.totalWeight} kg</span>
+                            <span>{(batch as any).customerUnit === "cbm" ? "📦" : "⚖️"}</span>
+                            <span className="tabular-nums">
+                              {(batch as any).customerChargeable}{" "}
+                              {(batch as any).customerUnit === "cbm" ? "m³" : "kg"}
+                            </span>
                           </div>
                         )}
                       </div>
