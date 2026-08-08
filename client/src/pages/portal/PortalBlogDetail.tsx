@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { postText, anyPostText } from "@/lib/blogLang";
 import { SocialChannels, firstYouTubeId, YouTubeEmbed } from "@/components/portal/SocialChannels";
+import { copyText } from "@/lib/copyText";
 
 export default function PortalBlogDetail() {
 const { id } = useParams<{ id: string }>();
@@ -98,7 +99,7 @@ const { id } = useParams<{ id: string }>();
       }
     } else {
       // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
+      void copyText(window.location.href);
       toast.success(language === "ku" ? "لینک کۆپی کرا" : "Link copied!");
     }
   };

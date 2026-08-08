@@ -22,6 +22,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { toast } from "sonner";
+import { copyText } from "@/lib/copyText";
 
 // Language options for the picker — each labelled in its own script (native) so
 // a customer always recognises their language regardless of the current UI
@@ -223,7 +224,7 @@ const { t, language, setLanguage } = useLanguage();
     } catch (err) {
       if ((err as Error)?.name === "AbortError") return; // user cancelled
       try {
-        await navigator.clipboard.writeText(url);
+        await copyText(url);
         toast.success(pickLang(language, {
           ku: "لینک کۆپی کرا",
           en: "Link copied",

@@ -8,6 +8,7 @@ import { STATUS_LABEL, orderStageOf } from "@/lib/shipmentFilters";
 import { filterChinaDepot } from "@/lib/chinaDepotFilter";
 import { formatClockDate } from "@/lib/portalClock";
 import { Package, Warehouse, Copy, CheckCircle } from "lucide-react";
+import { copyText } from "@/lib/copyText";
 
 /**
  * What a customer has sitting in the China depot — the first rung of the
@@ -138,7 +139,7 @@ export function ChinaDepotList({
 
   const copy = async (code: string) => {
     try {
-      await navigator.clipboard.writeText(code);
+      await copyText(code);
       setCopied(code);
       setTimeout(() => setCopied(null), 1600);
     } catch {

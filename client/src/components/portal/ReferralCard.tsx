@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { Gift, Share2, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { copyText } from "@/lib/copyText";
 
 // ---------------------------------------------------------------------------
 // ReferralCard — "invite a friend" growth card on the portal home. The
@@ -64,7 +65,7 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
   // hand the customer something ready to paste anywhere.
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(shareText);
+      await copyText(shareText);
       toast.success(pickLang(language, { ku: "پەیامەکە کۆپی کرا ✓", en: "Message copied ✓", ar: "تم نسخ الرسالة ✓", zh: "消息已复制 ✓" }));
     } catch {
       toast.error(pickLang(language, { ku: "نەتوانرا کۆپی بکرێت", en: "Could not copy", ar: "تعذّر النسخ", zh: "无法复制" }));

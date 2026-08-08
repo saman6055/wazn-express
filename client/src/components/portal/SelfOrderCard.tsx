@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { PhotoStack } from "@/components/PhotoStack";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { pickLang } from "@/lib/lang";
+import { copyText } from "@/lib/copyText";
 import { cn } from "@/lib/utils";
 
 /**
@@ -89,9 +90,13 @@ export function SelfOrderCard({
 
   const cost = parseFloat(String(pkg.calculatedCostUsd ?? "0"));
 
-  const copy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(pick({ ku: "کۆپی کرا", en: "Copied", ar: "تم النسخ", zh: "已复制" }));
+  // navigator.clipboard is undefined in the Facebook and Instagram webviews
+  // — where a customer arriving from an advert actually is — so this threw
+  // inside the tap handler while still claiming success.
+  const copy = async (text: string) => {
+    const ok = await copyText(text);
+    if (ok) toast.success(pick({ ku: "کۆپی کرا", en: "Copied", ar: "تم النسخ", zh: "已复制" }));
+    else toast.error(pick({ ku: "نەتوانرا کۆپی بکرێت", en: "Couldn't copy", ar: "تعذّر النسخ", zh: "复制失败" }));
   };
 
   return (

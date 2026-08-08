@@ -27,6 +27,7 @@ import { OrderBillingGroups } from "@/components/portal/OrderBillingGroups";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { pickLang } from "@/lib/lang";
 import {
+  isDebt as isDebtBalance,
   INVOICE_STATE_LABEL,
   INVOICE_STATE_PRINT,
   INVOICE_STATE_TONE,
@@ -62,12 +63,14 @@ const { t, language } = useLanguage();
   const [selectedTransaction, setSelectedTransaction] = useState<number | null>(null);
   const searchString = useSearch();
   const urlTab = new URLSearchParams(searchString).get("tab");
-  const [activeTab, setActiveTab] = useState<"overview" | "transactions" | "invoices">(
-    urlTab === "transactions" || urlTab === "invoices" ? urlTab : "overview"
+  const [activeTab, setActiveTab] = useState<"overview" | "transactions">(
+    // "invoices" used to be accepted here and rendered a blank body: there is
+    // no such tab, only an invoice dialog opened from a transaction row.
+    urlTab === "transactions" ? urlTab : "overview"
   );
   // Keep the active tab in the URL so navigating to an order and pressing Back
   // returns the customer to the same tab (e.g. "transactions") they came from.
-  const changeTab = (tab: "overview" | "transactions" | "invoices") => {
+  const changeTab = (tab: "overview" | "transactions") => {
     setActiveTab(tab);
     const params = new URLSearchParams(searchString);
     if (tab === "overview") params.delete("tab");
@@ -96,7 +99,13 @@ const { t, language } = useLanguage();
   // Animate balance on load
   const balance = summary?.balanceUsd || 0;
   useEffect(() => {
-    if (balance !== 0) {
+    // Landing exactly on zero used to skip this entirely, so a customer who
+    // had just paid in full kept staring at the balance they had cleared.
+    if (balance === 0) {
+      setAnimatedBalance(0);
+      return;
+    }
+    {
       const duration = 1500;
       const steps = 60;
       const increment = balance / steps;
@@ -217,7 +226,10 @@ const { t, language } = useLanguage();
     { value: "year", label: "This Year", labelKu: "ئەم ساڵە" },
   ];
 
-  const isDebt = balance > 0;
+  const isDebt = isDebtBalance(balance);
+  // Zero is neither owed nor in credit, and the old ternary printed it as
+  // "-/usr/bin/bash.00" in green — a cleared account reading like a negative number.
+  const isCredit = balance < 0;
 
   const tabs = [
     { id: "overview", label: pickLang(language, { ku: "پوختە", en: "Overview", ar: "نظرة عامة", zh: "概览" }), icon: PieChart },
@@ -273,7 +285,7 @@ const { t, language } = useLanguage();
                     "text-4xl font-bold mt-1",
                     isDebt ? "text-red-500" : "text-emerald-500"
                   )}>
-                    {isDebt ? "" : "-"}{formatCurrency(Math.abs(animatedBalance))}
+                    <span dir="ltr">{isCredit ? "-" : ""}{formatCurrency(Math.abs(animatedBalance))}</span>
                   </p>
                 )}
               </div>

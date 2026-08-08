@@ -1,4 +1,4 @@
-import { CheckCircle, Truck, Package, MapPin, Clock, Warehouse, Ship } from "lucide-react";
+import { CheckCircle, Truck, Package, MapPin, Clock, Warehouse, Ship, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 
@@ -80,6 +80,60 @@ export function PackageTrackingTimeline({
   }
   const safeIndex = currentIndex >= 0 ? currentIndex : 0;
   const isDeliveredAll = normalizedCurrent === "delivered" || stageDates.has("delivered");
+
+  /**
+   * A parcel that was returned or cancelled is not on this road at all.
+   *
+   * Neither status is in RAW_TO_STAGE, so findIndex returned -1, safeIndex
+   * fell back to 0, and the timeline showed a cancelled parcel sitting
+   * cheerfully at step 1 of 5 — "Registered", as if it were on its way.
+   */
+  const terminal = currentStatus === "returned" || currentStatus === "cancelled";
+  if (terminal) {
+    const isReturned = currentStatus === "returned";
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-3 rounded-xl border p-4",
+          isReturned
+            ? "border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/30"
+            : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40",
+          className,
+        )}
+      >
+        <div
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white",
+            isReturned ? "bg-rose-500" : "bg-slate-500",
+          )}
+        >
+          <AlertCircle className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-foreground">
+            {isReturned
+              ? pickLang(language, { ku: "گەڕێندراوەتەوە", en: "Returned", ar: "مُرتجع", zh: "已退回" })
+              : pickLang(language, { ku: "هەڵوەشێنراوەتەوە", en: "Cancelled", ar: "ملغى", zh: "已取消" })}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {isReturned
+              ? pickLang(language, {
+                  ku: "ئەم پاکەتە گەڕێندراوەتەوە. بۆ وردەکاری پەیوەندیمان پێوە بکە.",
+                  en: "This parcel was returned. Contact us for details.",
+                  ar: "تم إرجاع هذا الطرد. تواصل معنا للتفاصيل.",
+                  zh: "该包裹已退回，详情请联系我们。",
+                })
+              : pickLang(language, {
+                  ku: "ئەم پاکەتە هەڵوەشێنراوەتەوە.",
+                  en: "This parcel was cancelled.",
+                  ar: "تم إلغاء هذا الطرد.",
+                  zh: "该包裹已取消。",
+                })}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-0", className)}>

@@ -14,6 +14,7 @@ import {
   type ContactChannel,
 } from "@/constants/contactChannels";
 import { PhoneCall, Copy, Check, ExternalLink } from "lucide-react";
+import { copyText } from "@/lib/copyText";
 
 /**
  * Contact — every way to reach the company, on one page.
@@ -33,7 +34,7 @@ export default function PortalContact() {
 
   const copy = async (channel: ContactChannel) => {
     try {
-      await navigator.clipboard.writeText(channel.value);
+      await copyText(channel.value);
       setCopied(channel.id);
       setTimeout(() => setCopied(null), 1800);
     } catch {

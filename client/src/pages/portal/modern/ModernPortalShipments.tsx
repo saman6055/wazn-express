@@ -1,5 +1,5 @@
 import { ChinaDepotList, useChinaDepotItems } from "@/components/portal/ChinaDepotList";
-import { STATUS_LABEL } from "@/lib/shipmentFilters";
+import { STATUS_LABEL, matchesStage, type ShipmentStage } from "@/lib/shipmentFilters";
 import { pickLang } from "@/lib/lang";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "wouter";
 
-type StatusFilter = "all" | "in_transit" | "arrived" | "delivered";
+type StatusFilter = "all" | ShipmentStage;
 
 export default function ModernPortalShipments() {
   const { language } = useLanguage();
@@ -80,22 +80,22 @@ export default function ModernPortalShipments() {
   const filteredBatches = useMemo(() => {
     let result = batches || [];
 
+    // One box searches two things: a batch code, and a tracking number looked
+    // up as a package. It only matched batch codes, so typing a tracking
+    // number emptied the list — the customer saw the green "found" card and,
+    // directly beneath it, "no shipments". Matching the found package's own
+    // batch shows the shipment it is travelling in.
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
+      const foundBatchId = (searchResult as any)?.batchId ?? null;
       result = result.filter((batch: any) =>
-        batch.batchCode?.toLowerCase().includes(query)
+        batch.batchCode?.toLowerCase().includes(query) ||
+        (foundBatchId !== null && batch.id === foundBatchId)
       );
     }
 
     if (statusFilter !== "all") {
-      result = result.filter((batch: any) => {
-        if (statusFilter === "in_transit") return batch.status === "in_transit";
-        if (statusFilter === "arrived")
-          return ["arrived", "customs"].includes(batch.status);
-        if (statusFilter === "delivered")
-          return ["delivered", "closed"].includes(batch.status);
-        return true;
-      });
+      result = result.filter((batch: any) => matchesStage(batch.status, statusFilter));
     }
 
     return [...result].sort(
@@ -103,7 +103,7 @@ export default function ModernPortalShipments() {
         new Date(b.createdAt || 0).getTime() -
         new Date(a.createdAt || 0).getTime()
     );
-  }, [batches, searchQuery, statusFilter]);
+  }, [batches, searchQuery, statusFilter, searchResult]);
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -196,8 +196,8 @@ export default function ModernPortalShipments() {
 
   const segmentedTabs: { value: StatusFilter; label: string }[] = [
     { value: "all", label: language === "ku" ? "هەموو" : "All" },
-    { value: "in_transit", label: language === "ku" ? "لەڕێگا" : "Transit" },
-    { value: "arrived", label: language === "ku" ? "گەیشتوو" : "Arrived" },
+    { value: "in_china", label: pickLang(language, { ku: "لە چین", en: "In China", ar: "في الصين", zh: "在中国" }) },
+    { value: "in_transit", label: pickLang(language, { ku: "لەڕێگا", en: "On the way", ar: "في الطريق", zh: "运输中" }) },
     { value: "delivered", label: language === "ku" ? "گەیاندرا" : "Delivered" },
   ];
 

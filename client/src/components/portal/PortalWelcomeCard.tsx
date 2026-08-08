@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { copyText } from "@/lib/copyText";
 import { cn } from "@/lib/utils";
 
 /**
@@ -50,14 +51,11 @@ export function PortalWelcomeCard({
     },
   ];
 
-  const copyCode = () => {
+  const copyCode = async () => {
     if (!customerCode) return;
-    try {
-      navigator.clipboard?.writeText(customerCode);
-      toast.success(pickLang(language, { ku: "کۆد کۆپی کرا", en: "Code copied", ar: "تم نسخ الرمز", zh: "编号已复制" }));
-    } catch {
-      toast.error(pickLang(language, { ku: "نەتوانرا کۆپی بکرێت", en: "Couldn't copy", ar: "تعذّر النسخ", zh: "复制失败" }));
-    }
+    const ok = await copyText(customerCode);
+    if (ok) toast.success(pickLang(language, { ku: "کۆد کۆپی کرا", en: "Code copied", ar: "تم نسخ الرمز", zh: "编号已复制" }));
+    else toast.error(pickLang(language, { ku: "نەتوانرا کۆپی بکرێت", en: "Couldn't copy", ar: "تعذّر النسخ", zh: "复制失败" }));
   };
 
   return (

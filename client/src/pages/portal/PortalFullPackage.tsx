@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -480,11 +480,19 @@ export default function PortalFullPackage() {
   // detail dialog (used when tapping a fee in the financial/transactions page).
   const searchString = useSearch();
   const deepLinkOrderId = new URLSearchParams(searchString).get("order");
+  // Open it once. The effect depended on the orders array's identity, so every
+  // refetch — including the one on window refocus — re-ran it and re-opened
+  // the dialog the customer had just closed, for as long as ?order= stayed in
+  // the URL. The comment claimed otherwise; a ref is what actually holds it.
+  const openedDeepLink = useRef<string | null>(null);
   useEffect(() => {
     if (!deepLinkOrderId || !fullPackageOrders?.length) return;
+    if (openedDeepLink.current === deepLinkOrderId) return;
     const match = fullPackageOrders.find((o: any) => String(o.id) === deepLinkOrderId);
-    if (match) openOrderDetail(match);
-    // Only react to the initial deep-link + data arrival, not to later re-opens.
+    if (match) {
+      openedDeepLink.current = deepLinkOrderId;
+      openOrderDetail(match);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLinkOrderId, fullPackageOrders]);
   

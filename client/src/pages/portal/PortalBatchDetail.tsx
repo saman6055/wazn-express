@@ -1,5 +1,6 @@
 ﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { pickLang } from "@/lib/lang";
+import { copyText } from "@/lib/copyText";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { STATUS_LABEL, SHIPPING_TYPE_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
@@ -184,7 +185,7 @@ const { t, language } = useLanguage();
       });
     } catch {
       // Fallback to copy
-      navigator.clipboard.writeText(window.location.href);
+      void copyText(window.location.href);
       toast.success(language === "ku" ? "لینک کۆپی کرا" : "Link copied!");
     }
   };
