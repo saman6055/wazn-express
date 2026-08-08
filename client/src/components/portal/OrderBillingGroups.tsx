@@ -297,7 +297,13 @@ export function OrderBillingGroups({
                 <div className={cn("mt-1 flex items-center justify-between border-t pt-2", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
                   <span className={cn("flex items-center gap-1 text-xs font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     <Wallet className="h-3.5 w-3.5" />
-                    {pick({ ku: "کۆی گشتی ئەم ئۆردەرە", en: "Order total", ar: "إجمالي الطلب", zh: "订单总计" })}
+                    {/* Grouped from the transactions this screen was handed,
+                        which is the most recent fifty — so on a long-standing
+                        account an older order card summed only the charges
+                        that happened to fall in that window and presented it
+                        as the definitive order total. Say what it actually
+                        is. */}
+                    {pick({ ku: "کۆی ئەم بڕگانە", en: "Total of these charges", ar: "مجموع هذه البنود", zh: "以上费用合计" })}
                   </span>
                   <span className={cn("text-sm font-black tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")} dir="ltr">
                     ${g.total.toFixed(2)}

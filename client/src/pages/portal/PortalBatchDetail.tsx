@@ -21,6 +21,7 @@ import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 // Timeline step type
 interface TimelineStep {
@@ -41,10 +42,18 @@ const { t, language } = useLanguage();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
   const params = useParams<{ id: string }>();
-  const batchId = parseInt(params.id || "0");
+  // A non-numeric id in the URL produced NaN, which the query happily sent
+  // and which matched nothing — and the empty branch below tested
+  // `length === 0`, false while data is undefined, so the page rendered a
+  // header and then nothing at all.
+  const parsedId = Number.parseInt(params.id ?? "", 10);
+  const batchId = Number.isFinite(parsedId) ? parsedId : 0;
   
   const { data: batches } = trpc.customerPortal.getMyBatches.useQuery();
-  const { data: packages, isLoading } = trpc.customerPortal.getMyPackagesInBatch.useQuery({ batchId });
+  const { data: packages, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyPackagesInBatch.useQuery(
+    { batchId },
+    { enabled: batchId > 0 },
+  );
   const { resolve: resolvePackageImage } = usePackageImages();
 
   // Which of these parcels are the customer's own buying. Derived server-side
@@ -367,7 +376,9 @@ const { t, language } = useLanguage();
               <Skeleton key={i} className={cn("h-32 w-full rounded-2xl", isDark && "bg-slate-800")} />
             ))}
           </div>
-        ) : packages?.length === 0 ? (
+        ) : isError ? (
+          <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
+        ) : !packages || packages.length === 0 ? (
           <div className={cn(
             "rounded-2xl p-10 text-center transition-colors duration-300",
             isDark ? "bg-slate-800" : "bg-white"

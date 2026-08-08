@@ -133,6 +133,8 @@ export default function PortalMessages() {
   
   // Get unread count
   const unreadQuery = trpc.supportChat.getUnreadCount.useQuery();
+  // The Notifications tab had no query at all behind it.
+  const { data: portalNotifications } = trpc.customerPortal.getMyNotifications.useQuery();
   
   // Initialize chat
   useEffect(() => {
@@ -812,42 +814,50 @@ export default function PortalMessages() {
           </>
         )}
         
-        {/* Notifications Tab */}
+        {/* Notifications Tab. This rendered a hardcoded "No Notifications"
+            with no query behind it at all, while getMyNotifications existed
+            and a customer might have five unread. */}
         {activeTab === "notifications" && (
           <div className={cn(
-            "flex-1 overflow-y-auto px-4 py-4",
+            "flex-1 overflow-y-auto px-4 py-4 space-y-2",
             isDark ? "bg-slate-900" : "bg-gray-50 dark:bg-gray-950/40"
           )}>
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", duration: 0.5 }}
-                className={cn(
-                  "w-24 h-24 rounded-full flex items-center justify-center mb-4",
-                  isDark 
-                    ? "bg-gradient-to-br from-amber-500/20 to-orange-500/20" 
-                    : "bg-gradient-to-br from-amber-100 to-orange-100"
-                )}
-              >
-                <Bell className={cn(
-                  "h-12 w-12",
-                  isDark ? "text-amber-400" : "text-amber-500"
-                )} />
-              </motion.div>
-              <h3 className={cn(
-                "font-bold text-lg mb-2",
-                isDark ? "text-white" : "text-gray-800 dark:text-gray-200"
-              )}>
-                {pickLang(language, { ku: "ئاگاداری نییە", en: "No Notifications", ar: "لا توجد إشعارات", zh: "暂无通知" })}
-              </h3>
-              <p className={cn(
-                "text-sm max-w-xs",
-                isDark ? "text-slate-400" : "text-gray-500"
-              )}>
-                {pickLang(language, { ku: "کاتێک ئاگاداریت هەبێت، لێرە دەردەکەوێت", en: "When you have notifications, they'll appear here", ar: "عند وصول إشعارات، ستظهر هنا", zh: "当您有通知时，将显示在这里" })}
-              </p>
-            </div>
+            {portalNotifications === undefined ? (
+              <Skeleton className="h-20 w-full rounded-2xl" />
+            ) : portalNotifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Bell className={cn("h-12 w-12 mb-3", isDark ? "text-slate-600" : "text-gray-300")} />
+                <h3 className={cn("font-bold", isDark ? "text-white" : "text-gray-800 dark:text-gray-200")}>
+                  {pickLang(language, { ku: "ئاگاداری نییە", en: "No notifications", ar: "لا توجد إشعارات", zh: "暂无通知" })}
+                </h3>
+                <p className={cn("text-sm mt-1", isDark ? "text-slate-400" : "text-gray-500")}>
+                  {pickLang(language, { ku: "کاتێک ئاگاداریت هەبێت، لێرە دەردەکەوێت", en: "They will appear here when you have some", ar: "ستظهر هنا عند وجودها", zh: "有通知时会显示在这里" })}
+                </p>
+              </div>
+            ) : (
+              <>
+                {portalNotifications.slice(0, 10).map((n: any) => (
+                  <div key={n.id} className={cn(
+                    "rounded-2xl border p-3",
+                    n.isRead
+                      ? "border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800/50"
+                      : "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30"
+                  )}>
+                    <p className={cn("text-sm font-bold", isDark ? "text-white" : "text-gray-800 dark:text-gray-200")}>
+                      {n.titleKu && language === "ku" ? n.titleKu : n.titleAr && language === "ar" ? n.titleAr : n.title}
+                    </p>
+                    <p className={cn("text-xs mt-0.5", isDark ? "text-slate-400" : "text-gray-600")}>
+                      {n.messageKu && language === "ku" ? n.messageKu : n.messageAr && language === "ar" ? n.messageAr : n.message}
+                    </p>
+                  </div>
+                ))}
+                <Link href="/portal/notifications">
+                  <button className="w-full rounded-2xl border border-dashed py-3 text-sm font-medium">
+                    {pickLang(language, { ku: "بینینی هەموو ئاگادارکردنەوەکان", en: "See all notifications", ar: "عرض كل الإشعارات", zh: "查看全部通知" })}
+                  </button>
+                </Link>
+              </>
+            )}
           </div>
         )}
         
