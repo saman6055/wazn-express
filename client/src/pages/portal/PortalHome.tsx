@@ -28,6 +28,7 @@ import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalHeaderControls, PortalClock, usePortalMode } from "@/components/portal/PortalHeaderControls";
 import { headerGradient, isLightHeader, modeDef, tint, gradient } from "@/lib/portalModes";
 import { PhotoStack } from "@/components/PhotoStack";
+import { isDebt } from "@/lib/portalMoney";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { stageOf } from "@/lib/shipmentFilters";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
@@ -263,7 +264,7 @@ const { t, language } = useLanguage();
   
   // Balance info
   const balance = financialSummary?.balanceUsd || 0;
-  const hasDebt = balance > 0;
+  const hasDebt = isDebt(balance);
 
   const getStatusIcon = (status: string) => {
     switch (status) {

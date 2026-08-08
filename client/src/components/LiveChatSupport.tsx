@@ -88,9 +88,16 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
   // Get messages query
   const messagesQuery = trpc.supportChat.getMessages.useQuery(
     { chatId: chatId! },
-    { 
+    {
       enabled: !!chatId,
-      refetchInterval: 5000, // Poll every 5 seconds
+      // Poll only while the customer is actually looking at the conversation.
+      // This component is mounted by all three portal layouts, so once a chat
+      // had been opened even once it kept firing every five seconds on every
+      // page for the rest of the session — 720 requests an hour per customer,
+      // for a panel that was closed. The 60-second unread count keeps the
+      // badge honest while it is shut.
+      refetchInterval: isOpen && !isMinimized ? 5000 : false,
+      refetchIntervalInBackground: false,
     }
   );
   

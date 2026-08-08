@@ -743,15 +743,25 @@ export async function getCustomerMessages(customerId: number, limit = 50): Promi
     .limit(limit);
 }
 
+/**
+ * The most recent messages in a conversation, oldest first for display.
+ *
+ * The ordering used to be ascending with the limit applied to it, so past a
+ * hundred messages the customer's thread froze on the first hundred and they
+ * never saw another reply — the conversation looked abandoned by us. Take the
+ * newest and reverse them, so the limit trims history rather than the present.
+ */
 export async function getConversationMessages(conversationId: string, limit = 100): Promise<CustomerMessage[]> {
   const db = await getDb();
   if (!db) return [];
-  
-  return db.select()
+
+  const newestFirst = await db.select()
     .from(customerMessages)
     .where(eq(customerMessages.conversationId, conversationId))
-    .orderBy(customerMessages.createdAt)
+    .orderBy(desc(customerMessages.createdAt))
     .limit(limit);
+
+  return newestFirst.reverse();
 }
 
 export async function createCustomerMessage(data: InsertCustomerMessage): Promise<CustomerMessage | null> {

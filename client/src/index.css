@@ -605,6 +605,32 @@
   text-align: right;
 }
 
+/* ---------------------------------------------------------------------------
+   Codes, money and figures read left-to-right, inside a right-to-left page.
+
+   A tracking number, a customer code, an invoice number and a price are all
+   Latin runs sitting in Kurdish or Arabic text. Without an explicit direction
+   the bidi algorithm reorders them against the paragraph: "JT5511006798204"
+   loses its leading letters to the end of the line, and "$12.00" puts the
+   dollar sign on the wrong side. A customer reads these aloud on the phone and
+   copies them into a shop's website, so scrambled is worse than ugly.
+
+   45 places carried dir="ltr" and about 148 did not — including the balance on
+   the home screen and every tracking number on it. Rather than annotate each
+   one, the two classes those values already use are isolated here:
+   `font-mono` is what codes are rendered in, and `tabular-nums` is what
+   figures are aligned with. `isolate` keeps them from disturbing the Kurdish
+   around them, which is the other half of what dir="ltr" does.
+
+   Anything genuinely Arabic-script that needs one of these classes can opt out
+   with dir="rtl" on the element itself, which wins over this rule.
+--------------------------------------------------------------------------- */
+[dir="rtl"] .font-mono:not([dir]),
+[dir="rtl"] .tabular-nums:not([dir]) {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 [dir="rtl"] .sidebar {
   border-left: 1px solid var(--sidebar-border);
   border-right: none;

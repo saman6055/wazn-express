@@ -27,6 +27,19 @@ export function isDebt(balanceUsd: number | null | undefined): boolean {
 }
 
 /**
+ * Negative means we are holding money for them.
+ *
+ * The counterpart exists so that no screen has to write `balance < 0` by
+ * hand — which is both the correct test for credit and the incorrect test for
+ * debt, and the portal already shipped the second one twice. With both named,
+ * a bare comparison in a portal file is always a mistake, and the test can say
+ * so without exceptions.
+ */
+export function isCredit(balanceUsd: number | null | undefined): boolean {
+  return Number(balanceUsd ?? 0) < 0;
+}
+
+/**
  * Money moving toward the customer (a payment they made, a refund, a discount).
  *
  * The enum has two shapes — `CREDIT_PAYMENT` and `ADJUSTMENT_CREDIT` — and the

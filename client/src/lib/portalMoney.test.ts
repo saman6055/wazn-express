@@ -131,11 +131,18 @@ describe("one copy of the rules", () => {
     expect(offenders, `use invoiceState/isInvoiceOutstanding:\n${offenders.join("\n")}`).toEqual([]);
   });
 
-  it("nobody reads a negative balance as debt", () => {
-    const offenders = FILES.filter((f) =>
-      /balance\w*\s*<\s*0/.test(fs.readFileSync(f, "utf8"))
-    ).map((f) => path.basename(f));
+  it("nobody compares a balance by hand", () => {
+    // Both directions are named in portalMoney now, so a bare comparison in a
+    // portal file is always a mistake — including the one this very test
+    // caught while the negative-zero render was being fixed.
+    const offenders = FILES.filter((f) => {
+      const src = fs.readFileSync(f, "utf8");
+      return /\bbalance\w*\s*[<>]\s*0\b/.test(src);
+    }).map((f) => path.basename(f));
 
-    expect(offenders, `positive means owed — use isDebt:\n${offenders.join("\n")}`).toEqual([]);
+    expect(
+      offenders,
+      `use isDebt / isCredit from lib/portalMoney — positive means owed:\n${offenders.join("\n")}`,
+    ).toEqual([]);
   });
 });

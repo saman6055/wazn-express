@@ -28,6 +28,7 @@ import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { pickLang } from "@/lib/lang";
 import {
   isDebt as isDebtBalance,
+  isCredit as isCreditBalance,
   INVOICE_STATE_LABEL,
   INVOICE_STATE_PRINT,
   INVOICE_STATE_TONE,
@@ -229,7 +230,7 @@ const { t, language } = useLanguage();
   const isDebt = isDebtBalance(balance);
   // Zero is neither owed nor in credit, and the old ternary printed it as
   // "-/usr/bin/bash.00" in green — a cleared account reading like a negative number.
-  const isCredit = balance < 0;
+  const isCredit = isCreditBalance(balance);
 
   const tabs = [
     { id: "overview", label: pickLang(language, { ku: "پوختە", en: "Overview", ar: "نظرة عامة", zh: "概览" }), icon: PieChart },

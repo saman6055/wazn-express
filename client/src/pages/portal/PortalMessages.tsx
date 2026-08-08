@@ -65,6 +65,7 @@ export default function PortalMessages() {
   const [newMessage, setNewMessage] = useState("");
   const [activeTab, setActiveTab] = useState("chat");
   const [chatId, setChatId] = useState<number | null>(null);
+  const [chatFailed, setChatFailed] = useState(false);
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -82,16 +83,31 @@ export default function PortalMessages() {
       setChatId(chat.id);
     },
     onError: (error) => {
+      // This used to console.error and nothing else: chatId stayed null, the
+      // composer, both attach buttons and send were all disabled with no
+      // reason given, and the header still said support was online. A dead
+      // page that looks alive.
       console.error('Failed to create chat:', error);
+      setChatFailed(true);
+      toast.error(pickLang(language, {
+        ku: "نەتوانرا گفتوگۆکە بکرێتەوە. تکایە دووبارە هەوڵ بدەرەوە.",
+        en: "Couldn't open the chat. Please try again.",
+        ar: "تعذّر فتح المحادثة. حاول مرة أخرى.",
+        zh: "无法打开对话，请重试。",
+      }));
     }
   });
   
   // Get chat messages
   const messagesQuery = trpc.supportChat.getMessages.useQuery(
     { chatId: chatId! },
-    { 
+    {
       enabled: !!chatId,
       refetchInterval: 5000,
+      // A backgrounded tab kept polling every five seconds all day. This page
+      // is the conversation, so five seconds is right while it is on screen —
+      // and nothing at all while it is not.
+      refetchIntervalInBackground: false,
     }
   );
   
@@ -336,8 +352,15 @@ export default function PortalMessages() {
                     {pickLang(language, { ku: "ناوەندی پەیام", en: "Message Center", ar: "مركز الرسائل", zh: "消息中心" })}
                   </h1>
                   <p className="text-white/70 text-xs flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                    {pickLang(language, { ku: "پشتگیری ئۆنلاین", en: "Support Online", ar: "الدعم متصل", zh: "客服在线" })}
+                    {/* The pulsing dot claimed support was live at 3am. It now
+                        reflects whether the conversation is actually open. */}
+                    <span className={cn("w-1.5 h-1.5 rounded-full", chatId ? "bg-emerald-400 animate-pulse" : "bg-white/40")} />
+                    {pickLang(language, {
+                      ku: "پشتگیری وەزن",
+                      en: "Wazn Support",
+                      ar: "دعم وزن",
+                      zh: "Wazn 客服",
+                    })}
                   </p>
                 </div>
               </div>
@@ -559,8 +582,14 @@ export default function PortalMessages() {
                                 </audio>
                               </div>
                             )}
-                            {/* Text content */}
-                            {message.content && message.messageType === "text" && (
+                            {/* Text content. The type check used to be
+                                `=== "text"`, but a caption typed alongside a
+                                photo is sent as `content` on an `image` or
+                                `file` message — so staff received "this
+                                arrived broken, see photo" while the customer's
+                                own thread showed the picture and nothing
+                                else, as if they had never explained. */}
+                            {message.content && (
                             <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                             )}
                             <div
@@ -633,6 +662,31 @@ export default function PortalMessages() {
                     <X className="w-4 h-4" />
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* The chat could not be opened. Every control below is
+                disabled in that state, so say why and offer the way out
+                rather than leaving a dead composer. */}
+            {chatFailed && !chatId && (
+              <div className="border-t border-amber-200 bg-amber-50 px-4 py-3 text-center dark:border-amber-900/60 dark:bg-amber-950/30">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                  {pickLang(language, {
+                    ku: "نەتوانرا گفتوگۆکە بکرێتەوە",
+                    en: "Couldn't open the chat",
+                    ar: "تعذّر فتح المحادثة",
+                    zh: "无法打开对话",
+                  })}
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-2 bg-amber-600 text-white hover:bg-amber-700"
+                  disabled={getOrCreateChat.isPending}
+                  onClick={() => { setChatFailed(false); getOrCreateChat.mutate(); }}
+                >
+                  <RefreshCw className={cn("h-4 w-4", getOrCreateChat.isPending && "animate-spin")} />
+                  {pickLang(language, { ku: "دووبارە هەوڵ بدەرەوە", en: "Try again", ar: "إعادة المحاولة", zh: "重试" })}
+                </Button>
               </div>
             )}
 
