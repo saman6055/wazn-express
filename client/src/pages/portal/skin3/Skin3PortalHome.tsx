@@ -30,6 +30,8 @@ import { motion } from "framer-motion";
 import { PriceListSection } from "@/components/portal/PriceListSection";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
+import { isDebt, isCreditTx } from "@/lib/portalMoney";
+import { pickLang } from "@/lib/lang";
 
 // Bold ¥ glyph styled like a lucide icon (lucide has no CNY symbol).
 // Accepts (and ignores) strokeWidth so it can stand in for a lucide icon.
@@ -87,7 +89,7 @@ function AnimatedCounter({
 
 // Transaction style helper
 function getTransactionStyle(type: string, isDark: boolean) {
-  if (type === "payment" || type === "credit") {
+  if (isCreditTx(type)) {
     return {
       icon: ArrowDownRight,
       color: isDark ? "text-emerald-400" : "text-emerald-600",
@@ -370,9 +372,11 @@ export default function Skin3PortalHome() {
                   <span className="text-2xl font-bold text-white/60 tabular-nums">
                     .{Math.abs(balanceValue % 1).toFixed(2).slice(2)}
                   </span>
-                  {balanceValue < 0 && (
+                  {/* Was `< 0` — inverted, so the badge appeared for customers
+                      in credit and hid from the ones who owed money. */}
+                  {isDebt(balanceValue) && (
                     <span className="ms-2 px-2 py-1 rounded-lg bg-red-500/30 text-red-200 text-xs font-black uppercase">
-                      {language === "ku" ? "قەرز" : "Debt"}
+                      {pickLang(language, { ku: "قەرز", en: "Owed", ar: "مستحق", zh: "欠款" })}
                     </span>
                   )}
                 </div>
@@ -562,9 +566,7 @@ export default function Skin3PortalHome() {
                   const style = getTransactionStyle(tx.transactionType, isDark);
                   const TxIcon = style.icon;
                   const amount = Number(tx.amountUsd) || 0;
-                  const isCredit =
-                    tx.transactionType === "payment" ||
-                    tx.transactionType === "credit";
+                  const isCredit = isCreditTx(tx.transactionType);
 
                   return (
                     <motion.div

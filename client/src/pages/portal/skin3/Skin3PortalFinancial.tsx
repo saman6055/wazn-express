@@ -20,6 +20,8 @@ import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { pickLang } from "@/lib/lang";
+import { isCreditTx, isDebt, isInvoiceOutstanding } from "@/lib/portalMoney";
 
 type FilterTab = "all" | "credit" | "debit";
 
@@ -50,39 +52,24 @@ export default function Skin3PortalFinancial() {
     { enabled: !!receiptTxId }
   );
 
+  // Same three broken filters as the modern skin: they tested for values the
+  // ledger and invoice enums do not contain, so both tabs were always empty,
+  // no unpaid invoice ever appeared, and payments were drawn as charges.
   const filteredTransactions = useMemo(() => {
     if (!transactions) return [];
     if (activeTab === "all") return transactions;
-    if (activeTab === "credit") {
-      return transactions.filter(
-        (tx: any) =>
-          tx.transactionType === "payment" ||
-          tx.transactionType === "credit" ||
-          tx.transactionType === "refund"
-      );
-    }
-    return transactions.filter(
-      (tx: any) =>
-        tx.transactionType === "charge" ||
-        tx.transactionType === "debit" ||
-        tx.transactionType === "invoice"
-    );
+    if (activeTab === "credit") return transactions.filter((tx: any) => isCreditTx(tx.transactionType));
+    return transactions.filter((tx: any) => !isCreditTx(tx.transactionType));
   }, [transactions, activeTab]);
 
   const unpaidInvoices = useMemo(() => {
     if (!invoices) return [];
-    return invoices.filter(
-      (inv: any) =>
-        inv.status === "unpaid" ||
-        inv.status === "pending" ||
-        inv.status === "overdue"
-    );
+    return invoices.filter((inv: any) => isInvoiceOutstanding(inv.status));
   }, [invoices]);
 
   const totalPaid = summary?.totalPaid ?? 0;
 
-  const isCredit = (type: string) =>
-    type === "payment" || type === "credit" || type === "refund";
+  const isCredit = (type: string) => isCreditTx(type);
 
   const formatCurrency = (amount: number | string) => {
     const num = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -150,13 +137,12 @@ export default function Skin3PortalFinancial() {
     },
     {
       icon: CreditCard,
-      label:
-        language === "ku"
-          ? "کۆی قەرز"
-          : language === "ar"
-          ? "إجمالي المدين"
-          : "Total Debit",
-      value: formatCurrency((summary as any)?.totalCharged ?? summary?.totalPaid ?? 0),
+      // This read `totalCharged`, which the summary has never carried, so it
+      // fell through to totalPaid — three tiles on one screen printing the
+      // same figure, one of them in red under the word "debt". The real
+      // outstanding amount is the balance, and only when it is owed.
+      label: pickLang(language, { ku: "قەرزی ماوە", en: "Outstanding", ar: "المبلغ المستحق", zh: "未结余额" }),
+      value: formatCurrency(isDebt(summary?.balanceUsd) ? Number(summary?.balanceUsd ?? 0) : 0),
       accent: "text-red-500 dark:text-red-400",
       bg: isDark ? "bg-red-500/15" : "bg-red-50 dark:bg-red-950/40",
     },
@@ -169,13 +155,10 @@ export default function Skin3PortalFinancial() {
     },
     {
       icon: FileText,
-      label:
-        language === "ku"
-          ? "پارەدراو"
-          : language === "ar"
-          ? "مدفوع"
-          : "Paid",
-      value: formatCurrency(summary?.totalPaid ?? 0),
+      // Was a second copy of "total paid" under a different word. The credit
+      // limit is the one number on this screen the customer could not see.
+      label: pickLang(language, { ku: "سنووری قەرز", en: "Credit limit", ar: "حد الائتمان", zh: "信用额度" }),
+      value: formatCurrency(summary?.creditLimitUsd ?? 0),
       accent: "text-indigo-600 dark:text-indigo-400",
       bg: isDark ? "bg-indigo-500/15" : "bg-indigo-50 dark:bg-indigo-950/40",
     },
@@ -223,7 +206,7 @@ export default function Skin3PortalFinancial() {
                       isDark ? "text-white" : "text-white"
                     )}
                   >
-                    ${(summary?.balanceUsd ?? 0).toFixed(2)}
+                    <span dir="ltr">${Math.abs(summary?.balanceUsd ?? 0).toFixed(2)}</span>
                   </span>
                   <span
                     className={cn(
@@ -233,6 +216,12 @@ export default function Skin3PortalFinancial() {
                   >
                     USD
                   </span>
+                  {/* Shown signed and unlabelled, this read as money in hand. */}
+                  {isDebt(summary?.balanceUsd) && (
+                    <span className="rounded-full bg-red-500/25 px-2 py-0.5 text-xs font-bold text-red-200">
+                      {pickLang(language, { ku: "قەرز", en: "Owed", ar: "مستحق", zh: "欠款" })}
+                    </span>
+                  )}
                 </div>
               )}
             </div>

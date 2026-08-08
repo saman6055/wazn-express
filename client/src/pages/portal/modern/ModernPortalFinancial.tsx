@@ -14,6 +14,8 @@ import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { pickLang } from "@/lib/lang";
+import { isCreditTx, isDebt, isInvoiceOutstanding } from "@/lib/portalMoney";
 
 type FilterTab = "all" | "credit" | "debit";
 
@@ -38,40 +40,27 @@ export default function ModernPortalFinancial() {
       { enabled: !!receiptTxId }
     );
 
+  // These three filters tested strings the database has never produced
+  // ("payment", "unpaid", "charge"), so both tabs were permanently empty, the
+  // unpaid-invoice section never rendered, and every payment the customer had
+  // made was drawn as another charge. They now go through the shared rules.
   const filteredTransactions = useMemo(() => {
     if (!transactions) return [];
     if (activeTab === "all") return transactions;
-    if (activeTab === "credit") {
-      return transactions.filter(
-        (tx: any) =>
-          tx.transactionType === "payment" ||
-          tx.transactionType === "credit" ||
-          tx.transactionType === "refund"
-      );
-    }
-    // debit
-    return transactions.filter(
-      (tx: any) =>
-        tx.transactionType === "charge" ||
-        tx.transactionType === "debit" ||
-        tx.transactionType === "invoice"
-    );
+    if (activeTab === "credit") return transactions.filter((tx: any) => isCreditTx(tx.transactionType));
+    return transactions.filter((tx: any) => !isCreditTx(tx.transactionType));
   }, [transactions, activeTab]);
 
   const unpaidInvoices = useMemo(() => {
     if (!invoices) return [];
-    return invoices.filter(
-      (inv: any) => inv.status === "unpaid" || inv.status === "pending" || inv.status === "overdue"
-    );
+    return invoices.filter((inv: any) => isInvoiceOutstanding(inv.status));
   }, [invoices]);
 
   const totalPaid = useMemo(() => {
     return summary?.totalPaid ?? 0;
   }, [summary]);
 
-  const isCredit = (type: string) => {
-    return type === "payment" || type === "credit" || type === "refund";
-  };
+  const isCredit = (type: string) => isCreditTx(type);
 
   const formatCurrency = (amount: number | string) => {
     const num = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -147,13 +136,20 @@ export default function ModernPortalFinancial() {
                     "text-4xl font-bold font-mono tracking-tight",
                     isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
                   )}>
-                    ${(summary?.balanceUsd ?? 0).toFixed(2)}
+                    {/* Signed and unlabelled, this read as money the customer
+                        HAS. Positive means they owe it, so say which. */}
+                    <span dir="ltr">${Math.abs(summary?.balanceUsd ?? 0).toFixed(2)}</span>
                     <span className={cn(
                       "text-base font-normal ms-2",
                       isDark ? "text-emerald-300/60" : "text-emerald-600/60"
                     )}>
                       USD
                     </span>
+                    {isDebt(summary?.balanceUsd) && (
+                      <span className="ms-2 rounded-full bg-red-500/25 px-2 py-0.5 align-middle text-xs font-medium text-red-200">
+                        {pickLang(language, { ku: "قەرز", en: "Owed", ar: "مستحق", zh: "欠款" })}
+                      </span>
+                    )}
                   </h1>
                   {(summary?.balanceIqd ?? 0) !== 0 && (
                     <p className={cn(
@@ -189,7 +185,10 @@ export default function ModernPortalFinancial() {
               },
               {
                 icon: CreditCard,
-                label: t("portal.balance"),
+                // Was labelled "Balance", next to a hero card also labelled
+                // "Balance" showing a different number. This one is the credit
+                // limit and always was.
+                label: pickLang(language, { ku: "سنووری قەرز", en: "Credit limit", ar: "حد الائتمان", zh: "信用额度" }),
                 value: formatCurrency(summary?.creditLimitUsd ?? 0),
                 color: "text-sky-600 dark:text-sky-400",
                 bg: isDark ? "bg-sky-500/10" : "bg-sky-50 dark:bg-sky-950/40",

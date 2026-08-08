@@ -25,6 +25,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { StatementPdfButton } from "@/components/portal/StatementPdfButton";
 import { OrderBillingGroups } from "@/components/portal/OrderBillingGroups";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
+import { pickLang } from "@/lib/lang";
+import {
+  INVOICE_STATE_LABEL,
+  INVOICE_STATE_PRINT,
+  INVOICE_STATE_TONE,
+  invoiceState,
+  isCreditTx,
+  isInvoiceOutstanding,
+} from "@/lib/portalMoney";
 
 // Deep-link a ledger transaction to the section it was raised for, so tapping a
 // row jumps straight to the relevant package/order/prohibited item.
@@ -113,7 +122,7 @@ const { t, language } = useLanguage();
       return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
     });
     return {
-      payments: thisMonth.filter(tx => tx.transactionType.startsWith("CREDIT_")).reduce((sum, tx) => sum + Number(tx.amountUsd), 0),
+      payments: thisMonth.filter(tx => isCreditTx(tx.transactionType)).reduce((sum, tx) => sum + Number(tx.amountUsd), 0),
       charges: thisMonth.filter(tx => tx.transactionType.startsWith("DEBIT_")).reduce((sum, tx) => sum + Number(tx.amountUsd), 0),
       count: thisMonth.length
     };
@@ -133,7 +142,7 @@ const { t, language } = useLanguage();
       });
       months.push({
         month: monthName,
-        payments: monthTxs.filter(tx => tx.transactionType.startsWith("CREDIT_")).reduce((sum, tx) => sum + Number(tx.amountUsd), 0),
+        payments: monthTxs.filter(tx => isCreditTx(tx.transactionType)).reduce((sum, tx) => sum + Number(tx.amountUsd), 0),
         charges: monthTxs.filter(tx => tx.transactionType.startsWith("DEBIT_")).reduce((sum, tx) => sum + Number(tx.amountUsd), 0)
       });
     }
@@ -152,14 +161,14 @@ const { t, language } = useLanguage();
   };
 
   const getTransactionIcon = (type: string) => {
-    if (type.startsWith("CREDIT_")) {
+    if (isCreditTx(type)) {
       return <ArrowDownLeft className="w-4 h-4" />;
     }
     return <ArrowUpRight className="w-4 h-4" />;
   };
 
   const getTransactionColor = (type: string, isDark: boolean) => {
-    if (type.startsWith("CREDIT_")) {
+    if (isCreditTx(type)) {
       return { 
         bg: isDark ? "bg-emerald-900/50" : "bg-emerald-100 dark:bg-emerald-950/40", 
         icon: "text-emerald-500", 
@@ -188,7 +197,7 @@ const { t, language } = useLanguage();
     if (!receiptData) return;
     const { transaction, customer, companyName, generatedAt } = receiptData;
     
-    const receiptHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt - ${transaction.transactionNumber}</title><style>body{font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}.logo{font-size:24px;font-weight:bold;color:#1e3a5f}.receipt-title{font-size:18px;margin-top:10px}.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #ccc}.label{color:#666}.value{font-weight:500}.amount{font-size:24px;font-weight:bold;text-align:center;padding:20px 0}.amount.credit{color:#16a34a}.amount.debit{color:#dc2626}.footer{text-align:center;margin-top:30px;font-size:12px;color:#666}.barcode{text-align:center;font-family:monospace;font-size:14px;letter-spacing:2px;margin:20px 0}</style></head><body><div class="header"><div class="logo">📦 ${companyName}</div><div class="receipt-title">Payment Receipt</div></div><div class="info-row"><span class="label">Receipt #</span><span class="value">${transaction.transactionNumber}</span></div><div class="info-row"><span class="label">Date</span><span class="value">${new Date(transaction.createdAt).toLocaleDateString()}</span></div><div class="info-row"><span class="label">Customer</span><span class="value">${customer.fullName}</span></div><div class="info-row"><span class="label">Customer Code</span><span class="value">${customer.customerCode || "-"}</span></div><div class="info-row"><span class="label">Type</span><span class="value">${getTransactionTypeName(transaction.transactionType)}</span></div><div class="amount ${transaction.transactionType.startsWith("CREDIT_") ? "credit" : "debit"}">${transaction.transactionType.startsWith("CREDIT_") ? "-" : "+"}$${Number(transaction.amountUsd).toFixed(2)}</div><div class="barcode">${transaction.transactionNumber}</div><div class="footer"><p>Thank you for your business!</p><p>Generated: ${new Date(generatedAt).toLocaleString()}</p></div></body></html>`;
+    const receiptHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt - ${transaction.transactionNumber}</title><style>body{font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}.logo{font-size:24px;font-weight:bold;color:#1e3a5f}.receipt-title{font-size:18px;margin-top:10px}.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #ccc}.label{color:#666}.value{font-weight:500}.amount{font-size:24px;font-weight:bold;text-align:center;padding:20px 0}.amount.credit{color:#16a34a}.amount.debit{color:#dc2626}.footer{text-align:center;margin-top:30px;font-size:12px;color:#666}.barcode{text-align:center;font-family:monospace;font-size:14px;letter-spacing:2px;margin:20px 0}</style></head><body><div class="header"><div class="logo">📦 ${companyName}</div><div class="receipt-title">Payment Receipt</div></div><div class="info-row"><span class="label">Receipt #</span><span class="value">${transaction.transactionNumber}</span></div><div class="info-row"><span class="label">Date</span><span class="value">${new Date(transaction.createdAt).toLocaleDateString()}</span></div><div class="info-row"><span class="label">Customer</span><span class="value">${customer.fullName}</span></div><div class="info-row"><span class="label">Customer Code</span><span class="value">${customer.customerCode || "-"}</span></div><div class="info-row"><span class="label">Type</span><span class="value">${getTransactionTypeName(transaction.transactionType)}</span></div><div class="amount ${isCreditTx(transaction.transactionType) ? "credit" : "debit"}">${isCreditTx(transaction.transactionType) ? "-" : "+"}$${Number(transaction.amountUsd).toFixed(2)}</div><div class="barcode">${transaction.transactionNumber}</div><div class="footer"><p>Thank you for your business!</p><p>Generated: ${new Date(generatedAt).toLocaleString()}</p></div></body></html>`;
     
     const blob = new Blob([receiptHTML], { type: "text/html" });
     const url = URL.createObjectURL(blob);
@@ -521,7 +530,7 @@ const { t, language } = useLanguage();
                         </p>
                       </div>
                       <p className={cn("font-bold", colors.amount)}>
-                        {tx.transactionType.startsWith("CREDIT_") ? "-" : "+"}
+                        {isCreditTx(tx.transactionType) ? "-" : "+"}
                         {formatCurrency(Number(tx.amountUsd))}
                       </p>
                     </div>
@@ -612,7 +621,7 @@ const { t, language } = useLanguage();
                         
                         <div className="flex items-center gap-2">
                           <p className={cn("text-lg font-bold", colors.amount)}>
-                            {tx.transactionType.startsWith("CREDIT_") ? "-" : "+"}
+                            {isCreditTx(tx.transactionType) ? "-" : "+"}
                             {formatCurrency(Number(tx.amountUsd))}
                           </p>
                           {tx.invoiceId && (
@@ -687,11 +696,11 @@ const { t, language } = useLanguage();
                 </p>
                 <p className={cn(
                   "text-3xl font-bold",
-                  receiptData.transaction.transactionType.startsWith("CREDIT_") 
+                  isCreditTx(receiptData.transaction.transactionType) 
                     ? "text-emerald-500" 
                     : "text-red-500"
                 )}>
-                  {receiptData.transaction.transactionType.startsWith("CREDIT_") ? "-" : "+"}
+                  {isCreditTx(receiptData.transaction.transactionType) ? "-" : "+"}
                   {formatCurrency(Number(receiptData.transaction.amountUsd))}
                 </p>
               </div>
@@ -789,8 +798,8 @@ const { t, language } = useLanguage();
       <div class="invoice-title">
         <h1>INVOICE</h1>
         <div class="invoice-number">${invoice.invoiceNumber}</div>
-        <span class="status ${invoice.status === 'cancelled' ? 'status-cancelled' : 'status-paid'}">
-          ${invoice.status === 'cancelled' ? 'CANCELLED' : 'PAID'}
+        <span class="status ${invoiceState(invoice.status) === 'paid' ? 'status-paid' : 'status-cancelled'}">
+          ${INVOICE_STATE_PRINT[invoiceState(invoice.status)]}
         </span>
       </div>
     </div>
@@ -876,33 +885,26 @@ const { t, language } = useLanguage();
                 </DialogHeader>
                 
                 <div className="space-y-4">
-                  {/* Status Banner */}
-                  <div className={cn(
-                    "p-4 rounded-xl text-center",
-                    invoice.status === "cancelled"
-                      ? "bg-red-100 dark:bg-red-900/30"
-                      : "bg-emerald-100 dark:bg-emerald-900/30"
-                  )}>
-                    <div className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2",
-                      invoice.status === "cancelled" ? "bg-red-500" : "bg-emerald-500"
-                    )}>
-                      {invoice.status === "cancelled" ? (
-                        <XCircle className="w-6 h-6 text-white" />
-                      ) : (
-                        <CheckCircle2 className="w-6 h-6 text-white" />
-                      )}
-                    </div>
-                    <p className={cn(
-                      "font-semibold",
-                      invoice.status === "cancelled" ? "text-red-700 dark:text-red-400"
-                        : "text-emerald-700 dark:text-emerald-400"
-                    )}>
-                      {invoice.status === "cancelled"
-                        ? (language === "ku" ? "هەڵوەشێنراو" : "Cancelled")
-                        : (language === "ku" ? "پارەدراو" : "Paid")}
-                    </p>
-                  </div>
+                  {/* Status banner. This used to read "Paid" for everything
+                      that was not cancelled — so a draft, issued or half-paid
+                      invoice told the customer there was nothing to pay. */}
+                  {(() => {
+                    const state = invoiceState(invoice.status);
+                    const tone = INVOICE_STATE_TONE[state];
+                    const settled = state === "paid";
+                    return (
+                      <div className={cn("p-4 rounded-xl text-center", tone.chip)}>
+                        <div className={cn("w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2", tone.dot)}>
+                          {settled
+                            ? <CheckCircle2 className="w-6 h-6 text-white" />
+                            : <XCircle className="w-6 h-6 text-white" />}
+                        </div>
+                        <p className={cn("font-semibold", tone.text)}>
+                          {pickLang(language, INVOICE_STATE_LABEL[state])}
+                        </p>
+                      </div>
+                    );
+                  })()}
                   
                   {/* Amount */}
                   <div className={cn("text-center py-4 border-b", isDark ? "border-slate-700" : "")}>

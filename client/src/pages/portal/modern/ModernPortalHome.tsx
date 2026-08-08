@@ -31,6 +31,8 @@ import { motion } from "framer-motion";
 import { PriceListSection } from "@/components/portal/PriceListSection";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
+import { isDebt, isCreditTx } from "@/lib/portalMoney";
+import { pickLang } from "@/lib/lang";
 
 // Bold ¥ glyph styled like a lucide icon (lucide has no CNY symbol).
 function YuanGlyphIcon({ className }: { className?: string }) {
@@ -110,7 +112,7 @@ function getGreeting(language: string): string {
 
 // Transaction icon/color helper
 function getTransactionStyle(type: string) {
-  if (type === "payment" || type === "credit") {
+  if (isCreditTx(type)) {
     return {
       icon: ArrowDownRight,
       color: "text-emerald-600 dark:text-emerald-400",
@@ -382,9 +384,12 @@ export default function ModernPortalHome() {
                       .toFixed(2)
                       .slice(2)}
                   </span>
-                  {balanceValue < 0 && (
+                  {/* Was `< 0`. Positive is what the ledger means by "owes us"
+                      — so this badge was on for customers in credit and off
+                      for the ones who actually owed money. */}
+                  {isDebt(balanceValue) && (
                     <span className="text-red-200 text-xs font-medium ms-2 px-2 py-0.5 rounded-full bg-red-500/30">
-                      {language === "ku" ? "قەرز" : "Debt"}
+                      {pickLang(language, { ku: "قەرز", en: "Owed", ar: "مستحق", zh: "欠款" })}
                     </span>
                   )}
                 </div>
@@ -616,11 +621,8 @@ export default function ModernPortalHome() {
                           style.color
                         )}
                       >
-                        {tx.transactionType === "payment" ||
-                        tx.transactionType === "credit"
-                          ? "+"
-                          : "-"}
-                        ${Math.abs(amount).toFixed(2)}
+                        {isCreditTx(tx.transactionType) ? "+" : "-"}
+                        <span dir="ltr">${Math.abs(amount).toFixed(2)}</span>
                       </span>
                     </motion.div>
                   );
