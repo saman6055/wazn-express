@@ -29,6 +29,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PriceListSection } from "@/components/portal/PriceListSection";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
+import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
 import { isDebt, isCreditTx } from "@/lib/portalMoney";
 import { pickLang } from "@/lib/lang";
@@ -413,6 +414,15 @@ export default function Skin3PortalHome() {
 
           <PriceListSection />
         </motion.div>
+
+        {/* A brand-new customer met four zeroes and, on this skin, a large
+            "Pay Now" button over a /usr/bin/bash.00 balance. Tell them how to start
+            instead. Shown only while they genuinely have nothing. */}
+        {!packagesLoading && totalPackages === 0 && (
+          <motion.div variants={itemVariants} className="mb-6">
+            <PortalWelcomeCard customerCode={account?.customerCode} isDark={isDark} />
+          </motion.div>
+        )}
 
         {/* ===== Stats 2x2 Grid ===== */}
         <motion.div variants={itemVariants} className="mb-8">

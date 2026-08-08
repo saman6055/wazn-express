@@ -28,6 +28,7 @@ import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalHeaderControls, PortalClock, usePortalMode } from "@/components/portal/PortalHeaderControls";
 import { headerGradient, isLightHeader, modeDef, tint, gradient } from "@/lib/portalModes";
 import { PhotoStack } from "@/components/PhotoStack";
+import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { stageOf } from "@/lib/shipmentFilters";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 
@@ -1009,6 +1010,13 @@ const { t, language } = useLanguage();
             ))}
           </div>
         ) : recentBatches.length === 0 ? (
+          /* A brand-new customer used to get a grey box saying "nothing here"
+             at the one moment they most need telling what to do. If they have
+             never sent anything, show them how; if they have and this is just
+             a quiet week, the plain message is right. */
+          totalBatches === 0 ? (
+            <PortalWelcomeCard customerCode={account?.customerCode} isDark={isDark} />
+          ) : (
           <div className={cn(
             "rounded-2xl p-10 text-center shadow-sm transition-colors duration-300",
             isDark ? "bg-slate-800" : "bg-white"
@@ -1026,6 +1034,7 @@ const { t, language } = useLanguage();
               {t("portal.shipmentsWillAppear") || "گواستنەوەکانت لێرە دەردەکەون"}
             </p>
           </div>
+          )
         ) : (
           <div className="space-y-3">
             {recentBatches.map((batch) => (
