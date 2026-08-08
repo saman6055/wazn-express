@@ -951,9 +951,47 @@ export const backupRouter = router({
       }),
 });
 
+/**
+ * May this user change that user's permissions?
+ *
+ * `bulkUpdate` carried this check inline while `setPermission`,
+ * `setSubPermission` and `deletePermissions` sat on bare `protectedProcedure`
+ * — which any signed-in session satisfies, including a portal customer. A
+ * customer could grant themselves nothing useful today, because permissions
+ * are enforced in the UI rather than on the server, but they could strip an
+ * admin's rows and write audit entries stamped `userRole: "customer"`. The
+ * moment enforcement moves server-side it becomes privilege escalation.
+ *
+ * Now every writer goes through here, and the rule is stated once.
+ */
+async function assertCanManagePermissions(
+  ctx: { user: { role: string } },
+  targetUserId: number,
+): Promise<void> {
+  const targetUser = await db.getUserById(targetUserId);
+  if (!targetUser) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+  }
+  if (ctx.user.role === "super_admin") return;
+  if (ctx.user.role === "admin") {
+    // An admin must not be able to edit another admin, or themselves upward.
+    if (targetUser.role !== "employee" && targetUser.role !== "accountant") {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Admin can only manage Employee and Accountant roles",
+      });
+    }
+    return;
+  }
+  throw new TRPCError({
+    code: "FORBIDDEN",
+    message: "You do not have permission to manage user permissions",
+  });
+}
+
 export const permissionsRouter = router({
     // Get user permissions
-    getUserPermissions: protectedProcedure
+    getUserPermissions: staffProcedure
       .input(z.object({ userId: z.number() }))
       .query(async ({ input }) => {
         const perms = await db.getUserPermissions(input.userId);
@@ -965,7 +1003,7 @@ export const permissionsRouter = router({
       }),
 
     // Check if user has permission
-    checkPermission: protectedProcedure
+    checkPermission: staffProcedure
       .input(z.object({
         userId: z.number(),
         module: z.string(),
@@ -981,7 +1019,7 @@ export const permissionsRouter = router({
       }),
 
     // Check if user has sub-permission
-    checkSubPermission: protectedProcedure
+    checkSubPermission: staffProcedure
       .input(z.object({
         userId: z.number(),
         module: z.string(),
@@ -997,7 +1035,7 @@ export const permissionsRouter = router({
       }),
 
     // Set module permission
-    setPermission: protectedProcedure
+    setPermission: adminProcedure
       .input(z.object({
         userId: z.number(),
         module: z.string(),
@@ -1007,6 +1045,7 @@ export const permissionsRouter = router({
         canDelete: z.boolean(),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertCanManagePermissions(ctx, input.userId);
         const permission = await db.setUserPermission(input);
         
         await db.createAuditLog({
@@ -1021,7 +1060,7 @@ export const permissionsRouter = router({
       }),
 
     // Set sub-permission
-    setSubPermission: protectedProcedure
+    setSubPermission: adminProcedure
       .input(z.object({
         userId: z.number(),
         module: z.string(),
@@ -1029,6 +1068,7 @@ export const permissionsRouter = router({
         isAllowed: z.boolean(),
       }))
       .mutation(async ({ input, ctx }) => {
+        await assertCanManagePermissions(ctx, input.userId);
         const subPermission = await db.setUserSubPermission(input);
         
         await db.createAuditLog({
@@ -1043,7 +1083,7 @@ export const permissionsRouter = router({
       }),
 
     // Bulk update permissions
-    bulkUpdate: protectedProcedure
+    bulkUpdate: adminProcedure
       .input(z.object({
         userId: z.number(),
         permissions: z.array(z.object({
@@ -1060,33 +1100,7 @@ export const permissionsRouter = router({
         })),
       }))
       .mutation(async ({ input, ctx }) => {
-        // Check role hierarchy
-        const targetUser = await db.getUserById(input.userId);
-        if (!targetUser) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
-        }
-        
-        // Super Admin can manage all roles
-        if (ctx.user.role === "super_admin") {
-          // Allow
-        }
-        // Admin can only manage Employee and Accountant
-        else if (ctx.user.role === "admin") {
-          if (targetUser.role !== "employee" && targetUser.role !== "accountant") {
-            throw new TRPCError({ 
-              code: "FORBIDDEN", 
-              message: "Admin can only manage Employee and Accountant roles" 
-            });
-          }
-        }
-        // Employee and Accountant cannot manage anyone
-        else {
-          throw new TRPCError({ 
-            code: "FORBIDDEN", 
-            message: "You do not have permission to manage user permissions" 
-          });
-        }
-        
+        await assertCanManagePermissions(ctx, input.userId);
         await db.bulkUpdateUserPermissions(input);
         
         // Create audit log
@@ -1102,9 +1116,10 @@ export const permissionsRouter = router({
       }),
 
     // Delete user permissions
-    deletePermissions: protectedProcedure
+    deletePermissions: adminProcedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ input, ctx }) => {
+        await assertCanManagePermissions(ctx, input.userId);
         await db.deleteUserPermissions(input.userId);
         
         await db.createAuditLog({

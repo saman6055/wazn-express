@@ -927,13 +927,23 @@ export async function createCustomerNotification(
   return notification || null;
 }
 
-export async function markNotificationAsRead(notificationId: number): Promise<void> {
+/**
+ * Mark one notification read — the caller's own.
+ *
+ * The customerId used to be absent, so any signed-in customer could silently
+ * mark every other customer's notifications read by walking the id range,
+ * including "your password was changed by support".
+ */
+export async function markNotificationAsRead(notificationId: number, customerId: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
-  
+
   await db.update(customerNotifications)
     .set({ isRead: true, readAt: new Date() })
-    .where(eq(customerNotifications.id, notificationId));
+    .where(and(
+      eq(customerNotifications.id, notificationId),
+      eq(customerNotifications.customerId, customerId),
+    ));
 }
 
 export async function markAllNotificationsAsRead(customerId: number): Promise<void> {
@@ -1018,12 +1028,17 @@ export async function getActivePushSubscriptionsForCustomer(customerId: number):
     ));
 }
 
-export async function deletePushSubscriptionByEndpoint(endpoint: string): Promise<void> {
+/** Drop a push subscription — the caller's own. Scoping costs one clause and
+ *  removes the only way one customer could unsubscribe another's device. */
+export async function deletePushSubscriptionByEndpoint(endpoint: string, customerId: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
 
   await db.delete(customerPushSubscriptions)
-    .where(eq(customerPushSubscriptions.endpoint, endpoint));
+    .where(and(
+      eq(customerPushSubscriptions.endpoint, endpoint),
+      eq(customerPushSubscriptions.customerId, customerId),
+    ));
 }
 
 export async function markPushSubscriptionUsed(id: number): Promise<void> {

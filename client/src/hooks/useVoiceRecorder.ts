@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 export function useVoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
@@ -82,6 +82,25 @@ export function useVoiceRecorder() {
     chunksRef.current = [];
     setIsRecording(false);
     setRecordingDuration(0);
+  }, []);
+
+  // Release the microphone if the customer navigates away mid-recording.
+  // Without this the MediaRecorder and its tracks stay live: the browser's
+  // recording indicator keeps burning and the phone keeps listening, because
+  // the tracks were only stopped inside stopRecording/cancelRecording.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      const recorder = mediaRecorderRef.current;
+      if (recorder) {
+        try {
+          if (recorder.state !== "inactive") recorder.stop();
+          recorder.stream.getTracks().forEach((t) => t.stop());
+        } catch {
+          /* already torn down */
+        }
+      }
+    };
   }, []);
 
   const formatDuration = (seconds: number) => {

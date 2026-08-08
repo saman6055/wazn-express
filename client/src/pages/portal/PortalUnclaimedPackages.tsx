@@ -269,6 +269,13 @@ export default function PortalUnclaimedPackages() {
                     {/* Claim Button */}
                     <Button
                       onClick={() => {
+                        // Clear the previous package's evidence. These were
+                        // reset only on a successful submit, so writing a
+                        // reason and attaching photos for one parcel, backing
+                        // out, then opening another claimed the second parcel
+                        // using the first one's proof of ownership.
+                        setClaimNote("");
+                        setProofImages([]);
                         setSelectedPackage(pkg);
                         setIsClaimDialogOpen(true);
                       }}

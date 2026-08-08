@@ -6,6 +6,7 @@ import { staffProcedure, adminProcedure, accountantProcedure } from "../middlewa
 import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { getVapidPublicKey, isPushEnabled, sendPushToCustomer } from "../services/push.service";
+import { toCustomerVisibleOrder, toCustomerVisibleOrders } from "../lib/customerVisibleOrder";
 
 // Best-effort portal-activity capture for the admin Customer Portal Center.
 // Fire-and-forget: logging never blocks or fails the customer's real action.
@@ -46,9 +47,22 @@ export const customerPortalRouter = router({
           address: (customer.address as string) || '',
         };
       }
-      // Legacy: find customer linked to this user
+      // Legacy: find customer linked to this user. Hand-picked to the same
+      // eight fields as the branch above — `return customer` shipped the whole
+      // row, which carries passwordHash, passportUrl, nationalIdUrl and the
+      // staff-only notes column.
       const customer = await db.getCustomerByUserId(ctx.user.id);
-      return customer;
+      if (!customer) return null;
+      return {
+        id: customer.id,
+        customerCode: customer.customerCode || '',
+        fullName: customer.fullName || '',
+        mobileNumber: customer.mobileNumber || '',
+        email: customer.email || '',
+        country: customer.country || '',
+        city: customer.city || '',
+        address: customer.address || '',
+      };
     }),
 
     // ============ SECURITY ============
@@ -235,7 +249,11 @@ export const customerPortalRouter = router({
         const customerId = ctx.user.isCustomer ? ctx.user.id :
           (await db.getCustomerByUserId(ctx.user.id))?.id;
         if (!customerId) return [];
-        return db.getFullPackageOrdersByCustomer(customerId, input);
+        // Every list row carried purchasePriceUsd / grossProfitUsd /
+        // netProfitUsd and the supplier ids. This is the list the portal loads
+        // on five different screens, so it was the widest of the leaks.
+        const orders = await db.getFullPackageOrdersByCustomer(customerId, input);
+        return toCustomerVisibleOrders(orders as any[]);
       }),
 
     /**
@@ -637,7 +655,13 @@ export const customerPortalRouter = router({
 
         const claim = await db.createClaimRequest({
           packageId: input.packageId,
-          trackingNumber: input.trackingNumber,
+          // The parcel's own tracking number, never the one the client sent.
+          // They were two independent inputs and nothing compared them, while
+          // both admin review screens displayed the customer-supplied string.
+          // So a claim could show a tracking number the customer genuinely
+          // owns, with genuine proof photos, while packageId pointed at a
+          // different and more valuable parcel — and it would look correct.
+          trackingNumber: pkg.trackingNumber ?? input.trackingNumber,
           customerId,
           customerNote: input.customerNote,
           proofImages: input.proofImages,
@@ -675,6 +699,39 @@ export const customerPortalRouter = router({
         const customerId = ctx.user.isCustomer ? ctx.user.id :
           (await db.getCustomerByUserId(ctx.user.id))?.id;
         if (!customerId) throw new TRPCError({ code: "BAD_REQUEST", message: "پرۆفایلی کریار نەدۆزرایەوە بۆ ئەم هەژمارە." });
+
+        // Another customer already waiting on this exact tracking number is
+        // the one case we must not resolve by guessing: the match at
+        // quick-register takes the newest declaration, so accepting this would
+        // quietly move somebody else's parcel to whoever declared last.
+        const conflict = await db.findConflictingDeclaration(input.trackingNumber, customerId);
+        if (conflict) {
+          try {
+            await db.createActivityAlert({
+              action: "declared_tracking_conflict",
+              category: "package",
+              entityType: "declared_package",
+              entityId: conflict.id,
+              entityCode: input.trackingNumber,
+              triggeredById: customerId,
+              triggeredByName: (await db.getCustomerById(customerId))?.fullName || "کڕیار",
+              customTitle: "دوو کڕیار هەمان تراکیان تۆمار کردووە",
+              customMessage:
+                `تراکی ${input.trackingNumber} پێشتر لەلایەن کڕیارێکی ترەوە تۆمارکراوە.` +
+                ` پێویستە بە دەست دیاری بکرێت هی کێیە پێش گەیشتنی.`,
+              severity: "warning",
+            });
+          } catch {
+            // The refusal below is the protection; the alert is how the office
+            // hears about it, and a failed alert must not swallow the refusal.
+          }
+          throw new TRPCError({
+            code: "CONFLICT",
+            message:
+              "ئەم ژمارەی تراکە پێشتر تۆمارکراوە. تکایە پەیوەندیمان پێوە بکە تاکو دڵنیا ببینەوە هی کێیە.",
+          });
+        }
+
         const declared = await db.createDeclaredPackage({ ...input, customerId });
         logPortal(ctx, customerId, "declare_package", "declaration", {
           detail: input.trackingNumber,
@@ -755,7 +812,10 @@ export const customerPortalRouter = router({
         
         const order = await db.getFullPackageOrderById(input.orderId);
         if (!order || order.customerId !== customerId) return null;
-        return order;
+        // Ownership was already checked; the payload was not. The raw row
+        // carried our purchase price and profit, the supplier's phone and
+        // WeChat, and the customer's own passwordHash and ID-document URLs.
+        return toCustomerVisibleOrder(order as any);
       }),
     
     // ============ MESSAGES ============
@@ -815,7 +875,10 @@ export const customerPortalRouter = router({
     markNotificationAsRead: protectedProcedure
       .input(z.object({ notificationId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        await db.markNotificationAsRead(input.notificationId);
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) return { success: false };
+        await db.markNotificationAsRead(input.notificationId, customerId);
         return { success: true };
       }),
     
@@ -971,8 +1034,11 @@ export const customerPortalRouter = router({
 
     unsubscribePush: protectedProcedure
       .input(z.object({ endpoint: z.string().url().max(500) }))
-      .mutation(async ({ input }) => {
-        await db.deletePushSubscriptionByEndpoint(input.endpoint);
+      .mutation(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) return { success: false };
+        await db.deletePushSubscriptionByEndpoint(input.endpoint, customerId);
         return { success: true };
       }),
 

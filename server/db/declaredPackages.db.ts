@@ -66,10 +66,19 @@ export async function updateDeclaredPackageForCustomer(
         eq(customerDeclaredPackages.customerId, customerId),
       ),
     );
+  // The update above is owner-guarded; this read-back was not. Passing another
+  // customer's id wrote nothing but returned their whole declaration —
+  // tracking number, product, platform, notes, images — so walking the id
+  // range enumerated every pre-alert in the system.
   const [row] = await db
     .select()
     .from(customerDeclaredPackages)
-    .where(eq(customerDeclaredPackages.id, id));
+    .where(
+      and(
+        eq(customerDeclaredPackages.id, id),
+        eq(customerDeclaredPackages.customerId, customerId),
+      ),
+    );
   return row ?? null;
 }
 
@@ -98,6 +107,39 @@ export async function cancelDeclaredPackageForCustomer(
  * case-insensitive via the column collation; we trim to match how the value
  * was stored.
  */
+/**
+ * Is someone else already expecting this tracking number?
+ *
+ * Two customers can honestly type the same number — a shared shop account, a
+ * mistyped digit. The danger is what happens next: `findActiveDeclaredByTracking`
+ * takes the NEWEST declaration, so whoever declared last would have been handed
+ * the parcel at quick-register, automatically, with a green "declared by" card
+ * telling staff it was correct.
+ *
+ * So a declaration that collides with another customer's is refused at the
+ * door, and the office is told. Nothing is guessed and nothing is silently
+ * reassigned.
+ */
+export async function findConflictingDeclaration(
+  trackingNumber: string,
+  customerId: number,
+): Promise<CustomerDeclaredPackage | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(customerDeclaredPackages)
+    .where(
+      and(
+        eq(customerDeclaredPackages.trackingNumber, norm(trackingNumber)),
+        ne(customerDeclaredPackages.customerId, customerId),
+        ne(customerDeclaredPackages.status, "cancelled"),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export async function findActiveDeclaredByTracking(
   trackingNumber: string,
 ): Promise<

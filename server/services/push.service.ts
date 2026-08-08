@@ -81,7 +81,9 @@ export async function sendPushToCustomer(
       const statusCode = (err as { statusCode?: number })?.statusCode;
       const expired = statusCode === 404 || statusCode === 410;
       if (expired) {
-        await db.deletePushSubscriptionByEndpoint(sub.endpoint);
+        // This one is ours, not a customer request: the push service told us
+        // the endpoint is gone, and we already know whose row it is.
+        await db.deletePushSubscriptionByEndpoint(sub.endpoint, sub.customerId);
         removed += 1;
       } else {
         const deactivate = sub.failureCount >= 4;
