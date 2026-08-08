@@ -15,6 +15,7 @@ import { pickLang } from "@/lib/lang";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatPortalDate } from "@/lib/portalClock";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 function getInitialSearchQuery(): string {
   if (typeof window === "undefined") return "";
@@ -50,10 +51,11 @@ export default function PortalSearch() {
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
-  const { data: result, isLoading, refetch } = trpc.customerPortal.searchPackage.useQuery(
+  const searchQ = trpc.customerPortal.searchPackage.useQuery(
     { trackingNumber: debouncedQuery },
     { enabled: hasSearched && !!debouncedQuery }
   );
+  const { data: result, isLoading, refetch } = searchQ;
 
   // Unified-search fallback: when the tracking isn't one of the customer's own
   // packages, surface whether it's unclaimed (claimable) or pre-declared.
@@ -517,6 +519,10 @@ export default function PortalSearch() {
               </Button>
             </Link>
           </div>
+        ) : searchQ.isError ? (
+          /* "Nothing found" and "the request failed" are very different
+             answers when a customer is looking for their own parcel. */
+          <PortalErrorState onRetry={() => void refetch()} isRetrying={searchQ.isFetching} />
         ) : (
           <div className="text-center py-12">
             <div className="w-20 h-20 bg-red-50 dark:bg-red-950/40 rounded-full flex items-center justify-center mx-auto mb-4">

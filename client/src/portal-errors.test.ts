@@ -17,20 +17,20 @@ import path from "path";
 
 const PORTAL = path.resolve(__dirname, "pages/portal");
 
-const MUST_HANDLE_ERRORS = [
-  "PortalShipments.tsx",
-  "PortalFinancial.tsx",
-  "PortalFullPackage.tsx",
-  "PortalNotifications.tsx",
-  "PortalAddresses.tsx",
-  "PortalHome.tsx",
-  "PortalProhibitedPackages.tsx",
-  "PortalUnclaimedPackages.tsx",
-  "PortalBlog.tsx",
-  "PortalTutorials.tsx",
-  "PortalDeclarePackage.tsx",
-  "PortalYuanExchange.tsx",
-];
+/**
+ * Every portal screen that fetches data. The list is derived rather than
+ * hand-written so a new screen cannot quietly skip it.
+ */
+const MUST_HANDLE_ERRORS = (function collect(dir: string, out: string[] = []): string[] {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, entry.name);
+    if (entry.isDirectory()) collect(p, out);
+    else if (entry.name.endsWith(".tsx") && /useQuery/.test(fs.readFileSync(p, "utf8"))) {
+      out.push(path.relative(PORTAL, p).replace(/\\/g, "/"));
+    }
+  }
+  return out;
+})(PORTAL);
 
 describe("a dropped request is not an empty account", () => {
   for (const file of MUST_HANDLE_ERRORS) {

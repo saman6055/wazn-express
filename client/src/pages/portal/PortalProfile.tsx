@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { toast } from "sonner";
 import { copyText } from "@/lib/copyText";
@@ -47,7 +48,8 @@ const { t, language, setLanguage } = useLanguage();
   
   const [showLangPicker, setShowLangPicker] = useState(false);
 
-  const { data: account, isLoading } = trpc.customerPortal.getMyAccount.useQuery();
+  const accountQuery = trpc.customerPortal.getMyAccount.useQuery();
+  const { data: account, isLoading } = accountQuery;
   const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
   const { data: summary } = trpc.customerPortal.getMyFinancialSummary.useQuery();
   // The Message Center badge was the literal 2, so every customer carried a red
@@ -260,6 +262,13 @@ const { t, language, setLanguage } = useLanguage();
 
   return (
     <CustomerPortalLayout>
+      {/* The identity card below is this page. A failed request used to render
+          it blank rather than saying anything had gone wrong. */}
+      {accountQuery.isError && (
+        <div className="px-4 pt-4">
+          <PortalErrorState compact onRetry={() => void accountQuery.refetch()} isRetrying={accountQuery.isFetching} />
+        </div>
+      )}
       {/* Premium Header with Profile */}
       <div className="relative overflow-hidden">
         <div className={cn(

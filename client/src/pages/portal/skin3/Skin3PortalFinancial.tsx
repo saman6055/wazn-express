@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { pickLang } from "@/lib/lang";
 import { isCreditTx, isDebt, isInvoiceOutstanding } from "@/lib/portalMoney";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
 
 type FilterTab = "all" | "credit" | "debit";
@@ -44,8 +45,8 @@ export default function Skin3PortalFinancial() {
 
   const { data: summary, isLoading: summaryLoading } =
     trpc.customerPortal.getMyFinancialSummary.useQuery();
-  const { data: transactions, isLoading: transactionsLoading } =
-    trpc.customerPortal.getMyTransactions.useQuery({ limit: 50 });
+  const txQuery = trpc.customerPortal.getMyTransactions.useQuery({ limit: 50 });
+  const { data: transactions, isLoading: transactionsLoading } = txQuery;
   const { data: invoices, isLoading: invoicesLoading } =
     trpc.customerPortal.getMyInvoices.useQuery();
   const _receiptQuery = trpc.customerPortal.getReceiptData.useQuery(
@@ -342,6 +343,9 @@ export default function Skin3PortalFinancial() {
                   <Skeleton key={i} className="h-20 w-full rounded-xl" />
                 ))}
               </div>
+            ) : txQuery.isError ? (
+              /* On the money screen a failed request read as "no transactions". */
+              <PortalErrorState onRetry={() => void txQuery.refetch()} isRetrying={txQuery.isFetching} />
             ) : filteredTransactions.length > 0 ? (
               <motion.div
                 variants={containerVariants}

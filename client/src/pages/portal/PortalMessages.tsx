@@ -51,6 +51,7 @@ import {
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { Link } from "wouter";
 import { toast } from "sonner";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
 
 export default function PortalMessages() {
@@ -77,6 +78,8 @@ export default function PortalMessages() {
   const { isRecording, formattedDuration, startRecording, stopRecording, cancelRecording } = useVoiceRecorder();
   
   const utils = trpc.useUtils();
+  // messagesQuery.isError is surfaced in the thread below — a failed load used
+  // to render the friendly "start a conversation" empty state instead.
   
   // Get or create chat
   const getOrCreateChat = trpc.supportChat.getOrCreateChat.useMutation({
@@ -433,8 +436,16 @@ export default function PortalMessages() {
                 </div>
               )}
               
+              {/* A failed load used to render the friendly "start a
+                  conversation" welcome, hiding a thread the customer has. */}
+              {messagesQuery.isError && (
+                <div className="p-4">
+                  <PortalErrorState onRetry={() => void messagesQuery.refetch()} isRetrying={messagesQuery.isFetching} />
+                </div>
+              )}
+
               {/* Empty state */}
-              {!getOrCreateChat.isPending && !messagesQuery.isLoading && (!messagesQuery.data || messagesQuery.data.length === 0) && (
+              {!getOrCreateChat.isPending && !messagesQuery.isLoading && !messagesQuery.isError && (!messagesQuery.data || messagesQuery.data.length === 0) && (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <motion.div
                     initial={{ scale: 0 }}

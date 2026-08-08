@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { formatPortalDate } from "@/lib/portalClock";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 // Kurdish month names
 const kurdishMonths = [
@@ -84,7 +85,8 @@ function ClassicPortalInvoiceReports() {
   }, [dateRange, selectedYear]);
 
   // Fetch customer's invoice data
-  const { data: invoices, isLoading: invoicesLoading } = trpc.customerPortal.getMyInvoices.useQuery();
+  const invoicesQuery = trpc.customerPortal.getMyInvoices.useQuery();
+  const { data: invoices, isLoading: invoicesLoading } = invoicesQuery;
 
   // Calculate summary from invoices
   const summary = useMemo(() => {
@@ -281,6 +283,13 @@ function ClassicPortalInvoiceReports() {
 
   return (
     <CustomerPortalLayout>
+      {/* Every figure on this page comes from one query; a failure used to
+          render zeroes across all of them. */}
+      {invoicesQuery.isError && (
+        <div className="px-4 pt-4">
+          <PortalErrorState compact onRetry={() => void invoicesQuery.refetch()} isRetrying={invoicesQuery.isFetching} />
+        </div>
+      )}
       {/* Header */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0" style={portalBanner} />

@@ -8,6 +8,7 @@ import {
   User, Mail, Phone, MapPin, Bell, ChevronRight, LogOut,
   MessageSquare, Headphones, HelpCircle, FileText, Banknote, Ban, BookOpen
 } from "lucide-react";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -23,8 +24,9 @@ export default function ModernPortalProfile() {
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
 
+  const accountQuery = trpc.customerPortal.getMyAccount.useQuery();
   const { data: account, isLoading: accountLoading } =
-    trpc.customerPortal.getMyAccount.useQuery();
+    accountQuery;
   const { data: balance, isLoading: balanceLoading } =
     trpc.customerPortal.getMyBalance.useQuery();
 
@@ -45,6 +47,12 @@ export default function ModernPortalProfile() {
   if (!user) {
     return (
       <ModernPortalLayout>
+      {/* A failed request used to render the identity card blank. */}
+      {accountQuery.isError && (
+        <div className="px-4 pt-4">
+          <PortalErrorState compact onRetry={() => void accountQuery.refetch()} isRetrying={accountQuery.isFetching} />
+        </div>
+      )}
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center px-6">
             <div className={cn(

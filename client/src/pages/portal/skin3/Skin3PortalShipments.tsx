@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "wouter";
 import { formatPortalDate } from "@/lib/portalClock";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 type StatusFilter = "all" | ShipmentStage;
 
@@ -62,8 +63,8 @@ export default function Skin3PortalShipments() {
   const [trackingSearch, setTrackingSearch] = useState("");
 
   // tRPC queries - same as ModernPortalShipments
-  const { data: batches, isLoading } =
-    trpc.customerPortal.getMyBatches.useQuery();
+  const batchesQuery = trpc.customerPortal.getMyBatches.useQuery();
+  const { data: batches, isLoading } = batchesQuery;
   const { data: unbatchedPackages } =
     trpc.customerPortal.getMyUnbatchedPackages.useQuery();
   const { data: batchPackages, isLoading: batchPackagesLoading } =
@@ -433,6 +434,10 @@ export default function Skin3PortalShipments() {
                 <Skeleton key={i} className="h-28 w-full rounded-xl" />
               ))}
             </div>
+          ) : batchesQuery.isError ? (
+            /* A failed request used to fall through to the empty state, so a
+               dropped connection told the customer they had nothing. */
+            <PortalErrorState onRetry={() => void batchesQuery.refetch()} isRetrying={batchesQuery.isFetching} />
           ) : filteredBatches.length > 0 ? (
             <div className="space-y-3">
               {filteredBatches.map((batch: any, index: number) => {

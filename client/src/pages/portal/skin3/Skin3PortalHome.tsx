@@ -35,6 +35,7 @@ import { PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
 import { isDebt, isCreditTx, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
 import { pickLang } from "@/lib/lang";
 import { formatPortalDate } from "@/lib/portalClock";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 // A ledger line named in the reader's language rather than the raw column.
 function ledgerTypeName(type: string | null | undefined, language: string): string {
@@ -121,14 +122,14 @@ export default function Skin3PortalHome() {
   const isRTL = language === "ku" || language === "ar";
 
   // Fetch data - same tRPC queries as ModernPortalHome
-  const { data: account, isLoading: profileLoading } =
-    trpc.customerPortal.getMyAccount.useQuery();
-  const { data: balance, isLoading: balanceLoading } =
-    trpc.customerPortal.getMyBalance.useQuery();
+  const accountQuery = trpc.customerPortal.getMyAccount.useQuery();
+  const { data: account, isLoading: profileLoading } = accountQuery;
+  const balanceQuery = trpc.customerPortal.getMyBalance.useQuery();
+  const { data: balance, isLoading: balanceLoading } = balanceQuery;
   // (getMyBatches was fetched here and never rendered — every visit paid for
   //  the whole batch list to display nothing.)
-  const { data: packages, isLoading: packagesLoading } =
-    trpc.customerPortal.getMyPackages.useQuery();
+  const packagesQuery = trpc.customerPortal.getMyPackages.useQuery();
+  const { data: packages, isLoading: packagesLoading } = packagesQuery;
   const { data: transactions, isLoading: transactionsLoading } =
     trpc.customerPortal.getMyTransactions.useQuery({ limit: 5 });
   const { data: notificationCount } =
@@ -137,6 +138,21 @@ export default function Skin3PortalHome() {
   // Calculate stats from packages. Same fix as the modern skin: the old
   // filters compared against batch statuses a package can never hold, so the
   // arrived tile always read zero.
+  /**
+   * One banner rather than one per list.
+   *
+   * None of this screen's queries checked isError, so a dropped connection
+   * showed the customer $0.00, four zero counters and an empty feed — their
+   * account, apparently emptied, stated with complete confidence.
+   */
+  const homeFailed = accountQuery.isError || packagesQuery.isError || balanceQuery.isError;
+  const homeRetrying = accountQuery.isFetching || packagesQuery.isFetching || balanceQuery.isFetching;
+  const retryHome = () => {
+    void accountQuery.refetch();
+    void packagesQuery.refetch();
+    void balanceQuery.refetch();
+  };
+
   const totalPackages = packages?.length || 0;
   const inTransit =
     packages?.filter((p: any) => (PACKAGE_STAGE_GROUPS.inTransit as readonly string[]).includes(p.status)).length || 0;
@@ -438,6 +454,12 @@ export default function Skin3PortalHome() {
         <motion.div variants={itemVariants} className="mb-4">
           <ProhibitedDecisionAlert isDark={isDark} />
         </motion.div>
+
+        {homeFailed && (
+          <motion.div variants={itemVariants} className="mb-5">
+            <PortalErrorState compact onRetry={retryHome} isRetrying={homeRetrying} />
+          </motion.div>
+        )}
 
         {/* ===== Stats 2x2 Grid ===== */}
         <motion.div variants={itemVariants} className="mb-8">

@@ -6,6 +6,7 @@ import {
   ArrowLeft, Calendar, Eye, Star, Share2, Clock,
   Megaphone, Newspaper, Gift, RefreshCw, BookOpen, Link as LinkIcon
 } from "lucide-react";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { WhatsAppGlyph } from "@/components/portal/WhatsAppHelpButton";
 import { Link, useParams } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,10 +24,11 @@ const { id } = useParams<{ id: string }>();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
   
-  const { data: post, isLoading } = trpc.blog.getById.useQuery(
+  const postQuery = trpc.blog.getById.useQuery(
     { id: parseInt(id || "0") },
     { enabled: !!id }
   );
+  const { data: post, isLoading } = postQuery;
   
   // Reader's language first. Unlike the feeds, a detail page can be opened via a
   // direct/shared link to a post not written in the reader's language — so here
@@ -114,6 +116,17 @@ const { id } = useParams<{ id: string }>();
           <Skeleton className="h-8 w-3/4 mb-2" />
           <Skeleton className="h-4 w-1/2 mb-6" />
           <Skeleton className="h-32 w-full" />
+        </div>
+      </PortalLayout>
+    );
+  }
+
+  if (postQuery.isError) {
+    // A dropped request and a deleted article are different answers.
+    return (
+      <PortalLayout>
+        <div className="px-4 py-8">
+          <PortalErrorState onRetry={() => void postQuery.refetch()} isRetrying={postQuery.isFetching} />
         </div>
       </PortalLayout>
     );
