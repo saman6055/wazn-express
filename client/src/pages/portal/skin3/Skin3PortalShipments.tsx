@@ -30,6 +30,7 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "wouter";
+import { formatPortalDate } from "@/lib/portalClock";
 
 type StatusFilter = "all" | ShipmentStage;
 
@@ -530,7 +531,7 @@ export default function Skin3PortalShipments() {
                                 )}
                               >
                                 <Calendar className="w-3.5 h-3.5" strokeWidth={2.5} />
-                                {new Date(batch.createdAt).toLocaleDateString()}
+                                {formatPortalDate(batch.createdAt, language)}
                               </span>
                             </div>
 
@@ -544,9 +545,7 @@ export default function Skin3PortalShipments() {
                                 {language === "ku"
                                   ? "گەیشتنی چاوەڕوانکراو:"
                                   : "ETA:"}{" "}
-                                {new Date(
-                                  batch.estimatedArrival
-                                ).toLocaleDateString()}
+                                {formatPortalDate(batch.estimatedArrival, language)}
                               </p>
                             )}
                           </div>

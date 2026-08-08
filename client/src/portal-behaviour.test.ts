@@ -113,3 +113,48 @@ describe("copying to the clipboard", () => {
     expect(src).toMatch(/Promise<boolean>/);
   });
 });
+
+describe("dates say which month they mean", () => {
+  it("no portal screen formats a date by hand", () => {
+    // Eight different formats were in use — en-GB, en-US, ku-IQ, ar-IQ and
+    // four bare toLocaleDateString() calls that follow the browser. On one
+    // screen the transaction dates came out in Arabic-Indic digits and the
+    // billing dates directly beneath them as dd/mm/yyyy. And "05/03" is two
+    // different days to two different readers, which for a shipping company
+    // is the difference between on time and late.
+    const dirs = [path.join(SRC, "pages/portal"), path.join(SRC, "components/portal")];
+    const files: string[] = [];
+    const walk = (d: string) => {
+      if (!fs.existsSync(d)) return;
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (e.name.endsWith(".tsx")) files.push(p);
+      }
+    };
+    dirs.forEach(walk);
+
+    const offenders = files
+      .filter((f) => /\.toLocaleDateString\(/.test(fs.readFileSync(f, "utf8")))
+      .map((f) => path.basename(f));
+
+    expect(offenders, `use formatPortalDate from lib/portalClock:\n${offenders.join("\n")}`).toEqual([]);
+  });
+
+  it("the formatter names the month in every language", () => {
+    const src = read("lib/portalClock.ts");
+    expect(src).toContain("formatPortalDate");
+    expect(src).toContain("KU_MONTHS");
+    expect(src).toMatch(/month:\s*"short"/);
+  });
+});
+
+describe("each skin keeps its own chrome", () => {
+  it("the skin3 profile does not render in the modern skin", () => {
+    // It imported ModernPortalLayout, so the bottom bar changed shape when a
+    // customer opened their profile and changed back when they left.
+    const src = read("pages/portal/skin3/Skin3PortalProfile.tsx");
+    expect(src).not.toMatch(/<ModernPortalLayout>/);
+    expect(src).toContain("Skin3PortalLayout");
+  });
+});

@@ -1,6 +1,7 @@
 import { CheckCircle, Truck, Package, MapPin, Clock, Warehouse, Ship, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
+import { formatPortalDate } from "@/lib/portalClock";
 
 // ---------------------------------------------------------------------------
 // PackageTrackingTimeline — the customer-facing movement timeline.
@@ -181,7 +182,7 @@ export function PackageTrackingTimeline({
                 <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   {pickLang(language, { ku: "چاوەڕوانی گەیشتن: ", en: "Est. arrival: ", ar: "الوصول المتوقع: ", zh: "预计到达：" })}
-                  {new Date(estimatedDelivery).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                  {formatPortalDate(estimatedDelivery, language)}
                 </p>
               )}
             </div>

@@ -14,6 +14,7 @@ import { pickLang } from "@/lib/lang";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useState } from "react";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { formatPortalDate } from "@/lib/portalClock";
 
 // Destinations that aren't worth a "View" link — landing on the portal home
 // from the notifications page reads as "nothing happened".
@@ -107,7 +108,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
     if (diffMins < 60) return `${diffMins} `+pickLang(language, { ku: "خولەک لەمەوپێش", en: "min ago", ar: "دقيقة مضت", zh: "分钟前" });
     if (diffHours < 24) return `${diffHours} `+pickLang(language, { ku: "کاتژمێر لەمەوپێش", en: "h ago", ar: "ساعة مضت", zh: "小时前" });
     if (diffDays < 7) return `${diffDays} `+pickLang(language, { ku: "ڕۆژ لەمەوپێش", en: "d ago", ar: "يوم مضى", zh: "天前" });
-    return d.toLocaleDateString();
+    return formatPortalDate(d, language);
   };
   
   // The schema carries titleKu/titleAr and messageKu/messageAr, written by

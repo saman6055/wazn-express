@@ -25,6 +25,7 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { formatPortalDate } from "@/lib/portalClock";
 
 // Kurdish month names
 const kurdishMonths = [
@@ -266,7 +267,7 @@ function ClassicPortalInvoiceReports() {
             `).join('')}
           </tbody>
         </table>
-        <p class="footer">Generated on ${new Date().toLocaleDateString()}</p>
+        <p class="footer">Generated on ${formatPortalDate(new Date(), language)}</p>
         <script>window.onload = function() { window.print(); }</script>
       </body>
       </html>

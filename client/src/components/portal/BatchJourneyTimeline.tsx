@@ -1,6 +1,7 @@
 import { pickLang, type Lang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { STATUS_LABEL } from "@/lib/shipmentFilters";
+import { formatPortalDate } from "@/lib/portalClock";
 import {
   Warehouse,
   Landmark,
@@ -41,11 +42,12 @@ const STAGE_INDEX: Record<string, number> = {
   closed: 5,
 };
 
-function fmtDate(d?: string | Date | null): string | null {
+function fmtDate(d: string | Date | null | undefined, language: string): string | null {
   if (!d) return null;
   const date = new Date(d);
   if (isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit" });
+  // "05/03" meant two different days to two different readers.
+  return formatPortalDate(date, language);
 }
 
 export function BatchJourneyTimeline({
@@ -67,17 +69,17 @@ export function BatchJourneyTimeline({
     {
       icon: Warehouse,
       label: STATUS_LABEL.preparing,
-      date: fmtDate(createdAt),
+      date: fmtDate(createdAt, language),
     },
     {
       icon: TransitIcon,
       label: STATUS_LABEL.in_transit,
-      date: fmtDate(departureDate),
+      date: fmtDate(departureDate, language),
     },
     {
       icon: PackageCheck,
       label: STATUS_LABEL.arrived,
-      date: fmtDate(actualArrival),
+      date: fmtDate(actualArrival, language),
     },
     {
       icon: Landmark,
@@ -96,7 +98,7 @@ export function BatchJourneyTimeline({
     },
   ];
 
-  const eta = fmtDate(estimatedArrival);
+  const eta = fmtDate(estimatedArrival, language);
   const showEta = eta && current < 2;
 
   return (

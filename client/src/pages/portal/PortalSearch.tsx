@@ -14,6 +14,7 @@ import { TutorialHint } from "@/components/TutorialHint";
 import { pickLang } from "@/lib/lang";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { formatPortalDate } from "@/lib/portalClock";
 
 function getInitialSearchQuery(): string {
   if (typeof window === "undefined") return "";
@@ -372,7 +373,7 @@ export default function PortalSearch() {
               <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                 <Calendar className="w-4 h-4 shrink-0" />
                 <span>{language === "ku" ? "بەرواری چاوەڕوانکراوی گەیشتن: " : "Estimated delivery: "}
-                  {new Date((result as any).estimatedArrival).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                  {formatPortalDate((result as any).estimatedArrival, language)}
                 </span>
               </div>
             )}
@@ -420,14 +421,14 @@ export default function PortalSearch() {
                 <div>
                   <p className="text-xs text-gray-500">{t("registered") || "Registered"}</p>
                   <p className="text-sm text-slate-800 dark:text-slate-200">
-                    {new Date(result.registeredAt).toLocaleDateString()}
+                    {formatPortalDate(result.registeredAt, language)}
                   </p>
                 </div>
                 {result.deliveredAt && (
                   <div>
                     <p className="text-xs text-gray-500">{t("delivered") || "Delivered"}</p>
                     <p className="text-sm text-slate-800 dark:text-slate-200">
-                      {new Date(result.deliveredAt).toLocaleDateString()}
+                      {formatPortalDate(result.deliveredAt, language)}
                     </p>
                   </div>
                 )}

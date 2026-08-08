@@ -24,6 +24,7 @@ import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { TERMS_WHATSAPP_NUMBER as SUPPORT_WHATSAPP } from "@/constants/portalTerms";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatPortalDate } from "@/lib/portalClock";
 export default function PortalUnclaimedPackages() {
   const { t, language } = useLanguage();
 
@@ -111,11 +112,7 @@ export default function PortalUnclaimedPackages() {
   };
 
   const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString(language === "ku" ? "ckb-IQ" : language === "ar" ? "ar-IQ" : "en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return formatPortalDate(date, language);
   };
 
   return (

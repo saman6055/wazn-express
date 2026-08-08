@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { formatPortalDate } from "@/lib/portalClock";
 
 /** WhatsApp brand glyph (lucide has no brand icons). */
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -355,7 +356,7 @@ export default function PortalYuanExchange() {
                               ${Number(o.usdAmount).toLocaleString()} → ¥{Number(o.cnyAmount).toLocaleString()}
                             </p>
                             <p className="text-xs text-gray-400 tabular-nums" dir="ltr">
-                              1$ = {Number(o.rate)}¥ · {new Date(o.createdAt).toLocaleDateString()}
+                              1$ = {Number(o.rate)}¥ · {formatPortalDate(o.createdAt, language)}
                             </p>
                             {o.adminNote && (
                               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{o.adminNote}</p>

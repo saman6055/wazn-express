@@ -28,6 +28,7 @@ import {
   Image as ImageIcon, ExternalLink, Hash, SlidersHorizontal, ArrowUpDown, Copy, HelpCircle
 } from "lucide-react";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { formatPortalDate } from "@/lib/portalClock";
 
 // Status configuration with beautiful colors
 const statusConfig: Record<string, { label: string; labelKu: string; labelAr: string; labelZh: string; color: string; bgColor: string; borderColor: string; icon: any; gradient: string }> = {
@@ -1044,7 +1045,7 @@ export default function PortalFullPackage() {
                               "text-sm",
                               isDark ? "text-slate-400" : "text-slate-500"
                             )}>
-                              {new Date(order.createdAt).toLocaleDateString('ku-IQ')}
+                              {formatPortalDate(order.createdAt, language)}
                             </span>
                           </div>
                           {order.trackingNumber && (
@@ -1406,11 +1407,7 @@ export default function PortalFullPackage() {
                       "text-sm",
                       isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                     )}>
-                      {new Date(selectedOrder.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                      }).replace(/\//g, '/')}
+                      {formatPortalDate(selectedOrder.createdAt, language).replace(/\//g, '/')}
                     </p>
                   </div>
                   

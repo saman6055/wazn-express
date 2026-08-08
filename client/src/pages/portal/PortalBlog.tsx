@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { postText, filterPostsByLanguage } from "@/lib/blogLang";
 import { SocialChannels, firstYouTubeId } from "@/components/portal/SocialChannels";
+import { formatPortalDate } from "@/lib/portalClock";
 
 export default function PortalBlog() {
 const { t, language } = useLanguage();
@@ -80,9 +81,9 @@ const { banner: portalBanner } = usePortalPalette();
   const formatDate = (date: Date | string) => {
     const d = new Date(date);
     if (language === "ku") {
-      return d.toLocaleDateString("ku", { year: "numeric", month: "long", day: "numeric" });
+      return formatPortalDate(d, language);
     }
-    return d.toLocaleDateString("en", { year: "numeric", month: "short", day: "numeric" });
+    return formatPortalDate(d, language);
   };
   
   // Check if post is new (within last 7 days)

@@ -34,6 +34,7 @@ import { ProhibitedDecisionAlert } from "@/components/portal/ProhibitedDecisionA
 import { PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
 import { isDebt, isCreditTx, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
 import { pickLang } from "@/lib/lang";
+import { formatPortalDate } from "@/lib/portalClock";
 
 // A ledger line named in the reader's language rather than the raw column.
 function ledgerTypeName(type: string | null | undefined, language: string): string {
@@ -656,7 +657,7 @@ export default function Skin3PortalHome() {
                             isDark ? "text-zinc-600" : "text-gray-400"
                           )}
                         >
-                          {new Date(tx.createdAt).toLocaleDateString()}
+                          {formatPortalDate(tx.createdAt, language)}
                         </p>
                       </div>
                     </motion.div>

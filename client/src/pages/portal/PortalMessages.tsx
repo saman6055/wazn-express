@@ -51,6 +51,7 @@ import {
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { Link } from "wouter";
 import { toast } from "sonner";
+import { formatPortalDate } from "@/lib/portalClock";
 
 export default function PortalMessages() {
   // Banner colour follows the mode the customer picked, like every other page.
@@ -301,7 +302,7 @@ export default function PortalMessages() {
     } else if (d.toDateString() === yesterday.toDateString()) {
       return pickLang(language, { ku: "دوێنێ", en: "Yesterday", ar: "أمس", zh: "昨天" });
     } else {
-      return d.toLocaleDateString(isKurdish ? 'ku' : 'en-US');
+      return formatPortalDate(d, language);
     }
   };
   

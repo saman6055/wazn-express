@@ -27,7 +27,7 @@ import { pickLang } from "@/lib/lang";
 import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
 import { matchesStage, countByStage, STATUS_LABEL, orderStageOf, type ShipmentStage } from "@/lib/shipmentFilters";
 import { tint, gradient } from "@/lib/portalModes";
-import { formatClockDate } from "@/lib/portalClock";
+import { formatClockDate, formatPortalDate } from "@/lib/portalClock";
 import { filterChinaDepot, matchesRoute } from "@/lib/chinaDepotFilter";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 // "" is no filter — which is what the old "All" chip meant. Dropping the chip
@@ -763,7 +763,7 @@ function ClassicPortalShipments() {
                         }
                         return batch.createdAt ? (
                           <div className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
-                            {new Date(batch.createdAt).toLocaleDateString()}
+                            {formatPortalDate(batch.createdAt, language)}
                           </div>
                         ) : null;
                       })()}

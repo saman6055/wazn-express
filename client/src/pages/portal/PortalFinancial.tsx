@@ -38,6 +38,7 @@ import {
   isInvoiceOutstanding,
 } from "@/lib/portalMoney";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { formatPortalDate } from "@/lib/portalClock";
 
 // Deep-link a ledger transaction to the section it was raised for, so tapping a
 // row jumps straight to the relevant package/order/prohibited item.
@@ -147,7 +148,8 @@ const { t, language } = useLanguage();
     for (let i = 5; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
-      const monthName = date.toLocaleDateString("en-US", { month: "short" });
+      // The chart axis wants a month, not a date.
+      const monthName = new Intl.DateTimeFormat(language === "zh" ? "zh-CN" : language === "ar" ? "ar" : "en-GB", { month: "short" }).format(date);
       const monthTxs = transactions.filter(tx => {
         const txDate = new Date(tx.createdAt);
         return txDate.getMonth() === date.getMonth() && txDate.getFullYear() === date.getFullYear();
@@ -206,7 +208,7 @@ const { t, language } = useLanguage();
     if (!receiptData) return;
     const { transaction, customer, companyName, generatedAt } = receiptData;
     
-    const receiptHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt - ${transaction.transactionNumber}</title><style>body{font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}.logo{font-size:24px;font-weight:bold;color:#1e3a5f}.receipt-title{font-size:18px;margin-top:10px}.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #ccc}.label{color:#666}.value{font-weight:500}.amount{font-size:24px;font-weight:bold;text-align:center;padding:20px 0}.amount.credit{color:#16a34a}.amount.debit{color:#dc2626}.footer{text-align:center;margin-top:30px;font-size:12px;color:#666}.barcode{text-align:center;font-family:monospace;font-size:14px;letter-spacing:2px;margin:20px 0}</style></head><body><div class="header"><div class="logo">📦 ${companyName}</div><div class="receipt-title">Payment Receipt</div></div><div class="info-row"><span class="label">Receipt #</span><span class="value">${transaction.transactionNumber}</span></div><div class="info-row"><span class="label">Date</span><span class="value">${new Date(transaction.createdAt).toLocaleDateString()}</span></div><div class="info-row"><span class="label">Customer</span><span class="value">${customer.fullName}</span></div><div class="info-row"><span class="label">Customer Code</span><span class="value">${customer.customerCode || "-"}</span></div><div class="info-row"><span class="label">Type</span><span class="value">${getTransactionTypeName(transaction.transactionType)}</span></div><div class="amount ${isCreditTx(transaction.transactionType) ? "credit" : "debit"}">${isCreditTx(transaction.transactionType) ? "-" : "+"}$${Number(transaction.amountUsd).toFixed(2)}</div><div class="barcode">${transaction.transactionNumber}</div><div class="footer"><p>Thank you for your business!</p><p>Generated: ${new Date(generatedAt).toLocaleString()}</p></div></body></html>`;
+    const receiptHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt - ${transaction.transactionNumber}</title><style>body{font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}.logo{font-size:24px;font-weight:bold;color:#1e3a5f}.receipt-title{font-size:18px;margin-top:10px}.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #ccc}.label{color:#666}.value{font-weight:500}.amount{font-size:24px;font-weight:bold;text-align:center;padding:20px 0}.amount.credit{color:#16a34a}.amount.debit{color:#dc2626}.footer{text-align:center;margin-top:30px;font-size:12px;color:#666}.barcode{text-align:center;font-family:monospace;font-size:14px;letter-spacing:2px;margin:20px 0}</style></head><body><div class="header"><div class="logo">📦 ${companyName}</div><div class="receipt-title">Payment Receipt</div></div><div class="info-row"><span class="label">Receipt #</span><span class="value">${transaction.transactionNumber}</span></div><div class="info-row"><span class="label">Date</span><span class="value">${formatPortalDate(transaction.createdAt, language)}</span></div><div class="info-row"><span class="label">Customer</span><span class="value">${customer.fullName}</span></div><div class="info-row"><span class="label">Customer Code</span><span class="value">${customer.customerCode || "-"}</span></div><div class="info-row"><span class="label">Type</span><span class="value">${getTransactionTypeName(transaction.transactionType)}</span></div><div class="amount ${isCreditTx(transaction.transactionType) ? "credit" : "debit"}">${isCreditTx(transaction.transactionType) ? "-" : "+"}$${Number(transaction.amountUsd).toFixed(2)}</div><div class="barcode">${transaction.transactionNumber}</div><div class="footer"><p>Thank you for your business!</p><p>Generated: ${new Date(generatedAt).toLocaleString()}</p></div></body></html>`;
     
     const blob = new Blob([receiptHTML], { type: "text/html" });
     const url = URL.createObjectURL(blob);
@@ -538,7 +540,7 @@ const { t, language } = useLanguage();
                           {getTransactionTypeName(tx.transactionType)}
                         </p>
                         <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
-                          {new Date(tx.createdAt).toLocaleDateString()}
+                          {formatPortalDate(tx.createdAt, language)}
                         </p>
                       </div>
                       <p className={cn("font-bold", colors.amount)}>
@@ -631,7 +633,7 @@ const { t, language } = useLanguage();
                             {getTransactionTypeName(tx.transactionType)}
                           </p>
                           <p className={cn("text-sm", isDark ? "text-slate-500" : "text-slate-500")}>
-                            {new Date(tx.createdAt).toLocaleDateString()}
+                            {formatPortalDate(tx.createdAt, language)}
                           </p>
                         </div>
                         
@@ -735,7 +737,7 @@ const { t, language } = useLanguage();
                     {pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}
                   </span>
                   <span className={cn("font-medium", isDark ? "text-white" : "")}>
-                    {new Date(receiptData.transaction.createdAt).toLocaleDateString()}
+                    {formatPortalDate(receiptData.transaction.createdAt, language)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -823,9 +825,9 @@ const { t, language } = useLanguage();
     <div class="info-section">
       <div class="info-box">
         <h3>Invoice Details</h3>
-        <p><span class="highlight">Date:</span> ${new Date(invoice.createdAt).toLocaleDateString()}</p>
-        ${invoice.dueDate ? '<p><span class="highlight">Due Date:</span> ' + new Date(invoice.dueDate).toLocaleDateString() + '</p>' : ''}
-        ${invoice.paidAt ? '<p><span class="highlight">Paid On:</span> ' + new Date(invoice.paidAt).toLocaleDateString() + '</p>' : ''}
+        <p><span class="highlight">Date:</span> ${formatPortalDate(invoice.createdAt, language)}</p>
+        ${invoice.dueDate ? '<p><span class="highlight">Due Date:</span> ' + formatPortalDate(invoice.dueDate, language) + '</p>' : ''}
+        ${invoice.paidAt ? '<p><span class="highlight">Paid On:</span> ' + formatPortalDate(invoice.paidAt, language) + '</p>' : ''}
       </div>
       <div class="info-box" style="text-align: right;">
         <h3>From</h3>
@@ -954,7 +956,7 @@ const { t, language } = useLanguage();
                         {pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}
                       </span>
                       <span className={cn("font-medium", isDark ? "text-white" : "")}>
-                        {new Date(invoice.createdAt).toLocaleDateString()}
+                        {formatPortalDate(invoice.createdAt, language)}
                       </span>
                     </div>
                     {invoice.dueDate && (
@@ -964,7 +966,7 @@ const { t, language } = useLanguage();
                           {pickLang(language, { ku: "بەرواری دوایی", en: "Due Date", ar: "تاريخ الاستحقاق", zh: "到期日" })}
                         </span>
                         <span className={cn("font-medium", isDark ? "text-white" : "")}>
-                          {new Date(invoice.dueDate).toLocaleDateString()}
+                          {formatPortalDate(invoice.dueDate, language)}
                         </span>
                       </div>
                     )}
@@ -975,7 +977,7 @@ const { t, language } = useLanguage();
                           {pickLang(language, { ku: "بەرواری پارەدان", en: "Paid On", ar: "تاريخ الدفع", zh: "支付日期" })}
                         </span>
                         <span className={cn("font-medium text-emerald-500")}>
-                          {new Date(invoice.paidAt).toLocaleDateString()}
+                          {formatPortalDate(invoice.paidAt, language)}
                         </span>
                       </div>
                     )}

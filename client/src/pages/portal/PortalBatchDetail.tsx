@@ -22,6 +22,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { formatPortalDate } from "@/lib/portalClock";
 
 // Timeline step type
 interface TimelineStep {
@@ -288,8 +289,15 @@ const { t, language } = useLanguage();
             {/* Progress line */}
             <div 
               className="absolute top-5 left-5 h-1 rounded-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500"
-              style={{ 
-                width: `${(timelineSteps.filter(s => s.completed || s.current).length - 1) / (timelineSteps.length - 1) * 100}%` 
+              style={{
+                // A status outside statusOrder — `cancelled` — put indexOf at
+                // -1, so nothing was completed or current and this computed
+                // "-20%", which is not a width a browser accepts.
+                width: `${Math.max(
+                  0,
+                  ((timelineSteps.filter(s => s.completed || s.current).length - 1) /
+                    Math.max(1, timelineSteps.length - 1)) * 100,
+                )}%`
               }}
             />
             
@@ -343,7 +351,7 @@ const { t, language } = useLanguage();
                   </p>
                   <p className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     {eta.kind === "exact"
-                      ? eta.date.toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+                      ? formatPortalDate(eta.date, language)
                       : formatBatchEta(eta)}
                   </p>
                 </div>

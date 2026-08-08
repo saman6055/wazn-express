@@ -5,6 +5,7 @@ import { ChevronDown, Hash, Package, ShoppingBag, Receipt, Truck, Wallet } from 
 import { useMemo, useState } from "react";
 import { WhatsAppHelpButton } from "./WhatsAppHelpButton";
 import { PhotoStack } from "@/components/PhotoStack";
+import { formatPortalDate } from "@/lib/portalClock";
 
 // ---------------------------------------------------------------------------
 // OrderBillingGroups — presentation-only fix for "one item, three receipts".
@@ -241,7 +242,7 @@ export function OrderBillingGroups({
                       </span>
                     )}
                     <span className={cn("ms-auto shrink-0 text-[10px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
-                      {g.firstAt.toLocaleDateString("en-GB")}
+                      {formatPortalDate(g.firstAt, language)}
                     </span>
                   </div>
                   {!code && (
@@ -286,7 +287,7 @@ export function OrderBillingGroups({
                             pick({ ku: "بڕگە", en: "Charge", ar: "بند", zh: "费用" })}
                         </p>
                         <p className={cn("text-[10px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
-                          {new Date(line.createdAt).toLocaleDateString("en-GB")}
+                          {formatPortalDate(line.createdAt, language)}
                         </p>
                       </div>
                       <span className={cn("shrink-0 text-xs font-bold tabular-nums", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")} dir="ltr">

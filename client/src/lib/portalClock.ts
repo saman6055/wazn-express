@@ -79,6 +79,47 @@ export function formatClockDate(date: Date, language: string): string {
   }
 }
 
+const KU_MONTHS = [
+  "کانوونی دووەم", "شوبات", "ئازار", "نیسان", "ئایار", "حوزەیران",
+  "تەممووز", "ئاب", "ئەیلوول", "تشرینی یەکەم", "تشرینی دووەم", "کانوونی یەکەم",
+];
+
+/**
+ * A date the customer cannot misread.
+ *
+ * The portal formatted dates eight different ways — `en-GB`, `en-US`,
+ * `ku-IQ`, `ar-IQ`, and four calls to a bare `toLocaleDateString()` that
+ * follows whatever the browser is set to. On one screen the transaction dates
+ * came out in Arabic-Indic digits and the billing dates directly beneath them
+ * as `dd/mm/yyyy`. Worse, `05/03` and `03/05` are the same date to two
+ * different readers, and this is a shipping company: the difference between
+ * the 3rd of May and the 5th of March is whether a parcel is late.
+ *
+ * Naming the month removes the ambiguity in every language, so that is what
+ * every portal date does now.
+ */
+export function formatPortalDate(value: string | Date | null | undefined, language: string): string {
+  if (!value) return "—";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  if (language === "ku") {
+    return `${date.getDate()} ${KU_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+  }
+
+  const locale = language === "ar" ? "ar" : language === "zh" ? "zh-CN" : "en-GB";
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(date);
+  } catch {
+    // A browser missing the locale data still gets an unambiguous date.
+    return `${date.getDate()} ${KU_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+  }
+}
+
 /**
  * Milliseconds until the top of the next minute. The header ticks on the
  * minute instead of every second — the seconds are never shown, so a

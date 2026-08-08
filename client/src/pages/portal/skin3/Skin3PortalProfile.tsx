@@ -3,7 +3,10 @@ import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import { ModernPortalLayout } from "@/components/ModernPortalLayout";
+// This screen belongs to skin3; it was rendering inside the modern skin's
+// chrome, so the bottom bar changed shape when a customer opened their
+// profile and changed back when they left it.
+import Skin3PortalLayout from "@/components/Skin3PortalLayout";
 import {
   User,
   Mail,
@@ -63,7 +66,7 @@ export default function Skin3PortalProfile() {
 
   if (!user) {
     return (
-      <ModernPortalLayout>
+      <Skin3PortalLayout>
         <div
           className={cn(
             "min-h-screen flex items-center justify-center",
@@ -108,7 +111,7 @@ export default function Skin3PortalProfile() {
             </Link>
           </div>
         </div>
-      </ModernPortalLayout>
+      </Skin3PortalLayout>
     );
   }
 
@@ -349,7 +352,7 @@ export default function Skin3PortalProfile() {
   );
 
   return (
-    <ModernPortalLayout>
+    <Skin3PortalLayout>
       <div
         className={cn(
           "min-h-screen pb-24",
@@ -520,6 +523,6 @@ export default function Skin3PortalProfile() {
           </p>
         </div>
       </div>
-    </ModernPortalLayout>
+    </Skin3PortalLayout>
   );
 }

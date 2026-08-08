@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { pickLang } from "@/lib/lang";
 import { isCreditTx, isDebt, isInvoiceOutstanding } from "@/lib/portalMoney";
+import { formatPortalDate } from "@/lib/portalClock";
 
 type FilterTab = "all" | "credit" | "debit";
 
@@ -78,10 +79,7 @@ export default function Skin3PortalFinancial() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString(
-      language === "ku" || language === "ar" ? "ar-IQ" : "en-US",
-      { month: "short", day: "numeric", year: "numeric" }
-    );
+    return formatPortalDate(date, language);
   };
 
   const handleDownloadReceipt = (txId: number) => {

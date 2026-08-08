@@ -5,6 +5,7 @@ import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { pickLang } from "@/lib/lang";
 import { copyText } from "@/lib/copyText";
 import { cn } from "@/lib/utils";
+import { formatPortalDate } from "@/lib/portalClock";
 
 /**
  * One parcel the customer bought themselves — we only shipped it.
@@ -58,10 +59,8 @@ const SHIPPING: Record<string, { label: L; icon: typeof Plane }> = {
   sea: { label: { ku: "دەریایی", en: "Sea freight", ar: "بحري", zh: "海运" }, icon: Ship },
 };
 
-function fmtDate(v: string | Date | null): string {
-  if (!v) return "—";
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-GB");
+function fmtDate(v: string | Date | null, language: string): string {
+  return formatPortalDate(v, language);
 }
 
 export function SelfOrderCard({
@@ -170,7 +169,7 @@ export function SelfOrderCard({
 
             <span className={cn("ms-auto inline-flex items-center gap-1 text-[10px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
               <Calendar className="h-3 w-3" />
-              {fmtDate(pkg.createdAt)}
+              {fmtDate(pkg.createdAt, language)}
             </span>
           </div>
 

@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { postText, anyPostText } from "@/lib/blogLang";
 import { SocialChannels, firstYouTubeId, YouTubeEmbed } from "@/components/portal/SocialChannels";
 import { copyText } from "@/lib/copyText";
+import { formatPortalDate } from "@/lib/portalClock";
 
 export default function PortalBlogDetail() {
 const { id } = useParams<{ id: string }>();
@@ -73,9 +74,9 @@ const { id } = useParams<{ id: string }>();
   const formatDate = (date: Date | string) => {
     const d = new Date(date);
     if (language === "ku") {
-      return d.toLocaleDateString("ku", { year: "numeric", month: "long", day: "numeric" });
+      return formatPortalDate(d, language);
     }
-    return d.toLocaleDateString("en", { year: "numeric", month: "long", day: "numeric" });
+    return formatPortalDate(d, language);
   };
   
   // Calculate read time
