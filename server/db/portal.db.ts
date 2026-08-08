@@ -1,6 +1,7 @@
 import { getDb } from './connection';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getCustomerAccountByCustomerId } from './finance.db';
+import { selfOrderWhere } from './selfOrder.filter';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -297,6 +298,47 @@ export async function getCustomerUnbatchedPackages(customerId: number) {
       eq(packages.customerId, customerId),
       isNull(packages.batchId)
     ))
+    .orderBy(desc(packages.createdAt));
+}
+
+/**
+ * The customer's own purchases: parcels we ship but never bought for them.
+ *
+ * Filtered by `selfOrderConditions` — the same rule the self-order revenue
+ * report runs on — so the tab a customer sees and the money the office counts
+ * can never describe the same box differently.
+ *
+ * Nothing here is stored. When the admin finally enters the purchase order and
+ * its tracking number, orderBacklink sets `fullPackageOrderId`, the parcel
+ * stops matching this query on the customer's very next page load, and it
+ * appears under its real order instead. That is the whole migration.
+ */
+export async function getSelfOrderPackagesByCustomer(customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: packages.id,
+      packageCode: packages.packageCode,
+      trackingNumber: packages.trackingNumber,
+      description: packages.description,
+      photos: packages.photos,
+      status: packages.status,
+      shippingType: packages.shippingType,
+      weightKg: packages.weightKg,
+      volumeCbm: packages.volumeCbm,
+      calculatedCostUsd: packages.calculatedCostUsd,
+      isCharged: packages.isCharged,
+      batchId: packages.batchId,
+      batchCode: batches.batchCode,
+      batchStatus: batches.status,
+      createdAt: packages.createdAt,
+      deliveredAt: packages.deliveredAt,
+    })
+    .from(packages)
+    .leftJoin(batches, eq(packages.batchId, batches.id))
+    .where(selfOrderWhere(eq(packages.customerId, customerId)))
     .orderBy(desc(packages.createdAt));
 }
 

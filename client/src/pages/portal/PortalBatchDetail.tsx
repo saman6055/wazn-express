@@ -44,7 +44,18 @@ const { t, language } = useLanguage();
   const { data: batches } = trpc.customerPortal.getMyBatches.useQuery();
   const { data: packages, isLoading } = trpc.customerPortal.getMyPackagesInBatch.useQuery({ batchId });
   const { resolve: resolvePackageImage } = usePackageImages();
-  
+
+  // Which of these parcels are the customer's own buying. Derived server-side
+  // from the one self-order rule, so this badge and the orders page can never
+  // disagree, and both stop showing it the moment the parcel is linked to an
+  // order that was entered late.
+  const { data: selfOrderPackages } = trpc.customerPortal.getMySelfOrderPackages.useQuery(undefined, {
+    staleTime: 60_000,
+    retry: false,
+  });
+  const selfOrderIds = new Set((selfOrderPackages ?? []).map((p) => p.id));
+
+
   const batch = batches?.find(b => b.id === batchId);
   
   // Photo viewer state
@@ -393,7 +404,7 @@ const { t, language } = useLanguage();
                         <p className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                           {pkg.trackingNumber || pkg.packageCode}
                         </p>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
                           <span className={cn(
                             "text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1",
                             getStatusColor(pkg.status)
@@ -401,6 +412,20 @@ const { t, language } = useLanguage();
                             {getStatusIcon(pkg.status)}
                             {getStatusText(pkg.status)}
                           </span>
+                          {/* Says plainly which parcels are the customer's own
+                              buying rather than an order of ours — the same
+                              distinction the orders page draws, so a parcel
+                              cannot look like two different things on two
+                              screens. The badge disappears by itself once an
+                              admin links the parcel to its purchase order. */}
+                          {selfOrderIds.has(pkg.id) && (
+                            <span className={cn(
+                              "text-xs px-2.5 py-1 rounded-full font-medium",
+                              isDark ? "bg-sky-900/50 text-sky-300" : "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300",
+                            )}>
+                              {pickLang(language, { ku: "کڕینی خۆت", en: "Your own purchase", ar: "شراؤك الخاص", zh: "自购" })}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

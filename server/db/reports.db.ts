@@ -3,6 +3,7 @@ import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getTotalDebtAmount } from './finance.db';
 import { getDeliveryBoxProfitBreakdown } from './deliveryBoxes.db';
+import { selfOrderConditions } from './selfOrder.filter';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -1201,7 +1202,10 @@ export async function getSelfOrderReport(days?: number): Promise<{
   const db = await getDb();
   if (!db) return empty;
   try {
-    const conds: any[] = [isNull(packages.fullPackageOrderId), isNotNull(packages.customerId), eq(packages.isUnclaimed, false)];
+    // The rule lives in selfOrder.filter.ts, not here: this report and the
+    // customer portal's "my own purchases" tab must never disagree about which
+    // box is a self order, because this one decides revenue and profit.
+    const conds: any[] = [...selfOrderConditions()];
     if (days && days > 0) {
       const since = new Date();
       since.setDate(since.getDate() - days);

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from "@/lib/utils";
 import { TutorialHint } from "@/components/TutorialHint";
 import { pickLang } from "@/lib/lang";
+import { SelfOrderCard, type SelfOrderPackage } from "@/components/portal/SelfOrderCard";
 import { Link, useSearch } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -203,10 +204,27 @@ export default function PortalFullPackage() {
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price_high" | "price_low">("newest");
   const [showFilters, setShowFilters] = useState(false);
   
-  // Fetch full package orders for this customer (using customer portal endpoint)
-  const { data: fullPackageOrders, isLoading } = trpc.customerPortal.getMyFullPackageOrders.useQuery({
-    orderType: activeTab === "all" ? undefined : activeTab as "full_package" | "commission",
-  });
+  // Every order, every tab. The tab filter is applied on the client below, so
+  // asking the server for a subset only made the three counters at the top of
+  // the page mean something different depending on which tab was open — "total"
+  // dropped when you tapped "Commission". They now count the same thing always.
+  const { data: fullPackageOrders, isLoading } = trpc.customerPortal.getMyFullPackageOrders.useQuery({});
+
+  /**
+   * Goods the customer bought themselves — parcels we only shipped.
+   *
+   * They have no row in fullPackageOrders, which is why this page never showed
+   * them: a customer could be looking at "my orders" with a box of their own
+   * sitting in our depot and nothing on the page admitting it existed.
+   *
+   * The server derives this list on every read from the same rule the
+   * self-order revenue report uses. So when an admin finally enters the
+   * purchase order for one of these parcels, it drops out of here by itself
+   * and reappears under its real order in the tabs above — no state to sync,
+   * and the office's money report moves at exactly the same moment.
+   */
+  const { data: selfOrderPackages, isLoading: selfLoading } =
+    trpc.customerPortal.getMySelfOrderPackages.useQuery();
 
   // Full-package orders can't be self-created in the portal — staff place them
   // on the customer's behalf. So "New Order" opens WhatsApp with a pre-filled
@@ -248,6 +266,9 @@ export default function PortalFullPackage() {
     if (activeTab === "all") return true;
     if (activeTab === "full_package") return order.orderType === "full_package";
     if (activeTab === "commission") return order.orderType === "commission";
+    // "My own" holds parcels with no order behind them, so no order belongs
+    // in it by definition.
+    if (activeTab === "self") return false;
     return true;
   }).filter(order => {
     if (statusFilter === "all") return true;
@@ -275,11 +296,64 @@ export default function PortalFullPackage() {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
   
-  // Calculate stats
+  /* ---- Self orders: same search, status filter and sort as the orders ---- */
+
+  /** Package statuses grouped into the buckets this page's filter offers. */
+  const SELF_STATUS_BUCKET: Record<string, string> = {
+    registered: "pending",
+    in_batch: "in_transit",
+    in_transit: "in_transit",
+    customs_processing: "in_transit",
+    ready_for_delivery: "in_transit",
+    out_for_delivery: "in_transit",
+    delivered: "delivered",
+    returned: "cancelled",
+    cancelled: "cancelled",
+  };
+
+  const allSelfOrders = (selfOrderPackages ?? []) as SelfOrderPackage[];
+
+  const filteredSelfOrders = allSelfOrders.filter(p => {
+    if (statusFilter === "all") return true;
+    return SELF_STATUS_BUCKET[p.status] === statusFilter;
+  }).filter(p => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (p.description || "").toLowerCase().includes(q)
+      || (p.trackingNumber || "").toLowerCase().includes(q)
+      || p.packageCode.toLowerCase().includes(q);
+  }).sort((a, b) => {
+    if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    if (sortBy === "price_high") return parseFloat(b.calculatedCostUsd || "0") - parseFloat(a.calculatedCostUsd || "0");
+    if (sortBy === "price_low") return parseFloat(a.calculatedCostUsd || "0") - parseFloat(b.calculatedCostUsd || "0");
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
+  // The "My own" tab only exists while there is something in it. When the last
+  // parcel in it is linked to a late-entered order, the tab button goes — so
+  // send the reader back to "All" rather than leaving them on a tab that is no
+  // longer there, looking at an empty page.
+  useEffect(() => {
+    if (activeTab === "self" && !selfLoading && allSelfOrders.length === 0) {
+      setActiveTab("all");
+    }
+  }, [activeTab, selfLoading, allSelfOrders.length]);
+
+  /** Which lists the current tab is showing. */
+  const showsOrders = activeTab !== "self";
+  const showsSelfOrders = activeTab === "all" || activeTab === "self";
+  const visibleCount =
+    (showsOrders ? filteredOrders.length : 0) + (showsSelfOrders ? filteredSelfOrders.length : 0);
+
+  // Calculate stats. Self orders count too: they are the customer's goods in
+  // our hands, and leaving them out would mean the total silently grew by one
+  // every time an admin linked a parcel to a late-entered order.
   const stats = {
-    total: allOrders.length,
-    pending: allOrders.filter(o => ["pending", "ordered", "purchasing", "tracking_added", "in_china_warehouse", "in_batch", "in_transit"].includes(o.status)).length,
-    delivered: allOrders.filter(o => ["delivered", "completed", "arrived"].includes(o.status)).length,
+    total: allOrders.length + allSelfOrders.length,
+    pending: allOrders.filter(o => ["pending", "ordered", "purchasing", "tracking_added", "in_china_warehouse", "in_batch", "in_transit"].includes(o.status)).length
+      + allSelfOrders.filter(p => SELF_STATUS_BUCKET[p.status] === "pending" || SELF_STATUS_BUCKET[p.status] === "in_transit").length,
+    delivered: allOrders.filter(o => ["delivered", "completed", "arrived"].includes(o.status)).length
+      + allSelfOrders.filter(p => p.status === "delivered").length,
   };
   
   const getStatusInfo = (status: string) => {
@@ -420,15 +494,15 @@ export default function PortalFullPackage() {
         "px-4 py-6 min-h-screen",
         isDark ? "bg-slate-900" : "bg-gray-50 dark:bg-gray-950/40"
       )}>
-        {/* Tab Filters */}
+        {/* Tab Filters — four now, so they scroll rather than squeeze on a phone */}
         <div className={cn(
-          "flex gap-2 p-1.5 rounded-2xl mb-5",
+          "flex gap-2 p-1.5 rounded-2xl mb-5 overflow-x-auto",
           isDark ? "bg-slate-800" : "bg-white shadow-sm"
         )}>
           <button
             onClick={() => setActiveTab("all")}
             className={cn(
-              "flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all",
+              "flex-1 whitespace-nowrap py-3 px-3 rounded-xl text-[13px] font-semibold transition-all",
               activeTab === "all"
                 ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -439,7 +513,7 @@ export default function PortalFullPackage() {
           <button
             onClick={() => setActiveTab("full_package")}
             className={cn(
-              "flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all",
+              "flex-1 whitespace-nowrap py-3 px-3 rounded-xl text-[13px] font-semibold transition-all",
               activeTab === "full_package"
                 ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -450,7 +524,7 @@ export default function PortalFullPackage() {
           <button
             onClick={() => setActiveTab("commission")}
             className={cn(
-              "flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all",
+              "flex-1 whitespace-nowrap py-3 px-3 rounded-xl text-[13px] font-semibold transition-all",
               activeTab === "commission"
                 ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -458,6 +532,31 @@ export default function PortalFullPackage() {
           >
 {pickLang(language, { ku: "عمولە", en: "Commission", ar: "عمولة", zh: "代购佣金" })}
           </button>
+          {/* Only offered when there is something in it: a customer who always
+              orders through us should not be asked to think about a category
+              that will never apply to them. */}
+          {allSelfOrders.length > 0 && (
+            <button
+              onClick={() => setActiveTab("self")}
+              className={cn(
+                "flex-1 inline-flex items-center justify-center gap-1.5 whitespace-nowrap py-3 px-3 rounded-xl text-[13px] font-semibold transition-all",
+                activeTab === "self"
+                  ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
+                  : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
+              )}
+            >
+              {pickLang(language, { ku: "کڕینی خۆم", en: "My own", ar: "شرائي الخاص", zh: "自购" })}
+              <span
+                className={cn(
+                  "rounded-full px-1.5 text-[10px] font-bold tabular-nums",
+                  activeTab === "self" ? "bg-white/25" : isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-800",
+                )}
+                dir="ltr"
+              >
+                {allSelfOrders.length}
+              </span>
+            </button>
+          )}
         </div>
         
         {/* Search Bar + Filter Toggle */}
@@ -614,13 +713,13 @@ export default function PortalFullPackage() {
         )}
 
         {/* Orders List */}
-        {isLoading ? (
+        {isLoading || selfLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map(i => (
               <Skeleton key={i} className="h-36 rounded-2xl" />
             ))}
           </div>
-        ) : filteredOrders.length === 0 ? (
+        ) : visibleCount === 0 ? (
           /* Empty State */
           <div className={cn(
             "text-center py-16 rounded-3xl",
@@ -652,6 +751,7 @@ export default function PortalFullPackage() {
         ) : (
           /* Orders Grid */
           <div className="space-y-4">
+            {showsOrders && (
             <AnimatePresence>
               {filteredOrders.map((order, index) => {
                 const statusInfo = getStatusInfo(order.status);
@@ -842,9 +942,47 @@ export default function PortalFullPackage() {
                 );
               })}
             </AnimatePresence>
+            )}
+
+            {showsSelfOrders && filteredSelfOrders.length > 0 && (
+              <div className="space-y-3">
+                {/* On the "All" tab these need a heading, because they are a
+                    different kind of thing from an order and the difference is
+                    the point: we did not buy these. On their own tab the
+                    heading doubles as the explanation. */}
+                <div className={cn(
+                  "rounded-2xl border p-3",
+                  isDark ? "bg-sky-950/30 border-sky-900" : "bg-sky-50 dark:bg-sky-950/30 border-sky-100 dark:border-sky-900",
+                )}>
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                    <p className={cn("text-sm font-bold", isDark ? "text-sky-200" : "text-sky-900 dark:text-sky-200")}>
+                      {pickLang(language, {
+                        ku: "کڕینی خۆت",
+                        en: "Your own purchases",
+                        ar: "مشترياتك الخاصة",
+                        zh: "您的自购商品",
+                      })}
+                    </p>
+                  </div>
+                  <p className={cn("mt-1 text-[12px] leading-relaxed", isDark ? "text-sky-300/80" : "text-sky-800/80 dark:text-sky-300/80")}>
+                    {pickLang(language, {
+                      ku: "ئەم کاڵایانە خۆت کڕیوتە و ئێمە تەنها گواستوومانەتەوە. ئەگەر یەکێکیان لە ڕاستیدا ئۆردەرێکی ئێمەیە، دوای ئەوەی تۆماری دەکەین خۆکار دەچێتە سەر ئۆردەرەکەی خۆی.",
+                      en: "You bought these yourself and we only shipped them. If one of them is in fact an order of ours, it moves to that order automatically once we register it.",
+                      ar: "هذه بضائع اشتريتها بنفسك ونحن شحنّاها فقط. إذا كانت إحداها في الواقع طلباً لدينا، فستنتقل إلى طلبها تلقائياً بمجرد تسجيله.",
+                      zh: "这些是您自行购买、由我们代运的货物。如果其中某件其实是我们的订单，登记后会自动归入该订单。",
+                    })}
+                  </p>
+                </div>
+
+                {filteredSelfOrders.map((pkg) => (
+                  <SelfOrderCard key={pkg.id} pkg={pkg} language={language} isDark={isDark} />
+                ))}
+              </div>
+            )}
           </div>
         )}
-        
+
         {/* Floating Action Button — request a new order via WhatsApp */}
         <button
           type="button"

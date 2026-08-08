@@ -211,6 +211,20 @@ export const customerPortalRouter = router({
       return db.getCustomerUnbatchedPackages(customerId);
     }),
     
+    /**
+     * Parcels the customer bought themselves — no order of ours behind them.
+     *
+     * Derived on every read from the same rule as the self-order revenue
+     * report, never stored. A parcel leaves this list by itself the moment an
+     * admin enters the purchase order that owns its tracking number.
+     */
+    getMySelfOrderPackages: protectedProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.user.isCustomer ? ctx.user.id :
+        (await db.getCustomerByUserId(ctx.user.id))?.id;
+      if (!customerId) return [];
+      return db.getSelfOrderPackagesByCustomer(customerId);
+    }),
+
     // Get customer's full package orders (for customer portal)
     getMyFullPackageOrders: protectedProcedure
       .input(z.object({
