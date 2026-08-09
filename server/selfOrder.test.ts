@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { isSelfOrder } from "./lib/selfOrder";
+import { isSelfOrder, SELF_ORDER_FROM } from "./lib/selfOrder";
 
 /**
  * A self order is a parcel we ship but never bought. Two very different parts
@@ -13,7 +13,14 @@ import { isSelfOrder } from "./lib/selfOrder";
  * So there is one rule, and these tests hold it in place.
  */
 
-const OWNED = { fullPackageOrderId: null, customerId: 7, isUnclaimed: false };
+// Registered a day after the cut-off, so the date is not what any of the
+// other cases is testing.
+const OWNED = {
+  fullPackageOrderId: null,
+  customerId: 7,
+  isUnclaimed: false,
+  registeredAt: new Date(SELF_ORDER_FROM.getTime() + 86_400_000),
+};
 
 describe("what counts as a self order", () => {
   it("is a parcel with an owner and no order behind it", () => {
@@ -177,5 +184,60 @@ describe("an order that missed its parcel can be told to look again", () => {
     const body = fn.slice(0, 3000);
     expect(body).toContain("inArray(fullPackageOrders.trackingNumber, trackings)");
     expect(body).toContain("inArray(fullPackageOrderTrackings.trackingNumber, trackings)");
+  });
+});
+
+describe("self orders start on the day the feature did", () => {
+  /**
+   * The office's call, and the right one: this is a new feature, and treating
+   * years of back-catalogue as "goods the customer bought themselves" would
+   * put parcels in the portal — and revenue in the self-order report — that
+   * were never meant to be there. Those older parcels are not self orders;
+   * they are from before the question was asked.
+   */
+  const base = { fullPackageOrderId: null, customerId: 7, isUnclaimed: false };
+
+  it("counts a parcel registered on or after the cut-off", () => {
+    expect(isSelfOrder({ ...base, registeredAt: SELF_ORDER_FROM })).toBe(true);
+    expect(isSelfOrder({ ...base, registeredAt: new Date(SELF_ORDER_FROM.getTime() + 1) })).toBe(true);
+  });
+
+  it("ignores anything registered before it", () => {
+    expect(isSelfOrder({ ...base, registeredAt: new Date(SELF_ORDER_FROM.getTime() - 1) })).toBe(false);
+    expect(isSelfOrder({ ...base, registeredAt: new Date("2026-01-01T00:00:00Z") })).toBe(false);
+  });
+
+  /**
+   * The boundary is midnight in Baghdad, not midnight UTC. Iraq is UTC+3, so
+   * UTC midnight would have put anything registered between 00:00 and 03:00
+   * on the 15th on the wrong side of the line — a whole three hours of
+   * parcels silently excluded.
+   */
+  it("draws the line at midnight where the warehouse is", () => {
+    expect(SELF_ORDER_FROM.toISOString()).toBe("2026-07-14T21:00:00.000Z");
+    // 15 July, 00:30 Baghdad — inside.
+    expect(isSelfOrder({ ...base, registeredAt: new Date("2026-07-14T21:30:00.000Z") })).toBe(true);
+    // 14 July, 23:30 Baghdad — outside.
+    expect(isSelfOrder({ ...base, registeredAt: new Date("2026-07-14T20:30:00.000Z") })).toBe(false);
+  });
+
+  /**
+   * Excluding is the safer direction for a value we cannot read: it keeps a
+   * parcel out of the portal and out of the revenue figure rather than
+   * inventing one of each.
+   */
+  it("treats an unreadable timestamp as too old", () => {
+    expect(isSelfOrder({ ...base, registeredAt: null })).toBe(false);
+    expect(isSelfOrder({ ...base, registeredAt: "not a date" })).toBe(false);
+  });
+
+  it("the SQL rule draws the same line", () => {
+    // Both readers must use the one constant, or the money report and the
+    // portal disagree about which parcels are whose.
+    const filter = fs.readFileSync(path.resolve(__dirname, "db/selfOrder.filter.ts"), "utf8");
+    expect(filter).toContain("gte(packages.registeredAt, SELF_ORDER_FROM)");
+    expect(filter, "and import it rather than restate the date")
+      .toContain('import { SELF_ORDER_FROM } from "../lib/selfOrder"');
+    expect(filter).not.toMatch(/new Date\("20\d\d-/);
   });
 });

@@ -1,5 +1,6 @@
-import { and, eq, isNull, isNotNull, SQL } from "drizzle-orm";
+import { and, eq, gte, isNull, isNotNull, SQL } from "drizzle-orm";
 import { packages } from "../../drizzle/schema";
+import { SELF_ORDER_FROM } from "../lib/selfOrder";
 
 /**
  * The self-order rule as a database condition.
@@ -21,6 +22,10 @@ export function selfOrderConditions(): SQL[] {
     isNull(packages.fullPackageOrderId),
     isNotNull(packages.customerId),
     eq(packages.isUnclaimed, false),
+    // And only from the day the feature existed. The constant lives beside
+    // the in-memory rule so both draw the line on the same day — see
+    // SELF_ORDER_FROM in ../lib/selfOrder.ts for why there is a line at all.
+    gte(packages.registeredAt, SELF_ORDER_FROM),
   ];
 }
 
