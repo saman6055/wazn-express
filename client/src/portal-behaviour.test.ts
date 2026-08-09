@@ -181,3 +181,28 @@ describe("each skin keeps its own chrome", () => {
     expect(src).toContain("Skin3PortalLayout");
   });
 });
+
+describe("a filter that leads nowhere does not invite a tap", () => {
+  const SRC = fs.readFileSync(
+    path.resolve(__dirname, "pages/portal/PortalShipments.tsx"), "utf8");
+
+  /**
+   * "On the way — 0" is worth showing: it is the answer to a question the
+   * customer came to the page to ask. It was not worth tapping. The pill took
+   * the tap, the list emptied, and the customer had to work out for themselves
+   * that the filter they had just chosen was the reason it was empty.
+   */
+  it("an empty stage pill is dimmed and inert", () => {
+    expect(SRC).toContain("const isEmpty = filter.count === 0 && !isActive");
+    expect(SRC).toContain("disabled={isEmpty}");
+    expect(SRC, "it must stay visible — the zero is information").toContain("opacity-45");
+  });
+
+  /**
+   * Never disabled while it is the active filter, or a customer could select
+   * a stage, watch the list empty, and have no way to switch it back off.
+   */
+  it("the active filter is never disabled", () => {
+    expect(SRC).toMatch(/filter\.count === 0 && !isActive/);
+  });
+});

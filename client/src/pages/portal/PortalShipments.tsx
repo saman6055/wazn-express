@@ -495,13 +495,27 @@ function ClassicPortalShipments() {
         )}>
           {statusFilters.map((filter) => {
             const isActive = statusFilter === filter.value;
+            /**
+             * A stage with nothing in it is still worth showing — "0 on the
+             * way" is the answer to a question a customer came here to ask —
+             * but it is not worth tapping. It used to be: the pill took the
+             * tap, the list emptied, and the customer had to work out that
+             * the filter they had just chosen was the reason.
+             *
+             * So it stays on screen, dimmed, and does nothing. Never disabled
+             * while it is the active filter, or the customer could select a
+             * stage, watch it empty, and have no way to switch it off.
+             */
+            const isEmpty = filter.count === 0 && !isActive;
             return (
               <button
                 key={filter.value}
                 // Same as the type row: tapping the active one clears it.
                 onClick={() => setStatusFilter(isActive ? "" : filter.value)}
                 aria-pressed={isActive}
+                disabled={isEmpty}
                 className={cn(
+                  isEmpty && "opacity-45 cursor-default",
                   // Raised: a highlight along the top edge and a shadow beneath
                   // give the pill some depth, and it presses down when tapped.
                   "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap",
