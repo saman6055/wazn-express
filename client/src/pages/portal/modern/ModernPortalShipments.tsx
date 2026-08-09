@@ -1,5 +1,6 @@
 import { ChinaDepotList, useChinaDepotItems } from "@/components/portal/ChinaDepotList";
 import { STATUS_LABEL, matchesStage, type ShipmentStage } from "@/lib/shipmentFilters";
+import { onImageError } from "@/lib/imageFallback";
 import { pickLang } from "@/lib/lang";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -583,7 +584,7 @@ export default function ModernPortalShipments() {
                                           <div className="flex gap-1.5 mb-2 overflow-x-auto">
                                             {pkg.photos.slice(0, 4).map((photo: string, pi: number) => (
                                               <a key={pi} href={photo} target="_blank" rel="noopener noreferrer" className="shrink-0">
-                                                <img
+                                                <img onError={onImageError}
                                                   src={photo}
                                                   alt=""
                                                   loading="lazy"

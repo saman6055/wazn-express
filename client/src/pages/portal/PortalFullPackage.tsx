@@ -4,6 +4,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
+import { onImageError } from "@/lib/imageFallback";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
@@ -920,7 +921,7 @@ export default function PortalFullPackage() {
                             isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
                           )}>
                             {order.productImage ? (
-                              <img loading="lazy" decoding="async" 
+                              <img onError={onImageError} loading="lazy" decoding="async" 
                                 src={order.productImage} 
                                 alt={order.productName}
                                 className="w-full h-full object-cover"
@@ -1159,7 +1160,7 @@ export default function PortalFullPackage() {
                     isDark ? "border-slate-900 bg-slate-800" : "border-white bg-slate-100 dark:bg-slate-950/40"
                   )}>
                     {selectedOrder.productImage ? (
-                      <img loading="lazy" decoding="async" 
+                      <img onError={onImageError} loading="lazy" decoding="async" 
                         src={selectedOrder.productImage} 
                         alt={selectedOrder.productName}
                         className="w-full h-full object-cover"

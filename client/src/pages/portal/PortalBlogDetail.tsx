@@ -2,6 +2,7 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
+import { onImageError } from "@/lib/imageFallback";
 import {
   ArrowLeft, Calendar, Eye, Star, Share2, Clock,
   Megaphone, Newspaper, Gift, RefreshCw, BookOpen, Link as LinkIcon
@@ -188,7 +189,7 @@ const { id } = useParams<{ id: string }>();
         {/* Cover Image */}
         {post.coverImageUrl && (
           <div className="relative h-56 overflow-hidden">
-            <img loading="lazy" decoding="async" 
+            <img onError={onImageError} loading="lazy" decoding="async" 
               src={post.coverImageUrl} 
               alt={getTitle(post)}
               className="w-full h-full object-cover"

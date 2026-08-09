@@ -1,4 +1,5 @@
 import { pickLang } from "@/lib/lang";
+import { onImageError } from "@/lib/imageFallback";
 import { postText, filterPostsByLanguage } from "@/lib/blogLang";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
@@ -105,7 +106,7 @@ export function WaznNewsCarousel({ language, isDark }: { language: string; isDar
                 <div className={cn("relative overflow-hidden p-5 min-h-[176px] text-white cursor-pointer bg-gradient-to-br", meta.grad)}>
                   {post.coverImageUrl && (
                     <div className="absolute inset-0">
-                      <img src={post.coverImageUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover opacity-25" />
+                      <img onError={onImageError} src={post.coverImageUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover opacity-25" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                     </div>
                   )}

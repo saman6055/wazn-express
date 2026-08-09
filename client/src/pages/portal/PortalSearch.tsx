@@ -4,6 +4,7 @@ import { PortalSearchSkeleton } from "@/components/portal/PortalListSkeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
+import { onImageError } from "@/lib/imageFallback";
 import { Search, Package, X, CheckCircle, Truck, Clock, AlertCircle, Scale, Ruler, Camera, ChevronLeft, ChevronRight, Calendar, PackagePlus, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
@@ -442,7 +443,7 @@ export default function PortalSearch() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 space-y-3">
             <div className="flex items-center gap-3">
               {orderResult.productImage ? (
-                <img loading="lazy" decoding="async" src={orderResult.productImage} alt="" className="w-14 h-14 rounded-xl object-cover" />
+                <img onError={onImageError} loading="lazy" decoding="async" src={orderResult.productImage} alt="" className="w-14 h-14 rounded-xl object-cover" />
               ) : (
                 <div className="w-14 h-14 bg-violet-100 dark:bg-violet-950/40 rounded-xl flex items-center justify-center">
                   <Package className="w-7 h-7 text-violet-500" />

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { onImageError } from "@/lib/imageFallback";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { pickLang } from "@/lib/lang";
@@ -81,7 +82,7 @@ function DeliveryProof({ boxId, label }: { boxId: number; label: Label }) {
     <div className="mt-2 grid grid-cols-2 gap-2">
       {proof.data?.deliveryPhoto && (
         <figure className="min-w-0">
-          <img
+          <img onError={onImageError}
             src={proof.data.deliveryPhoto}
             alt={label({ ku: "وێنەی گەیاندن", en: "Delivery photo", ar: "صورة التسليم", zh: "签收照片" })}
             className="h-28 w-full rounded-lg border object-cover"
@@ -97,7 +98,7 @@ function DeliveryProof({ boxId, label }: { boxId: number; label: Label }) {
         <figure className="min-w-0">
           {/* Signatures are drawn in black ink on transparent canvas, so they
               need a light plate of their own or they vanish in dark mode. */}
-          <img
+          <img onError={onImageError}
             src={proof.data.signature}
             alt={label({ ku: "واژوو", en: "Signature", ar: "التوقيع", zh: "签名" })}
             className="h-28 w-full rounded-lg border bg-white object-contain p-1"

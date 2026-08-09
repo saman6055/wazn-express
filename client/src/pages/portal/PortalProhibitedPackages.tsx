@@ -4,6 +4,7 @@ import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
+import { onImageError } from "@/lib/imageFallback";
 import { pickLang } from "@/lib/lang";
 import { getProhibitedItemLabel } from "@/constants/prohibitedItems";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
@@ -151,7 +152,7 @@ export default function PortalProhibitedPackages() {
                     {photos.length > 0 && (
                       <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
                         {photos.map((src, i) => (
-                          <img key={i} src={src} alt="" loading="lazy" className="w-24 h-24 rounded-xl object-cover flex-shrink-0 border border-black/5" />
+                          <img onError={onImageError} key={i} src={src} alt="" loading="lazy" className="w-24 h-24 rounded-xl object-cover flex-shrink-0 border border-black/5" />
                         ))}
                       </div>
                     )}

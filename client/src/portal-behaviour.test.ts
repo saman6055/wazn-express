@@ -206,3 +206,51 @@ describe("a filter that leads nowhere does not invite a tap", () => {
     expect(SRC).toMatch(/filter\.count === 0 && !isActive/);
   });
 });
+
+describe("a missing picture is not a broken app", () => {
+  /**
+   * Nearly every image in the portal comes from somewhere that can fail: a
+   * product photo the customer uploaded months ago, a blog cover the office
+   * replaced, an attachment on a support message, a delivery photo. When the
+   * URL is dead the browser draws its broken-image glyph — a torn page in the
+   * middle of an otherwise finished card, which reads as the app being broken
+   * rather than one picture being missing.
+   */
+  it("every portal <img> says what to do when it fails", () => {
+    const dirs = [path.join(SRC, "pages/portal"), path.join(SRC, "components/portal")];
+    const files: string[] = [];
+    const walk = (d: string) => {
+      if (!fs.existsSync(d)) return;
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (e.name.endsWith(".tsx")) files.push(p);
+      }
+    };
+    dirs.forEach(walk);
+
+    const offenders: string[] = [];
+    for (const f of files) {
+      const src = fs.readFileSync(f, "utf8");
+      for (const m of src.matchAll(/<img\b[\s\S]{0,400}?\/?>/g)) {
+        if (!/onError/.test(m[0])) {
+          offenders.push(`${path.basename(f)}:${src.slice(0, m.index).split("\n").length}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      offenders.length ? `add onError={onImageError} from lib/imageFallback:\n  ${offenders.join("\n  ")}` : "",
+    ).toEqual([]);
+  });
+
+  it("the handler hides rather than swapping in another image", () => {
+    // A placeholder image is another request that can fail, and another thing
+    // to keep in the build.
+    const src = read("lib/imageFallback.ts");
+    expect(src).toContain('style.display = "none"');
+    expect(src).not.toMatch(/src\s*=/);
+    // React can fire onError again on re-render; it must do the work once.
+    expect(src).toContain("dataset.failed");
+  });
+});

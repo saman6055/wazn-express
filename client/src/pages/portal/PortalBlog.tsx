@@ -3,6 +3,7 @@ import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
+import { onImageError } from "@/lib/imageFallback";
 import { 
   Megaphone, ChevronRight, Calendar, Eye, Star,
   Newspaper, Gift, RefreshCw, BookOpen, ArrowLeft, PlayCircle, Pin
@@ -192,7 +193,7 @@ const { banner: portalBanner } = usePortalPalette();
                   {/* Cover Image */}
                   {post.coverImageUrl ? (
                     <div className="relative h-40 overflow-hidden">
-                      <img loading="lazy" decoding="async"
+                      <img onError={onImageError} loading="lazy" decoding="async"
                         src={post.coverImageUrl}
                         alt={getTitle(post)}
                         className="w-full h-full object-cover"

@@ -3,6 +3,7 @@ import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
+import { onImageError } from "@/lib/imageFallback";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -179,7 +180,7 @@ export default function PortalTutorials() {
               >
                 <button onClick={() => open(t)} className="relative block w-full aspect-video bg-slate-900 group">
                   {t.thumbnailUrl && (
-                    <img src={t.thumbnailUrl} alt="" className="h-full w-full object-cover opacity-90 group-hover:opacity-100 transition" loading="lazy" />
+                    <img onError={onImageError} src={t.thumbnailUrl} alt="" className="h-full w-full object-cover opacity-90 group-hover:opacity-100 transition" loading="lazy" />
                   )}
                   <span className="absolute inset-0 flex items-center justify-center">
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm">
