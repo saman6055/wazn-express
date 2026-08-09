@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { appLogger } from '../utils/logger';
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from '@shared/chargeableWeight';
 import { getSetting, getVolumetricDivisor } from './settings.db';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
@@ -10,6 +11,7 @@ import {
   warehouses, InsertWarehouse, Warehouse,
   pricingRules, InsertPricingRule, PricingRule,
   batches, InsertBatch, Batch,
+  batchStatusHistory,
   packages, InsertPackage, Package,
   invoices, InsertInvoice, Invoice,
   exchangeRates, InsertExchangeRate, ExchangeRate,
@@ -194,10 +196,59 @@ export async function getBatchById(id: number): Promise<Batch | undefined> {
   return result[0];
 }
 
-export async function updateBatch(id: number, data: Partial<InsertBatch>) {
+/**
+ * Update a batch, and record the move if its status changed.
+ *
+ * The history is written here rather than in the three routers that call
+ * this, because a fourth caller added next year would otherwise have to
+ * remember — and forgetting to write a link is exactly how the self-order
+ * bug happened. There is one place a batch's status changes, so there is
+ * one place the move is recorded.
+ *
+ * Only on an actual change. `updateBatch` is also called to bump a package
+ * count, and a row saying "arrived → arrived" every time a parcel is added
+ * would bury the six that mean something.
+ *
+ * `changedById` is optional and stays null for a background job. Inventing a
+ * user id for one would be worse than recording none.
+ */
+export async function updateBatch(
+  id: number,
+  data: Partial<InsertBatch>,
+  changedById?: number | null,
+) {
   const db = await getDb();
   if (!db) return;
+
+  // Read the old status before the write, and only when the write might
+  // change it — an unrelated update should not cost a query.
+  const nextStatus = (data as Partial<InsertBatch>).status;
+  let previousStatus: string | null = null;
+  if (nextStatus !== undefined) {
+    const [before] = await db.select({ status: batches.status })
+      .from(batches)
+      .where(eq(batches.id, id))
+      .limit(1);
+    previousStatus = before?.status ?? null;
+  }
+
   await db.update(batches).set(data).where(eq(batches.id, id));
+
+  if (nextStatus !== undefined && nextStatus !== previousStatus) {
+    try {
+      await db.insert(batchStatusHistory).values({
+        batchId: id,
+        fromStatus: previousStatus,
+        toStatus: nextStatus,
+        changedById: changedById ?? null,
+      });
+    } catch (err) {
+      // A shipment's status must never fail to save because its history
+      // could not be written. The move has already happened; losing the note
+      // about it costs a date on a timeline, not the state itself.
+      appLogger.error("[Batch] status history write failed", { batchId: id, err });
+    }
+  }
 }
 
 export async function getActiveBatches() {
@@ -594,3 +645,60 @@ export async function getBatchFinancialSummary(batchId: number) {
   };
 }
 
+
+/**
+ * Every recorded move for one batch, oldest first.
+ *
+ * Only ever as many rows as a shipment has stages, so no ceiling is needed —
+ * a batch that somehow accumulated hundreds would be a data problem worth
+ * seeing rather than hiding behind a limit.
+ */
+export async function getBatchStatusHistory(batchId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    fromStatus: batchStatusHistory.fromStatus,
+    toStatus: batchStatusHistory.toStatus,
+    changedAt: batchStatusHistory.changedAt,
+  })
+    .from(batchStatusHistory)
+    .where(eq(batchStatusHistory.batchId, batchId))
+    .orderBy(asc(batchStatusHistory.changedAt));
+}
+
+/**
+ * The first time each batch reached each status, for a whole set at once.
+ *
+ * The portal's shipment list draws a stepper per card, so asking per batch
+ * would be one query per row — the fan-out this codebase has had to undo
+ * twice already. One query, grouped in memory.
+ *
+ * First occurrence, not last: if a shipment was moved to `customs` twice, the
+ * date a customer cares about is when it got there, not when someone
+ * corrected the record.
+ */
+export async function getBatchStatusTimestamps(batchIds: number[]): Promise<Map<number, Record<string, Date>>> {
+  const byBatch = new Map<number, Record<string, Date>>();
+  if (batchIds.length === 0) return byBatch;
+
+  const db = await getDb();
+  if (!db) return byBatch;
+
+  const rows = await db.select({
+    batchId: batchStatusHistory.batchId,
+    toStatus: batchStatusHistory.toStatus,
+    changedAt: batchStatusHistory.changedAt,
+  })
+    .from(batchStatusHistory)
+    .where(inArray(batchStatusHistory.batchId, batchIds))
+    .orderBy(asc(batchStatusHistory.changedAt));
+
+  for (const row of rows) {
+    const existing = byBatch.get(row.batchId) ?? {};
+    // Ordered oldest first, so the first write for a status is the one to keep.
+    if (!existing[row.toStatus]) existing[row.toStatus] = row.changedAt;
+    byBatch.set(row.batchId, existing);
+  }
+
+  return byBatch;
+}

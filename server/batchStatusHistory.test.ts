@@ -75,3 +75,70 @@ describe("a batch records when it moved", () => {
     }
   });
 });
+
+describe("the move is recorded where the move happens", () => {
+  const DB = fs.readFileSync(path.resolve(__dirname, "db/batches.db.ts"), "utf8");
+  const ROUTER = fs.readFileSync(path.resolve(__dirname, "routers/batches.router.ts"), "utf8");
+  const fn = DB.slice(DB.indexOf("export async function updateBatch"), DB.indexOf("export async function getActiveBatches"));
+
+  /**
+   * In updateBatch, not in the routers that call it. A fourth caller added
+   * next year would otherwise have to remember — and forgetting to write a
+   * link is precisely how a parcel with a real order number ended up in the
+   * customer's portal as goods they had bought themselves.
+   */
+  it("is written in the one place a batch status changes", () => {
+    expect(fn).toContain("db.insert(batchStatusHistory)");
+    // And nowhere else, so there is one path.
+    const inserts = DB.match(/db\.insert\(batchStatusHistory\)/g) ?? [];
+    expect(inserts.length).toBe(1);
+  });
+
+  it("records where it came from as well as where it went", () => {
+    expect(fn).toContain("fromStatus: previousStatus");
+    expect(fn).toContain("toStatus: nextStatus");
+  });
+
+  /**
+   * updateBatch is also called to bump a package count. A row saying
+   * "arrived → arrived" every time a parcel is added would bury the six that
+   * mean something.
+   */
+  it("writes nothing when the status did not change", () => {
+    expect(fn).toMatch(/nextStatus !== undefined && nextStatus !== previousStatus/);
+    // And does not pay for a lookup on an update that cannot change it.
+    expect(fn).toMatch(/if \(nextStatus !== undefined\) \{/);
+  });
+
+  /**
+   * A shipment's status must never fail to save because its history could not
+   * be written. The move has already happened; losing the note about it costs
+   * a date on a timeline, not the state itself.
+   */
+  it("a failed history write does not fail the status change", () => {
+    const at = fn.indexOf("db.insert(batchStatusHistory)");
+    const around = fn.slice(at - 200, at + 500);
+    expect(around).toContain("try {");
+    expect(around).toContain("catch");
+    expect(around).toContain("appLogger.error");
+  });
+
+  it("says who made the change when a person made it", () => {
+    expect(fn).toContain("changedById: changedById ?? null");
+    // Both routers that change a status pass the acting user.
+    const calls = ROUTER.match(/db\.updateBatch\([^)]*ctx\.user\.id\)/g) ?? [];
+    expect(calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  /**
+   * The list screen draws a stepper per card. Reading the history per batch
+   * would be one query per row — the fan-out this codebase has had to undo
+   * twice already.
+   */
+  it("reads a whole set of batches in one query", () => {
+    const reader = DB.slice(DB.indexOf("export async function getBatchStatusTimestamps"));
+    expect(reader.slice(0, 1600)).toContain("inArray(batchStatusHistory.batchId, batchIds)");
+    expect(reader.slice(0, 1600), "first time it reached each status, not the last")
+      .toContain("if (!existing[row.toStatus])");
+  });
+});

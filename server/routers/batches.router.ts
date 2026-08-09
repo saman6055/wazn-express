@@ -920,7 +920,8 @@ export const batchesRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
-        await db.updateBatch(id, data);
+        // ctx.user.id so the history says who moved the shipment.
+        await db.updateBatch(id, data, ctx.user.id);
 
         // Diagnostic report — populated by the delivered/closed branch and
         // returned to the UI so the caller can immediately see what happened
@@ -1674,7 +1675,7 @@ export const batchesRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, pricingTiers, customerPricing, ...data } = input;
-        await db.updateBatch(id, data);
+        await db.updateBatch(id, data, ctx.user.id);
         
         // Update pricing tiers if provided
         if (pricingTiers !== undefined) {
