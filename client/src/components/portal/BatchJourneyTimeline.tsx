@@ -50,6 +50,39 @@ function fmtDate(d: string | Date | null | undefined, language: string): string 
   return formatPortalDate(date, language);
 }
 
+function toTime(d: string | Date | null | undefined): number | null {
+  if (!d) return null;
+  const t = new Date(d).getTime();
+  return isNaN(t) ? null : t;
+}
+
+/**
+ * A journey cannot run backwards.
+ *
+ * Two of these dates come from different places: `createdAt` is stamped by
+ * the system when the batch row is made, `departureDate` and `actualArrival`
+ * are typed in by staff afterwards. When they disagree the timeline said, on
+ * every card on the shipments page, "in China warehouse — 28 July" followed
+ * by "in transit — 1 February": a shipment that left six months before it was
+ * packed.
+ *
+ * Whose mistake it is does not matter to the customer reading it. A stage
+ * whose date precedes the stage before it is not shown — the step still
+ * appears, with its label and its tick, and only the impossible date is
+ * withheld. A missing date reads as "we have not recorded this yet", which is
+ * honest. A date going backwards reads as "this company does not know where
+ * your goods are".
+ */
+function dropBackwardsDates<T extends { date: string | null; at: number | null }>(stages: T[]): T[] {
+  let last: number | null = null;
+  return stages.map((s) => {
+    if (s.at === null) return s;
+    if (last !== null && s.at < last) return { ...s, date: null };
+    last = s.at;
+    return s;
+  });
+}
+
 export function BatchJourneyTimeline({
   status,
   shippingType,
@@ -65,38 +98,45 @@ export function BatchJourneyTimeline({
   const current = STAGE_INDEX[status] ?? 0;
   const TransitIcon: LucideIcon = shippingType === "sea" ? Ship : Plane;
 
-  const stages: { icon: LucideIcon; label: L10n; date: string | null }[] = [
-    {
-      icon: Warehouse,
-      label: STATUS_LABEL.preparing,
-      date: fmtDate(createdAt, language),
-    },
-    {
-      icon: TransitIcon,
-      label: STATUS_LABEL.in_transit,
-      date: fmtDate(departureDate, language),
-    },
-    {
-      icon: PackageCheck,
-      label: STATUS_LABEL.arrived,
-      date: fmtDate(actualArrival, language),
-    },
-    {
-      icon: Landmark,
-      label: STATUS_LABEL.customs,
-      date: null,
-    },
-    {
-      icon: Warehouse,
-      label: STATUS_LABEL.at_depot,
-      date: null,
-    },
-    {
-      icon: CheckCircle2,
-      label: STATUS_LABEL.delivered,
-      date: null,
-    },
-  ];
+  const stages: { icon: LucideIcon; label: L10n; date: string | null; at: number | null }[] =
+    dropBackwardsDates([
+      {
+        icon: Warehouse,
+        label: STATUS_LABEL.preparing,
+        date: fmtDate(createdAt, language),
+        at: toTime(createdAt),
+      },
+      {
+        icon: TransitIcon,
+        label: STATUS_LABEL.in_transit,
+        date: fmtDate(departureDate, language),
+        at: toTime(departureDate),
+      },
+      {
+        icon: PackageCheck,
+        label: STATUS_LABEL.arrived,
+        date: fmtDate(actualArrival, language),
+        at: toTime(actualArrival),
+      },
+      {
+        icon: Landmark,
+        label: STATUS_LABEL.customs,
+        date: null,
+        at: null,
+      },
+      {
+        icon: Warehouse,
+        label: STATUS_LABEL.at_depot,
+        date: null,
+        at: null,
+      },
+      {
+        icon: CheckCircle2,
+        label: STATUS_LABEL.delivered,
+        date: null,
+        at: null,
+      },
+    ]);
 
   const eta = fmtDate(estimatedArrival, language);
   const showEta = eta && current < 2;
