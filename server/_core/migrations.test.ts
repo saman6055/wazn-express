@@ -9,8 +9,10 @@ describe("Migration System", () => {
   
   describe("TABLE_DEFINITIONS", () => {
     
-    it("should have 88 table definitions", () => {
-      expect(TABLE_DEFINITIONS.length).toBe(88);
+    // A count, so adding a table is a deliberate act rather than something
+    // that slips in. Bump it in the same commit that adds the table.
+    it("should have 89 table definitions", () => {
+      expect(TABLE_DEFINITIONS.length).toBe(89);
     });
     
     it("should have unique table names", () => {

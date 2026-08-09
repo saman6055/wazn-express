@@ -1547,6 +1547,34 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    // When a shipment moved from one stage to the next, and who moved it.
+    //
+    // A batch carries three timestamps of its own — created, departed,
+    // arrived — so the customer's journey stepper could show a date for the
+    // first three steps and never for customs, the Erbil depot or delivery.
+    // A shipment that had reached the customer showed six green steps and one
+    // date, the oldest of them.
+    //
+    // A history rather than three more columns: a status corrected back and
+    // forth leaves both moves on the record, and it says who made each change.
+    // Parcels already work exactly this way in packageStatusHistory.
+    //
+    // Holds nothing financial, on purpose. State and time, nothing else.
+    name: "batchStatusHistory",
+    dependencies: ["batches", "users"],
+    sql: `CREATE TABLE IF NOT EXISTS batchStatusHistory (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      batchId INT NOT NULL,
+      fromStatus VARCHAR(50),
+      toStatus VARCHAR(50) NOT NULL,
+      changedById INT,
+      changedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_bsh_batch_id (batchId),
+      INDEX idx_bsh_changed_at (changedAt)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "packageClaimRequests",
     dependencies: ["packages", "customers", "users"],
     sql: `CREATE TABLE IF NOT EXISTS packageClaimRequests (

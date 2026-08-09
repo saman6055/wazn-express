@@ -112,3 +112,43 @@ export type InsertBatchCustomerPricing = typeof batchCustomerPricing.$inferInser
 
 
 // ============ NOTIFICATION SETTINGS (Global) ============
+// ============ BATCH STATUS HISTORY ============
+
+/**
+ * When a shipment moved from one stage to the next, and who moved it.
+ *
+ * A batch carries three timestamps of its own — created, departed, arrived —
+ * and nothing else. So the customer's journey stepper could show a date for
+ * the first three steps and never for customs, the Erbil depot, or delivery.
+ * A shipment that had reached the customer showed six green steps and one
+ * date, the oldest of them. On a sea batch that is two months of silence.
+ *
+ * A history table rather than three more columns on `batches`, for three
+ * reasons: a status corrected back and forth leaves both moves on the record
+ * instead of overwriting one; it says who made each change, which is what a
+ * dispute actually needs; and parcels already work exactly this way in
+ * `packageStatusHistory`, so this is the shape the system already has.
+ *
+ * Deliberately holds nothing financial. It is a record of state and time. No
+ * reader of this table decides money, and none should.
+ */
+export const batchStatusHistory = mysqlTable("batchStatusHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  batchId: int("batchId").notNull(),
+
+  // Null on the first row for a batch, or when the previous state is unknown.
+  fromStatus: varchar("fromStatus", { length: 50 }),
+  toStatus: varchar("toStatus", { length: 50 }).notNull(),
+
+  // Null when the change came from a background job rather than a person.
+  changedById: int("changedById"),
+
+  changedAt: timestamp("changedAt").defaultNow().notNull(),
+}, (table) => ({
+  // The portal reads a whole batch's history at once, oldest first.
+  batchIdIdx: index("idx_bsh_batch_id").on(table.batchId),
+  changedAtIdx: index("idx_bsh_changed_at").on(table.changedAt),
+}));
+
+export type BatchStatusHistory = typeof batchStatusHistory.$inferSelect;
+export type InsertBatchStatusHistory = typeof batchStatusHistory.$inferInsert;
