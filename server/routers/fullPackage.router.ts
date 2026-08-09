@@ -1457,6 +1457,36 @@ export const fullPackageRouter = router({
     removeOrderTracking: staffProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => db.removeOrderTracking(input.id)),
+
+    /**
+     * Re-run the parcel↔order link for one order, by hand.
+     *
+     * The link is written automatically when an order is created, edited or
+     * gains a tracking — but only then. An order whose parcel arrived through
+     * a path that missed it stayed unlinked forever, with no way to ask the
+     * system to look again short of editing and re-saving the order.
+     *
+     * That is what left a parcel showing in the customer's portal under
+     * "goods I bought myself" while its order sat in the admin screen with a
+     * buy price and a profit against it.
+     *
+     * Same conservative rules as every other caller: a parcel is adopted only
+     * when it plainly belongs to the same customer and no money has settled
+     * on it. Anything else comes back as a conflict for a person to look at.
+     * Idempotent — running it twice links nothing twice.
+     */
+    relinkOrderPackages: staffProcedure
+      .input(z.object({ fullPackageOrderId: z.number().int() }))
+      .mutation(async ({ input }) => safeBacklink(input.fullPackageOrderId)),
+
+    /**
+     * The same sweep across every order that still has an unlinked parcel.
+     *
+     * Bounded, and reports what it could not resolve rather than guessing.
+     */
+    relinkAllOrderPackages: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(2000).default(500) }).optional())
+      .mutation(async ({ input }) => db.relinkAllOrphanedPackages(input?.limit ?? 500)),
     
     // Get supplier tracking performance
     getSupplierTrackingPerformance: staffProcedure.query(async () => {

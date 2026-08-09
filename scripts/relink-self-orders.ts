@@ -29,6 +29,7 @@
 import { getDb } from "../server/db/connection";
 import { packages, fullPackageOrders, fullPackageOrderTrackings } from "../drizzle/schema";
 import { and, eq, isNull, isNotNull } from "drizzle-orm";
+import { selfOrderWhere } from "../server/db/selfOrder.filter";
 
 const WRITE = process.argv.includes("--write");
 
@@ -50,12 +51,8 @@ async function main() {
       customerId: packages.customerId,
     })
     .from(packages)
-    .where(and(
-      isNull(packages.fullPackageOrderId),
-      isNotNull(packages.customerId),
-      eq(packages.isUnclaimed, false),
-      isNotNull(packages.trackingNumber),
-    ));
+    // The rule comes from one place; see server/db/selfOrder.filter.ts.
+    .where(selfOrderWhere(isNotNull(packages.trackingNumber)));
 
   console.log(`parcels currently reading as self orders: ${orphans.length}`);
 

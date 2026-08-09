@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { selfOrderWhere } from './selfOrder.filter';
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import {
@@ -2372,4 +2373,76 @@ export async function addPackagePhoto(packageId: number, photoUrl: string): Prom
   await db.update(packages)
     .set({ photos: [...existing, photoUrl] })
     .where(eq(packages.id, packageId));
+}
+
+/**
+ * Sweep every order that still has a registered parcel it never adopted.
+ *
+ * `backlinkRegisteredPackagesForOrder` fixes one order and is called when an
+ * order is created, edited, or gains a tracking. Nothing ever re-ran it for
+ * orders that slipped through — an order whose parcel arrived by a path that
+ * missed the link stayed unlinked forever, and an unlinked parcel IS a self
+ * order, so it showed in the customer's portal as goods they bought
+ * themselves while its order carried a buy price and a profit.
+ *
+ * This finds those orders and runs the same routine on each, so every safety
+ * rule that applies to a single order applies here too: same customer, no
+ * money settled, conflicts reported rather than guessed at. Idempotent.
+ *
+ * Works from the parcel side, because that is where the symptom is: a parcel
+ * with no order, an owner, and a tracking number that some order claims.
+ */
+export async function relinkAllOrphanedPackages(limit = 500): Promise<{
+  ordersExamined: number;
+  linked: Array<{ packageId: number; packageCode: string; trackingNumber: string; isPrimary: boolean }>;
+  conflicts: OrderBacklinkConflict[];
+}> {
+  const db = await getDb();
+  if (!db) return { ordersExamined: 0, linked: [], conflicts: [] };
+
+  // Parcels that currently read as self orders and carry a tracking number.
+  const orphans = await db
+    .select({ trackingNumber: packages.trackingNumber })
+    .from(packages)
+    // The rule itself comes from selfOrder.filter — writing the three
+    // clauses out again here is exactly how the money report and the portal
+    // would come to disagree about whose box a parcel is.
+    .where(selfOrderWhere(isNotNull(packages.trackingNumber)))
+    .limit(limit);
+
+  const trackings = orphans
+    .map((o) => (o.trackingNumber ?? "").trim())
+    .filter(Boolean);
+  if (trackings.length === 0) return { ordersExamined: 0, linked: [], conflicts: [] };
+
+  // Which orders claim those trackings — the order's own column and the
+  // multi-tracking table, because an order can record it in either.
+  const [direct, viaTrackings] = await Promise.all([
+    db.select({ id: fullPackageOrders.id })
+      .from(fullPackageOrders)
+      .where(inArray(fullPackageOrders.trackingNumber, trackings)),
+    db.select({ id: fullPackageOrderTrackings.fullPackageOrderId })
+      .from(fullPackageOrderTrackings)
+      .where(inArray(fullPackageOrderTrackings.trackingNumber, trackings)),
+  ]);
+
+  const orderIdSet = new Set<number>();
+  for (const r of direct) orderIdSet.add(r.id);
+  for (const r of viaTrackings) orderIdSet.add(r.id);
+  const orderIds = Array.from(orderIdSet);
+
+  const linked: Array<{ packageId: number; packageCode: string; trackingNumber: string; isPrimary: boolean }> = [];
+  const conflicts: OrderBacklinkConflict[] = [];
+
+  for (const orderId of orderIds) {
+    try {
+      const result = await backlinkRegisteredPackagesForOrder(orderId);
+      linked.push(...result.linked);
+      conflicts.push(...result.conflicts);
+    } catch (err) {
+      appLogger.error("[Backlink] sweep failed for one order", { orderId, err });
+    }
+  }
+
+  return { ordersExamined: orderIds.length, linked, conflicts };
 }

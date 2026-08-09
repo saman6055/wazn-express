@@ -132,3 +132,50 @@ describe("a parcel finds its order however the order records the tracking", () =
     }
   });
 });
+
+describe("an order that missed its parcel can be told to look again", () => {
+  const router = fs.readFileSync(path.resolve(__dirname, "routers/fullPackage.router.ts"), "utf8");
+  const pkgDb = fs.readFileSync(path.resolve(__dirname, "db/packages.db.ts"), "utf8");
+
+  /**
+   * The link was written on order create, order edit, and add-tracking — and
+   * nowhere else. An order whose parcel arrived by a path that missed all
+   * three stayed unlinked forever, and there was no way to ask the system to
+   * look again short of editing and re-saving the order.
+   *
+   * That is what left a parcel in the customer's portal under "goods I bought
+   * myself" while its order sat in the admin screen with a buy price, a sell
+   * price and a profit against it.
+   */
+  it("one order can be relinked on demand", () => {
+    expect(router).toContain("relinkOrderPackages");
+    const proc = router.slice(router.indexOf("relinkOrderPackages"));
+    expect(proc.slice(0, 400), "must go through the same guarded routine")
+      .toContain("safeBacklink(input.fullPackageOrderId)");
+  });
+
+  it("and every order at once", () => {
+    expect(router).toContain("relinkAllOrderPackages");
+    expect(pkgDb).toContain("export async function relinkAllOrphanedPackages");
+  });
+
+  /**
+   * The sweep must not invent its own rules. Every safety check that applies
+   * to a single order — same customer, no money settled, conflicts reported
+   * rather than guessed at — applies because it calls the same function.
+   */
+  it("the sweep reuses the per-order routine rather than its own logic", () => {
+    const fn = pkgDb.slice(pkgDb.indexOf("export async function relinkAllOrphanedPackages"));
+    const body = fn.slice(0, 3000);
+    expect(body).toContain("backlinkRegisteredPackagesForOrder(orderId)");
+    expect(body, "it must not decide for itself").not.toContain("classifyBacklinkCandidate");
+    expect(body, "and must report what it could not resolve").toContain("conflicts");
+  });
+
+  it("looks for claiming orders in both places", () => {
+    const fn = pkgDb.slice(pkgDb.indexOf("export async function relinkAllOrphanedPackages"));
+    const body = fn.slice(0, 3000);
+    expect(body).toContain("inArray(fullPackageOrders.trackingNumber, trackings)");
+    expect(body).toContain("inArray(fullPackageOrderTrackings.trackingNumber, trackings)");
+  });
+});
