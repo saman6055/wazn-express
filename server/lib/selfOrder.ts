@@ -48,6 +48,16 @@ export const SELF_ORDER_FROM = new Date("2026-07-14T21:00:00.000Z");
 export type SelfOrderCandidate = {
   /** The legacy FK, mirrored from the primary package↔order link. */
   fullPackageOrderId: number | null;
+  /**
+   * Does any order in the system claim this parcel's tracking number?
+   *
+   * This is the question that matters, and it is separate from the FK above.
+   * The FK records that somebody wrote a link; this records that an order
+   * exists. They came apart repeatedly — see the note in db/selfOrder.filter.ts
+   * — and every time they did, a parcel with a real order number appeared in
+   * the customer's portal as goods they had bought themselves.
+   */
+  hasClaimingOrder: boolean;
   customerId: number | null;
   isUnclaimed: boolean;
   /** When the parcel reached the warehouse and was registered. */
@@ -55,8 +65,11 @@ export type SelfOrderCandidate = {
 };
 
 export function isSelfOrder(pkg: SelfOrderCandidate): boolean {
-  // No order behind it — the whole point.
+  // A link has been written — settled, no further questions.
   if (pkg.fullPackageOrderId !== null) return false;
+  // Or an order exists that claims it, whether or not anyone linked them.
+  // An order number in the system means the customer did not buy this.
+  if (pkg.hasClaimingOrder) return false;
   // Nobody to attribute it to. An ownerless box is not anybody's purchase; it
   // belongs to the unclaimed flow until staff or the customer claims it.
   if (pkg.customerId === null) return false;

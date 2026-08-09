@@ -19,6 +19,7 @@ const OWNED = {
   fullPackageOrderId: null,
   customerId: 7,
   isUnclaimed: false,
+  hasClaimingOrder: false,
   registeredAt: new Date(SELF_ORDER_FROM.getTime() + 86_400_000),
 };
 
@@ -195,7 +196,7 @@ describe("self orders start on the day the feature did", () => {
    * were never meant to be there. Those older parcels are not self orders;
    * they are from before the question was asked.
    */
-  const base = { fullPackageOrderId: null, customerId: 7, isUnclaimed: false };
+  const base = { fullPackageOrderId: null, hasClaimingOrder: false, customerId: 7, isUnclaimed: false };
 
   it("counts a parcel registered on or after the cut-off", () => {
     expect(isSelfOrder({ ...base, registeredAt: SELF_ORDER_FROM })).toBe(true);
@@ -239,5 +240,57 @@ describe("self orders start on the day the feature did", () => {
     expect(filter, "and import it rather than restate the date")
       .toContain('import { SELF_ORDER_FROM } from "../lib/selfOrder"');
     expect(filter).not.toMatch(/new Date\("20\d\d-/);
+  });
+});
+
+describe("an order number in the system settles it", () => {
+  const OWNED_RECENT = {
+    fullPackageOrderId: null,
+    hasClaimingOrder: false,
+    customerId: 7,
+    isUnclaimed: false,
+    registeredAt: new Date(SELF_ORDER_FROM.getTime() + 86_400_000),
+  };
+
+  /**
+   * The case that kept coming back. Order 260717-175500193301958 carried
+   * tracking 465547904900857 in its own field, with a buy price, a sell price
+   * and a profit against it — and the parcel sat in the customer's portal
+   * under "goods I bought myself", because nothing had written
+   * packages.fullPackageOrderId.
+   *
+   * The old rule asked whether somebody remembered to write a link. This one
+   * asks whether the parcel has an order, which is the actual question and
+   * cannot fall out of step with anything.
+   */
+  it("is not a self order once any order claims the tracking", () => {
+    expect(isSelfOrder({ ...OWNED_RECENT, hasClaimingOrder: true })).toBe(false);
+  });
+
+  it("does not need the link to have been written", () => {
+    // fullPackageOrderId still null — nobody linked them — and it is still
+    // not a self order, because an order exists.
+    const pkg = { ...OWNED_RECENT, fullPackageOrderId: null, hasClaimingOrder: true };
+    expect(pkg.fullPackageOrderId).toBeNull();
+    expect(isSelfOrder(pkg)).toBe(false);
+  });
+
+  it("the SQL rule asks the same question", () => {
+    const filter = fs.readFileSync(path.resolve(__dirname, "db/selfOrder.filter.ts"), "utf8");
+    // Both places an order can record a tracking number.
+    expect(filter).toContain("NOT EXISTS");
+    expect(filter).toContain("fullPackageOrders");
+    expect(filter).toContain("fullPackageOrderTrackings");
+    // And it must not have gone back to trusting the mirror column alone.
+    const conds = filter.slice(filter.indexOf("export function selfOrderConditions"));
+    expect(conds).toContain("noOrderClaimsTheTracking()");
+  });
+
+  /**
+   * A parcel with no tracking number at all cannot be matched to an order, so
+   * it can only be judged by the link — and by everything else in the rule.
+   */
+  it("still works for a parcel with no tracking number", () => {
+    expect(isSelfOrder(OWNED_RECENT)).toBe(true);
   });
 });
