@@ -95,29 +95,35 @@ const KU_MONTHS = [
  * different readers, and this is a shipping company: the difference between
  * the 3rd of May and the 5th of March is whether a parcel is late.
  *
- * Naming the month removes the ambiguity in every language, so that is what
- * every portal date does now.
+ * The first answer was to name the month. That fixed the ambiguity and
+ * introduced a different one: the Kurdish month names are the Levantine Arabic
+ * set — تەممووز, ئاب, ئەیلوول — and plenty of customers cannot say which month
+ * تەممووز is without stopping to think. A date nobody can read at a glance is
+ * not better than one two people read differently.
+ *
+ * So: digits, `28/07/2026`. Day first, which is how dates are written and said
+ * in Iraq; zero-padded, so the columns line up and 05/03 cannot be mistaken
+ * for 5/3 of some other reading; four-digit year, always present, so there is
+ * never a bare `28/07` to date-guess at. The ambiguity the month names were
+ * there to prevent comes from *mixing* orders, and every portal date goes
+ * through this one function.
+ *
+ * Chinese keeps its own form, 2026年7月28日 — already digits, and the
+ * characters name which number is which, so it is the least ambiguous of all
+ * four. Swapping it for 28/07/2026 would make it worse, not more consistent.
  */
 export function formatPortalDate(value: string | Date | null | undefined, language: string): string {
   if (!value) return "—";
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
 
-  if (language === "ku") {
-    return `${date.getDate()} ${KU_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+  if (language === "zh") {
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
   }
 
-  const locale = language === "ar" ? "ar" : language === "zh" ? "zh-CN" : "en-GB";
-  try {
-    return new Intl.DateTimeFormat(locale, {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }).format(date);
-  } catch {
-    // A browser missing the locale data still gets an unambiguous date.
-    return `${date.getDate()} ${KU_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
-  }
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${date.getFullYear()}`;
 }
 
 /**

@@ -1,7 +1,7 @@
 import { CheckCircle, Truck, Package, MapPin, Clock, Warehouse, Ship, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
-import { formatPortalDate } from "@/lib/portalClock";
+import { formatPortalDate, formatClockTime } from "@/lib/portalClock";
 
 // ---------------------------------------------------------------------------
 // PackageTrackingTimeline — the customer-facing movement timeline.
@@ -51,12 +51,18 @@ interface PackageTrackingTimelineProps {
   className?: string;
 }
 
+/**
+ * The date and time a parcel reached a stage.
+ *
+ * Was `toLocaleString(… month: "short")`, which is the named-month form the
+ * rest of the portal moved away from — and in `en-GB` for Kurdish and Arabic
+ * readers besides. Both halves come from the shared formatters now, so a
+ * movement here reads the same as the same movement on any other screen.
+ */
 function fmtDate(d: string | Date, language: string): string {
   const date = new Date(d);
   if (isNaN(date.getTime())) return "";
-  return date.toLocaleString(language === "zh" ? "zh-CN" : "en-GB", {
-    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
-  });
+  return `${formatPortalDate(date, language)} · ${formatClockTime(date, language)}`;
 }
 
 export function PackageTrackingTimeline({

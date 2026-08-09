@@ -141,11 +141,34 @@ describe("dates say which month they mean", () => {
     expect(offenders, `use formatPortalDate from lib/portalClock:\n${offenders.join("\n")}`).toEqual([]);
   });
 
-  it("the formatter names the month in every language", () => {
+  /**
+   * Naming the month was the first answer to `05/03` meaning two different
+   * days. It fixed that and introduced another: the Kurdish month names are
+   * the Levantine Arabic set, and plenty of customers cannot say which month
+   * تەممووز is without stopping to think. A date nobody reads at a glance is
+   * no better than one two people read differently.
+   *
+   * The ambiguity came from *mixing* day-first and month-first, not from
+   * digits. One padded, day-first, four-digit-year form, applied everywhere
+   * through this one function, has neither problem.
+   */
+  it("the formatter writes one unambiguous numeric date", () => {
     const src = read("lib/portalClock.ts");
     expect(src).toContain("formatPortalDate");
-    expect(src).toContain("KU_MONTHS");
-    expect(src).toMatch(/month:\s*"short"/);
+
+    const fn = src.slice(src.indexOf("export function formatPortalDate"));
+    // Day first, both parts padded, year always four digits.
+    expect(fn).toMatch(/String\(date\.getDate\(\)\)\.padStart\(2, "0"\)/);
+    expect(fn).toMatch(/String\(date\.getMonth\(\) \+ 1\)\.padStart\(2, "0"\)/);
+    expect(fn).toMatch(/\$\{dd\}\/\$\{mm\}\/\$\{date\.getFullYear\(\)\}/);
+
+    // Chinese keeps its own form: already digits, and the characters say which
+    // number is which, so it is the least ambiguous of the four.
+    expect(fn).toMatch(/年.*月.*日/);
+
+    // Nothing here may go back to asking Intl for a locale-shaped date; that
+    // is what produced Arabic-Indic digits above dd/mm/yyyy on one screen.
+    expect(fn.slice(0, 900)).not.toMatch(/Intl\.DateTimeFormat/);
   });
 });
 
