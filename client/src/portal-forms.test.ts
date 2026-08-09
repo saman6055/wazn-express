@@ -89,3 +89,41 @@ describe("what a customer types fits where it is going", () => {
     expect(src).not.toMatch(/onClick=\{\(\) => cancelMutation\.mutate\(/);
   });
 });
+
+describe("print prints", () => {
+  const SRC = read("PortalFinancial.tsx");
+
+  /**
+   * The invoice dialog offers "چاپکردن" beside "داگرتن", with a printer icon
+   * on one and a download arrow on the other. `printInvoice` called
+   * `downloadInvoicePDF()` and nothing else: both buttons put the same .html
+   * file in the Downloads folder, and neither opened a print dialog. On a
+   * phone, where most customers are, that file is close to unreachable.
+   */
+  it("the print button opens a print dialog", () => {
+    const fn = SRC.slice(SRC.indexOf("const printInvoice"), SRC.indexOf("const printInvoice") + 1200);
+    expect(fn).toContain("window.open");
+    expect(fn).toContain("w.print()");
+    expect(fn, "printing must not just be a download in disguise")
+      .not.toMatch(/const printInvoice = \(\) => \{\s*downloadInvoicePDF\(\);\s*\}/);
+  });
+
+  /**
+   * A popup blocker is common enough that silently doing nothing would be the
+   * worst outcome — the customer taps and the app appears broken.
+   */
+  it("falls back to the download when the window is blocked", () => {
+    const fn = SRC.slice(SRC.indexOf("const printInvoice"), SRC.indexOf("const printInvoice") + 1200);
+    expect(fn).toContain("if (!w)");
+    expect(fn).toContain("downloadInvoicePDF()");
+    expect(fn, "and says so, rather than failing silently").toContain("toast.error");
+  });
+
+  it("print and download are the same document", () => {
+    // Two copies of a hundred-line invoice template is how the printed one and
+    // the saved one start to disagree about what was charged.
+    expect(SRC).toContain("const buildInvoiceHtml");
+    const uses = SRC.match(/buildInvoiceHtml\(\)/g) ?? [];
+    expect(uses.length, "both paths must build from it").toBeGreaterThanOrEqual(2);
+  });
+});

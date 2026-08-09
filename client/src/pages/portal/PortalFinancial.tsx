@@ -26,6 +26,7 @@ import { StatementPdfButton } from "@/components/portal/StatementPdfButton";
 import { OrderBillingGroups } from "@/components/portal/OrderBillingGroups";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { pickLang } from "@/lib/lang";
+import { toast } from "sonner";
 import {
   isDebt as isDebtBalance,
   LEDGER_TYPE_LABEL,
@@ -779,9 +780,12 @@ const { t, language } = useLanguage();
             const invoice = invoices?.find(inv => inv.id === selectedInvoice) as any;
             if (!invoice) return null;
             
-            const downloadInvoicePDF = () => {
+            // Built once and shared: printing and downloading are the same
+            // document, and a second copy of a 100-line template is how two
+            // versions of an invoice start to disagree.
+            const buildInvoiceHtml = () => {
               const lineItems = invoice.lineItems || [];
-              const pdfHTML = `<!DOCTYPE html>
+              return `<!DOCTYPE html>
 <html lang="${language}" dir="${language === "ku" || language === "ar" ? "rtl" : "ltr"}">
 <head>
   <meta charset="UTF-8">
@@ -891,7 +895,10 @@ const { t, language } = useLanguage();
 </body>
 </html>`;
               
-              const blob = new Blob([pdfHTML], { type: "text/html" });
+            };
+
+            const downloadInvoicePDF = () => {
+              const blob = new Blob([buildInvoiceHtml()], { type: "text/html" });
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
@@ -902,8 +909,36 @@ const { t, language } = useLanguage();
               URL.revokeObjectURL(url);
             };
             
+            /**
+             * Print, rather than a second download button wearing a printer
+             * icon. `printInvoice` called `downloadInvoicePDF()` and nothing
+             * else, so tapping "چاپکردن" put an .html file in the customer's
+             * Downloads folder and never opened a print dialog — on a phone,
+             * where most of them are, that file is close to unreachable.
+             *
+             * Opened in a window rather than an iframe so the customer can see
+             * what they are about to print and pick a printer; `onload` fires
+             * the dialog once the document is laid out, and blocked popups
+             * fall back to the download that used to be all this did.
+             */
             const printInvoice = () => {
-              downloadInvoicePDF();
+              const w = window.open("", "_blank");
+              if (!w) {
+                toast.error(pickLang(language, {
+                  ku: "وێبگەڕەکەت پەنجەرەکەی داخست — لەبری ئەوە دایگرت",
+                  en: "Your browser blocked the print window — downloaded instead",
+                  ar: "منع متصفحك نافذة الطباعة — تم التنزيل بدلًا من ذلك",
+                  zh: "浏览器拦截了打印窗口 — 已改为下载",
+                }));
+                downloadInvoicePDF();
+                return;
+              }
+              w.document.write(buildInvoiceHtml());
+              w.document.close();
+              w.onload = () => {
+                w.focus();
+                w.print();
+              };
             };
             
             return (
