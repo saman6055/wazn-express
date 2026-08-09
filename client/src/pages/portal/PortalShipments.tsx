@@ -13,7 +13,8 @@ import { trpc } from "@/lib/trpc";
 import { 
   Package, ChevronRight, Truck, CheckCircle, Clock, AlertCircle, 
   Plane, Ship, Box, AlertTriangle, Search, Filter, X, Calendar,
-  ArrowUpDown, Download, Share2, HelpCircle, Info, Warehouse, Copy
+  ArrowUpDown, Download, Share2, HelpCircle, Info, Warehouse, Copy,
+  XCircle,
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { PortalListSkeleton } from "@/components/portal/PortalListSkeleton";
@@ -317,21 +318,31 @@ function ClassicPortalShipments() {
    */
   // Counts have to match what tapping the pill actually shows.
   //
-  // Two things they used to get wrong: goods in the China depot belong to no
+  // Three things they used to get wrong: goods in the China depot belong to no
   // batch, so counting batches alone reported 0 while six items sat listed
-  // underneath; and the route above is an upstream filter, so a count that
-  // ignored it promised parcels the stage would not then show.
+  // underneath; the route above is an upstream filter, so a count that ignored
+  // it promised parcels the stage would not then show; and the search is an
+  // upstream filter too. Typing a code that matched nothing left the pills
+  // reading 7 / 0 / 10 directly above the words "0 results found" — the same
+  // page saying two different things.
   const stageCounts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     const inRoute = (type: string | null | undefined) => matchesRoute(type, shippingType);
+    const matchesSearch = (code: string | null | undefined) =>
+      !q || (code ?? "").toLowerCase().includes(q);
 
     const counts = countByStage(
-      (batches ?? []).filter(b => inRoute(b.shippingType)).map(b => b.status),
+      (batches ?? [])
+        .filter(b => inRoute(b.shippingType) && matchesSearch(b.batchCode))
+        .map(b => b.status),
     );
     return {
       ...counts,
-      in_china: counts.in_china + inChinaItems.filter(i => inRoute(i.shippingType)).length,
+      in_china:
+        counts.in_china +
+        filterChinaDepot(inChinaItems, { stage: "", shippingType, search: searchQuery }).length,
     };
-  }, [batches, inChinaItems, shippingType]);
+  }, [batches, inChinaItems, shippingType, searchQuery]);
   const statusFilters: { value: Exclude<StatusFilter, "">; label: string; labelKu: string; labelAr: string; labelZh: string; count: number }[] = [
     { value: "in_china", label: "In China", labelKu: "لە کۆگای چین", labelAr: "في مستودع الصين", labelZh: "在中国仓库", count: stageCounts.in_china },
     { value: "in_transit", label: "On the way", labelKu: "لە ڕێگادا", labelAr: "في الطريق", labelZh: "在途中", count: stageCounts.in_transit },
@@ -626,17 +637,55 @@ function ClassicPortalShipments() {
               {pickLang(language, { ku: "هیچ بارێک نەدۆزرایەوە", en: "No shipments found", ar: "لا توجد شحنات", zh: "未找到运单" })}
             </p>
             <p className={cn("text-sm mt-1", isDark ? "text-slate-500" : "text-slate-400")}>
-              {/* A customer with no shipments at all was told to try a
-                  different filter. The filter was never the problem. */}
-              {statusFilter || shippingType || searchQuery
-                ? pickLang(language, { ku: "فلتەرێکی تر تاقی بکەرەوە", en: "Try a different filter", ar: "جرب فلتر مختلف", zh: "换一个筛选条件" })
-                : pickLang(language, {
-                    ku: "کاتێک یەکەم بارت بگاتە کۆگاکەمان لێرە دەردەکەوێت.",
-                    en: "Your first shipment will appear here once it reaches our depot.",
-                    ar: "ستظهر أول شحنة لك هنا فور وصولها إلى مستودعنا.",
-                    zh: "您的第一批货物抵达我们仓库后会显示在这里。",
-                  })}
+              {/* Three different situations shared one sentence. A customer
+                  with no shipments at all was told to try a different filter
+                  — the filter was never the problem — and so was a customer
+                  who had just typed a batch code, when what they had done was
+                  search. It also said "فلتەر" while the hint bar four lines up
+                  says "پاڵاوتن" for the same thing. */}
+              {searchQuery
+                ? pickLang(language, {
+                    ku: `هیچ بارێک بە «${searchQuery}» نەدۆزرایەوە.`,
+                    en: `Nothing matches “${searchQuery}”.`,
+                    ar: `لا يوجد ما يطابق «${searchQuery}».`,
+                    zh: `没有与“${searchQuery}”相符的运单。`,
+                  })
+                : statusFilter || shippingType
+                  ? pickLang(language, {
+                      ku: "هیچ بارێک بەم پاڵاوتنە نییە.",
+                      en: "No shipments match this filter.",
+                      ar: "لا توجد شحنات بهذا الفلتر.",
+                      zh: "没有符合此筛选条件的运单。",
+                    })
+                  : pickLang(language, {
+                      ku: "کاتێک یەکەم بارت بگاتە کۆگاکەمان لێرە دەردەکەوێت.",
+                      en: "Your first shipment will appear here once it reaches our depot.",
+                      ar: "ستظهر أول شحنة لك هنا فور وصولها إلى مستودعنا.",
+                      zh: "您的第一批货物抵达我们仓库后会显示在这里。",
+                    })}
             </p>
+
+            {/* And a way back. The only exit was a small × inside the search
+                box at the top of the page, which is not where anyone looks
+                after being told there is nothing here. */}
+            {(searchQuery || statusFilter || shippingType) && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("");
+                  setShippingType("");
+                }}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 active:scale-[0.98] dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
+              >
+                <XCircle className="h-4 w-4" />
+                {pickLang(language, {
+                  ku: "هەموو بارەکانم پیشان بدە",
+                  en: "Show all my shipments",
+                  ar: "أظهر كل شحناتي",
+                  zh: "显示我的全部运单",
+                })}
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
