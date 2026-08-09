@@ -118,10 +118,17 @@ function ClassicPortalShipments() {
     // From the customer's side anything not yet in their hands is on its way.
     result = result.filter(batch => matchesStage(batch.status, statusFilter));
 
-    // Shipping type filter
-    if (shippingType) {
-      result = result.filter(batch => batch.shippingType === shippingType);
-    }
+    // Shipping type filter.
+    //
+    // Through matchesRoute, not `=== shippingType`, because the pills above
+    // this list count with matchesRoute — and that rule deliberately lets a
+    // batch with no route recorded appear under every route, so an unrouted
+    // shipment is never unreachable.
+    //
+    // The two disagreed. A batch with no shippingType was counted in the
+    // pills and then filtered out of the list, so the pills read 13 · 0 · 1
+    // above the words "13 results found": fourteen counted, thirteen shown.
+    result = result.filter(batch => matchesRoute(batch.shippingType, shippingType));
     
     // Sort
     result = [...result].sort((a, b) => {

@@ -1,4 +1,7 @@
 import { describe, it, expect } from "vitest";
+import fs from "fs";
+import path from "path";
+import { matchesRoute } from "./chinaDepotFilter";
 import {
   stageOf,
   matchesStage,
@@ -226,5 +229,34 @@ describe("orderStatusLabel", () => {
       const hasLabel = orderStatusLabel(status) !== null;
       expect(hasLabel, `${status}: stage=${hasStage} label=${hasLabel}`).toBe(hasStage);
     }
+  });
+});
+
+describe("the pills and the list agree", () => {
+  /**
+   * The list filtered with `batch.shippingType === shippingType`; the pills
+   * counted with `matchesRoute`, which deliberately lets a batch with no route
+   * recorded appear under every route so it is never unreachable.
+   *
+   * The two disagreed, and the disagreement was visible: the pills read
+   * 13 · 0 · 1 directly above the words "13 results found". Fourteen counted,
+   * thirteen shown.
+   */
+  it("an unrouted batch is treated the same by both", () => {
+    // This is the case that differed: no route on the batch, a route chosen.
+    expect(matchesRoute(null, "air_regular")).toBe(true);
+    expect(matchesRoute(undefined, "sea")).toBe(true);
+    // And the ordinary cases still behave.
+    expect(matchesRoute("air_regular", "air_regular")).toBe(true);
+    expect(matchesRoute("sea", "air_regular")).toBe(false);
+    expect(matchesRoute("sea", "")).toBe(true);
+  });
+
+  it("the list filters through the same rule the counts use", () => {
+    const src = fs.readFileSync(
+      path.resolve(__dirname, "../pages/portal/PortalShipments.tsx"), "utf8");
+    expect(src).toContain("matchesRoute(batch.shippingType, shippingType)");
+    expect(src, "a strict equality here is how the two drifted apart")
+      .not.toContain("batch.shippingType === shippingType");
   });
 });
