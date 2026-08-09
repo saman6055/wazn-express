@@ -53,3 +53,46 @@ describe("a journey cannot run backwards", () => {
     }
   });
 });
+
+describe("the route marker means something", () => {
+  const SHIPMENTS = fs.readFileSync(
+    path.resolve(__dirname, "pages/portal/PortalShipments.tsx"), "utf8");
+
+  /**
+   * The China → Iraq line under every batch card had its marker pinned to the
+   * midpoint. Only the colour and the icon changed with the status, so a
+   * delivered shipment showed a green tick stranded halfway between the two
+   * flags — directly beneath a stepper whose every step was ticked. Two things
+   * on one card, contradicting each other, and position is the loudest.
+   */
+  it("moves with the batch rather than sitting at the midpoint", () => {
+    expect(SHIPMENTS).toContain("ROUTE_PROGRESS");
+    expect(SHIPMENTS).toMatch(/insetInlineStart: `\$\{ROUTE_PROGRESS\[batch\.status\]/);
+  });
+
+  it("covers every stage the stepper knows", () => {
+    const map = SHIPMENTS.slice(
+      SHIPMENTS.indexOf("const ROUTE_PROGRESS"),
+      SHIPMENTS.indexOf("};", SHIPMENTS.indexOf("const ROUTE_PROGRESS")),
+    );
+    for (const stage of ["preparing", "in_transit", "arrived", "customs", "at_depot", "delivered", "closed"]) {
+      expect(map, `${stage} has no position`).toContain(`${stage}:`);
+    }
+    // Monotonic: a later stage must never sit further back than an earlier one.
+    const values = [...map.matchAll(/:\s*(\d+),/g)].map((m) => Number(m[1]));
+    expect(values.length).toBeGreaterThanOrEqual(7);
+    for (let i = 1; i < values.length; i++) {
+      expect(values[i], `stage ${i} goes backwards`).toBeGreaterThanOrEqual(values[i - 1]);
+    }
+  });
+
+  /**
+   * In Kurdish and Arabic, China is the right-hand flag. A `left`/translateX
+   * pair would have marched the dot the wrong way down the line; the logical
+   * properties flip on their own.
+   */
+  it("travels the right way in both directions", () => {
+    expect(SHIPMENTS).toContain("insetInlineStart");
+    expect(SHIPMENTS).toContain('marginInlineStart: "-12px"');
+  });
+});

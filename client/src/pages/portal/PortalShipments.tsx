@@ -36,6 +36,23 @@ type StatusFilter = ShipmentStage;
 type ShippingFilter = "" | "air_regular" | "sea" | "air_irregular";
 type SortOption = "newest" | "oldest" | "status";
 
+/**
+ * How far along the China → Iraq line the marker sits, as a percentage.
+ *
+ * Mirrors the stepper above it rather than inventing a second progress model:
+ * the two are on the same card and a customer reads them together. Kept
+ * slightly inside both ends so the dot never overlaps a flag.
+ */
+const ROUTE_PROGRESS: Record<string, number> = {
+  preparing: 4,
+  in_transit: 50,
+  arrived: 70,
+  customs: 80,
+  at_depot: 90,
+  delivered: 96,
+  closed: 96,
+};
+
 function ClassicPortalShipments() {
   // Banner colour follows the mode the customer picked, like every other page.
   const { banner: portalBanner, palette: pal } = usePortalPalette();
@@ -699,8 +716,26 @@ function ClassicPortalShipments() {
                         "flex-1 border-t-2 border-dashed relative",
                         isDark ? "border-slate-600" : "border-slate-200 dark:border-slate-800/60"
                       )}>
-                        <div className={cn(
-                          "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center",
+                        {/* The dot used to sit pinned at the halfway point
+                            whatever the batch was doing — only its colour and
+                            icon changed with the status. A
+                            delivered shipment showed a green tick stranded
+                            halfway between the two flags, directly under a
+                            stepper whose every step was ticked. Position is
+                            the loudest thing on this row; it now says the
+                            same as the rest of the card.
+
+                            insetInlineStart + marginInlineStart rather than
+                            left + translate-x: both flip on their own, so the
+                            dot travels China → Iraq in Kurdish and Arabic too,
+                            where China is the right-hand flag. */}
+                        <div
+                          style={{
+                            insetInlineStart: `${ROUTE_PROGRESS[batch.status] ?? 0}%`,
+                            marginInlineStart: "-12px",
+                          }}
+                          className={cn(
+                          "absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center transition-[inset-inline-start] duration-700",
                           batch.status === "in_transit" 
                             ? "bg-blue-500 text-white animate-pulse" 
                             : batch.status === "delivered" || batch.status === "closed"
