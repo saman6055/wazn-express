@@ -132,3 +132,69 @@ describe("both reset screens set the same password", () => {
     expect(LIST.slice(at - 200, at + 200)).not.toContain('type="password"');
   });
 });
+
+describe("why a customer cannot sign in is answerable", () => {
+  const ROUTER = fs.readFileSync(path.resolve(__dirname, "routers/portalCenter.router.ts"), "utf8");
+  const proc = ROUTER.slice(
+    ROUTER.indexOf("diagnoseCustomerLogin"),
+    ROUTER.indexOf("resetCustomerPassword: adminProcedure"),
+  );
+
+  /**
+   * The login refuses in four ways and two of them print the same sentence:
+   * "wrong phone number or password" covers both "no account with that
+   * number" and "that password does not match". So staff reset the password,
+   * the customer still cannot get in, staff reset it again, and nobody learns
+   * anything. This separates them.
+   */
+  it("distinguishes every way the login refuses", () => {
+    for (const step of ["no_account", "inactive", "no_password", "wrong_password", "ok"]) {
+      expect(proc, `${step} must be reported`).toContain(`"${step}"`);
+    }
+  });
+
+  it("looks the number up exactly as the login does", () => {
+    // Same function, so a fix to one is a fix to both. Re-implementing the
+    // lookup here would let the diagnostic disagree with the thing it
+    // diagnoses.
+    expect(proc).toContain("db.getCustomerByMobile(typed)");
+  });
+
+  it("says when the stored number is written differently", () => {
+    // The number stored one way and typed another is the most common cause,
+    // and it is invisible unless somebody says it out loud.
+    expect(proc).toContain("storedDiffersFromTyped");
+  });
+
+  /**
+   * Checking a password is the only way to tell the two identical messages
+   * apart, so it must be possible — and recorded, because it is a password
+   * check on somebody else's account even though it changes nothing.
+   */
+  it("is admin-only and audited", () => {
+    expect(proc.slice(0, 200)).toContain("adminProcedure");
+    expect(proc).toContain("bcrypt.compare");
+    expect(proc).toContain('action: "diagnose_customer_login"');
+  });
+
+  /**
+   * The hash may be compared against, never handed back. Reading it is how a
+   * diagnostic becomes an offline cracking target.
+   */
+  it("never returns the hash", () => {
+    // Comparing is fine; putting it in a returned object is not.
+    expect(proc).toContain("bcrypt.compare(input.password, customer.passwordHash)");
+    expect(proc, "must not be part of any return value")
+      .not.toMatch(/(passwordHash|hash):\s*customer\.passwordHash/);
+    expect(proc).not.toMatch(/return[^;]*customer\.passwordHash/s);
+  });
+
+  it("treats an empty password as 'do not test one'", () => {
+    // Otherwise pressing the button with the field blank would report "wrong
+    // password" for every account, which is worse than saying nothing.
+    expect(proc).toContain("input.password === undefined");
+    const page = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/PortalCenter.tsx"), "utf8");
+    expect(page).toContain("password: pw ? pw : undefined");
+  });
+});

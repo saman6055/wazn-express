@@ -1447,6 +1447,99 @@ function genPassword(): string {
   return out.slice(0, 7) + digits[Math.floor(Math.random() * digits.length)];
 }
 
+/**
+ * "This customer says they cannot sign in."
+ *
+ * The portal login refuses in four ways and two of them print the same
+ * sentence — "wrong phone number or password" covers both "no account with
+ * that number" and "that password does not match". So staff reset the
+ * password, the customer still cannot get in, staff reset it again, and
+ * nobody learns anything.
+ *
+ * This walks the same path the login walks, with the number typed the way the
+ * customer types it, and says which step fails.
+ */
+function LoginDiagnostic({ p, defaultMobile }: { p: (v: L) => string; defaultMobile: string }) {
+  const [phone, setPhone] = useState(defaultMobile);
+  const [pw, setPw] = useState("");
+  const diagnose = trpc.portalCenter.diagnoseCustomerLogin.useMutation();
+
+  // The stored number is the sensible starting point, but staff need to be
+  // able to type what the customer actually typed.
+  useEffect(() => { setPhone(defaultMobile); }, [defaultMobile]);
+
+  const r = diagnose.data;
+  const tone =
+    r?.step === "ok" ? "text-emerald-600 dark:text-emerald-400"
+      : r?.step === "reaches_password" ? "text-sky-600 dark:text-sky-400"
+        : "text-amber-600 dark:text-amber-400";
+
+  return (
+    <div className="space-y-1.5 rounded-lg border border-dashed p-2.5">
+      <div className="text-[11px] font-semibold text-muted-foreground">
+        {p({
+          ku: "ناتوانێت بچێتە ژوورەوە؟ بیپشکنە",
+          en: "Can't sign in? Check why",
+          ar: "لا يستطيع الدخول؟ افحص السبب",
+          zh: "无法登录？检查原因",
+        })}
+      </div>
+      <div className="flex items-center gap-1.5">
+        <Input
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="h-9 text-sm flex-1"
+          dir="ltr"
+          placeholder="07XX XXX XXXX"
+        />
+        <Input
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+          className="h-9 text-sm flex-1"
+          dir="ltr"
+          placeholder={p({ ku: "وشەی نهێنی (ئارەزوومەندانە)", en: "Password (optional)", ar: "كلمة المرور (اختياري)", zh: "密码（选填）" })}
+        />
+        <Button
+          size="sm"
+          className="h-9 px-2 shrink-0"
+          disabled={phone.trim().length < 7 || diagnose.isPending}
+          onClick={() => diagnose.mutate({
+            mobileNumber: phone.trim(),
+            // Empty means "do not test a password" rather than "test the
+            // empty password".
+            password: pw ? pw : undefined,
+          })}
+        >
+          {diagnose.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+        </Button>
+      </div>
+
+      {r && (
+        <div className="space-y-1 pt-0.5">
+          <p className={cn("text-[11px] font-semibold leading-snug", tone)}>{r.message}</p>
+          {"found" in r && r.found && (
+            <p className="text-[10px] text-muted-foreground leading-snug">
+              {r.found.customerCode} · {r.found.fullName}
+              {r.found.storedDiffersFromTyped && (
+                <>
+                  {" — "}
+                  {p({
+                    ku: "لە سیستەمدا بەم شێوەیە خەزنکراوە",
+                    en: "stored in the system as",
+                    ar: "مخزّن في النظام هكذا",
+                    zh: "系统中存储为",
+                  })}{" "}
+                  <span dir="ltr" className="font-mono">{r.found.storedNumber}</span>
+                </>
+              )}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customerId: number }) {
   const utils = trpc.useUtils();
   const { data: sec, isLoading } = trpc.portalCenter.getCustomerSecurity.useQuery({ customerId });
@@ -1565,6 +1658,9 @@ function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customer
           })}
         </p>
       </div>
+
+      {/* Why can't they sign in? */}
+      <LoginDiagnostic p={p} defaultMobile={sec?.mobileNumber ?? ""} />
 
       {/* Login mobile */}
       <div className="space-y-1.5">

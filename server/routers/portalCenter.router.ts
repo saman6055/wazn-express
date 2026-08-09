@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizePhone, phoneVariants } from "@shared/phone";
 import * as bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";
 import { router } from "../_core/trpc";
@@ -192,6 +193,93 @@ export const portalCenterRouter = router({
         isActive: c.isActive,
         lastSignedIn: c.lastSignedIn ?? null,
         hasPassword: !!c.passwordHash,
+      };
+    }),
+
+  /**
+   * "This customer says they cannot sign in." Answers why, in one call.
+   *
+   * There are four ways the portal login refuses, and two of them print the
+   * same sentence — "wrong phone number or password" covers both "no account
+   * with that number" and "that password does not match". So staff reset the
+   * password, the customer still cannot get in, staff reset it again, and
+   * nobody learns anything. That has cost real afternoons.
+   *
+   * This walks the exact path the login walks, with the number as the
+   * customer would type it, and reports which step fails. Optionally checks a
+   * password too, which is the only way to tell the two identical messages
+   * apart.
+   *
+   * Admin-only and audit-logged. It reveals no hash and grants nothing an
+   * admin could not already do by resetting the password — it only replaces
+   * guessing with an answer.
+   */
+  diagnoseCustomerLogin: adminProcedure
+    .input(z.object({
+      mobileNumber: z.string().min(1).max(30),
+      password: z.string().max(500).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const typed = input.mobileNumber.trim();
+
+      const customer = await db.getCustomerByMobile(typed);
+      if (!customer) {
+        return {
+          step: "no_account" as const,
+          normalized: normalizePhone(typed),
+          triedVariants: phoneVariants(typed),
+          message: "هیچ کڕیارێک بەم ژمارەیە نەدۆزرایەوە — نە بە سفرەوە و نە بەبێ سفر.",
+        };
+      }
+
+      const found = {
+        id: customer.id,
+        customerCode: customer.customerCode,
+        fullName: customer.fullName,
+        storedNumber: customer.mobileNumber,
+        // The number is stored one way and typed another far more often than
+        // anyone expects; say so plainly when it happens.
+        storedDiffersFromTyped: customer.mobileNumber !== typed,
+      };
+
+      if (!customer.isActive) {
+        return { step: "inactive" as const, found, message: "هەژمارەکە ناچالاکە — چالاکی بکە." };
+      }
+
+      if (!customer.passwordHash) {
+        return {
+          step: "no_password" as const,
+          found,
+          message: "هیچ وشەیەکی نهێنی بۆ ئەم هەژمارە دانەنراوە — ڕیسێتی بکە.",
+        };
+      }
+
+      if (input.password === undefined) {
+        return {
+          step: "reaches_password" as const,
+          found,
+          message: "ژمارەکە دۆزرایەوە، هەژمارەکە چالاکە و وشەی نهێنی دانراوە. وشەکە بنووسە بۆ تاقیکردنەوەی.",
+        };
+      }
+
+      const matches = await bcrypt.compare(input.password, customer.passwordHash);
+
+      // Recorded because it is a password check on somebody else's account,
+      // even though it changes nothing.
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "diagnose_customer_login",
+        entityType: "customer",
+        entityId: customer.id,
+      });
+
+      return {
+        step: matches ? ("ok" as const) : ("wrong_password" as const),
+        found,
+        message: matches
+          ? "ئەم وشەیە کاردەکات. ئەگەر موشتەری هێشتا ناتوانێت بچێتە ژوورەوە، بۆشایی یان کاراکتەرێکی زیادەی تێدایە."
+          : "ژمارەکە دروستە بەڵام ئەم وشەیە ناگونجێت — ڕیسێتی بکە.",
       };
     }),
 
