@@ -59,12 +59,16 @@ export default function Skin3PortalProfile() {
   };
 
   const getInitials = (name?: string | null) => {
-    if (!name) return "U";
-    const parts = name.trim().split(/\s+/);
+    // Trim first, then test. A name of "   " passed the !name guard, split to
+    // a single empty part, and charAt(0) returned the space — an avatar
+    // circle with nothing in it rather than the fallback letter.
+    const trimmed = (name ?? "").trim();
+    if (!trimmed) return "U";
+    const parts = trimmed.split(/\s+/);
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
-    return name.charAt(0).toUpperCase();
+    return trimmed.charAt(0).toUpperCase();
   };
 
   if (!user) {
