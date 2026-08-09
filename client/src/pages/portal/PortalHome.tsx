@@ -540,8 +540,8 @@ const { t, language } = useLanguage();
                 Note: guard with a boolean comparison, not `count && ...` —
                 React renders a literal "0" for the latter when count is 0. */}
             <Link href="/portal/notifications">
-              <button className={cn(
-                "relative p-3 backdrop-blur-sm rounded-2xl transition-all duration-300 group",
+              <span className={cn(
+                "relative inline-block p-3 backdrop-blur-sm rounded-2xl transition-all duration-300 group",
                 (notificationCount ?? 0) > 0
                   ? "bg-red-500/25 hover:bg-red-500/35 ring-2 ring-red-400/60"
                   : headGlass
@@ -555,7 +555,7 @@ const { t, language } = useLanguage();
                     {notificationCount! > 99 ? "99+" : notificationCount}
                   </span>
                 )}
-              </button>
+              </span>
             </Link>
           </div>
 
@@ -583,7 +583,7 @@ const { t, language } = useLanguage();
           <div className="mt-6 grid grid-cols-3 gap-2.5">
             {quickActions.map((action, index) => (
               <Link key={index} href={action.href}>
-                <button className={cn("relative w-full h-full flex flex-col items-start gap-2.5 rounded-2xl p-3 border backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]", headGlass)}>
+                <span className={cn("relative w-full h-full flex flex-col items-start gap-2.5 rounded-2xl p-3 border backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]", headGlass)}>
                   {/* ⓘ — reveals "what is this?" without navigating; hidden until tapped. */}
                   <span
                     role="button"
@@ -606,7 +606,7 @@ const { t, language } = useLanguage();
                   <span className={cn("text-xs font-medium text-start leading-tight", headSoft)}>
                     {action.label}
                   </span>
-                </button>
+                </span>
               </Link>
             ))}
           </div>
@@ -959,10 +959,10 @@ const { t, language } = useLanguage();
               {pickLang(language, { ku: "بارە خۆدەرخستووەکانم", en: "My declared packages", ar: "طرودي المُعلنة", zh: "我申报的包裹" })}
             </h2>
             <Link href="/portal/declare">
-              <button className="text-sm text-blue-500 font-medium flex items-center gap-1 hover:text-blue-600 transition-colors">
+              <span className="text-sm text-blue-500 font-medium flex items-center gap-1 hover:text-blue-600 transition-colors">
                 {t("portal.viewAll") || "هەموو ببینە"}
                 <ChevronRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
-              </button>
+              </span>
             </Link>
           </div>
 
@@ -1031,10 +1031,10 @@ const { t, language } = useLanguage();
             {t("portal.recentShipments") || "گواستنەوە نوێیەکان"}
           </h2>
           <Link href="/portal/shipments">
-            <button className="text-sm text-blue-500 font-medium flex items-center gap-1 hover:text-blue-600 transition-colors">
+            <span className="text-sm text-blue-500 font-medium flex items-center gap-1 hover:text-blue-600 transition-colors">
               {t("portal.viewAll") || "هەموو ببینە"}
               <ChevronRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
-            </button>
+            </span>
           </Link>
         </div>
 

@@ -105,12 +105,12 @@ const { banner: portalBanner } = usePortalPalette();
       )}>
         <div className="flex items-center gap-3">
           <Link href="/portal">
-            <button className={cn(
-              "p-2 rounded-xl transition-colors",
+            <span className={cn(
+              "inline-block p-2 rounded-xl transition-colors",
               isDark ? "hover:bg-slate-800" : "hover:bg-gray-100"
             )}>
               <ArrowLeft className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")} />
-            </button>
+            </span>
           </Link>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="p-2 rounded-xl text-white shadow-sm shrink-0" style={portalBanner}>

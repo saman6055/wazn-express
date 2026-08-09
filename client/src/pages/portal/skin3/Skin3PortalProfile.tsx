@@ -107,16 +107,16 @@ export default function Skin3PortalProfile() {
               {pickLang(language, { ku: "چوونەژوورەوە پێویستە", en: "Login Required", ar: "تسجيل الدخول مطلوب", zh: "需要登录" })}
             </h2>
             <Link href={getLoginUrl()}>
-              <button
+              <span
                 className={cn(
-                  "mt-4 px-8 py-3 rounded-full font-black text-sm border-2 transition-all",
+                  "mt-4 inline-block px-8 py-3 rounded-full font-black text-sm border-2 transition-all",
                   isDark
                     ? "bg-indigo-600 text-white border-indigo-500 hover:bg-indigo-500 shadow-[3px_3px_0px_rgba(99,102,241,0.3)]"
                     : "bg-indigo-500 text-white border-indigo-600 hover:bg-indigo-600 shadow-[4px_4px_0px_rgba(0,0,0,0.12)]"
                 )}
               >
                 {t("auth.login")}
-              </button>
+              </span>
             </Link>
           </div>
         </div>

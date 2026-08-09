@@ -204,8 +204,7 @@ export default function PortalGuide() {
                       {/* Actions */}
                       <div className="flex flex-wrap items-center gap-2 pt-1">
                         <Link href={s.path}>
-                          <button
-                            type="button"
+                          <span
                             className={cn(
                               "inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r px-4 py-2 text-sm font-bold text-white shadow-sm transition active:scale-95",
                               s.gradient,
@@ -213,7 +212,7 @@ export default function PortalGuide() {
                           >
                             <ArrowLeft className={cn("h-4 w-4", !isRTL && "rotate-180")} />
                             {pick(guideHeader.goTo)}
-                          </button>
+                          </span>
                         </Link>
                         <WhatsAppHelpButton
                           language={language}

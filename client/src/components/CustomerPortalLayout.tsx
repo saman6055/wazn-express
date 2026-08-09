@@ -156,8 +156,11 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   const isHomeActive = location === "/portal";
 
   const renderNavItem = (item: typeof leftItems[0], isActive: boolean) => (
-    <Link key={item.path} href={item.path}>
-      <button className={cn(
+    <Link
+      key={item.path}
+      href={item.path}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
         "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-2xl transition-all duration-300 min-w-[60px]",
         isActive 
           ? `${item.activeColor} ${item.activeBg} shadow-lg ${item.activeGlow}` 
@@ -183,7 +186,6 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         )}>
           {item.label}
         </span>
-      </button>
     </Link>
   );
 
@@ -285,10 +287,11 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
 
             {/* Center - Home Button (Large & Prominent) */}
             <div className="relative -top-4">
-              <Link href={homeItem.path}>
-                <button className={cn(
-                  "relative group",
-                )}>
+              <Link
+                href={homeItem.path}
+                aria-current={isHomeActive ? "page" : undefined}
+                className="relative group block"
+              >
                   {/* Outer glow ring */}
                   <div className={cn(
                     "absolute -inset-2 rounded-full transition-all duration-500",
@@ -329,7 +332,6 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
                   )}>
                     {homeItem.label}
                   </span>
-                </button>
               </Link>
             </div>
 

@@ -222,10 +222,10 @@ const { t, language } = useLanguage();
       {/* Header */}
       <div className="text-white px-4 pt-12 pb-8" style={portalBanner}>
         <Link href="/portal/shipments">
-          <button className="flex items-center gap-1 text-slate-300 mb-3 hover:text-white transition-colors">
+          <span className="flex items-center gap-1 text-slate-300 mb-3 hover:text-white transition-colors">
             <ChevronLeft className={cn("w-5 h-5", isRTL && "rotate-180")} />
             <span className="text-sm">{pickLang(language, { ku: "گەڕانەوە", en: "Back", ar: "رجوع", zh: "返回" })}</span>
-          </button>
+          </span>
         </Link>
         
         <div className="flex items-start justify-between">

@@ -66,9 +66,9 @@ export default function ModernPortalProfile() {
               {pickLang(language, { ku: "چوونەژوورەوە پێویستە", en: "Login Required", ar: "تسجيل الدخول مطلوب", zh: "需要登录" })}
             </h2>
             <Link href={getLoginUrl()}>
-              <button className="mt-4 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-colors">
+              <span className="block mt-4 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-colors">
                 {t("auth.login")}
-              </button>
+              </span>
             </Link>
           </div>
         </div>

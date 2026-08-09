@@ -562,7 +562,7 @@ export default function Skin3PortalHome() {
               {pickLang(language, { ku: "چالاکی دوایی", en: "Recent Activity", ar: "النشاط الأخير", zh: "最近动态" })}
             </h2>
             <Link href="/portal/financial">
-              <button
+              <span
                 className={cn(
                   "text-sm font-bold flex items-center gap-0.5",
                   "text-indigo-500 hover:text-indigo-600"
@@ -570,7 +570,7 @@ export default function Skin3PortalHome() {
               >
                 {pickLang(language, { ku: "هەموو", en: "View All", ar: "عرض الكل", zh: "查看全部" })}
                 <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
-              </button>
+              </span>
             </Link>
           </div>
 

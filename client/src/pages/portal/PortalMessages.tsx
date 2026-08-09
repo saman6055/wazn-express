@@ -871,9 +871,9 @@ export default function PortalMessages() {
                   </div>
                 ))}
                 <Link href="/portal/notifications">
-                  <button className="w-full rounded-2xl border border-dashed py-3 text-sm font-medium">
+                  <span className="block w-full rounded-2xl border border-dashed py-3 text-sm font-medium">
                     {pickLang(language, { ku: "بینینی هەموو ئاگادارکردنەوەکان", en: "See all notifications", ar: "عرض كل الإشعارات", zh: "查看全部通知" })}
-                  </button>
+                  </span>
                 </Link>
               </>
             )}

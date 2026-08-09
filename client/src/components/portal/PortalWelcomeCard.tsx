@@ -121,8 +121,7 @@ export function PortalWelcomeCard({
       )}
 
       <Link href="/portal/declare">
-        <button
-          type="button"
+        <span
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 active:scale-[0.99]"
         >
           <PackagePlus className="h-4 w-4" />
@@ -132,7 +131,7 @@ export function PortalWelcomeCard({
             ar: "تسجيل رقم التتبع",
             zh: "登记我的运单号",
           })}
-        </button>
+        </span>
       </Link>
 
       <p className={cn("mt-3 flex items-center gap-1.5 text-[11px]", isDark ? "text-emerald-400/70" : "text-emerald-700/70 dark:text-emerald-400/70")}>

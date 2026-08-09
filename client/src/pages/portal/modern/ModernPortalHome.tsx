@@ -359,7 +359,7 @@ export default function ModernPortalHome() {
             )}
           </div>
           <Link href="/portal/notifications">
-            <button
+            <span
               className={cn(
                 "relative w-11 h-11 rounded-2xl flex items-center justify-center transition-colors",
                 isDark
@@ -378,7 +378,7 @@ export default function ModernPortalHome() {
                   {notificationCount > 99 ? "99+" : notificationCount}
                 </span>
               ) : null}
-            </button>
+            </span>
           </Link>
         </motion.div>
 
@@ -421,10 +421,10 @@ export default function ModernPortalHome() {
               )}
 
               <Link href="/portal/financial">
-                <button className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-emerald-700 dark:text-emerald-300 font-semibold text-sm hover:bg-white/90 transition-colors shadow-sm">
+                <span className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-emerald-700 dark:text-emerald-300 font-semibold text-sm hover:bg-white/90 transition-colors shadow-sm">
                   <CreditCard className="w-4 h-4" />
                   {pickLang(language, { ku: "پارەدان", en: "Pay Now", ar: "الدفع", zh: "去支付" })}
-                </button>
+                </span>
               </Link>
             </div>
           </div>
@@ -577,7 +577,7 @@ export default function ModernPortalHome() {
               {pickLang(language, { ku: "چالاکی دوایی", en: "Recent Activity", ar: "النشاط الأخير", zh: "最近动态" })}
             </h2>
             <Link href="/portal/financial">
-              <button
+              <span
                 className={cn(
                   "text-sm font-medium flex items-center gap-0.5",
                   "text-emerald-600 dark:text-emerald-400"
@@ -585,7 +585,7 @@ export default function ModernPortalHome() {
               >
                 {pickLang(language, { ku: "هەموو", en: "View All", ar: "عرض الكل", zh: "查看全部" })}
                 <ChevronRight className="w-4 h-4" />
-              </button>
+              </span>
             </Link>
           </div>
 
