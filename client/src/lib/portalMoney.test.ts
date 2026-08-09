@@ -8,7 +8,6 @@ import {
   LEDGER_TYPE_LABEL,
   isDebt,
   isInvoiceOutstanding,
-  formatIqdAmount,
   txSign,
 } from "./portalMoney";
 
@@ -178,7 +177,7 @@ describe("one copy of the rules", () => {
   });
 });
 
-describe("the dinar a customer actually pays in", () => {
+describe("the portal settles in one currency", () => {
   const SKIN_ROOT = path.resolve(__dirname, "../pages/portal");
   const SKINS = [
     "PortalFinancial.tsx",
@@ -187,52 +186,39 @@ describe("the dinar a customer actually pays in", () => {
   ];
 
   /**
-   * The books have carried IQD all along — `invoices.totalIqd` written against
-   * the rate on the day the invoice was raised, `ledgerTransactions.amountIqd`
-   * against the rate on the day the line was posted. Only the classic skin
-   * showed the invoice figure; the other two dropped it, and none of the three
-   * showed it on a transaction. A customer in Erbil pays in dinar and was
-   * being handed dollars to convert in their head at whatever rate they last
-   * heard, which is how someone arrives at the counter short.
+   * The books carry IQD — invoices have totalIqd, ledger lines have amountIqd
+   * — and the portal briefly printed both currencies against every charge.
+   * The office's call was that one is clearer: two figures against one charge
+   * is a question a customer asks support rather than an answer they read.
+   *
+   * The public price list is the exception and keeps its own IQD line behind
+   * the showIqdEquivalent setting, which is why this only guards the money
+   * screens. There a customer is deciding whether to buy; here they are
+   * reconciling what they were charged.
    */
   for (const skin of SKINS) {
-    const src = fs.readFileSync(path.join(SKIN_ROOT, skin), "utf8");
-
-    it(`${skin} shows the dinar on invoices and transactions`, () => {
-      expect(src, "must use the shared formatter").toContain("formatIqdAmount");
-      expect(src, "the invoice's own dinar figure").toMatch(/formatIqdAmount\((?:inv|invoice)\.totalIqd\)/);
-      expect(src, "the transaction's own dinar figure").toMatch(/formatIqdAmount\(tx\.amountIqd\)/);
-    });
-
-    /**
-     * The one thing worse than showing dollars alone is showing a dinar figure
-     * that disagrees with the paper receipt in the customer's hand. Today's
-     * rate applied to an invoice raised in March is exactly that. Nothing here
-     * may multiply by a rate — the number is read, never derived.
-     */
-    it(`${skin} never recomputes the dinar from a live rate`, () => {
-      expect(src).not.toMatch(/(totalUsd|amountUsd|balanceUsd)[^\n]{0,40}\*\s*\w*[Rr]ate/);
-      expect(src).not.toMatch(/\*\s*(iqdRate|exchangeRate|usdToIqd)\b/);
+    it(`${skin} shows amounts in USD alone`, () => {
+      const src = fs.readFileSync(path.join(SKIN_ROOT, skin), "utf8");
+      for (const field of ["amountIqd", "totalIqd"]) {
+        expect(src, `${field} must not be rendered`).not.toContain(field);
+      }
+      expect(src, "the dinar formatter is gone").not.toContain("formatIqdAmount");
     });
   }
 
-  it("returns nothing rather than a bare zero", () => {
-    // A row booked in dollars has no dinar figure, and "0 IQD" beside a real
-    // dollar amount reads as a price of nothing.
-    expect(formatIqdAmount(null)).toBeNull();
-    expect(formatIqdAmount(undefined)).toBeNull();
-    expect(formatIqdAmount("")).toBeNull();
-    expect(formatIqdAmount(0)).toBeNull();
-    expect(formatIqdAmount("0")).toBeNull();
-    expect(formatIqdAmount("not a number")).toBeNull();
-  });
-
-  it("prints a grouped, unsigned figure", () => {
-    // The sign is already carried by the +/- beside the dollar amount; a
-    // second minus in front of the dinar reads as a different transaction.
-    expect(formatIqdAmount(374500)).toBe("374,500 IQD");
-    expect(formatIqdAmount("-374500")).toBe("374,500 IQD");
-    expect(formatIqdAmount(1250000)).toBe("1,250,000 IQD");
+  /**
+   * And nothing may quietly reintroduce it by multiplying. A figure derived
+   * from today's rate would disagree with the paper receipt in the customer's
+   * hand, which was the objection to converting in the first place.
+   */
+  it("no money screen converts a dollar into anything", () => {
+    const RATE = new RegExp("(totalUsd|amountUsd|balanceUsd)[^\\n]{0,40}\\*\\s*\\w*[Rr]ate");
+    const NAMED_RATE = new RegExp("\\*\\s*(iqdRate|exchangeRate|usdToIqd)\\b");
+    for (const skin of SKINS) {
+      const src = fs.readFileSync(path.join(SKIN_ROOT, skin), "utf8");
+      expect(src).not.toMatch(RATE);
+      expect(src).not.toMatch(NAMED_RATE);
+    }
   });
 });
 

@@ -158,30 +158,18 @@ export const INVOICE_STATE_PRINT: Record<InvoiceState, string> = {
 };
 
 /**
- * The dinar figure the books already hold, for a customer who pays in dinar.
+ * There is no dinar formatter here any more, on purpose.
  *
- * Nothing here converts anything. Invoices carry `totalIqd` written against
- * `exchangeRateIqd` at the moment they were raised, and ledger lines carry
- * `amountIqd` written at the rate of the day they were posted. Recomputing
- * either from today's rate would show a customer a number that disagrees with
- * the paper receipt in their hand, which is the one thing worse than showing
- * dollars alone.
+ * The books do carry IQD — invoices have totalIqd, ledger lines have
+ * amountIqd — and the portal briefly showed both currencies side by side.
+ * The office's call was that one currency is clearer: two figures against
+ * one charge is a question a customer asks support rather than an answer
+ * they read. The portal quotes, charges and settles in USD.
  *
- * So this only formats. It returns null when the row has no dinar figure —
- * older rows, and anything booked in dollars — and the caller renders the
- * dollar by itself.
- *
- * It lives beside the rest of the money rules because three skins each wrote
- * their own version of this once already: the classic invoice showed the
- * dinar, the other two silently dropped it, and a customer comparing the two
- * had no way to tell which one was lying.
+ * The public price list is the exception and keeps its own IQD line, behind
+ * the showIqdEquivalent setting the office controls — there a customer is
+ * deciding whether to buy, not reconciling what they were charged.
  */
-export function formatIqdAmount(value: number | string | null | undefined): string | null {
-  if (value === null || value === undefined || value === "") return null;
-  const n = typeof value === "string" ? parseFloat(value) : value;
-  if (!Number.isFinite(n) || n === 0) return null;
-  return `${Math.abs(n).toLocaleString("en-US")} IQD`;
-}
 
 /**
  * A ledger line's description, in the customer's language.
