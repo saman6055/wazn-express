@@ -176,7 +176,17 @@ export const scanningRouter = router({
           notes: input.notes,
           photoUrl: input.photoUrl,
         });
-        
+
+        // The scan keeps its own copy above, as the record of what that scan
+        // saw. The parcel needs one too: `packages.photos` is the column every
+        // screen that shows a picture actually reads, and it was staying empty
+        // while photos piled up in the scan log.
+        if (input.packageId && input.photoUrl) {
+          void db.addPackagePhoto(input.packageId, input.photoUrl).catch(() => {
+            /* a picture must never be the reason a scan fails */
+          });
+        }
+
         // If package exists, update its status.
         //
         // This used to map the scan type to a display string — 'In Local
@@ -303,6 +313,20 @@ export const scanningRouter = router({
           batchId: input.batchId,
           registeredById: ctx.user.id,
           notes: input.notes,
+          /**
+           * The photo taken at the counter, on the parcel itself.
+           *
+           * It was only ever written to `packageScans.photoUrl` — the scan
+           * event's own record, which nothing outside the scan log reads. The
+           * parcel's `photos` column, which is what the portal card, the
+           * admin parcel page, the delivery box and the rating card all read,
+           * stayed empty. So a photo was taken of every parcel arriving in
+           * China and then shown to nobody.
+           *
+           * Written to both: the scan keeps its own copy as the record of
+           * what that scan saw, and the parcel carries it as its picture.
+           */
+          photos: input.photoUrl ? [input.photoUrl] : undefined,
         });
         
         // Create initial scan

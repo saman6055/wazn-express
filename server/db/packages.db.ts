@@ -2311,3 +2311,36 @@ export async function getRegistrationSummary(opts: {
     byCustomer,
   };
 }
+
+/**
+ * Add a photo taken at a scan to the parcel's own gallery.
+ *
+ * The scan already keeps its copy in `packageScans.photoUrl` — that is the
+ * record of what that particular scan saw, and it should stay. But nothing
+ * outside the scan log reads it, so a photo taken of every parcel arriving at
+ * the China depot was being stored and shown to nobody: the portal card, the
+ * parcel page, the delivery box and the rating card all read `packages.photos`
+ * and it stayed empty.
+ *
+ * Appends rather than replaces, and skips a URL already in the list, so a
+ * parcel scanned at three points along the road ends up with three pictures
+ * and not three copies of the first.
+ */
+export async function addPackagePhoto(packageId: number, photoUrl: string): Promise<void> {
+  if (!photoUrl) return;
+  const db = await getDb();
+  if (!db) return;
+
+  const [row] = await db.select({ photos: packages.photos })
+    .from(packages)
+    .where(eq(packages.id, packageId))
+    .limit(1);
+  if (!row) return;
+
+  const existing = Array.isArray(row.photos) ? row.photos.filter((p): p is string => typeof p === "string") : [];
+  if (existing.includes(photoUrl)) return;
+
+  await db.update(packages)
+    .set({ photos: [...existing, photoUrl] })
+    .where(eq(packages.id, packageId));
+}
