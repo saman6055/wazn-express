@@ -110,18 +110,47 @@ export async function createPackage(data: InsertPackage): Promise<Package> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Auto-link to full package order if tracking number matches
+  /**
+   * Auto-link to the order that already claims this tracking number.
+   *
+   * This looked in one place: `fullPackageOrders.trackingNumber`, the order's
+   * own single-tracking column. But an order can carry several trackings, and
+   * those live in `fullPackageOrderTrackings` — one row per parcel, which is
+   * the whole point of that table.
+   *
+   * So a parcel whose tracking was registered against an order as one of
+   * several never found its order, `fullPackageOrderId` stayed null, and the
+   * parcel therefore satisfied isSelfOrder — it appeared in the customer's
+   * portal under "goods I bought myself", while the same tracking number sat
+   * in the admin's full-package screen with a buy price, a sell price and a
+   * profit against it. The customer had bought nothing.
+   *
+   * Both places are checked now, the order's own column first because a
+   * single-tracking order is the common case.
+   */
   if (data.trackingNumber && !data.fullPackageOrderId) {
-    const matchingOrder = await db.select({ id: fullPackageOrders.id, orderType: fullPackageOrders.orderType, customerId: fullPackageOrders.customerId })
+    let matched: { id: number; customerId: number | null } | null = null;
+
+    const direct = await db.select({ id: fullPackageOrders.id, customerId: fullPackageOrders.customerId })
       .from(fullPackageOrders)
       .where(eq(fullPackageOrders.trackingNumber, data.trackingNumber))
       .limit(1);
+    if (direct.length > 0) matched = direct[0];
 
-    if (matchingOrder.length > 0) {
-      data.fullPackageOrderId = matchingOrder[0].id;
+    if (!matched) {
+      const viaTrackings = await db.select({ id: fullPackageOrders.id, customerId: fullPackageOrders.customerId })
+        .from(fullPackageOrderTrackings)
+        .innerJoin(fullPackageOrders, eq(fullPackageOrderTrackings.fullPackageOrderId, fullPackageOrders.id))
+        .where(eq(fullPackageOrderTrackings.trackingNumber, data.trackingNumber))
+        .limit(1);
+      if (viaTrackings.length > 0) matched = viaTrackings[0];
+    }
+
+    if (matched) {
+      data.fullPackageOrderId = matched.id;
       // Also set the customer from the order if not already set
-      if (!data.customerId && matchingOrder[0].customerId) {
-        data.customerId = matchingOrder[0].customerId;
+      if (!data.customerId && matched.customerId) {
+        data.customerId = matched.customerId;
       }
     }
   }

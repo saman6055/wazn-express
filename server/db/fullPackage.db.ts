@@ -614,12 +614,58 @@ export async function addOrderTrackings(
   return { added, duplicates };
 }
 
+/**
+ * Take a tracking number off an order.
+ *
+ * The link runs both ways and both have to be undone. Deleting only the
+ * tracking row left the parcel still pointing at the order through
+ * `packages.fullPackageOrderId` — so a parcel removed from an order in the
+ * admin screen kept the order's buy price and profit hanging off it, and did
+ * not go back to being the customer's own purchase in the portal.
+ *
+ * The parcel is released only if this order was the reason it was linked and
+ * nothing else on the order still claims it: the order's own trackingNumber
+ * column, or another row in this table. Releasing means setting the link back
+ * to null, which is exactly what makes the parcel a self order again — that
+ * state is derived from this column and nowhere else. See lib/selfOrder.ts.
+ */
 export async function removeOrderTracking(id: number): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
   const [row] = await db.select().from(fullPackageOrderTrackings).where(eq(fullPackageOrderTrackings.id, id)).limit(1);
   if (!row) return false;
+
   await db.delete(fullPackageOrderTrackings).where(eq(fullPackageOrderTrackings.id, id));
+
+  if (row.trackingNumber) {
+    // Does anything else on this order still claim that tracking number?
+    const [order] = await db
+      .select({ trackingNumber: fullPackageOrders.trackingNumber })
+      .from(fullPackageOrders)
+      .where(eq(fullPackageOrders.id, row.fullPackageOrderId))
+      .limit(1);
+
+    const stillOnOrderColumn = order?.trackingNumber === row.trackingNumber;
+
+    const others = stillOnOrderColumn ? [] : await db
+      .select({ id: fullPackageOrderTrackings.id })
+      .from(fullPackageOrderTrackings)
+      .where(and(
+        eq(fullPackageOrderTrackings.fullPackageOrderId, row.fullPackageOrderId),
+        eq(fullPackageOrderTrackings.trackingNumber, row.trackingNumber),
+      ))
+      .limit(1);
+
+    if (!stillOnOrderColumn && others.length === 0) {
+      await db.update(packages)
+        .set({ fullPackageOrderId: null })
+        .where(and(
+          eq(packages.trackingNumber, row.trackingNumber),
+          eq(packages.fullPackageOrderId, row.fullPackageOrderId),
+        ));
+    }
+  }
+
   return true;
 }
 

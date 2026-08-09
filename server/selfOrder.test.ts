@@ -79,3 +79,56 @@ describe("only one copy of the rule exists", () => {
     expect(portal).toContain("selfOrderWhere");
   });
 });
+
+describe("a parcel finds its order however the order records the tracking", () => {
+  const pkgDb = fs.readFileSync(path.resolve(__dirname, "db/packages.db.ts"), "utf8");
+  const fpDb = fs.readFileSync(path.resolve(__dirname, "db/fullPackage.db.ts"), "utf8");
+
+  /**
+   * The bug this exists to stop coming back.
+   *
+   * An order can carry several tracking numbers, and those live in
+   * fullPackageOrderTrackings rather than on the order's own column.
+   * createPackage only looked at the order's own column, so a parcel
+   * registered against a multi-tracking order never found its order,
+   * fullPackageOrderId stayed null, and the parcel therefore satisfied
+   * isSelfOrder.
+   *
+   * What the customer saw: the same tracking number in the admin's
+   * full-package screen with a buy price, a sell price and a profit against
+   * it, and in their own portal under "goods I bought myself". They had
+   * bought nothing.
+   */
+  it("createPackage looks in both places", () => {
+    const fn = pkgDb.slice(pkgDb.indexOf("export async function createPackage"));
+    const head = fn.slice(0, 3000);
+    expect(head, "the order's own column").toContain("eq(fullPackageOrders.trackingNumber, data.trackingNumber)");
+    expect(head, "and the multi-tracking table").toContain("eq(fullPackageOrderTrackings.trackingNumber, data.trackingNumber)");
+  });
+
+  /**
+   * And the reverse. Removing a tracking from an order deleted the tracking
+   * row and left packages.fullPackageOrderId pointing at the order, so the
+   * parcel kept the order's money hanging off it and did not go back to being
+   * the customer's own purchase.
+   */
+  it("removing a tracking releases the parcel", () => {
+    const fn = fpDb.slice(fpDb.indexOf("export async function removeOrderTracking"));
+    const body = fn.slice(0, 2500);
+    expect(body).toContain("set({ fullPackageOrderId: null })");
+    // Only when nothing else on the order still claims that tracking.
+    expect(body, "the order's own column may still claim it").toContain("stillOnOrderColumn");
+    expect(body, "and another row may still claim it").toMatch(/others\.length === 0/);
+  });
+
+  /**
+   * Releasing has to mean setting the column to null, not writing a flag.
+   * The whole design is that self-order state is derived from this one
+   * column, so a second copy of the truth must never appear.
+   */
+  it("nothing stores self-order state", () => {
+    for (const src of [pkgDb, fpDb]) {
+      expect(src).not.toMatch(/isSelfOrder\s*[:=]\s*(true|false)/);
+    }
+  });
+});
