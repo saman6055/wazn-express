@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { onEnter } from "@/lib/onEnter";
 import { trpc } from "@/lib/trpc";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { TutorialHint } from "@/components/TutorialHint";
@@ -113,6 +114,13 @@ export default function PortalYuanExchange() {
   }, [info, usdNum, language]);
 
   const canSubmit = usdNum > 0 && rate > 0 && !limitError && !createOrder.isPending;
+
+  // One path for the button and for the Enter key, so a guard added to one
+  // cannot go missing from the other.
+  const submitYuanOrder = () => {
+    if (!canSubmit) return;
+    createOrder.mutate({ usdAmount: usdNum, note: note.trim() || undefined });
+  };
 
   const waMessage = pick({
     ku: `سڵاو، دەمەوێت یوانی چینی بکڕم:\n💵 ${usdNum.toLocaleString("en-US")} دۆلار → ¥${cnyNum.toLocaleString("en-US")} یوان\n(نرخ: ١$ = ${rate}¥)`,
@@ -226,6 +234,8 @@ export default function PortalYuanExchange() {
                         step="0.01"
                         inputMode="decimal"
                         stepper={false}
+                        onKeyDown={onEnter(submitYuanOrder)}
+                        enterKeyHint="send"
                         value={usd}
                         onChange={(e) => syncFromUsd(e.target.value)}
                         placeholder="100"
@@ -248,6 +258,8 @@ export default function PortalYuanExchange() {
                         step="0.01"
                         inputMode="decimal"
                         stepper={false}
+                        onKeyDown={onEnter(submitYuanOrder)}
+                        enterKeyHint="send"
                         value={cny}
                         onChange={(e) => syncFromCny(e.target.value)}
                         placeholder="640"
@@ -276,6 +288,8 @@ export default function PortalYuanExchange() {
                   {pick({ ku: "تۆماری داواکاری", en: "Place an order", ar: "تسجيل طلب", zh: "提交订单" })}
                 </h3>
                 <Textarea
+                  onKeyDown={onEnter(submitYuanOrder)}
+                  enterKeyHint="send"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   rows={2}
@@ -289,9 +303,7 @@ export default function PortalYuanExchange() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <Button
                     disabled={!canSubmit}
-                    onClick={() =>
-                      createOrder.mutate({ usdAmount: usdNum, note: note.trim() || undefined })
-                    }
+                    onClick={submitYuanOrder}
                     className="h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-base"
                   >
                     {createOrder.isPending ? (

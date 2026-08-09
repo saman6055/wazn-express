@@ -1,6 +1,7 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { onEnter } from "@/lib/onEnter";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -385,6 +386,8 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Input
                   placeholder={pickLang(language, { ku: "یان ناوێکی خۆت بنووسە", en: "Or enter your own", ar: "أو اكتب اسماً خاصاً", zh: "或自定义名称" })}
                   maxLength={100}
+                  onKeyDown={onEnter(handleSubmit)}
+                  enterKeyHint="done"
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                 />
@@ -396,6 +399,8 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Input
                   placeholder={pickLang(language, { ku: "ناوی تەواوی وەرگر", en: "Recipient's full name", ar: "الاسم الكامل للمستلم", zh: "收件人全名" })}
                   maxLength={255}
+                  onKeyDown={onEnter(handleSubmit)}
+                  enterKeyHint="done"
                   value={formData.recipientName}
                   onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
                 />
@@ -413,6 +418,8 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                   inputMode="tel"
                   autoComplete="tel"
                   maxLength={20}
+                  onKeyDown={onEnter(handleSubmit)}
+                  enterKeyHint="done"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
@@ -424,6 +431,8 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Input
                   placeholder={pickLang(language, { ku: "وەک هەولێر، سلێمانی، بەغدا", en: "e.g., Erbil, Sulaymaniyah, Baghdad", ar: "مثل أربيل، السليمانية، بغداد", zh: "例如：埃尔比勒、苏莱曼尼亚、巴格达" })}
                   maxLength={100}
+                  onKeyDown={onEnter(handleSubmit)}
+                  enterKeyHint="done"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 />
@@ -435,6 +444,8 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Input
                   placeholder={pickLang(language, { ku: "وەک عەنکاوە، ژیان", en: "e.g., Ankawa, Zhyan", ar: "مثل عنكاوة، جيان", zh: "例如：安卡瓦、日扬" })}
                   maxLength={100}
+                  onKeyDown={onEnter(handleSubmit)}
+                  enterKeyHint="done"
                   value={formData.district}
                   onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                 />
@@ -446,6 +457,8 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Input
                   placeholder={pickLang(language, { ku: "ناو یان ژمارەی شەقام", en: "Street name or number", ar: "اسم أو رقم الشارع", zh: "街道名称或号码" })}
                   maxLength={255}
+                  onKeyDown={onEnter(handleSubmit)}
+                  enterKeyHint="done"
                   value={formData.street}
                   onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                 />
@@ -498,6 +511,8 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <Input
                   placeholder={pickLang(language, { ku: "نزیک لە شوێنێکی ناسراو", en: "Near a well-known place", ar: "بالقرب من مكان معروف", zh: "靠近知名地点" })}
                   maxLength={2000}
+                  onKeyDown={onEnter(handleSubmit)}
+                  enterKeyHint="done"
                   value={formData.landmark}
                   onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
                 />

@@ -127,3 +127,51 @@ describe("print prints", () => {
     expect(uses.length, "both paths must build from it").toBeGreaterThanOrEqual(2);
   });
 });
+
+describe("Enter sends the form", () => {
+  const FORMS: [string, string][] = [
+    ["PortalDeclarePackage.tsx", "handleSubmit"],
+    ["PortalAddresses.tsx", "handleSubmit"],
+    ["PortalYuanExchange.tsx", "submitYuanOrder"],
+  ];
+
+  /**
+   * All three could only be sent by finding and tapping their button. On a
+   * phone that means dismissing the keyboard first — and the tracking
+   * declaration has one field in it, with the keyboard's own go key sitting
+   * there doing nothing.
+   */
+  for (const [file, handler] of FORMS) {
+    it(`${file} submits on Enter`, () => {
+      const src = read(file);
+      expect(src).toContain(`onKeyDown={onEnter(${handler})}`);
+      // And the key says what it does rather than showing a bare arrow.
+      expect(src, "set enterKeyHint so the phone labels the key").toMatch(/enterKeyHint="(go|send|done)"/);
+    });
+  }
+
+  /**
+   * The one that would have been a real bug: a Chinese customer typing 中文
+   * presses Enter to choose a candidate from the IME, several times per word.
+   * Without the composition check the first candidate they picked would submit
+   * the form and send a half-typed tracking number.
+   */
+  it("does not fire while an IME candidate is open", () => {
+    const src = fs.readFileSync(path.resolve(__dirname, "lib/onEnter.ts"), "utf8");
+    expect(src).toContain("isComposing");
+    expect(src, "older Safari reports composition as keyCode 229").toContain("229");
+    expect(src, "Shift+Enter stays a newline").toContain("e.shiftKey");
+  });
+
+  /**
+   * The yuan order was submitted by an inline arrow on the button. Enter had
+   * to call the same thing, or a guard added to one would go missing from the
+   * other.
+   */
+  it("the yuan order has one submit path", () => {
+    const src = read("PortalYuanExchange.tsx");
+    expect(src).toContain("const submitYuanOrder");
+    expect(src).toContain("onClick={submitYuanOrder}");
+    expect(src, "the keyboard path must check canSubmit too").toMatch(/if \(!canSubmit\) return/);
+  });
+});

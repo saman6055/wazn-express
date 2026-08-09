@@ -3,6 +3,7 @@ import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
+import { onEnter } from "@/lib/onEnter";
 import { toast } from "sonner";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
@@ -146,6 +147,8 @@ export default function PortalDeclarePackage() {
             </Label>
             <Input
               maxLength={100}
+              onKeyDown={onEnter(handleSubmit)}
+              enterKeyHint="go"
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
               placeholder={label({ ku: "بۆ نموونە: 78123456789", en: "e.g. 78123456789", ar: "مثال: 78123456789", zh: "例如：78123456789" })}

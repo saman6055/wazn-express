@@ -2,7 +2,11 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "wazn-dev",
+      "name": "wazn-live",
+      "url": "https://waznexpress.com"
+    },
+    {
+      "name": "wazn-dev-needs-reachable-db",
       "runtimeExecutable": "C:\\Program Files\\nodejs\\npm.cmd",
       "runtimeArgs": ["run", "dev"],
       "port": 3500
