@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { phoneVariants } from "@shared/phone";
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import {
   InsertUser, users,
@@ -86,11 +87,36 @@ export async function getCustomerById(id: number): Promise<Customer | undefined>
   return result[0];
 }
 
+/**
+ * Find a customer by their phone number, however either side wrote it.
+ *
+ * This compared with `=`. A customer whose number was stored as `07740427884`
+ * and who typed `7740427884` — or the reverse, or pasted `+964 774 042 7884`
+ * out of WhatsApp — matched nothing, and the portal told them "wrong phone
+ * number or password". Staff then reset the password, they still could not
+ * sign in, and the password had never been the problem.
+ *
+ * Matched on every shape the number might be stored as, rather than by
+ * rewriting the column: rows written years ago keep the form they were typed
+ * in, and nothing about signing in should depend on a migration having run.
+ *
+ * `mobileNumber` is not unique in the schema, so an exact match is preferred
+ * when one exists — otherwise a customer who typed their number exactly as
+ * stored could be handed a different account that merely normalises the same.
+ */
 export async function getCustomerByMobile(mobileNumber: string): Promise<Customer | undefined> {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(customers).where(eq(customers.mobileNumber, mobileNumber)).limit(1);
-  return result[0];
+
+  const variants = phoneVariants(mobileNumber);
+  if (variants.length === 0) return undefined;
+
+  const rows = await db.select().from(customers)
+    .where(inArray(customers.mobileNumber, variants))
+    .limit(5);
+
+  if (rows.length === 0) return undefined;
+  return rows.find(r => r.mobileNumber === mobileNumber) ?? rows[0];
 }
 
 export async function getCustomerByCode(customerCode: string): Promise<Customer | undefined> {

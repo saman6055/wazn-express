@@ -93,7 +93,7 @@ const [, setLocation] = useLocation();
                   <Input
                     id="mobile"
                     type="tel"
-                    placeholder="+964 750 123 4567"
+                    placeholder="0750 123 4567"
                     value={mobileNumber}
                     onChange={(e) => setMobileNumber(e.target.value)}
                     onInput={(e) => setMobileNumber((e.target as HTMLInputElement).value)}
@@ -101,6 +101,19 @@ const [, setLocation] = useLocation();
                     dir="ltr"
                   />
                 </div>
+                {/* Said out loud, because the number is where signing in went
+                    wrong far more often than the password did — and the old
+                    message blamed the password, so staff reset it and the
+                    customer still could not get in. Every shape works now;
+                    this only saves them wondering which one to use. */}
+                <p className="text-xs text-muted-foreground">
+                  {pickLang(language, {
+                    ku: "بە سفرەوە یان بەبێ سفر — هەردووکیان کاردەکەن (0750… یان 750…)",
+                    en: "With or without the leading zero — both work (0750… or 750…)",
+                    ar: "بصفر أو بدونه — كلاهما يعمل (0750… أو 750…)",
+                    zh: "带不带开头的 0 都可以（0750… 或 750…）",
+                  })}
+                </p>
               </div>
 
               <div className="space-y-2">
