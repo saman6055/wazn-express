@@ -9,6 +9,7 @@ import {
   isDebt,
   isInvoiceOutstanding,
   formatIqdAmount,
+  txSign,
 } from "./portalMoney";
 
 /**
@@ -232,5 +233,52 @@ describe("the dinar a customer actually pays in", () => {
     expect(formatIqdAmount(374500)).toBe("374,500 IQD");
     expect(formatIqdAmount("-374500")).toBe("374,500 IQD");
     expect(formatIqdAmount(1250000)).toBe("1,250,000 IQD");
+  });
+});
+
+describe("one sign, from the customer's side", () => {
+  /**
+   * A delivery fee read `+$2.29` in red on the classic page and `-$2.29` on
+   * the other two. Same transaction, opposite sign, depending on which skin
+   * the office had switched on — and the classic one was following the
+   * balance rather than the customer, so a plus sign sat beside money they
+   * owed, which reads as money arriving.
+   */
+  it("money the customer paid is +, money we charged is -", () => {
+    expect(txSign("CREDIT_PAYMENT")).toBe("+");
+    expect(txSign("ADJUSTMENT_CREDIT")).toBe("+");
+    expect(txSign("DEBIT_PACKAGE")).toBe("-");
+    expect(txSign("DEBIT_DELIVERY")).toBe("-");
+    // Unknown types are charges: a row we cannot classify is far more likely
+    // to be something owed than a payment we forgot to name.
+    expect(txSign(null)).toBe("-");
+    expect(txSign("SOMETHING_NEW")).toBe("-");
+  });
+
+  it("no skin writes its own", () => {
+    const SKIN_ROOT = path.resolve(__dirname, "../pages/portal");
+    for (const skin of [
+      "PortalFinancial.tsx",
+      "modern/ModernPortalFinancial.tsx",
+      "skin3/Skin3PortalFinancial.tsx",
+    ]) {
+      const src = fs.readFileSync(path.join(SKIN_ROOT, skin), "utf8");
+      expect(src, `${skin} must use txSign`).toContain("txSign(");
+      expect(src, `${skin} must not pick a sign inline`)
+        .not.toMatch(/\?\s*"[+-]"\s*:\s*"[+-]"/);
+    }
+  });
+
+  /**
+   * The exported `isCredit` takes a balance; two skins had a local alias of
+   * the same name taking a transaction type. Both were right on their own and
+   * the pair was a trap for whoever imported the real one first.
+   */
+  it("nothing shadows isCredit with a different meaning", () => {
+    const SKIN_ROOT = path.resolve(__dirname, "../pages/portal");
+    for (const skin of ["modern/ModernPortalFinancial.tsx", "skin3/Skin3PortalFinancial.tsx"]) {
+      const src = fs.readFileSync(path.join(SKIN_ROOT, skin), "utf8");
+      expect(src, `${skin} redefines isCredit`).not.toMatch(/const isCredit\s*=/);
+    }
   });
 });

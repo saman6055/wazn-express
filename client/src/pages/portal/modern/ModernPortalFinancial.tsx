@@ -15,7 +15,7 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { pickLang } from "@/lib/lang";
-import { isCreditTx, isDebt, isInvoiceOutstanding, formatIqdAmount, describeLedgerRef } from "@/lib/portalMoney";
+import { isCreditTx, isDebt, isInvoiceOutstanding, formatIqdAmount, describeLedgerRef, txSign } from "@/lib/portalMoney";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
 
@@ -61,8 +61,9 @@ export default function ModernPortalFinancial() {
   const totalPaid = useMemo(() => {
     return summary?.totalPaid ?? 0;
   }, [summary]);
-
-  const isCredit = (type: string) => isCreditTx(type);
+  // (a local `isCredit` alias used to live here, shadowing the exported one
+  // that takes a balance rather than a transaction type — a trap for the
+  // first person to import the real one.)
 
   const formatCurrency = (amount: number | string) => {
     const num = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -272,7 +273,7 @@ export default function ModernPortalFinancial() {
               <div className="space-y-2.5">
                 <AnimatePresence mode="popLayout">
                   {filteredTransactions.map((tx: any, index: number) => {
-                    const credit = isCredit(tx.transactionType);
+                    const credit = isCreditTx(tx.transactionType);
 
                     return (
                       <motion.div
@@ -352,7 +353,7 @@ export default function ModernPortalFinancial() {
                                   : "text-red-500 dark:text-red-400"
                               )}
                             >
-                              {credit ? "+" : "-"}
+                              {txSign(tx.transactionType)}
                               {formatCurrency(tx.amountUsd)}
                               {/* The dinar posted with this line, at that
                                   day's rate — not recomputed from today's. */}

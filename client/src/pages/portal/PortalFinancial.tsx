@@ -36,6 +36,7 @@ import {
   INVOICE_STATE_TONE,
   invoiceState,
   isCreditTx,
+  txSign,
   isInvoiceOutstanding,
   formatIqdAmount,
   describeLedgerRef,
@@ -211,7 +212,7 @@ const { t, language } = useLanguage();
     if (!receiptData) return;
     const { transaction, customer, companyName, generatedAt } = receiptData;
     
-    const receiptHTML = `<!DOCTYPE html><html lang="${language}" dir="${language === "ku" || language === "ar" ? "rtl" : "ltr"}"><head><meta charset="UTF-8"><title>Receipt - ${transaction.transactionNumber}</title><style>body{font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}.logo{font-size:24px;font-weight:bold;color:#1e3a5f}.receipt-title{font-size:18px;margin-top:10px}.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #ccc}.label{color:#666}.value{font-weight:500}.amount{font-size:24px;font-weight:bold;text-align:center;padding:20px 0}.amount.credit{color:#16a34a}.amount.debit{color:#dc2626}.footer{text-align:center;margin-top:30px;font-size:12px;color:#666}.barcode{text-align:center;font-family:monospace;font-size:14px;letter-spacing:2px;margin:20px 0}</style></head><body><div class="header"><div class="logo">📦 ${companyName}</div><div class="receipt-title">${pickLang(language, { ku: "پسووڵەی پارەدان", en: "Payment Receipt", ar: "إيصال دفع", zh: "付款收据" })}</div></div><div class="info-row"><span class="label">${pickLang(language, { ku: "ژمارەی پسووڵە", en: "Receipt #", ar: "رقم الإيصال", zh: "收据编号" })}</span><span class="value">${transaction.transactionNumber}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</span><span class="value">${formatPortalDate(transaction.createdAt, language)}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</span><span class="value">${customer.fullName}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "کۆدی کڕیار", en: "Customer Code", ar: "رمز العميل", zh: "客户编号" })}</span><span class="value">${customer.customerCode || "-"}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</span><span class="value">${getTransactionTypeName(transaction.transactionType)}</span></div><div class="amount ${isCreditTx(transaction.transactionType) ? "credit" : "debit"}">${isCreditTx(transaction.transactionType) ? "-" : "+"}${Number(transaction.amountUsd).toFixed(2)}</div>${formatIqdAmount(transaction.amountIqd) ? `<div style="text-align:center;font-size:14px;color:#64748b;margin-top:-12px;padding-bottom:12px">${formatIqdAmount(transaction.amountIqd)}</div>` : ""}<div class="barcode">${transaction.transactionNumber}</div><div class="footer"><p>${pickLang(language, { ku: "سوپاس بۆ متمانەت", en: "Thank you for your business!", ar: "شكرًا لثقتك بنا!", zh: "感谢您的惠顾！" })}</p><p>${pickLang(language, { ku: "دروستکرا", en: "Generated", ar: "أُنشئ", zh: "生成" })}: ${formatPortalDate(generatedAt, language)}</p></div></body></html>`;
+    const receiptHTML = `<!DOCTYPE html><html lang="${language}" dir="${language === "ku" || language === "ar" ? "rtl" : "ltr"}"><head><meta charset="UTF-8"><title>Receipt - ${transaction.transactionNumber}</title><style>body{font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}.logo{font-size:24px;font-weight:bold;color:#1e3a5f}.receipt-title{font-size:18px;margin-top:10px}.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #ccc}.label{color:#666}.value{font-weight:500}.amount{font-size:24px;font-weight:bold;text-align:center;padding:20px 0}.amount.credit{color:#16a34a}.amount.debit{color:#dc2626}.footer{text-align:center;margin-top:30px;font-size:12px;color:#666}.barcode{text-align:center;font-family:monospace;font-size:14px;letter-spacing:2px;margin:20px 0}</style></head><body><div class="header"><div class="logo">📦 ${companyName}</div><div class="receipt-title">${pickLang(language, { ku: "پسووڵەی پارەدان", en: "Payment Receipt", ar: "إيصال دفع", zh: "付款收据" })}</div></div><div class="info-row"><span class="label">${pickLang(language, { ku: "ژمارەی پسووڵە", en: "Receipt #", ar: "رقم الإيصال", zh: "收据编号" })}</span><span class="value">${transaction.transactionNumber}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</span><span class="value">${formatPortalDate(transaction.createdAt, language)}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</span><span class="value">${customer.fullName}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "کۆدی کڕیار", en: "Customer Code", ar: "رمز العميل", zh: "客户编号" })}</span><span class="value">${customer.customerCode || "-"}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</span><span class="value">${getTransactionTypeName(transaction.transactionType)}</span></div><div class="amount ${isCreditTx(transaction.transactionType) ? "credit" : "debit"}">${txSign(transaction.transactionType)}${Number(transaction.amountUsd).toFixed(2)}</div>${formatIqdAmount(transaction.amountIqd) ? `<div style="text-align:center;font-size:14px;color:#64748b;margin-top:-12px;padding-bottom:12px">${formatIqdAmount(transaction.amountIqd)}</div>` : ""}<div class="barcode">${transaction.transactionNumber}</div><div class="footer"><p>${pickLang(language, { ku: "سوپاس بۆ متمانەت", en: "Thank you for your business!", ar: "شكرًا لثقتك بنا!", zh: "感谢您的惠顾！" })}</p><p>${pickLang(language, { ku: "دروستکرا", en: "Generated", ar: "أُنشئ", zh: "生成" })}: ${formatPortalDate(generatedAt, language)}</p></div></body></html>`;
     
     const blob = new Blob([receiptHTML], { type: "text/html" });
     const url = URL.createObjectURL(blob);
@@ -551,7 +552,7 @@ const { t, language } = useLanguage();
                       </div>
                       <div className="text-end">
                       <p className={cn("font-bold", colors.amount)}>
-                        {isCreditTx(tx.transactionType) ? "-" : "+"}
+                        {txSign(tx.transactionType)}
                         {formatCurrency(Number(tx.amountUsd))}
                       </p>
                       {/* The dinar posted with this line, at that day's rate. */}
@@ -653,7 +654,7 @@ const { t, language } = useLanguage();
                         
                         <div className="flex items-center gap-2">
                           <p className={cn("text-lg font-bold", colors.amount)}>
-                            {isCreditTx(tx.transactionType) ? "-" : "+"}
+                            {txSign(tx.transactionType)}
                             {formatCurrency(Number(tx.amountUsd))}
                           </p>
                           {tx.invoiceId && (
@@ -732,7 +733,7 @@ const { t, language } = useLanguage();
                     ? "text-emerald-500" 
                     : "text-red-500"
                 )}>
-                  {isCreditTx(receiptData.transaction.transactionType) ? "-" : "+"}
+                  {txSign(receiptData.transaction.transactionType)}
                   {formatCurrency(Number(receiptData.transaction.amountUsd))}
                 </p>
               </div>

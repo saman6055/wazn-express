@@ -238,3 +238,25 @@ export function describeLedgerRef(
 
   return raw;
 }
+
+/**
+ * The sign in front of an amount on the customer's statement.
+ *
+ * Money the customer paid us is `+`; money we charged them is `-`. That is
+ * the customer's own point of view — a delivery fee is money leaving their
+ * pocket — and it is what the two newer skins already did.
+ *
+ * The classic page did the opposite: `isCreditTx ? "-" : "+"`, following the
+ * balance rather than the customer, so a delivery fee read `+$2.29` in red.
+ * A plus sign beside money someone owes reads as money arriving. The same
+ * transaction carried the opposite sign depending on which skin the office
+ * had switched on.
+ *
+ * Note this is deliberately NOT the sign of the balance. A positive balance
+ * means the customer owes us and a negative one means we owe them, which is
+ * the ordinary receivables convention and is correct — but the balance says
+ * so in words ("قەرزت هەیە"), so nothing has to be inferred from a sign.
+ */
+export function txSign(transactionType: string | null | undefined): "+" | "-" {
+  return isCreditTx(transactionType) ? "+" : "-";
+}
