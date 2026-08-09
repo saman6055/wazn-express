@@ -576,6 +576,7 @@ export default function Skin3PortalShipments() {
                           departureDate={batch.departureDate}
                           estimatedArrival={batch.estimatedArrival}
                           actualArrival={batch.actualArrival}
+                          statusDates={(batch as any).statusDates}
                           language={language}
                           isDark={isDark}
                         />

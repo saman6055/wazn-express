@@ -27,6 +27,18 @@ export interface BatchJourneyTimelineProps {
   departureDate?: string | Date | null;
   estimatedArrival?: string | Date | null;
   actualArrival?: string | Date | null;
+  /**
+   * When the batch first reached each status, keyed by the status name —
+   * `preparing`, `in_transit`, `arrived`, `customs`, `at_depot`, `delivered`.
+   *
+   * A batch only carries three timestamps of its own, so the last three steps
+   * could never be dated: a shipment that had reached the customer showed six
+   * green steps and one date, the oldest of them. These come from
+   * batchStatusHistory, which starts from the day it was switched on — an
+   * older batch has none and falls back to the three columns exactly as
+   * before.
+   */
+  statusDates?: Record<string, string | Date | null | undefined>;
   language: string;
   isDark?: boolean;
   className?: string;
@@ -90,6 +102,7 @@ export function BatchJourneyTimeline({
   departureDate,
   estimatedArrival,
   actualArrival,
+  statusDates,
   language,
   isDark = false,
   className,
@@ -98,43 +111,61 @@ export function BatchJourneyTimeline({
   const current = STAGE_INDEX[status] ?? 0;
   const TransitIcon: LucideIcon = shippingType === "sea" ? Ship : Plane;
 
+  /**
+   * The recorded move first, the batch's own column second.
+   *
+   * batchStatusHistory says when the shipment actually reached a stage, and
+   * covers all six. The three columns — created, departed, arrived — are what
+   * existed before it, and they stay as the fallback so a batch from before
+   * the history started looks exactly as it did.
+   */
+  const dateFor = (
+    statusKey: string,
+    fallback?: string | Date | null,
+  ): { date: string | null; at: number | null } => {
+    const value = statusDates?.[statusKey] ?? fallback ?? null;
+    return { date: fmtDate(value, language), at: toTime(value) };
+  };
+
   const stages: { icon: LucideIcon; label: L10n; date: string | null; at: number | null }[] =
     dropBackwardsDates([
       {
         icon: Warehouse,
         label: STATUS_LABEL.preparing,
-        date: fmtDate(createdAt, language),
-        at: toTime(createdAt),
+        ...dateFor("preparing", createdAt),
       },
       {
         icon: TransitIcon,
         label: STATUS_LABEL.in_transit,
-        date: fmtDate(departureDate, language),
-        at: toTime(departureDate),
+        // departureDate is typed by staff and createdAt is stamped by the
+        // system, which is how the stepper came to read "in China warehouse,
+        // 28 July → in transit, 1 February". A recorded move beats both: it is
+        // the moment the status actually changed.
+        ...dateFor("in_transit", departureDate),
       },
       {
         icon: PackageCheck,
         label: STATUS_LABEL.arrived,
-        date: fmtDate(actualArrival, language),
-        at: toTime(actualArrival),
+        ...dateFor("arrived", actualArrival),
       },
       {
         icon: Landmark,
         label: STATUS_LABEL.customs,
-        date: null,
-        at: null,
+        // No column ever held these three. Before the history they were blank
+        // on every shipment, including ones already in the customer's hands.
+        ...dateFor("customs"),
       },
       {
         icon: Warehouse,
         label: STATUS_LABEL.at_depot,
-        date: null,
-        at: null,
+        ...dateFor("at_depot"),
       },
       {
         icon: CheckCircle2,
         label: STATUS_LABEL.delivered,
-        date: null,
-        at: null,
+        // `closed` is the same end of the road as `delivered`; whichever was
+        // recorded is when the customer got their goods.
+        ...dateFor("delivered", statusDates?.closed),
       },
     ]);
 

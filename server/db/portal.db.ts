@@ -4,6 +4,7 @@ import { chargeableWeight, isAirShipping } from '@shared/chargeableWeight';
 import { getVolumetricDivisor } from './settings.db';
 import { getCustomerAccountByCustomerId } from './finance.db';
 import { selfOrderWhere } from './selfOrder.filter';
+import { getBatchStatusTimestamps } from './batches.db';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -184,6 +185,19 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
     sizeByBatch.set(p.batchId, acc);
   }
 
+  /**
+   * When each batch reached each stage.
+   *
+   * A batch carries three timestamps of its own — created, departed, arrived
+   * — so the customer's stepper could date the first three steps and never
+   * customs, the Erbil depot or delivery. batchStatusHistory records the rest
+   * from the day it started; older batches simply have none, and their
+   * steppers fall back to the three columns exactly as before.
+   *
+   * One query for the whole page, not one per card.
+   */
+  const statusDatesByBatch = await getBatchStatusTimestamps(batchIds);
+
   return batchRows
     .map(batch => {
       const size = sizeByBatch.get(batch.id) ?? { kg: 0, cbm: 0 };
@@ -194,6 +208,8 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
         /** This customer's own total, in the unit this batch is billed by. */
         customerChargeable: Number((bySea ? size.cbm : size.kg).toFixed(bySea ? 3 : 2)),
         customerUnit: (bySea ? "cbm" : "kg") as "cbm" | "kg",
+        /** Keyed by batch status: preparing, in_transit, arrived, customs, … */
+        statusDates: statusDatesByBatch.get(batch.id) ?? {},
       };
     })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
