@@ -83,3 +83,52 @@ describe("the login looks a customer up by the number, not the spelling", () => 
     expect(page).toMatch(/0750….*750…/s);
   });
 });
+
+describe("both reset screens set the same password", () => {
+  const SHARED = fs.readFileSync(path.resolve(__dirname, "../shared/resetPassword.ts"), "utf8");
+  const CENTRE = fs.readFileSync(path.resolve(__dirname, "../client/src/pages/PortalCenter.tsx"), "utf8");
+  const LIST = fs.readFileSync(path.resolve(__dirname, "../client/src/pages/Customers.tsx"), "utf8");
+
+  /**
+   * There are two places staff can reset a customer's password. The one thing
+   * worse than a weak default is two different weak defaults, with staff
+   * reading out whichever one they last saw — which is exactly the confusion
+   * that made this look like a broken password feature in the first place.
+   */
+  it("the default lives in one place", () => {
+    expect(SHARED).toContain('export const DEFAULT_RESET_PASSWORD = "123456"');
+    for (const [name, src] of [["portal centre", CENTRE], ["customers list", LIST]] as const) {
+      expect(src, `${name} must import it`).toContain("DEFAULT_RESET_PASSWORD");
+      expect(src, `${name} must not restate it`).not.toMatch(/DEFAULT_RESET_PASSWORD\s*=\s*"/);
+    }
+  });
+
+  it("both screens start with it filled in", () => {
+    expect(CENTRE).toContain("useState(DEFAULT_RESET_PASSWORD)");
+    expect(LIST).toContain("defaultValue={DEFAULT_RESET_PASSWORD}");
+  });
+
+  /**
+   * Six digits is the shortest the server accepts. If that rule ever
+   * tightens, this default stops working and staff find out by a reset
+   * failing — so the two are pinned together here.
+   */
+  it("the default satisfies the server's own minimum", () => {
+    const portalCentre = fs.readFileSync(
+      path.resolve(__dirname, "routers/portalCenter.router.ts"), "utf8");
+    const customers = fs.readFileSync(
+      path.resolve(__dirname, "routers/customers.router.ts"), "utf8");
+    expect(portalCentre).toMatch(/newPassword: z\.string\(\)\.min\(6\)/);
+    expect(customers).toMatch(/newPassword: z\.string\(\)\.min\(6\)/);
+    expect("123456".length).toBeGreaterThanOrEqual(6);
+  });
+
+  /**
+   * A password that cannot be read back is a second phone call. Staff have to
+   * be able to see what they are about to read out.
+   */
+  it("the customers list shows the password rather than masking it", () => {
+    const at = LIST.indexOf('name="newPassword"');
+    expect(LIST.slice(at - 200, at + 200)).not.toContain('type="password"');
+  });
+});

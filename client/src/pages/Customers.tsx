@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { trpc } from "@/lib/trpc";
+import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
 import { useCustomers, useFilteredCustomers } from "@/hooks/useCustomers";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
@@ -1327,7 +1328,11 @@ const [, setLocation] = useLocation();
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label htmlFor="newPassword">{t("customers.newPassword")}</Label>
-                  <Input id="newPassword" name="newPassword" type="password" required minLength={6} className="h-11" />
+                  {/* Pre-filled with the office default and shown rather than
+                      masked: this is read down the phone to a customer who is
+                      already stuck, and a reset nobody can read back is a
+                      second phone call. */}
+                  <Input id="newPassword" name="newPassword" defaultValue={DEFAULT_RESET_PASSWORD} type="text" required minLength={6} className="h-11" />
                 </div>
               </div>
               <DialogFooter>

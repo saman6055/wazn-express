@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1434,6 +1435,7 @@ function CalcSettingsCard({ p }: { p: (v: L) => string }) {
 // Admin security & access controls for one customer. Passwords are one-way
 // hashed and can't be read back — control works by RESETTING to a new value
 // the admin sets and sees here (copy / WhatsApp to the customer).
+
 function genPassword(): string {
   // Readable, no ambiguous chars (0/O, 1/l), always mixes letters + digits.
   const letters = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -1449,7 +1451,8 @@ function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customer
   const utils = trpc.useUtils();
   const { data: sec, isLoading } = trpc.portalCenter.getCustomerSecurity.useQuery({ customerId });
 
-  const [newPw, setNewPw] = useState("");
+  // Pre-filled, so the common case is one tap on Save.
+  const [newPw, setNewPw] = useState(DEFAULT_RESET_PASSWORD);
   const [showPw, setShowPw] = useState(true);
   const [copied, setCopied] = useState(false);
   const [mobile, setMobile] = useState("");
