@@ -19,6 +19,7 @@
  * The rules are small. Keeping them in one file is what stops them drifting
  * again; portal-audit.test.ts fails if a screen re-implements them.
  */
+import { isChargeTx, isPaymentTx } from "@shared/ledgerTypes";
 
 /** Positive means the customer owes us. Set by finance.db: a payment does
  *  `currentBalanceUsd - amountUsd`, and the debtors report counts `> 0`. */
@@ -47,8 +48,19 @@ export function isCredit(balanceUsd: number | null | undefined): boolean {
  * shown to the customer as another charge.
  */
 export function isCreditTx(transactionType: string | null | undefined): boolean {
-  const t = String(transactionType ?? "").toUpperCase();
-  return t.startsWith("CREDIT_") || t.endsWith("_CREDIT");
+  return isPaymentTx(transactionType);
+}
+
+/**
+ * Money the customer owes — the other half, which never had a name.
+ *
+ * Only the credit side was ever given a rule, so every screen that needed the
+ * debit side wrote its own. The classic money page wrote `startsWith("DEBIT_")`
+ * and lost `ADJUSTMENT_DEBIT`, which begins with neither. Asking "is it a
+ * charge" directly is the only version that cannot drift from its opposite.
+ */
+export function isDebitTx(transactionType: string | null | undefined): boolean {
+  return isChargeTx(transactionType);
 }
 
 export type InvoiceState = "paid" | "unpaid" | "partial" | "cancelled" | "refunded";

@@ -338,6 +338,23 @@ export const customerPortalRouter = router({
       return db.getCustomerFinancialSummary(customerId);
     }),
     
+    /**
+     * Paid and charged per month, counted over the whole period.
+     *
+     * The page used to derive this in the browser from the fifty most recent
+     * transactions, so an active customer's monthly total and six-month chart
+     * were short by however much did not fit — beside a balance that was
+     * right. See getCustomerMonthlyMoney.
+     */
+    getMyMonthlyMoney: protectedProcedure
+      .input(z.object({ months: z.number().int().min(1).max(24).default(6) }).optional())
+      .query(async ({ ctx, input }) => {
+        const customerId = ctx.user.isCustomer ? ctx.user.id :
+          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        if (!customerId) return [];
+        return db.getCustomerMonthlyMoney(customerId, input?.months ?? 6);
+      }),
+
     // Get transaction history
     getMyTransactions: protectedProcedure
       .input(z.object({ limit: z.number().optional() }).optional())
@@ -913,13 +930,11 @@ export const customerPortalRouter = router({
       await db.markAllNotificationsAsRead(customerId);
     }),
     
-    getUnreadNotificationCount: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : 
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return 0;
-      return db.getUnreadNotificationCount(customerId);
-    }),
-    
+    // getUnreadNotificationCount was a second endpoint over a second function
+    // that counted exactly the same rows as getNotificationCount — the same
+    // customer, the same `isRead = false`. Two copies of one number is how the
+    // bell and the page came to disagree once already. There is one now.
+
     // ============ ADDRESSES ============
     getMyAddresses: protectedProcedure.query(async ({ ctx }) => {
       const customerId = ctx.user.isCustomer ? ctx.user.id : 

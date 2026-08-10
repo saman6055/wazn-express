@@ -93,6 +93,11 @@ const { t, language } = useLanguage();
     { enabled: !!selectedTransaction }
   );
   const { data: invoices, isLoading: invoicesLoading } = trpc.customerPortal.getMyInvoices.useQuery();
+  // The monthly figures come from the server, counted over the whole period.
+  // Deriving them from `transactions` meant deriving them from the fifty rows
+  // above, so a customer with a busy month was shown a total that was simply
+  // short — beside a balance that was right.
+  const { data: monthlyMoney } = trpc.customerPortal.getMyMonthlyMoney.useQuery({ months: 6 });
   // Company info for the invoice/receipt header — via the PUBLIC
   // settings.getCompanyInfo endpoint. The old trpc.settings.list is a
   // staffProcedure: a portal customer hitting it threw FORBIDDEN, which the
@@ -129,42 +134,31 @@ const { t, language } = useLanguage();
     }
   }, [balance]);
 
-  // Calculate monthly stats
+  // This month, from the server's count of the whole month.
   const monthlyStats = useMemo(() => {
-    if (!transactions) return { payments: 0, charges: 0, count: 0 };
-    const now = new Date();
-    const thisMonth = transactions.filter(tx => {
-      const txDate = new Date(tx.createdAt);
-      return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
-    });
-    return {
-      payments: thisMonth.filter(tx => isCreditTx(tx.transactionType)).reduce((sum, tx) => sum + Number(tx.amountUsd), 0),
-      charges: thisMonth.filter(tx => tx.transactionType.startsWith("DEBIT_")).reduce((sum, tx) => sum + Number(tx.amountUsd), 0),
-      count: thisMonth.length
-    };
-  }, [transactions]);
+    const current = monthlyMoney?.[monthlyMoney.length - 1];
+    if (!current) return { payments: 0, charges: 0, count: 0 };
+    return { payments: current.payments, charges: current.charges, count: current.count };
+  }, [monthlyMoney]);
 
-  // Last 6 months chart data
+  // Last 6 months chart data. The buckets are the server's; only the month's
+  // name is decided here, because only here do we know the customer's language.
   const chartData = useMemo(() => {
-    if (!transactions) return [];
-    const months: { month: string; payments: number; charges: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      // The chart axis wants a month, not a date.
-      const monthName = new Intl.DateTimeFormat(language === "zh" ? "zh-CN" : language === "ar" ? "ar" : "en-GB", { month: "short" }).format(date);
-      const monthTxs = transactions.filter(tx => {
-        const txDate = new Date(tx.createdAt);
-        return txDate.getMonth() === date.getMonth() && txDate.getFullYear() === date.getFullYear();
-      });
-      months.push({
-        month: monthName,
-        payments: monthTxs.filter(tx => isCreditTx(tx.transactionType)).reduce((sum, tx) => sum + Number(tx.amountUsd), 0),
-        charges: monthTxs.filter(tx => tx.transactionType.startsWith("DEBIT_")).reduce((sum, tx) => sum + Number(tx.amountUsd), 0)
-      });
-    }
-    return months;
-  }, [transactions]);
+    if (!monthlyMoney) return [];
+    const fmt = new Intl.DateTimeFormat(
+      language === "zh" ? "zh-CN" : language === "ar" ? "ar" : "en-GB",
+      { month: "short" },
+    );
+    return monthlyMoney.map(m => {
+      const [year, month] = m.ym.split("-").map(Number);
+      return {
+        // Day 1 of the month, so naming it can never roll into the next one.
+        month: fmt.format(new Date(year, month - 1, 1)),
+        payments: m.payments,
+        charges: m.charges,
+      };
+    });
+  }, [monthlyMoney, language]);
 
   const maxChartValue = useMemo(() => {
     return Math.max(...chartData.map(d => Math.max(d.payments, d.charges)), 1);

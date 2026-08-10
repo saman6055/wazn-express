@@ -63,7 +63,6 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   // moment something arrives, without waiting for a page refresh.
   const refreshBadges = () => {
     utils.customerPortal.getNotificationCount.invalidate();
-    utils.customerPortal.getUnreadNotificationCount.invalidate();
     utils.customerPortal.getUnreadMessageCount.invalidate();
   };
   usePortalSSE({

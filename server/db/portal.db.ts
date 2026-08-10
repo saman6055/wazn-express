@@ -1,6 +1,7 @@
 import { getDb } from './connection';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { chargeableWeight, isAirShipping } from '@shared/chargeableWeight';
+import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from '@shared/ledgerTypes';
 import { getVolumetricDivisor } from './settings.db';
 import { getCustomerAccountByCustomerId } from './finance.db';
 import { selfOrderWhere } from './selfOrder.filter';
@@ -519,6 +520,65 @@ export async function getCustomerFinancialSummary(customerId: number) {
     totalPaid: totalPaidData[0]?.total || 0,
     status: account.accountStatus
   };
+}
+
+/**
+ * What the customer paid and was charged, month by month.
+ *
+ * The money page used to work this out in the browser from the fifty most
+ * recent transactions — and then drew a six-month chart with them. Fifty is a
+ * couple of busy months for a real customer, so the older columns were simply
+ * short, the monthly total was wrong, and nothing on the page said so. The
+ * balance beside it came from the account and was right, which left the page
+ * quietly disagreeing with itself.
+ *
+ * Counted in SQL over the whole period instead, so the answer does not depend
+ * on how much of the ledger somebody happened to download. Months are built
+ * here rather than in the browser because the browser was walking backwards
+ * with `setMonth(getMonth() - i)`, which on the 29th to the 31st skips a month
+ * — 31 March minus one month is 3 March — so the chart repeated a month and
+ * dropped another on those days.
+ */
+export async function getCustomerMonthlyMoney(customerId: number, months = 6) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const account = await getCustomerAccountByCustomerId(customerId);
+  if (!account) return [];
+
+  // Anchored to the first of the month so the arithmetic cannot overflow.
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (months - 1), 1));
+
+  const rows = await db.select({
+    ym: sql<string>`DATE_FORMAT(${ledgerTransactions.createdAt}, '%Y-%m')`,
+    payments: sql<number>`COALESCE(SUM(CASE WHEN ${inArray(ledgerTransactions.transactionType, [...PAYMENT_TX_TYPES])} THEN ${ledgerTransactions.amountUsd} ELSE 0 END), 0)`,
+    charges: sql<number>`COALESCE(SUM(CASE WHEN ${inArray(ledgerTransactions.transactionType, [...CHARGE_TX_TYPES])} THEN ${ledgerTransactions.amountUsd} ELSE 0 END), 0)`,
+    count: sql<number>`COUNT(*)`,
+  }).from(ledgerTransactions)
+    .where(and(
+      eq(ledgerTransactions.accountId, account.id),
+      gte(ledgerTransactions.createdAt, start),
+    ))
+    .groupBy(sql`DATE_FORMAT(${ledgerTransactions.createdAt}, '%Y-%m')`);
+
+  const found = new Map(rows.map(r => [r.ym, r]));
+
+  // Every month in the window, including the empty ones — a gap in the chart
+  // must read as "nothing happened", not as a month that was never asked about.
+  const out: { ym: string; payments: number; charges: number; count: number }[] = [];
+  for (let i = 0; i < months; i++) {
+    const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + i, 1));
+    const ym = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    const hit = found.get(ym);
+    out.push({
+      ym,
+      payments: Number(hit?.payments ?? 0),
+      charges: Number(hit?.charges ?? 0),
+      count: Number(hit?.count ?? 0),
+    });
+  }
+  return out;
 }
 
 // Get customer's transaction history from unified ledger system
@@ -1139,19 +1199,10 @@ export async function markAllNotificationsAsRead(customerId: number): Promise<vo
     ));
 }
 
-export async function getUnreadNotificationCount(customerId: number): Promise<number> {
-  const db = await getDb();
-  if (!db) return 0;
-  
-  const [result] = await db.select({ count: count() })
-    .from(customerNotifications)
-    .where(and(
-      eq(customerNotifications.customerId, customerId),
-      eq(customerNotifications.isRead, false)
-    ));
-  
-  return result?.count || 0;
-}
+// getUnreadNotificationCount lived here and counted the same rows as
+// getCustomerNotificationCount above — same customer, same `isRead = false`.
+// Use that one. Two functions answering one question is how the bell and the
+// notifications page came to show different numbers once already.
 
 
 // ============ CUSTOMER PUSH SUBSCRIPTIONS ============

@@ -6,14 +6,10 @@ import { packages, users, customers, ledgerTransactions, customerAccounts, payme
 import { sql, count, eq, desc, asc, gte, lte, and, sum, inArray } from 'drizzle-orm';
 
 // Ledger transaction-type buckets for the statement's "type" filter.
-const CHARGE_TX_TYPES = [
-  'DEBIT_PACKAGE', 'DEBIT_FULL_PACKAGE', 'DEBIT_PURCHASE_REQUEST', 'DEBIT_COMMISSION',
-  'DEBIT_SERVICE', 'DEBIT_PENALTY', 'DEBIT_OTHER', 'ADJUSTMENT_DEBIT',
-] as const;
-const PAYMENT_TX_TYPES = [
-  'CREDIT_PAYMENT', 'CREDIT_DEPOSIT', 'CREDIT_REFUND', 'CREDIT_DISCOUNT',
-  'CREDIT_OTHER', 'ADJUSTMENT_CREDIT',
-] as const;
+// These were written out here, correctly, while the classic money page split
+// the same enum by hand and lost ADJUSTMENT_DEBIT. Both now read the one list
+// so the statement and the screen cannot print different totals.
+import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from "@shared/ledgerTypes";
 
 export type StatementTxFilter = 'all' | 'charges' | 'payments';
 

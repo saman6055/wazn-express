@@ -20,6 +20,9 @@ export default defineConfig({
       "server/**/*.test.ts",
       "server/**/*.spec.ts",
       "client/src/**/*.test.ts",
+      // Rules both sides depend on live in shared/. Without this line a test
+      // written beside one of them is never run, and reads as passing.
+      "shared/**/*.test.ts",
     ],
   },
 });
