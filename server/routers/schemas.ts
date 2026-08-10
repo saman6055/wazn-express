@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-export const phoneSchema = z.string().regex(/^[+]?[\d\s-]{7,20}$/).max(20);
+// `\d` is ASCII-only, so a keyboard set to Arabic or Kurdish producing
+// ٠٧٧٤٠٤٢٧٨٨٤ was refused here — before the lookup that now understands it
+// ever ran, and with a message about the number being invalid when it was not.
+export const phoneSchema = z.string().regex(/^[+]?[\d٠-٩۰-۹\s-]{7,20}$/).max(20);
 export const emailSchema = z.string().email().max(255);
 export const idSchema = z.number().int().positive();
 export const amountSchema = z.number().min(0).max(999999999);

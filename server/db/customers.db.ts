@@ -1,5 +1,5 @@
 import { getDb } from './connection';
-import { phoneVariants } from "@shared/phone";
+import { normalizePhone, phoneVariants } from "@shared/phone";
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import {
   InsertUser, users,
@@ -108,15 +108,69 @@ export async function getCustomerByMobile(mobileNumber: string): Promise<Custome
   const db = await getDb();
   if (!db) return undefined;
 
+  const bare = normalizePhone(mobileNumber);
   const variants = phoneVariants(mobileNumber);
-  if (variants.length === 0) return undefined;
+  if (!bare || variants.length === 0) return undefined;
 
+  // The shapes a row is usually stored in, straight off the index.
   const rows = await db.select().from(customers)
     .where(inArray(customers.mobileNumber, variants))
     .limit(5);
+  if (rows.length > 0) return pickAccount(rows, mobileNumber);
 
+  // Nothing — so the row is stored in a shape the list above did not predict.
+  // Reduce the column itself and compare on that. See storedDigits().
+  const loose = await db.select().from(customers)
+    .where(sql`${storedDigits()} LIKE ${`%${bare}`}`)
+    .limit(10);
+
+  // The SQL is a net, not the verdict: `%7740427884` also catches a longer
+  // number ending in those digits. normalizePhone decides, so both sides are
+  // judged by one rule and cannot drift apart.
+  return pickAccount(loose.filter(r => normalizePhone(r.mobileNumber) === bare), mobileNumber);
+}
+
+/**
+ * The stored column reduced to bare digits, in SQL.
+ *
+ * Matching a list of predicted shapes only ever finds the shapes that were
+ * predicted. A row holding `0774 042 7884`, or `07740427884 ` with a trailing
+ * space out of an import, or `٠٧٧٤٠٤٢٧٨٨٤` from an Arabic source, is the same
+ * number — and in the admin list all four look identical, which is why this
+ * kept being read as a broken password rather than a lookup that missed.
+ *
+ * Long, but generated rather than typed, and it only runs when the indexed
+ * lookup found nobody. The alternative is loading every customer on a login.
+ */
+function storedDigits(): SQL {
+  let expr: SQL = sql`${customers.mobileNumber}`;
+  // Whitespace and the punctuation of an international number.
+  for (const ch of [" ", " ", "\t", "-", "(", ")", "+", "."]) {
+    expr = sql`REPLACE(${expr}, ${ch}, '')`;
+  }
+  // Arabic-Indic and Extended Arabic-Indic digits, folded to ASCII.
+  for (let d = 0; d < 10; d++) {
+    expr = sql`REPLACE(${expr}, ${String.fromCharCode(0x0660 + d)}, ${String(d)})`;
+    expr = sql`REPLACE(${expr}, ${String.fromCharCode(0x06f0 + d)}, ${String(d)})`;
+  }
+  return expr;
+}
+
+/**
+ * Which account, when more than one row holds the same number.
+ *
+ * mobileNumber is not unique in the schema. Preferring the exact match keeps a
+ * customer who typed their number precisely as stored from being handed a
+ * different account that merely normalises the same. Beyond that, prefer a row
+ * that could actually sign in: staff reset the password on the row they can
+ * see, and quietly checking a different one is the failure that reads as
+ * "the reset did nothing".
+ */
+function pickAccount(rows: Customer[], mobileNumber: string): Customer | undefined {
   if (rows.length === 0) return undefined;
-  return rows.find(r => r.mobileNumber === mobileNumber) ?? rows[0];
+  return rows.find(r => r.mobileNumber === mobileNumber)
+    ?? rows.find(r => r.isActive && !!r.passwordHash)
+    ?? rows[0];
 }
 
 export async function getCustomerByCode(customerCode: string): Promise<Customer | undefined> {

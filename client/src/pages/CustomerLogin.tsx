@@ -13,7 +13,7 @@ import { pickLang } from "@/lib/lang";
 
 // Must mirror the server's phoneSchema so we can fail with a friendly,
 // localized message instead of surfacing a raw zod pattern error.
-const PHONE_RE = /^[+]?[\d\s-]{7,20}$/;
+const PHONE_RE = /^[+]?[\d٠-٩۰-۹\s-]{7,20}$/;
 
 export default function CustomerLogin() {
     const { t, language } = useTranslation();

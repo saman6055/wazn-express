@@ -19,9 +19,25 @@
  * and dashes people put in — is decoration that varies by who is typing.
  */
 
+/**
+ * Arabic-Indic digits, folded to the ASCII ones.
+ *
+ * `٠٧٧٤٠٤٢٧٨٨٤` is the same number as `07740427884` and looks the same to
+ * anyone reading it. A phone keyboard set to Arabic or Kurdish can produce
+ * them, and rows imported from an Arabic source hold them. `\D` counts them
+ * as punctuation and strips them, so a number written that way reduced to an
+ * empty string and matched nobody at all.
+ */
+function toAsciiDigits(input: string): string {
+  return input.replace(/[٠-٩۰-۹]/g, ch => {
+    const code = ch.charCodeAt(0);
+    return String(code - (code >= 0x06f0 ? 0x06f0 : 0x0660));
+  });
+}
+
 /** Digits only, with the country code and trunk zero taken off. */
 export function normalizePhone(input: string | null | undefined): string {
-  let digits = String(input ?? "").replace(/\D/g, "");
+  let digits = toAsciiDigits(String(input ?? "")).replace(/\D/g, "");
   if (!digits) return "";
 
   // 00964… and 964… both mean the same country.

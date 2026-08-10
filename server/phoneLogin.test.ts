@@ -33,6 +33,31 @@ describe("a phone number is the same number however it is written", () => {
     expect(samePhone("07740427884", "07740427885")).toBe(false);
   });
 
+  /**
+   * The same number, typed on a keyboard set to Arabic or Kurdish. It looks
+   * identical written down, and `\D` counted the digits as punctuation and
+   * stripped them — so the number reduced to nothing and matched nobody.
+   */
+  it("reads Arabic-Indic digits as digits", () => {
+    expect(normalizePhone("٠٧٧٤٠٤٢٧٨٨٤")).toBe("7740427884");
+    expect(normalizePhone("۰۷۷۴۰۴۲۷۸۸۴")).toBe("7740427884");
+    expect(samePhone("٠٧٧٤٠٤٢٧٨٨٤", "07740427884")).toBe(true);
+  });
+
+  it("the login screen and the server agree on what a number may contain", () => {
+    const schemas = fs.readFileSync(path.resolve(__dirname, "routers/schemas.ts"), "utf8");
+    const page = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/CustomerLogin.tsx"), "utf8");
+    // A number the server would accept must not be refused by the screen in
+    // front of it — that refusal never reaches the lookup, so no fix below
+    // can rescue it.
+    const pattern = /\/\^\[\+\]\?\[[^\]]+\]\{7,20\}\$\//;
+    const server = schemas.match(pattern)?.[0];
+    expect(server, "phoneSchema must still be a single pattern").toBeTruthy();
+    expect(page, "CustomerLogin must mirror it").toContain(server!);
+    expect(server).toContain("٠-٩");
+  });
+
   it("never matches on nothing", () => {
     // Two empty numbers are not the same customer.
     expect(samePhone("", "")).toBe(false);
@@ -71,6 +96,45 @@ describe("the login looks a customer up by the number, not the spelling", () => 
    */
   it("prefers the row that matches exactly", () => {
     expect(fn).toContain("rows.find(r => r.mobileNumber === mobileNumber)");
+  });
+
+  /**
+   * The variant list can only find shapes it predicted. A row holding
+   * `0774 042 7884`, or `07740427884 ` with a trailing space from an import,
+   * or `٠٧٧٤٠٤٢٧٨٨٤`, is the same number and matched none of them — and all
+   * four look identical in the admin list, so the account looked fine and the
+   * login refused anyway. That is the failure that survived the first fix.
+   */
+  it("falls back to reducing the stored column when no predicted shape matches", () => {
+    expect(fn, "must not give up on the indexed lookup alone")
+      .toContain("storedDigits()");
+    const helper = DB.slice(DB.indexOf("function storedDigits"), DB.indexOf("function pickAccount"));
+    for (const ch of [`" "`, `"-"`, `"+"`]) {
+      expect(helper, `${ch} must be stripped from the stored value`).toContain(ch);
+    }
+    expect(helper, "Arabic-Indic digits must be folded").toContain("0x0660");
+  });
+
+  /**
+   * The LIKE is a net: `%7740427884` also catches a longer number ending in
+   * those digits. One rule has to decide, or the lookup and the normaliser
+   * disagree about who a number belongs to.
+   */
+  it("lets normalizePhone make the final call, not the SQL", () => {
+    expect(fn).toContain("normalizePhone(r.mobileNumber) === bare");
+  });
+
+  /**
+   * Duplicates happen, and staff reset the password on the row they can see.
+   * Silently checking a different row is the failure that reads as "the reset
+   * did nothing" — which is how this whole thing got blamed on passwords.
+   */
+  it("prefers a row that could actually sign in over one that could not", () => {
+    const picker = DB.slice(DB.indexOf("function pickAccount"), DB.indexOf("export async function getCustomerByCode"));
+    expect(picker).toContain("r.isActive && !!r.passwordHash");
+    // Still only after an exact match: typing your number precisely as stored
+    // must not hand you somebody else's account.
+    expect(picker.indexOf("=== mobileNumber")).toBeLessThan(picker.indexOf("r.isActive"));
   });
 
   /**
