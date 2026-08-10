@@ -236,8 +236,17 @@ const { t, language } = useLanguage();
   const headGlass = lightHeader
     ? "bg-slate-900/[0.05] border-slate-900/10 hover:bg-slate-900/[0.09]"
     : "bg-white/10 border-white/20 hover:bg-white/15";
-  /** The pale brand tint, for icons and small labels on the header. */
+  /** The pale brand tint, for icons on the header. */
   const paleStyle = lightHeader ? undefined : { color: pal.pale };
+  /**
+   * Small text on the header is white, not the pale tint.
+   *
+   * pale measures 3.3:1 against pink's brand colour, and small text wants
+   * 4.5:1 — so the customer code and the example chip were below the readable
+   * floor in that one mode. Icons keep the tint: a mark needs 3:1, which pale
+   * clears in every mode. portalModes.test.ts holds both numbers.
+   */
+  const headTextStyle = lightHeader ? undefined : { color: "#FFFFFF" };
 
   const accountQuery = trpc.customerPortal.getMyAccount.useQuery();
   const batchesQuery = trpc.customerPortal.getMyBatches.useQuery();
@@ -570,7 +579,7 @@ const { t, language } = useLanguage();
                   : ""
               )} style={lightHeader ? undefined : { backgroundImage: gradient("to right", tint(pal.pale, 0.15), tint(pal.light, 0.2)), borderColor: tint(pal.pale, 0.3) }}>
                 <Package className={cn("w-4 h-4", lightHeader && "text-slate-700 dark:text-slate-300")} style={paleStyle} />
-                <span className={cn("text-sm font-semibold", lightHeader && "text-slate-800 dark:text-slate-200")} style={paleStyle}>
+                <span className={cn("text-sm font-semibold", lightHeader && "text-slate-800 dark:text-slate-200")} style={headTextStyle}>
                   {account.customerCode}
                 </span>
               </div>
@@ -620,7 +629,7 @@ const { t, language } = useLanguage();
               <div className="flex-1 min-w-0 pe-5">
                 <h4 className={cn("text-sm font-bold", headStrong)}>{quickActions[openTileInfo].info.title}</h4>
                 <p className={cn("text-xs mt-0.5 leading-relaxed", headSoft)}>{quickActions[openTileInfo].info.desc}</p>
-                <span className={cn("inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium", lightHeader && "bg-slate-900/[0.07] text-slate-700 dark:text-slate-300")} style={lightHeader ? undefined : { backgroundColor: tint(pal.pale, 0.2), color: pal.pale }}>
+                <span className={cn("inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium", lightHeader && "bg-slate-900/[0.07] text-slate-700 dark:text-slate-300")} style={lightHeader ? undefined : { backgroundColor: tint(pal.pale, 0.2), color: "#FFFFFF" }}>
                   {quickActions[openTileInfo].info.example}
                 </span>
               </div>

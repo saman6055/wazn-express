@@ -112,6 +112,69 @@ describe("mode palettes", () => {
       expect(luminance(light), `${mode.id} light<pale`).toBeLessThan(luminance(pale));
     }
   });
+
+  /**
+   * Ordering is not readability.
+   *
+   * The check above says the four roles get lighter in turn, which keeps a
+   * gradient looking like a gradient. It says nothing about whether the text
+   * laid over them can be read, and those are different questions: a palette
+   * can be perfectly ordered and still put 3.3:1 text on a header.
+   *
+   * So this measures the real thing — the WCAG relative-luminance ratio — for
+   * the pairs the portal actually paints. 4.5:1 is the standard for body text,
+   * 3:1 for icons and large text.
+   */
+  const contrast = (a: string, b: string) => {
+    const lum = (hex: string) => {
+      const h = hex.replace("#", "");
+      const c = [0, 2, 4].map((i) => {
+        const v = parseInt(h.slice(i, i + 2), 16) / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    };
+    const [hi, lo] = [lum(a), lum(b)].sort((p, q) => q - p);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+
+  it("white text can be read on every brand and deep surface", () => {
+    // Buttons, the balance card, and the header wash all carry white text.
+    for (const mode of PORTAL_MODES) {
+      const { brand, deep } = mode.palette;
+      expect(contrast("#FFFFFF", brand), `${mode.id}: white on brand`).toBeGreaterThanOrEqual(4.5);
+      expect(contrast("#FFFFFF", deep), `${mode.id}: white on deep`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("pale icons can be read on the header wash", () => {
+    // pale is used for icons on the header, which runs deep -> brand. Icons
+    // and other non-text marks need 3:1, not 4.5:1.
+    for (const mode of PORTAL_MODES) {
+      const { brand, deep, pale } = mode.palette;
+      expect(contrast(pale, brand), `${mode.id}: pale icon on brand`).toBeGreaterThanOrEqual(3);
+      expect(contrast(pale, deep), `${mode.id}: pale icon on deep`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  /**
+   * Documents the one pair that does not reach the body-text standard, so the
+   * number cannot drift further without this failing.
+   *
+   * Pink's brand (#DB2777) is the lightest of the three, and pale text on it
+   * measures 3.33:1 where small text wants 4.5:1. Lightening pale does not
+   * rescue it — pure white on that pink is only 4.60:1 — so the fix is a
+   * darker pink, which is a decision about how the mode should look rather
+   * than something to change quietly inside a test. Until then, small text on
+   * the header uses white, and this records where the floor currently sits.
+   */
+  it("records the known-weak pair rather than pretending it passes", () => {
+    const pink = modeDef("pink").palette;
+    const measured = contrast(pink.pale, pink.brand);
+    expect(measured).toBeGreaterThanOrEqual(3);
+    expect(measured, "if pink's palette changes, revisit the header text colour")
+      .toBeLessThan(4.5);
+  });
 });
 
 describe("colour helpers", () => {

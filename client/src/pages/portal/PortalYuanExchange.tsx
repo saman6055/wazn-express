@@ -3,6 +3,7 @@ import { PortalLayout } from "@/components/portal/PortalLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { onEnter } from "@/lib/onEnter";
@@ -173,7 +174,7 @@ export default function PortalYuanExchange() {
               {pick({ ku: "نرخی ئەمڕۆ", en: "Today's rate", ar: "سعر اليوم", zh: "今日汇率" })}
             </span>
             {infoQuery.isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Skeleton className="h-6 w-24 rounded-md bg-white/25" />
             ) : (
               <span className="text-xl font-black tabular-nums" dir="ltr">
                 1$ = {rate}¥
@@ -348,8 +349,19 @@ export default function PortalYuanExchange() {
                 </div>
 
                 {ordersQuery.isLoading ? (
-                  <div className="p-6 flex justify-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                  // A skeleton rather than a spinner: the rest of the portal
+                  // holds the shape of what is coming, so the page does not
+                  // jump when it arrives.
+                  <div className="p-4 space-y-3">
+                    {[0, 1, 2].map(i => (
+                      <div key={i} className="rounded-xl border border-border/50 p-3 space-y-2">
+                        <div className="flex justify-between">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-5 w-16 rounded-full" />
+                        </div>
+                        <Skeleton className="h-4 w-[70%]" />
+                      </div>
+                    ))}
                   </div>
                 ) : ordersQuery.isError ? (
                   <PortalErrorState onRetry={() => void ordersQuery.refetch()} isRetrying={ordersQuery.isFetching} />

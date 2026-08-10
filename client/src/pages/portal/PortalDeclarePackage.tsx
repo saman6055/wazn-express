@@ -11,6 +11,7 @@ import { TutorialHint } from "@/components/TutorialHint";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -226,7 +227,20 @@ export default function PortalDeclarePackage() {
           </h2>
 
           {isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+            // A skeleton rather than a spinner: the rest of the portal holds
+            // the shape of what is coming, so the page does not jump when it
+            // arrives.
+            <div className="space-y-3">
+              {[0, 1, 2].map(i => (
+                <div key={i} className="rounded-2xl border border-border/50 p-4 space-y-2">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </div>
+                  <Skeleton className="h-4 w-[65%]" />
+                </div>
+              ))}
+            </div>
           ) : isError ? (
             <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
           ) : !declared || declared.length === 0 ? (
