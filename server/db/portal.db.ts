@@ -586,17 +586,16 @@ export async function getCustomerTransactionHistory(customerId: number, limit = 
   const db = await getDb();
   if (!db) return [];
   
-  // First, get or create customer account
+  // No ledger account yet means no transactions yet — a new customer, not an
+  // error. This used to look the id up in `users` before returning the same
+  // empty list either way: a customer id read against the staff table, left
+  // over from when the two shared one table. It decided nothing, but the next
+  // person to add a line inside that branch would have been reading the wrong
+  // row entirely.
   const account = await getCustomerAccountByCustomerId(customerId);
-  if (!account) {
-    // Try to auto-create account
-    const customer = await db.select().from(users).where(eq(users.id, customerId)).limit(1);
-    if (!customer[0]) return [];
-    
-    // Return empty if no account exists yet
-    return [];
-  }
-  
+  if (!account) return [];
+
+
   // Get transactions from unified ledgerTransactions table
   const transactions = await db.select({
     id: ledgerTransactions.id,

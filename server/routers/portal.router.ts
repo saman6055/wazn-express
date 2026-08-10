@@ -7,6 +7,17 @@ import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { getVapidPublicKey, isPushEnabled, sendPushToCustomer } from "../services/push.service";
 import { toCustomerVisibleOrder, toCustomerVisibleOrders } from "../lib/customerVisibleOrder";
+import { isSafeCustomerImage, MAX_CUSTOMER_IMAGES } from "@shared/customerImages";
+
+/**
+ * Photos a customer attaches, checked before they are stored.
+ *
+ * These end up rendered on a staff review screen, so the endpoint has to agree
+ * with the upload widget rather than trust it — see @shared/customerImages.
+ */
+const customerImagesSchema = z
+  .array(z.string().refine(isSafeCustomerImage, "Unsupported image"))
+  .max(MAX_CUSTOMER_IMAGES);
 
 // Best-effort portal-activity capture for the admin Customer Portal Center.
 // Fire-and-forget: logging never blocks or fails the customer's real action.
@@ -597,8 +608,8 @@ export const customerPortalRouter = router({
         trackingNumber: z.string(),
         // Proof of ownership is mandatory: a written reason AND at least one
         // evidence image (purchase screenshot / supplier / WeChat photo).
-        customerNote: z.string().trim().min(1),
-        proofImages: z.array(z.string()).min(1),
+        customerNote: z.string().trim().min(1).max(2000),
+        proofImages: customerImagesSchema.min(1),
       }))
       .mutation(async ({ ctx, input }) => {
         const customerId = ctx.customerId;
@@ -652,7 +663,7 @@ export const customerPortalRouter = router({
         trackingNumber: z.string().trim().min(1).max(100),
         platform: z.string().max(100).optional(),
         productName: z.string().max(255).optional(),
-        productImages: z.array(z.string()).optional(),
+        productImages: customerImagesSchema.optional(),
         categoryId: z.number().optional(),
         notes: z.string().max(2000).optional(),
         purchaseDate: z.date().optional(),
@@ -737,7 +748,7 @@ export const customerPortalRouter = router({
         trackingNumber: z.string().trim().min(1).optional(),
         platform: z.string().max(100).nullable().optional(),
         productName: z.string().max(255).optional(),
-        productImages: z.array(z.string()).optional(),
+        productImages: customerImagesSchema.optional(),
         categoryId: z.number().nullable().optional(),
         notes: z.string().max(2000).optional(),
         purchaseDate: z.date().nullable().optional(),
