@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as bcrypt from "bcryptjs";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
-import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
+import { staffProcedure, adminProcedure, accountantProcedure, customerProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { getVapidPublicKey, isPushEnabled, sendPushToCustomer } from "../services/push.service";
@@ -32,6 +32,8 @@ function logPortal(
 }
 
 export const customerPortalRouter = router({
+    // Not customerProcedure: this is the endpoint that reports whether there
+    // is a customer profile at all, so it has to be able to answer "no".
     getMyAccount: protectedProcedure.query(async ({ ctx }) => {
       // For merged model, the user IS the customer if isCustomer is true
       if (ctx.user.isCustomer) {
@@ -68,18 +70,13 @@ export const customerPortalRouter = router({
     // ============ SECURITY ============
     // Customer changes their own portal password. Verifies the current
     // password against the stored bcrypt hash, then stores a fresh hash.
-    changeMyPassword: protectedProcedure
+    changeMyPassword: customerProcedure
       .input(z.object({
         currentPassword: z.string().min(1),
         newPassword: z.string().min(6).max(100),
       }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'پرۆفایلی کڕیار نەدۆزرایەوە بۆ ئەم هەژمارە.' });
-        }
-
+        const customerId = ctx.customerId;
         const customer = await db.getCustomerById(customerId);
         if (!customer || !customer.passwordHash) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'ناتوانرێت وشەی نهێنی بگۆڕدرێت بۆ ئەم هەژمارە.' });
@@ -100,11 +97,8 @@ export const customerPortalRouter = router({
      * The customer's own delivery boxes — the goods packed for them
      * specifically, as opposed to the batch they travelled in.
      */
-    getMyDeliveryBoxes: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer
-        ? ctx.user.id
-        : (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return [];
+    getMyDeliveryBoxes: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getCustomerVisibleBoxes(customerId);
     }),
 
@@ -115,13 +109,10 @@ export const customerPortalRouter = router({
      * id is guessable, and this is the one endpoint that returns a picture of
      * somebody's front door.
      */
-    getMyBoxProof: protectedProcedure
+    getMyBoxProof: customerProcedure
       .input(z.object({ boxId: z.number().int() }))
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer
-          ? ctx.user.id
-          : (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return null;
+        const customerId = ctx.customerId;
         return db.getCustomerBoxProof(input.boxId, customerId);
       }),
 
@@ -132,16 +123,10 @@ export const customerPortalRouter = router({
      * mistake a member of staff can undo it, but a customer cannot quietly
      * reverse a receipt they have already given.
      */
-    confirmBoxReceived: protectedProcedure
+    confirmBoxReceived: customerProcedure
       .input(z.object({ boxId: z.number().int() }))
       .mutation(async ({ input, ctx }) => {
-        const customerId = ctx.user.isCustomer
-          ? ctx.user.id
-          : (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "هەژماری کڕیار نەدۆزرایەوە" });
-        }
-
+        const customerId = ctx.customerId;
         const box = await db.getDeliveryBoxById(input.boxId);
         const result = await db.confirmBoxReceivedByCustomer(input.boxId, customerId);
 
@@ -191,21 +176,17 @@ export const customerPortalRouter = router({
         return { success: true };
       }),
 
-    getMyPackages: protectedProcedure.query(async ({ ctx }) => {
+    getMyPackages: customerProcedure.query(async ({ ctx }) => {
       // Column-listed and capped: the old call returned every column of every
       // row, including the delivery signature and photo — canvas data URIs
       // written from uncapped strings — and the staff-only notes and QR
       // signature. On a long-standing account it was large enough to time out
       // on a mobile connection, and it grew every month.
-      const customerId = ctx.user.isCustomer
-        ? ctx.user.id
-        : (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return [];
+      const customerId = ctx.customerId;
       return db.getCustomerVisiblePackages(customerId);
     }),
-    getMyInvoices: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return [];
+    getMyInvoices: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       const result = await db.getInvoicesByCustomer(customerId, { limit: 50, page: 1 });
       return result.data;
     }),
@@ -219,28 +200,22 @@ export const customerPortalRouter = router({
     }),
     
     // Get customer's batches with their package count
-    getMyBatches: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : 
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return [];
+    getMyBatches: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getCustomerBatches(customerId);
     }),
     
     // Get customer's packages in a specific batch
-    getMyPackagesInBatch: protectedProcedure
+    getMyPackagesInBatch: customerProcedure
       .input(z.object({ batchId: z.number() }))
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return [];
+        const customerId = ctx.customerId;
         return db.getCustomerPackagesInBatch(customerId, input.batchId);
       }),
     
     // Get unbatched packages
-    getMyUnbatchedPackages: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : 
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return [];
+    getMyUnbatchedPackages: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getCustomerUnbatchedPackages(customerId);
     }),
     
@@ -251,23 +226,19 @@ export const customerPortalRouter = router({
      * report, never stored. A parcel leaves this list by itself the moment an
      * admin enters the purchase order that owns its tracking number.
      */
-    getMySelfOrderPackages: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id :
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return [];
+    getMySelfOrderPackages: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getSelfOrderPackagesByCustomer(customerId);
     }),
 
     // Get customer's full package orders (for customer portal)
-    getMyFullPackageOrders: protectedProcedure
+    getMyFullPackageOrders: customerProcedure
       .input(z.object({
         orderType: z.enum(["full_package", "commission", "purchase_request"]).optional(),
         status: z.string().optional(),
       }).optional())
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return [];
+        const customerId = ctx.customerId;
         // Every list row carried purchasePriceUsd / grossProfitUsd /
         // netProfitUsd and the supplier ids. This is the list the portal loads
         // on five different screens, so it was the widest of the leaks.
@@ -281,18 +252,8 @@ export const customerPortalRouter = router({
      * can see at a glance how many orders are still flowing through the
      * pipeline and what the estimated invoice total will be.
      */
-    getMyPendingOrders: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id :
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) {
-        return {
-          count: 0,
-          totalPriceUsd: 0,
-          oldestAt: null,
-          byType: { full_package: 0, commission: 0, purchase_request: 0 },
-        };
-      }
-
+    getMyPendingOrders: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       const raw = await db.getFullPackageOrdersByCustomer(customerId);
       const list = Array.isArray(raw) ? raw : ((raw as any)?.data ?? []);
       const TERMINAL = new Set(['delivered', 'cancelled', 'refunded', 'returned']);
@@ -331,10 +292,8 @@ export const customerPortalRouter = router({
     }),
     
     // Get financial summary
-    getMyFinancialSummary: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : 
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return null;
+    getMyFinancialSummary: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getCustomerFinancialSummary(customerId);
     }),
     
@@ -346,56 +305,46 @@ export const customerPortalRouter = router({
      * were short by however much did not fit — beside a balance that was
      * right. See getCustomerMonthlyMoney.
      */
-    getMyMonthlyMoney: protectedProcedure
+    getMyMonthlyMoney: customerProcedure
       .input(z.object({ months: z.number().int().min(1).max(24).default(6) }).optional())
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return [];
+        const customerId = ctx.customerId;
         return db.getCustomerMonthlyMoney(customerId, input?.months ?? 6);
       }),
 
     // Get transaction history
-    getMyTransactions: protectedProcedure
+    getMyTransactions: customerProcedure
       .input(z.object({ limit: z.number().optional() }).optional())
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return [];
+        const customerId = ctx.customerId;
         return db.getCustomerTransactionHistory(customerId, input?.limit || 50);
       }),
     
     // Search package by tracking number
-    searchPackage: protectedProcedure
+    searchPackage: customerProcedure
       .input(z.object({ trackingNumber: z.string() }))
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return null;
+        const customerId = ctx.customerId;
         logPortal(ctx, customerId, "search", "search", { detail: input.trackingNumber });
         return db.searchCustomerPackage(customerId, input.trackingNumber);
       }),
 
     // Same search box, but for full-package/commission orders: matches the
     // order number (FP-...) or the order's tracking number.
-    searchOrder: protectedProcedure
+    searchOrder: customerProcedure
       .input(z.object({ query: z.string().trim().min(1).max(100) }))
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return null;
+        const customerId = ctx.customerId;
         return db.searchCustomerOrder(customerId, input.query);
       }),
 
     // Unified-search fallback: when a tracking isn't one of the customer's own
     // registered packages, tell them what else we know — is it sitting
     // unclaimed (claimable), or did they pre-declare it (awaiting arrival)?
-    searchTrackingExtra: protectedProcedure
+    searchTrackingExtra: customerProcedure
       .input(z.object({ trackingNumber: z.string().trim().min(1) }))
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return { unclaimed: null, declared: null };
+        const customerId = ctx.customerId;
         const pkg = await db.getPackageByTrackingNumber(input.trackingNumber);
         const unclaimed = pkg && pkg.isUnclaimed ? pkg : null;
         const declared = await db.findCustomerDeclaredByTracking(customerId, input.trackingNumber);
@@ -404,23 +353,19 @@ export const customerPortalRouter = router({
 
     // ============ DELIVERY RATING ============
     // The most recent delivered package (14 days) the customer hasn't rated.
-    getRatablePackage: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id :
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return null;
+    getRatablePackage: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getRatablePackage(customerId);
     }),
 
-    submitDeliveryRating: protectedProcedure
+    submitDeliveryRating: customerProcedure
       .input(z.object({
         packageId: z.number(),
         rating: z.number().int().min(1).max(5),
         comment: z.string().max(1000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) throw new TRPCError({ code: "BAD_REQUEST", message: "پرۆفایلی کریار نەدۆزرایەوە." });
+        const customerId = ctx.customerId;
         const pkg = await db.getPackageById(input.packageId);
         if (!pkg || pkg.customerId !== customerId) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Package not found" });
@@ -442,16 +387,14 @@ export const customerPortalRouter = router({
     // Portal navigation tracking — the portal layout calls this on route change
     // so the admin Portal Center can see which pages each customer visits.
     // Best-effort observability; returns quickly and never throws.
-    trackActivity: protectedProcedure
+    trackActivity: customerProcedure
       .input(z.object({
         path: z.string().max(255),
         action: z.string().max(60).default("page_view"),
         detail: z.string().max(500).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return { ok: false };
+        const customerId = ctx.customerId;
         logPortal(ctx, customerId, input.action, "navigation", { path: input.path, detail: input.detail });
         return { ok: true };
       }),
@@ -461,7 +404,7 @@ export const customerPortalRouter = router({
     // Labels render in the customer's language (ku/ar via embedded font, zh
     // falls back to en); numbers/codes stay Latin. Optional date range and
     // charge/payment type filter.
-    getMyStatementPdf: protectedProcedure
+    getMyStatementPdf: customerProcedure
       .input(z.object({
         language: z.enum(["ku", "en", "ar", "zh"]).default("en"),
         from: z.date().optional(),
@@ -469,11 +412,7 @@ export const customerPortalRouter = router({
         type: z.enum(["all", "charges", "payments"]).default("all"),
       }).optional())
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Customer account required" });
-        }
+        const customerId = ctx.customerId;
         const { getCustomerReportData, generateCustomerPDF } = await import("../services/pdf.service");
         const data = await getCustomerReportData(
           customerId,
@@ -520,24 +459,18 @@ export const customerPortalRouter = router({
       };
     }),
 
-    getMyYuanOrders: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id :
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return [];
+    getMyYuanOrders: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getYuanOrdersByCustomer(customerId);
     }),
 
-    createYuanOrder: protectedProcedure
+    createYuanOrder: customerProcedure
       .input(z.object({
         usdAmount: z.number().positive().max(1_000_000),
         note: z.string().max(1000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Customer account required" });
-        }
+        const customerId = ctx.customerId;
         const settings = await db.getYuanExchangeSettings();
         if (!settings.enabled) {
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Yuan exchange is currently unavailable" });
@@ -570,20 +503,16 @@ export const customerPortalRouter = router({
       }),
 
     // Get notification count
-    getNotificationCount: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : 
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return 0;
+    getNotificationCount: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getCustomerNotificationCount(customerId);
     }),
     
     // Generate PDF receipt for a transaction
-    getReceiptData: protectedProcedure
+    getReceiptData: customerProcedure
       .input(z.object({ transactionId: z.number() }))
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+        const customerId = ctx.customerId;
         
         // Get customer account to verify ownership
         const account = await db.getCustomerAccountByCustomerId(customerId);
@@ -610,12 +539,10 @@ export const customerPortalRouter = router({
       }),
     
     // Get package details with image
-    getPackageDetails: protectedProcedure
+    getPackageDetails: customerProcedure
       .input(z.object({ packageId: z.number() }))
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+        const customerId = ctx.customerId;
         
         // Allow-listed, and scoped inside the query. Returning the row
         // whole handed over the office notes and the signed qrCodeData /
@@ -631,12 +558,10 @@ export const customerPortalRouter = router({
     // Real movement history for one of the customer's own packages: merged
     // status-history + scan events with timestamps, oldest first. Powers the
     // portal tracking timeline with actual dates instead of a synthetic bar.
-    getPackageTimeline: protectedProcedure
+    getPackageTimeline: customerProcedure
       .input(z.object({ packageId: z.number() }))
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return [];
+        const customerId = ctx.customerId;
         const pkg = await db.getPackageById(input.packageId);
         if (!pkg || pkg.customerId !== customerId) return [];
 
@@ -666,7 +591,7 @@ export const customerPortalRouter = router({
       }),
     
     // Create a claim request for an unclaimed package
-    createClaimRequest: protectedProcedure
+    createClaimRequest: customerProcedure
       .input(z.object({
         packageId: z.number(),
         trackingNumber: z.string(),
@@ -676,9 +601,7 @@ export const customerPortalRouter = router({
         proofImages: z.array(z.string()).min(1),
       }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+        const customerId = ctx.customerId;
 
         // Check if package exists and is unclaimed
         const pkg = await db.getPackageById(input.packageId);
@@ -714,17 +637,15 @@ export const customerPortalRouter = router({
       }),
     
     // Get customer's claim requests
-    getMyClaimRequests: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id :
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return [];
+    getMyClaimRequests: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getClaimRequestsByCustomer(customerId);
     }),
 
     // ============ DECLARED (PRE-ALERT) PACKAGES ============
     // Customer pre-declares an incoming purchase's tracking so staff can
     // auto-own it at registration. Only the tracking number is required.
-    declareIncomingPackage: protectedProcedure
+    declareIncomingPackage: customerProcedure
       .input(z.object({
         // varchar(100) in the packages table; the router accepted any
         // length and let MySQL decide.
@@ -737,9 +658,7 @@ export const customerPortalRouter = router({
         purchaseDate: z.date().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) throw new TRPCError({ code: "BAD_REQUEST", message: "پرۆفایلی کریار نەدۆزرایەوە بۆ ئەم هەژمارە." });
+        const customerId = ctx.customerId;
 
         // Another customer already waiting on this exact tracking number is
         // the one case we must not resolve by guessing: the match at
@@ -807,14 +726,12 @@ export const customerPortalRouter = router({
         return declared;
       }),
 
-    getMyDeclaredPackages: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id :
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return [];
+    getMyDeclaredPackages: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getDeclaredPackagesByCustomer(customerId);
     }),
 
-    updateDeclaredPackage: protectedProcedure
+    updateDeclaredPackage: customerProcedure
       .input(z.object({
         id: z.number(),
         trackingNumber: z.string().trim().min(1).optional(),
@@ -826,30 +743,24 @@ export const customerPortalRouter = router({
         purchaseDate: z.date().nullable().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) throw new TRPCError({ code: "BAD_REQUEST", message: "پرۆفایلی کریار نەدۆزرایەوە." });
+        const customerId = ctx.customerId;
         const { id, ...data } = input;
         return db.updateDeclaredPackageForCustomer(id, customerId, data as any);
       }),
 
-    cancelDeclaredPackage: protectedProcedure
+    cancelDeclaredPackage: customerProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) throw new TRPCError({ code: "BAD_REQUEST", message: "پرۆفایلی کریار نەدۆزرایەوە." });
+        const customerId = ctx.customerId;
         await db.cancelDeclaredPackageForCustomer(input.id, customerId);
         return { success: true };
       }),
     
     // Get single full package order detail
-    getMyFullPackageOrderDetail: protectedProcedure
+    getMyFullPackageOrderDetail: customerProcedure
       .input(z.object({ orderId: z.number() }))
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return null;
+        const customerId = ctx.customerId;
         
         const order = await db.getFullPackageOrderById(input.orderId);
         if (!order || order.customerId !== customerId) return null;
@@ -860,23 +771,15 @@ export const customerPortalRouter = router({
       }),
     
     // ============ MESSAGES ============
-    getMyMessages: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : 
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return [];
+    getMyMessages: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getConversationMessages(`CONV-${customerId}`);
     }),
     
-    sendMessage: protectedProcedure
+    sendMessage: customerProcedure
       .input(z.object({ message: z.string().min(1) }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        // BAD_REQUEST, not FORBIDDEN: the user IS authenticated, they
-        // just don't have a customer profile attached to their account.
-        // Throwing FORBIDDEN used to trip QueryErrorBoundary's auth
-        // heuristics and bounce the user to login mid-session.
-        if (!customerId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'پرۆفایلی کریار نەدۆزرایەوە بۆ ئەم هەژمارە. تکایە لەگەڵ پشتگیرییەوە پەیوەندی بکە.' });
+        const customerId = ctx.customerId;
         
         const created = await db.createCustomerMessage({
           conversationId: `CONV-${customerId}`,
@@ -889,44 +792,34 @@ export const customerPortalRouter = router({
         return created;
       }),
     
-    markMessagesAsRead: protectedProcedure.mutation(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : 
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return;
+    markMessagesAsRead: customerProcedure.mutation(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       await db.markCustomerMessagesAsRead(customerId, 'customer');
     }),
     
-    getUnreadMessageCount: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : 
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return 0;
+    getUnreadMessageCount: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getUnreadMessageCount(customerId, 'customer');
     }),
     
     // ============ NOTIFICATIONS ============
-    getMyNotifications: protectedProcedure
+    getMyNotifications: customerProcedure
       .input(z.object({ unreadOnly: z.boolean().optional() }).optional())
       .query(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return [];
+        const customerId = ctx.customerId;
         return db.getCustomerNotifications(customerId, { unreadOnly: input?.unreadOnly });
       }),
     
-    markNotificationAsRead: protectedProcedure
+    markNotificationAsRead: customerProcedure
       .input(z.object({ notificationId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return { success: false };
+        const customerId = ctx.customerId;
         await db.markNotificationAsRead(input.notificationId, customerId);
         return { success: true };
       }),
     
-    markAllNotificationsAsRead: protectedProcedure.mutation(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : 
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return;
+    markAllNotificationsAsRead: customerProcedure.mutation(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       await db.markAllNotificationsAsRead(customerId);
     }),
     
@@ -936,14 +829,12 @@ export const customerPortalRouter = router({
     // bell and the page came to disagree once already. There is one now.
 
     // ============ ADDRESSES ============
-    getMyAddresses: protectedProcedure.query(async ({ ctx }) => {
-      const customerId = ctx.user.isCustomer ? ctx.user.id : 
-        (await db.getCustomerByUserId(ctx.user.id))?.id;
-      if (!customerId) return [];
+    getMyAddresses: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
       return db.getCustomerAddresses(customerId);
     }),
     
-    createAddress: protectedProcedure
+    createAddress: customerProcedure
       .input(z.object({
         label: z.string().min(1).max(100),
         recipientName: z.string().min(1).max(255),
@@ -960,10 +851,7 @@ export const customerPortalRouter = router({
         isDefault: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        // BAD_REQUEST instead of FORBIDDEN — see sendMessage comment.
-        if (!customerId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'پرۆفایلی کریار نەدۆزرایەوە بۆ ئەم هەژمارە. تکایە لەگەڵ پشتگیرییەوە پەیوەندی بکە.' });
+        const customerId = ctx.customerId;
 
         return db.createCustomerAddress({
           ...input,
@@ -971,7 +859,7 @@ export const customerPortalRouter = router({
         });
       }),
     
-    updateAddress: protectedProcedure
+    updateAddress: customerProcedure
       .input(z.object({
         addressId: z.number(),
         label: z.string().max(100).optional(),
@@ -991,8 +879,7 @@ export const customerPortalRouter = router({
         const { addressId, ...data } = input;
         const address = await db.getCustomerAddressById(addressId);
         
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        const customerId = ctx.customerId;
         
         if (!address || address.customerId !== customerId) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Address not found' });
@@ -1001,13 +888,12 @@ export const customerPortalRouter = router({
         return db.updateCustomerAddress(addressId, data);
       }),
     
-    deleteAddress: protectedProcedure
+    deleteAddress: customerProcedure
       .input(z.object({ addressId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const address = await db.getCustomerAddressById(input.addressId);
         
-        const customerId = ctx.user.isCustomer ? ctx.user.id : 
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        const customerId = ctx.customerId;
         
         if (!address || address.customerId !== customerId) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Address not found' });
@@ -1017,13 +903,12 @@ export const customerPortalRouter = router({
         return { success: true };
       }),
     
-    setDefaultAddress: protectedProcedure
+    setDefaultAddress: customerProcedure
       .input(z.object({ addressId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const address = await db.getCustomerAddressById(input.addressId);
 
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
+        const customerId = ctx.customerId;
 
         if (!address || address.customerId !== customerId) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Address not found' });
@@ -1071,12 +956,10 @@ export const customerPortalRouter = router({
         return { success: true, id: sub?.id ?? null };
       }),
 
-    unsubscribePush: protectedProcedure
+    unsubscribePush: customerProcedure
       .input(z.object({ endpoint: z.string().url().max(500) }))
       .mutation(async ({ ctx, input }) => {
-        const customerId = ctx.user.isCustomer ? ctx.user.id :
-          (await db.getCustomerByUserId(ctx.user.id))?.id;
-        if (!customerId) return { success: false };
+        const customerId = ctx.customerId;
         await db.deletePushSubscriptionByEndpoint(input.endpoint, customerId);
         return { success: true };
       }),

@@ -297,8 +297,11 @@ describe("what a parcel tells the customer", () => {
     const fn = portal.slice(portal.indexOf("export async function getCustomerPackageDetail"));
     expect(fn.slice(0, 1600)).toContain("eq(packages.customerId, customerId)");
     // And the router must go through it rather than back to the raw getter.
+    // Matched on the name alone: which procedure kind guards it is a separate
+    // decision, and pinning it here made this fail when the portal moved to
+    // customerProcedure without anything about the scoping having changed.
     const proc = router.slice(
-      router.indexOf("getPackageDetails: protectedProcedure"),
+      router.indexOf("getPackageDetails:"),
       router.indexOf("getPackageTimeline"),
     );
     expect(proc).toContain("getCustomerPackageDetail");

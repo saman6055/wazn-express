@@ -51,8 +51,13 @@ describe("what a customer types fits where it is going", () => {
   });
 
   it("the router refuses what the column cannot hold", () => {
+    // Matched on the name alone — which procedure kind guards the endpoint is
+    // a separate decision from what its input accepts, and pinning it here
+    // silently emptied this slice when the portal moved to customerProcedure.
+    // An empty slice passes nothing, so the caps went unchecked rather than
+    // failing loudly, which is the worse half of the bug.
     const block = ROUTER.slice(
-      ROUTER.indexOf("createAddress: protectedProcedure"),
+      ROUTER.indexOf("createAddress:"),
       ROUTER.indexOf("deleteAddress"),
     );
     for (const [field, max] of Object.entries(ADDRESS_LIMITS)) {
