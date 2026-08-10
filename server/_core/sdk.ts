@@ -298,6 +298,17 @@ class SDKServer {
       if (!customer) {
         throw ForbiddenError("Customer not found");
       }
+      // Deactivating an account has to mean something before the cookie
+      // expires. The login refused an inactive customer and nothing after it
+      // ever asked again, so switching somebody off left them with seven more
+      // days of full access — their parcels, their money, their documents —
+      // and the office had no way to end it.
+      //
+      // Read from the row, not the token: the session was minted before the
+      // decision to switch them off, so it cannot be asked about it.
+      if (!customer.isActive) {
+        throw ForbiddenError("Customer account is not active");
+      }
       // Return customer data with isCustomer flag for type checking
       return {
         ...customer,
@@ -313,6 +324,12 @@ class SDKServer {
       const user = await db.getUserById(session.userId);
       if (!user) {
         throw ForbiddenError("Staff user not found");
+      }
+      // Same rule, and it matters more here: a staff account is switched off
+      // on the day somebody leaves, and until now that took a week to take
+      // effect on a session already open.
+      if (!user.isActive) {
+        throw ForbiddenError("Staff account is not active");
       }
       return {
         ...user,
