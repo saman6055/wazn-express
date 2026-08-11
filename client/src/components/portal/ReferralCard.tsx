@@ -45,7 +45,7 @@ Map: https://maps.app.goo.gl/2AXdNzfZnxtv4rX3A
 وەزن ئێکسپرێس
 🌐 www.waznexpress.com
 TikTok: wazn.express
-Instagram: wazn.express
+Instagram: waznexpress
 Telegram: https://t.me/waznexpress
 WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
 

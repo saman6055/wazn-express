@@ -120,8 +120,10 @@ export const SOCIAL_CHANNELS: ContactChannel[] = [
     id: "instagram",
     icon: "instagram",
     label: { ku: "ئینستاگرام", en: "Instagram", ar: "إنستغرام", zh: "Instagram" },
-    value: "wazn.express",
-    href: "https://www.instagram.com/wazn.express",
+    // waznexpress, not wazn.express — the dotted spelling is the Facebook
+    // handle, and it was copied across to this row. It leads nowhere.
+    value: "waznexpress",
+    href: "https://www.instagram.com/waznexpress/",
     color: "#C13584",
   },
   {

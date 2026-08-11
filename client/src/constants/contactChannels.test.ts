@@ -85,6 +85,40 @@ describe("channel links", () => {
     const ids = allChannels.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  /**
+   * The handle a customer reads and the handle they are taken to must be the
+   * same one.
+   *
+   * The Instagram row was carrying `wazn.express` — the Facebook handle, copied
+   * across when the row was written — in both the label and the link, so the
+   * contact page confidently showed a name and a button that both led nowhere.
+   * Nothing can tell a wrong-but-consistent handle from a right one, but this
+   * at least stops the two halves drifting apart when one of them is corrected.
+   */
+  it("links to the same handle it prints", () => {
+    for (const channel of SOCIAL_CHANNELS) {
+      if (channel.id === "website" || channel.id === "whatsapp-channel") continue;
+      expect(
+        channel.href.toLowerCase(),
+        `${channel.id} shows "${channel.value}" but links somewhere else`,
+      ).toContain(channel.value.toLowerCase());
+    }
+  });
+
+  /**
+   * Two platforms genuinely use different handles for us — Instagram and
+   * Telegram are `waznexpress`, TikTok and Facebook are `wazn.express`. That
+   * is easy to get wrong in either direction, so both spellings are pinned.
+   */
+  it("pins the handle each platform actually uses", () => {
+    const handle = (id: string) => SOCIAL_CHANNELS.find((c) => c.id === id)?.href ?? "";
+    expect(handle("instagram")).toContain("instagram.com/waznexpress");
+    expect(handle("instagram"), "the dotted spelling is Facebook's")
+      .not.toContain("instagram.com/wazn.express");
+    expect(handle("facebook")).toContain("facebook.com/wazn.express");
+    expect(handle("tiktok")).toContain("tiktok.com/@wazn.express");
+  });
 });
 
 describe("labels", () => {
