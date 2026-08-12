@@ -46,8 +46,17 @@ export default function BatchAssignmentScanner() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
 
-  // Core state
-  const [selectedBatchId, setSelectedBatchId] = useState<string>("");
+  // Core state.
+  //
+  // The Batches page links here with ?batch=<id> so the operator arrives with
+  // the batch already chosen — picking it again out of a long dropdown is the
+  // step people get wrong, and getting it wrong files parcels onto the wrong
+  // shipment.
+  const [selectedBatchId, setSelectedBatchId] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    const asked = new URLSearchParams(window.location.search).get("batch") ?? "";
+    return /^\d+$/.test(asked) ? asked : "";
+  });
   const [isSearching, setIsSearching] = useState(false);
 
   // Continuous mode & sound (used by ScanInput)
@@ -118,6 +127,17 @@ export default function BatchAssignmentScanner() {
     return batches.filter((b: any) => b.status === "preparing" || b.status === "in_transit");
   }, [batches]);
   
+  // A batch id handed to us in the URL is not to be trusted: it may be closed,
+  // delivered, or simply gone. Once the list has loaded, drop anything that
+  // isn't actually open, so the scanner never sits enabled against a batch
+  // that cannot receive packages.
+  useEffect(() => {
+    if (!selectedBatchId || !batches) return;
+    if (!openBatches.some((b: any) => b.id.toString() === selectedBatchId)) {
+      setSelectedBatchId("");
+    }
+  }, [batches, openBatches, selectedBatchId]);
+
   // Selected batch info
   const selectedBatch = useMemo(() => {
     if (!selectedBatchId || !batches) return null;

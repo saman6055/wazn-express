@@ -1872,7 +1872,9 @@
     "customs": "Customs",
     "atDepot": "In Erbil depot",
     "delivered": "Delivered",
-    "closed": "Closed"
+    "closed": "Closed",
+    "scanIntoBatch": "Scan into batch",
+    "scanIntoThisBatch": "Scan into this batch"
   },
   "scanning": {
     "title": "Scanning",

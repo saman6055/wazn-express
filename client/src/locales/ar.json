@@ -1872,7 +1872,9 @@
     "customs": "الجمارك",
     "atDepot": "في مستودع أربيل",
     "delivered": "تم التسليم",
-    "closed": "مغلق"
+    "closed": "مغلق",
+    "scanIntoBatch": "المسح إلى الدفعة",
+    "scanIntoThisBatch": "المسح إلى هذه الدفعة"
   },
   "scanning": {
     "title": "المسح",

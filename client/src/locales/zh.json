@@ -1877,7 +1877,9 @@
     "customs": "海关",
     "atDepot": "在埃尔比勒仓库",
     "delivered": "已交付",
-    "closed": "已关闭"
+    "closed": "已关闭",
+    "scanIntoBatch": "扫描入批次",
+    "scanIntoThisBatch": "扫描入此批次"
   },
   "scan": {
     "register": "登记",

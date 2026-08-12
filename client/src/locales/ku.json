@@ -1892,7 +1892,9 @@
     "customs": "گومرگ",
     "atDepot": "لە مەخزەنی هەولێر",
     "delivered": "گەیەنرا",
-    "closed": "داخراو"
+    "closed": "داخراو",
+    "scanIntoBatch": "خستنە ناو باچ",
+    "scanIntoThisBatch": "خستنە ناو ئەم باچە"
   },
   "scanning": {
     "title": "سکان",

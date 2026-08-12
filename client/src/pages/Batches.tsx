@@ -18,8 +18,8 @@ import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
 import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
-import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown } from "lucide-react";
-import { Link } from "wouter";
+import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -54,6 +54,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isFinancialOpen, setIsFinancialOpen] = useState(false);
   const [editingBatch, setEditingBatch] = useState<any>(null);
+  const [, setLocation] = useLocation();
   const [selectedBatch, setSelectedBatch] = useState<number | null>(null);
   const [financialBatchId, setFinancialBatchId] = useState<number | null>(null);
   const [shippingType, setShippingType] = useState<string>("");
@@ -453,6 +454,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <h1 className="text-2xl font-bold tracking-tight">{t("batches.title")}</h1>
             <p className="text-muted-foreground">{t("batches.subtitle")}</p>
           </div>
+          <div className="flex items-center gap-2">
+            {/* The two halves of the same job: you make a batch here, then you
+                scan into it. The scanner already points back here when there
+                is no batch yet; this is the other direction. */}
+            <Button variant="outline" onClick={() => setLocation("/batch-assignment-scanner")}>
+              <ScanLine className="h-4 w-4 me-2" />
+              {t("batches.scanIntoBatch")}
+            </Button>
           <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button><Plus className="h-4 w-4 me-2" />{t("batches.newBatch")}</Button>
@@ -954,6 +963,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -1097,6 +1107,20 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <Button variant="ghost" size="icon" onClick={() => setSelectedBatch(batch.id)} title={t("batches.viewPackages")}>
                           <Eye className="h-4 w-4" />
                         </Button>
+                        {/* Straight to the scanner with this batch already
+                            chosen — picking it again from a long dropdown is
+                            the step people get wrong. Only while it is still
+                            open; a delivered batch takes no more packages. */}
+                        {(batch.status === "preparing" || batch.status === "in_transit") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setLocation(`/batch-assignment-scanner?batch=${batch.id}`)}
+                            title={t("batches.scanIntoThisBatch")}
+                          >
+                            <ScanLine className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Link href={`/batches/${batch.id}/financial`}>
                           <Button variant="ghost" size="icon" title={t("batches.financialReport")}>
                             <BarChart3 className="h-4 w-4" />

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wazn Express — Creating a Batch and Scanning Packages Into It</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 11pt; line-height: 1.6; color: #1a1a1a; margin: 0;
+  }
+  h1 { font-size: 22pt; margin: 0 0 4pt; color: #14507e; }
+  .sub { font-size: 11pt; color: #555; margin: 0 0 18pt; }
+  h2 {
+    font-size: 15pt; color: #14507e; margin: 22pt 0 8pt;
+    border-bottom: 2px solid #14507e; padding-bottom: 4pt;
+    page-break-after: avoid;
+  }
+  h3 { font-size: 12pt; margin: 14pt 0 4pt; page-break-after: avoid; }
+  p { margin: 0 0 8pt; }
+  ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+  ol.steps > li {
+    counter-increment: step; position: relative;
+    padding: 0 0 14pt 30pt; page-break-inside: avoid;
+  }
+  ol.steps > li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 1pt;
+    width: 20pt; height: 20pt; border-radius: 50%;
+    background: #14507e; color: #fff;
+    font-size: 10pt; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ui { background: #eef4fa; border: 1px solid #c5d9ec; border-radius: 3px;
+        padding: 1pt 5pt; font-weight: 600; white-space: nowrap; }
+  figure { margin: 8pt 0 0; page-break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid #ccc; border-radius: 4px; display: block; }
+  figcaption { font-size: 9pt; color: #666; margin-top: 3pt; font-style: italic; }
+  .note, .warn {
+    border-left: 4px solid #14507e; background: #f2f7fc;
+    padding: 8pt 10pt; margin: 10pt 0; page-break-inside: avoid;
+  }
+  .warn { border-left-color: #b8860b; background: #fdf8ec; }
+  .note b, .warn b { display: block; margin-bottom: 2pt; }
+  table { width: 100%; border-collapse: collapse; margin: 10pt 0; font-size: 10pt; }
+  th, td { border: 1px solid #ccc; padding: 6pt 8pt; text-align: left; vertical-align: top; }
+  th { background: #14507e; color: #fff; font-weight: 600; }
+  tr:nth-child(even) td { background: #f7f9fb; }
+  .page-break { page-break-before: always; }
+  .badge { display: inline-block; padding: 1pt 6pt; border-radius: 3px;
+           font-size: 9pt; font-weight: 600; color: #fff; }
+  .g { background: #1e7a45; } .y { background: #b8860b; }
+  .r { background: #b3261e; } .b { background: #14507e; }
+  footer { margin-top: 20pt; padding-top: 8pt; border-top: 1px solid #ddd;
+           font-size: 9pt; color: #777; }
+</style>
+</head>
+<body>
+
+<h1>Creating a Batch and Scanning Packages Into It</h1>
+<p class="sub">Wazn Express — step-by-step guide for the China warehouse</p>
+
+<p>This guide covers two jobs, in the order you do them. First you <b>create a batch</b>, which is the shipment that will carry the goods to Erbil. Then you <b>scan packages into that batch</b>, one by one, so the system knows exactly what is travelling.</p>
+
+<div class="note">
+  <b>Do these in order</b>
+  You cannot scan anything until a batch exists. If the scanner page shows an empty batch list, go back and create the batch first.
+</div>
+
+<h2>Before you start</h2>
+
+<ol class="steps">
+  <li>
+    Open <span class="ui">admin.waznexpress.com</span> and sign in with your username and password.
+    <!--FIGURE:login-->
+  </li>
+  <li>
+    Set the language you want to work in. Click the language button at the top of the screen and choose <span class="ui">English</span> or <span class="ui">中文</span>. Every screen in this guide is shown in English.
+    <!--FIGURE:language-->
+  </li>
+</ol>
+
+<h2 class="page-break">Part 1 — Create a batch</h2>
+
+<p>A batch is one shipment: one flight, or one container. Everything you scan into it travels together.</p>
+
+<ol class="steps">
+  <li>
+    In the left sidebar, open <span class="ui">Batches</span>.
+    <!--FIGURE:sidebar-batches-->
+  </li>
+  <li>
+    Click the <span class="ui">New Batch</span> button at the top right. A window opens with three tabs: <span class="ui">Basic Information</span>, <span class="ui">Volume &amp; Cost</span> and <span class="ui">Selling Price</span>.
+    <!--FIGURE:batches-list-->
+  </li>
+  <li>
+    <b>Batch Code</b> — you can type your own name for this batch, in any format. If you leave it empty, the system creates a code for you. Use a name you will recognise later.
+  </li>
+  <li>
+    <b>Origin Warehouse</b> and <b>Destination</b> — choose the China warehouse the goods are leaving from, and Iraq as the destination. Both are required.
+  </li>
+  <li>
+    <b>Shipping Type</b> — choose one. This is required, and it changes which fields appear next.
+    <table>
+      <tr><th>Choose</th><th>When</th></tr>
+      <tr><td>Air Regular</td><td>Normal air cargo, charged by weight</td></tr>
+      <tr><td>Air Irregular</td><td>Air cargo with special or tiered pricing</td></tr>
+      <tr><td>Sea Freight</td><td>Sea container, charged by CBM (volume)</td></tr>
+    </table>
+    <!--FIGURE:create-basic-->
+  </li>
+  <li>
+    Fill in the carrier details. <b>You can leave all of these empty for now</b> — at the time you create the batch you usually do not know them yet. See Part 3 for adding them later.
+    <table>
+      <tr><th>If you chose air</th><th>If you chose sea</th></tr>
+      <tr>
+        <td>
+          Airline Name<br>
+          Flight Number<br>
+          Air waybill (AWB)<br>
+          Shipping Company
+        </td>
+        <td>
+          Shipping Company<br>
+          Container Number<br>
+          Vessel Name
+        </td>
+      </tr>
+    </table>
+    <!--FIGURE:create-carrier-->
+  </li>
+  <li>
+    <b>Shipment to warehouse</b> — this records how the cartons physically reached the airport or port warehouse.
+    <ul>
+      <li><b>Shipment tracking numbers</b> — type a courier tracking number and click <span class="ui">Add</span>. Repeat for each shipment. The <b>Shipments</b> count updates by itself.</li>
+      <li><b>Cartons</b> — type how many cartons you sent in total.</li>
+    </ul>
+    You do not need to count the pieces. Every package you scan into the batch is counted automatically.
+    <!--FIGURE:create-shipment-->
+  </li>
+  <li>
+    <b>Departure Date</b> and <b>Est. Arrival</b> — fill these if you know them. Both are optional.
+  </li>
+  <li>
+    The <span class="ui">Volume &amp; Cost</span> and <span class="ui">Selling Price</span> tabs are for the accounts. <b>You can leave them completely empty.</b> Fill them in later, when the shipping cost is known.
+  </li>
+  <li>
+    Click <span class="ui">Create Batch</span>. The new batch appears in the list with the status <span class="badge b">Preparing</span>, and it is now ready to receive packages.
+    <!--FIGURE:batch-created-->
+  </li>
+</ol>
+
+<div class="warn">
+  <b>If the code is refused</b>
+  If you typed a batch code that already exists, the system will tell you so and nothing is saved. Change the code and click Create Batch again.
+</div>
+
+<h2 class="page-break">Part 2 — Scan packages into the batch</h2>
+
+<p>Now put the goods into the batch you just made. Each package is scanned one at a time.</p>
+
+<ol class="steps">
+  <li>
+    In the left sidebar, open <span class="ui">Batch Assignment</span>.
+    <!--FIGURE:sidebar-scanner-->
+  </li>
+  <li>
+    At the top, open <span class="ui">Select a batch</span> and choose the batch you created. <b>Nothing can be scanned until you do this</b> — the scanner box stays greyed out.
+    <div class="note">
+      <b>Empty list?</b>
+      Only batches with the status <b>Preparing</b> or <b>In Transit</b> appear here. If the list is empty, the page tells you so and gives you a button to go and create one.
+    </div>
+    <!--FIGURE:scanner-select-batch-->
+  </li>
+  <li>
+    Choose how you will read the barcode:
+    <ul>
+      <li><span class="ui">Manual</span> — use a barcode gun, or type the number and press Enter. This is the normal way.</li>
+      <li><span class="ui">Camera</span> — use the device camera to read the barcode.</li>
+    </ul>
+    Leave <span class="ui">Continuous mode</span> switched on. The box clears itself after each scan, so you can keep scanning without touching anything.
+    <!--FIGURE:scanner-modes-->
+  </li>
+  <li>
+    Scan the tracking number of the first package. The system finds it, adds it to the batch, and plays a sound. A green message says <span class="badge g">Added to batch</span>.
+    <!--FIGURE:scan-success-->
+  </li>
+  <li>
+    Keep scanning. Every package you add appears in the list below, newest first, and the <span class="ui">Session stats</span> panel on the right counts as you go: number of packages, total weight, total CBM, and how many have incomplete data.
+    <!--FIGURE:scanner-stats-->
+  </li>
+  <li>
+    When you have finished, there is nothing to save — every scan is stored immediately. Your list stays on screen if you leave the page and come back. Use <span class="ui">Clear</span> only when you want to start a fresh session.
+  </li>
+</ol>
+
+<h3>What each message means</h3>
+
+<table>
+  <tr><th>Message</th><th>What happened</th><th>What to do</th></tr>
+  <tr>
+    <td><span class="badge g">Added to batch</span></td>
+    <td>The package is now in this batch.</td>
+    <td>Nothing. Scan the next one.</td>
+  </tr>
+  <tr>
+    <td><span class="badge y">Already in this batch</span></td>
+    <td>You scanned the same package twice.</td>
+    <td>Nothing. It is not added again.</td>
+  </tr>
+  <tr>
+    <td><span class="badge r">Package not found</span></td>
+    <td>This tracking number is not registered in the system at all.</td>
+    <td>Register it first using <span class="ui">Quick Register</span>, then scan it again.</td>
+  </tr>
+  <tr>
+    <td><span class="badge y">Package is in another batch</span></td>
+    <td>The package already belongs to a different batch.</td>
+    <td>A window shows you which batch. Confirm to move it here, or cancel to leave it where it is.</td>
+  </tr>
+  <tr>
+    <td><span class="badge y">Incomplete data</span></td>
+    <td>The package has no weight and no dimensions, so it cannot be priced.</td>
+    <td>Best: click <span class="ui">Go to Quick Register</span> and add the weight. If you are in a hurry, click <span class="ui">Continue anyway</span> — it is added, and counted under <b>Incomplete</b> so it can be fixed later.</td>
+  </tr>
+</table>
+
+<div class="warn">
+  <b>Watch the Incomplete number</b>
+  A package with no weight and no dimensions cannot be charged correctly. Before the batch leaves, the Incomplete count should be zero.
+</div>
+
+<h2 class="page-break">Part 3 — Adding the shipping details later</h2>
+
+<p>When you create a batch you rarely know the air waybill or the container number yet. Add them as soon as they exist — you do not need to create anything new.</p>
+
+<ol class="steps">
+  <li>Open <span class="ui">Batches</span> and find your batch in the list.</li>
+  <li>
+    Click the edit (pencil) button on that row.
+    <!--FIGURE:batch-edit-button-->
+  </li>
+  <li>
+    Fill in whatever you now know: the <b>Air waybill (AWB)</b> or <b>Container Number</b>, the flight or vessel, the shipment tracking numbers, and the carton count.
+    <!--FIGURE:batch-edit-dialog-->
+  </li>
+  <li>Click <span class="ui">Save Changes</span>.</li>
+</ol>
+
+<div class="note">
+  <b>The number becomes a link</b>
+  Once an air waybill or container number is saved, it appears underneath the batch code in the list as a blue link. Click it and the airline's or shipping line's own tracking page opens. If that carrier's website cannot accept the number in the address, the system copies the number for you and tells you to paste it.
+  <br><br>
+  Your customers see the same number on their shipment page in the customer portal, and they can click it too.
+</div>
+
+<footer>
+  Wazn Express — internal guide. If a screen does not look like this guide, the system may have been updated; ask the office.
+</footer>
+
+</body>
+</html>
