@@ -626,7 +626,8 @@
     "pricingRules": "أسعار الشحن",
     "batchLabelTemplate": "قالب ملصق الدفعة",
     "registrations": "التسجيلات",
-    "awaitingArrival": "لم تصل بعد"
+    "awaitingArrival": "لم تصل بعد",
+    "trash": "سلة المحذوفات"
   },
   "dashboard": {
     "problemsTitle": "المشاكل والإجراءات المطلوبة",
@@ -6089,5 +6090,18 @@
   "addNote": "أضف ملاحظة",
   "optional": "اختياري",
   "claimNotePlaceholder": "اشرح سبب كون هذا الطرد ملكًا لك...",
-  "submitting": "جارٍ الإرسال..."
+  "submitting": "جارٍ الإرسال...",
+  "trash": {
+    "title": "سلة المحذوفات",
+    "subtitle": "كل ما تم حذفه — يمكنك استعادته أو حذفه نهائياً",
+    "searchPlaceholder": "ابحث في السلة...",
+    "empty": "السلة فارغة",
+    "emptyHint": "كل ما تحذفه سيظهر هنا",
+    "restore": "استعادة",
+    "restored": "تمت استعادة «{{label}}»",
+    "purge": "حذف نهائي",
+    "purged": "تم حذف «{{label}}» نهائياً",
+    "purgeWarning": "سيتم حذف «{{label}}» نهائياً. لا يمكن التراجع عن هذا أبداً.",
+    "deletedBy": "حذفه {{who}} — {{when}}"
+  }
 }

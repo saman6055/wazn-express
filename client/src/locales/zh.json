@@ -626,7 +626,8 @@
     "pricingRules": "运费价格",
     "batchLabelTemplate": "批次标签模板",
     "registrations": "登记记录",
-    "awaitingArrival": "尚未到达"
+    "awaitingArrival": "尚未到达",
+    "trash": "回收站"
   },
   "dashboard": {
     "problemsTitle": "问题与待办事项",
@@ -6076,5 +6077,18 @@
   "addNote": "添加备注",
   "optional": "可选",
   "claimNotePlaceholder": "请说明此包裹为何属于您…",
-  "submitting": "提交中…"
+  "submitting": "提交中…",
+  "trash": {
+    "title": "回收站",
+    "subtitle": "所有已删除的内容 — 可以恢复，或永久删除",
+    "searchPlaceholder": "搜索回收站...",
+    "empty": "回收站是空的",
+    "emptyHint": "您删除的任何内容都会显示在这里",
+    "restore": "恢复",
+    "restored": "已恢复「{{label}}」",
+    "purge": "永久删除",
+    "purged": "已永久删除「{{label}}」",
+    "purgeWarning": "「{{label}}」将被永久删除。此操作无法撤销。",
+    "deletedBy": "由 {{who}} 删除 — {{when}}"
+  }
 }

@@ -960,7 +960,7 @@ export const batchesRouter = router({
      * never decremented when a package moves away.
      */
     delete: adminProcedure
-      .input(z.object({ id: idSchema }))
+      .input(z.object({ id: idSchema, reason: z.string().max(500).optional() }))
       .mutation(async ({ input, ctx }) => {
         const batch = await db.getBatchById(input.id);
         if (!batch) {
@@ -980,7 +980,19 @@ export const batchesRouter = router({
           });
         }
 
-        // Written before the row goes, so the log still has something to say.
+        // A complete copy into the bin before the row goes, so a deletion
+        // made in error can be undone. Written first: if this insert fails,
+        // nothing is deleted and the operator can try again.
+        await db.recordDeletion({
+          entityType: "batch",
+          entityId: batch.id,
+          label: batch.batchCode,
+          snapshot: batch as unknown as Record<string, unknown>,
+          deletedById: ctx.user.id,
+          deletedByName: ctx.user.name ?? null,
+          deletionReason: input.reason ?? null,
+        });
+
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,

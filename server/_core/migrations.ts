@@ -1868,6 +1868,32 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    // The recycle bin. Holds a complete copy of a deleted row so it can be
+    // put back, keyed by what it was rather than by a foreign key — the row
+    // it came from is gone, which is the point.
+    //
+    // A new table rather than reusing deletionLogs: that one's migration SQL
+    // and its drizzle schema have drifted into two different shapes, and
+    // building recovery on top of a table nobody can describe would be a bad
+    // trade for saving one CREATE.
+    name: "deletedRecords",
+    dependencies: ["users"],
+    sql: `CREATE TABLE IF NOT EXISTS deletedRecords (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      entityType VARCHAR(50) NOT NULL,
+      entityId INT NOT NULL,
+      label VARCHAR(255) NOT NULL,
+      snapshot JSON NOT NULL,
+      deletedById INT NOT NULL,
+      deletedByName VARCHAR(255),
+      deletionReason TEXT,
+      deletedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_deleted_records_deleted_at (deletedAt),
+      INDEX idx_deleted_records_entity (entityType, entityId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "activityAlerts",
     dependencies: ["users", "auditLogs"],
     sql: `CREATE TABLE IF NOT EXISTS activity_alerts (

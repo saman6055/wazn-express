@@ -111,6 +111,7 @@ const FinancialReports = lazy(() => import("./pages/FinancialReports"));
 const Users = lazy(() => import("./pages/Users"));
 const StaffManagement = lazy(() => import("./pages/StaffManagement"));
 const PermissionsManagement = lazy(() => import("./pages/PermissionsManagement"));
+const Trash = lazy(() => import("./pages/Trash"));
 const AuditLogs = lazy(() => import("./pages/AuditLogs"));
 
 // ---------------------------------------------------------------------------
@@ -277,6 +278,7 @@ function Router() {
         <Route path="/users" component={Users} />
         <Route path="/staff-management" component={StaffManagement} />
         <Route path="/permissions-management" component={PermissionsManagement} />
+        <Route path="/trash" component={Trash} />
         <Route path="/audit-logs" component={AuditLogs} />
         <Route path="/settings" component={Settings} />
         <Route path="/settings/notifications" component={NotificationSettings} />

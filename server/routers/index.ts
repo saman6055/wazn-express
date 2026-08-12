@@ -6,6 +6,7 @@ import { authRouter } from "./auth.router";
 import { adminRouters } from "./admin.router";
 import { customersRouters } from "./customers.router";
 import { batchesRouter } from "./batches.router";
+import { trashRouter } from "./trash.router";
 import { packagesRouter } from "./packages.router";
 import { invoicesRouters } from "./invoices.router";
 import { financeRouters } from "./finance.router";
@@ -27,6 +28,7 @@ export const appRouter = router({
   auth: authRouter,
   ...customersRouters,
   batches: batchesRouter,
+  trash: trashRouter,
   packages: packagesRouter,
   ...invoicesRouters,
   ...financeRouters,

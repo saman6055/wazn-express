@@ -209,3 +209,51 @@ export type InsertBackup = typeof backups.$inferInsert;
 
 
 // ============ CURRENCIES ============
+
+// ============ RECYCLE BIN ============
+
+/**
+ * A deleted record, kept whole so it can be put back.
+ *
+ * Stores a snapshot of the row rather than marking the original with a
+ * `deletedAt`. Soft-deleting a batch would have meant auditing thirty-six
+ * separate queries across nine files for a `deletedAt IS NULL` filter, and a
+ * single one missed leaks a deleted shipment back into a report or the
+ * customer portal. A snapshot cannot leak: the row is genuinely gone, and
+ * the bin is the only thing that still knows about it.
+ *
+ * `entityType` keeps this general. Every section can put things here without
+ * a table of its own, which is the point — a bin per section would be a
+ * dozen slightly different bins.
+ *
+ * Types that already carry their own `deletedAt` (full-package orders) are
+ * NOT copied here. They are read through the same bin screen from their own
+ * table, because things reference an order and its history has to survive.
+ * The bin is a view over "what was deleted", not a second storage policy.
+ */
+export const deletedRecords = mysqlTable("deletedRecords", {
+  id: int("id").autoincrement().primaryKey(),
+
+  entityType: varchar("entityType", { length: 50 }).notNull(),
+  /** Id the record had before it was deleted. Not a foreign key: the row it
+   *  pointed at no longer exists, which is the whole idea. */
+  entityId: int("entityId").notNull(),
+  /** What to show in the bin — a batch code, a customer name. Denormalised
+   *  on purpose: the record it came from is gone, so nothing can be joined. */
+  label: varchar("label", { length: 255 }).notNull(),
+
+  /** The complete row, exactly as it was, so restoring is a re-insert. */
+  snapshot: json("snapshot").$type<Record<string, unknown>>().notNull(),
+
+  deletedById: int("deletedById").notNull(),
+  deletedByName: varchar("deletedByName", { length: 255 }),
+  deletionReason: text("deletionReason"),
+  deletedAt: timestamp("deletedAt").defaultNow().notNull(),
+}, (table) => ({
+  // The bin lists newest first, and filters by type.
+  deletedAtIdx: index("idx_deleted_records_deleted_at").on(table.deletedAt),
+  entityIdx: index("idx_deleted_records_entity").on(table.entityType, table.entityId),
+}));
+
+export type DeletedRecord = typeof deletedRecords.$inferSelect;
+export type InsertDeletedRecord = typeof deletedRecords.$inferInsert;

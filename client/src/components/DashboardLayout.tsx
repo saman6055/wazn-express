@@ -76,6 +76,7 @@ import {
   Minimize2,
   Plus,
   Minus,
+  Trash2,
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
@@ -519,6 +520,7 @@ function DashboardLayoutContent({
           { icon: Users, label: t("nav.staffManagement") || "بەڕێوەبردنی ستاف", path: "/staff-management" },
           { icon: Shield, label: t("nav.permissionsManagement") || "بەڕێوەبردنی مۆڵەتەکان", path: "/permissions-management" },
           { icon: FileText, label: t("nav.auditLogs") || "لۆگی چاودێری", path: "/audit-logs" },
+          { icon: Trash2, label: t("nav.trash") || "سەبەتەی سڕاوەکان", path: "/trash" },
         ]
       });
     }

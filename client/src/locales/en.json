@@ -626,7 +626,8 @@
     "pricingRules": "Shipping rates",
     "batchLabelTemplate": "Batch label template",
     "registrations": "Registrations",
-    "awaitingArrival": "Not yet arrived"
+    "awaitingArrival": "Not yet arrived",
+    "trash": "Recycle bin"
   },
   "dashboard": {
     "problemsTitle": "Problems & action needed",
@@ -6014,5 +6015,18 @@
   "addNote": "Add a note",
   "optional": "optional",
   "claimNotePlaceholder": "Explain why this package belongs to you...",
-  "submitting": "Submitting..."
+  "submitting": "Submitting...",
+  "trash": {
+    "title": "Recycle bin",
+    "subtitle": "Everything that has been deleted — restore it, or remove it for good",
+    "searchPlaceholder": "Search the bin...",
+    "empty": "The bin is empty",
+    "emptyHint": "Anything you delete shows up here",
+    "restore": "Restore",
+    "restored": "\"{{label}}\" restored",
+    "purge": "Delete permanently",
+    "purged": "\"{{label}}\" permanently deleted",
+    "purgeWarning": "\"{{label}}\" will be deleted permanently. This can never be undone.",
+    "deletedBy": "Deleted by {{who}} — {{when}}"
+  }
 }
