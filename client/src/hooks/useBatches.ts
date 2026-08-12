@@ -10,6 +10,7 @@ export function useBatches() {
   const createMutation = trpc.batches.create.useMutation();
   const updateMutation = trpc.batches.update.useMutation();
   const updateStatusMutation = trpc.batches.updateStatus.useMutation();
+  const deleteMutation = trpc.batches.delete.useMutation();
 
   return {
     batches,
@@ -24,7 +25,10 @@ export function useBatches() {
     updateStatusMutation,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
+    deleteBatch: deleteMutation.mutateAsync,
+    deleteMutation,
     isUpdatingStatus: updateStatusMutation.isPending,
+    isDeleting: deleteMutation.isPending,
   };
 }
 

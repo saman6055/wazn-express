@@ -1874,7 +1874,8 @@
     "delivered": "Delivered",
     "closed": "Closed",
     "scanIntoBatch": "Scan into batch",
-    "scanIntoThisBatch": "Scan into this batch"
+    "scanIntoThisBatch": "Scan into this batch",
+    "deleteBatchWarning": "Batch \"{{code}}\" will be deleted. This cannot be undone. Only an empty batch can be deleted — if anything is attached to it, the system refuses and tells you what."
   },
   "scanning": {
     "title": "Scanning",

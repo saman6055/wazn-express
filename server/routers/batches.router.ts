@@ -940,6 +940,60 @@ export const batchesRouter = router({
         });
         return batch;
       }),
+
+    /**
+     * Delete a batch that nothing has happened to yet.
+     *
+     * A batch created by mistake — wrong type, wrong destination, a typo in
+     * the code — had no way out. It stayed in the list forever, and worse, it
+     * stayed in the scanner's dropdown, where the next person could file
+     * parcels into it.
+     *
+     * Refused the moment anything references it. Packages, delivery boxes,
+     * invoices and full-package orders each mean real work has been done
+     * against this batch, and deleting it would orphan that work or quietly
+     * break money already counted. The message names what is in the way, so
+     * the operator knows whether to empty the batch or leave it alone.
+     *
+     * `getBatchDeletionBlockers` counts the referencing rows rather than
+     * reading `batches.totalPackages`, which is incremented on assignment and
+     * never decremented when a package moves away.
+     */
+    delete: adminProcedure
+      .input(z.object({ id: idSchema }))
+      .mutation(async ({ input, ctx }) => {
+        const batch = await db.getBatchById(input.id);
+        if (!batch) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "باچەکە نەدۆزرایەوە" });
+        }
+
+        const blockers = await db.getBatchDeletionBlockers(input.id);
+        if (blockers.total > 0) {
+          const parts: string[] = [];
+          if (blockers.packages) parts.push(`${blockers.packages} پاکێج`);
+          if (blockers.deliveryBoxes) parts.push(`${blockers.deliveryBoxes} سندوقی گەیاندن`);
+          if (blockers.invoices) parts.push(`${blockers.invoices} پسوڵە`);
+          if (blockers.fullPackageOrders) parts.push(`${blockers.fullPackageOrders} داواکاری پاکێجی تەواو`);
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: `ناتوانرێت بسڕدرێتەوە — ${parts.join(" و ")} بەم باچەوە بەستراوە. سەرەتا دەریانبهێنە.`,
+          });
+        }
+
+        // Written before the row goes, so the log still has something to say.
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "delete_batch",
+          entityType: "batch",
+          entityId: batch.id,
+          oldValues: batch,
+        });
+
+        await db.deleteBatch(input.id);
+        return { success: true, batchCode: batch.batchCode };
+      }),
+
     updateStatus: staffProcedure
       .input(z.object({
         id: idSchema,

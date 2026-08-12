@@ -13,6 +13,7 @@ import {
   batches, InsertBatch, Batch,
   batchStatusHistory,
   packages, InsertPackage, Package,
+  deliveryBoxes,
   invoices, InsertInvoice, Invoice,
   exchangeRates, InsertExchangeRate, ExchangeRate,
   auditLogs, InsertAuditLog,
@@ -713,4 +714,64 @@ export async function getBatchStatusTimestamps(batchIds: number[]): Promise<Map<
   }
 
   return byBatch;
+}
+
+/**
+ * What is standing in the way of deleting this batch.
+ *
+ * Counted from the referencing tables, never from `batches.totalPackages` —
+ * that counter is incremented when a package is assigned and is never
+ * decremented when one is moved away, so a batch that has been emptied still
+ * reads as full. Deciding a deletion on it would refuse the exact case this
+ * exists for.
+ *
+ * Everything counted here represents work already done against the batch.
+ * Its own children — pricing tiers, customer pricing, status history — are
+ * not blockers; they are deleted with it.
+ */
+export async function getBatchDeletionBlockers(batchId: number): Promise<{
+  packages: number;
+  deliveryBoxes: number;
+  invoices: number;
+  fullPackageOrders: number;
+  total: number;
+}> {
+  const db = await getDb();
+  const empty = { packages: 0, deliveryBoxes: 0, invoices: 0, fullPackageOrders: 0, total: 0 };
+  if (!db) return empty;
+
+  const one = async (table: any, column: any) => {
+    const rows = await db.select({ n: count() }).from(table).where(eq(column, batchId));
+    return Number(rows[0]?.n ?? 0);
+  };
+
+  const result = {
+    packages: await one(packages, packages.batchId),
+    deliveryBoxes: await one(deliveryBoxes, deliveryBoxes.batchId),
+    invoices: await one(invoices, invoices.batchId),
+    fullPackageOrders: await one(fullPackageOrders, fullPackageOrders.batchId),
+    total: 0,
+  };
+  result.total =
+    result.packages + result.deliveryBoxes + result.invoices + result.fullPackageOrders;
+  return result;
+}
+
+/**
+ * Delete a batch and the rows that belong to it.
+ *
+ * Callers must check `getBatchDeletionBlockers` first — this does not, so
+ * that the router can refuse with a message naming what is in the way.
+ * Scan history keeps its batch id: it is a record of something that
+ * happened, and rewriting it to hide a deletion would be worse than a
+ * dangling id.
+ */
+export async function deleteBatch(batchId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(batchPricingTiers).where(eq(batchPricingTiers.batchId, batchId));
+  await db.delete(batchCustomerPricing).where(eq(batchCustomerPricing.batchId, batchId));
+  await db.delete(batchStatusHistory).where(eq(batchStatusHistory.batchId, batchId));
+  await db.delete(batches).where(eq(batches.id, batchId));
 }

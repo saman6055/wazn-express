@@ -20,6 +20,7 @@ import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
 import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -116,7 +117,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     exportBatchPDF.mutate({ batchId });
   };
   
-  const { batches, refetch, createMutation, updateMutation, updateStatusMutation } = useBatches();
+  const { batches, refetch, createMutation, updateMutation, updateStatusMutation, deleteMutation } = useBatches();
+  const [deletingBatch, setDeletingBatch] = useState<any>(null);
   const { data: warehouses } = trpc.warehouses.list.useQuery({ activeOnly: true });
   const { data: countries } = trpc.countries.list.useQuery({ activeOnly: true });
   const { packages: batchPackages } = useBatchPackages(selectedBatch);
@@ -1121,6 +1123,22 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             <ScanLine className="h-4 w-4" />
                           </Button>
                         )}
+                        {/* Only offered for an empty batch — a mistake worth
+                            undoing, before anything has been filed into it.
+                            The counter is only ever incremented, never
+                            decremented, so a zero here really is empty; the
+                            server counts the rows itself and refuses if
+                            anything at all is attached. */}
+                        {!batch.totalPackages && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeletingBatch(batch)}
+                            title={t("batches.deleteBatch")}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        )}
                         <Link href={`/batches/${batch.id}/financial`}>
                           <Button variant="ghost" size="icon" title={t("batches.financialReport")}>
                             <BarChart3 className="h-4 w-4" />
@@ -1215,6 +1233,44 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             </Table>
           </CardContent>
         </Card>
+
+        <AlertDialog open={!!deletingBatch} onOpenChange={(open) => !open && setDeletingBatch(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                {t("batches.deleteBatch")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("batches.deleteBatchWarning", { code: deletingBatch?.batchCode ?? "" })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                disabled={deleteMutation.isPending}
+                onClick={async (e) => {
+                  // The dialog must survive a refusal: the server rejects a
+                  // batch that has anything attached, and naming what is in
+                  // the way is the whole point of asking.
+                  e.preventDefault();
+                  if (!deletingBatch) return;
+                  try {
+                    await deleteMutation.mutateAsync({ id: deletingBatch.id });
+                    toast.success(t("batches.batchDeleted", { code: deletingBatch.batchCode }));
+                    setDeletingBatch(null);
+                    refetch();
+                  } catch (error: any) {
+                    toast.error(error?.message || t("common.error"));
+                  }
+                }}
+              >
+                {deleteMutation.isPending ? "..." : t("forms.delete")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Batch Packages Dialog */}
         <Dialog open={!!selectedBatch} onOpenChange={(open) => !open && setSelectedBatch(null)}>

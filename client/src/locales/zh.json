@@ -1879,7 +1879,8 @@
     "delivered": "已交付",
     "closed": "已关闭",
     "scanIntoBatch": "扫描入批次",
-    "scanIntoThisBatch": "扫描入此批次"
+    "scanIntoThisBatch": "扫描入此批次",
+    "deleteBatchWarning": "将删除批次「{{code}}」。此操作无法撤销。只有空批次才能删除 — 如果有任何内容与之关联，系统会拒绝并告知原因。"
   },
   "scan": {
     "register": "登记",
