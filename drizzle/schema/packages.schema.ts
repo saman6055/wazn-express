@@ -57,6 +57,11 @@ export const packages = mysqlTable("packages", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
   customerIdIdx: index("idx_packages_customer_id").on(table.customerId),
+  // The portal's hottest filter, used seven times on a single page load:
+  // "this customer's parcels in these batches". MySQL picks one index per
+  // table, so the single-column customerId index left every one of those
+  // scanning the customer's whole history to find a handful of rows.
+  customerBatchIdx: index("idx_packages_customer_batch").on(table.customerId, table.batchId),
   batchIdIdx: index("idx_packages_batch_id").on(table.batchId),
   statusIdx: index("idx_packages_status").on(table.status),
   trackingNumberIdx: index("idx_packages_tracking_number").on(table.trackingNumber),

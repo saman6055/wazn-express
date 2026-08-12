@@ -2451,6 +2451,12 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "packages.volumetricAckById", sql: "ALTER TABLE packages ADD COLUMN volumetricAckById INT NULL" },
   { name: "packages.volumetricNotifiedAt", sql: "ALTER TABLE packages ADD COLUMN volumetricNotifiedAt TIMESTAMP NULL" },
 
+  // The portal filters packages by customer AND batch together, seven times
+  // on a single page load. MySQL uses one index per table, so the
+  // single-column customerId index was reading the customer's entire parcel
+  // history each time and discarding almost all of it.
+  { name: "idx.packages_customer_batch", sql: "CREATE INDEX idx_packages_customer_batch ON packages (customerId, batchId)" },
+
   {
     name: "batches.status.at_depot",
     sql: "ALTER TABLE batches MODIFY COLUMN status ENUM('preparing','in_transit','arrived','customs','at_depot','delivered','closed') NOT NULL DEFAULT 'preparing'",
