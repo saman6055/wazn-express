@@ -6,9 +6,14 @@
 <style>
   @page { size: A4; margin: 18mm 16mm; }
   * { box-sizing: border-box; }
+  /* Stated outright, and never inherited: the first draft set no colours at
+     all, so the page picked up the reader's dark theme and printed as grey
+     text on black. A document for print declares both ends itself. */
+  html, body { background: #ffffff; }
   body {
     font-family: "Segoe UI", Arial, sans-serif;
     font-size: 11pt; line-height: 1.6; color: #1a1a1a; margin: 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
   h1 { font-size: 22pt; margin: 0 0 4pt; color: #14507e; }
   .sub { font-size: 11pt; color: #555; margin: 0 0 18pt; }
@@ -73,11 +78,9 @@
 <ol class="steps">
   <li>
     Open <span class="ui">admin.waznexpress.com</span> and sign in with your username and password.
-    <!--FIGURE:login-->
   </li>
   <li>
     Set the language you want to work in. Click the language button at the top of the screen and choose <span class="ui">English</span> or <span class="ui">中文</span>. Every screen in this guide is shown in English.
-    <!--FIGURE:language-->
   </li>
 </ol>
 
@@ -85,14 +88,18 @@
 
 <p>A batch is one shipment: one flight, or one container. Everything you scan into it travels together.</p>
 
+<div class="note">
+  <b>Fill in what you can, even if you are not sure</b>
+  Put in your best estimate for any field you are unsure about — weight, cost, dates, carrier names. Do not leave the batch unmade because a number is missing. The Erbil office checks every batch and corrects the figures when the goods arrive. An estimate you can correct is far more useful than an empty field.
+</div>
+
 <ol class="steps">
   <li>
     In the left sidebar, open <span class="ui">Batches</span>.
-    <!--FIGURE:sidebar-batches-->
   </li>
   <li>
     Click the <span class="ui">New Batch</span> button at the top right. A window opens with three tabs: <span class="ui">Basic Information</span>, <span class="ui">Volume &amp; Cost</span> and <span class="ui">Selling Price</span>.
-    <!--FIGURE:batches-list-->
+    <!--FIGURE:3-batches-list-->
   </li>
   <li>
     <b>Batch Code</b> — you can type your own name for this batch, in any format. If you leave it empty, the system creates a code for you. Use a name you will recognise later.
@@ -108,10 +115,10 @@
       <tr><td>Air Irregular</td><td>Air cargo with special or tiered pricing</td></tr>
       <tr><td>Sea Freight</td><td>Sea container, charged by CBM (volume)</td></tr>
     </table>
-    <!--FIGURE:create-basic-->
+    <!--FIGURE:4-create-basic-->
   </li>
   <li>
-    Fill in the carrier details. <b>You can leave all of these empty for now</b> — at the time you create the batch you usually do not know them yet. See Part 3 for adding them later.
+    Fill in the carrier details. The screen itself says these are optional and can be added later from Edit — so put in whatever you already know, and leave the rest. See Part 3 for adding them once the goods actually ship.
     <table>
       <tr><th>If you chose air</th><th>If you chose sea</th></tr>
       <tr>
@@ -128,7 +135,6 @@
         </td>
       </tr>
     </table>
-    <!--FIGURE:create-carrier-->
   </li>
   <li>
     <b>Shipment to warehouse</b> — this records how the cartons physically reached the airport or port warehouse.
@@ -137,17 +143,20 @@
       <li><b>Cartons</b> — type how many cartons you sent in total.</li>
     </ul>
     You do not need to count the pieces. Every package you scan into the batch is counted automatically.
-    <!--FIGURE:create-shipment-->
   </li>
   <li>
-    <b>Departure Date</b> and <b>Est. Arrival</b> — fill these if you know them. Both are optional.
+    <b>Total Shipping Cost (USD)</b>, <b>Departure Date</b> and <b>Estimated Arrival Date</b> — put in your best estimate. The dates come pre-filled; change them to the real ones if you know them.
   </li>
   <li>
-    The <span class="ui">Volume &amp; Cost</span> and <span class="ui">Selling Price</span> tabs are for the accounts. <b>You can leave them completely empty.</b> Fill them in later, when the shipping cost is known.
+    Open the <span class="ui">Volume &amp; Cost</span> tab. Enter the <b>Actual weight</b> of the batch, and the <b>Charged weight</b> if the carrier charges a different figure. <b>Cost per KG</b> is what we pay the carrier. Estimates are fine here.
+    <!--FIGURE:5-create-volume-->
+  </li>
+  <li>
+    Open the <span class="ui">Selling Price</span> tab. <b>Price per KG</b> is what the customer pays. Leave <b>Special Pricing</b> alone unless the office has told you a particular customer has an agreed rate.
+    <!--FIGURE:6-create-price-->
   </li>
   <li>
     Click <span class="ui">Create Batch</span>. The new batch appears in the list with the status <span class="badge b">Preparing</span>, and it is now ready to receive packages.
-    <!--FIGURE:batch-created-->
   </li>
 </ol>
 
@@ -162,16 +171,20 @@
 
 <ol class="steps">
   <li>
-    In the left sidebar, open <span class="ui">Batch Assignment</span>.
-    <!--FIGURE:sidebar-scanner-->
+    Get to the scanner in whichever way is quicker for you:
+    <ul>
+      <li><b>From the batch you just made</b> — on the <span class="ui">Batches</span> page, click the scan button on that batch's row. The scanner opens with the batch already selected, and you can go straight to step 3.</li>
+      <li><b>From the sidebar</b> — open <span class="ui">Scanning</span>, then <span class="ui">Batch Assignment</span>.</li>
+    </ul>
+    <!--FIGURE:1-scanner-sidebar-->
   </li>
   <li>
-    At the top, open <span class="ui">Select a batch</span> and choose the batch you created. <b>Nothing can be scanned until you do this</b> — the scanner box stays greyed out.
+    If the batch is not already chosen, open <span class="ui">Select a batch</span> at the top and pick it. <b>Nothing can be scanned until you do this</b> — the scanner box stays greyed out and the page says <i>Select a batch</i>.
     <div class="note">
       <b>Empty list?</b>
-      Only batches with the status <b>Preparing</b> or <b>In Transit</b> appear here. If the list is empty, the page tells you so and gives you a button to go and create one.
+      Only batches with the status <b>Preparing</b> or <b>In Transit</b> appear here. If there are none, the page says <i>No open batches — create one on the Batches page first</i> and gives you a <span class="ui">Create Batch</span> button that takes you straight there.
     </div>
-    <!--FIGURE:scanner-select-batch-->
+    <!--FIGURE:2-scanner-empty-->
   </li>
   <li>
     Choose how you will read the barcode:
@@ -180,15 +193,12 @@
       <li><span class="ui">Camera</span> — use the device camera to read the barcode.</li>
     </ul>
     Leave <span class="ui">Continuous mode</span> switched on. The box clears itself after each scan, so you can keep scanning without touching anything.
-    <!--FIGURE:scanner-modes-->
   </li>
   <li>
     Scan the tracking number of the first package. The system finds it, adds it to the batch, and plays a sound. A green message says <span class="badge g">Added to batch</span>.
-    <!--FIGURE:scan-success-->
   </li>
   <li>
     Keep scanning. Every package you add appears in the list below, newest first, and the <span class="ui">Session stats</span> panel on the right counts as you go: number of packages, total weight, total CBM, and how many have incomplete data.
-    <!--FIGURE:scanner-stats-->
   </li>
   <li>
     When you have finished, there is nothing to save — every scan is stored immediately. Your list stays on screen if you leave the page and come back. Use <span class="ui">Clear</span> only when you want to start a fresh session.
@@ -239,11 +249,9 @@
   <li>Open <span class="ui">Batches</span> and find your batch in the list.</li>
   <li>
     Click the edit (pencil) button on that row.
-    <!--FIGURE:batch-edit-button-->
   </li>
   <li>
     Fill in whatever you now know: the <b>Air waybill (AWB)</b> or <b>Container Number</b>, the flight or vessel, the shipment tracking numbers, and the carton count.
-    <!--FIGURE:batch-edit-dialog-->
   </li>
   <li>Click <span class="ui">Save Changes</span>.</li>
 </ol>
