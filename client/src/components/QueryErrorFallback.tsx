@@ -1,7 +1,9 @@
 import { useTranslation } from "@/contexts/LanguageContext";
-import { AlertTriangle, RotateCcw, Home } from "lucide-react";
+import { AlertTriangle, RotateCcw, Home, Copy, Check } from "lucide-react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { buildErrorReport, getErrorBoundaryStrings } from "./ErrorBoundary";
 
 interface QueryErrorFallbackProps {
   error: Error;
@@ -19,6 +21,17 @@ export function QueryErrorFallback({
   isNetwork,
 }: QueryErrorFallbackProps) {
   const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  // Same labels as the top-level error screen, so "copy details" reads
+  // identically on every error screen regardless of which boundary caught it.
+  const copyStrings = getErrorBoundaryStrings();
+
+  const handleCopyDetails = () => {
+    navigator.clipboard.writeText(buildErrorReport(error)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   const getTitle = () => {
     if (isAuthError) return t("errors.sessionExpiredPleaseLogin");
@@ -50,6 +63,13 @@ export function QueryErrorFallback({
           {getDescription()}
         </p>
         {!isAuthError && (
+          <div className="w-full max-h-32 overflow-auto rounded-lg bg-muted p-3 mb-6 text-start">
+            <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words font-sans">
+              {error.message}
+            </pre>
+          </div>
+        )}
+        {!isAuthError && (
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
@@ -73,6 +93,21 @@ export function QueryErrorFallback({
                 {t("common.goHome")}
               </a>
             </Link>
+            <button
+              type="button"
+              onClick={handleCopyDetails}
+              className={cn(
+                "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
+                "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              {copied ? (
+                <Check size={16} className="text-green-600" />
+              ) : (
+                <Copy size={16} />
+              )}
+              {copied ? copyStrings.copied : copyStrings.copyDetails}
+            </button>
           </div>
         )}
         {isAuthError && (

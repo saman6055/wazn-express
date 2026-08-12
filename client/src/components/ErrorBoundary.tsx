@@ -52,7 +52,7 @@ const ERROR_STRINGS: Record<string, {
 
 const LANGUAGE_STORAGE_KEY = "wazn-express-language";
 
-function getErrorBoundaryStrings(): {
+export function getErrorBoundaryStrings(): {
   title: string;
   description: string;
   tryAgain: string;
@@ -70,6 +70,23 @@ function getErrorBoundaryStrings(): {
     copyDetails: s?.copyDetails ?? "Copy details",
     copied: s?.copied ?? "Copied",
   };
+}
+
+/**
+ * One report format for every error screen (and the pre-mount failure screen
+ * in main.tsx): what happened, where, and when — so "copy details for
+ * support" always hands support enough to act on, no matter which screen
+ * caught the problem.
+ */
+export function buildErrorReport(error: Error): string {
+  return [
+    error.message,
+    error.stack,
+    typeof window !== "undefined" ? `Page: ${window.location.href}` : null,
+    `Time: ${new Date().toISOString()}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 interface Props {
@@ -95,8 +112,7 @@ class ErrorBoundary extends Component<Props, State> {
   handleCopyDetails = () => {
     const { error } = this.state;
     if (!error) return;
-    const text = [error.message, error.stack].filter(Boolean).join("\n\n");
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard.writeText(buildErrorReport(error)).then(() => {
       this.setState({ copied: true });
       setTimeout(() => this.setState({ copied: false }), 2000);
     });

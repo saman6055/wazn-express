@@ -16,6 +16,7 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
+import { buildErrorReport, getErrorBoundaryStrings } from "./components/ErrorBoundary";
 import { getLoginUrl } from "./const";
 import { loadLocale } from "@/lib/i18nRegistry";
 import "./index.css";
@@ -161,4 +162,76 @@ async function mount() {
   );
 }
 
-void mount();
+/**
+ * If the app fails before React mounts (the usual cause: the locale file
+ * fetch in mount() failing right after a deploy), the visitor used to get a
+ * boot screen that never went away — no message, nothing to send to support.
+ * This renders the same report the in-app error screens show, with the same
+ * copy-details button, using plain DOM because React never got to render.
+ */
+function renderMountFailure(error: unknown) {
+  const err = error instanceof Error ? error : new Error(String(error));
+  const root = document.getElementById("root");
+  if (!root) return;
+  const s = getErrorBoundaryStrings();
+  const lang = (() => {
+    try {
+      return localStorage.getItem("wazn-express-language") || "ku";
+    } catch {
+      return "ku";
+    }
+  })();
+
+  root.innerHTML = "";
+  root.dir = ["ku", "ar"].includes(lang) ? "rtl" : "ltr";
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText =
+    "display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center;font-family:system-ui,sans-serif;gap:12px;";
+
+  const title = document.createElement("h2");
+  title.textContent = s.title;
+  title.style.cssText = "font-size:20px;font-weight:600;margin:0;";
+
+  const desc = document.createElement("p");
+  desc.textContent = s.description;
+  desc.style.cssText = "font-size:14px;color:#6b7280;max-width:28rem;margin:0;";
+
+  const details = document.createElement("pre");
+  details.textContent = err.message;
+  details.style.cssText =
+    "font-size:12px;color:#6b7280;background:#f3f4f6;border-radius:8px;padding:12px;max-width:32rem;max-height:8rem;overflow:auto;white-space:pre-wrap;word-break:break-word;";
+
+  const buttons = document.createElement("div");
+  buttons.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;justify-content:center;";
+  const buttonCss =
+    "padding:10px 16px;border-radius:8px;font-size:14px;font-weight:500;border:1px solid #e5e7eb;cursor:pointer;background:#fff;color:#111827;";
+
+  const retry = document.createElement("button");
+  retry.type = "button";
+  retry.textContent = s.tryAgain;
+  retry.style.cssText = buttonCss + "background:#146c94;color:#fff;border-color:#146c94;";
+  retry.addEventListener("click", () => window.location.reload());
+
+  const copy = document.createElement("button");
+  copy.type = "button";
+  copy.textContent = s.copyDetails;
+  copy.style.cssText = buttonCss;
+  copy.addEventListener("click", () => {
+    navigator.clipboard.writeText(buildErrorReport(err)).then(() => {
+      copy.textContent = s.copied;
+      setTimeout(() => {
+        copy.textContent = s.copyDetails;
+      }, 2000);
+    });
+  });
+
+  buttons.append(retry, copy);
+  wrap.append(title, desc, details, buttons);
+  root.appendChild(wrap);
+}
+
+mount().catch((error) => {
+  console.error("[Mount] App failed to start:", error);
+  renderMountFailure(error);
+});
