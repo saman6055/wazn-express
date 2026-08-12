@@ -18,10 +18,11 @@ import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
 import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
-import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine } from "lucide-react";
+import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -119,6 +120,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   
   const { batches, refetch, createMutation, updateMutation, updateStatusMutation, deleteMutation } = useBatches();
   const [deletingBatch, setDeletingBatch] = useState<any>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const { data: warehouses } = trpc.warehouses.list.useQuery({ activeOnly: true });
   const { data: countries } = trpc.countries.list.useQuery({ activeOnly: true });
   const { packages: batchPackages } = useBatchPackages(selectedBatch);
@@ -447,6 +449,16 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   };
 
   const getUnit = (type: string) => type === "sea" ? "CBM" : "KG";
+
+  // Split rather than filter: the summary counts above the table are taken
+  // from the whole set, so hiding a delivered batch must not make the
+  // "Delivered" figure drop. One shared rule, so the next section to adopt
+  // this cannot answer "how old is old" differently.
+  const { current: currentBatches, archived: archivedBatches } = useMemo(
+    () => partitionArchived(batches ?? [], FINISHED_BATCH_STATUSES),
+    [batches]
+  );
+  const visibleBatches = showArchived ? (batches ?? []) : currentBatches;
 
   return (
     <DashboardLayout>
@@ -1006,6 +1018,20 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
         <Card>
           <CardContent className="pt-6">
+            {/* Finished shipments drop out of the table but stay in the counts
+                above — sixteen delivered batches were burying the four that
+                anyone was actually working on. */}
+            {archivedBatches.length > 0 && (
+              <div className="flex items-center justify-between gap-2 mb-4 text-sm">
+                <span className="text-muted-foreground">
+                  {t("batches.archivedHidden", { count: archivedBatches.length })}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => setShowArchived((v) => !v)}>
+                  <Archive className="h-4 w-4 me-2" />
+                  {showArchived ? t("batches.hideArchived") : t("batches.showArchived")}
+                </Button>
+              </div>
+            )}
             <Table pageSticky>
               <TableHeader>
                 <TableRow>
@@ -1021,7 +1047,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {batches?.map((batch) => (
+                {visibleBatches.map((batch) => (
                   <TableRow
                     key={batch.id}
                     className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"

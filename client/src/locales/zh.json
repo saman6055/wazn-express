@@ -1880,7 +1880,10 @@
     "closed": "已关闭",
     "scanIntoBatch": "扫描入批次",
     "scanIntoThisBatch": "扫描入此批次",
-    "deleteBatchWarning": "将删除批次「{{code}}」。此操作无法撤销。只有空批次才能删除 — 如果有任何内容与之关联，系统会拒绝并告知原因。"
+    "deleteBatchWarning": "将删除批次「{{code}}」。此操作无法撤销。只有空批次才能删除 — 如果有任何内容与之关联，系统会拒绝并告知原因。",
+    "showArchived": "显示已归档",
+    "hideArchived": "隐藏已归档",
+    "archivedHidden": "已隐藏 {{count}} 个完成的批次"
   },
   "scan": {
     "register": "登记",
