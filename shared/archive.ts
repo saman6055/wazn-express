@@ -18,8 +18,10 @@
  * question.
  */
 
-/** How long a finished record stays in the main list before it drops out. */
-export const ARCHIVE_AFTER_DAYS = 30;
+/** How long a finished record stays in the main list before it drops out.
+ *  Ten days: long enough to still be handling the tail of a delivered
+ *  shipment, short enough that the list is about this week's work. */
+export const ARCHIVE_AFTER_DAYS = 10;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

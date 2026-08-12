@@ -21,6 +21,7 @@ import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
 import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
+import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -459,6 +460,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     [batches]
   );
   const visibleBatches = showArchived ? (batches ?? []) : currentBatches;
+
+  // Batches that have been travelling for days with no waybill or container
+  // number recorded. Nothing used to ask for these, so a shipment could reach
+  // Erbil with the field still blank — staff unable to look it up with the
+  // carrier, and the customer's portal page showing nothing to click.
+  const awaitingNumber = useMemo(
+    () => batchesAwaitingShippingNumber(batches ?? []),
+    [batches]
+  );
 
   return (
     <DashboardLayout>
@@ -1015,6 +1025,45 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             </CardContent>
           </Card>
         </div>
+
+        {awaitingNumber.length > 0 && (
+          <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/40">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">
+                    {t("batches.awaitingNumberTitle", { count: awaitingNumber.length })}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {t("batches.awaitingNumberDesc")}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {awaitingNumber.slice(0, 8).map((batch: any) => (
+                      <Button
+                        key={batch.id}
+                        size="sm"
+                        variant={batch.severity === "urgent" ? "default" : "outline"}
+                        className={batch.severity === "urgent" ? "bg-amber-600 hover:bg-amber-700" : ""}
+                        onClick={() => openEditDialog(batch)}
+                      >
+                        <span className="font-mono">{batch.batchCode}</span>
+                        <Badge variant="secondary" className="ms-2">
+                          {t("batches.daysWaiting", { count: batch.daysWaiting })}
+                        </Badge>
+                      </Button>
+                    ))}
+                    {awaitingNumber.length > 8 && (
+                      <span className="self-center text-sm text-muted-foreground">
+                        {t("batches.andMore", { count: awaitingNumber.length - 8 })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardContent className="pt-6">

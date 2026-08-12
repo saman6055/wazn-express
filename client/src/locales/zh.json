@@ -1884,7 +1884,11 @@
     "deleteBatchWarning": "将删除批次「{{code}}」。此操作无法撤销。只有空批次才能删除 — 如果有任何内容与之关联，系统会拒绝并告知原因。",
     "showArchived": "显示已归档",
     "hideArchived": "隐藏已归档",
-    "archivedHidden": "已隐藏 {{count}} 个完成的批次"
+    "archivedHidden": "已隐藏 {{count}} 个完成的批次",
+    "awaitingNumberTitle": "{{count}} 个批次正在等待提单号或集装箱号",
+    "awaitingNumberDesc": "这些批次创建已有一段时间，但仍未记录号码。没有它，员工无法向承运人查询货物，客户在门户中也无处可点。点击批次以添加。",
+    "daysWaiting": "{{count}} 天",
+    "andMore": "还有 {{count}} 个"
   },
   "scan": {
     "register": "登记",

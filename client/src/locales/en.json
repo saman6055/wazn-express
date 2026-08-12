@@ -1879,7 +1879,11 @@
     "deleteBatchWarning": "Batch \"{{code}}\" will be deleted. This cannot be undone. Only an empty batch can be deleted — if anything is attached to it, the system refuses and tells you what.",
     "showArchived": "Show archived",
     "hideArchived": "Hide archived",
-    "archivedHidden": "{{count}} finished batches hidden"
+    "archivedHidden": "{{count}} finished batches hidden",
+    "awaitingNumberTitle": "{{count}} batches are waiting for a waybill or container number",
+    "awaitingNumberDesc": "These were created a while ago and still have no number recorded. Without it staff cannot look the shipment up with the carrier, and the customer has nothing to click in the portal. Click a batch to add it.",
+    "daysWaiting": "{{count}} days",
+    "andMore": "and {{count}} more"
   },
   "scanning": {
     "title": "Scanning",
