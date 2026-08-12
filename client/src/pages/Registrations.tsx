@@ -515,7 +515,7 @@ export default function Registrations() {
         <Card className="rounded-2xl">
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-blue-100 dark:from-sky-950/50 dark:to-blue-950/50">
-              <PackageIcon className="h-7 w-7 text-sky-500" />
+              <PackageIcon className="h-7 w-7 text-sky-500 dark:text-sky-400" />
             </div>
             <p className="text-sm text-muted-foreground">
               {label({
@@ -609,7 +609,7 @@ function Toggle({
       onClick={onClick}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-medium ring-1 transition-all duration-200",
-        active ? "bg-white text-blue-700 dark:text-blue-300 shadow-lg ring-white/40" : "bg-white/10 text-white/85 ring-white/20 hover:bg-white/20",
+        active ? "bg-white dark:bg-card text-blue-700 dark:text-blue-300 shadow-lg ring-white/40" : "bg-white/10 text-white/85 ring-white/20 hover:bg-white/20",
       )}
     >
       <Icon className="h-4 w-4" />

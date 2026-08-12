@@ -334,7 +334,7 @@ const { t, language, setLanguage } = useLanguage();
                 "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2",
                 isDark ? "bg-blue-900/30" : "bg-blue-100 dark:bg-blue-950/40"
               )}>
-                <Package className="w-5 h-5 text-blue-500" />
+                <Package className="w-5 h-5 text-blue-500 dark:text-blue-400" />
               </div>
               <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                 {summary?.totalPackages || 0}
@@ -348,9 +348,9 @@ const { t, language, setLanguage } = useLanguage();
                 "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2",
                 isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
-                <CreditCard className="w-5 h-5 text-emerald-500" />
+                <CreditCard className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
               </div>
-              <p className="text-lg font-bold text-emerald-500">{formatCurrency(summary?.totalPaid || 0)}</p>
+              <p className="text-lg font-bold text-emerald-500 dark:text-emerald-400">{formatCurrency(summary?.totalPaid || 0)}</p>
               <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
                 {pickLang(language, { ku: "پارەدان", en: "Paid", ar: "المدفوع", zh: "已付" })}
               </p>
@@ -364,12 +364,12 @@ const { t, language, setLanguage } = useLanguage();
               )}>
                 <CreditCard className={cn(
                   "w-5 h-5",
-                  (summary?.balanceUsd || 0) > 0 ? "text-red-500" : "text-emerald-500"
+                  (summary?.balanceUsd || 0) > 0 ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400"
                 )} />
               </div>
               <p className={cn(
                 "text-lg font-bold",
-                (summary?.balanceUsd || 0) > 0 ? "text-red-500" : "text-emerald-500"
+                (summary?.balanceUsd || 0) > 0 ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400"
               )}>
                 {formatCurrency(Math.abs(summary?.balanceUsd || 0))}
               </p>

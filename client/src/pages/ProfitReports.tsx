@@ -181,7 +181,7 @@ export default function ProfitReports() {
           <Card className="border-violet-200 dark:border-violet-800/60 bg-gradient-to-br from-violet-50/80 to-white dark:from-violet-950/20 dark:to-background">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4 text-violet-600" />
+                <FileText className="h-4 w-4 text-violet-600 dark:text-violet-300" />
                 {t("profitReport.executiveSummary")}
               </CardTitle>
             </CardHeader>
@@ -210,7 +210,7 @@ export default function ProfitReports() {
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-emerald-600">{t("profitReport.totalProfit")}</p>
+                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">{t("profitReport.totalProfit")}</p>
                       <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">{formatCurrency(monthlyReport.yearSummary.totalProfit)}</p>
                     </div>
                     <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl">
@@ -223,7 +223,7 @@ export default function ProfitReports() {
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-blue-600">{t("profitReport.totalRevenue")}</p>
+                      <p className="text-sm font-medium text-blue-600 dark:text-blue-300">{t("profitReport.totalRevenue")}</p>
                       <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 tabular-nums">{formatCurrency(monthlyReport.yearSummary.totalRevenue)}</p>
                     </div>
                     <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
@@ -236,7 +236,7 @@ export default function ProfitReports() {
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-orange-600">{t("profitReport.totalShipping")}</p>
+                      <p className="text-sm font-medium text-orange-600 dark:text-orange-300">{t("profitReport.totalShipping")}</p>
                       <p className="text-2xl font-bold text-orange-700 dark:text-orange-300 tabular-nums">{formatCurrency(monthlyReport.yearSummary.totalShipping)}</p>
                     </div>
                     <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
@@ -249,7 +249,7 @@ export default function ProfitReports() {
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-purple-600">{t("profitReport.avgMonthly")}</p>
+                      <p className="text-sm font-medium text-purple-600 dark:text-purple-300">{t("profitReport.avgMonthly")}</p>
                       <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 tabular-nums">{formatCurrency(monthlyReport.yearSummary.avgMonthlyProfit)}</p>
                     </div>
                     <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
@@ -335,7 +335,7 @@ export default function ProfitReports() {
                               <TableCell className="font-medium">{monthNames[month.month - 1]}</TableCell>
                               <TableCell>
                                 <div className="text-sm">
-                                  <span className={`font-mono tabular-nums ${month.fullPackage.profit >= 0 ? "text-foreground" : "text-red-600"}`}>
+                                  <span className={`font-mono tabular-nums ${month.fullPackage.profit >= 0 ? "text-foreground" : "text-red-600 dark:text-red-300"}`}>
                                     {formatCurrency(month.fullPackage.profit)}
                                   </span>
                                   <span className="text-muted-foreground text-xs ms-2">({month.fullPackage.count})</span>
@@ -354,7 +354,7 @@ export default function ProfitReports() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <span className={`font-mono font-bold tabular-nums ${month.total.profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                <span className={`font-mono font-bold tabular-nums ${month.total.profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                                   {formatCurrency(month.total.profit)}
                                 </span>
                               </TableCell>
@@ -365,10 +365,10 @@ export default function ProfitReports() {
                                   <span className="text-muted-foreground">–</span>
                                 ) : (
                                   <div className="flex items-center gap-1">
-                                    {month.comparison && month.comparison.profitChange > 0 && <ArrowUp className="h-4 w-4 text-green-500" />}
-                                    {month.comparison && month.comparison.profitChange < 0 && <ArrowDown className="h-4 w-4 text-red-500" />}
+                                    {month.comparison && month.comparison.profitChange > 0 && <ArrowUp className="h-4 w-4 text-green-500 dark:text-green-400" />}
+                                    {month.comparison && month.comparison.profitChange < 0 && <ArrowDown className="h-4 w-4 text-red-500 dark:text-red-400" />}
                                     {month.comparison && month.comparison.profitChange === 0 && <Minus className="h-4 w-4 text-muted-foreground" />}
-                                    <span className={`text-sm tabular-nums ${prevProfit === 0 ? "text-muted-foreground" : (month.comparison?.profitChange ?? 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                    <span className={`text-sm tabular-nums ${prevProfit === 0 ? "text-muted-foreground" : (month.comparison?.profitChange ?? 0) >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                                       {compLabel}
                                     </span>
                                   </div>
@@ -448,7 +448,7 @@ export default function ProfitReports() {
                   <Card>
                     <CardHeader className="pb-2">
                       <div className="flex items-center gap-2">
-                        <ShoppingBag className="h-5 w-5 text-emerald-600" />
+                        <ShoppingBag className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                         <CardTitle className="text-base">{t("profitReport.fullPackage")}</CardTitle>
                       </div>
                     </CardHeader>
@@ -460,7 +460,7 @@ export default function ProfitReports() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">{t("profitReport.totalProfit")}</span>
-                          <span className="font-mono font-bold text-emerald-600 tabular-nums">
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-300 tabular-nums">
                             {formatCurrency(profitByType?.fullPackage.totalProfit ?? 0)}
                           </span>
                         </div>
@@ -478,7 +478,7 @@ export default function ProfitReports() {
                   <Card>
                     <CardHeader className="pb-2">
                       <div className="flex items-center gap-2">
-                        <Percent className="h-5 w-5 text-purple-600" />
+                        <Percent className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                         <CardTitle className="text-base">{t("profitReport.commission")}</CardTitle>
                       </div>
                     </CardHeader>
@@ -490,7 +490,7 @@ export default function ProfitReports() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">{t("profitReport.totalProfit")}</span>
-                          <span className="font-mono font-bold text-purple-600 tabular-nums">
+                          <span className="font-mono font-bold text-purple-600 dark:text-purple-300 tabular-nums">
                             {formatCurrency(profitByType?.commission.totalProfit ?? 0)}
                           </span>
                         </div>
@@ -507,7 +507,7 @@ export default function ProfitReports() {
                   <Card>
                     <CardHeader className="pb-2">
                       <div className="flex items-center gap-2">
-                        <Package className="h-5 w-5 text-orange-600" />
+                        <Package className="h-5 w-5 text-orange-600 dark:text-orange-300" />
                         <CardTitle className="text-base">{t("profitReport.package")}</CardTitle>
                       </div>
                     </CardHeader>
@@ -519,7 +519,7 @@ export default function ProfitReports() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">{t("profitReport.totalRevenue")}</span>
-                          <span className="font-mono font-bold text-orange-600">
+                          <span className="font-mono font-bold text-orange-600 dark:text-orange-300">
                             {formatCurrency(profitByType?.packages.totalRevenue || 0)}
                           </span>
                         </div>
@@ -569,19 +569,19 @@ export default function ProfitReports() {
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-muted-foreground">{t("profitReport.totalRevenue")}</p>
-                        <p className="text-xl font-bold text-blue-600 tabular-nums">{formatCurrency(detailedReport?.summary.totalRevenue ?? 0)}</p>
+                        <p className="text-xl font-bold text-blue-600 dark:text-blue-300 tabular-nums">{formatCurrency(detailedReport?.summary.totalRevenue ?? 0)}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-muted-foreground">{t("profitReport.totalCost")}</p>
-                        <p className="text-xl font-bold text-orange-600 tabular-nums">{formatCurrency(detailedReport?.summary.totalCost ?? 0)}</p>
+                        <p className="text-xl font-bold text-orange-600 dark:text-orange-300 tabular-nums">{formatCurrency(detailedReport?.summary.totalCost ?? 0)}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-muted-foreground">{t("profitReport.totalProfit")}</p>
-                        <p className="text-xl font-bold text-green-600 tabular-nums">{formatCurrency(detailedReport?.summary.totalProfit ?? 0)}</p>
+                        <p className="text-xl font-bold text-green-600 dark:text-green-300 tabular-nums">{formatCurrency(detailedReport?.summary.totalProfit ?? 0)}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-muted-foreground">{t("profitReport.profitMargin")}</p>
-                        <p className="text-xl font-bold text-purple-600 tabular-nums">{detailedReport?.summary.avgProfitMargin?.toFixed(1) ?? 0}%</p>
+                        <p className="text-xl font-bold text-purple-600 dark:text-purple-300 tabular-nums">{detailedReport?.summary.avgProfitMargin?.toFixed(1) ?? 0}%</p>
                       </div>
                     </div>
                     <div className="overflow-x-auto rounded-lg border border-border">
@@ -609,9 +609,9 @@ export default function ProfitReports() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="font-mono tabular-nums">{formatCurrency(order.purchasePriceUsd)}</TableCell>
-                              <TableCell className="font-mono text-emerald-600 tabular-nums">{formatCurrency(order.sellingPriceUsd)}</TableCell>
-                              <TableCell className="font-mono text-orange-600 tabular-nums">{formatCurrency(order.shippingCostUsd)}</TableCell>
-                              <TableCell className={`font-mono font-bold tabular-nums ${order.profitUsd >= 0 ? "text-green-600" : "text-red-600"}`}>
+                              <TableCell className="font-mono text-emerald-600 dark:text-emerald-300 tabular-nums">{formatCurrency(order.sellingPriceUsd)}</TableCell>
+                              <TableCell className="font-mono text-orange-600 dark:text-orange-300 tabular-nums">{formatCurrency(order.shippingCostUsd)}</TableCell>
+                              <TableCell className={`font-mono font-bold tabular-nums ${order.profitUsd >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                                 {formatCurrency(order.profitUsd)}
                               </TableCell>
                               <TableCell className="text-sm tabular-nums">{order.profitMargin.toFixed(1)}%</TableCell>
@@ -645,45 +645,45 @@ export default function ProfitReports() {
                   <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <ShoppingBag className="h-4 w-4 text-emerald-600" />
+                        <ShoppingBag className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
                         {t("profitReport.fullPackage")}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-xl font-bold tabular-nums text-emerald-600">{formatCurrency(aggregatedData?.fullPackageProfit ?? 0)}</p>
+                      <p className="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-300">{formatCurrency(aggregatedData?.fullPackageProfit ?? 0)}</p>
                     </CardContent>
                   </Card>
                   <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <Percent className="h-4 w-4 text-purple-600" />
+                        <Percent className="h-4 w-4 text-purple-600 dark:text-purple-300" />
                         {t("profitReport.commission")}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-xl font-bold tabular-nums text-purple-600">{formatCurrency(aggregatedData?.commissionProfit ?? 0)}</p>
+                      <p className="text-xl font-bold tabular-nums text-purple-600 dark:text-purple-300">{formatCurrency(aggregatedData?.commissionProfit ?? 0)}</p>
                     </CardContent>
                   </Card>
                   <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <Package className="h-4 w-4 text-orange-600" />
+                        <Package className="h-4 w-4 text-orange-600 dark:text-orange-300" />
                         {t("profitReport.packageNetProfitFromBatch")}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-xl font-bold tabular-nums text-orange-600">{formatCurrency(aggregatedData?.packageNetProfitFromBatch ?? 0)}</p>
+                      <p className="text-xl font-bold tabular-nums text-orange-600 dark:text-orange-300">{formatCurrency(aggregatedData?.packageNetProfitFromBatch ?? 0)}</p>
                     </CardContent>
                   </Card>
                   <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-blue-600" />
+                        <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                         {t("profitReport.serviceProfit")}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-xl font-bold tabular-nums text-blue-600">{formatCurrency(aggregatedData?.serviceProfit ?? 0)}</p>
+                      <p className="text-xl font-bold tabular-nums text-blue-600 dark:text-blue-300">{formatCurrency(aggregatedData?.serviceProfit ?? 0)}</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -706,7 +706,7 @@ export default function ProfitReports() {
                       <CardTitle className="text-sm font-medium text-muted-foreground">{t("profitReport.totalExpenses")}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-2xl font-bold tabular-nums text-red-600">{formatCurrency(aggregatedData?.totalExpenses ?? 0)}</p>
+                      <p className="text-2xl font-bold tabular-nums text-red-600 dark:text-red-300">{formatCurrency(aggregatedData?.totalExpenses ?? 0)}</p>
                     </CardContent>
                   </Card>
                   <Card className="border-0 shadow-md">
@@ -714,7 +714,7 @@ export default function ProfitReports() {
                       <CardTitle className="text-sm font-medium text-muted-foreground">{t("profitReport.netSurplus")}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className={`text-2xl font-bold tabular-nums ${(aggregatedData?.netSurplus ?? 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      <p className={`text-2xl font-bold tabular-nums ${(aggregatedData?.netSurplus ?? 0) >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                         {formatCurrency(aggregatedData?.netSurplus ?? 0)}
                       </p>
                     </CardContent>
@@ -726,7 +726,7 @@ export default function ProfitReports() {
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium flex items-center gap-2">
                         {((aggregatedData?.totalExpenses ?? 0) > (aggregatedData?.totalProfit ?? 0) * (EXPENSE_RECOMMEND_PERCENT / 100)) ? (
-                          <AlertTriangle className="h-4 w-4 text-amber-600" />
+                          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                         ) : null}
                         {t("profitReport.recommendedExpenseLimit", { percent: EXPENSE_RECOMMEND_PERCENT })}
                       </CardTitle>
@@ -736,7 +736,7 @@ export default function ProfitReports() {
                       <p className="text-sm text-muted-foreground">
                         {t("profitReport.aggregatedProfit")}: {formatCurrency(aggregatedData.totalProfit)} → {t("profitReport.totalExpenses")}: {formatCurrency(aggregatedData.totalExpenses)}.
                         {aggregatedData.totalExpenses > aggregatedData.totalProfit * (EXPENSE_RECOMMEND_PERCENT / 100) && (
-                          <span className="block mt-2 font-medium text-amber-600">{t("profitReport.expenseOverLimit")}</span>
+                          <span className="block mt-2 font-medium text-amber-600 dark:text-amber-300">{t("profitReport.expenseOverLimit")}</span>
                         )}
                       </p>
                     </CardContent>
@@ -766,7 +766,7 @@ export default function ProfitReports() {
                             {aggregatedData.expensesByCategory.map((row) => (
                               <TableRow key={row.categoryId} className="hover:bg-muted/20">
                                 <TableCell className="font-medium">{row.categoryName}</TableCell>
-                                <TableCell className="font-mono tabular-nums text-red-600">{formatCurrency(row.amountUsd)}</TableCell>
+                                <TableCell className="font-mono tabular-nums text-red-600 dark:text-red-300">{formatCurrency(row.amountUsd)}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>

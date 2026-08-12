@@ -200,10 +200,10 @@ export default function BankAccounts() {
 
   const getTransactionIcon = (type: string) => {
     if (['deposit', 'transfer_in', 'customer_payment', 'partner_deposit'].includes(type))
-      return <ArrowDownLeft className="h-4 w-4 text-emerald-600" />;
+      return <ArrowDownLeft className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />;
     if (['withdrawal', 'transfer_out', 'expense', 'debt_payment', 'partner_withdrawal'].includes(type))
-      return <ArrowUpRight className="h-4 w-4 text-red-600" />;
-    return <RefreshCw className="h-4 w-4 text-blue-600" />;
+      return <ArrowUpRight className="h-4 w-4 text-red-600 dark:text-red-300" />;
+    return <RefreshCw className="h-4 w-4 text-blue-600 dark:text-blue-300" />;
   };
 
   const isIncome = (type: string) => ['deposit', 'transfer_in', 'customer_payment', 'partner_deposit'].includes(type);
@@ -348,7 +348,7 @@ export default function BankAccounts() {
               <ArrowLeftRight className="h-4 w-4 ms-2" />
               {t("bankAccounts.transfer") || "گواستنەوە"}
             </Button>
-            <Button className="bg-white text-blue-700 dark:text-blue-300 hover:bg-blue-50 shadow-lg"
+            <Button className="bg-white dark:bg-card text-blue-700 dark:text-blue-300 hover:bg-blue-50 shadow-lg"
               onClick={() => setIsAddOpen(true)}>
               <Plus className="h-4 w-4 ms-2" />
               {t("bankAccounts.addAccount") || "زیادکردنی هەژمار"}
@@ -365,10 +365,10 @@ export default function BankAccounts() {
               <div>
                 <p className="text-xs md:text-sm text-muted-foreground">{t("bankAccounts.totalBalance") || "کۆی باڵانس"}</p>
                 <p className="text-xl md:text-2xl font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(totalBalance)}</p>
-                <p className="text-xs text-emerald-500 mt-1">{activeAccounts.length} {t("bankAccounts.activeAccounts") || "حسابی چالاک"}</p>
+                <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-1">{activeAccounts.length} {t("bankAccounts.activeAccounts") || "حسابی چالاک"}</p>
               </div>
               <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                <PiggyBank className="h-5 w-5 md:h-6 md:w-6 text-emerald-600" />
+                <PiggyBank className="h-5 w-5 md:h-6 md:w-6 text-emerald-600 dark:text-emerald-300" />
               </div>
             </div>
           </CardContent>
@@ -380,10 +380,10 @@ export default function BankAccounts() {
               <div>
                 <p className="text-xs md:text-sm text-muted-foreground">{t("bankAccounts.cashBox") || "سندوقی پارە"}</p>
                 <p className="text-xl md:text-2xl font-bold text-green-700 dark:text-green-400">{formatCurrency(cashBalance)}</p>
-                <p className="text-xs text-green-500 mt-1">{cashAccounts_.length} {t("bankAccounts.account") || "هەژمار"}</p>
+                <p className="text-xs text-green-500 dark:text-green-400 mt-1">{cashAccounts_.length} {t("bankAccounts.account") || "هەژمار"}</p>
               </div>
               <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <Banknote className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+                <Banknote className="h-5 w-5 md:h-6 md:w-6 text-green-600 dark:text-green-300" />
               </div>
             </div>
           </CardContent>
@@ -395,10 +395,10 @@ export default function BankAccounts() {
               <div>
                 <p className="text-xs md:text-sm text-muted-foreground">{t("bankAccounts.bankAccount") || "بانک"}</p>
                 <p className="text-xl md:text-2xl font-bold text-blue-700 dark:text-blue-400">{formatCurrency(bankBalance)}</p>
-                <p className="text-xs text-blue-500 mt-1">{bankAccountsList.length} {t("bankAccounts.account") || "هەژمار"}</p>
+                <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">{bankAccountsList.length} {t("bankAccounts.account") || "هەژمار"}</p>
               </div>
               <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <Building2 className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
+                <Building2 className="h-5 w-5 md:h-6 md:w-6 text-blue-600 dark:text-blue-300" />
               </div>
             </div>
           </CardContent>
@@ -410,10 +410,10 @@ export default function BankAccounts() {
               <div>
                 <p className="text-xs md:text-sm text-muted-foreground">{t("bankAccounts.mobileWallet") || "جزدانی مۆبایل"}</p>
                 <p className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">{formatCurrency(walletBalance)}</p>
-                <p className="text-xs text-purple-500 mt-1">{walletAccounts.length} {t("bankAccounts.account") || "هەژمار"}</p>
+                <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">{walletAccounts.length} {t("bankAccounts.account") || "هەژمار"}</p>
               </div>
               <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+                <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-purple-600 dark:text-purple-300" />
               </div>
             </div>
           </CardContent>
@@ -438,7 +438,7 @@ export default function BankAccounts() {
           {/* Cash Accounts */}
           {cashAccounts_.length > 0 && (
             <AccountSection
-              icon={<Banknote className="h-4 w-4 text-emerald-600" />}
+              icon={<Banknote className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}
               title={t("bankAccounts.cashBox") || "سندوقی پارە"}
               count={cashAccounts_.length}
               colorClass="bg-emerald-100 dark:bg-emerald-900/30"
@@ -456,7 +456,7 @@ export default function BankAccounts() {
           {/* Bank Accounts */}
           {bankAccountsList.length > 0 && (
             <AccountSection
-              icon={<Building2 className="h-4 w-4 text-blue-600" />}
+              icon={<Building2 className="h-4 w-4 text-blue-600 dark:text-blue-300" />}
               title={t("bankAccounts.bankAccount") || "هەژمارە بانکییەکان"}
               count={bankAccountsList.length}
               colorClass="bg-blue-100 dark:bg-blue-900/30"
@@ -474,7 +474,7 @@ export default function BankAccounts() {
           {/* Mobile Wallets */}
           {walletAccounts.length > 0 && (
             <AccountSection
-              icon={<CreditCard className="h-4 w-4 text-purple-600" />}
+              icon={<CreditCard className="h-4 w-4 text-purple-600 dark:text-purple-300" />}
               title={t("bankAccounts.mobileWallet") || "جزدانی مۆبایل"}
               count={walletAccounts.length}
               colorClass="bg-purple-100 dark:bg-purple-900/30"
@@ -636,7 +636,7 @@ export default function BankAccounts() {
         <DialogContent className="max-w-lg" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-blue-500" />
+              <Plus className="h-5 w-5 text-blue-500 dark:text-blue-400" />
               {t("bankAccounts.addAccount") || "زیادکردنی هەژمار"}
             </DialogTitle>
             <DialogDescription>{t("bankAccounts.addAccountDesc") || "زیادکردنی هەژماری نوێ"}</DialogDescription>
@@ -722,7 +722,7 @@ export default function BankAccounts() {
         <DialogContent className="max-w-lg" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5 text-amber-500" />
+              <Edit className="h-5 w-5 text-amber-500 dark:text-amber-400" />
               {t("bankAccounts.editAccount") || "دەستکاری هەژمار"}
             </DialogTitle>
           </DialogHeader>
@@ -783,7 +783,7 @@ export default function BankAccounts() {
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ArrowLeftRight className="h-5 w-5 text-blue-500" />
+              <ArrowLeftRight className="h-5 w-5 text-blue-500 dark:text-blue-400" />
               {t("bankAccounts.transferBetweenAccounts") || "گواستنەوە لەنێوان حسابەکان"}
             </DialogTitle>
             <DialogDescription>{t("bankAccounts.transferDesc") || "پارە بگوازەرەوە لە حسابێکەوە بۆ حسابێکی تر"}</DialogDescription>
@@ -806,7 +806,7 @@ export default function BankAccounts() {
             </div>
             <div className="flex justify-center">
               <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <ArrowDownLeft className="h-4 w-4 text-blue-600" />
+                <ArrowDownLeft className="h-4 w-4 text-blue-600 dark:text-blue-300" />
               </div>
             </div>
             <div className="space-y-2">
@@ -853,7 +853,7 @@ export default function BankAccounts() {
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-emerald-500" />
+              <DollarSign className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
               {t("bankAccounts.recordTransaction") || "تۆمارکردنی مامەڵە"}
             </DialogTitle>
             <DialogDescription>{t("bankAccounts.recordTransactionDesc") || "تۆمارکردنی داخل یان دەرهێنان"}</DialogDescription>
@@ -881,19 +881,19 @@ export default function BankAccounts() {
                 <SelectContent>
                   <SelectItem value="deposit">
                     <span className="flex items-center gap-2">
-                      <ArrowDownLeft className="h-4 w-4 text-emerald-500" />
+                      <ArrowDownLeft className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
                       {t("bankAccounts.deposit") || "داخل (وەرگرتن)"}
                     </span>
                   </SelectItem>
                   <SelectItem value="withdrawal">
                     <span className="flex items-center gap-2">
-                      <ArrowUpRight className="h-4 w-4 text-red-500" />
+                      <ArrowUpRight className="h-4 w-4 text-red-500 dark:text-red-400" />
                       {t("bankAccounts.withdrawal") || "دەرهێنان"}
                     </span>
                   </SelectItem>
                   <SelectItem value="adjustment">
                     <span className="flex items-center gap-2">
-                      <RefreshCw className="h-4 w-4 text-blue-500" />
+                      <RefreshCw className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                       {t("bankAccounts.adjustment") || "ڕێکخستن"}
                     </span>
                   </SelectItem>
@@ -940,7 +940,7 @@ export default function BankAccounts() {
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
               {t("bankAccounts.confirmDelete") || "دڵنیای لە سڕینەوە؟"}
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -1020,7 +1020,7 @@ function AccountCard({ account, getTypeIcon, getTypeColor, getTypeBorderColor, g
                 <Edit className="h-4 w-4 ms-2" />
                 {t("forms.edit") || "دەستکاری"}
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600" onClick={() => onDelete(account.id)}>
+              <DropdownMenuItem className="text-red-600 dark:text-red-300" onClick={() => onDelete(account.id)}>
                 <Trash2 className="h-4 w-4 ms-2" />
                 {t("forms.delete") || "سڕینەوە"}
               </DropdownMenuItem>

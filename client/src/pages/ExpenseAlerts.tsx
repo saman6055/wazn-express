@@ -202,7 +202,7 @@ export default function ExpenseAlerts() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <AlertTriangle className="h-7 w-7 text-amber-500" />
+              <AlertTriangle className="h-7 w-7 text-amber-500 dark:text-amber-400" />
               {t("expenseAlerts.pageTitle") || "سیستەمی ئاگادارکردنەوەی خەرجی"}
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -224,7 +224,7 @@ export default function ExpenseAlerts() {
                   <p className="text-sm text-muted-foreground">{t("expenseAlerts.totalAlerts") || "کۆی ئاگادارکردنەوەکان"}</p>
                   <p className="text-2xl font-bold">{alerts.length}</p>
                 </div>
-                <Shield className="h-8 w-8 text-emerald-500 opacity-80" />
+                <Shield className="h-8 w-8 text-emerald-500 dark:text-emerald-400 opacity-80" />
               </div>
             </CardContent>
           </Card>
@@ -234,9 +234,9 @@ export default function ExpenseAlerts() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("expenseAlerts.activeAlerts") || "چالاکەکان"}</p>
-                  <p className="text-2xl font-bold text-blue-600">{activeAlerts.length}</p>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-300">{activeAlerts.length}</p>
                 </div>
-                <Bell className="h-8 w-8 text-blue-500 opacity-80" />
+                <Bell className="h-8 w-8 text-blue-500 dark:text-blue-400 opacity-80" />
               </div>
             </CardContent>
           </Card>
@@ -246,7 +246,7 @@ export default function ExpenseAlerts() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("expenseAlerts.inactiveAlerts") || "ناچالاکەکان"}</p>
-                  <p className="text-2xl font-bold text-gray-500">{inactiveAlerts.length}</p>
+                  <p className="text-2xl font-bold text-gray-500 dark:text-gray-400">{inactiveAlerts.length}</p>
                 </div>
                 <BellOff className="h-8 w-8 text-gray-400 opacity-80" />
               </div>
@@ -258,9 +258,9 @@ export default function ExpenseAlerts() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("expenseAlerts.triggeredCount") || "جار تریگەرکراو"}</p>
-                  <p className="text-2xl font-bold text-amber-600">{logs.length}</p>
+                  <p className="text-2xl font-bold text-amber-600 dark:text-amber-300">{logs.length}</p>
                 </div>
-                <History className="h-8 w-8 text-amber-500 opacity-80" />
+                <History className="h-8 w-8 text-amber-500 dark:text-amber-400 opacity-80" />
               </div>
             </CardContent>
           </Card>
@@ -370,7 +370,7 @@ export default function ExpenseAlerts() {
                             variant="outline"
                             size="sm"
                             onClick={() => setDeleteConfirmId(alert.id)}
-                            className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="gap-1 text-red-600 dark:text-red-300 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             {t("expenseAlerts.delete") || "سڕینەوە"}
@@ -409,9 +409,9 @@ export default function ExpenseAlerts() {
                           <div className="flex items-start gap-3">
                             <div className={`p-2 rounded-full mt-0.5 ${log.notificationSent ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
                               {log.notificationSent ? (
-                                <CheckCircle className="h-4 w-4 text-amber-600" />
+                                <CheckCircle className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                               ) : (
-                                <XCircle className="h-4 w-4 text-red-600" />
+                                <XCircle className="h-4 w-4 text-red-600 dark:text-red-300" />
                               )}
                             </div>
                             <div>
@@ -422,7 +422,7 @@ export default function ExpenseAlerts() {
                                 <span className="flex items-center gap-1">
                                   <DollarSign className="h-3 w-3" />
                                   {t("expenseAlerts.totalExpenses") || "کۆی خەرجی"}: 
-                                  <strong className="text-red-600">${parseFloat(log.totalExpenses).toLocaleString()}</strong>
+                                  <strong className="text-red-600 dark:text-red-300">${parseFloat(log.totalExpenses).toLocaleString()}</strong>
                                 </span>
                                 <span>|</span>
                                 <span>
@@ -467,7 +467,7 @@ export default function ExpenseAlerts() {
           <DialogContent className="max-w-lg" dir="rtl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                <AlertTriangle className="h-5 w-5 text-amber-500 dark:text-amber-400" />
                 {editingAlert 
                   ? (t("expenseAlerts.editAlert") || "دەستکاری ئاگادارکردنەوە")
                   : (t("expenseAlerts.createAlert") || "ئاگادارکردنەوەی نوێ")}
@@ -595,7 +595,7 @@ export default function ExpenseAlerts() {
         <Dialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
           <DialogContent className="max-w-sm" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-red-600">
+              <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-300">
                 <Trash2 className="h-5 w-5" />
                 {t("expenseAlerts.deleteConfirmTitle") || "سڕینەوەی ئاگادارکردنەوە"}
               </DialogTitle>

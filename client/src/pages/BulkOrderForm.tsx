@@ -361,9 +361,9 @@ export default function BulkOrderForm() {
               resultData.errors === 0 ? "bg-green-100 dark:bg-green-900/30" : "bg-amber-100 dark:bg-amber-900/30"
             )}>
               {resultData.errors === 0 ? (
-                <CheckCircle2 className="w-10 h-10 text-green-600" />
+                <CheckCircle2 className="w-10 h-10 text-green-600 dark:text-green-300" />
               ) : (
-                <AlertCircle className="w-10 h-10 text-amber-600" />
+                <AlertCircle className="w-10 h-10 text-amber-600 dark:text-amber-300" />
               )}
             </div>
             
@@ -377,7 +377,7 @@ export default function BulkOrderForm() {
                 {pickLang(language, { ku: `${resultData.created} ئۆردەر بە سەرکەوتوویی دروست کران`, en: `${resultData.created} orders created successfully`, ar: `تم إنشاء ${resultData.created} طلب بنجاح`, zh: `已成功创建 ${resultData.created} 个订单` })}
               </p>
               {resultData.errors > 0 && (
-                <p className="text-amber-600 mt-1">
+                <p className="text-amber-600 dark:text-amber-300 mt-1">
                   {pickLang(language, { ku: `${resultData.errors} ئۆردەر کێشەیان هەبوو`, en: `${resultData.errors} orders had issues`, ar: `${resultData.errors} طلب واجهت مشكلات`, zh: `${resultData.errors} 个订单存在问题` })}
                 </p>
               )}
@@ -460,7 +460,7 @@ export default function BulkOrderForm() {
                 "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
                 isCommission ? "bg-amber-100 dark:bg-amber-900/30" : "bg-emerald-100 dark:bg-emerald-900/30"
               )}>
-                <ShoppingBag className={cn("w-6 h-6", isCommission ? "text-amber-600" : "text-emerald-600")} />
+                <ShoppingBag className={cn("w-6 h-6", isCommission ? "text-amber-600 dark:text-amber-300" : "text-emerald-600 dark:text-emerald-300")} />
               </div>
               <div className="flex-1">
                 <Label className="text-sm font-medium text-muted-foreground mb-2 block">{pickLang(language, { ku: "هەڵبژاردنی کڕیار *", en: "Select customer *", ar: "اختيار العميل *", zh: "选择客户 *" })}</Label>
@@ -707,7 +707,7 @@ export default function BulkOrderForm() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        className="h-7 w-7 text-red-500 dark:text-red-400 hover:text-red-700 hover:bg-red-50"
                         onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
                         title={pickLang(language, { ku: "سڕینەوە", en: "Delete", ar: "حذف", zh: "删除" })}
                       >
@@ -727,14 +727,14 @@ export default function BulkOrderForm() {
                         <div className="flex items-center justify-between mb-2">
                           <Label className="text-xs font-semibold text-orange-700 dark:text-orange-400">{pickLang(language, { ku: "نرخی کاڵا بە یوانی چینی (¥)", en: "Item price in Chinese Yuan (¥)", ar: "سعر المنتج باليوان الصيني (¥)", zh: "商品价格（人民币 ¥）" })}</Label>
                           {rmbRate > 0 ? (
-                            <span className="text-[11px] font-mono text-orange-600">١ $ = {rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} ¥</span>
+                            <span className="text-[11px] font-mono text-orange-600 dark:text-orange-300">١ $ = {rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} ¥</span>
                           ) : (
-                            <span className="text-[11px] text-red-600">{pickLang(language, { ku: "نرخی گۆڕین لە سیتینگ دانەنراوە", en: "Exchange rate not set in settings", ar: "لم يتم تعيين سعر الصرف في الإعدادات", zh: "设置中未设定汇率" })}</span>
+                            <span className="text-[11px] text-red-600 dark:text-red-300">{pickLang(language, { ku: "نرخی گۆڕین لە سیتینگ دانەنراوە", en: "Exchange rate not set in settings", ar: "لم يتم تعيين سعر الصرف في الإعدادات", zh: "设置中未设定汇率" })}</span>
                           )}
                         </div>
                         <div className="grid grid-cols-2 gap-3 items-center">
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 dark:text-orange-400 font-bold select-none">¥</span>
                             <Input
                               type="number"
                               min="0"
@@ -864,14 +864,14 @@ export default function BulkOrderForm() {
                       return (
                         <div className="mt-3 rounded-lg border-2 border-teal-200 dark:border-teal-900/50 bg-gradient-to-l from-teal-50/60 to-emerald-50/60 dark:from-teal-950/20 dark:to-emerald-950/20 p-3">
                           <div className="flex items-center gap-2 mb-2">
-                            <Wallet className="w-4 h-4 text-teal-600" />
+                            <Wallet className="w-4 h-4 text-teal-600 dark:text-teal-300" />
                             <span className="text-xs font-semibold text-teal-700 dark:text-teal-400">{pickLang(language, { ku: "پارەدانی پێشەکی (ئاختیاری)", en: "Advance payment (optional)", ar: "دفعة مقدمة (اختياري)", zh: "预付款（可选）" })}</span>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                               <Label className="text-xs text-teal-700 dark:text-teal-400">{pickLang(language, { ku: "بڕی پارەی پێشەکی ($)", en: "Advance amount ($)", ar: "مبلغ الدفعة المقدمة ($)", zh: "预付金额 ($)" })}</Label>
                               <div className="relative mt-1">
-                                <span className="absolute start-3 top-1/2 -translate-y-1/2 text-teal-500 font-bold select-none text-sm">$</span>
+                                <span className="absolute start-3 top-1/2 -translate-y-1/2 text-teal-500 dark:text-teal-400 font-bold select-none text-sm">$</span>
                                 <Input
                                   type="number"
                                   min="0"
@@ -930,7 +930,7 @@ export default function BulkOrderForm() {
                           <span className="text-muted-foreground">
                             {pickLang(language, { ku: "کۆی پارەدان:", en: "Total payment:", ar: "إجمالي الدفع:", zh: "付款总额：" })} <span className="font-semibold text-foreground">${itemTotal.toFixed(2)}</span>
                           </span>
-                          <span className="text-green-600">
+                          <span className="text-green-600 dark:text-green-300">
                             {pickLang(language, { ku: "قازانج (عمولە):", en: "Profit (commission):", ar: "الربح (العمولة):", zh: "利润（佣金）：" })} <span className="font-semibold">${itemProfit.toFixed(2)}</span>
                           </span>
                         </>
@@ -939,7 +939,7 @@ export default function BulkOrderForm() {
                           <span className="text-muted-foreground">
                             {pickLang(language, { ku: "کۆی فرۆشتن:", en: "Total selling:", ar: "إجمالي البيع:", zh: "销售总额：" })} <span className="font-semibold text-foreground">${itemTotal.toFixed(2)}</span>
                           </span>
-                          <span className={cn("font-semibold", itemProfit >= 0 ? "text-green-600" : "text-red-600")}>
+                          <span className={cn("font-semibold", itemProfit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300")}>
                             {pickLang(language, { ku: "قازانج:", en: "Profit:", ar: "الربح:", zh: "利润：" })} ${itemProfit.toFixed(2)}
                           </span>
                         </>
@@ -984,29 +984,29 @@ export default function BulkOrderForm() {
                 {isCommission ? (
                   <>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-amber-600">${summary.totalPrepaid.toFixed(2)}</div>
+                      <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">${summary.totalPrepaid.toFixed(2)}</div>
                       <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی پارەدان", en: "Total payment", ar: "إجمالي الدفع", zh: "付款总额" })}</div>
                     </div>
                     <Separator orientation="vertical" className="h-10" />
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">${summary.totalCommission.toFixed(2)}</div>
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-300">${summary.totalCommission.toFixed(2)}</div>
                       <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی عمولە", en: "Total commission", ar: "إجمالي العمولة", zh: "佣金总额" })}</div>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-red-600">${summary.totalPurchase.toFixed(2)}</div>
+                      <div className="text-2xl font-bold text-red-600 dark:text-red-300">${summary.totalPurchase.toFixed(2)}</div>
                       <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی کڕین", en: "Total purchase", ar: "إجمالي الشراء", zh: "采购总额" })}</div>
                     </div>
                     <Separator orientation="vertical" className="h-10" />
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">${summary.totalSelling.toFixed(2)}</div>
+                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-300">${summary.totalSelling.toFixed(2)}</div>
                       <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی فرۆشتن", en: "Total selling", ar: "إجمالي البيع", zh: "销售总额" })}</div>
                     </div>
                     <Separator orientation="vertical" className="h-10" />
                     <div className="text-center">
-                      <div className={cn("text-2xl font-bold", summary.totalProfit >= 0 ? "text-green-600" : "text-red-600")}>
+                      <div className={cn("text-2xl font-bold", summary.totalProfit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300")}>
                         ${summary.totalProfit.toFixed(2)}
                       </div>
                       <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "کۆی قازانج", en: "Total profit", ar: "إجمالي الربح", zh: "利润总额" })}</div>

@@ -74,10 +74,10 @@ const orderTypeConfig = {
 // Mini bar chart for table
 function MiniBarChart({ values, colors }: { values: number[]; colors: string[] }) {
   const total = values.reduce((a, b) => a + b, 0);
-  if (total === 0) return <div className="h-2 bg-gray-200 rounded-full w-full" />;
+  if (total === 0) return <div className="h-2 bg-gray-200 dark:bg-gray-800/50 rounded-full w-full" />;
   
   return (
-    <div className="h-2 bg-gray-200 rounded-full w-full overflow-hidden flex">
+    <div className="h-2 bg-gray-200 dark:bg-gray-800/50 rounded-full w-full overflow-hidden flex">
       {values.map((value, i) => (
         <div 
           key={i}
@@ -275,7 +275,7 @@ export default function MonthlyProfitReport() {
                     <Skeleton className="h-6 w-20" />
                   ) : (
                     <>
-                      <p className="text-lg font-bold text-green-600">{bestMonth.monthName}</p>
+                      <p className="text-lg font-bold text-green-600 dark:text-green-300">{bestMonth.monthName}</p>
                       <p className="text-sm text-muted-foreground">
                         ${bestMonth.total.profit.toLocaleString()}
                       </p>
@@ -283,7 +283,7 @@ export default function MonthlyProfitReport() {
                   )}
                 </div>
                 <div className="w-10 h-10 bg-green-100 dark:bg-green-950/40 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-green-600" />
+                  <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
@@ -301,7 +301,7 @@ export default function MonthlyProfitReport() {
                     <Skeleton className="h-6 w-20" />
                   ) : (
                     <>
-                      <p className="text-lg font-bold text-red-600">{worstMonth.monthName}</p>
+                      <p className="text-lg font-bold text-red-600 dark:text-red-300">{worstMonth.monthName}</p>
                       <p className="text-sm text-muted-foreground">
                         ${worstMonth.total.profit.toLocaleString()}
                       </p>
@@ -309,7 +309,7 @@ export default function MonthlyProfitReport() {
                   )}
                 </div>
                 <div className="w-10 h-10 bg-red-100 dark:bg-red-950/40 rounded-lg flex items-center justify-center">
-                  <TrendingDown className="w-5 h-5 text-red-600" />
+                  <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-300" />
                 </div>
               </div>
             </CardContent>
@@ -327,7 +327,7 @@ export default function MonthlyProfitReport() {
                     <Skeleton className="h-6 w-20" />
                   ) : (
                     <>
-                      <p className="text-lg font-bold text-purple-600">
+                      <p className="text-lg font-bold text-purple-600 dark:text-purple-300">
                         ${(yearlyTotals.total.profit / 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </p>
                       <p className="text-sm text-muted-foreground">
@@ -337,7 +337,7 @@ export default function MonthlyProfitReport() {
                   )}
                 </div>
                 <div className="w-10 h-10 bg-purple-100 dark:bg-purple-950/40 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-purple-600" />
+                  <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-300" />
                 </div>
               </div>
             </CardContent>
@@ -408,9 +408,9 @@ export default function MonthlyProfitReport() {
                     <TableRow>
                       <TableHead className="w-[150px]">{pickLang(language, { ku: "مانگ", en: "Month", ar: "الشهر", zh: "月份" })}</TableHead>
                       <TableHead className="text-center">{pickLang(language, { ku: "ئۆردەر", en: "Orders", ar: "الطلبات", zh: "订单" })}</TableHead>
-                      <TableHead className="text-right text-emerald-600">{pickLang(language, { ku: "پاکێجی تەواو", en: "Full Pack", ar: "الباقة الكاملة", zh: "全包" })}</TableHead>
+                      <TableHead className="text-right text-emerald-600 dark:text-emerald-300">{pickLang(language, { ku: "پاکێجی تەواو", en: "Full Pack", ar: "الباقة الكاملة", zh: "全包" })}</TableHead>
 
-                      <TableHead className="text-right text-amber-600">{pickLang(language, { ku: "عمولە", en: "Commission", ar: "العمولة", zh: "佣金" })}</TableHead>
+                      <TableHead className="text-right text-amber-600 dark:text-amber-300">{pickLang(language, { ku: "عمولە", en: "Commission", ar: "العمولة", zh: "佣金" })}</TableHead>
                       <TableHead className="text-right font-bold">{pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "合计" })}</TableHead>
                       <TableHead className="w-[120px]">{pickLang(language, { ku: "دابەشبوون", en: "Distribution", ar: "التوزيع", zh: "分布" })}</TableHead>
                     </TableRow>
@@ -423,14 +423,14 @@ export default function MonthlyProfitReport() {
                           <Badge variant="secondary">{row.total.count}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <span className="text-emerald-600">${row.full_package.profit.toLocaleString()}</span>
+                          <span className="text-emerald-600 dark:text-emerald-300">${row.full_package.profit.toLocaleString()}</span>
                           {row.full_package.count > 0 && (
                             <span className="text-xs text-muted-foreground ms-1">({row.full_package.count})</span>
                           )}
                         </TableCell>
 
                         <TableCell className="text-right">
-                          <span className="text-amber-600">${row.commission.profit.toLocaleString()}</span>
+                          <span className="text-amber-600 dark:text-amber-300">${row.commission.profit.toLocaleString()}</span>
                           {row.commission.count > 0 && (
                             <span className="text-xs text-muted-foreground ms-1">({row.commission.count})</span>
                           )}
@@ -453,14 +453,14 @@ export default function MonthlyProfitReport() {
                       <TableCell className="text-center">
                         <Badge>{yearlyTotals.total.count}</Badge>
                       </TableCell>
-                      <TableCell className="text-right text-emerald-600">
+                      <TableCell className="text-right text-emerald-600 dark:text-emerald-300">
                         ${yearlyTotals.full_package.profit.toLocaleString()}
                       </TableCell>
 
-                      <TableCell className="text-right text-amber-600">
+                      <TableCell className="text-right text-amber-600 dark:text-amber-300">
                         ${yearlyTotals.commission.profit.toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right text-blue-600">
+                      <TableCell className="text-right text-blue-600 dark:text-blue-300">
                         ${yearlyTotals.total.profit.toLocaleString()}
                       </TableCell>
                       <TableCell>

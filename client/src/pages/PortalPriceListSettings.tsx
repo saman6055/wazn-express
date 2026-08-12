@@ -171,8 +171,8 @@ export default function PortalPriceListSettings() {
             {settings && (
               <Badge className={
                 settings.isEnabled
-                  ? "bg-emerald-500/20 text-emerald-100 border-emerald-300/30"
-                  : "bg-slate-500/20 text-slate-100 border-slate-300/30"
+                  ? "bg-emerald-500/20 text-emerald-100 border-emerald-300/30 dark:border-emerald-800/60"
+                  : "bg-slate-500/20 text-slate-100 border-slate-300/30 dark:border-slate-800/60"
               }>
                 {settings.isEnabled ? "● Live" : "○ Hidden"}
               </Badge>
@@ -203,7 +203,7 @@ export default function PortalPriceListSettings() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Eye className="h-5 w-5 text-purple-600" />
+                      <Eye className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                       {t("priceList.admin.enableSection")}
                     </CardTitle>
                     <CardDescription>{t("priceList.admin.enableSectionDesc")}</CardDescription>
@@ -278,7 +278,7 @@ export default function PortalPriceListSettings() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Tag className="h-5 w-5 text-purple-600" />
+                      <Tag className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                       {t("priceList.admin.titleLabel")} & {t("priceList.admin.subtitleLabel")}
                     </CardTitle>
                   </CardHeader>
@@ -302,7 +302,7 @@ export default function PortalPriceListSettings() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Info className="h-5 w-5 text-amber-600" />
+                      <Info className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                       {t("priceList.admin.disclaimerLabel")}
                     </CardTitle>
                   </CardHeader>
@@ -334,7 +334,7 @@ export default function PortalPriceListSettings() {
                 <Card className="mt-6">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Eye className="h-5 w-5 text-indigo-600" />
+                      <Eye className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
                       {t("priceList.admin.preview")}
                     </CardTitle>
                     <CardDescription>
@@ -359,7 +359,7 @@ export default function PortalPriceListSettings() {
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <Plane className="h-5 w-5 text-purple-600" />
+                      <Plane className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                       {t("priceList.admin.tabShipping")}
                     </CardTitle>
                     <CardDescription className="mt-1">
@@ -415,7 +415,7 @@ export default function PortalPriceListSettings() {
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <Wrench className="h-5 w-5 text-purple-600" />
+                      <Wrench className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                       {t("priceList.admin.tabServices")}
                     </CardTitle>
                     <CardDescription className="mt-1">
@@ -516,7 +516,7 @@ function QuickPriceCard() {
     <Card className="border-purple-200 dark:border-purple-900/50 bg-gradient-to-br from-purple-50/60 to-indigo-50/40 dark:from-purple-950/20 dark:to-indigo-950/10">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-purple-600" />
+          <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-300" />
           {pickLang(language, { ku: "نوێکردنەوەی خێرای نرخ", en: "Quick price update", ar: "تحديث سريع للأسعار", zh: "快速更新价格" })}
         </CardTitle>
         <CardDescription>
@@ -1226,7 +1226,7 @@ function AddShippingRateDialog({ t, onCreated }: { t: (k: string) => string; onC
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Plane className="h-5 w-5 text-purple-600" />
+            <Plane className="h-5 w-5 text-purple-600 dark:text-purple-300" />
             {t("priceList.admin.addRate") || "زیادکردنی نرخی گواستنەوە"}
           </DialogTitle>
           <DialogDescription>
@@ -1479,7 +1479,7 @@ function AddServiceTypeDialog({ t, onCreated }: { t: (k: string) => string; onCr
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Wrench className="h-5 w-5 text-purple-600" />
+            <Wrench className="h-5 w-5 text-purple-600 dark:text-purple-300" />
             {t("priceList.admin.addService") || "زیادکردنی خزمەتگوزاری"}
           </DialogTitle>
           <DialogDescription>

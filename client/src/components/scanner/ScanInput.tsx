@@ -209,7 +209,7 @@ export function ScanInput({
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               {soundEnabled ? (
-                <Volume2 className="h-5 w-5 text-green-600" />
+                <Volume2 className="h-5 w-5 text-green-600 dark:text-green-300" />
               ) : (
                 <VolumeX className="h-5 w-5 text-gray-400" />
               )}

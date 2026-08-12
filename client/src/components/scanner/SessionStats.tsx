@@ -30,7 +30,7 @@ export function SessionStats({ stats, title, className }: SessionStatsProps) {
     <Card className={cn("border-0 shadow-lg", className)}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-indigo-600" />
+          <BarChart3 className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
           {title || "Session Stats"}
         </CardTitle>
       </CardHeader>

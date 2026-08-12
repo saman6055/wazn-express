@@ -68,7 +68,7 @@ export default function ScheduledBackups() {
                     {schedule.schedule === "weekly" && pickLang(language, { ku: "بەکاپی هەفتانە", en: "Weekly Backup", ar: "نسخ احتياطي أسبوعي", zh: "每周备份" })}
                     {schedule.schedule === "monthly" && pickLang(language, { ku: "بەکاپی مانگانە", en: "Monthly Backup", ar: "نسخ احتياطي شهري", zh: "每月备份" })}
                     {schedule.enabled && (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-300" />
                     )}
                   </h3>
                   <p className="text-sm text-muted-foreground">

@@ -184,7 +184,7 @@ export function ImageUpload({
             </div>
           </div>
           <div className="flex flex-col items-center gap-1 mt-2">
-            <div className="flex items-center gap-1 text-sm text-green-600">
+            <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-300">
               <CheckCircle2 className="w-4 h-4" />
               <span>{t('imageUpload.uploaded')}</span>
             </div>
@@ -242,7 +242,7 @@ export function ImageUpload({
                 <p className="text-sm font-medium">{t('imageUpload.clickOrDrag')}</p>
                 <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WEBP (5MB max)</p>
                 {enableCompression && (
-                  <p className="text-xs text-green-600 mt-1">
+                  <p className="text-xs text-green-600 dark:text-green-300 mt-1">
                     {t('imageUpload.autoCompression') || 'Auto-compressed for faster loading'}
                   </p>
                 )}

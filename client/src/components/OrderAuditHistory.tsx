@@ -59,11 +59,11 @@ export default function OrderAuditHistory({
   }
 
   return (
-    <Card className="shadow-sm border-0 bg-white">
-      <CardHeader className="border-b bg-gray-50/50">
+    <Card className="shadow-sm border-0 bg-white dark:bg-card">
+      <CardHeader className="border-b bg-gray-50/50 dark:bg-gray-900/50">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
-            <History className="h-5 w-5 text-indigo-600" />
+            <History className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
           </div>
           <div>
             <CardTitle>{pickLang(language, { ku: "مێژووی گۆڕانکاری", en: "Audit History", ar: "سجل التعديلات", zh: "审计记录" })}</CardTitle>
@@ -179,7 +179,7 @@ export default function OrderAuditHistory({
                       {log.oldValues && (
                         <div>
                           <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">{pickLang(language, { ku: "پێشوو", en: "Before", ar: "قبل", zh: "之前" })}:</div>
-                          <pre className="bg-white border rounded p-2 overflow-auto max-h-40 text-[10px]">
+                          <pre className="bg-white dark:bg-card border rounded p-2 overflow-auto max-h-40 text-[10px]">
                             {JSON.stringify(log.oldValues, null, 2)}
                           </pre>
                         </div>
@@ -187,7 +187,7 @@ export default function OrderAuditHistory({
                       {log.newValues && (
                         <div>
                           <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">{pickLang(language, { ku: "دوایی", en: "After", ar: "بعد", zh: "之后" })}:</div>
-                          <pre className="bg-white border rounded p-2 overflow-auto max-h-40 text-[10px]">
+                          <pre className="bg-white dark:bg-card border rounded p-2 overflow-auto max-h-40 text-[10px]">
                             {JSON.stringify(log.newValues, null, 2)}
                           </pre>
                         </div>

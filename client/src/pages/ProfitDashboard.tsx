@@ -145,12 +145,12 @@ function StatCard({
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
             {change !== undefined && (
               <div className="flex items-center gap-1 text-sm">
-                {trend === "up" && <ArrowUpRight className="h-4 w-4 text-green-500" />}
-                {trend === "down" && <ArrowDownRight className="h-4 w-4 text-red-500" />}
+                {trend === "up" && <ArrowUpRight className="h-4 w-4 text-green-500 dark:text-green-400" />}
+                {trend === "down" && <ArrowDownRight className="h-4 w-4 text-red-500 dark:text-red-400" />}
                 {trend === "neutral" && <Minus className="h-4 w-4 text-muted-foreground" />}
                 <span className={
-                  trend === "up" ? "text-green-500" : 
-                  trend === "down" ? "text-red-500" : 
+                  trend === "up" ? "text-green-500 dark:text-green-400" : 
+                  trend === "down" ? "text-red-500 dark:text-red-400" : 
                   "text-muted-foreground"
                 }>
                   {change > 0 ? "+" : ""}{change.toFixed(1)}%
@@ -406,7 +406,7 @@ const [timeRange, setTimeRange] = useState("all");
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-950/40 text-blue-600">
+              <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300">
                 <Package className="h-5 w-5" />
               </div>
               <div>
@@ -419,7 +419,7 @@ const [timeRange, setTimeRange] = useState("all");
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-950/40 text-purple-600">
+              <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300">
                 <Layers className="h-5 w-5" />
               </div>
               <div>
@@ -432,7 +432,7 @@ const [timeRange, setTimeRange] = useState("all");
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-orange-100 dark:bg-orange-950/40 text-orange-600">
+              <div className="p-3 rounded-lg bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-300">
                 <DollarSign className="h-5 w-5" />
               </div>
               <div>
@@ -500,21 +500,21 @@ const [timeRange, setTimeRange] = useState("all");
         <Card className="border-l-4 border-l-blue-500">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">
-              <Plane className="h-5 w-5 text-blue-500" />
+              <Plane className="h-5 w-5 text-blue-500 dark:text-blue-400" />
               <h3 className="font-semibold">Air Regular</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Revenue</span>
-                <span className="font-medium text-green-600">${data.byType.airRegular.revenue.toLocaleString()}</span>
+                <span className="font-medium text-green-600 dark:text-green-300">${data.byType.airRegular.revenue.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Cost</span>
-                <span className="font-medium text-red-600">${data.byType.airRegular.cost.toLocaleString()}</span>
+                <span className="font-medium text-red-600 dark:text-red-300">${data.byType.airRegular.cost.toLocaleString()}</span>
               </div>
               <div className="border-t pt-2 flex justify-between">
                 <span className="font-medium">Profit</span>
-                <span className={`font-bold ${data.byType.airRegular.profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <span className={`font-bold ${data.byType.airRegular.profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                   ${data.byType.airRegular.profit.toLocaleString()}
                 </span>
               </div>
@@ -525,21 +525,21 @@ const [timeRange, setTimeRange] = useState("all");
         <Card className="border-l-4 border-l-purple-500">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">
-              <Plane className="h-5 w-5 text-purple-500" />
+              <Plane className="h-5 w-5 text-purple-500 dark:text-purple-400" />
               <h3 className="font-semibold">Air Irregular</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Revenue</span>
-                <span className="font-medium text-green-600">${data.byType.airIrregular.revenue.toLocaleString()}</span>
+                <span className="font-medium text-green-600 dark:text-green-300">${data.byType.airIrregular.revenue.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Cost</span>
-                <span className="font-medium text-red-600">${data.byType.airIrregular.cost.toLocaleString()}</span>
+                <span className="font-medium text-red-600 dark:text-red-300">${data.byType.airIrregular.cost.toLocaleString()}</span>
               </div>
               <div className="border-t pt-2 flex justify-between">
                 <span className="font-medium">Profit</span>
-                <span className={`font-bold ${data.byType.airIrregular.profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <span className={`font-bold ${data.byType.airIrregular.profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                   ${data.byType.airIrregular.profit.toLocaleString()}
                 </span>
               </div>
@@ -550,21 +550,21 @@ const [timeRange, setTimeRange] = useState("all");
         <Card className="border-l-4 border-l-green-500">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">
-              <Ship className="h-5 w-5 text-green-500" />
+              <Ship className="h-5 w-5 text-green-500 dark:text-green-400" />
               <h3 className="font-semibold">Sea</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Revenue</span>
-                <span className="font-medium text-green-600">${data.byType.sea.revenue.toLocaleString()}</span>
+                <span className="font-medium text-green-600 dark:text-green-300">${data.byType.sea.revenue.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Cost</span>
-                <span className="font-medium text-red-600">${data.byType.sea.cost.toLocaleString()}</span>
+                <span className="font-medium text-red-600 dark:text-red-300">${data.byType.sea.cost.toLocaleString()}</span>
               </div>
               <div className="border-t pt-2 flex justify-between">
                 <span className="font-medium">Profit</span>
-                <span className={`font-bold ${data.byType.sea.profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <span className={`font-bold ${data.byType.sea.profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                   ${data.byType.sea.profit.toLocaleString()}
                 </span>
               </div>
@@ -610,9 +610,9 @@ const [timeRange, setTimeRange] = useState("all");
                     </Badge>
                   </TableCell>
                   <TableCell>{batch.packageCount}</TableCell>
-                  <TableCell className="text-right text-red-600">${batch.cost.toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-green-600">${batch.revenue.toLocaleString()}</TableCell>
-                  <TableCell className={`text-right font-medium ${batch.profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  <TableCell className="text-right text-red-600 dark:text-red-300">${batch.cost.toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-green-600 dark:text-green-300">${batch.revenue.toLocaleString()}</TableCell>
+                  <TableCell className={`text-right font-medium ${batch.profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                     ${batch.profit.toLocaleString()}
                   </TableCell>
                   <TableCell className="text-right">

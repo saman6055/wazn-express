@@ -168,7 +168,7 @@ export default function CurrencyManagement() {
                   <TableCell className="font-mono font-semibold">
                     {currency.code}
                     {currency.isBaseCurrency && (
-                      <Star className="inline h-4 w-4 me-1 text-yellow-500 fill-yellow-500" />
+                      <Star className="inline h-4 w-4 me-1 text-yellow-500 dark:text-yellow-400 fill-yellow-500" />
                     )}
                   </TableCell>
                   <TableCell>{currency.name}</TableCell>

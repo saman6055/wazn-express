@@ -428,7 +428,7 @@ function ClassicPortalInvoiceReports() {
                 "w-8 h-8 rounded-lg flex items-center justify-center",
                 isDark ? "bg-blue-900/50" : "bg-blue-100 dark:bg-blue-950/40"
               )}>
-                <FileText className="w-4 h-4 text-blue-500" />
+                <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400" />
               </div>
               <span className={cn(
                 "text-xs",
@@ -466,7 +466,7 @@ function ClassicPortalInvoiceReports() {
                 "w-8 h-8 rounded-lg flex items-center justify-center",
                 isDark ? "bg-emerald-900/50" : "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
-                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                <CheckCircle className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
               </div>
               <span className={cn(
                 "text-xs",
@@ -479,7 +479,7 @@ function ClassicPortalInvoiceReports() {
               <Skeleton className="h-7 w-16" />
             ) : (
               <>
-                <p className="text-xl font-bold text-emerald-500">
+                <p className="text-xl font-bold text-emerald-500 dark:text-emerald-400">
                   {summary?.paidInvoices || 0}
                 </p>
                 <p className={cn(
@@ -501,7 +501,7 @@ function ClassicPortalInvoiceReports() {
                 "w-8 h-8 rounded-lg flex items-center justify-center",
                 isDark ? "bg-purple-900/50" : "bg-purple-100 dark:bg-purple-950/40"
               )}>
-                <TrendingUp className="w-4 h-4 text-purple-500" />
+                <TrendingUp className="w-4 h-4 text-purple-500 dark:text-purple-400" />
               </div>
               <span className={cn(
                 "text-xs",
@@ -513,7 +513,7 @@ function ClassicPortalInvoiceReports() {
             {invoicesLoading ? (
               <Skeleton className="h-7 w-16" />
             ) : (
-              <p className="text-xl font-bold text-purple-500">
+              <p className="text-xl font-bold text-purple-500 dark:text-purple-400">
                 {formatCurrency(summary?.averageInvoiceUsd || 0)}
               </p>
             )}
@@ -608,7 +608,7 @@ function ClassicPortalInvoiceReports() {
                       )}>
                         {formatCurrency(m.total)}
                       </p>
-                      <p className="text-xs text-emerald-500">{formatCurrency(m.paid)}</p>
+                      <p className="text-xs text-emerald-500 dark:text-emerald-400">{formatCurrency(m.paid)}</p>
                     </div>
                   </div>
                 ))}

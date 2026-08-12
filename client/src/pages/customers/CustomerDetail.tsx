@@ -184,7 +184,7 @@ export default function CustomerDetail() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-amber-500" />
+                    <Shield className="h-5 w-5 text-amber-500 dark:text-amber-400" />
                     {pickLang(language, { ku: "ڕێستکردنەوەی وشەی نهێنی کڕیار", en: "Reset Customer Password", ar: "إعادة تعيين كلمة مرور العميل", zh: "重置客户密码" })}
                   </DialogTitle>
                   <DialogDescription>{pickLang(language, { ku: "وشەیەکی نهێنی نوێ دابنێ بۆ", en: "Set a new password for", ar: "تعيين كلمة مرور جديدة لـ", zh: "为以下客户设置新密码" })} {customer.fullName}</DialogDescription>
@@ -242,7 +242,7 @@ export default function CustomerDetail() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-medium text-muted-foreground">{t("customers.balance")}</p>
-                      <p className={`text-2xl font-bold ${(balance ?? 0) > 0 ? "text-red-600" : (balance ?? 0) < 0 ? "text-green-600" : ""}`}>
+                      <p className={`text-2xl font-bold ${(balance ?? 0) > 0 ? "text-red-600 dark:text-red-300" : (balance ?? 0) < 0 ? "text-green-600 dark:text-green-300" : ""}`}>
                         ${Math.abs(balance ?? 0).toFixed(2)}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -250,7 +250,7 @@ export default function CustomerDetail() {
                       </p>
                     </div>
                     <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${(balance ?? 0) > 0 ? "bg-red-100 dark:bg-red-900/30" : "bg-green-100 dark:bg-green-900/30"}`}>
-                      <Wallet className={`h-5 w-5 ${(balance ?? 0) > 0 ? "text-red-600" : "text-green-600"}`} />
+                      <Wallet className={`h-5 w-5 ${(balance ?? 0) > 0 ? "text-red-600 dark:text-red-300" : "text-green-600 dark:text-green-300"}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -264,7 +264,7 @@ export default function CustomerDetail() {
                       <p className="text-xs text-muted-foreground">{deliveredPackages} {t("packages.delivered")}</p>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                      <Package className="h-5 w-5 text-blue-600" />
+                      <Package className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                     </div>
                   </div>
                 </CardContent>
@@ -274,11 +274,11 @@ export default function CustomerDetail() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-medium text-muted-foreground">{t("packages.inProgress")}</p>
-                      <p className="text-2xl font-bold text-amber-600">{pendingPackages}</p>
+                      <p className="text-2xl font-bold text-amber-600 dark:text-amber-300">{pendingPackages}</p>
                       <p className="text-xs text-muted-foreground">{t("common.active")}</p>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                      <Clock className="h-5 w-5 text-amber-600" />
+                      <Clock className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                     </div>
                   </div>
                 </CardContent>
@@ -292,7 +292,7 @@ export default function CustomerDetail() {
                       <p className="text-xs text-muted-foreground">{t("common.allTime")}</p>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-green-600" />
+                      <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-300" />
                     </div>
                   </div>
                 </CardContent>
@@ -307,7 +307,7 @@ export default function CustomerDetail() {
                       <p className="text-2xl font-bold">{totalWeight.toFixed(2)} kg</p>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                      <Package className="h-5 w-5 text-purple-600" />
+                      <Package className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                     </div>
                   </div>
                 </CardContent>
@@ -331,7 +331,7 @@ export default function CustomerDetail() {
                       <p className="text-xs text-muted-foreground">{preferredShippingCount} {t("common.packages")}</p>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
-                      <Globe className="h-5 w-5 text-teal-600" />
+                      <Globe className="h-5 w-5 text-teal-600 dark:text-teal-300" />
                     </div>
                   </div>
                 </CardContent>
@@ -341,10 +341,10 @@ export default function CustomerDetail() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-medium text-muted-foreground">{t("customers.deliveryRate")}</p>
-                      <p className="text-2xl font-bold text-green-600">{deliveryRatePct}%</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-300">{deliveryRatePct}%</p>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                      <Check className="h-5 w-5 text-emerald-600" />
+                      <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                     </div>
                   </div>
                 </CardContent>
@@ -535,7 +535,7 @@ export default function CustomerDetail() {
                               <TableCell className="text-right text-sm font-medium">
                                 ${Number(service.priceAmount ?? 0).toFixed(2)}
                               </TableCell>
-                              <TableCell className={`text-right font-medium ${profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                              <TableCell className={`text-right font-medium ${profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                                 ${profit.toFixed(2)}
                               </TableCell>
                               <TableCell>
@@ -727,13 +727,13 @@ export default function CustomerDetail() {
                       <SelectContent>
                         <SelectItem value="male">
                           <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-blue-500" />
+                            <User className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                             {t("common.male")}
                           </div>
                         </SelectItem>
                         <SelectItem value="female">
                           <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-pink-500" />
+                            <User className="h-4 w-4 text-pink-500 dark:text-pink-400" />
                             {t("common.female")}
                           </div>
                         </SelectItem>
@@ -750,7 +750,7 @@ export default function CustomerDetail() {
                         {nationalities.map((nat: any) => (
                           <SelectItem key={nat.id} value={nat.id}>
                             <div className="flex items-center gap-2">
-                              <Globe className="h-4 w-4 text-emerald-500" />
+                              <Globe className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
                               {nat.nameKu} - {nat.nameEn}
                             </div>
                           </SelectItem>
@@ -771,7 +771,7 @@ export default function CustomerDetail() {
                       {businessTypes.map((bt: any) => (
                         <SelectItem key={bt.id} value={bt.id}>
                           <div className="flex items-center gap-2">
-                            <Briefcase className="h-4 w-4 text-amber-500" />
+                            <Briefcase className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                             {bt.nameKu} - {bt.nameEn}
                           </div>
                         </SelectItem>

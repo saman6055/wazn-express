@@ -598,10 +598,10 @@ const [showAddDebt, setShowAddDebt] = useState(false);
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("finance.totalDebt")}</CardTitle>
-              <DollarSign className="h-4 w-4 text-red-500" />
+              <DollarSign className="h-4 w-4 text-red-500 dark:text-red-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-300">
                 {formatCurrency(totalDebt)}
               </div>
               <p className="text-xs text-muted-foreground">{t("debts.totalPlusInterest")}</p>
@@ -610,10 +610,10 @@ const [showAddDebt, setShowAddDebt] = useState(false);
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("debts.paidBack")}</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-300">
                 {formatCurrency(totalPaid)}
               </div>
               <p className="text-xs text-muted-foreground">{t("debts.totalPaid")}</p>
@@ -622,10 +622,10 @@ const [showAddDebt, setShowAddDebt] = useState(false);
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("forms.remaining")}</CardTitle>
-              <Clock className="h-4 w-4 text-orange-500" />
+              <Clock className="h-4 w-4 text-orange-500 dark:text-orange-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-300">
                 {formatCurrency(totalRemaining)}
               </div>
               <p className="text-xs text-muted-foreground">{t("debts.mustBePaid")}</p>
@@ -634,7 +634,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("common.active")}</CardTitle>
-              <Landmark className="h-4 w-4 text-blue-500" />
+              <Landmark className="h-4 w-4 text-blue-500 dark:text-blue-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{activeDebts}</div>
@@ -644,10 +644,10 @@ const [showAddDebt, setShowAddDebt] = useState(false);
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("invoices.overdue")}</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <AlertTriangle className="h-4 w-4 text-red-500 dark:text-red-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{overdueDebts}</div>
+              <div className="text-2xl font-bold text-red-600 dark:text-red-300">{overdueDebts}</div>
               <p className="text-xs text-muted-foreground">{t("debts.needsToBePaid")}</p>
             </CardContent>
           </Card>
@@ -684,11 +684,11 @@ const [showAddDebt, setShowAddDebt] = useState(false);
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{t("debts.paidBack")}:</span>
-                      <span className="font-medium text-green-600">{formatCurrency(debt.paidAmount)}</span>
+                      <span className="font-medium text-green-600 dark:text-green-300">{formatCurrency(debt.paidAmount)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{t("debts.remaining")}:</span>
-                      <span className="font-medium text-red-600">{formatCurrency(debt.remainingAmount)}</span>
+                      <span className="font-medium text-red-600 dark:text-red-300">{formatCurrency(debt.remainingAmount)}</span>
                     </div>
                   </div>
 
@@ -765,7 +765,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
                         }
                       }}
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                     </Button>
                   </div>
                 </CardContent>
@@ -815,7 +815,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
                             {payment.paymentMethod === "other" && t("common.other")}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right font-medium text-green-600">
+                        <TableCell className="text-right font-medium text-green-600 dark:text-green-300">
                           {formatCurrency(payment.amountUsd)}
                         </TableCell>
                         <TableCell className="text-right font-medium">

@@ -58,7 +58,7 @@ export function DeadPhotoCleanupCard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <ImageOff className="h-5 w-5 text-amber-500" />
+          <ImageOff className="h-5 w-5 text-amber-500 dark:text-amber-400" />
           {label({
             ku: "پاککردنەوەی وێنە مردووەکان",
             en: "Clean up dead photo links",

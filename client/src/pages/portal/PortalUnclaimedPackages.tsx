@@ -134,7 +134,7 @@ export default function PortalUnclaimedPackages() {
 
       {/* Search Bar */}
       <div className="px-4 -mt-4">
-        <div className="bg-white rounded-2xl shadow-lg p-4">
+        <div className="bg-white dark:bg-card rounded-2xl shadow-lg p-4">
           <div className="relative">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <Input
@@ -197,11 +197,11 @@ export default function PortalUnclaimedPackages() {
                  it is empty when the request failed sends them away. */
               <PortalErrorState onRetry={() => void refetchUnclaimed()} isRetrying={unclaimedFetching} />
             ) : !unclaimedData?.packages.length ? (
-              <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+              <div className="bg-white dark:bg-card rounded-2xl p-8 text-center shadow-sm">
                 <div className="w-16 h-16 bg-gray-100 dark:bg-gray-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Package className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-gray-600 font-medium">
+                <p className="text-gray-600 dark:text-gray-300 font-medium">
                   {searchTerm 
                     ? (t("noPackagesFound") || "No packages found") 
                     : (t("noUnclaimedPackages") || "No unclaimed packages")}
@@ -217,7 +217,7 @@ export default function PortalUnclaimedPackages() {
                 {unclaimedData.packages.map((pkg) => (
                   <div 
                     key={pkg.id}
-                    className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all"
+                    className="bg-white dark:bg-card rounded-2xl p-4 shadow-sm hover:shadow-md transition-all"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
@@ -229,7 +229,7 @@ export default function PortalUnclaimedPackages() {
                           className="w-12 h-12 rounded-xl border border-orange-100 dark:border-orange-800/60"
                           fallback={
                             <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center shrink-0">
-                              <Package className="w-6 h-6 text-orange-600" />
+                              <Package className="w-6 h-6 text-orange-600 dark:text-orange-300" />
                             </div>
                           }
                         />
@@ -247,10 +247,10 @@ export default function PortalUnclaimedPackages() {
                           )}
                           {/* Package Code */}
                           <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-950/40 text-gray-600 text-xs font-medium rounded">
+                            <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-950/40 text-gray-600 dark:text-gray-300 text-xs font-medium rounded">
                               {t("packageCode") || "Code"}
                             </span>
-                            <p className="text-sm text-gray-600 font-mono">
+                            <p className="text-sm text-gray-600 dark:text-gray-300 font-mono">
                               {pkg.packageCode}
                             </p>
                           </div>
@@ -258,12 +258,12 @@ export default function PortalUnclaimedPackages() {
                           {/* Package Details */}
                           <div className="flex flex-wrap gap-3 mt-2">
                             {pkg.weightKg && (
-                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                                 <Scale className="w-3 h-3" />
                                 <span>{pkg.weightKg} kg</span>
                               </div>
                             )}
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                               <Calendar className="w-3 h-3" />
                               <span>{formatDate(pkg.createdAt)}</span>
                             </div>
@@ -305,11 +305,11 @@ export default function PortalUnclaimedPackages() {
                 ))}
               </div>
             ) : !myClaimRequests?.length ? (
-              <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+              <div className="bg-white dark:bg-card rounded-2xl p-8 text-center shadow-sm">
                 <div className="w-16 h-16 bg-gray-100 dark:bg-gray-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Send className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-gray-600 font-medium">
+                <p className="text-gray-600 dark:text-gray-300 font-medium">
                   {t("noClaimRequests") || "No claim requests yet"}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
@@ -321,7 +321,7 @@ export default function PortalUnclaimedPackages() {
                 {myClaimRequests.map((request) => (
                   <div 
                     key={request.id}
-                    className="bg-white rounded-2xl p-4 shadow-sm"
+                    className="bg-white dark:bg-card rounded-2xl p-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
@@ -331,18 +331,18 @@ export default function PortalUnclaimedPackages() {
                           request.status === "approved" ? "bg-green-100 dark:bg-green-950/40" : "bg-red-100 dark:bg-red-950/40"
                         )}>
                           {request.status === "pending" ? (
-                            <Clock className="w-6 h-6 text-yellow-600" />
+                            <Clock className="w-6 h-6 text-yellow-600 dark:text-yellow-300" />
                           ) : request.status === "approved" ? (
-                            <CheckCircle className="w-6 h-6 text-green-600" />
+                            <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-300" />
                           ) : (
-                            <XCircle className="w-6 h-6 text-red-600" />
+                            <XCircle className="w-6 h-6 text-red-600 dark:text-red-300" />
                           )}
                         </div>
                         <div>
                           <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
                             {request.trackingNumber}
                           </p>
-                          <p className="text-xs text-gray-500 mt-0.5">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                             {request.requestNumber}
                           </p>
                           <div className="mt-2">
@@ -372,7 +372,7 @@ export default function PortalUnclaimedPackages() {
                     
                     {/* Customer Note */}
                     {request.customerNote && (
-                      <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-950/40 rounded-xl text-sm text-gray-600">
+                      <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-950/40 rounded-xl text-sm text-gray-600 dark:text-gray-300">
                         <p className="font-medium mb-1 text-gray-700 dark:text-gray-300">
                           {t("yourNote") || "Your Note"}:
                         </p>
@@ -409,8 +409,8 @@ export default function PortalUnclaimedPackages() {
                     photos={selectedPackage.photos ?? []}
                     className="w-12 h-12 rounded-xl shadow-sm"
                     fallback={
-                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
-                        <Package className="w-6 h-6 text-slate-600" />
+                      <div className="w-12 h-12 bg-white dark:bg-card rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                        <Package className="w-6 h-6 text-slate-600 dark:text-slate-300" />
                       </div>
                     }
                   />
@@ -418,7 +418,7 @@ export default function PortalUnclaimedPackages() {
                     <p className="font-semibold text-slate-800 dark:text-slate-200">
                       {selectedPackage.trackingNumber || selectedPackage.packageCode}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {selectedPackage.weightKg && `${selectedPackage.weightKg} kg`}
                       {selectedPackage.weightKg && selectedPackage.createdAt && " • "}
                       {selectedPackage.createdAt && formatDate(selectedPackage.createdAt)}
@@ -431,7 +431,7 @@ export default function PortalUnclaimedPackages() {
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                   {pickLang(language, { ku: "هۆکاری خاوەنداری", en: "Reason for ownership", ar: "سبب الملكية", zh: "归属原因" })}
-                  <span className="text-red-500"> *</span>
+                  <span className="text-red-500 dark:text-red-400"> *</span>
                 </label>
                 <Textarea
                   placeholder={pickLang(language, { ku: "بۆ نموونە: لە عەلی بابا کڕیم، لەگەڵ سەپلایەر قسەم کرد...", en: "e.g. I bought it on Alibaba, spoke with the supplier...", ar: "مثال: اشتريته من علي بابا، تحدثت مع المورد...", zh: "例如：我在阿里巴巴购买，与供应商沟通过……" })}
@@ -445,9 +445,9 @@ export default function PortalUnclaimedPackages() {
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                   {pickLang(language, { ku: "بەڵگە / سکرینشۆتی کڕین", en: "Proof / purchase screenshot", ar: "الإثبات / لقطة الشراء", zh: "凭证 / 购买截图" })}
-                  <span className="text-red-500"> *</span>
+                  <span className="text-red-500 dark:text-red-400"> *</span>
                 </label>
-                <p className="text-xs text-gray-500 mb-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                   {pickLang(language, { ku: "سکرینشۆتی کڕین، وێنەی سەپلایەر، یان وێنەی ویچات دابنێ", en: "Attach a purchase screenshot, supplier photo, or WeChat image", ar: "أرفق لقطة شراء أو صورة المورد أو صورة من WeChat", zh: "附上购买截图、供应商照片或微信图片" })}
                 </p>
                 <CompressedImageUpload images={proofImages} onChange={setProofImages} maxImages={5} />

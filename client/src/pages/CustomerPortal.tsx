@@ -62,7 +62,7 @@ function BatchCard({
   };
 
   return (
-    <Card className="bg-white rounded-2xl shadow-sm mb-4">
+    <Card className="bg-white dark:bg-card rounded-2xl shadow-sm mb-4">
       <CardContent className="p-4">
         {/* Header row */}
         <div className="flex items-center gap-2 flex-wrap mb-2">
@@ -76,18 +76,18 @@ function BatchCard({
         </div>
 
         {/* CTN Quantity */}
-        <p className="text-gray-500 text-sm mb-3">CTN Quantity: {ctnQuantity}</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-3">CTN Quantity: {ctnQuantity}</p>
 
         {/* Tracking numbers box */}
         <div className="bg-gray-100 dark:bg-gray-950/40 rounded-lg p-3 mb-3">
-          <p className="text-gray-600 text-sm break-all">
+          <p className="text-gray-600 dark:text-gray-300 text-sm break-all">
             {trackingNumbers.join(",")}
           </p>
         </div>
 
         {/* Date and View Details */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-gray-500 text-sm">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
             <Calendar className="h-4 w-4" />
             <span>{date}</span>
           </div>
@@ -150,11 +150,11 @@ function AirBatchDetail({
       {/* Content */}
       <div className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-950/40 p-4">
         {/* Arrival Card */}
-        <Card className="bg-white rounded-2xl mb-4">
+        <Card className="bg-white dark:bg-card rounded-2xl mb-4">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 rounded-lg bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-orange-500" />
+                <Calendar className="h-5 w-5 text-orange-500 dark:text-orange-400" />
               </div>
               <div className="flex-1">
                 {batch?.estimatedArrival && (
@@ -167,7 +167,7 @@ function AirBatchDetail({
                         zh: "预计到达日期",
                       })}
                     </Badge>
-                    <span className="font-semibold text-blue-600">
+                    <span className="font-semibold text-blue-600 dark:text-blue-300">
                       {new Date(batch.estimatedArrival).toLocaleDateString('ku-IQ', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </span>
                   </div>
@@ -182,12 +182,12 @@ function AirBatchDetail({
                         zh: "已到达",
                       })}
                     </Badge>
-                    <span className="font-semibold text-green-600">
+                    <span className="font-semibold text-green-600 dark:text-green-300">
                       {new Date(batch.actualArrival).toLocaleDateString('ku-IQ', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </span>
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-sm">{pickLang(language, {
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">{pickLang(language, {
                     ku: "هێشتا نەگەیشتووە",
                     en: "Not arrived yet",
                     ar: "لم تصل بعد",
@@ -208,7 +208,7 @@ function AirBatchDetail({
         </Card>
 
         {/* Stats Card */}
-        <Card className="bg-white rounded-2xl mb-4">
+        <Card className="bg-white dark:bg-card rounded-2xl mb-4">
           <CardContent className="p-4">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
@@ -231,7 +231,7 @@ function AirBatchDetail({
           </p>
 
           <div className="mt-4 space-y-3">
-            <Card className="bg-white rounded-xl">
+            <Card className="bg-white dark:bg-card rounded-xl">
               <CardContent className="p-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">City</span>
@@ -244,15 +244,15 @@ function AirBatchDetail({
               </CardContent>
             </Card>
 
-            <Card className="bg-white rounded-xl">
+            <Card className="bg-white dark:bg-card rounded-xl">
               <CardContent className="p-3">
-                <p className="text-gray-600 text-sm break-all">
+                <p className="text-gray-600 dark:text-gray-300 text-sm break-all">
                   {trackingNumbers.join(",")}
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-white rounded-xl">
+            <Card className="bg-white dark:bg-card rounded-xl">
               <CardContent className="p-3">
                 <p className="text-gray-800 dark:text-gray-200 font-medium">Track No.:</p>
               </CardContent>
@@ -316,17 +316,17 @@ function SeaBatchDetail({
       {/* Content */}
       <div className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-950/40 p-4">
         {/* ETA Card */}
-        <Card className="bg-white rounded-2xl mb-4">
+        <Card className="bg-white dark:bg-card rounded-2xl mb-4">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 rounded-lg bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center">
-                <ChevronRight className="h-5 w-5 text-orange-500 rotate-180" />
+                <ChevronRight className="h-5 w-5 text-orange-500 dark:text-orange-400 rotate-180" />
               </div>
               <div>
                 <p className="text-gray-800 dark:text-gray-200">
                   ETA: {batch?.estimatedArrival ? new Date(batch.estimatedArrival).toLocaleString() : "2025-12-16 02:37:00"}
                 </p>
-                <p className="text-blue-500">
+                <p className="text-blue-500 dark:text-blue-400">
                   Arrival at: {batch?.actualArrival ? new Date(batch.actualArrival).toLocaleString() : "2025-12-28 02:37:00"}
                 </p>
                 <p className="text-gray-400 text-sm">
@@ -388,7 +388,7 @@ function SeaBatchDetail({
         </Card>
 
         {/* Package Table */}
-        <Card className="bg-white rounded-2xl mb-4">
+        <Card className="bg-white dark:bg-card rounded-2xl mb-4">
           <CardContent className="p-4">
             <div className="grid grid-cols-4 gap-2 text-center border-b pb-2 mb-2">
               <span className="text-gray-400 text-sm">{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编码" })}</span>
@@ -404,8 +404,8 @@ function SeaBatchDetail({
                 <div key={idx} className="grid grid-cols-4 gap-2 text-center py-2 border-b border-gray-100 dark:border-gray-800/60 text-sm">
                   <span className="font-mono text-xs">{pkg.packageCode || idx + 1}</span>
                   <span>{pkg.weightKg ? `${pkg.weightKg}kg` : "-"}</span>
-                  <span className="font-medium text-cyan-600">{pkgCbm.toFixed(4)}</span>
-                  <span className="text-green-600">${pkgCost.toFixed(2)}</span>
+                  <span className="font-medium text-cyan-600 dark:text-cyan-300">{pkgCbm.toFixed(4)}</span>
+                  <span className="text-green-600 dark:text-green-300">${pkgCost.toFixed(2)}</span>
                 </div>
               );
             })}
@@ -413,10 +413,10 @@ function SeaBatchDetail({
             <div className="grid grid-cols-4 gap-2 text-center py-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg mt-2 font-bold">
               <span>{pickLang(language, { ku: "کۆی", en: "Total", ar: "الإجمالي", zh: "合计" })}</span>
               <span>{packages.reduce((sum: number, pkg: any) => sum + (parseFloat(pkg.weightKg) || 0), 0).toFixed(2)}kg</span>
-              <span className="text-cyan-600">
+              <span className="text-cyan-600 dark:text-cyan-300">
                 {packages.reduce((sum: number, pkg: any) => sum + (parseFloat(pkg.volumeCbm) || 0), 0).toFixed(4)}
               </span>
-              <span className="text-green-600">
+              <span className="text-green-600 dark:text-green-300">
                 ${(packages.reduce((sum: number, pkg: any) => sum + (parseFloat(pkg.volumeCbm) || 0), 0) * (parseFloat(batch?.pricePerCbm) || 0)).toFixed(2)}
               </span>
             </div>
@@ -465,7 +465,7 @@ function TransactionCard({
   };
   
   return (
-    <Card className="bg-white rounded-2xl mb-4">
+    <Card className="bg-white dark:bg-card rounded-2xl mb-4">
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-3">
           <Badge className={getBadgeColor()}>
@@ -476,16 +476,16 @@ function TransactionCard({
 
         <div className="bg-gray-50 dark:bg-gray-950/40 rounded-lg p-3 mb-3">
           <div className="flex justify-between mb-1">
-            <span className="text-gray-500">Amount</span>
-            <span className="text-red-500 font-semibold">${amount.toFixed(2)}</span>
+            <span className="text-gray-500 dark:text-gray-400">Amount</span>
+            <span className="text-red-500 dark:text-red-400 font-semibold">${amount.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">Date</span>
+            <span className="text-gray-500 dark:text-gray-400">Date</span>
             <span className="text-gray-800 dark:text-gray-200">{date}</span>
           </div>
         </div>
 
-        <p className="text-gray-500 text-sm mb-3">{description}</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-3">{description}</p>
 
         {type === "invoice" && (
           <div className="flex gap-2">
@@ -708,7 +708,7 @@ const { user, loading, logout } = useAuth();
           </div>
 
           {/* Status Filter */}
-          <div className="bg-gray-200 p-3 flex flex-wrap gap-2">
+          <div className="bg-gray-200 dark:bg-gray-800/50 p-3 flex flex-wrap gap-2">
             {[
               { key: "all", label: "All" },
               { key: "received", label: "Received" },
@@ -722,7 +722,7 @@ const { user, loading, logout } = useAuth();
                 className={`rounded-full px-4 py-1 h-auto text-sm ${
                   statusFilter === filter.key 
                     ? "bg-slate-800 text-white" 
-                    : "bg-white text-gray-600 border-gray-300 dark:border-gray-800/60"
+                    : "bg-white dark:bg-card text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-800/60"
                 }`}
                 onClick={() => setStatusFilter(filter.key as StatusFilter)}
               >
@@ -734,7 +734,7 @@ const { user, loading, logout } = useAuth();
           {/* Batch List */}
           <div className="flex-1 p-4 overflow-auto">
             {filteredBatches.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                 <Package className="h-12 w-12 mx-auto mb-4 opacity-30" />
                 <p>No shipments found</p>
               </div>
@@ -767,10 +767,10 @@ const { user, loading, logout } = useAuth();
 
           <div className="flex-1 p-4 overflow-auto">
             {/* Balance Card */}
-            <Card className="bg-white rounded-2xl mb-4">
+            <Card className="bg-white dark:bg-card rounded-2xl mb-4">
               <CardContent className="p-4 flex items-center gap-4">
                 <div className="h-14 w-14 rounded-xl bg-red-100 dark:bg-red-950/40 flex items-center justify-center">
-                  <Wallet className="h-7 w-7 text-red-500" />
+                  <Wallet className="h-7 w-7 text-red-500 dark:text-red-400" />
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Customer Balance</p>
@@ -781,7 +781,7 @@ const { user, loading, logout } = useAuth();
 
             {/* Transaction List Header */}
             <div className="flex items-center justify-between mb-4">
-              <span className="text-gray-600 font-medium">Transaction List</span>
+              <span className="text-gray-600 dark:text-gray-300 font-medium">Transaction List</span>
               <div className="flex gap-2">
                 <Badge variant="secondary" className="bg-gray-700 text-white">2024-12-16</Badge>
                 <span className="text-gray-400">—</span>
@@ -791,7 +791,7 @@ const { user, loading, logout } = useAuth();
 
             {/* Transactions */}
             {((myTransactions || []).length === 0 && (myInvoices || []).length === 0) ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                 <FileText className="h-12 w-12 mx-auto mb-4 opacity-30" />
                 <p>No transactions found</p>
               </div>
@@ -830,59 +830,59 @@ const { user, loading, logout } = useAuth();
         <>
           <div className="bg-slate-800 text-white p-4 pb-8 text-center">
             <h1 className="text-lg font-medium mb-4">Me</h1>
-            <div className="h-20 w-20 rounded-full bg-gray-200 mx-auto flex items-center justify-center mb-3">
-              <User className="h-10 w-10 text-gray-500" />
+            <div className="h-20 w-20 rounded-full bg-gray-200 dark:bg-gray-800/50 mx-auto flex items-center justify-center mb-3">
+              <User className="h-10 w-10 text-gray-500 dark:text-gray-400" />
             </div>
             <p className="text-xl font-medium">{user?.name || "Customer"}</p>
           </div>
 
           <div className="flex-1 p-4 -mt-4 overflow-auto">
-            <Card className="bg-white rounded-2xl">
+            <Card className="bg-white dark:bg-card rounded-2xl">
               <CardContent className="p-0">
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-yellow-100 dark:bg-yellow-950/40 flex items-center justify-center"><MessageSquare className="h-5 w-5 text-yellow-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-yellow-100 dark:bg-yellow-950/40 flex items-center justify-center"><MessageSquare className="h-5 w-5 text-yellow-600 dark:text-yellow-300" /></div>}
                   label="Message center"
                   badge={2}
                   onClick={() => toast.info("Message center coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center"><Bell className="h-5 w-5 text-blue-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center"><Bell className="h-5 w-5 text-blue-600 dark:text-blue-300" /></div>}
                   label="Notification"
                   badge={7074}
                   onClick={() => toast.info("Notifications coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center"><MapPin className="h-5 w-5 text-teal-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center"><MapPin className="h-5 w-5 text-teal-600 dark:text-teal-300" /></div>}
                   label="Address"
                   onClick={() => toast.info("Address management coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center"><FileText className="h-5 w-5 text-blue-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center"><FileText className="h-5 w-5 text-blue-600 dark:text-blue-300" /></div>}
                   label="Terms & Conditions"
                   onClick={() => toast.info("Terms & Conditions coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-yellow-100 dark:bg-yellow-950/40 flex items-center justify-center"><Handshake className="h-5 w-5 text-yellow-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-yellow-100 dark:bg-yellow-950/40 flex items-center justify-center"><Handshake className="h-5 w-5 text-yellow-600 dark:text-yellow-300" /></div>}
                   label="Our Services"
                   onClick={() => toast.info("Our Services coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-950/40 flex items-center justify-center"><AlertTriangle className="h-5 w-5 text-red-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-950/40 flex items-center justify-center"><AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-300" /></div>}
                   label="without shipping mark"
                   onClick={() => toast.info("Feature coming soon")}
                 />
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center"><Globe className="h-5 w-5 text-teal-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center"><Globe className="h-5 w-5 text-teal-600 dark:text-teal-300" /></div>}
                   label="Online Order Details"
                   onClick={() => toast.info("Online Order Details coming soon")}
                 />
               </CardContent>
             </Card>
 
-            <Card className="bg-white rounded-2xl mt-4">
+            <Card className="bg-white dark:bg-card rounded-2xl mt-4">
               <CardContent className="p-0">
                 <MenuItem 
-                  icon={<div className="h-10 w-10 rounded-lg bg-pink-100 dark:bg-pink-950/40 flex items-center justify-center"><Lock className="h-5 w-5 text-pink-600" /></div>}
+                  icon={<div className="h-10 w-10 rounded-lg bg-pink-100 dark:bg-pink-950/40 flex items-center justify-center"><Lock className="h-5 w-5 text-pink-600 dark:text-pink-300" /></div>}
                   label="Change Password"
                   onClick={() => setShowPasswordDialog(true)}
                 />
@@ -891,7 +891,7 @@ const { user, loading, logout } = useAuth();
 
             <Button 
               variant="outline" 
-              className="w-full mt-4 text-red-500 border-red-200 dark:border-red-800/60 hover:bg-red-50 rounded-full"
+              className="w-full mt-4 text-red-500 dark:text-red-400 border-red-200 dark:border-red-800/60 hover:bg-red-50 rounded-full"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4 me-2" />
@@ -912,7 +912,7 @@ const { user, loading, logout } = useAuth();
               placeholder="Enter tracking number..." 
               className="rounded-full"
             />
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
               <p>Search for packages by tracking number</p>
             </div>
@@ -927,7 +927,7 @@ const { user, loading, logout } = useAuth();
             <h1 className="text-lg font-medium">News</h1>
           </div>
           <div className="flex-1 p-4">
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               <Home className="h-12 w-12 mx-auto mb-4 opacity-30" />
               <p>No news available</p>
             </div>
@@ -936,7 +936,7 @@ const { user, loading, logout } = useAuth();
       )}
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t flex items-center justify-around py-2 z-50">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-card border-t flex items-center justify-around py-2 z-50">
         <NavItem 
           icon={<Home className="h-6 w-6" />} 
           label="News" 

@@ -213,7 +213,7 @@ export function ChinaDepotList({
                   {item.code}
                 </span>
                 {copied === item.code
-                  ? <CheckCircle className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  ? <CheckCircle className="h-3.5 w-3.5 shrink-0 text-emerald-500 dark:text-emerald-400" />
                   : <Copy className={cn("h-3.5 w-3.5 shrink-0", isDark ? "text-slate-500" : "text-slate-400")} />}
               </button>
 

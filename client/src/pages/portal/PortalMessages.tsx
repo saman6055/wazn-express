@@ -435,7 +435,7 @@ export default function PortalMessages() {
               {/* Loading state */}
               {(getOrCreateChat.isPending || messagesQuery.isLoading) && (
                 <div className="flex flex-col items-center justify-center h-full gap-3">
-                  <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+                  <Loader2 className="w-8 h-8 animate-spin text-purple-500 dark:text-purple-400" />
                   <p className={cn(
                     "text-sm",
                     isDark ? "text-slate-400" : "text-slate-600"
@@ -745,7 +745,7 @@ export default function PortalMessages() {
                   <div className="flex-1 flex items-center gap-3">
                     <button
                       onClick={cancelRecording}
-                      className="p-2 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 hover:bg-red-200 transition"
+                      className="p-2 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-300 hover:bg-red-200 transition"
                     >
                       <X className="w-5 h-5" />
                     </button>

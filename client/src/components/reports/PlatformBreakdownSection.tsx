@@ -58,7 +58,7 @@ export function PlatformBreakdownSection({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <ShoppingBag className="h-5 w-5 text-amber-600" />
+          <ShoppingBag className="h-5 w-5 text-amber-600 dark:text-amber-300" />
           {pickLang(language, {
             ku: "کڕین بەپێی پلاتفۆرم",
             en: "Purchases by platform",
@@ -120,7 +120,7 @@ export function PlatformBreakdownSection({
                       <td className="py-2 text-end font-medium tabular-nums">{r.orders}</td>
                       <td className="py-2 text-end tabular-nums text-muted-foreground">{r.units}</td>
                       <td className="py-2 text-end tabular-nums">{money(r.value)}</td>
-                      <td className="py-2 text-end tabular-nums text-emerald-600">{money(r.profit)}</td>
+                      <td className="py-2 text-end tabular-nums text-emerald-600 dark:text-emerald-300">{money(r.profit)}</td>
                       <td className="py-2 text-end tabular-nums text-muted-foreground">{share(r.orders)}%</td>
                     </tr>
                   ))}
@@ -131,7 +131,7 @@ export function PlatformBreakdownSection({
                     <td className="py-2 text-end tabular-nums">{totals.orders}</td>
                     <td className="py-2 text-end tabular-nums">{totals.units}</td>
                     <td className="py-2 text-end tabular-nums">{money(totals.value)}</td>
-                    <td className="py-2 text-end tabular-nums text-emerald-600">{money(totals.profit)}</td>
+                    <td className="py-2 text-end tabular-nums text-emerald-600 dark:text-emerald-300">{money(totals.profit)}</td>
                     <td className="py-2 text-end tabular-nums">100%</td>
                   </tr>
                 </tfoot>

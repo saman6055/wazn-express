@@ -442,7 +442,7 @@ export default function CommissionDetail() {
                 <>
                   <Button
                     onClick={() => navigate(`/commission/${id}/edit`)}
-                    className="bg-white text-purple-700 dark:text-purple-300 hover:bg-purple-50 shadow-md"
+                    className="bg-white dark:bg-card text-purple-700 dark:text-purple-300 hover:bg-purple-50 shadow-md"
                   >
                     <Pencil className="h-4 w-4 ms-2" />
                     {t("common.edit")}
@@ -479,7 +479,7 @@ export default function CommissionDetail() {
 
         {/* Visual tracking timeline — China→Iraq journey, from existing fields */}
         {trackingSteps.length > 0 && (
-          <Card className="shadow-sm border-0 bg-white">
+          <Card className="shadow-sm border-0 bg-white dark:bg-card">
             <CardContent className="p-5">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-1">
                 <Truck className="h-3 w-3" /> {t("tracking.title") || "شوێنکەوتنی ئۆردەر"}
@@ -496,7 +496,7 @@ export default function CommissionDetail() {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-purple-600" />
+                  <User className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   <CardTitle>{pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</CardTitle>
                 </div>
               </CardHeader>
@@ -557,7 +557,7 @@ export default function CommissionDetail() {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Layers className="h-5 w-5 text-purple-600" />
+                  <Layers className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   <CardTitle>{pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}</CardTitle>
                 </div>
               </CardHeader>
@@ -596,7 +596,7 @@ export default function CommissionDetail() {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-purple-600" />
+                  <Package className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   <CardTitle>{pickLang(language, { ku: "زانیاری کاڵا", en: "Product Info", ar: "معلومات المنتج", zh: "商品信息" })}</CardTitle>
                 </div>
               </CardHeader>
@@ -698,7 +698,7 @@ export default function CommissionDetail() {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <DollarSign className="h-5 w-5 text-green-600 dark:text-green-300" />
                   <CardTitle>{pickLang(language, { ku: "نرخەکان", en: "Prices", ar: "الأسعار", zh: "价格" })}</CardTitle>
                 </div>
               </CardHeader>
@@ -735,7 +735,7 @@ export default function CommissionDetail() {
                 )}
                 <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "عمولە (ڕێگری)", en: "Commission (flat)", ar: "العمولة (ثابتة)", zh: "佣金（固定）" })}</span>
-                  <span className="font-mono font-medium text-purple-600">${totalCommission.toFixed(2)}</span>
+                  <span className="font-mono font-medium text-purple-600 dark:text-purple-300">${totalCommission.toFixed(2)}</span>
                 </div>
                 <div className="p-3 bg-purple-50 dark:bg-purple-950/40 rounded-lg">
                   <div className="flex justify-between items-center">
@@ -761,7 +761,7 @@ export default function CommissionDetail() {
               <Card className="shadow-sm border-2 border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40">
                 <CardHeader className="border-b border-amber-200 dark:border-amber-800/60 bg-amber-100 dark:bg-amber-950/40">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-200 rounded-lg">
+                    <div className="p-2 bg-amber-200 dark:bg-amber-900/50 rounded-lg">
                       <AlertCircle className="h-5 w-5 text-amber-800 dark:text-amber-200" />
                     </div>
                     <div>
@@ -832,11 +832,11 @@ export default function CommissionDetail() {
             {/* Main Info */}
             <div className="lg:col-span-2 space-y-6">
               {/* Product Info Card */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
-                      <Package className="h-5 w-5 text-purple-600" />
+                      <Package className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                     </div>
                     <CardTitle>{t("fullPackage.productInfo")}</CardTitle>
                   </div>
@@ -915,7 +915,7 @@ export default function CommissionDetail() {
                         href={order.productLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 hover:underline"
+                        className="inline-flex items-center gap-2 text-purple-600 dark:text-purple-300 hover:text-purple-700 hover:underline"
                       >
                         <ExternalLink className="h-4 w-4" />
                         {order.productLink.length > 50 ? order.productLink.substring(0, 50) + "..." : order.productLink}
@@ -926,11 +926,11 @@ export default function CommissionDetail() {
               </Card>
 
               {/* Product Images Gallery */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
-                      <ImageIcon className="h-5 w-5 text-purple-600" />
+                      <ImageIcon className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                     </div>
                     <div>
                       <CardTitle>{t("fullPackage.productImages") || "وێنەکانی کاڵا"}</CardTitle>
@@ -956,11 +956,11 @@ export default function CommissionDetail() {
               </Card>
 
               {/* Customer Info Card */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
-                      <User className="h-5 w-5 text-purple-600" />
+                      <User className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                     </div>
                     <CardTitle>{t("fullPackage.customer")}</CardTitle>
                   </div>
@@ -995,11 +995,11 @@ export default function CommissionDetail() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Pricing Card */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-green-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
-                      <DollarSign className="h-5 w-5 text-green-600" />
+                      <DollarSign className="h-5 w-5 text-green-600 dark:text-green-300" />
                     </div>
                     <CardTitle>{t("fullPackage.prices")}</CardTitle>
                   </div>
@@ -1011,7 +1011,7 @@ export default function CommissionDetail() {
                     <div className="text-right">
                       <span className="font-mono font-semibold">${Number(order.itemPriceUsd || 0).toFixed(2)}</span>
                       {toRmb(Number(order.itemPriceUsd || 0)) && (
-                        <p className="text-[11px] text-orange-500 font-mono">≈ {toRmb(Number(order.itemPriceUsd || 0))} ¥</p>
+                        <p className="text-[11px] text-orange-500 dark:text-orange-400 font-mono">≈ {toRmb(Number(order.itemPriceUsd || 0))} ¥</p>
                       )}
                     </div>
                   </div>
@@ -1020,9 +1020,9 @@ export default function CommissionDetail() {
                   <div className="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-100 dark:border-purple-800/60">
                     <span className="text-sm text-muted-foreground">{t("commission.commissionPerItem") || "عمولەی هەر دانەیەک"}</span>
                     <div className="text-right">
-                      <span className="font-mono font-semibold text-purple-600">${Number(order.commissionFeeUsd || 0).toFixed(2)}</span>
+                      <span className="font-mono font-semibold text-purple-600 dark:text-purple-300">${Number(order.commissionFeeUsd || 0).toFixed(2)}</span>
                       {toRmb(Number(order.commissionFeeUsd || 0)) && (
-                        <p className="text-[11px] text-orange-500 font-mono">≈ {toRmb(Number(order.commissionFeeUsd || 0))} ¥</p>
+                        <p className="text-[11px] text-orange-500 dark:text-orange-400 font-mono">≈ {toRmb(Number(order.commissionFeeUsd || 0))} ¥</p>
                       )}
                     </div>
                   </div>
@@ -1042,7 +1042,7 @@ export default function CommissionDetail() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">+ {t("commission.commission") || "عمولە"} × {order.quantity || 1}</span>
-                      <span className="font-mono text-purple-600">${((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1)).toFixed(2)}</span>
+                      <span className="font-mono text-purple-600 dark:text-purple-300">${((Number(order.commissionFeeUsd) || 0) * (order.quantity || 1)).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm font-semibold border-t border-gray-200 dark:border-gray-800/60 pt-2 mt-2">
                       <span>{t("commission.totalCost") || "کۆی گشتی"}</span>
@@ -1083,18 +1083,18 @@ export default function CommissionDetail() {
                     return (
                       <div className="rounded-xl border-2 border-teal-200 dark:border-teal-800/60 bg-gradient-to-l from-teal-50 to-emerald-50 p-4 space-y-2">
                         <div className="flex items-center gap-2 mb-1">
-                          <DollarSign className="h-4 w-4 text-teal-600" />
+                          <DollarSign className="h-4 w-4 text-teal-600 dark:text-teal-300" />
                           <span className="text-sm font-bold text-teal-800 dark:text-teal-200">{pickLang(language, { ku: "پوختەی پارەدان", en: "Payment summary", ar: "ملخص الدفع", zh: "付款摘要" })}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">{pickLang(language, { ku: "کۆی نرخ", en: "Total cost", ar: "إجمالي التكلفة", zh: "总价" })}</span>
+                          <span className="text-slate-600 dark:text-slate-300">{pickLang(language, { ku: "کۆی نرخ", en: "Total cost", ar: "إجمالي التكلفة", zh: "总价" })}</span>
                           <span className="font-mono font-semibold">${totalCost.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-teal-700 dark:text-teal-300">{pickLang(language, { ku: "پارەی پێشەکی دراو", en: "Advance paid", ar: "الدفعة المقدمة المدفوعة", zh: "已付预付款" })}</span>
                           <span className="font-mono font-semibold text-teal-700 dark:text-teal-300">-${advancePaid.toFixed(2)}</span>
                         </div>
-                        <div className="h-px bg-teal-200" />
+                        <div className="h-px bg-teal-200 dark:bg-teal-900/50" />
                         <div className="flex justify-between text-base">
                           <span className="font-semibold">{isFullyPaid ? pickLang(language, { ku: "ڕەوشی پارەدان", en: "Payment status", ar: "حالة الدفع", zh: "付款状态" }) : pickLang(language, { ku: "ماوە بۆ پارەدان", en: "Remaining to pay", ar: "المتبقي للدفع", zh: "待付余额" })}</span>
                           {isFullyPaid ? (
@@ -1104,7 +1104,7 @@ export default function CommissionDetail() {
                           )}
                         </div>
                         {order.advancePaymentMethod && (
-                          <p className="text-xs text-teal-600">{pickLang(language, { ku: "شێواز", en: "Method", ar: "الطريقة", zh: "方式" })}: {order.advancePaymentMethod}</p>
+                          <p className="text-xs text-teal-600 dark:text-teal-300">{pickLang(language, { ku: "شێواز", en: "Method", ar: "الطريقة", zh: "方式" })}: {order.advancePaymentMethod}</p>
                         )}
                       </div>
                     );
@@ -1119,11 +1119,11 @@ export default function CommissionDetail() {
               </Card>
 
               {/* Status & Date Card */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-blue-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
-                      <Calendar className="h-5 w-5 text-blue-600" />
+                      <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                     </div>
                     <CardTitle>{t("fullPackage.statusColumn")} & {t("fullPackage.dateColumn")}</CardTitle>
                   </div>
@@ -1160,11 +1160,11 @@ export default function CommissionDetail() {
               </Card>
 
               {/* Notes */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
-                      <FileText className="h-5 w-5 text-purple-600" />
+                      <FileText className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                     </div>
                     <CardTitle>{t("fullPackage.notes")}</CardTitle>
                   </div>

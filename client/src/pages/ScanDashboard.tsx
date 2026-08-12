@@ -123,10 +123,10 @@ export default function ScanDashboard() {
                       <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 mb-1">
                         {pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}
                       </h3>
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         {pickLang(language, { ku: module.descKu, en: module.descEn, ar: module.descAr, zh: module.descZh })}
                       </p>
-                      <div className="flex items-center gap-2 mt-4 text-sm font-medium text-slate-600 group-hover:text-slate-800">
+                      <div className="flex items-center gap-2 mt-4 text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-slate-800">
                         <span>{pickLang(language, { ku: "دەستپێکردن", en: "Start", ar: "بدء", zh: "开始" })}</span>
                         <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </div>
@@ -272,7 +272,7 @@ export default function ScanDashboard() {
                           <Icon className="h-4 w-4 text-white" />
                         </div>
                         <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{count}</p>
-                        <p className="text-xs text-slate-500 mb-2">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
                           {pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh })}
                         </p>
                         <Progress value={percentage} className="h-1.5" />
@@ -348,7 +348,7 @@ export default function ScanDashboard() {
                     </div>
                   </div>
                   <Link href="/scan-reports">
-                    <Button variant="ghost" size="sm" className="text-blue-600">
+                    <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-300">
                       {pickLang(language, { ku: "هەموو", en: "View All", ar: "عرض الكل", zh: "查看全部" })}
                       <ArrowRight className="h-4 w-4 me-1" />
                     </Button>
@@ -363,7 +363,7 @@ export default function ScanDashboard() {
                     ))}
                   </div>
                 ) : latestScans.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500">
+                  <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                     <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
                     <p>{pickLang(language, { ku: "هیچ سکانێک نییە", en: "No scans yet", ar: "لا توجد عمليات مسح بعد", zh: "暂无扫描" })}</p>
                   </div>
@@ -375,13 +375,13 @@ export default function ScanDashboard() {
                         className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-950/40 hover:bg-slate-100 transition-colors"
                       >
                         <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
-                          <Package className="h-4 w-4 text-blue-600" />
+                          <Package className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-mono text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
                             {scan.trackingNumber || scan.packageCode || "N/A"}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                             {new Date(scan.scannedAt).toLocaleTimeString('ku')}
                           </p>
                         </div>
@@ -417,13 +417,13 @@ export default function ScanDashboard() {
                   {/* Missing Weight */}
                   <div className="flex items-center gap-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60">
                     <div className="p-3 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
-                      <AlertTriangle className="h-5 w-5 text-amber-600" />
+                      <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-amber-800 dark:text-amber-200">
                         {pickLang(language, { ku: "بێ کێش", en: "Missing Weight", ar: "بدون وزن", zh: "缺少重量" })}
                       </p>
-                      <p className="text-sm text-amber-600">
+                      <p className="text-sm text-amber-600 dark:text-amber-300">
                         {missingInfo?.filter((p: any) => !p.actualWeightKg)?.length || 0} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرود", zh: "个包裹" })}
                       </p>
                     </div>
@@ -437,13 +437,13 @@ export default function ScanDashboard() {
                   {/* Missing Customer */}
                   <div className="flex items-center gap-4 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60">
                     <div className="p-3 bg-red-100 dark:bg-red-950/40 rounded-xl">
-                      <Users className="h-5 w-5 text-red-600" />
+                      <Users className="h-5 w-5 text-red-600 dark:text-red-300" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-red-800 dark:text-red-200">
                         {pickLang(language, { ku: "بێ کڕیار", en: "Missing Customer", ar: "بدون عميل", zh: "缺少客户" })}
                       </p>
-                      <p className="text-sm text-red-600">
+                      <p className="text-sm text-red-600 dark:text-red-300">
                         {missingInfo?.filter((p: any) => !p.customerId)?.length || 0} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرود", zh: "个包裹" })}
                       </p>
                     </div>
@@ -457,13 +457,13 @@ export default function ScanDashboard() {
                   {/* Missing Batch */}
                   <div className="flex items-center gap-4 p-4 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60">
                     <div className="p-3 bg-purple-100 dark:bg-purple-950/40 rounded-xl">
-                      <Boxes className="h-5 w-5 text-purple-600" />
+                      <Boxes className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-purple-800 dark:text-purple-200">
                         {pickLang(language, { ku: "بێ باچ", en: "Missing Batch", ar: "بدون دفعة", zh: "缺少批次" })}
                       </p>
-                      <p className="text-sm text-purple-600">
+                      <p className="text-sm text-purple-600 dark:text-purple-300">
                         {missingInfo?.filter((p: any) => !p.batchId)?.length || 0} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرود", zh: "个包裹" })}
                       </p>
                     </div>

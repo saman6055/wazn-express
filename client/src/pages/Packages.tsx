@@ -988,7 +988,7 @@ const [, setLocation] = useLocation();
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button className="bg-white text-blue-600 hover:bg-white/90">
+                  <Button className="bg-white dark:bg-card text-blue-600 dark:text-blue-300 hover:bg-white/90">
                     <Plus className="h-4 w-4 me-2" />
                     {t('packages.registerPackage')}
                     <ChevronDown className="h-4 w-4 ms-2" />
@@ -996,14 +996,14 @@ const [, setLocation] = useLocation();
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem onClick={() => setLocation("/packages/quick-register")}>
-                    <Zap className="h-4 w-4 me-2 text-amber-500" />
+                    <Zap className="h-4 w-4 me-2 text-amber-500 dark:text-amber-400" />
                     <div>
                       <div className="font-medium">{t('packages.quickRegister')}</div>
                       <div className="text-xs text-muted-foreground">{t('packages.quickRegisterDescription')}</div>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setLocation("/packages/bulk-register")}>
-                    <Layers className="h-4 w-4 me-2 text-purple-500" />
+                    <Layers className="h-4 w-4 me-2 text-purple-500 dark:text-purple-400" />
                     <div>
                       <div className="font-medium">{t('packages.bulkRegister')}</div>
                       <div className="text-xs text-muted-foreground">{t('packages.bulkRegisterDescription')}</div>
@@ -1011,7 +1011,7 @@ const [, setLocation] = useLocation();
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setLocation("/packages/unclaimed")}>
-                    <AlertTriangle className="h-4 w-4 me-2 text-amber-500" />
+                    <AlertTriangle className="h-4 w-4 me-2 text-amber-500 dark:text-amber-400" />
                     <div>
                       <div className="font-medium">{t('packages.unclaimedPackages')}</div>
                       <div className="text-xs text-muted-foreground">{t('packages.unclaimedDescription')}</div>
@@ -1613,7 +1613,7 @@ const [, setLocation] = useLocation();
                   <span className="font-medium">{editCustomerId ? customers?.find(c => c.id === editCustomerId)?.customerCode : "-"}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-sm">
-                  {editShippingType === "sea" ? <Ship className="h-3.5 w-3.5 text-cyan-500" /> : <Plane className="h-3.5 w-3.5 text-blue-500" />}
+                  {editShippingType === "sea" ? <Ship className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" /> : <Plane className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />}
                   <span className="text-muted-foreground">{t("packages.shippingType")}:</span>
                   <span className="font-medium capitalize">{editShippingType.replace("_", " ")}</span>
                 </div>
@@ -1687,7 +1687,7 @@ const [, setLocation] = useLocation();
                 </div>
                 {editCustomerId && (
                   <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950 rounded-md mt-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-300 shrink-0" />
                     <span className="text-sm text-green-700 dark:text-green-400">
                       {t("packages.customerSelected")}: {customers?.find(c => c.id === editCustomerId)?.customerCode}
                     </span>
@@ -2054,7 +2054,7 @@ const [, setLocation] = useLocation();
               <Card>
                 <CardHeader className="pb-2">
                   <Label className="text-base flex items-center gap-2">
-                    <User className="h-4 w-4 text-blue-500" />
+                    <User className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                     {t("packages.customerInfo")}
                   </Label>
                 </CardHeader>
@@ -2084,7 +2084,7 @@ const [, setLocation] = useLocation();
               <Card>
                 <CardHeader className="pb-2">
                   <Label className="text-base flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-green-500" />
+                    <Hash className="h-4 w-4 text-green-500 dark:text-green-400" />
                     {t("packages.trackingAndShipping")}
                   </Label>
                 </CardHeader>
@@ -2098,9 +2098,9 @@ const [, setLocation] = useLocation();
                       <p className="text-sm text-muted-foreground">{t("packages.shippingType")}</p>
                       <div className="flex items-center gap-2">
                         {viewPackage.shippingType.includes("air") ? (
-                          <Plane className="h-4 w-4 text-blue-500" />
+                          <Plane className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                         ) : (
-                          <Ship className="h-4 w-4 text-cyan-500" />
+                          <Ship className="h-4 w-4 text-cyan-500 dark:text-cyan-400" />
                         )}
                         <span className="font-medium capitalize">{viewPackage.shippingType.replace(/_/g, " ")}</span>
                       </div>
@@ -2121,7 +2121,7 @@ const [, setLocation] = useLocation();
               <Card>
                 <CardHeader className="pb-2">
                   <Label className="text-base flex items-center gap-2">
-                    <Weight className="h-4 w-4 text-amber-500" />
+                    <Weight className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                     {t("packages.weightAndDimensions")}
                   </Label>
                 </CardHeader>
@@ -2161,7 +2161,7 @@ const [, setLocation] = useLocation();
               <Card>
                 <CardHeader className="pb-2">
                   <Label className="text-base flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-green-500" />
+                    <DollarSign className="h-4 w-4 text-green-500 dark:text-green-400" />
                     {t("packages.costAndDates")}
                   </Label>
                 </CardHeader>
@@ -2169,7 +2169,7 @@ const [, setLocation] = useLocation();
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">{t("packages.calculatedCost")}</p>
-                      <p className="font-bold text-xl text-green-600">${viewPackage.calculatedCostUsd || "0.00"}</p>
+                      <p className="font-bold text-xl text-green-600 dark:text-green-300">${viewPackage.calculatedCostUsd || "0.00"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{t("packages.registrationDate")}</p>
@@ -2204,7 +2204,7 @@ const [, setLocation] = useLocation();
                 <Card>
                   <CardHeader className="pb-2">
                     <Label className="text-base flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-purple-500" />
+                      <FileText className="h-4 w-4 text-purple-500 dark:text-purple-400" />
                       {t("common.description")}
                     </Label>
                   </CardHeader>

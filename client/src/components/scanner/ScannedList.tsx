@@ -75,9 +75,9 @@ export function ScannedList({
                 )}
               >
                 {item.hasCompleteData ? (
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-300" />
                 ) : (
-                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                  <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-300" />
                 )}
               </div>
 

@@ -60,7 +60,7 @@ export default function StaffLogin() {
           <div className="inline-flex items-center justify-center mb-4">
             <CompanyLogo
               size={64}
-              className="bg-white rounded-2xl shadow-lg p-2"
+              className="bg-white dark:bg-card rounded-2xl shadow-lg p-2"
               iconClassName="w-8 h-8 text-emerald-600"
               fallbackBg="bg-white"
             />
@@ -143,7 +143,7 @@ export default function StaffLogin() {
             <div className="mt-6 text-center">
               <a
                 href="/"
-                className="text-sm text-gray-500 hover:text-emerald-600 transition-colors"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 transition-colors"
               >
                 {t("common.goHome")}
               </a>

@@ -158,10 +158,10 @@ export default function StaffManagement() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Users className="w-6 h-6 text-emerald-600" />
+              <Users className="w-6 h-6 text-emerald-600 dark:text-emerald-300" />
               {t('staff.management')}
             </h1>
-            <p className="text-gray-500 mt-1">{t('staff.managementDesc')}</p>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">{t('staff.managementDesc')}</p>
           </div>
           
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -206,7 +206,7 @@ export default function StaffManagement() {
                     onChange={(e) => setNewStaff({ ...newStaff, mobileNumber: e.target.value })}
                     dir="ltr"
                   />
-                  <p className="text-xs text-gray-500">{t('staff.emailOrMobileHint') || 'ئیمەیڵ یان ژمارەی مۆبایل پێویستە (یەکێکیان یان هەردووکیان)'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('staff.emailOrMobileHint') || 'ئیمەیڵ یان ژمارەی مۆبایل پێویستە (یەکێکیان یان هەردووکیان)'}</p>
                 </div>
                 <div className="space-y-2">
                   <Label>{t('common.password')}</Label>
@@ -268,10 +268,10 @@ export default function StaffManagement() {
           <CardContent>
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-300" />
               </div>
             ) : !staffList?.length ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p>{t('staff.noStaff')}</p>
               </div>
@@ -281,22 +281,22 @@ export default function StaffManagement() {
                   <div key={staff.id} className="flex items-center justify-between py-4">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950/40 rounded-full flex items-center justify-center">
-                        <Shield className="w-5 h-5 text-emerald-600" />
+                        <Shield className="w-5 h-5 text-emerald-600 dark:text-emerald-300" />
                       </div>
                       <div>
                         <p className="font-medium">{staff.name}</p>
-                        <p className="text-sm text-gray-500">{staff.email}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{staff.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       {getRoleBadge(staff.role)}
                       {staff.isActive ? (
-                        <Badge variant="outline" className="text-green-600 border-green-200 dark:border-green-800/60">
+                        <Badge variant="outline" className="text-green-600 dark:text-green-300 border-green-200 dark:border-green-800/60">
                           <CheckCircle className="w-3 h-3 me-1" />
                           {t('status.active')}
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-red-600 border-red-200 dark:border-red-800/60">
+                        <Badge variant="outline" className="text-red-600 dark:text-red-300 border-red-200 dark:border-red-800/60">
                           <XCircle className="w-3 h-3 me-1" />
                           {t('status.inactive')}
                         </Badge>
@@ -330,7 +330,7 @@ export default function StaffManagement() {
                           </DropdownMenuItem>
                           {canDeleteStaff(staff) && (
                             <DropdownMenuItem
-                              className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                              className="text-red-600 dark:text-red-300 focus:text-red-600 focus:bg-red-50"
                               onClick={() => {
                                 setSelectedStaff(staff);
                                 setDeleteDialogOpen(true);
@@ -396,7 +396,7 @@ export default function StaffManagement() {
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertDialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-300">
                 <AlertTriangle className="w-5 h-5" />
                 {t('staff.confirmDelete') || 'دڵنیایت لە سڕینەوە؟'}
               </AlertDialogTitle>

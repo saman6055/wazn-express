@@ -228,13 +228,13 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2].map((i) => (
-                <div key={i} className="bg-white rounded-xl p-4 animate-pulse">
+                <div key={i} className="bg-white dark:bg-card rounded-xl p-4 animate-pulse">
                   <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gray-200" />
+                    <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-800/50" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-1/3" />
-                      <div className="h-3 bg-gray-200 rounded w-full" />
-                      <div className="h-3 bg-gray-200 rounded w-2/3" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-800/50 rounded w-1/3" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-800/50 rounded w-full" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-800/50 rounded w-2/3" />
                     </div>
                   </div>
                 </div>
@@ -246,10 +246,10 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
           ) : addresses?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-100 to-teal-200 flex items-center justify-center mb-4">
-                <MapPin className="h-10 w-10 text-teal-500" />
+                <MapPin className="h-10 w-10 text-teal-500 dark:text-teal-400" />
               </div>
               <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">{pickLang(language, { ku: "هێشتا هیچ ناونیشانێک نییە", en: "No addresses yet", ar: "لا توجد عناوين بعد", zh: "暂无地址" })}</h3>
-              <p className="text-sm text-gray-500 max-w-xs mb-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mb-4">
                 {pickLang(language, { ku: "ناونیشانی گەیاندنت زیاد بکە تاکو گەیاندن خێراتر بێت", en: "Add a delivery address so we can reach you faster", ar: "أضف عنوان التسليم لتصلك الشحنات أسرع", zh: "添加配送地址，让我们更快找到您" })}
               </p>
               <Button onClick={openNewDialog} className="bg-teal-500 hover:bg-teal-600">
@@ -263,7 +263,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <div
                   key={address.id}
                   className={cn(
-                    "bg-white rounded-xl p-4 shadow-sm transition-all duration-200",
+                    "bg-white dark:bg-card rounded-xl p-4 shadow-sm transition-all duration-200",
                     address.isDefault && "border-2 border-teal-500"
                   )}
                 >
@@ -286,17 +286,17 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                         )}
                       </div>
                       
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-1">
                         <User className="h-4 w-4 text-gray-400" />
                         {address.recipientName}
                       </div>
                       
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-1">
                         <Phone className="h-4 w-4 text-gray-400" />
                         {address.phone}
                       </div>
                       
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {[address.city, address.district, address.street, address.building]
                           .filter(Boolean)
                           .join(", ")}
@@ -316,7 +316,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                        className="text-teal-600 dark:text-teal-300 hover:text-teal-700 hover:bg-teal-50"
                         onClick={() => setDefaultMutation.mutate({ addressId: address.id })}
                         disabled={setDefaultMutation.isPending}
                       >
@@ -327,7 +327,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-gray-600 hover:text-gray-700"
+                      className="text-gray-600 dark:text-gray-300 hover:text-gray-700"
                       onClick={() => openEditDialog(address)}
                     >
                       <Edit2 className="h-4 w-4 me-1" />
@@ -336,7 +336,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-600 dark:text-red-300 hover:text-red-700 hover:bg-red-50"
                       onClick={() => {
                         if (confirm(pickLang(language, { ku: "دڵنیایت لە سڕینەوەی ئەم ناونیشانە؟", en: "Delete this address?", ar: "هل تريد حذف هذا العنوان؟", zh: "确定删除此地址吗？" }))) {
                           deleteMutation.mutate({ addressId: address.id });
@@ -537,7 +537,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                   id="isDefault"
                   checked={formData.isDefault}
                   onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
-                  className="rounded border-gray-300 dark:border-gray-800/60 text-teal-500 focus:ring-teal-500"
+                  className="rounded border-gray-300 dark:border-gray-800/60 text-teal-500 dark:text-teal-400 focus:ring-teal-500"
                 />
                 <Label htmlFor="isDefault" className="cursor-pointer">
                   {pickLang(language, { ku: "بیکە بە ناونیشانی سەرەکی", en: "Set as my default address", ar: "اجعله عنواني الافتراضي", zh: "设为默认地址" })}

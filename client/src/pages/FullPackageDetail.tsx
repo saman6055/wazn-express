@@ -520,7 +520,7 @@ export default function FullPackageDetail() {
                 <>
                   <Button
                     onClick={() => navigate(`/full-package/${id}/edit`)}
-                    className="bg-white text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-md"
+                    className="bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-md"
                   >
                     <Pencil className="h-4 w-4 ms-2" />
                     {t("common.edit")}
@@ -557,7 +557,7 @@ export default function FullPackageDetail() {
 
         {/* Visual tracking timeline — China→Iraq journey, from existing fields */}
         {trackingSteps.length > 0 && (
-          <Card className="shadow-sm border-0 bg-white">
+          <Card className="shadow-sm border-0 bg-white dark:bg-card">
             <CardContent className="p-5">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-1">
                 <Truck className="h-3 w-3" /> {t("tracking.title") || pickLang(language, { ku: "شوێنکەوتنی ئۆردەر", en: "Order tracking", ar: "تتبع الطلب", zh: "订单追踪" })}
@@ -571,11 +571,11 @@ export default function FullPackageDetail() {
           /* Edit Form */
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Customer & Supplier */}
-            <Card className="shadow-sm border-0 bg-white">
-              <CardHeader className="border-b bg-gray-50/50">
+            <Card className="shadow-sm border-0 bg-white dark:bg-card">
+              <CardHeader className="border-b bg-gray-50/50 dark:bg-gray-900/50">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-emerald-100 dark:bg-emerald-950/40 rounded-lg">
-                    <User className="h-5 w-5 text-emerald-600" />
+                    <User className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                   </div>
                   <div>
                     <CardTitle>{t("fullPackage.customer")} & {t("fullPackage.supplier")}</CardTitle>
@@ -628,11 +628,11 @@ export default function FullPackageDetail() {
             </Card>
 
             {/* Product Info */}
-            <Card className="shadow-sm border-0 bg-white">
-              <CardHeader className="border-b bg-gray-50/50">
+            <Card className="shadow-sm border-0 bg-white dark:bg-card">
+              <CardHeader className="border-b bg-gray-50/50 dark:bg-gray-900/50">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
-                    <Package className="h-5 w-5 text-blue-600" />
+                    <Package className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                   </div>
                   <div>
                     <CardTitle>{t("fullPackage.productInfo")}</CardTitle>
@@ -681,7 +681,7 @@ export default function FullPackageDetail() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-11 w-11 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            className="h-11 w-11 shrink-0 text-red-500 dark:text-red-400 hover:text-red-700 hover:bg-red-50"
                             onClick={() => {
                               const updated = formData.trackingNumbers.filter((_, i) => i !== idx);
                               setFormData({ ...formData, trackingNumbers: updated });
@@ -768,11 +768,11 @@ export default function FullPackageDetail() {
             </Card>
 
             {/* Pricing */}
-            <Card className="shadow-sm border-0 bg-white">
-              <CardHeader className="border-b bg-gray-50/50">
+            <Card className="shadow-sm border-0 bg-white dark:bg-card">
+              <CardHeader className="border-b bg-gray-50/50 dark:bg-gray-900/50">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
-                    <DollarSign className="h-5 w-5 text-green-600" />
+                    <DollarSign className="h-5 w-5 text-green-600 dark:text-green-300" />
                   </div>
                   <div>
                     <CardTitle>{t("fullPackage.prices")}</CardTitle>
@@ -809,11 +809,11 @@ export default function FullPackageDetail() {
             </Card>
 
             {/* Notes */}
-            <Card className="shadow-sm border-0 bg-white">
-              <CardHeader className="border-b bg-gray-50/50">
+            <Card className="shadow-sm border-0 bg-white dark:bg-card">
+              <CardHeader className="border-b bg-gray-50/50 dark:bg-gray-900/50">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
-                    <FileText className="h-5 w-5 text-purple-600" />
+                    <FileText className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                   </div>
                   <CardTitle>{t("fullPackage.notes")}</CardTitle>
                 </div>
@@ -833,7 +833,7 @@ export default function FullPackageDetail() {
               <Card className="shadow-sm border-2 border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40">
                 <CardHeader className="border-b border-amber-200 dark:border-amber-800/60 bg-amber-100 dark:bg-amber-950/40">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-200 rounded-lg">
+                    <div className="p-2 bg-amber-200 dark:bg-amber-900/50 rounded-lg">
                       <AlertCircle className="h-5 w-5 text-amber-800 dark:text-amber-200" />
                     </div>
                     <div>
@@ -889,7 +889,7 @@ export default function FullPackageDetail() {
             )}
 
             {/* Submit */}
-            <div className="flex gap-4 sticky bottom-4 bg-white p-4 rounded-xl shadow-lg border">
+            <div className="flex gap-4 sticky bottom-4 bg-white dark:bg-card p-4 rounded-xl shadow-lg border">
               <Button
                 type="button"
                 variant="outline"
@@ -920,11 +920,11 @@ export default function FullPackageDetail() {
             {/* Main Info */}
             <div className="lg:col-span-2 space-y-6">
               {/* Product Info Card */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-blue-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
-                      <Package className="h-5 w-5 text-blue-600" />
+                      <Package className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                     </div>
                     <CardTitle>{pickLang(language, { ku: "زانیاری کاڵا", en: "Product information", ar: "معلومات المنتج", zh: "产品信息" })}</CardTitle>
                   </div>
@@ -1018,7 +1018,7 @@ export default function FullPackageDetail() {
                         href={order.productLink} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:underline"
+                        className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-300 hover:text-blue-700 hover:underline"
                       >
                         <ExternalLink className="h-4 w-4" />
                         {order.productLink.length > 50 ? order.productLink.substring(0, 50) + "..." : order.productLink}
@@ -1029,11 +1029,11 @@ export default function FullPackageDetail() {
               </Card>
 
               {/* Product Images Gallery */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-indigo-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
-                      <Image className="h-5 w-5 text-indigo-600" />
+                      <Image className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
                     </div>
                     <div>
                       <CardTitle>{pickLang(language, { ku: "وێنەکانی کاڵا", en: "Product images", ar: "صور المنتج", zh: "产品图片" })}</CardTitle>
@@ -1059,11 +1059,11 @@ export default function FullPackageDetail() {
               </Card>
 
               {/* Customer Info Card */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-emerald-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-emerald-100 dark:bg-emerald-950/40 rounded-lg">
-                      <User className="h-5 w-5 text-emerald-600" />
+                      <User className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                     </div>
                     <CardTitle>{t("fullPackage.customer")}</CardTitle>
                   </div>
@@ -1098,11 +1098,11 @@ export default function FullPackageDetail() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Pricing Card */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-green-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
-                      <DollarSign className="h-5 w-5 text-green-600" />
+                      <DollarSign className="h-5 w-5 text-green-600 dark:text-green-300" />
                     </div>
                     <CardTitle>{t("fullPackage.prices")}</CardTitle>
                   </div>
@@ -1114,7 +1114,7 @@ export default function FullPackageDetail() {
                     <div className="text-right">
                       <span className="font-mono font-semibold">${Number(order.purchasePriceUsd || 0).toFixed(2)}</span>
                       {toRmb(Number(order.purchasePriceUsd || 0)) && (
-                        <p className="text-[11px] text-orange-500 font-mono">≈ {toRmb(Number(order.purchasePriceUsd || 0))} ¥</p>
+                        <p className="text-[11px] text-orange-500 dark:text-orange-400 font-mono">≈ {toRmb(Number(order.purchasePriceUsd || 0))} ¥</p>
                       )}
                     </div>
                   </div>
@@ -1123,9 +1123,9 @@ export default function FullPackageDetail() {
                   <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-800/60">
                     <span className="text-sm text-muted-foreground">{t("fullPackage.sellingPrice")}</span>
                     <div className="text-right">
-                      <span className="font-mono font-semibold text-emerald-600">${Number(order.sellingPriceUsd || 0).toFixed(2)}</span>
+                      <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-300">${Number(order.sellingPriceUsd || 0).toFixed(2)}</span>
                       {toRmb(Number(order.sellingPriceUsd || 0)) && (
-                        <p className="text-[11px] text-orange-500 font-mono">≈ {toRmb(Number(order.sellingPriceUsd || 0))} ¥</p>
+                        <p className="text-[11px] text-orange-500 dark:text-orange-400 font-mono">≈ {toRmb(Number(order.sellingPriceUsd || 0))} ¥</p>
                       )}
                     </div>
                   </div>
@@ -1142,7 +1142,7 @@ export default function FullPackageDetail() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-semibold text-orange-600">${shippingCost.toFixed(2)}</span>
+                      <span className="font-mono font-semibold text-orange-600 dark:text-orange-300">${shippingCost.toFixed(2)}</span>
                       {hasSharedTracking && (
                         <Button
                           variant="outline"
@@ -1211,18 +1211,18 @@ export default function FullPackageDetail() {
                     return (
                       <div className="rounded-xl border-2 border-teal-200 dark:border-teal-800/60 bg-gradient-to-l from-teal-50 to-emerald-50 p-4 space-y-2">
                         <div className="flex items-center gap-2 mb-1">
-                          <DollarSign className="h-4 w-4 text-teal-600" />
+                          <DollarSign className="h-4 w-4 text-teal-600 dark:text-teal-300" />
                           <span className="text-sm font-bold text-teal-800 dark:text-teal-200">{pickLang(language, { ku: "پوختەی پارەدان", en: "Payment summary", ar: "ملخص الدفع", zh: "付款摘要" })}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">{pickLang(language, { ku: "کۆی فرۆشتن", en: "Total selling", ar: "إجمالي البيع", zh: "销售总额" })}</span>
+                          <span className="text-slate-600 dark:text-slate-300">{pickLang(language, { ku: "کۆی فرۆشتن", en: "Total selling", ar: "إجمالي البيع", zh: "销售总额" })}</span>
                           <span className="font-mono font-semibold">${totalSelling.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-teal-700 dark:text-teal-300">{pickLang(language, { ku: "پارەی پێشەکی دراو", en: "Advance paid", ar: "الدفعة المقدمة المدفوعة", zh: "已付预付款" })}</span>
                           <span className="font-mono font-semibold text-teal-700 dark:text-teal-300">-${advancePaid.toFixed(2)}</span>
                         </div>
-                        <div className="h-px bg-teal-200" />
+                        <div className="h-px bg-teal-200 dark:bg-teal-900/50" />
                         <div className="flex justify-between text-base">
                           <span className="font-semibold">{isFullyPaid ? pickLang(language, { ku: "ڕەوشی پارەدان", en: "Payment status", ar: "حالة الدفع", zh: "付款状态" }) : pickLang(language, { ku: "ماوە بۆ پارەدان", en: "Remaining to pay", ar: "المتبقي للدفع", zh: "待付余额" })}</span>
                           {isFullyPaid ? (
@@ -1232,7 +1232,7 @@ export default function FullPackageDetail() {
                           )}
                         </div>
                         {(order as any).advancePaymentMethod && (
-                          <p className="text-xs text-teal-600">{pickLang(language, { ku: "شێواز", en: "Method", ar: "الطريقة", zh: "方式" })}: {(order as any).advancePaymentMethod}</p>
+                          <p className="text-xs text-teal-600 dark:text-teal-300">{pickLang(language, { ku: "شێواز", en: "Method", ar: "الطريقة", zh: "方式" })}: {(order as any).advancePaymentMethod}</p>
                         )}
                       </div>
                     );
@@ -1247,11 +1247,11 @@ export default function FullPackageDetail() {
               </Card>
 
               {/* Status & Date Card */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-blue-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
-                      <Calendar className="h-5 w-5 text-blue-600" />
+                      <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                     </div>
                     <CardTitle>{t("fullPackage.statusColumn")} & {t("fullPackage.dateColumn")}</CardTitle>
                   </div>
@@ -1288,11 +1288,11 @@ export default function FullPackageDetail() {
               </Card>
 
               {/* Notes */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
-                      <FileText className="h-5 w-5 text-purple-600" />
+                      <FileText className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                     </div>
                     <CardTitle>{t("fullPackage.notes")}</CardTitle>
                   </div>
@@ -1308,7 +1308,7 @@ export default function FullPackageDetail() {
               <OrderAuditHistory entityType="full_package_order" entityId={order.id} />
 
               {/* Quick Actions */}
-              <Card className="shadow-sm border-0 bg-white overflow-hidden">
+              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-gradient-to-l from-gray-50 to-white">
                   <CardTitle className="text-sm">{t("fullPackage.actionsColumn")}</CardTitle>
                 </CardHeader>
@@ -1331,7 +1331,7 @@ export default function FullPackageDetail() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="w-full justify-start text-red-600 dark:text-red-300 hover:text-red-700 hover:bg-red-50"
                     onClick={() => setDeleteDialogOpen(true)}
                   >
                     <Trash2 className="h-4 w-4 ms-2" />
@@ -1349,7 +1349,7 @@ export default function FullPackageDetail() {
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Split className="h-5 w-5 text-blue-600" />
+              <Split className="h-5 w-5 text-blue-600 dark:text-blue-300" />
               {t("fullPackage.splitShipping")}
             </DialogTitle>
             <DialogDescription>
@@ -1440,7 +1440,7 @@ export default function FullPackageDetail() {
                   </table>
                 </div>
                 {splitPreview.every(p => p.measure === 0) && (
-                  <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/40 p-2 rounded">
+                  <p className="text-xs text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2 rounded">
                     <AlertCircle className="h-3 w-3 inline me-1" />
                     {t("fullPackage.noWeightData")}
                   </p>

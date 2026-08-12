@@ -254,11 +254,11 @@ const [searchQuery, setSearchQuery] = useState("");
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-orange-600 font-medium">{t("auto.text_623214")} </p>
+                  <p className="text-xs text-orange-600 dark:text-orange-300 font-medium">{t("auto.text_623214")} </p>
                   <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{supplierStats?.total || suppliers?.length || 0}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-orange-200 flex items-center justify-center">
-                  <Store className="h-5 w-5 text-orange-600" />
+                <div className="h-10 w-10 rounded-full bg-orange-200 dark:bg-orange-900/50 flex items-center justify-center">
+                  <Store className="h-5 w-5 text-orange-600 dark:text-orange-300" />
                 </div>
               </div>
             </CardContent>
@@ -268,11 +268,11 @@ const [searchQuery, setSearchQuery] = useState("");
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-green-600 font-medium">{t("common.active")}</p>
+                  <p className="text-xs text-green-600 dark:text-green-300 font-medium">{t("common.active")}</p>
                   <p className="text-2xl font-bold text-green-700 dark:text-green-300">{supplierStats?.active || suppliers?.filter(s => s.isActive).length || 0}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-green-200 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
+                <div className="h-10 w-10 rounded-full bg-green-200 dark:bg-green-900/50 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
@@ -282,11 +282,11 @@ const [searchQuery, setSearchQuery] = useState("");
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-blue-600 font-medium">{t("auto.text_269691")} </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-300 font-medium">{t("auto.text_269691")} </p>
                   <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{supplierStats?.totalOrders || 0}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-blue-200 flex items-center justify-center">
-                  <ShoppingBag className="h-5 w-5 text-blue-600" />
+                <div className="h-10 w-10 rounded-full bg-blue-200 dark:bg-blue-900/50 flex items-center justify-center">
+                  <ShoppingBag className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                 </div>
               </div>
             </CardContent>
@@ -296,14 +296,14 @@ const [searchQuery, setSearchQuery] = useState("");
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-amber-600 font-medium">{t("auto.text_17eb70")} </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-300 font-medium">{t("auto.text_17eb70")} </p>
                   <p className="text-2xl font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1">
-                    <Star className="h-5 w-5 fill-amber-500 text-amber-500" />
+                    <Star className="h-5 w-5 fill-amber-500 text-amber-500 dark:text-amber-400" />
                     {supplierStats?.avgRating?.toFixed(1) || "5.0"}
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-amber-200 flex items-center justify-center">
-                  <Star className="h-5 w-5 text-amber-600" />
+                <div className="h-10 w-10 rounded-full bg-amber-200 dark:bg-amber-900/50 flex items-center justify-center">
+                  <Star className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                 </div>
               </div>
             </CardContent>
@@ -454,7 +454,7 @@ const [searchQuery, setSearchQuery] = useState("");
                             )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
-                              className="text-red-600"
+                              className="text-red-600 dark:text-red-300"
                               onClick={() => setDeleteId(supplier.id)}
                             >
                               <Trash2 className="h-4 w-4 me-2" />{t("common.delete")}</DropdownMenuItem>
@@ -593,7 +593,7 @@ const [searchQuery, setSearchQuery] = useState("");
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="wechatId" className="flex items-center gap-1">
-                    <MessageCircle className="h-4 w-4 text-green-600" />
+                    <MessageCircle className="h-4 w-4 text-green-600 dark:text-green-300" />
                     WeChat ID
                   </Label>
                   <Input

@@ -142,9 +142,9 @@ export default function PortalDeclarePackage() {
           {/* Tracking (required) */}
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5 text-sm font-semibold">
-              <ScanBarcode className="h-4 w-4 text-emerald-600" />
+              <ScanBarcode className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
               {label({ ku: "ژمارەی تراکینگ", en: "Tracking number", ar: "رقم التتبع", zh: "运单号" })}
-              <span className="text-red-500">*</span>
+              <span className="text-red-500 dark:text-red-400">*</span>
             </Label>
             <Input
               maxLength={100}

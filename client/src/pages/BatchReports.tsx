@@ -498,12 +498,12 @@ export default function BatchReports() {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-indigo-700 dark:text-indigo-300">{pickLang(language, { ku: "کۆی باچەکان", en: "Total batches", ar: "إجمالي الدفعات", zh: "批次总数" })}</CardTitle>
               <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
-                <Boxes className="h-5 w-5 text-indigo-600" />
+                <Boxes className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">{totals.totalBatches}</div>
-              <p className="text-sm text-indigo-600/70 mt-1">
+              <p className="text-sm text-indigo-600/70 dark:text-indigo-300 mt-1">
                 {totals.totalPackages} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرد", zh: "包裹" })}
               </p>
             </CardContent>
@@ -514,12 +514,12 @@ export default function BatchReports() {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</CardTitle>
               <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-lg">
-                <DollarSign className="h-5 w-5 text-red-600" />
+                <DollarSign className="h-5 w-5 text-red-600 dark:text-red-300" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-600">{formatCurrency(totals.totalCost)}</div>
-              <p className="text-sm text-red-600/70 mt-1 flex items-center gap-1">
+              <div className="text-3xl font-bold text-red-600 dark:text-red-300">{formatCurrency(totals.totalCost)}</div>
+              <p className="text-sm text-red-600/70 dark:text-red-300 mt-1 flex items-center gap-1">
                 <Scale className="h-3 w-3" />
                 {formatNumber(totals.totalWeight)} KG
               </p>
@@ -531,12 +531,12 @@ export default function BatchReports() {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</CardTitle>
               <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
-                <Wallet className="h-5 w-5 text-green-600" />
+                <Wallet className="h-5 w-5 text-green-600 dark:text-green-300" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">{formatCurrency(totals.totalRevenue)}</div>
-              <p className="text-sm text-green-600/70 mt-1">
+              <div className="text-3xl font-bold text-green-600 dark:text-green-300">{formatCurrency(totals.totalRevenue)}</div>
+              <p className="text-sm text-green-600/70 dark:text-green-300 mt-1">
                 {pickLang(language, { ku: "لە", en: "from", ar: "من", zh: "来自" })} {totals.totalPackages} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرد", zh: "包裹" })}
               </p>
             </CardContent>
@@ -554,8 +554,8 @@ export default function BatchReports() {
               </CardTitle>
               <div className={`p-2 rounded-lg ${totals.totalProfit >= 0 ? 'bg-emerald-100 dark:bg-emerald-950/40' : 'bg-red-100 dark:bg-red-950/40'}`}>
                 {totals.totalProfit >= 0 
-                  ? <TrendingUp className="h-5 w-5 text-emerald-600" />
-                  : <TrendingDown className="h-5 w-5 text-red-600" />
+                  ? <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+                  : <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-300" />
                 }
               </div>
             </CardHeader>
@@ -735,7 +735,7 @@ export default function BatchReports() {
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs w-16 text-red-600">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</span>
+                          <span className="text-xs w-16 text-red-600 dark:text-red-300">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</span>
                           <div className="flex-1 h-4 bg-gray-100 dark:bg-gray-950/40 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-red-500 rounded-full transition-all duration-500"
@@ -745,7 +745,7 @@ export default function BatchReports() {
                           <span className="text-xs w-20 text-left">{formatCurrency(data.cost)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs w-16 text-green-600">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</span>
+                          <span className="text-xs w-16 text-green-600 dark:text-green-300">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</span>
                           <div className="flex-1 h-4 bg-gray-100 dark:bg-gray-950/40 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-green-500 rounded-full transition-all duration-500"
@@ -953,10 +953,10 @@ export default function BatchReports() {
                               }
                             </span>
                           </TableCell>
-                          <TableCell className="text-red-600 font-medium">
+                          <TableCell className="text-red-600 dark:text-red-300 font-medium">
                             {formatCurrency(batch.totalCost)}
                           </TableCell>
-                          <TableCell className="text-green-600 font-medium">
+                          <TableCell className="text-green-600 dark:text-green-300 font-medium">
                             {formatCurrency(batch.totalRevenue)}
                           </TableCell>
                           <TableCell className={`font-bold ${isProfitable ? 'text-emerald-600' : 'text-red-600'}`}>
@@ -1012,11 +1012,11 @@ export default function BatchReports() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}:</span>
-                  <span className="font-bold text-red-600">{formatCurrency(chartData.air_regular.cost)}</span>
+                  <span className="font-bold text-red-600 dark:text-red-300">{formatCurrency(chartData.air_regular.cost)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}:</span>
-                  <span className="font-bold text-green-600">{formatCurrency(chartData.air_regular.revenue)}</span>
+                  <span className="font-bold text-green-600 dark:text-green-300">{formatCurrency(chartData.air_regular.revenue)}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}:</span>
@@ -1044,11 +1044,11 @@ export default function BatchReports() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}:</span>
-                  <span className="font-bold text-red-600">{formatCurrency(chartData.air_irregular.cost)}</span>
+                  <span className="font-bold text-red-600 dark:text-red-300">{formatCurrency(chartData.air_irregular.cost)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}:</span>
-                  <span className="font-bold text-green-600">{formatCurrency(chartData.air_irregular.revenue)}</span>
+                  <span className="font-bold text-green-600 dark:text-green-300">{formatCurrency(chartData.air_irregular.revenue)}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}:</span>
@@ -1076,11 +1076,11 @@ export default function BatchReports() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}:</span>
-                  <span className="font-bold text-red-600">{formatCurrency(chartData.sea.cost)}</span>
+                  <span className="font-bold text-red-600 dark:text-red-300">{formatCurrency(chartData.sea.cost)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}:</span>
-                  <span className="font-bold text-green-600">{formatCurrency(chartData.sea.revenue)}</span>
+                  <span className="font-bold text-green-600 dark:text-green-300">{formatCurrency(chartData.sea.revenue)}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}:</span>
@@ -1154,7 +1154,7 @@ export default function BatchReports() {
                         <TableRow>
                           <TableCell className="font-medium">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</TableCell>
                           {comparisonBatches.map(batch => (
-                            <TableCell key={batch.id} className="text-center font-bold text-red-600">
+                            <TableCell key={batch.id} className="text-center font-bold text-red-600 dark:text-red-300">
                               {formatCurrency(batch.totalCost)}
                             </TableCell>
                           ))}
@@ -1162,7 +1162,7 @@ export default function BatchReports() {
                         <TableRow>
                           <TableCell className="font-medium">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</TableCell>
                           {comparisonBatches.map(batch => (
-                            <TableCell key={batch.id} className="text-center font-bold text-green-600">
+                            <TableCell key={batch.id} className="text-center font-bold text-green-600 dark:text-green-300">
                               {formatCurrency(batch.totalRevenue)}
                             </TableCell>
                           ))}
@@ -1208,13 +1208,13 @@ export default function BatchReports() {
                         </div>
                         <div>
                           <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</div>
-                          <div className="text-xl font-bold text-red-600">
+                          <div className="text-xl font-bold text-red-600 dark:text-red-300">
                             {formatCurrency(comparisonBatches.reduce((sum, b) => sum + b.totalCost, 0))}
                           </div>
                         </div>
                         <div>
                           <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</div>
-                          <div className="text-xl font-bold text-green-600">
+                          <div className="text-xl font-bold text-green-600 dark:text-green-300">
                             {formatCurrency(comparisonBatches.reduce((sum, b) => sum + b.totalRevenue, 0))}
                           </div>
                         </div>

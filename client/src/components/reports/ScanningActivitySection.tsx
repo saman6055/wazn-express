@@ -45,7 +45,7 @@ export function ScanningActivitySection({ startDate, endDate }: Props) {
       <Card className="overflow-hidden border-0 shadow-lg">
         <CardHeader className="border-b bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <QrCode className="h-5 w-5 text-indigo-500" />
+            <QrCode className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
             {t("reports.todayScans")}
           </CardTitle>
         </CardHeader>
@@ -81,7 +81,7 @@ export function ScanningActivitySection({ startDate, endDate }: Props) {
       <Card className="overflow-hidden border-0 shadow-lg lg:col-span-2">
         <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <QrCode className="h-5 w-5 text-purple-500" />
+            <QrCode className="h-5 w-5 text-purple-500 dark:text-purple-400" />
             {t("reports.scanModuleBreakdown")}
           </CardTitle>
         </CardHeader>

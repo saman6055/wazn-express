@@ -256,7 +256,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
     if (senderType !== 'customer') return null;
     
     if (isRead) {
-      return <CheckCheck className="w-3 h-3 text-blue-500" />;
+      return <CheckCheck className="w-3 h-3 text-blue-500 dark:text-blue-400" />;
     }
     return <Check className="w-3 h-3 text-slate-400" />;
   };
@@ -372,7 +372,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                 {/* Loading state */}
                 {(getOrCreateChat.isPending || messagesQuery.isLoading) && (
                   <div className="flex flex-col items-center justify-center h-full gap-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+                    <Loader2 className="w-8 h-8 animate-spin text-purple-500 dark:text-purple-400" />
                     <p className={cn(
                       "text-sm",
                       isDark ? "text-slate-400" : "text-slate-600"

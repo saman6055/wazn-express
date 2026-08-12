@@ -417,7 +417,7 @@ export default function ServicesManagement() {
               </Button>
               <Dialog open={isAddServiceOpen} onOpenChange={setIsAddServiceOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-white text-emerald-600 hover:bg-emerald-50">
+                  <Button className="bg-white dark:bg-card text-emerald-600 dark:text-emerald-300 hover:bg-emerald-50">
                     <Plus className="h-4 w-4 ms-2" />
                     {t('services.addService')}
                   </Button>
@@ -673,8 +673,8 @@ export default function ServicesManagement() {
                           <span className="text-sm text-muted-foreground">{t('services.profit')}:</span>
                           <span className={`font-bold ${
                             Number(newService.priceAmount) - Number(newService.costAmount) >= 0 
-                              ? "text-green-600" 
-                              : "text-red-600"
+                              ? "text-green-600 dark:text-green-300" 
+                              : "text-red-600 dark:text-red-300"
                           }`}>
                             ${(Number(newService.priceAmount) - Number(newService.costAmount)).toFixed(2)}
                           </span>
@@ -732,10 +732,10 @@ export default function ServicesManagement() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t('services.totalServices')}</p>
-                  <p className="text-3xl font-bold text-blue-600 mt-1">{totals.total}</p>
+                  <p className="text-3xl font-bold text-blue-600 dark:text-blue-300 mt-1">{totals.total}</p>
                 </div>
                 <div className="p-3 bg-blue-500/10 rounded-xl">
-                  <Wrench className="h-6 w-6 text-blue-600" />
+                  <Wrench className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                 </div>
               </div>
             </CardContent>
@@ -746,10 +746,10 @@ export default function ServicesManagement() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t('services.totalRevenue')}</p>
-                  <p className="text-3xl font-bold text-green-600 mt-1">${totals.totalRevenue.toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-green-600 dark:text-green-300 mt-1">${totals.totalRevenue.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-green-500/10 rounded-xl">
-                  <TrendingUp className="h-6 w-6 text-green-600" />
+                  <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
@@ -760,10 +760,10 @@ export default function ServicesManagement() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t('services.totalCost')}</p>
-                  <p className="text-3xl font-bold text-red-600 mt-1">${totals.totalCost.toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-red-600 dark:text-red-300 mt-1">${totals.totalCost.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-red-500/10 rounded-xl">
-                  <DollarSign className="h-6 w-6 text-red-600" />
+                  <DollarSign className="h-6 w-6 text-red-600 dark:text-red-300" />
                 </div>
               </div>
             </CardContent>
@@ -783,9 +783,9 @@ export default function ServicesManagement() {
                 </div>
                 <div className="p-3 bg-emerald-500/10 rounded-xl">
                   {totals.totalProfit >= 0 ? (
-                    <ArrowUpRight className="h-6 w-6 text-emerald-600" />
+                    <ArrowUpRight className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
                   ) : (
-                    <ArrowDownRight className="h-6 w-6 text-red-600" />
+                    <ArrowDownRight className="h-6 w-6 text-red-600 dark:text-red-300" />
                   )}
                 </div>
               </div>
@@ -972,7 +972,7 @@ export default function ServicesManagement() {
                         <TableCell>
                           <Button
                             variant="link"
-                            className="p-0 h-auto text-blue-600 hover:text-blue-800"
+                            className="p-0 h-auto text-blue-600 dark:text-blue-300 hover:text-blue-800"
                             onClick={() => navigate(`/customers/${service.customerId}`)}
                           >
                             {getCustomerName(service.customerId)}

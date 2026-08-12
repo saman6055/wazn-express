@@ -278,7 +278,7 @@ function ServiceCard({
         isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60",
       )}>
         {isYuan ? (
-          <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-500">
+          <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-500 dark:text-orange-400">
             {pickLang(lang, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "买人民币" })}
             <ChevronDown className="w-4 h-4 -rotate-90 rtl:rotate-90" />
           </span>
@@ -297,7 +297,7 @@ function ServiceCard({
               {priceLabel}
             </span>
             {showRmb && rmbValue !== null && (
-              <span className="ms-auto text-[11px] text-orange-500 font-mono">
+              <span className="ms-auto text-[11px] text-orange-500 dark:text-orange-400 font-mono">
                 ≈ ¥{Math.round(rmbValue).toLocaleString("en-US")}
               </span>
             )}

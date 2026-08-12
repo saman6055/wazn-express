@@ -68,7 +68,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Users className="h-6 w-6 text-purple-600" />
+            <Users className="h-6 w-6 text-purple-600 dark:text-purple-300" />
             ڕ{t("auto.text_4d8c25")}
           </h1>
           <p className="text-muted-foreground">{t("auto.text_90dc76")} </p>
@@ -81,7 +81,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
               <CardTitle className="text-sm font-medium text-muted-foreground">{t("auto.text_f6924e")} </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-purple-600">{stats.totalCustomerPricing}</p>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-300">{stats.totalCustomerPricing}</p>
             </CardContent>
           </Card>
           <Card>
@@ -106,14 +106,14 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
-                <Badge variant="outline" className="text-amber-600">
+                <Badge variant="outline" className="text-amber-600 dark:text-amber-300">
                   <Plane className="h-3 w-3 me-1" />
                   {filteredPricing.filter((cp: any) => {
                     const batch = getBatchInfo(cp.batchId);
                     return batch?.shippingType !== 'sea';
                   }).length}
                 </Badge>
-                <Badge variant="outline" className="text-blue-600">
+                <Badge variant="outline" className="text-blue-600 dark:text-blue-300">
                   <Ship className="h-3 w-3 me-1" />
                   {filteredPricing.filter((cp: any) => {
                     const batch = getBatchInfo(cp.batchId);
@@ -227,9 +227,9 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {isSea ? (
-                            <Ship className="h-4 w-4 text-blue-600" />
+                            <Ship className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                           ) : (
-                            <Plane className="h-4 w-4 text-amber-600" />
+                            <Plane className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                           )}
                           <span className="font-mono">{batch?.batchCode || 'Unknown'}</span>
                         </div>
@@ -245,7 +245,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium text-purple-600">
+                        <span className="font-medium text-purple-600 dark:text-purple-300">
                           ${customPrice?.toFixed(2) || '0.00'}/{unit}
                         </span>
                       </TableCell>

@@ -224,11 +224,11 @@ export default function PortalYuanExchange() {
                   {/* USD */}
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
-                      <DollarSign className="w-4 h-4 text-emerald-500" />
+                      <DollarSign className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                       {pick({ ku: "بڕی دۆلار دەدەیت", en: "You pay (USD)", ar: "تدفع (دولار)", zh: "您支付（美元）" })}
                     </label>
                     <div className="relative" dir="ltr">
-                      <span className="absolute start-3 top-1/2 -translate-y-1/2 font-bold text-emerald-500">$</span>
+                      <span className="absolute start-3 top-1/2 -translate-y-1/2 font-bold text-emerald-500 dark:text-emerald-400">$</span>
                       <Input
                         type="number"
                         min="0"
@@ -248,11 +248,11 @@ export default function PortalYuanExchange() {
                   {/* CNY */}
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
-                      <Banknote className="w-4 h-4 text-red-500" />
+                      <Banknote className="w-4 h-4 text-red-500 dark:text-red-400" />
                       {pick({ ku: "بڕی یوان وەردەگریت", en: "You receive (CNY)", ar: "تستلم (يوان)", zh: "您收到（人民币）" })}
                     </label>
                     <div className="relative" dir="ltr">
-                      <span className="absolute start-3 top-1/2 -translate-y-1/2 font-bold text-red-500">¥</span>
+                      <span className="absolute start-3 top-1/2 -translate-y-1/2 font-bold text-red-500 dark:text-red-400">¥</span>
                       <Input
                         type="number"
                         min="0"

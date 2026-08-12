@@ -246,7 +246,7 @@ export default function ProfitLossReport() {
             <Card className="overflow-hidden border-0 shadow-lg">
               <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <BarChart3 className="h-5 w-5 text-blue-500" />
+                  <BarChart3 className="h-5 w-5 text-blue-500 dark:text-blue-400" />
                   {t("profitLoss.revenueBreakdown")}
                 </CardTitle>
               </CardHeader>
@@ -284,7 +284,7 @@ export default function ProfitLossReport() {
             <Card className="overflow-hidden border-0 shadow-lg">
               <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <PieChartIcon className="h-5 w-5 text-emerald-500" />
+                  <PieChartIcon className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
                   {t("profitLoss.revenueDistribution")}
                 </CardTitle>
               </CardHeader>
@@ -348,22 +348,22 @@ export default function ProfitLossReport() {
                     </tr>
                     <tr className="border-b border-muted/30 hover:bg-muted/20">
                       <td className="px-6 py-2 ps-10">{t("profitLoss.packageShipping")}</td>
-                      <td className="px-6 py-2 text-end font-medium text-green-600">{fmt(pnl?.revenue.packageShipping ?? 0)}</td>
+                      <td className="px-6 py-2 text-end font-medium text-green-600 dark:text-green-300">{fmt(pnl?.revenue.packageShipping ?? 0)}</td>
                       <td className="px-6 py-2 text-end text-muted-foreground">{pct(pnl?.revenue.packageShipping ?? 0, pnl?.revenue.totalRevenue ?? 0)}</td>
                     </tr>
                     <tr className="border-b border-muted/30 hover:bg-muted/20">
                       <td className="px-6 py-2 ps-10">{t("profitLoss.fullPackageProfit")}</td>
-                      <td className="px-6 py-2 text-end font-medium text-green-600">{fmt(pnl?.revenue.fullPackageProfit ?? 0)}</td>
+                      <td className="px-6 py-2 text-end font-medium text-green-600 dark:text-green-300">{fmt(pnl?.revenue.fullPackageProfit ?? 0)}</td>
                       <td className="px-6 py-2 text-end text-muted-foreground">{pct(pnl?.revenue.fullPackageProfit ?? 0, pnl?.revenue.totalRevenue ?? 0)}</td>
                     </tr>
                     <tr className="border-b border-muted/30 hover:bg-muted/20">
                       <td className="px-6 py-2 ps-10">{t("profitLoss.commissionProfit")}</td>
-                      <td className="px-6 py-2 text-end font-medium text-green-600">{fmt(pnl?.revenue.commissionProfit ?? 0)}</td>
+                      <td className="px-6 py-2 text-end font-medium text-green-600 dark:text-green-300">{fmt(pnl?.revenue.commissionProfit ?? 0)}</td>
                       <td className="px-6 py-2 text-end text-muted-foreground">{pct(pnl?.revenue.commissionProfit ?? 0, pnl?.revenue.totalRevenue ?? 0)}</td>
                     </tr>
                     <tr className="border-b border-muted/30 hover:bg-muted/20">
                       <td className="px-6 py-2 ps-10">{t("profitLoss.serviceRevenue")}</td>
-                      <td className="px-6 py-2 text-end font-medium text-green-600">{fmt(pnl?.revenue.serviceRevenue ?? 0)}</td>
+                      <td className="px-6 py-2 text-end font-medium text-green-600 dark:text-green-300">{fmt(pnl?.revenue.serviceRevenue ?? 0)}</td>
                       <td className="px-6 py-2 text-end text-muted-foreground">{pct(pnl?.revenue.serviceRevenue ?? 0, pnl?.revenue.totalRevenue ?? 0)}</td>
                     </tr>
                     <tr className="border-y-2 border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-950/30">
@@ -383,17 +383,17 @@ export default function ProfitLossReport() {
                     </tr>
                     <tr className="border-b border-muted/30 hover:bg-muted/20">
                       <td className="px-6 py-2 ps-10">{t("profitLoss.fullPackageCost")}</td>
-                      <td className="px-6 py-2 text-end font-medium text-orange-600">({fmt(pnl?.costOfRevenue.fullPackageCost ?? 0)})</td>
+                      <td className="px-6 py-2 text-end font-medium text-orange-600 dark:text-orange-300">({fmt(pnl?.costOfRevenue.fullPackageCost ?? 0)})</td>
                       <td className="px-6 py-2 text-end text-muted-foreground">{pct(pnl?.costOfRevenue.fullPackageCost ?? 0, pnl?.revenue.totalRevenue ?? 0)}</td>
                     </tr>
                     <tr className="border-b border-muted/30 hover:bg-muted/20">
                       <td className="px-6 py-2 ps-10">{t("profitLoss.commissionCost")}</td>
-                      <td className="px-6 py-2 text-end font-medium text-orange-600">({fmt(pnl?.costOfRevenue.commissionCost ?? 0)})</td>
+                      <td className="px-6 py-2 text-end font-medium text-orange-600 dark:text-orange-300">({fmt(pnl?.costOfRevenue.commissionCost ?? 0)})</td>
                       <td className="px-6 py-2 text-end text-muted-foreground">{pct(pnl?.costOfRevenue.commissionCost ?? 0, pnl?.revenue.totalRevenue ?? 0)}</td>
                     </tr>
                     <tr className="border-b border-muted/30 hover:bg-muted/20">
                       <td className="px-6 py-2 ps-10">{t("profitLoss.serviceCost")}</td>
-                      <td className="px-6 py-2 text-end font-medium text-orange-600">({fmt(pnl?.costOfRevenue.serviceCost ?? 0)})</td>
+                      <td className="px-6 py-2 text-end font-medium text-orange-600 dark:text-orange-300">({fmt(pnl?.costOfRevenue.serviceCost ?? 0)})</td>
                       <td className="px-6 py-2 text-end text-muted-foreground">{pct(pnl?.costOfRevenue.serviceCost ?? 0, pnl?.revenue.totalRevenue ?? 0)}</td>
                     </tr>
 
@@ -418,7 +418,7 @@ export default function ProfitLossReport() {
                         <td className="px-6 py-2 ps-10">
                           {language === "ku" || language === "ar" ? cat.categoryNameKu : cat.categoryName}
                         </td>
-                        <td className="px-6 py-2 text-end font-medium text-red-600">({fmt(cat.total)})</td>
+                        <td className="px-6 py-2 text-end font-medium text-red-600 dark:text-red-300">({fmt(cat.total)})</td>
                         <td className="px-6 py-2 text-end text-muted-foreground">{pct(cat.total, pnl?.revenue.totalRevenue ?? 0)}</td>
                       </tr>
                     ))}
@@ -441,7 +441,7 @@ export default function ProfitLossReport() {
                     </tr>
                     <tr className="bg-muted/30">
                       <td className="px-6 py-2 font-semibold">{t("profitLoss.profitMargin")}</td>
-                      <td className={`px-6 py-2 text-end font-bold ${(pnl?.profitMargin ?? 0) >= 0 ? "text-emerald-600" : "text-red-600"}`} colSpan={2}>
+                      <td className={`px-6 py-2 text-end font-bold ${(pnl?.profitMargin ?? 0) >= 0 ? "text-emerald-600 dark:text-emerald-300" : "text-red-600 dark:text-red-300"}`} colSpan={2}>
                         {pnl?.profitMargin ?? 0}%
                       </td>
                     </tr>
@@ -459,7 +459,7 @@ export default function ProfitLossReport() {
             <Card className="overflow-hidden border-0 shadow-lg">
               <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <BarChart3 className="h-5 w-5 text-red-500" />
+                  <BarChart3 className="h-5 w-5 text-red-500 dark:text-red-400" />
                   {t("profitLoss.expenseBreakdown")}
                 </CardTitle>
               </CardHeader>
@@ -497,7 +497,7 @@ export default function ProfitLossReport() {
             <Card className="overflow-hidden border-0 shadow-lg">
               <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <PieChartIcon className="h-5 w-5 text-orange-500" />
+                  <PieChartIcon className="h-5 w-5 text-orange-500 dark:text-orange-400" />
                   {t("profitLoss.expenseDistribution")}
                 </CardTitle>
               </CardHeader>
@@ -586,7 +586,7 @@ export default function ProfitLossReport() {
                     <span className="text-sm font-medium text-muted-foreground">{t("profitLoss.bestRevenueSource")}</span>
                   </div>
                   <p className="text-lg font-bold">{metrics.bestSource.name}</p>
-                  <p className="text-sm text-green-600 font-semibold">{fmt(metrics.bestSource.value)}</p>
+                  <p className="text-sm text-green-600 dark:text-green-300 font-semibold">{fmt(metrics.bestSource.value)}</p>
                 </CardContent>
               </Card>
 
@@ -604,7 +604,7 @@ export default function ProfitLossReport() {
                       ? (language === "ku" || language === "ar" ? metrics.biggestExpense.categoryNameKu : metrics.biggestExpense.categoryName)
                       : "-"}
                   </p>
-                  <p className="text-sm text-red-600 font-semibold">
+                  <p className="text-sm text-red-600 dark:text-red-300 font-semibold">
                     {metrics.biggestExpense ? fmt(metrics.biggestExpense.total) : "$0"}
                   </p>
                 </CardContent>

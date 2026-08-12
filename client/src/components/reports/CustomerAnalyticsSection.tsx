@@ -45,7 +45,7 @@ export function CustomerAnalyticsSection() {
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Crown className="h-5 w-5 text-amber-500" />
+            <Crown className="h-5 w-5 text-amber-500 dark:text-amber-400" />
             {t("reports.topCustomers")}
           </CardTitle>
           <CardDescription>{t("reports.topCustomersDesc")}</CardDescription>
@@ -86,7 +86,7 @@ export function CustomerAnalyticsSection() {
                       </div>
                     </TableCell>
                     <TableCell className="text-end font-semibold">{customer.packageCount}</TableCell>
-                    <TableCell className="text-end font-semibold text-green-600">
+                    <TableCell className="text-end font-semibold text-green-600 dark:text-green-300">
                       ${Number(customer.totalCharges || 0).toLocaleString()}
                     </TableCell>
                   </TableRow>
@@ -110,7 +110,7 @@ export function CustomerAnalyticsSection() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
+                <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
                 {t("reports.outstandingBalances")}
               </CardTitle>
               <CardDescription>{t("reports.outstandingBalancesDesc")}</CardDescription>
@@ -142,7 +142,7 @@ export function CustomerAnalyticsSection() {
                         <p className="text-xs text-muted-foreground">{code}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="text-end font-semibold text-red-600">
+                    <TableCell className="text-end font-semibold text-red-600 dark:text-red-300">
                       -${Math.abs(balance).toLocaleString()}
                     </TableCell>
                     <TableCell className="text-end">
@@ -156,7 +156,7 @@ export function CustomerAnalyticsSection() {
               {(!customersWithDebt || customersWithDebt.length === 0) && (
                 <TableRow>
                   <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                    <CheckCircle className="mx-auto mb-2 h-8 w-8 text-green-500" />
+                    <CheckCircle className="mx-auto mb-2 h-8 w-8 text-green-500 dark:text-green-400" />
                     {t("reports.noOutstandingBalances")}
                   </TableCell>
                 </TableRow>

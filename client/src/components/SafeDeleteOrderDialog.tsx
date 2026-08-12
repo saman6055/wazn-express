@@ -216,7 +216,7 @@ export default function SafeDeleteOrderDialog({
       <AlertDialogContent className="max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-right">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-300" />
             {pickLang(language, {
               ku: "سڕینەوەی ئۆردەر",
               en: "Delete Order",
@@ -227,7 +227,7 @@ export default function SafeDeleteOrderDialog({
           <AlertDialogDescription className="text-right space-y-2">
             <div>
               {pickLang(language, { ku: "ئۆردەر", en: "Order", ar: "الطلب", zh: "订单" })}:{" "}
-              <span className="font-mono font-bold text-red-600">{order.orderCode}</span>
+              <span className="font-mono font-bold text-red-600 dark:text-red-300">{order.orderCode}</span>
               {" — "}
               <span className="font-semibold">{order.productName}</span>
             </div>
@@ -338,7 +338,7 @@ export default function SafeDeleteOrderDialog({
                 ar: "سبب الحذف",
                 zh: "删除原因",
               })}{" "}
-              <span className="text-red-600">*</span>
+              <span className="text-red-600 dark:text-red-300">*</span>
             </Label>
             <Textarea
               id="delete-reason"

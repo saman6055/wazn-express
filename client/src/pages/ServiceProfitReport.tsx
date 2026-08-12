@@ -183,11 +183,11 @@ const [startDate, setStartDate] = useState<string>("");
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-600">{t("auto.text_3a3774")} </p>
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-300">{t("auto.text_3a3774")} </p>
                   <p className="text-2xl font-bold text-blue-900 dark:text-blue-200">${stats.totalRevenue.toFixed(2)}</p>
-                  <p className="text-xs text-blue-600">{stats.serviceCount} {t("auto.text_9e2f33")}</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-300">{stats.serviceCount} {t("auto.text_9e2f33")}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-blue-200 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-blue-200 dark:bg-blue-900/50 flex items-center justify-center">
                   <DollarSign className="h-6 w-6 text-blue-700 dark:text-blue-300" />
                 </div>
               </div>
@@ -198,10 +198,10 @@ const [startDate, setStartDate] = useState<string>("");
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-red-600">{t("auto.text_d9ab72")} </p>
+                  <p className="text-sm font-medium text-red-600 dark:text-red-300">{t("auto.text_d9ab72")} </p>
                   <p className="text-2xl font-bold text-red-900 dark:text-red-200">${stats.totalCost.toFixed(2)}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-red-200 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-red-200 dark:bg-red-900/50 flex items-center justify-center">
                   <TrendingDown className="h-6 w-6 text-red-700 dark:text-red-300" />
                 </div>
               </div>
@@ -212,11 +212,11 @@ const [startDate, setStartDate] = useState<string>("");
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-600">{t("auto.text_aa03aa")} </p>
+                  <p className="text-sm font-medium text-green-600 dark:text-green-300">{t("auto.text_aa03aa")} </p>
                   <p className="text-2xl font-bold text-green-900 dark:text-green-200">${stats.totalProfit.toFixed(2)}</p>
-                  <p className="text-xs text-green-600">{stats.profitMargin.toFixed(1)}% margin</p>
+                  <p className="text-xs text-green-600 dark:text-green-300">{stats.profitMargin.toFixed(1)}% margin</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-green-200 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-green-200 dark:bg-green-900/50 flex items-center justify-center">
                   <TrendingUp className="h-6 w-6 text-green-700 dark:text-green-300" />
                 </div>
               </div>
@@ -227,11 +227,11 @@ const [startDate, setStartDate] = useState<string>("");
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-amber-600">{t("auto.text_e2a2cc")} </p>
+                  <p className="text-sm font-medium text-amber-600 dark:text-amber-300">{t("auto.text_e2a2cc")} </p>
                   <p className="text-lg font-bold text-green-700 dark:text-green-300">{stats.paidCount} {t("auto.text_40d446")}</p>
                   <p className="text-lg font-bold text-red-700 dark:text-red-300">{stats.unpaidCount} {t("auto.text_040176")}</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-amber-200 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-amber-200 dark:bg-amber-900/50 flex items-center justify-center">
                   <Receipt className="h-6 w-6 text-amber-700 dark:text-amber-300" />
                 </div>
               </div>
@@ -269,7 +269,7 @@ const [startDate, setStartDate] = useState<string>("");
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-green-600">${item.profit.toFixed(2)}</p>
+                          <p className="font-bold text-green-600 dark:text-green-300">${item.profit.toFixed(2)}</p>
                           <p className="text-xs text-muted-foreground">
                             {t("finance.revenue")}: ${item.revenue.toFixed(2)} | {t("auto.text_080d04")}: ${item.cost.toFixed(2)}
                           </p>
@@ -337,13 +337,13 @@ const [startDate, setStartDate] = useState<string>("");
                       </TableCell>
                       <TableCell>{getCustomerName(service.customerId)}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{service.description}</TableCell>
-                      <TableCell className="text-right font-mono text-red-600">
+                      <TableCell className="text-right font-mono text-red-600 dark:text-red-300">
                         ${Number(service.costAmount || 0).toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-blue-600">
+                      <TableCell className="text-right font-mono text-blue-600 dark:text-blue-300">
                         ${Number(service.priceAmount || 0).toFixed(2)}
                       </TableCell>
-                      <TableCell className={`text-right font-mono font-bold ${profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      <TableCell className={`text-right font-mono font-bold ${profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                         ${profit.toFixed(2)}
                       </TableCell>
                       <TableCell>

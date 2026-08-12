@@ -165,7 +165,7 @@ export default function TaxRatesManagement() {
                   <TableCell className="font-semibold">
                     {taxRate.name}
                     {taxRate.isDefault && (
-                      <Star className="inline h-4 w-4 me-1 text-yellow-500 fill-yellow-500" />
+                      <Star className="inline h-4 w-4 me-1 text-yellow-500 dark:text-yellow-400 fill-yellow-500" />
                     )}
                   </TableCell>
                   <TableCell className="font-mono text-lg">{taxRate.rate}%</TableCell>

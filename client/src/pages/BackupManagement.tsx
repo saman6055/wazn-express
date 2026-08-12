@@ -211,7 +211,7 @@ export default function BackupManagement() {
             <CardTitle className="text-sm font-medium text-muted-foreground">{pickLang(language, { ku: "بەکاپی تەواو", en: "Completed backups", ar: "النسخ الاحتياطية المكتملة", zh: "已完成备份" })}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-300">
               {backups?.filter(b => b.status === "completed").length || 0}
             </div>
           </CardContent>
@@ -221,7 +221,7 @@ export default function BackupManagement() {
             <CardTitle className="text-sm font-medium text-muted-foreground">{pickLang(language, { ku: "بەکاپی شکستخواردوو", en: "Failed backups", ar: "النسخ الاحتياطية الفاشلة", zh: "失败的备份" })}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-300">
               {backups?.filter(b => b.status === "failed").length || 0}
             </div>
           </CardContent>
@@ -285,7 +285,7 @@ export default function BackupManagement() {
                       <p>{pickLang(language, { ku: "دروستکراوە", en: "Created", ar: "تم الإنشاء", zh: "创建于" })}: {backup.createdAt ? formatDistanceToNow(new Date(backup.createdAt), { addSuffix: true }) : pickLang(language, { ku: "نەزانراو", en: "Unknown", ar: "غير معروف", zh: "未知" })}</p>
                       {backup.createdByName && <p>{pickLang(language, { ku: "دروستکراوە لەلایەن", en: "Created by", ar: "أنشأها", zh: "创建者" })}: {backup.createdByName}</p>}
                       {backup.errorMessage && (
-                        <p className="text-red-600">{pickLang(language, { ku: "هەڵە", en: "Error", ar: "خطأ", zh: "错误" })}: {backup.errorMessage}</p>
+                        <p className="text-red-600 dark:text-red-300">{pickLang(language, { ku: "هەڵە", en: "Error", ar: "خطأ", zh: "错误" })}: {backup.errorMessage}</p>
                       )}
                     </div>
                   </div>
@@ -348,7 +348,7 @@ export default function BackupManagement() {
                       onClick={() => handleDelete(backup.id)}
                       disabled={deleteBackup.isPending}
                     >
-                      <Trash2 className="w-4 h-4 text-red-600" />
+                      <Trash2 className="w-4 h-4 text-red-600 dark:text-red-300" />
                     </Button>
                   </div>
                 </div>

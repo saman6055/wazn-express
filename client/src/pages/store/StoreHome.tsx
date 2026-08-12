@@ -21,7 +21,7 @@ export default function StoreHome() {
       <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200 dark:border-slate-800/60">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-            <StoreIcon className="w-5 h-5 text-violet-600" />
+            <StoreIcon className="w-5 h-5 text-violet-600 dark:text-violet-300" />
             {label({ ku: "وەزن ستۆر", en: "Wazn Store", ar: "متجر وزن", zh: "Wazn 商店" })}
           </span>
           <LanguageSwitcher />
@@ -40,20 +40,20 @@ export default function StoreHome() {
       <main className="max-w-3xl mx-auto px-4 py-6">
         {isLoading ? (
           <div className="grid grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map((i) => <div key={i} className="aspect-[3/4] rounded-2xl bg-slate-200 animate-pulse" />)}
+            {[1, 2, 3, 4].map((i) => <div key={i} className="aspect-[3/4] rounded-2xl bg-slate-200 dark:bg-slate-800/50 animate-pulse" />)}
           </div>
         ) : !products || products.length === 0 ? (
           <div className="text-center py-20">
             <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-950/40 flex items-center justify-center mx-auto mb-4">
               <StoreIcon className="w-8 h-8 text-slate-300" />
             </div>
-            <p className="font-medium text-slate-600">{label({ ku: "هێشتا هیچ کاڵایەک نییە", en: "No products yet", ar: "لا توجد منتجات بعد", zh: "暂无产品" })}</p>
+            <p className="font-medium text-slate-600 dark:text-slate-300">{label({ ku: "هێشتا هیچ کاڵایەک نییە", en: "No products yet", ar: "لا توجد منتجات بعد", zh: "暂无产品" })}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {products.map((p: any) => (
               <Link key={p.id} href={`/store/${p.slug}`}>
-                <div className="group rounded-2xl bg-white border border-slate-200 dark:border-slate-800/60 overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5">
+                <div className="group rounded-2xl bg-white dark:bg-card border border-slate-200 dark:border-slate-800/60 overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5">
                   <div className="aspect-square bg-slate-100 dark:bg-slate-950/40 relative overflow-hidden">
                     {p.coverImageUrl ? (
                       <img src={p.coverImageUrl} alt={pName(p, language)} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -73,11 +73,11 @@ export default function StoreHome() {
                   </div>
                   <div className="p-3">
                     {p.category && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-violet-600 font-medium mb-1"><Tag className="w-2.5 h-2.5" />{p.category}</span>
+                      <span className="inline-flex items-center gap-1 text-[10px] text-violet-600 dark:text-violet-300 font-medium mb-1"><Tag className="w-2.5 h-2.5" />{p.category}</span>
                     )}
                     <p className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug min-h-[2.5rem]">{pName(p, language)}</p>
                     <div className="flex items-baseline gap-1.5 mt-1.5">
-                      <span className="text-base font-bold text-violet-600">{money(p.price, p.currency)}</span>
+                      <span className="text-base font-bold text-violet-600 dark:text-violet-300">{money(p.price, p.currency)}</span>
                       {p.compareAtPrice && Number(p.compareAtPrice) > Number(p.price) && (
                         <span className="text-xs text-slate-400 line-through">{money(p.compareAtPrice, p.currency)}</span>
                       )}

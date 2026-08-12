@@ -527,10 +527,10 @@ const [activeTab, setActiveTab] = useState("expenses");
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("expenses.totalExpenses")}</CardTitle>
-              <TrendingDown className="h-4 w-4 text-red-500" />
+              <TrendingDown className="h-4 w-4 text-red-500 dark:text-red-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-300">
                 ${summary?.totalAmount.toFixed(2) || "0.00"}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -717,7 +717,7 @@ const [activeTab, setActiveTab] = useState("expenses");
                                 {expense.paymentMethod === "other" && t("common.other")}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-medium text-red-600">
+                            <TableCell className="text-right font-medium text-red-600 dark:text-red-300">
                               {formatCurrency(expense.amountUsd)}
                             </TableCell>
                             <TableCell>
@@ -730,7 +730,7 @@ const [activeTab, setActiveTab] = useState("expenses");
                                   }
                                 }}
                               >
-                                <Trash2 className="h-4 w-4 text-red-500" />
+                                <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -775,7 +775,7 @@ const [activeTab, setActiveTab] = useState("expenses");
                         }
                       }}
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                     </Button>
                   </CardHeader>
                   <CardContent>

@@ -334,7 +334,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       {/* Featured Toggle */}
       <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
         <div className="flex items-center gap-2">
-          <Star className="h-4 w-4 text-yellow-500" />
+          <Star className="h-4 w-4 text-yellow-500 dark:text-yellow-400" />
           <Label>{t("blog.featured")}</Label>
         </div>
         <Switch

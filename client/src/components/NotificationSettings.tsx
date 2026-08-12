@@ -165,7 +165,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
             )}>
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <BellOff className="w-5 h-5 text-amber-600" />
+                  <BellOff className="w-5 h-5 text-amber-600 dark:text-amber-300" />
                 </div>
                 <div className="flex-1">
                   <p className={cn(
@@ -184,7 +184,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
             )}>
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <X className="w-5 h-5 text-red-600" />
+                  <X className="w-5 h-5 text-red-600 dark:text-red-300" />
                 </div>
                 <div className="flex-1">
                   <p className={cn(
@@ -210,7 +210,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-purple-600" />
+                    <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-300" />
                   </div>
                   <div className="flex-1">
                     <p className={cn(
@@ -253,7 +253,7 @@ export function NotificationSettings({ open, onOpenChange }: NotificationSetting
             )}>
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <Check className="w-5 h-5 text-emerald-600" />
+                  <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-300" />
                 </div>
                 <div className="flex-1">
                   <p className={cn(

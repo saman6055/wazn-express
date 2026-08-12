@@ -38,16 +38,16 @@ export function CustomerActivityTab({ activityLogs, t }: CustomerActivityTabProp
                 <div
                   className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
                     log.action.includes("create")
-                      ? "bg-green-100 dark:bg-green-950/40 text-green-600"
+                      ? "bg-green-100 dark:bg-green-950/40 text-green-600 dark:text-green-300"
                       : log.action.includes("update") || log.action.includes("edit")
-                        ? "bg-blue-100 dark:bg-blue-950/40 text-blue-600"
+                        ? "bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300"
                         : log.action.includes("delete") || log.action.includes("remove")
-                          ? "bg-red-100 dark:bg-red-950/40 text-red-600"
+                          ? "bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-300"
                           : log.action.includes("payment")
-                            ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600"
+                            ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300"
                             : log.action.includes("reset")
-                              ? "bg-amber-100 dark:bg-amber-950/40 text-amber-600"
-                              : "bg-slate-100 dark:bg-slate-950/40 text-slate-600"
+                              ? "bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300"
+                              : "bg-slate-100 dark:bg-slate-950/40 text-slate-600 dark:text-slate-300"
                   }`}
                 >
                   {log.action.includes("create") ? (

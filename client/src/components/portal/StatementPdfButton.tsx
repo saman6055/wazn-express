@@ -186,7 +186,7 @@ export function StatementPdfButton({
         <DialogContent className="max-w-sm rounded-2xl" dir={isRTL ? "rtl" : "ltr"}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
-              <SlidersHorizontal className="h-4 w-4 text-indigo-500" />
+              <SlidersHorizontal className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
               {pick({ ku: "کەشفی حساب — فلتەر", en: "Statement — filters", ar: "كشف الحساب — تصفية", zh: "对账单——筛选" })}
             </DialogTitle>
           </DialogHeader>

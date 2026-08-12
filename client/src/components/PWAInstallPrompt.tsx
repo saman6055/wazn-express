@@ -181,7 +181,7 @@ export function OfflineIndicator() {
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white text-center py-2.5 text-sm font-medium shadow-md">
       <span className="inline-flex items-center gap-2">
-        <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+        <span className="w-2 h-2 bg-white dark:bg-card rounded-full animate-pulse" />
         {message}
       </span>
     </div>

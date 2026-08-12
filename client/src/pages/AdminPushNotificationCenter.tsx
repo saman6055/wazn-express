@@ -52,7 +52,7 @@ export default function AdminPushNotificationCenter() {
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Bell className="h-6 w-6 text-emerald-500" />
+              <Bell className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />
               {t("pushAdmin.title")}
             </h1>
             <p className="text-sm text-muted-foreground">{t("pushAdmin.subtitle")}</p>
@@ -320,7 +320,7 @@ function ComposeTab() {
                 {audiencePreview.isFetching ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <span className="text-emerald-600">{audiencePreview.data?.count ?? 0}</span>
+                  <span className="text-emerald-600 dark:text-emerald-300">{audiencePreview.data?.count ?? 0}</span>
                 )}
               </span>
             </div>
@@ -444,7 +444,7 @@ function ComposeTab() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-medium text-slate-500">WAZN EXPRESS</span>
+                      <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">WAZN EXPRESS</span>
                       <span className="text-[10px] text-slate-400">now</span>
                     </div>
                     <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-50 truncate mt-0.5">
@@ -530,10 +530,10 @@ function HistoryTab() {
                     <span className="flex items-center gap-1">
                       <Users className="h-3 w-3" /> {c.totalRecipients}
                     </span>
-                    <span className="flex items-center gap-1 text-emerald-600">
+                    <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-300">
                       <CheckCircle2 className="h-3 w-3" /> {c.sentCount}
                     </span>
-                    <span className="flex items-center gap-1 text-red-500">
+                    <span className="flex items-center gap-1 text-red-500 dark:text-red-400">
                       <XCircle className="h-3 w-3" /> {c.failedCount}
                     </span>
                     <span className="flex items-center gap-1">
@@ -542,7 +542,7 @@ function HistoryTab() {
                     </span>
                   </div>
                   {c.errorMessage && (
-                    <p className="mt-2 text-xs text-red-500 break-words">{c.errorMessage}</p>
+                    <p className="mt-2 text-xs text-red-500 dark:text-red-400 break-words">{c.errorMessage}</p>
                   )}
                 </div>
                 <div className="flex flex-col gap-1.5 shrink-0">
@@ -563,7 +563,7 @@ function HistoryTab() {
                       variant="outline"
                       disabled={cancel.isPending}
                       onClick={() => cancel.mutate({ campaignId: c.id })}
-                      className="text-red-500"
+                      className="text-red-500 dark:text-red-400"
                     >
                       <XCircle className="me-1 h-3 w-3" />
                       {t("pushAdmin.cancel")}

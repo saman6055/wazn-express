@@ -115,7 +115,7 @@ export default function PortalProhibitedPackages() {
         ) : !items || items.length === 0 ? (
           <div className="text-center py-20">
             <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4", isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40")}>
-              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              <CheckCircle2 className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
             </div>
             <p className={cn("font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
               {label({ ku: "هیچ پاکێجێکی قەدەغە نییە", en: "No prohibited packages", ar: "لا توجد طرود ممنوعة", zh: "没有违禁包裹" })}
@@ -159,7 +159,7 @@ export default function PortalProhibitedPackages() {
 
                     {/* Reason */}
                     <div className={cn("rounded-xl p-3 flex items-start gap-2.5", isDark ? "bg-red-950/30" : "bg-red-50 dark:bg-red-950/40")}>
-                      <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                      <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className={cn("text-xs font-medium", isDark ? "text-red-300" : "text-red-700 dark:text-red-300")}>{label({ ku: "هۆکاری قەدەغە", en: "Reason", ar: "السبب", zh: "原因" })}</p>
                         <p className={cn("text-sm mt-0.5", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")}>

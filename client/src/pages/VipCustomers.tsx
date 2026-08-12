@@ -154,7 +154,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             </div>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-white text-amber-600 hover:bg-white/90 shadow-lg">
+                <Button className="bg-white dark:bg-card text-amber-600 dark:text-amber-300 hover:bg-white/90 shadow-lg">
                   <Plus className="h-4 w-4 me-2" />
                   {pickLang(language, { ku: "زیادکردنی VIP", en: "Add VIP", ar: "إضافة VIP", zh: "添加 VIP" })}
                 </Button>
@@ -162,7 +162,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <DialogContent className="max-w-lg">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <Crown className="h-5 w-5 text-amber-500" />
+                    <Crown className="h-5 w-5 text-amber-500 dark:text-amber-400" />
                     {pickLang(language, { ku: "زیادکردنی کڕیاری VIP", en: "Add VIP Customer", ar: "إضافة عميل VIP", zh: "添加 VIP 客户" })}
                   </DialogTitle>
                   <DialogDescription>
@@ -301,7 +301,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{pickLang(language, { ku: "زیو", en: "Silver", ar: "فضي", zh: "白银" })}</p>
-                  <p className="text-3xl font-bold text-slate-500">{silverCount}</p>
+                  <p className="text-3xl font-bold text-slate-500 dark:text-slate-400">{silverCount}</p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-slate-700 dark:text-slate-300 shadow-lg">
                   <Sparkles className="h-6 w-6" />
@@ -314,7 +314,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{pickLang(language, { ku: "زێڕ", en: "Gold", ar: "ذهبي", zh: "黄金" })}</p>
-                  <p className="text-3xl font-bold text-amber-500">{goldCount}</p>
+                  <p className="text-3xl font-bold text-amber-500 dark:text-amber-400">{goldCount}</p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg">
                   <Sparkles className="h-6 w-6" />
@@ -327,7 +327,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{pickLang(language, { ku: "پلاتین", en: "Platinum", ar: "بلاتيني", zh: "铂金" })}</p>
-                  <p className="text-3xl font-bold text-slate-600">{platinumCount}</p>
+                  <p className="text-3xl font-bold text-slate-600 dark:text-slate-300">{platinumCount}</p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white shadow-lg">
                   <Sparkles className="h-6 w-6" />
@@ -372,7 +372,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                        className="h-8 w-8 text-red-500 dark:text-red-400 hover:text-red-600 hover:bg-red-50"
                         onClick={() => {
                           if (confirm(pickLang(language, { ku: "دۆخی VIP لەم کڕیارە بسڕیتەوە؟", en: "Remove VIP status from this customer?", ar: "إزالة حالة VIP من هذا العميل؟", zh: "移除此客户的 VIP 身份？" }))) {
                             deleteMutation.mutate({ id: vip.id });

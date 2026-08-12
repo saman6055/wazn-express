@@ -70,7 +70,7 @@ export function DeleteDataSection({
         {/* Section 1: Delete by Category */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Trash2 className="h-5 w-5 text-slate-600" />
+            <Trash2 className="h-5 w-5 text-slate-600 dark:text-slate-300" />
             <h3 className="text-lg font-semibold">{t("dataManagement.deleteByCategory")}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -96,7 +96,7 @@ export function DeleteDataSection({
                     </span>
                   </div>
                   <div className="mt-4 flex items-center justify-end">
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <Button variant="ghost" size="sm" className="text-red-600 dark:text-red-300 hover:text-red-700 hover:bg-red-50">
                       <Trash2 className="h-4 w-4 me-1" />
                       {t("dataManagement.delete")}
                     </Button>
@@ -116,7 +116,7 @@ export function DeleteDataSection({
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-50 dark:bg-amber-950/40 rounded-lg">
-                <Clock className="h-5 w-5 text-amber-600" />
+                <Clock className="h-5 w-5 text-amber-600 dark:text-amber-300" />
               </div>
               <div>
                 <CardTitle className="text-lg text-amber-800 dark:text-amber-200">{t("dataManagement.deleteOldData")}</CardTitle>
@@ -167,7 +167,7 @@ export function DeleteDataSection({
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-50 dark:bg-red-950/40 rounded-lg">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-300" />
               </div>
               <div>
                 <CardTitle className="text-lg text-red-800 dark:text-red-200">{t("dataManagement.factoryReset")}</CardTitle>
@@ -206,7 +206,7 @@ export function DeleteDataSection({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-300">
               <AlertTriangle className="h-5 w-5" />
               {t("dataManagement.confirmDelete")}
             </DialogTitle>
@@ -238,7 +238,7 @@ export function DeleteDataSection({
             <div className="space-y-2">
               <Label>
                 {t("dataManagement.typeToConfirm")}{" "}
-                <span className="font-mono font-bold text-red-600">DELETE</span>
+                <span className="font-mono font-bold text-red-600 dark:text-red-300">DELETE</span>
               </Label>
               <Input
                 value={confirmationInput}
@@ -286,7 +286,7 @@ export function DeleteDataSection({
       <Dialog open={showOldDataDialog} onOpenChange={setShowOldDataDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-600">
+            <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-300">
               <Clock className="h-5 w-5" />
               {t("dataManagement.deleteOldData")}
             </DialogTitle>
@@ -330,7 +330,7 @@ export function DeleteDataSection({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-300">
               <AlertTriangle className="h-5 w-5" />
               {t("dataManagement.factoryReset")}
             </DialogTitle>
@@ -363,7 +363,7 @@ export function DeleteDataSection({
             <div className="space-y-2">
               <Label>
                 {t("dataManagement.typeToConfirm")}{" "}
-                <span className="font-mono font-bold text-red-600">RESET ALL DATA</span>
+                <span className="font-mono font-bold text-red-600 dark:text-red-300">RESET ALL DATA</span>
               </Label>
               <Input
                 value={resetConfirmation}

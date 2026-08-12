@@ -115,7 +115,7 @@ export default function PortalContact() {
                   className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition hover:bg-black/5 active:scale-90 dark:hover:bg-white/10"
                 >
                   {copied === c.id
-                    ? <Check className="h-4 w-4 text-emerald-600" />
+                    ? <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
                     : <Copy className="h-4 w-4" />}
                 </button>
               )}

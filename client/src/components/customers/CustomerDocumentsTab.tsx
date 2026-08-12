@@ -91,7 +91,7 @@ export function CustomerDocumentsTab({
                     variant="outline"
                     size="sm"
                     onClick={() => onDocumentDelete("passport")}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 dark:text-red-300 hover:text-red-700"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -140,7 +140,7 @@ export function CustomerDocumentsTab({
                     variant="outline"
                     size="sm"
                     onClick={() => onDocumentDelete("nationalId")}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 dark:text-red-300 hover:text-red-700"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -189,7 +189,7 @@ export function CustomerDocumentsTab({
                     variant="outline"
                     size="sm"
                     onClick={() => onDocumentDelete("contract")}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 dark:text-red-300 hover:text-red-700"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

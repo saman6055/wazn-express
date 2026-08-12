@@ -553,7 +553,7 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "قازانجی ئەم هەفتەیە", en: "This week's profit", ar: "ربح هذا الأسبوع", zh: "本周利润" })}</p>
                   <p className="text-xl font-bold">${(highlights.profit.thisWeekUsd || 0).toFixed(0)}</p>
                   {highlights.profit.deltaPct !== null && (
-                    <p className={`text-xs ${highlights.profit.deltaPct >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                    <p className={`text-xs ${highlights.profit.deltaPct >= 0 ? "text-emerald-600 dark:text-emerald-300" : "text-rose-600 dark:text-rose-300"}`}>
                       {highlights.profit.deltaPct >= 0 ? "▲" : "▼"} {Math.abs(Math.round(highlights.profit.deltaPct))}% {pickLang(language, { ku: "بەراورد بە هەفتەی ڕابردوو", en: "vs. last week", ar: "مقارنة بالأسبوع الماضي", zh: "对比上周" })}
                     </p>
                   )}
@@ -896,7 +896,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-red-500" />
+                    <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
                     {t('dashboard.overdueDebtAlerts') ?? 'Overdue debt alerts'}
                   </CardTitle>
                   <CardDescription>{t('dashboard.customersWithHighDebt')}</CardDescription>
@@ -936,7 +936,7 @@ export default function Dashboard() {
                 ))}
                 {(!topDebtors || topDebtors.length === 0) && (
                   <div className="p-8 text-center text-muted-foreground">
-                    <CheckCircle className="h-12 w-12 mx-auto mb-3 opacity-30 text-green-500" />
+                    <CheckCircle className="h-12 w-12 mx-auto mb-3 opacity-30 text-green-500 dark:text-green-400" />
                     <p>{t('dashboard.noDebtors')}</p>
                   </div>
                 )}
@@ -950,7 +950,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Truck className="h-5 w-5 text-blue-500" />
+                    <Truck className="h-5 w-5 text-blue-500 dark:text-blue-400" />
                     {t('dashboard.activeBatchesList')}
                   </CardTitle>
                   <CardDescription>{t('dashboard.batchesOnRoute')}</CardDescription>
@@ -1008,7 +1008,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Crown className="h-5 w-5 text-amber-500" />
+                    <Crown className="h-5 w-5 text-amber-500 dark:text-amber-400" />
                     {t('dashboard.topCustomers')}
                   </CardTitle>
                   <CardDescription>{t('dashboard.byRevenue')}</CardDescription>
@@ -1340,7 +1340,7 @@ function AlertSummarySection() {
                 <div>
                   <p className="text-2xl font-bold text-red-700 dark:text-red-400">{packageAlerts.highRisk}</p>
                   <p className="text-sm text-red-600 dark:text-red-400">{t('dashboard.highRiskPackages')} 🔴</p>
-                  <p className="text-xs text-red-500">{t('dashboard.moreThan20Days')}</p>
+                  <p className="text-xs text-red-500 dark:text-red-400">{t('dashboard.moreThan20Days')}</p>
                 </div>
               </div>
             </CardContent>
@@ -1359,7 +1359,7 @@ function AlertSummarySection() {
                 <div>
                   <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{packageAlerts.warning}</p>
                   <p className="text-sm text-amber-600 dark:text-amber-400">{t('dashboard.warningPackages')} ⚠️</p>
-                  <p className="text-xs text-amber-500">{t('dashboard.10to20Days')}</p>
+                  <p className="text-xs text-amber-500 dark:text-amber-400">{t('dashboard.10to20Days')}</p>
                 </div>
               </div>
             </CardContent>
@@ -1378,7 +1378,7 @@ function AlertSummarySection() {
                 <div>
                   <p className="text-2xl font-bold text-red-700 dark:text-red-400">{batchAlerts.highRisk}</p>
                   <p className="text-sm text-red-600 dark:text-red-400">{t('dashboard.highRiskBatches')} 🔴</p>
-                  <p className="text-xs text-red-500">{t('dashboard.veryOverdue')}</p>
+                  <p className="text-xs text-red-500 dark:text-red-400">{t('dashboard.veryOverdue')}</p>
                 </div>
               </div>
             </CardContent>
@@ -1397,7 +1397,7 @@ function AlertSummarySection() {
                 <div>
                   <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{batchAlerts.warning}</p>
                   <p className="text-sm text-amber-600 dark:text-amber-400">{t('dashboard.warningBatches')} ⚠️</p>
-                  <p className="text-xs text-amber-500">{t('dashboard.nearETA')}</p>
+                  <p className="text-xs text-amber-500 dark:text-amber-400">{t('dashboard.nearETA')}</p>
                 </div>
               </div>
             </CardContent>

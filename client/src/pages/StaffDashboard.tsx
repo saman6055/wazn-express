@@ -257,7 +257,7 @@ export default function StaffDashboard() {
                     className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400 shrink-0" />
                       <span className="font-mono text-sm truncate">{scan.trackingNumber}</span>
                       <span className="text-xs text-muted-foreground capitalize shrink-0">{scan.scanType?.replace(/_/g, " ")}</span>
                     </div>

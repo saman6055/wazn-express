@@ -62,7 +62,7 @@ const [search, setSearch] = useState("");
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-red-600" />
+                <Shield className="h-5 w-5 text-red-600 dark:text-red-300" />
                 <div>
                   <div className="text-2xl font-bold">{users?.filter(u => u.role === "admin").length || 0}</div>
                   <div className="text-sm text-muted-foreground">Admins</div>
@@ -73,7 +73,7 @@ const [search, setSearch] = useState("");
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-2">
-                <UserCog className="h-5 w-5 text-blue-600" />
+                <UserCog className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                 <div>
                   <div className="text-2xl font-bold">{users?.filter(u => u.role === "employee").length || 0}</div>
                   <div className="text-sm text-muted-foreground">Employees</div>
@@ -84,7 +84,7 @@ const [search, setSearch] = useState("");
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-2">
-                <UserCog className="h-5 w-5 text-purple-600" />
+                <UserCog className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                 <div>
                   <div className="text-2xl font-bold">{users?.filter(u => u.role === "accountant").length || 0}</div>
                   <div className="text-sm text-muted-foreground">Accountants</div>
@@ -95,7 +95,7 @@ const [search, setSearch] = useState("");
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-2">
-                <User className="h-5 w-5 text-gray-600" />
+                <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
                 <div>
                   <div className="text-2xl font-bold">{users?.filter(u => u.role === "accountant").length || 0}</div>
                   <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "ژمێریار", en: "Accountants", ar: "المحاسبون", zh: "会计" })}</div>
@@ -185,7 +185,7 @@ const [search, setSearch] = useState("");
         <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/40">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 text-amber-600 mt-0.5" />
+              <Shield className="h-5 w-5 text-amber-600 dark:text-amber-300 mt-0.5" />
               <div className="text-sm">
                 <p className="font-medium text-amber-800 dark:text-amber-200">Role Permissions</p>
                 <ul className="mt-2 space-y-1 text-amber-700 dark:text-amber-300">

@@ -164,13 +164,13 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-xl p-4 animate-pulse">
+                <div key={i} className="bg-white dark:bg-card rounded-xl p-4 animate-pulse">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-200" />
+                    <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800/50" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-3/4" />
-                      <div className="h-3 bg-gray-200 rounded w-full" />
-                      <div className="h-3 bg-gray-200 rounded w-1/4" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-800/50 rounded w-3/4" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-800/50 rounded w-full" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-800/50 rounded w-1/4" />
                     </div>
                   </div>
                 </div>
@@ -182,10 +182,10 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
           ) : notifications?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-4">
-                <Bell className="h-10 w-10 text-blue-500" />
+                <Bell className="h-10 w-10 text-blue-500 dark:text-blue-400" />
               </div>
               <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">{pickLang(language, { ku: "هیچ ئاگادارکردنەوەیەک نییە", en: "No notifications", ar: "لا توجد إشعارات", zh: "暂无通知" })}</h3>
-              <p className="text-sm text-gray-500 max-w-xs">
+              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
                 {pickLang(language, { ku: "هەموو شتێک خوێندراوەتەوە. کاتێک شتێکی گرنگ ڕوودەدات ئاگادارت دەکەینەوە.", en: "You are all caught up. We will let you know when something happens.", ar: "لا يوجد جديد. سنخبرك عند حدوث شيء مهم.", zh: "暂时没有新消息，有重要动态会通知您。" })}
               </p>
             </div>
@@ -195,8 +195,8 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
                 <div
                   key={notification.id}
                   className={cn(
-                    "bg-white rounded-xl p-4 shadow-sm transition-all duration-200",
-                    !notification.isRead && "border-l-4 border-blue-500 bg-blue-50/50"
+                    "bg-white dark:bg-card rounded-xl p-4 shadow-sm transition-all duration-200",
+                    !notification.isRead && "border-l-4 border-blue-500 bg-blue-50/50 dark:bg-blue-950/50"
                   )}
                   onClick={() => {
                     setExpandedId((prev) => (prev === notification.id ? null : notification.id));
@@ -227,7 +227,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
                       </div>
                       
                       <p className={cn(
-                        "text-sm text-gray-600 mt-1 whitespace-pre-wrap",
+                        "text-sm text-gray-600 dark:text-gray-300 mt-1 whitespace-pre-wrap",
                         expandedId !== notification.id && "line-clamp-2"
                       )}>
                         {localised(notification, "message")}
@@ -242,7 +242,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
                             generic "/portal" reads as a dead button. */}
                         {notification.actionUrl && !DEAD_ACTION_URLS.has(notification.actionUrl) && (
                           <Link href={notification.actionUrl} onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 h-auto p-0 text-xs">
+                            <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-300 hover:text-blue-700 h-auto p-0 text-xs">
                               {notification.actionLabel || "View"}
                               <ChevronRight className="h-3 w-3 ms-1" />
                             </Button>

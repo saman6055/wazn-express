@@ -584,11 +584,11 @@ export default function FullPackageDashboard() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={exportToExcel}>
-                    <FileSpreadsheet className="h-4 w-4 ms-2 text-green-600" />
+                    <FileSpreadsheet className="h-4 w-4 ms-2 text-green-600 dark:text-green-300" />
                     {t("fullPackage.exportExcel")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={exportToPDF}>
-                    <FileText className="h-4 w-4 ms-2 text-red-600" />
+                    <FileText className="h-4 w-4 ms-2 text-red-600 dark:text-red-300" />
                     {t("fullPackage.exportPDF")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -601,7 +601,7 @@ export default function FullPackageDashboard() {
                 </Button>
               </Link>
               <Link href="/full-package/new">
-                <Button className="bg-white text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50">
+                <Button className="bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50">
                   <Plus className="h-4 w-4 ms-2" />
                   {t("fullPackage.newOrder")}
                 </Button>
@@ -616,11 +616,11 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-emerald-600 font-medium">{t("fullPackage.ordersCountLabel")}</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-300 font-medium">{t("fullPackage.ordersCountLabel")}</p>
                   <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{totalOrders}</p>
                 </div>
                 <div className="p-2 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
-                  <Package className="h-5 w-5 text-emerald-600" />
+                  <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 </div>
               </div>
             </CardContent>
@@ -630,11 +630,11 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-amber-600 font-medium">{t("fullPackage.pendingLabel")}</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-300 font-medium">{t("fullPackage.pendingLabel")}</p>
                   <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{pendingOrders}</p>
                 </div>
                 <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
-                  <Clock className="h-5 w-5 text-amber-600" />
+                  <Clock className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                 </div>
               </div>
             </CardContent>
@@ -644,11 +644,11 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-blue-600 font-medium">{t("fullPackage.inTransitLabel")}</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-300 font-medium">{t("fullPackage.inTransitLabel")}</p>
                   <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{inTransitOrders}</p>
                 </div>
                 <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
-                  <Clock className="h-5 w-5 text-blue-600" />
+                  <Clock className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                 </div>
               </div>
             </CardContent>
@@ -658,11 +658,11 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-red-600 font-medium">{t("fullPackage.totalPurchaseCost")}</p>
+                  <p className="text-xs text-red-600 dark:text-red-300 font-medium">{t("fullPackage.totalPurchaseCost")}</p>
                   <p className="text-xl font-bold text-red-700 dark:text-red-300">${totalPurchaseCost.toFixed(2)}</p>
                 </div>
                 <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-xl">
-                  <ShoppingCart className="h-5 w-5 text-red-600" />
+                  <ShoppingCart className="h-5 w-5 text-red-600 dark:text-red-300" />
                 </div>
               </div>
             </CardContent>
@@ -672,11 +672,11 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-green-600 font-medium">{t("fullPackage.grossProfitLabel")}</p>
+                  <p className="text-xs text-green-600 dark:text-green-300 font-medium">{t("fullPackage.grossProfitLabel")}</p>
                   <p className="text-xl font-bold text-green-700 dark:text-green-300">${totalGrossProfit.toFixed(2)}</p>
                 </div>
                 <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-xl">
-                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <DollarSign className="h-5 w-5 text-green-600 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
@@ -686,11 +686,11 @@ export default function FullPackageDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-purple-600 font-medium">{t("fullPackage.netProfitLabel")}</p>
+                  <p className="text-xs text-purple-600 dark:text-purple-300 font-medium">{t("fullPackage.netProfitLabel")}</p>
                   <p className="text-xl font-bold text-purple-700 dark:text-purple-300">${totalNetProfit.toFixed(2)}</p>
                 </div>
                 <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-xl">
-                  <TrendingUp className="h-5 w-5 text-purple-600" />
+                  <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                 </div>
               </div>
             </CardContent>
@@ -752,7 +752,7 @@ export default function FullPackageDashboard() {
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium text-sm">{t("fullPackage.advancedFiltersTitle")}</h4>
                     {hasActiveFilters && (
-                      <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-red-600 hover:text-red-700">
+                      <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-red-600 dark:text-red-300 hover:text-red-700">
                         <X className="h-4 w-4 ms-1" />
                         {t("fullPackage.clearAllFilters")}
                       </Button>
@@ -937,7 +937,7 @@ export default function FullPackageDashboard() {
                 <div className="text-sm text-muted-foreground">
                   {t("fullPackage.ordersCountFound", { count: String(filteredOrders.length) })}
                   {hasActiveFilters && (
-                    <span className="text-emerald-600 me-2">{t("fullPackage.filteredBadge")}</span>
+                    <span className="text-emerald-600 dark:text-emerald-300 me-2">{t("fullPackage.filteredBadge")}</span>
                   )}
                 </div>
                 
@@ -1039,7 +1039,7 @@ export default function FullPackageDashboard() {
                         <TableCell>
                           <div className="space-y-1">
                             <div className="flex items-center gap-1">
-                              <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300 dark:border-emerald-800/60">
+                              <Badge variant="outline" className="font-mono text-emerald-600 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/60">
                                 {order.orderCode}
                               </Badge>
                               <CopyButton value={order.orderCode} label={pickLang(language, { ku: "کۆپی کۆدی ئۆردەر", en: "Copy order code", ar: "نسخ رمز الطلب", zh: "复制订单编码" })} />
@@ -1075,7 +1075,7 @@ export default function FullPackageDashboard() {
                               />
                             ) : (
                               <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
-                                <Package className="h-5 w-5 text-emerald-600" />
+                                <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                               </div>
                             )}
                             <div>
@@ -1090,7 +1090,7 @@ export default function FullPackageDashboard() {
                                 <p className="text-xs text-muted-foreground">{order.quantity} {t("fullPackage.quantityUnit")}</p>
                               )}
                               {(order as any).orderNumber && (
-                                <p className="text-xs text-blue-600 font-mono mt-0.5">
+                                <p className="text-xs text-blue-600 dark:text-blue-300 font-mono mt-0.5">
                                   # {(order as any).orderNumber}
                                 </p>
                               )}
@@ -1113,8 +1113,8 @@ export default function FullPackageDashboard() {
                           )}
                         </TableCell>
                         <TableCell className="font-mono">${((parseFloat(order.purchasePriceUsd || "0") * (order.quantity || 1))).toFixed(2)}</TableCell>
-                        <TableCell className="font-mono text-emerald-600">${((parseFloat(order.sellingPriceUsd || "0") * (order.quantity || 1))).toFixed(2)}</TableCell>
-                        <TableCell className="font-mono font-bold text-green-600">
+                        <TableCell className="font-mono text-emerald-600 dark:text-emerald-300">${((parseFloat(order.sellingPriceUsd || "0") * (order.quantity || 1))).toFixed(2)}</TableCell>
+                        <TableCell className="font-mono font-bold text-green-600 dark:text-green-300">
                           ${((parseFloat(order.grossProfitUsd || "0") * (order.quantity || 1))).toFixed(2)}
                         </TableCell>
                         <TableCell>

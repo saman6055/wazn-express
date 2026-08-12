@@ -394,7 +394,7 @@ export default function ServicesReport() {
                 {pickLang(language, { ku: "چاپکردن", en: "Print", ar: "طباعة", zh: "打印" })}
               </Button>
               <Button
-                className="bg-white text-emerald-600 hover:bg-emerald-50"
+                className="bg-white dark:bg-card text-emerald-600 dark:text-emerald-300 hover:bg-emerald-50"
                 onClick={handleExportCSV}
               >
                 <Download className="h-4 w-4 ms-2" />
@@ -468,10 +468,10 @@ export default function ServicesReport() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی خزمەتگوزاری", en: "Total services", ar: "إجمالي الخدمات", zh: "服务总数" })}</p>
-                  <p className="text-3xl font-bold text-blue-600 mt-1">{totals.total}</p>
+                  <p className="text-3xl font-bold text-blue-600 dark:text-blue-300 mt-1">{totals.total}</p>
                 </div>
                 <div className="p-3 bg-blue-500/10 rounded-xl">
-                  <Wrench className="h-6 w-6 text-blue-600" />
+                  <Wrench className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                 </div>
               </div>
             </CardContent>
@@ -482,10 +482,10 @@ export default function ServicesReport() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</p>
-                  <p className="text-3xl font-bold text-green-600 mt-1">${totals.totalRevenue.toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-green-600 dark:text-green-300 mt-1">${totals.totalRevenue.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-green-500/10 rounded-xl">
-                  <TrendingUp className="h-6 w-6 text-green-600" />
+                  <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
@@ -496,10 +496,10 @@ export default function ServicesReport() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</p>
-                  <p className="text-3xl font-bold text-red-600 mt-1">${totals.totalCost.toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-red-600 dark:text-red-300 mt-1">${totals.totalCost.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-red-500/10 rounded-xl">
-                  <DollarSign className="h-6 w-6 text-red-600" />
+                  <DollarSign className="h-6 w-6 text-red-600 dark:text-red-300" />
                 </div>
               </div>
             </CardContent>
@@ -519,9 +519,9 @@ export default function ServicesReport() {
                 </div>
                 <div className="p-3 bg-emerald-500/10 rounded-xl">
                   {totals.totalProfit >= 0 ? (
-                    <ArrowUpRight className="h-6 w-6 text-emerald-600" />
+                    <ArrowUpRight className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
                   ) : (
-                    <ArrowDownRight className="h-6 w-6 text-red-600" />
+                    <ArrowDownRight className="h-6 w-6 text-red-600 dark:text-red-300" />
                   )}
                 </div>
               </div>
@@ -535,7 +535,7 @@ export default function ServicesReport() {
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-emerald-600" />
+                <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 <CardTitle className="text-lg">{pickLang(language, { ku: "داهات بەپێی جۆری خزمەتگوزاری", en: "Revenue by service type", ar: "الإيرادات حسب نوع الخدمة", zh: "按服务类型的收入" })}</CardTitle>
               </div>
               <CardDescription>{pickLang(language, { ku: "بەراوردی تێچوون و داهات", en: "Cost vs revenue comparison", ar: "مقارنة التكلفة بالإيرادات", zh: "成本与收入对比" })}</CardDescription>
@@ -586,7 +586,7 @@ export default function ServicesReport() {
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <PieChart className="h-5 w-5 text-emerald-600" />
+                <PieChart className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 <CardTitle className="text-lg">{pickLang(language, { ku: "دابەشبوونی قازانج", en: "Profit distribution", ar: "توزيع الأرباح", zh: "利润分布" })}</CardTitle>
               </div>
               <CardDescription>{pickLang(language, { ku: "بەپێی جۆری خزمەتگوزاری", en: "By service type", ar: "حسب نوع الخدمة", zh: "按服务类型" })}</CardDescription>
@@ -631,7 +631,7 @@ export default function ServicesReport() {
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-emerald-600">${totals.totalProfit.toFixed(0)}</p>
+                        <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">${totals.totalProfit.toFixed(0)}</p>
                         <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</p>
                       </div>
                     </div>
@@ -658,7 +658,7 @@ export default function ServicesReport() {
         <Card className="border-0 shadow-lg">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-emerald-600" />
+              <Calendar className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
               <CardTitle className="text-lg">{pickLang(language, { ku: "ترێندی مانگانە", en: "Monthly trend", ar: "الاتجاه الشهري", zh: "月度趋势" })}</CardTitle>
             </div>
             <CardDescription>{pickLang(language, { ku: "داهات و قازانجی ٦ مانگی کۆتایی", en: "Revenue and profit for the last 6 months", ar: "الإيرادات والأرباح لآخر 6 أشهر", zh: "最近6个月的收入与利润" })}</CardDescription>
@@ -670,8 +670,8 @@ export default function ServicesReport() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium w-24">{month.month}</span>
                     <div className="flex items-center gap-4">
-                      <span className="text-red-600 text-xs">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}: ${month.cost.toFixed(0)}</span>
-                      <span className="text-green-600 text-xs">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}: ${month.revenue.toFixed(0)}</span>
+                      <span className="text-red-600 dark:text-red-300 text-xs">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}: ${month.cost.toFixed(0)}</span>
+                      <span className="text-green-600 dark:text-green-300 text-xs">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}: ${month.revenue.toFixed(0)}</span>
                       <span className={`font-bold ${month.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                         {pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}: ${month.profit.toFixed(0)}
                       </span>
@@ -699,7 +699,7 @@ export default function ServicesReport() {
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Wrench className="h-5 w-5 text-emerald-600" />
+                <Wrench className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 <CardTitle className="text-lg">{pickLang(language, { ku: "شیکاری بەپێی جۆر", en: "Breakdown by type", ar: "التحليل حسب النوع", zh: "按类型分析" })}</CardTitle>
               </div>
             </CardHeader>
@@ -729,8 +729,8 @@ export default function ServicesReport() {
                         <TableRow key={index}>
                           <TableCell className="font-medium">{type.name}</TableCell>
                           <TableCell>{type.count}</TableCell>
-                          <TableCell className="text-red-600">${type.cost.toFixed(2)}</TableCell>
-                          <TableCell className="text-green-600">${type.revenue.toFixed(2)}</TableCell>
+                          <TableCell className="text-red-600 dark:text-red-300">${type.cost.toFixed(2)}</TableCell>
+                          <TableCell className="text-green-600 dark:text-green-300">${type.revenue.toFixed(2)}</TableCell>
                           <TableCell className={`font-bold ${type.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                             ${type.profit.toFixed(2)}
                           </TableCell>
@@ -752,7 +752,7 @@ export default function ServicesReport() {
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-emerald-600" />
+                <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 <CardTitle className="text-lg">{pickLang(language, { ku: "باشترین ١٠ کڕیار", en: "Top 10 customers", ar: "أفضل 10 عملاء", zh: "前十客户" })}</CardTitle>
               </div>
               <CardDescription>{pickLang(language, { ku: "بەپێی داهات لە خزمەتگوزارییەکان", en: "By revenue from services", ar: "حسب الإيرادات من الخدمات", zh: "按服务收入" })}</CardDescription>
@@ -785,7 +785,7 @@ export default function ServicesReport() {
                         </TableCell>
                         <TableCell className="font-medium">{customer.name}</TableCell>
                         <TableCell>{customer.count}</TableCell>
-                        <TableCell className="text-green-600">${customer.revenue.toFixed(2)}</TableCell>
+                        <TableCell className="text-green-600 dark:text-green-300">${customer.revenue.toFixed(2)}</TableCell>
                         <TableCell className={`font-bold ${customer.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                           ${customer.profit.toFixed(2)}
                         </TableCell>

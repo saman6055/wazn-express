@@ -539,7 +539,7 @@ export default function FullPackageForm() {
           </Button>
           <div className="flex items-center gap-3">
             <div className={cn("p-2 rounded-lg", isEditMode ? "bg-purple-100 dark:bg-purple-950/40" : "bg-emerald-100 dark:bg-emerald-950/40")}>
-              <ShoppingBag className={cn("h-5 w-5", isEditMode ? "text-purple-600" : "text-emerald-600")} />
+              <ShoppingBag className={cn("h-5 w-5", isEditMode ? "text-purple-600 dark:text-purple-300" : "text-emerald-600 dark:text-emerald-300")} />
             </div>
             <div>
               <h1 className="text-xl font-bold leading-tight">
@@ -678,7 +678,7 @@ export default function FullPackageForm() {
                   </span>
                 )}
                 <div className={`p-1.5 rounded-lg shrink-0 ${formData.shippingType === "air_regular" ? "bg-sky-500" : "bg-gray-100 dark:bg-gray-950/40"}`}>
-                  <Plane className={`h-4 w-4 ${formData.shippingType === "air_regular" ? "text-white" : "text-gray-500"}`} />
+                  <Plane className={`h-4 w-4 ${formData.shippingType === "air_regular" ? "text-white" : "text-gray-500 dark:text-gray-400"}`} />
                 </div>
                 <div className="text-start min-w-0">
                   <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "air_regular" ? "text-sky-700 dark:text-sky-300" : "text-gray-700 dark:text-gray-300"}`}>{pickLang(language, { ku: "ئاسمانی ئاسایی", en: "Air regular", ar: "جوي عادي", zh: "普通空运" })}</p>
@@ -702,7 +702,7 @@ export default function FullPackageForm() {
                   </span>
                 )}
                 <div className={`p-1.5 rounded-lg relative shrink-0 ${formData.shippingType === "air_irregular" ? "bg-amber-500" : "bg-gray-100 dark:bg-gray-950/40"}`}>
-                  <Plane className={`h-4 w-4 ${formData.shippingType === "air_irregular" ? "text-white" : "text-gray-500"}`} />
+                  <Plane className={`h-4 w-4 ${formData.shippingType === "air_irregular" ? "text-white" : "text-gray-500 dark:text-gray-400"}`} />
                   <Zap className={`h-2.5 w-2.5 absolute -bottom-0.5 -end-0.5 ${formData.shippingType === "air_irregular" ? "text-yellow-200" : "text-amber-400"}`} />
                 </div>
                 <div className="text-start min-w-0">
@@ -727,7 +727,7 @@ export default function FullPackageForm() {
                   </span>
                 )}
                 <div className={`p-1.5 rounded-lg shrink-0 ${formData.shippingType === "sea" ? "bg-teal-500" : "bg-gray-100 dark:bg-gray-950/40"}`}>
-                  <Ship className={`h-4 w-4 ${formData.shippingType === "sea" ? "text-white" : "text-gray-500"}`} />
+                  <Ship className={`h-4 w-4 ${formData.shippingType === "sea" ? "text-white" : "text-gray-500 dark:text-gray-400"}`} />
                 </div>
                 <div className="text-start min-w-0">
                   <p className={`font-bold text-sm leading-tight truncate ${formData.shippingType === "sea" ? "text-teal-700 dark:text-teal-300" : "text-gray-700 dark:text-gray-300"}`}>{pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" })}</p>
@@ -858,7 +858,7 @@ export default function FullPackageForm() {
                       never blocks the save: the image often is not to hand at
                       entry time, and forcing it would only produce junk uploads. */}
                   {productImages.length === 0 && (
-                    <p className="text-[11px] text-amber-600 flex items-center gap-1">
+                    <p className="text-[11px] text-amber-600 dark:text-amber-300 flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
                       {pickLang(language, { ku: "وێنە دانەنراوە — دواتر زیادی بکە", en: "No image yet — you can add it later", ar: "لا توجد صورة بعد — يمكن إضافتها لاحقاً", zh: "尚无图片 — 可稍后添加" })}
                     </p>
@@ -899,7 +899,7 @@ export default function FullPackageForm() {
                           {pickLang(language, { ku: `نرخی بەراورد: ١ دۆلار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} یوانی چینی`, en: `Exchange rate: 1 USD = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} CNY`, ar: `سعر الصرف: 1 دولار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} يوان صيني`, zh: `汇率：1 美元 = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} 人民币` })}
                         </p>
                       ) : (
-                        <p className="text-xs text-red-600">{pickLang(language, { ku: "تکایە نرخی بەراورد لە سیتینگی سیستەم داخڵ بکە", en: "Please enter the exchange rate in system settings", ar: "يرجى إدخال سعر الصرف في إعدادات النظام", zh: "请在系统设置中输入汇率" })}</p>
+                        <p className="text-xs text-red-600 dark:text-red-300">{pickLang(language, { ku: "تکایە نرخی بەراورد لە سیتینگی سیستەم داخڵ بکە", en: "Please enter the exchange rate in system settings", ar: "يرجى إدخال سعر الصرف في إعدادات النظام", zh: "请在系统设置中输入汇率" })}</p>
                       )}
                     </div>
                   </div>
@@ -912,11 +912,11 @@ export default function FullPackageForm() {
                 </div>
 
                 {/* 1. Quantity (compact inline) + 2. per-unit ¥ + 3. total ¥ */}
-                <div className="bg-white px-3 py-3 space-y-3">
+                <div className="bg-white dark:bg-card px-3 py-3 space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_1fr] gap-3 items-end">
                     {/* 1. Quantity — compact stepper */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-slate-600">{pickLang(language, { ku: "عەدەد *", en: "Quantity *", ar: "الكمية *", zh: "数量 *" })}</Label>
+                      <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">{pickLang(language, { ku: "عەدەد *", en: "Quantity *", ar: "الكمية *", zh: "数量 *" })}</Label>
                       <div className="flex items-center gap-1 w-[10rem]">
                         <Button
                           type="button"
@@ -952,7 +952,7 @@ export default function FullPackageForm() {
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold text-amber-700 dark:text-amber-300">{pickLang(language, { ku: "نرخی ١ دانە بە یوانی چینی", en: "Price per unit in CNY", ar: "سعر الوحدة باليوان الصيني", zh: "单件价格（人民币）" })}</Label>
                       <div className="relative" dir="ltr">
-                        <span className="absolute start-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
+                        <span className="absolute start-3 top-1/2 -translate-y-1/2 text-orange-500 dark:text-orange-400 font-bold select-none">¥</span>
                         <Input
                           type="number"
                           min="0"
@@ -960,7 +960,7 @@ export default function FullPackageForm() {
                           value={rmbPerUnit}
                           onChange={(e) => syncFromPerUnit(e.target.value)}
                           placeholder="٠"
-                          className={cn("ps-9 h-10 text-base font-bold border-amber-200 dark:border-amber-800/60 focus:border-orange-400 bg-amber-50/40", filledCls(rmbPerUnit))}
+                          className={cn("ps-9 h-10 text-base font-bold border-amber-200 dark:border-amber-800/60 focus:border-orange-400 bg-amber-50/40 dark:bg-amber-950/40", filledCls(rmbPerUnit))}
                           dir="ltr"
                         />
                       </div>
@@ -970,7 +970,7 @@ export default function FullPackageForm() {
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold text-orange-700 dark:text-orange-300">{pickLang(language, { ku: `کۆی نرخ بە یوانی چینی (${quantity} دانە)`, en: `Total price in CNY (${quantity} units)`, ar: `إجمالي السعر باليوان الصيني (${quantity} وحدة)`, zh: `总价（人民币，${quantity} 件）` })}</Label>
                       <div className="relative" dir="ltr">
-                        <span className="absolute start-3 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">¥</span>
+                        <span className="absolute start-3 top-1/2 -translate-y-1/2 text-orange-500 dark:text-orange-400 font-bold select-none">¥</span>
                         <Input
                           type="number"
                           min="0"
@@ -978,7 +978,7 @@ export default function FullPackageForm() {
                           value={rmbTotal}
                           onChange={(e) => syncFromTotal(e.target.value)}
                           placeholder="٠"
-                          className={cn("ps-9 h-10 text-base font-bold border-orange-200 dark:border-orange-800/60 focus:border-orange-400 bg-orange-50/40", filledCls(rmbTotal))}
+                          className={cn("ps-9 h-10 text-base font-bold border-orange-200 dark:border-orange-800/60 focus:border-orange-400 bg-orange-50/40 dark:bg-orange-950/40", filledCls(rmbTotal))}
                           dir="ltr"
                         />
                       </div>
@@ -989,11 +989,11 @@ export default function FullPackageForm() {
                   {(parseFloat(rmbPerUnit) > 0 || parseFloat(rmbTotal) > 0) && (
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-amber-50 dark:bg-amber-950/40 rounded-lg p-2 text-center border border-amber-100 dark:border-amber-800/60">
-                        <p className="text-[10px] text-amber-500 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: "١ دانە یوانی چینی", en: "Per unit CNY", ar: "وحدة واحدة باليوان", zh: "单件人民币" })}</p>
+                        <p className="text-[10px] text-amber-500 dark:text-amber-400 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: "١ دانە یوانی چینی", en: "Per unit CNY", ar: "وحدة واحدة باليوان", zh: "单件人民币" })}</p>
                         <p className="font-bold text-amber-700 dark:text-amber-300 font-mono text-sm">{Number(rmbPerUnit || 0).toLocaleString("en-US")} ¥</p>
                       </div>
                       <div className="bg-orange-50 dark:bg-orange-950/40 rounded-lg p-2 text-center border border-orange-100 dark:border-orange-800/60">
-                        <p className="text-[10px] text-orange-500 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: `کۆی ${quantity} دانە`, en: `Total ${quantity} units`, ar: `إجمالي ${quantity} وحدة`, zh: `共 ${quantity} 件` })}</p>
+                        <p className="text-[10px] text-orange-500 dark:text-orange-400 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: `کۆی ${quantity} دانە`, en: `Total ${quantity} units`, ar: `إجمالي ${quantity} وحدة`, zh: `共 ${quantity} 件` })}</p>
                         <p className="font-bold text-orange-700 dark:text-orange-300 font-mono text-sm">{Number(rmbTotal || 0).toLocaleString("en-US")} ¥</p>
                       </div>
                       <div className="bg-gradient-to-b from-amber-500 to-orange-500 rounded-lg p-2 text-center shadow-sm">
@@ -1010,7 +1010,7 @@ export default function FullPackageForm() {
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-amber-700 dark:text-amber-300">{pickLang(language, { ku: "نرخی کڕین (یەک عەدەد)", en: "Purchase price (per unit)", ar: "سعر الشراء (للوحدة)", zh: "采购价（单件）" })}</Label>
                   <div className="relative" dir="ltr">
-                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-amber-600 font-bold">$</span>
+                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-amber-600 dark:text-amber-300 font-bold">$</span>
                     <Input
                       type="number"
                       step="0.0001"
@@ -1018,24 +1018,24 @@ export default function FullPackageForm() {
                       value={formData.purchasePriceUsd}
                       onChange={(e) => syncFromUsd(e.target.value)}
                       placeholder="0.00"
-                      className={cn("ps-8 text-start text-base font-bold h-10 border-amber-300 dark:border-amber-800/60 bg-white", filledCls(formData.purchasePriceUsd))}
+                      className={cn("ps-8 text-start text-base font-bold h-10 border-amber-300 dark:border-amber-800/60 bg-white dark:bg-card", filledCls(formData.purchasePriceUsd))}
                       dir="ltr"
                     />
                   </div>
                   {rmbPerUnit && rmbRate > 0 ? (
                     <div className="flex items-center justify-between bg-orange-50 dark:bg-orange-950/40 rounded-lg px-3 py-1 border border-orange-200 dark:border-orange-800/60">
-                      <span className="text-[11px] text-orange-600">{pickLang(language, { ku: "١ دانە بە یوانی چینی", en: "Per unit in CNY", ar: "وحدة واحدة باليوان الصيني", zh: "单件人民币" })}</span>
+                      <span className="text-[11px] text-orange-600 dark:text-orange-300">{pickLang(language, { ku: "١ دانە بە یوانی چینی", en: "Per unit in CNY", ar: "وحدة واحدة باليوان الصيني", zh: "单件人民币" })}</span>
                       <span className="text-sm font-bold text-orange-700 dark:text-orange-300 font-mono">{Number(rmbPerUnit).toLocaleString("en-US")} ¥</span>
                     </div>
                   ) : (
-                    <p className="text-[11px] text-amber-600">{pickLang(language, { ku: "نرخی کاڵا لە چین", en: "Product price in China", ar: "سعر المنتج في الصين", zh: "中国商品价格" })}</p>
+                    <p className="text-[11px] text-amber-600 dark:text-amber-300">{pickLang(language, { ku: "نرخی کاڵا لە چین", en: "Product price in China", ar: "سعر المنتج في الصين", zh: "中国商品价格" })}</p>
                   )}
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">{pickLang(language, { ku: "نرخی فرۆشتن (یەک عەدەد)", en: "Selling price (per unit)", ar: "سعر البيع (للوحدة)", zh: "销售价（单件）" })}</Label>
                   <div className="relative" dir="ltr">
-                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-emerald-600 font-bold">$</span>
+                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-emerald-600 dark:text-emerald-300 font-bold">$</span>
                     <Input
                       type="number"
                       step="0.01"
@@ -1043,11 +1043,11 @@ export default function FullPackageForm() {
                       value={formData.sellingPriceUsd}
                       onChange={(e) => setFormData(prev => ({ ...prev, sellingPriceUsd: e.target.value }))}
                       placeholder="0.00"
-                      className={cn("ps-8 text-start text-base font-bold h-10 border-emerald-300 dark:border-emerald-800/60 bg-white", filledCls(formData.sellingPriceUsd))}
+                      className={cn("ps-8 text-start text-base font-bold h-10 border-emerald-300 dark:border-emerald-800/60 bg-white dark:bg-card", filledCls(formData.sellingPriceUsd))}
                       dir="ltr"
                     />
                   </div>
-                  <p className="text-[11px] text-emerald-600">{pickLang(language, { ku: "نرخی فرۆشتن بە کڕیار — بە دۆلار", en: "Selling price to the customer — in USD", ar: "سعر البيع للعميل — بالدولار", zh: "对客户的销售价 — 美元" })}</p>
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-300">{pickLang(language, { ku: "نرخی فرۆشتن بە کڕیار — بە دۆلار", en: "Selling price to the customer — in USD", ar: "سعر البيع للعميل — بالدولار", zh: "对客户的销售价 — 美元" })}</p>
                 </div>
               </div>
 
@@ -1056,26 +1056,26 @@ export default function FullPackageForm() {
                 <div className="bg-emerald-50 dark:bg-emerald-950/40 rounded-xl p-3 border border-emerald-200 dark:border-emerald-800/60">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-emerald-600" />
+                      <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
                       <span className="font-bold text-sm text-emerald-800 dark:text-emerald-200">{pickLang(language, { ku: "پێشبینی قازانج", en: "Profit forecast", ar: "توقّع الربح", zh: "利润预测" })}</span>
                     </div>
-                    <span className="bg-white px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs">{pickLang(language, { ku: `${formData.quantity || 1} عەدەد`, en: `${formData.quantity || 1} units`, ar: `${formData.quantity || 1} وحدة`, zh: `${formData.quantity || 1} 件` })}</span>
+                    <span className="bg-white dark:bg-card px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs">{pickLang(language, { ku: `${formData.quantity || 1} عەدەد`, en: `${formData.quantity || 1} units`, ar: `${formData.quantity || 1} وحدة`, zh: `${formData.quantity || 1} 件` })}</span>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <div className="bg-white rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-slate-500 mb-0.5">{pickLang(language, { ku: "نرخی کڕین (١ عەدەد)", en: "Purchase price (1 unit)", ar: "سعر الشراء (وحدة واحدة)", zh: "采购价（1 件）" })}</p>
-                      <p className="text-base font-bold text-amber-600">${purchasePrice.toFixed(2)}</p>
+                    <div className="bg-white dark:bg-card rounded-lg p-2 text-center shadow-sm">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">{pickLang(language, { ku: "نرخی کڕین (١ عەدەد)", en: "Purchase price (1 unit)", ar: "سعر الشراء (وحدة واحدة)", zh: "采购价（1 件）" })}</p>
+                      <p className="text-base font-bold text-amber-600 dark:text-amber-300">${purchasePrice.toFixed(2)}</p>
                     </div>
                     <div className="bg-amber-100 dark:bg-amber-950/40 rounded-lg p-2 text-center shadow-sm">
                       <p className="text-[10px] text-amber-700 dark:text-amber-300 mb-0.5">{pickLang(language, { ku: `کۆی کڕین (${formData.quantity || 1} عەدەد)`, en: `Total purchase (${formData.quantity || 1} units)`, ar: `إجمالي الشراء (${formData.quantity || 1} وحدة)`, zh: `采购总额（${formData.quantity || 1} 件）` })}</p>
                       <p className="text-base font-bold text-amber-700 dark:text-amber-300">${(purchasePrice * quantity).toFixed(2)}</p>
                     </div>
-                    <div className="bg-white rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-slate-500 mb-0.5">{pickLang(language, { ku: "نرخی فرۆشتن (١ عەدەد)", en: "Selling price (1 unit)", ar: "سعر البيع (وحدة واحدة)", zh: "销售价（1 件）" })}</p>
-                      <p className="text-base font-bold text-emerald-600">${sellingPrice.toFixed(2)}</p>
+                    <div className="bg-white dark:bg-card rounded-lg p-2 text-center shadow-sm">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">{pickLang(language, { ku: "نرخی فرۆشتن (١ عەدەد)", en: "Selling price (1 unit)", ar: "سعر البيع (وحدة واحدة)", zh: "销售价（1 件）" })}</p>
+                      <p className="text-base font-bold text-emerald-600 dark:text-emerald-300">${sellingPrice.toFixed(2)}</p>
                     </div>
-                    <div className="bg-emerald-200 rounded-lg p-2 text-center shadow-sm">
+                    <div className="bg-emerald-200 dark:bg-emerald-900/50 rounded-lg p-2 text-center shadow-sm">
                       <p className="text-[10px] text-emerald-700 dark:text-emerald-300 mb-0.5">{pickLang(language, { ku: `کۆی فرۆشتن (${formData.quantity || 1} عەدەد)`, en: `Total selling (${formData.quantity || 1} units)`, ar: `إجمالي البيع (${formData.quantity || 1} وحدة)`, zh: `销售总额（${formData.quantity || 1} 件）` })}</p>
                       <p className="text-base font-bold text-emerald-700 dark:text-emerald-300">${(sellingPrice * quantity).toFixed(2)}</p>
                     </div>
@@ -1084,14 +1084,14 @@ export default function FullPackageForm() {
                   <div className="mt-2 pt-2 border-t border-emerald-300 dark:border-emerald-800/60 flex items-center justify-between">
                     <div>
                       <p className="text-xs text-emerald-700 dark:text-emerald-300">{pickLang(language, { ku: "قازانجی خاو (بەبێ گواستنەوە)", en: "Gross profit (excluding shipping)", ar: "الربح الإجمالي (بدون الشحن)", zh: "毛利润（不含运费）" })}</p>
-                      <p className="text-[10px] text-slate-500">({sellingPrice.toFixed(2)} - {purchasePrice.toFixed(2)}) × {formData.quantity || 1}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">({sellingPrice.toFixed(2)} - {purchasePrice.toFixed(2)}) × {formData.quantity || 1}</p>
                     </div>
-                    <div className={`text-xl font-bold ${grossProfit * quantity >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    <div className={`text-xl font-bold ${grossProfit * quantity >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                       ${(grossProfit * quantity).toFixed(2)}
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-center text-emerald-600 mt-2 bg-white/50 rounded-lg py-1">
+                  <p className="text-[11px] text-center text-emerald-600 dark:text-emerald-300 mt-2 bg-white/50 rounded-lg py-1">
                     💡 {pickLang(language, { ku: "قازانجی خاوێن = قازانجی خاو - کۆستی گواستنەوە (دواتر کاتی باچ حساب دەکرێت)", en: "Net profit = gross profit - shipping cost (calculated later at batch time)", ar: "صافي الربح = الربح الإجمالي - تكلفة الشحن (تُحتسب لاحقاً عند تجهيز الدفعة)", zh: "净利润 = 毛利润 - 运费（在批次时再计算）" })}
                   </p>
                 </div>
@@ -1110,7 +1110,7 @@ export default function FullPackageForm() {
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-teal-700 dark:text-teal-300">{pickLang(language, { ku: "بڕی پارەی پێشەکی (USD)", en: "Advance amount (USD)", ar: "مبلغ الدفعة المقدمة (USD)", zh: "预付金额（USD）" })}</Label>
                   <div className="relative" dir="ltr">
-                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-teal-500 font-bold select-none">$</span>
+                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-teal-500 dark:text-teal-400 font-bold select-none">$</span>
                     <Input
                       type="number"
                       min="0"
@@ -1118,11 +1118,11 @@ export default function FullPackageForm() {
                       value={formData.advancePaidUsd}
                       onChange={(e) => setFormData({ ...formData, advancePaidUsd: e.target.value })}
                       placeholder="0.00"
-                      className={cn("ps-8 h-10 text-base font-bold border-teal-200 dark:border-teal-800/60 focus:border-teal-400 bg-teal-50/40", filledCls(formData.advancePaidUsd))}
+                      className={cn("ps-8 h-10 text-base font-bold border-teal-200 dark:border-teal-800/60 focus:border-teal-400 bg-teal-50/40 dark:bg-teal-950/40", filledCls(formData.advancePaidUsd))}
                       dir="ltr"
                     />
                   </div>
-                  <p className="text-[11px] text-teal-600">{pickLang(language, { ku: "بۆ بێ پارەدان دابمێنە بە 0", en: "Leave at 0 for no payment", ar: "اتركه 0 لعدم وجود دفعة", zh: "无付款则保持为 0" })}</p>
+                  <p className="text-[11px] text-teal-600 dark:text-teal-300">{pickLang(language, { ku: "بۆ بێ پارەدان دابمێنە بە 0", en: "Leave at 0 for no payment", ar: "اتركه 0 لعدم وجود دفعة", zh: "无付款则保持为 0" })}</p>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-teal-700 dark:text-teal-300">{pickLang(language, { ku: "شێوازی پارەدان", en: "Payment method", ar: "طريقة الدفع", zh: "付款方式" })}</Label>
@@ -1130,7 +1130,7 @@ export default function FullPackageForm() {
                     value={formData.advancePaymentMethod}
                     onValueChange={(v) => setFormData({ ...formData, advancePaymentMethod: v as any })}
                   >
-                    <SelectTrigger className={cn("h-10 border-teal-200 dark:border-teal-800/60 bg-teal-50/40", filledCls(formData.advancePaymentMethod))}>
+                    <SelectTrigger className={cn("h-10 border-teal-200 dark:border-teal-800/60 bg-teal-50/40 dark:bg-teal-950/40", filledCls(formData.advancePaymentMethod))}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1152,7 +1152,7 @@ export default function FullPackageForm() {
                   {formData.sellingPriceUsd && parseFloat(formData.sellingPriceUsd) > 0 ? (
                     <>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">{pickLang(language, { ku: "نرخی فرۆشتن × ژمارە", en: "Selling price × quantity", ar: "سعر البيع × الكمية", zh: "销售价 × 数量" })}</span>
+                        <span className="text-slate-600 dark:text-slate-300">{pickLang(language, { ku: "نرخی فرۆشتن × ژمارە", en: "Selling price × quantity", ar: "سعر البيع × الكمية", zh: "销售价 × 数量" })}</span>
                         <span className="font-mono font-bold">
                           ${(parseFloat(formData.sellingPriceUsd) * quantity).toFixed(2)}
                         </span>
@@ -1163,7 +1163,7 @@ export default function FullPackageForm() {
                           -${parseFloat(formData.advancePaidUsd || "0").toFixed(2)}
                         </span>
                       </div>
-                      <div className="h-px bg-teal-200" />
+                      <div className="h-px bg-teal-200 dark:bg-teal-900/50" />
                       <div className="flex items-center justify-between text-base">
                         <span className="font-semibold text-slate-800 dark:text-slate-200">{pickLang(language, { ku: "ماوە بۆ پارەدان لە کاتی گەیشتن", en: "Remaining due on arrival", ar: "المتبقي للدفع عند الوصول", zh: "到货时应付余额" })}</span>
                         <span className="font-mono font-bold text-xl text-emerald-700 dark:text-emerald-300">
@@ -1191,11 +1191,11 @@ export default function FullPackageForm() {
                 {(formData.shippingType === "air_regular" || formData.shippingType === "air_irregular") && (
                   <div className={`rounded-xl border overflow-hidden ${formData.shippingType === "air_irregular" ? "border-amber-200 dark:border-amber-800/60" : "border-sky-200 dark:border-sky-800/60"}`}>
                     <div className={`px-4 py-2 flex items-center gap-2 border-b ${formData.shippingType === "air_irregular" ? "bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-800/60" : "bg-sky-50 dark:bg-sky-950/40 border-sky-100 dark:border-sky-800/60"}`}>
-                      <Scale className={`h-4 w-4 ${formData.shippingType === "air_irregular" ? "text-amber-600" : "text-sky-600"}`} />
+                      <Scale className={`h-4 w-4 ${formData.shippingType === "air_irregular" ? "text-amber-600 dark:text-amber-300" : "text-sky-600 dark:text-sky-300"}`} />
                       <span className="text-sm font-semibold">{pickLang(language, { ku: "کێش و قەبارە", en: "Weight & dimensions", ar: "الوزن والأبعاد", zh: "重量与尺寸" })}</span>
                       <span className="text-xs text-muted-foreground ms-auto">max({pickLang(language, { ku: "ڕاستەقینە، ئەندازەیی", en: "actual, volumetric", ar: "الفعلي، الحجمي", zh: "实重，体积重" })})</span>
                     </div>
-                    <div className="p-3 space-y-3 bg-white">
+                    <div className="p-3 space-y-3 bg-white dark:bg-card">
                       {/* Weight */}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
@@ -1251,11 +1251,11 @@ export default function FullPackageForm() {
                 {formData.shippingType === "sea" && (
                   <div className="rounded-xl border border-teal-200 dark:border-teal-800/60 overflow-hidden">
                     <div className="px-4 py-2 flex items-center gap-2 bg-teal-50 dark:bg-teal-950/40 border-b border-teal-100 dark:border-teal-800/60">
-                      <Calculator className="h-4 w-4 text-teal-600" />
+                      <Calculator className="h-4 w-4 text-teal-600 dark:text-teal-300" />
                       <span className="text-sm font-semibold text-teal-800 dark:text-teal-200">{pickLang(language, { ku: "قەبارەی CBM", en: "CBM volume", ar: "حجم CBM", zh: "CBM 体积" })}</span>
                       <span className="text-xs text-muted-foreground ms-auto">١ CBM = ١٠٠cm × ١٠٠cm × ١٠٠cm</span>
                     </div>
-                    <div className="p-3 space-y-3 bg-white">
+                    <div className="p-3 space-y-3 bg-white dark:bg-card">
                       <div className="grid grid-cols-2 gap-3">
                         {/* Direct CBM */}
                         <div className="space-y-1.5">
@@ -1271,10 +1271,10 @@ export default function FullPackageForm() {
                         {/* Auto CBM from dims */}
                         {autoCbm > 0 && (
                           <div className="bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 rounded-xl p-3 flex flex-col justify-center">
-                            <p className="text-[11px] text-teal-600">{pickLang(language, { ku: "CBM خۆکار", en: "Auto CBM", ar: "CBM تلقائي", zh: "自动 CBM" })}</p>
+                            <p className="text-[11px] text-teal-600 dark:text-teal-300">{pickLang(language, { ku: "CBM خۆکار", en: "Auto CBM", ar: "CBM تلقائي", zh: "自动 CBM" })}</p>
                             <p className="text-xl font-bold font-mono text-teal-700 dark:text-teal-300">{autoCbm.toFixed(4)} m³</p>
                             <button type="button" onClick={() => setFormData(p => ({ ...p, volumeCbm: autoCbm.toFixed(4) }))}
-                              className="text-[11px] text-teal-600 underline text-start mt-1 hover:text-teal-800">
+                              className="text-[11px] text-teal-600 dark:text-teal-300 underline text-start mt-1 hover:text-teal-800">
                               {pickLang(language, { ku: "بەکاربێنە", en: "Use this", ar: "استخدم هذا", zh: "使用此值" })} ←
                             </button>
                           </div>

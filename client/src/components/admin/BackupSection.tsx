@@ -101,21 +101,21 @@ function getBackupTypeBadge(type: string, t: (key: string) => string) {
   switch (type) {
     case "database_only":
       return (
-        <Badge variant="outline" className="text-blue-600 border-blue-200 dark:border-blue-800/60">
+        <Badge variant="outline" className="text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-800/60">
           <Database className="h-3 w-3 me-1" />
           {t("dataManagement.databaseOnly")}
         </Badge>
       );
     case "files_only":
       return (
-        <Badge variant="outline" className="text-purple-600 border-purple-200 dark:border-purple-800/60">
+        <Badge variant="outline" className="text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
           <FolderArchive className="h-3 w-3 me-1" />
           {t("dataManagement.filesOnly")}
         </Badge>
       );
     case "full":
       return (
-        <Badge variant="outline" className="text-green-600 border-green-200 dark:border-green-800/60">
+        <Badge variant="outline" className="text-green-600 dark:text-green-300 border-green-200 dark:border-green-800/60">
           <Cloud className="h-3 w-3 me-1" />
           {t("dataManagement.fullBackup")}
         </Badge>
@@ -156,7 +156,7 @@ export function BackupSection({
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-50 dark:bg-green-950/40 rounded-lg">
-              <Save className="h-5 w-5 text-green-600" />
+              <Save className="h-5 w-5 text-green-600 dark:text-green-300" />
             </div>
             <div>
               <CardTitle>{t("dataManagement.createBackup")}</CardTitle>
@@ -173,7 +173,7 @@ export function BackupSection({
               onClick={() => setBackupType("database_only")}
             >
               <CardContent className="p-4 text-center">
-                <Database className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                <Database className="h-8 w-8 mx-auto mb-2 text-blue-600 dark:text-blue-300" />
                 <div className="font-medium">{t("dataManagement.databaseOnly")}</div>
                 <div className="text-xs text-muted-foreground mt-1">{t("dataManagement.databaseOnlyDesc")}</div>
               </CardContent>
@@ -185,7 +185,7 @@ export function BackupSection({
               onClick={() => setBackupType("files_only")}
             >
               <CardContent className="p-4 text-center">
-                <FolderArchive className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+                <FolderArchive className="h-8 w-8 mx-auto mb-2 text-purple-600 dark:text-purple-300" />
                 <div className="font-medium">{t("dataManagement.filesOnly")}</div>
                 <div className="text-xs text-muted-foreground mt-1">{t("dataManagement.filesOnlyDesc")}</div>
               </CardContent>
@@ -197,10 +197,10 @@ export function BackupSection({
               onClick={() => setBackupType("full")}
             >
               <CardContent className="p-4 text-center">
-                <FolderArchive className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <FolderArchive className="h-8 w-8 mx-auto mb-2 text-green-600 dark:text-green-300" />
                 <div className="font-medium">{t("dataManagement.fullBackup")}</div>
                 <div className="text-xs text-muted-foreground mt-1">{t("dataManagement.fullBackupDesc")}</div>
-                <Badge variant="outline" className="mt-2 text-green-600 border-green-300 dark:border-green-800/60">
+                <Badge variant="outline" className="mt-2 text-green-600 dark:text-green-300 border-green-300 dark:border-green-800/60">
                   <Download className="h-3 w-3 me-1" />
                   ZIP
                 </Badge>
@@ -230,7 +230,7 @@ export function BackupSection({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
-                <FolderArchive className="h-5 w-5 text-blue-600" />
+                <FolderArchive className="h-5 w-5 text-blue-600 dark:text-blue-300" />
               </div>
               <div>
                 <CardTitle>{t("dataManagement.backupList")}</CardTitle>
@@ -265,11 +265,11 @@ export function BackupSection({
                           }`}
                         >
                           {backup.status === "completed" ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-300" />
                           ) : backup.status === "in_progress" ? (
-                            <RefreshCw className="h-5 w-5 text-blue-600 animate-spin" />
+                            <RefreshCw className="h-5 w-5 text-blue-600 dark:text-blue-300 animate-spin" />
                           ) : (
-                            <AlertCircle className="h-5 w-5 text-red-600" />
+                            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-300" />
                           )}
                         </div>
                         <div>
@@ -278,7 +278,7 @@ export function BackupSection({
                             {getBackupStatusBadge(backup.status, t)}
                             {getBackupTypeBadge(backup.backupContent, t)}
                             {backup.backupType === "scheduled" && (
-                              <Badge variant="outline" className="text-amber-600 border-amber-200 dark:border-amber-800/60">
+                              <Badge variant="outline" className="text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
                                 <Clock className="h-3 w-3 me-1" />
                                 {t("dataManagement.scheduled")}
                               </Badge>
@@ -313,7 +313,7 @@ export function BackupSection({
                             <Button
                               variant="outline"
                               size="sm"
-                              className="text-amber-600 border-amber-200 dark:border-amber-800/60 hover:bg-amber-50"
+                              className="text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800/60 hover:bg-amber-50"
                               onClick={() => {
                                 setSelectedBackupId(backup.id);
                                 setShowRestoreDialog(true);
@@ -326,7 +326,7 @@ export function BackupSection({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-600 hover:bg-red-50"
+                            className="text-red-600 dark:text-red-300 hover:bg-red-50"
                             onClick={() => handleDeleteBackup(backup.id)}
                           >
                             <Trash2 className="h-3 w-3" />
@@ -354,7 +354,7 @@ export function BackupSection({
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-50 dark:bg-amber-950/40 rounded-lg">
-              <Clock className="h-5 w-5 text-amber-600" />
+              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-300" />
             </div>
             <div>
               <CardTitle>{t("dataManagement.autoBackup")}</CardTitle>
@@ -402,7 +402,7 @@ export function BackupSection({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-600">
+            <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-300">
               <RotateCcw className="h-5 w-5" />
               {t("dataManagement.restoreBackup")}
             </DialogTitle>
@@ -419,7 +419,7 @@ export function BackupSection({
             <div className="space-y-2">
               <Label>
                 {t("dataManagement.typeToConfirm")}{" "}
-                <span className="font-mono font-bold text-amber-600">RESTORE</span>
+                <span className="font-mono font-bold text-amber-600 dark:text-amber-300">RESTORE</span>
               </Label>
               <Input
                 value={restoreConfirmation}

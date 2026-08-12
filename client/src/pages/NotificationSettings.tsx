@@ -270,7 +270,7 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-green-600" />
+            <MessageSquare className="h-5 w-5 text-green-600 dark:text-green-300" />
             WhatsApp Business API Configuration
           </CardTitle>
           <CardDescription>
@@ -351,21 +351,21 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
                       {/* Channel toggles */}
                       <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-blue-600" />
+                          <Mail className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                           <Switch
                             checked={setting?.emailEnabled ?? false}
                             onCheckedChange={() => toggleChannel(event.id, "emailEnabled")}
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-purple-600" />
+                          <Phone className="h-4 w-4 text-purple-600 dark:text-purple-300" />
                           <Switch
                             checked={setting?.smsEnabled ?? false}
                             onCheckedChange={() => toggleChannel(event.id, "smsEnabled")}
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4 text-green-600" />
+                          <MessageSquare className="h-4 w-4 text-green-600 dark:text-green-300" />
                           <Switch
                             checked={setting?.whatsappEnabled ?? false}
                             onCheckedChange={() => toggleChannel(event.id, "whatsappEnabled")}
@@ -457,21 +457,21 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-blue-600" />
+                          <Mail className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                           <Switch
                             checked={setting?.emailEnabled ?? false}
                             onCheckedChange={() => toggleChannel(event.id, "emailEnabled")}
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-purple-600" />
+                          <Phone className="h-4 w-4 text-purple-600 dark:text-purple-300" />
                           <Switch
                             checked={setting?.smsEnabled ?? false}
                             onCheckedChange={() => toggleChannel(event.id, "smsEnabled")}
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4 text-green-600" />
+                          <MessageSquare className="h-4 w-4 text-green-600 dark:text-green-300" />
                           <Switch
                             checked={setting?.whatsappEnabled ?? false}
                             onCheckedChange={() => toggleChannel(event.id, "whatsappEnabled")}
@@ -536,15 +536,15 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
         <CardContent className="py-4">
           <div className="flex items-center justify-center gap-8 text-sm">
             <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-blue-600" />
+              <Mail className="h-4 w-4 text-blue-600 dark:text-blue-300" />
               <span>Email</span>
             </div>
             <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-purple-600" />
+              <Phone className="h-4 w-4 text-purple-600 dark:text-purple-300" />
               <span>SMS</span>
             </div>
             <div className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-green-600" />
+              <MessageSquare className="h-4 w-4 text-green-600 dark:text-green-300" />
               <span>WhatsApp</span>
             </div>
           </div>

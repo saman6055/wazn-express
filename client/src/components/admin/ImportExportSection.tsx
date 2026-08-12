@@ -48,7 +48,7 @@ export function ImportExportSection({
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
-              <Download className="h-5 w-5 text-blue-600" />
+              <Download className="h-5 w-5 text-blue-600 dark:text-blue-300" />
             </div>
             <div>
               <CardTitle>{t("dataManagement.exportData")}</CardTitle>
@@ -102,7 +102,7 @@ export function ImportExportSection({
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-50 dark:bg-green-950/40 rounded-lg">
-              <Upload className="h-5 w-5 text-green-600" />
+              <Upload className="h-5 w-5 text-green-600 dark:text-green-300" />
             </div>
             <div>
               <CardTitle>{t("dataManagement.importData")}</CardTitle>
@@ -158,7 +158,7 @@ export function ImportExportSection({
                   {Object.entries(importPreview).map(([category, records]) => (
                     <div
                       key={category}
-                      className="flex items-center justify-between p-2 bg-white rounded border"
+                      className="flex items-center justify-between p-2 bg-white dark:bg-card rounded border"
                     >
                       <span className="text-sm font-medium">{t(`dataManagement.${category}`)}</span>
                       <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
@@ -217,7 +217,7 @@ export function ImportExportSection({
                     size="sm"
                     onClick={() => handleDownloadTemplate(category.id)}
                   >
-                    <FileSpreadsheet className="h-3.5 w-3.5 text-green-600" />
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-green-600 dark:text-green-300" />
                   </Button>
                   <input
                     type="file"

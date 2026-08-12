@@ -167,7 +167,7 @@ export default function SelfOrders() {
                   return (
                     <div key={tp} className="flex items-center justify-between rounded-lg border p-2.5">
                       <div className="flex items-center gap-2">
-                        <Icon className={`h-4 w-4 ${tp === "sea" ? "text-cyan-500" : tp === "air_irregular" ? "text-purple-500" : "text-blue-500"}`} />
+                        <Icon className={`h-4 w-4 ${tp === "sea" ? "text-cyan-500 dark:text-cyan-400" : tp === "air_irregular" ? "text-purple-500 dark:text-purple-400" : "text-blue-500 dark:text-blue-400"}`} />
                         <span className="text-sm">{pickLang(language, SHIP_LABEL[tp])}</span>
                       </div>
                       <div className="flex items-center gap-3 text-sm">

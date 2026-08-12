@@ -254,13 +254,13 @@ const [, setLocation] = useLocation();
           <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50 dark:bg-green-950/40">
             <CardHeader className="text-center">
               <div className="mx-auto h-16 w-16 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center mb-4">
-                <Check className="h-8 w-8 text-green-600" />
+                <Check className="h-8 w-8 text-green-600 dark:text-green-300" />
               </div>
               <CardTitle className="text-green-800 dark:text-green-200">Package Registered Successfully</CardTitle>
               <CardDescription>The package has been added to the system</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-white p-4 rounded-lg border text-center">
+              <div className="bg-white dark:bg-card p-4 rounded-lg border text-center">
                 <p className="text-sm text-muted-foreground mb-1">Package Code</p>
                 <p className="text-2xl font-mono font-bold">{createdPackage.packageCode}</p>
               </div>
@@ -289,7 +289,7 @@ const [, setLocation] = useLocation();
                 {estimatedPrice && (
                   <div className="col-span-2">
                     <p className="text-muted-foreground">Estimated Cost</p>
-                    <p className="font-medium text-green-600">${estimatedPrice.price}</p>
+                    <p className="font-medium text-green-600 dark:text-green-300">${estimatedPrice.price}</p>
                   </div>
                 )}
               </div>
@@ -367,7 +367,7 @@ const [, setLocation] = useLocation();
                   
                   {isUnclaimed && (
                     <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800/60">
-                      <AlertTriangle className="h-5 w-5 text-amber-600" />
+                      <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                       <div>
                         <p className="font-medium text-amber-800 dark:text-amber-200">Unclaimed Package</p>
                         <p className="text-sm text-amber-600 dark:text-amber-400">This package will be registered without an owner. You can assign a customer later.</p>
@@ -711,16 +711,16 @@ const [, setLocation] = useLocation();
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               {batch.shippingType === 'sea' ? (
-                                <Ship className="h-4 w-4 text-cyan-600" />
+                                <Ship className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
                               ) : (
-                                <Plane className="h-4 w-4 text-blue-600" />
+                                <Plane className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                               )}
                               <span className="font-mono font-medium">{batch.batchCode}</span>
                             </div>
                             <Badge variant="outline">{batch.status}</Badge>
                           </div>
                           <div className="flex items-center gap-4 text-sm">
-                            <div className="flex items-center gap-1 text-green-600">
+                            <div className="flex items-center gap-1 text-green-600 dark:text-green-300">
                               <DollarSign className="h-4 w-4" />
                               {batch.shippingType === 'sea' && batch.pricePerCbm ? (
                                 <span>${batch.pricePerCbm}/CBM</span>
@@ -803,9 +803,9 @@ const [, setLocation] = useLocation();
 
                 {estimatedPrice && (
                   <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/60">
-                    <p className="text-xs text-green-600 mb-1">Estimated Cost</p>
+                    <p className="text-xs text-green-600 dark:text-green-300 mb-1">Estimated Cost</p>
                     <p className="text-2xl font-bold text-green-700 dark:text-green-300">${estimatedPrice.price}</p>
-                    <p className="text-xs text-green-600 mt-1">
+                    <p className="text-xs text-green-600 dark:text-green-300 mt-1">
                       ${estimatedPrice.rate}/{estimatedPrice.unit}
                     </p>
                   </div>

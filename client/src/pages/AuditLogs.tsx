@@ -353,7 +353,7 @@ export default function AuditLogs() {
                 <span className="font-medium text-muted-foreground min-w-[120px]">
                   {(fieldLabels[key] ? pickLang(language, fieldLabels[key]) : null) || key}:
                 </span>
-                <span className="text-green-600">{formatFieldValue(value)}</span>
+                <span className="text-green-600 dark:text-green-300">{formatFieldValue(value)}</span>
               </div>
             ))}
           </div>
@@ -372,11 +372,11 @@ export default function AuditLogs() {
               <div className="font-medium text-sm mb-1">{(fieldLabels[field] ? pickLang(language, fieldLabels[field]) : null) || field}</div>
               <div className="flex items-center gap-2 text-sm">
                 <div className="flex-1 p-2 bg-red-50 dark:bg-red-950/40 rounded border border-red-200 dark:border-red-800/60">
-                  <span className="text-red-600 line-through">{formatFieldValue(oldVal)}</span>
+                  <span className="text-red-600 dark:text-red-300 line-through">{formatFieldValue(oldVal)}</span>
                 </div>
                 <ArrowUpRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <div className="flex-1 p-2 bg-green-50 dark:bg-green-950/40 rounded border border-green-200 dark:border-green-800/60">
-                  <span className="text-green-600">{formatFieldValue(newVal)}</span>
+                  <span className="text-green-600 dark:text-green-300">{formatFieldValue(newVal)}</span>
                 </div>
               </div>
             </div>
@@ -409,7 +409,7 @@ export default function AuditLogs() {
           <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200 dark:border-slate-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-200 rounded-lg">
+                <div className="p-2 bg-slate-200 dark:bg-slate-800/50 rounded-lg">
                   <History className="h-5 w-5 text-slate-700 dark:text-slate-300" />
                 </div>
                 <div>
@@ -423,7 +423,7 @@ export default function AuditLogs() {
           <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 dark:border-green-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-200 rounded-lg">
+                <div className="p-2 bg-green-200 dark:bg-green-900/50 rounded-lg">
                   <Plus className="h-5 w-5 text-green-700 dark:text-green-300" />
                 </div>
                 <div>
@@ -433,7 +433,7 @@ export default function AuditLogs() {
                       .reduce((sum, [, v]) => sum + (v as number), 0)
                       .toLocaleString()}
                   </div>
-                  <div className="text-sm text-green-600">{pickLang(language, { ku: "دروستکردن", en: "Created", ar: "إنشاء", zh: "创建" })}</div>
+                  <div className="text-sm text-green-600 dark:text-green-300">{pickLang(language, { ku: "دروستکردن", en: "Created", ar: "إنشاء", zh: "创建" })}</div>
                 </div>
               </div>
             </CardContent>
@@ -442,7 +442,7 @@ export default function AuditLogs() {
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 dark:border-blue-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-200 rounded-lg">
+                <div className="p-2 bg-blue-200 dark:bg-blue-900/50 rounded-lg">
                   <Edit className="h-5 w-5 text-blue-700 dark:text-blue-300" />
                 </div>
                 <div>
@@ -452,7 +452,7 @@ export default function AuditLogs() {
                       .reduce((sum, [, v]) => sum + (v as number), 0)
                       .toLocaleString()}
                   </div>
-                  <div className="text-sm text-blue-600">{pickLang(language, { ku: "نوێکردنەوە", en: "Updated", ar: "تحديث", zh: "更新" })}</div>
+                  <div className="text-sm text-blue-600 dark:text-blue-300">{pickLang(language, { ku: "نوێکردنەوە", en: "Updated", ar: "تحديث", zh: "更新" })}</div>
                 </div>
               </div>
             </CardContent>
@@ -461,7 +461,7 @@ export default function AuditLogs() {
           <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 dark:border-red-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-200 rounded-lg">
+                <div className="p-2 bg-red-200 dark:bg-red-900/50 rounded-lg">
                   <Trash2 className="h-5 w-5 text-red-700 dark:text-red-300" />
                 </div>
                 <div>
@@ -471,7 +471,7 @@ export default function AuditLogs() {
                       .reduce((sum, [, v]) => sum + (v as number), 0)
                       .toLocaleString()}
                   </div>
-                  <div className="text-sm text-red-600">{pickLang(language, { ku: "سڕینەوە", en: "Deleted", ar: "حذف", zh: "删除" })}</div>
+                  <div className="text-sm text-red-600 dark:text-red-300">{pickLang(language, { ku: "سڕینەوە", en: "Deleted", ar: "حذف", zh: "删除" })}</div>
                 </div>
               </div>
             </CardContent>
@@ -480,14 +480,14 @@ export default function AuditLogs() {
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 dark:border-purple-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-200 rounded-lg">
+                <div className="p-2 bg-purple-200 dark:bg-purple-900/50 rounded-lg">
                   <Layers className="h-5 w-5 text-purple-700 dark:text-purple-300" />
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
                     {Object.keys(stats?.byCategory || {}).length}
                   </div>
-                  <div className="text-sm text-purple-600">{pickLang(language, { ku: "پۆلەکان", en: "Categories", ar: "الفئات", zh: "类别" })}</div>
+                  <div className="text-sm text-purple-600 dark:text-purple-300">{pickLang(language, { ku: "پۆلەکان", en: "Categories", ar: "الفئات", zh: "类别" })}</div>
                 </div>
               </div>
             </CardContent>
@@ -813,10 +813,10 @@ export default function AuditLogs() {
                 {/* Entity Link */}
                 {getEntityLink(selectedLog) && (
                   <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-800/60">
-                    <ArrowUpRight className="h-4 w-4 text-blue-600" />
+                    <ArrowUpRight className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                     <span className="text-sm text-blue-700 dark:text-blue-300">{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编码" })}: {selectedLog.entityCode || selectedLog.entityId}</span>
                     <Link href={getEntityLink(selectedLog)!}>
-                      <Button variant="link" size="sm" className="text-blue-600 p-0 h-auto">
+                      <Button variant="link" size="sm" className="text-blue-600 dark:text-blue-300 p-0 h-auto">
                         {pickLang(language, { ku: "بینینی وردەکاری", en: "View details", ar: "عرض التفاصيل", zh: "查看详情" })}
                       </Button>
                     </Link>

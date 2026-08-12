@@ -102,7 +102,7 @@ export function QueryErrorFallback({
               )}
             >
               {copied ? (
-                <Check size={16} className="text-green-600" />
+                <Check size={16} className="text-green-600 dark:text-green-300" />
               ) : (
                 <Copy size={16} />
               )}

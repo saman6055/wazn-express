@@ -188,19 +188,19 @@ export default function BatchLabelTemplateSettings() {
           )}
           {template.showQrCode && (
             <div className="absolute top-0 right-0 w-12 h-12 bg-slate-200 rounded flex items-center justify-center">
-              <QrCode className="h-6 w-6 text-slate-500" />
+              <QrCode className="h-6 w-6 text-slate-500 dark:text-slate-400" />
             </div>
           )}
           <div className="mt-2 space-y-1">
             {template.showCustomerName && (
               <div>
-                <p className="text-[10px] text-gray-500">{pickLang(language, { ku: "ناوی کڕیار", en: "Customer name", ar: "اسم العميل", zh: "客户名称" })}</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">{pickLang(language, { ku: "ناوی کڕیار", en: "Customer name", ar: "اسم العميل", zh: "客户名称" })}</p>
                 <p className="font-bold" style={{ color: template.primaryColor }}>{sampleBatchLabel.customerName}</p>
               </div>
             )}
             {template.showCustomerCode && (
               <div>
-                <p className="text-[10px] text-gray-500">{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "代码" })}</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "代码" })}</p>
                 <p className="font-medium">{sampleBatchLabel.customerCode}</p>
               </div>
             )}

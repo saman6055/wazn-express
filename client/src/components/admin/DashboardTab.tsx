@@ -162,7 +162,7 @@ export function DashboardTab({
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
-                <Database className="h-5 w-5 text-blue-600" />
+                <Database className="h-5 w-5 text-blue-600 dark:text-blue-300" />
               </div>
               <div>
                 <div className="text-2xl font-bold">{totalRecords.toLocaleString()}</div>
@@ -175,7 +175,7 @@ export function DashboardTab({
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-green-100 dark:bg-green-950/40 rounded-xl">
-                <Save className="h-5 w-5 text-green-600" />
+                <Save className="h-5 w-5 text-green-600 dark:text-green-300" />
               </div>
               <div>
                 <div className="text-2xl font-bold">{completedBackups}</div>
@@ -188,7 +188,7 @@ export function DashboardTab({
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-purple-100 dark:bg-purple-950/40 rounded-xl">
-                <HardDrive className="h-5 w-5 text-purple-600" />
+                <HardDrive className="h-5 w-5 text-purple-600 dark:text-purple-300" />
               </div>
               <div>
                 <div className="text-2xl font-bold">{formatFileSize(totalBackupSize)}</div>
@@ -206,7 +206,7 @@ export function DashboardTab({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
-                  <Users className="h-4 w-4 text-blue-600" />
+                  <Users className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.customers")}</CardTitle>
               </div>
@@ -217,7 +217,7 @@ export function DashboardTab({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("dataManagement.active")}</span>
-                <span className="font-medium text-green-600">{detailedCounts?.customers?.active ?? 0}</span>
+                <span className="font-medium text-green-600 dark:text-green-300">{detailedCounts?.customers?.active ?? 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("dataManagement.withPackages")}</span>
@@ -232,7 +232,7 @@ export function DashboardTab({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg">
-                  <Package className="h-4 w-4 text-emerald-600" />
+                  <Package className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.packages")}</CardTitle>
               </div>
@@ -243,15 +243,15 @@ export function DashboardTab({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("dataManagement.delivered")}</span>
-                <span className="font-medium text-green-600">{detailedCounts?.packages?.delivered ?? 0}</span>
+                <span className="font-medium text-green-600 dark:text-green-300">{detailedCounts?.packages?.delivered ?? 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("dataManagement.inTransit")}</span>
-                <span className="font-medium text-blue-600">{detailedCounts?.packages?.inTransit ?? 0}</span>
+                <span className="font-medium text-blue-600 dark:text-blue-300">{detailedCounts?.packages?.inTransit ?? 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("dataManagement.pending")}</span>
-                <span className="font-medium text-amber-600">{detailedCounts?.packages?.pending ?? 0}</span>
+                <span className="font-medium text-amber-600 dark:text-amber-300">{detailedCounts?.packages?.pending ?? 0}</span>
               </div>
             </div>
           </CardContent>
@@ -262,7 +262,7 @@ export function DashboardTab({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-purple-50 dark:bg-purple-950/40 rounded-lg">
-                  <Boxes className="h-4 w-4 text-purple-600" />
+                  <Boxes className="h-4 w-4 text-purple-600 dark:text-purple-300" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.batches")}</CardTitle>
               </div>
@@ -273,7 +273,7 @@ export function DashboardTab({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("dataManagement.active")}</span>
-                <span className="font-medium text-green-600">{detailedCounts?.batches?.active ?? 0}</span>
+                <span className="font-medium text-green-600 dark:text-green-300">{detailedCounts?.batches?.active ?? 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("dataManagement.completed")}</span>
@@ -288,7 +288,7 @@ export function DashboardTab({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-orange-50 dark:bg-orange-950/40 rounded-lg">
-                  <FileText className="h-4 w-4 text-orange-600" />
+                  <FileText className="h-4 w-4 text-orange-600 dark:text-orange-300" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.invoices")}</CardTitle>
               </div>
@@ -299,11 +299,11 @@ export function DashboardTab({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("dataManagement.paid")}</span>
-                <span className="font-medium text-green-600">{detailedCounts?.invoices?.paid ?? 0}</span>
+                <span className="font-medium text-green-600 dark:text-green-300">{detailedCounts?.invoices?.paid ?? 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("dataManagement.unpaid")}</span>
-                <span className="font-medium text-red-600">{detailedCounts?.invoices?.unpaid ?? 0}</span>
+                <span className="font-medium text-red-600 dark:text-red-300">{detailedCounts?.invoices?.unpaid ?? 0}</span>
               </div>
             </div>
           </CardContent>
@@ -314,7 +314,7 @@ export function DashboardTab({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-teal-50 dark:bg-teal-950/40 rounded-lg">
-                  <CreditCard className="h-4 w-4 text-teal-600" />
+                  <CreditCard className="h-4 w-4 text-teal-600 dark:text-teal-300" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.payments")}</CardTitle>
               </div>
@@ -325,7 +325,7 @@ export function DashboardTab({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("dataManagement.totalAmount")}</span>
-                <span className="font-medium text-green-600">
+                <span className="font-medium text-green-600 dark:text-green-300">
                   ${(detailedCounts?.payments?.totalAmount ?? 0).toLocaleString()}
                 </span>
               </div>
@@ -338,7 +338,7 @@ export function DashboardTab({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg">
-                  <Shield className="h-4 w-4 text-indigo-600" />
+                  <Shield className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />
                 </div>
                 <CardTitle className="text-base">{t("dataManagement.users")}</CardTitle>
               </div>
@@ -367,7 +367,7 @@ export function DashboardTab({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg">
-                  <TrendingUp className="h-5 w-5 text-indigo-600" />
+                  <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
                 </div>
                 <div>
                   <CardTitle>{t("dataManagement.dataDistribution")}</CardTitle>
@@ -434,7 +434,7 @@ export function DashboardTab({
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-50 dark:bg-amber-950/40 rounded-lg">
-                <Activity className="h-5 w-5 text-amber-600" />
+                <Activity className="h-5 w-5 text-amber-600 dark:text-amber-300" />
               </div>
               <div>
                 <CardTitle>{t("dataManagement.alertsRecommendations")}</CardTitle>
@@ -445,7 +445,7 @@ export function DashboardTab({
           <CardContent className="space-y-3">
             {(!backupsList || backupsList.length === 0) && (
               <Alert className="border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-950/40">
-                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-300" />
                 <AlertTitle className="text-red-800 dark:text-red-200">{t("dataManagement.noRecentBackup")}</AlertTitle>
                 <AlertDescription className="text-red-700 dark:text-red-300">{t("dataManagement.noRecentBackupDesc")}</AlertDescription>
               </Alert>
@@ -458,28 +458,28 @@ export function DashboardTab({
                 return lastTime > 7 * 24 * 60 * 60 * 1000;
               })() && (
               <Alert className="border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40">
-                <Clock className="h-4 w-4 text-amber-600" />
+                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                 <AlertTitle className="text-amber-800 dark:text-amber-200">{t("dataManagement.noRecentBackup")}</AlertTitle>
                 <AlertDescription className="text-amber-700 dark:text-amber-300">{t("dataManagement.noRecentBackupDesc")}</AlertDescription>
               </Alert>
             )}
             {totalRecords > 10000 && (
               <Alert className="border-blue-200 dark:border-blue-800/60 bg-blue-50 dark:bg-blue-950/40">
-                <Database className="h-4 w-4 text-blue-600" />
+                <Database className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                 <AlertTitle className="text-blue-800 dark:text-blue-200">{t("dataManagement.largeDatabase")}</AlertTitle>
                 <AlertDescription className="text-blue-700 dark:text-blue-300">{t("dataManagement.largeDatabaseDesc")}</AlertDescription>
               </Alert>
             )}
             {(detailedCounts?.packages?.delivered ?? 0) > 500 && (
               <Alert className="border-green-200 dark:border-green-800/60 bg-green-50 dark:bg-green-950/40">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-300" />
                 <AlertTitle className="text-green-800 dark:text-green-200">{t("dataManagement.cleanupSuggestion")}</AlertTitle>
                 <AlertDescription className="text-green-700 dark:text-green-300">{t("dataManagement.cleanupSuggestionDesc")}</AlertDescription>
               </Alert>
             )}
             {healthScore.status === "good" && (
               <Alert className="border-green-200 dark:border-green-800/60 bg-green-50 dark:bg-green-950/40">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-300" />
                 <AlertTitle className="text-green-800 dark:text-green-200">{t("dataManagement.allGood")}</AlertTitle>
                 <AlertDescription className="text-green-700 dark:text-green-300">{t("dataManagement.allGoodDesc")}</AlertDescription>
               </Alert>

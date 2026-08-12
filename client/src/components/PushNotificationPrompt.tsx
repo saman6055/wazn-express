@@ -23,7 +23,7 @@ export function PushNotificationPrompt({ enabled }: { enabled: boolean }) {
   return (
     <div className="fixed bottom-20 start-3 end-3 z-40 mx-auto max-w-md rounded-2xl border border-emerald-500/30 bg-white/95 p-4 shadow-2xl backdrop-blur dark:bg-slate-900/95 sm:bottom-6 sm:start-auto sm:end-6">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500 dark:text-emerald-400">
           <Bell className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">

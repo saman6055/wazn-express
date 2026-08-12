@@ -96,7 +96,7 @@ export default function PortalGuide() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={pick(guideHeader.searchPlaceholder)}
-              className="h-11 ps-9 rounded-xl bg-white text-slate-800 dark:text-slate-200 placeholder:text-slate-400 border-0"
+              className="h-11 ps-9 rounded-xl bg-white dark:bg-card text-slate-800 dark:text-slate-200 placeholder:text-slate-400 border-0"
               stepper={false}
             />
           </div>
@@ -133,7 +133,7 @@ export default function PortalGuide() {
           {filtered.length === 0 ? (
             <div className="rounded-2xl bg-white dark:bg-gray-900 p-8 text-center ring-1 ring-gray-100 dark:ring-white/5">
               <Search className="mx-auto h-8 w-8 text-gray-300" />
-              <p className="mt-3 text-sm text-gray-500">{pick(guideHeader.notFound)}</p>
+              <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{pick(guideHeader.notFound)}</p>
             </div>
           ) : (
             filtered.map((s) => {

@@ -163,12 +163,12 @@ export default function StoreManagement() {
                     <CardContent className="p-3">
                       <p className="font-medium text-sm line-clamp-1">{p.nameKu || p.nameEn || p.nameAr}</p>
                       <div className="flex items-center justify-between mt-1.5">
-                        <span className="font-bold text-violet-600">{money(p.price, p.currency)}</span>
+                        <span className="font-bold text-violet-600 dark:text-violet-300">{money(p.price, p.currency)}</span>
                         <span className="text-xs text-muted-foreground">{p.orderCount} {label({ ku: "ئۆردەر", en: "orders", ar: "طلب", zh: "订单" })}</span>
                       </div>
                       <div className="flex gap-2 mt-3">
                         <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => openEdit(p)}><Pencil className="w-3.5 h-3.5" />{label({ ku: "دەستکاری", en: "Edit", ar: "تعديل", zh: "编辑" })}</Button>
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => { if (confirm(label({ ku: "دڵنیایت؟", en: "Delete this product?", ar: "حذف؟", zh: "删除？" }))) deleteMutation.mutate({ id: p.id }); }}><Trash2 className="w-3.5 h-3.5" /></Button>
+                        <Button variant="outline" size="sm" className="text-red-600 dark:text-red-300 hover:text-red-700" onClick={() => { if (confirm(label({ ku: "دڵنیایت؟", en: "Delete this product?", ar: "حذف؟", zh: "删除？" }))) deleteMutation.mutate({ id: p.id }); }}><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -196,7 +196,7 @@ export default function StoreManagement() {
                             <p className="text-xs font-mono text-muted-foreground">{o.orderCode} · {money(o.totalPrice, o.currency)}</p>
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-muted-foreground">
                               <span className="font-medium text-foreground">{o.customerName}</span>
-                              <a href={`https://wa.me/${o.customerPhone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-emerald-600"><Phone className="w-3 h-3" />{o.customerPhone}</a>
+                              <a href={`https://wa.me/${o.customerPhone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-300"><Phone className="w-3 h-3" />{o.customerPhone}</a>
                               {(o.customerCity || o.customerAddress) && <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" />{[o.customerCity, o.customerAddress].filter(Boolean).join("، ")}</span>}
                             </div>
                             {o.note && <p className="text-xs text-muted-foreground mt-1 italic">“{o.note}”</p>}

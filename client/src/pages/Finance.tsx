@@ -721,7 +721,7 @@ export default function Finance() {
                 <DialogContent className="max-w-lg">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-green-500" />
+                      <CreditCard className="h-5 w-5 text-green-500 dark:text-green-400" />
                       {t("finance.recordPayment")}
                     </DialogTitle>
                     <DialogDescription>
@@ -923,7 +923,7 @@ export default function Finance() {
                   <p className="text-3xl font-bold text-red-700 dark:text-red-300">
                     {formatCurrency(summary?.totalDebtUsd || 0)}
                   </p>
-                  <p className="text-xs text-red-500 mt-1">{debtors?.length || 0} {pickLang(language, { ku: "کڕیاری قەرزدار", en: "debtor customers", ar: "عميل مدين", zh: "欠款客户" })}</p>
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">{debtors?.length || 0} {pickLang(language, { ku: "کڕیاری قەرزدار", en: "debtor customers", ar: "عميل مدين", zh: "欠款客户" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white shadow-lg">
                   <TrendingUp className="h-7 w-7" />
@@ -940,7 +940,7 @@ export default function Finance() {
                   <p className="text-3xl font-bold text-green-700 dark:text-green-300">
                     {formatCurrency(summary?.totalCreditUsd || 0)}
                   </p>
-                  <p className="text-xs text-green-500 mt-1">{payments?.length || 0} {pickLang(language, { ku: "پارەدان", en: "payments", ar: "دفعة", zh: "笔付款" })}</p>
+                  <p className="text-xs text-green-500 dark:text-green-400 mt-1">{payments?.length || 0} {pickLang(language, { ku: "پارەدان", en: "payments", ar: "دفعة", zh: "笔付款" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white shadow-lg">
                   <TrendingDown className="h-7 w-7" />
@@ -957,7 +957,7 @@ export default function Finance() {
                   <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">
                     {accounts?.length || 0}
                   </p>
-                  <p className="text-xs text-blue-500 mt-1">{pickLang(language, { ku: "حسابی چالاک", en: "Active accounts", ar: "حسابات نشطة", zh: "活跃账户" })}</p>
+                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">{pickLang(language, { ku: "حسابی چالاک", en: "Active accounts", ar: "حسابات نشطة", zh: "活跃账户" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
                   <Users className="h-7 w-7" />
@@ -974,7 +974,7 @@ export default function Finance() {
                   <p className={`text-3xl font-bold ${((summary?.totalDebtUsd || 0) - (summary?.totalCreditUsd || 0)) > 0 ? 'text-red-600' : 'text-green-600'}`}>
                     {formatCurrency((summary?.totalDebtUsd || 0) - (summary?.totalCreditUsd || 0))}
                   </p>
-                  <p className="text-xs text-amber-500 mt-1">{pickLang(language, { ku: "قەرز - کریدیت", en: "Debt - Credit", ar: "الدين - الرصيد", zh: "欠款 - 贷方" })}</p>
+                  <p className="text-xs text-amber-500 dark:text-amber-400 mt-1">{pickLang(language, { ku: "قەرز - کریدیت", en: "Debt - Credit", ar: "الدين - الرصيد", zh: "欠款 - 贷方" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg">
                   <DollarSign className="h-7 w-7" />
@@ -1012,7 +1012,7 @@ export default function Finance() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Users className="w-5 h-5 text-blue-500" />
+                    <Users className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                     {pickLang(language, { ku: "حسابی کڕیاران", en: "Customer accounts", ar: "حسابات العملاء", zh: "客户账户" })}
                   </CardTitle>
                   <Link href="/finance?tab=accounts">
@@ -1081,7 +1081,7 @@ export default function Finance() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <History className="w-5 h-5 text-purple-500" />
+                    <History className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                     {pickLang(language, { ku: "کۆی باڵانس", en: "Recent transactions", ar: "أحدث المعاملات", zh: "近期交易" })}
                   </CardTitle>
                 </div>
@@ -1122,7 +1122,7 @@ export default function Finance() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                    <AlertTriangle className="w-5 h-5 text-amber-500 dark:text-amber-400" />
                     {t("auto.text_8f3c5b")}
                   </CardTitle>
                   <Link href="/finance/debtors">
@@ -1138,8 +1138,8 @@ export default function Finance() {
                   {debtors?.slice(0, 4).map((debtor) => (
                     <div key={debtor.customerId} className="p-4 border rounded-xl bg-gradient-to-br from-red-50 to-rose-50 border-red-200 dark:border-red-800/60 hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className="bg-white">{debtor.customer?.customerCode}</Badge>
-                        <span className="text-red-600 font-bold">{formatCurrency(String(debtor.balanceUsd || 0))}</span>
+                        <Badge variant="outline" className="bg-white dark:bg-card">{debtor.customer?.customerCode}</Badge>
+                        <span className="text-red-600 dark:text-red-300 font-bold">{formatCurrency(String(debtor.balanceUsd || 0))}</span>
                       </div>
                       <p className="font-medium">{debtor.customer?.fullName}</p>
                       <p className="text-sm text-muted-foreground">{debtor.customer?.mobileNumber}</p>
@@ -1164,7 +1164,7 @@ export default function Finance() {
               <CardHeader className="pb-3 border-b">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Users className="w-5 h-5 text-blue-500" />
+                    <Users className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                     {pickLang(language, { ku: "هەموو حسابەکان", en: "All accounts", ar: "جميع الحسابات", zh: "所有账户" })}
                     <Badge variant="secondary" className="ms-2">{filteredAndSortedAccounts.length}</Badge>
                   </CardTitle>
@@ -1197,11 +1197,11 @@ export default function Finance() {
                           {pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('debtors')} className={accountFilter === 'debtors' ? 'bg-muted' : ''}>
-                          <TrendingUp className="w-4 h-4 me-2 text-red-500" />
+                          <TrendingUp className="w-4 h-4 me-2 text-red-500 dark:text-red-400" />
                           {pickLang(language, { ku: "قەرزدارەکان", en: "Debtors", ar: "المدينون", zh: "欠款客户" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('credit')} className={accountFilter === 'credit' ? 'bg-muted' : ''}>
-                          <TrendingDown className="w-4 h-4 me-2 text-green-500" />
+                          <TrendingDown className="w-4 h-4 me-2 text-green-500 dark:text-green-400" />
                           {pickLang(language, { ku: "کریدیتدارەکان", en: "Credit holders", ar: "أصحاب الرصيد", zh: "贷方客户" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('zero')} className={accountFilter === 'zero' ? 'bg-muted' : ''}>
@@ -1209,11 +1209,11 @@ export default function Finance() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setAccountFilter('active')} className={accountFilter === 'active' ? 'bg-muted' : ''}>
-                          <CheckCircle className="w-4 h-4 me-2 text-green-500" />
+                          <CheckCircle className="w-4 h-4 me-2 text-green-500 dark:text-green-400" />
                           {pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" })}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAccountFilter('inactive')} className={accountFilter === 'inactive' ? 'bg-muted' : ''}>
-                          <XCircle className="w-4 h-4 me-2 text-red-500" />
+                          <XCircle className="w-4 h-4 me-2 text-red-500 dark:text-red-400" />
                           {pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -1264,15 +1264,15 @@ export default function Finance() {
                         <DropdownMenuLabel>{pickLang(language, { ku: "داونلۆدی ڕاپۆرت", en: "Download report", ar: "تنزيل التقرير", zh: "下载报告" })}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={exportToPDF}>
-                          <FileText className="w-4 h-4 me-2 text-red-500" />
+                          <FileText className="w-4 h-4 me-2 text-red-500 dark:text-red-400" />
                           PDF
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={exportToExcel}>
-                          <FileSpreadsheet className="w-4 h-4 me-2 text-green-500" />
+                          <FileSpreadsheet className="w-4 h-4 me-2 text-green-500 dark:text-green-400" />
                           Excel
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={exportToCSV}>
-                          <FileText className="w-4 h-4 me-2 text-blue-500" />
+                          <FileText className="w-4 h-4 me-2 text-blue-500 dark:text-blue-400" />
                           CSV
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -1349,7 +1349,7 @@ export default function Finance() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">{t("finance.totalReceived")}</p>
-                      <p className="text-3xl font-bold text-green-600">${totalPayments.toFixed(2)}</p>
+                      <p className="text-3xl font-bold text-green-600 dark:text-green-300">${totalPayments.toFixed(2)}</p>
                     </div>
                     <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white shadow-lg">
                       <TrendingUp className="h-6 w-6" />
@@ -1470,7 +1470,7 @@ export default function Finance() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <span className="font-bold text-green-600">
+                            <span className="font-bold text-green-600 dark:text-green-300">
                               +{formatCurrency(Math.abs(Number(payment.amountUsd || 0)))}
                             </span>
                           </TableCell>
@@ -1553,7 +1553,7 @@ export default function Finance() {
               <CardHeader className="pb-3 border-b bg-gradient-to-r from-muted/50 to-muted/30">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-emerald-500" />
+                    <CreditCard className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                     {pickLang(language, { ku: "کڕیارانی کریدیتدار", en: "Credit customers", ar: "العملاء أصحاب الرصيد", zh: "贷方客户" })}
                   </CardTitle>
                   <div className="flex gap-2">

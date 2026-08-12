@@ -162,7 +162,7 @@ export function CustomerFinanceTab({
                     <TableCell className="text-sm">{entry.description ?? "-"}</TableCell>
                     <TableCell
                       className={`text-right font-mono text-sm ${
-                        isCredit ? "text-green-600" : "text-red-600"
+                        isCredit ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"
                       }`}
                     >
                       {isCredit ? "-" : "+"}${entry.amountUsd}

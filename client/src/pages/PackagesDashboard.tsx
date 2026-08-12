@@ -96,14 +96,14 @@ const [, setLocation] = useLocation();
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setLocation("/packages/quick-register")}>
-                <Zap className="h-4 w-4 me-2 text-amber-500" />
+                <Zap className="h-4 w-4 me-2 text-amber-500 dark:text-amber-400" />
                 <div>
                   <div className="font-medium">{t("packages.quickRegisterName")}</div>
                   <div className="text-xs text-muted-foreground">{t("packages.fastSinglePage")}</div>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setLocation("/packages/bulk-register")}>
-                <Layers className="h-4 w-4 me-2 text-purple-500" />
+                <Layers className="h-4 w-4 me-2 text-purple-500 dark:text-purple-400" />
                 <div>
                   <div className="font-medium">{t("packages.bulkRegister")}</div>
                   <div className="text-xs text-muted-foreground">{t("packages.multiplePackages")}</div>
@@ -111,7 +111,7 @@ const [, setLocation] = useLocation();
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setLocation("/packages/unclaimed")}>
-                <AlertTriangle className="h-4 w-4 me-2 text-amber-500" />
+                <AlertTriangle className="h-4 w-4 me-2 text-amber-500 dark:text-amber-400" />
                 <div>
                   <div className="font-medium">{t("packages.unclaimedPackages")}</div>
                   <div className="text-xs text-muted-foreground">{t("packages.viewWithoutOwner")}</div>
@@ -127,7 +127,7 @@ const [, setLocation] = useLocation();
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-blue-600">{t("packages.totalPackages")}</p>
+                  <p className="text-xs font-medium text-blue-600 dark:text-blue-300">{t("packages.totalPackages")}</p>
                   <p className="text-2xl font-bold text-blue-900 dark:text-blue-200">{stats?.total || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
@@ -141,7 +141,7 @@ const [, setLocation] = useLocation();
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-amber-600">{t("packages.unclaimedShortName")}</p>
+                  <p className="text-xs font-medium text-amber-600 dark:text-amber-300">{t("packages.unclaimedShortName")}</p>
                   <p className="text-2xl font-bold text-amber-900 dark:text-amber-200">{stats?.unclaimed || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-amber-500 flex items-center justify-center">
@@ -155,7 +155,7 @@ const [, setLocation] = useLocation();
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-purple-600">{t("packages.stRegistered")}</p>
+                  <p className="text-xs font-medium text-purple-600 dark:text-purple-300">{t("packages.stRegistered")}</p>
                   <p className="text-2xl font-bold text-purple-900 dark:text-purple-200">{stats?.registered || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center">
@@ -169,7 +169,7 @@ const [, setLocation] = useLocation();
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-orange-600">In Transit</p>
+                  <p className="text-xs font-medium text-orange-600 dark:text-orange-300">In Transit</p>
                   <p className="text-2xl font-bold text-orange-900 dark:text-orange-200">{stats?.inTransit || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-orange-500 flex items-center justify-center">
@@ -183,7 +183,7 @@ const [, setLocation] = useLocation();
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-green-600">Delivered</p>
+                  <p className="text-xs font-medium text-green-600 dark:text-green-300">Delivered</p>
                   <p className="text-2xl font-bold text-green-900 dark:text-green-200">{stats?.delivered || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center">
@@ -197,7 +197,7 @@ const [, setLocation] = useLocation();
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-cyan-600">{t("packages.today")}</p>
+                  <p className="text-xs font-medium text-cyan-600 dark:text-cyan-300">{t("packages.today")}</p>
                   <p className="text-2xl font-bold text-cyan-900 dark:text-cyan-200">{stats?.todayCount || 0}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-cyan-500 flex items-center justify-center">
@@ -302,7 +302,7 @@ const [, setLocation] = useLocation();
                 onClick={() => setLocation("/packages/quick-register")}
               >
                 <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center me-3">
-                  <Zap className="h-4 w-4 text-amber-600" />
+                  <Zap className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                 </div>
                 <div className="text-left">
                   <p className="font-medium">Quick Register</p>
@@ -317,7 +317,7 @@ const [, setLocation] = useLocation();
                 onClick={() => setLocation("/packages/bulk-register")}
               >
                 <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-950/40 flex items-center justify-center me-3">
-                  <Layers className="h-4 w-4 text-purple-600" />
+                  <Layers className="h-4 w-4 text-purple-600 dark:text-purple-300" />
                 </div>
                 <div className="text-left">
                   <p className="font-medium">{t("packages.bulkRegister")}</p>
@@ -332,7 +332,7 @@ const [, setLocation] = useLocation();
                 onClick={() => setLocation("/smart-scanner")}
               >
                 <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center me-3">
-                  <QrCode className="h-4 w-4 text-blue-600" />
+                  <QrCode className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                 </div>
                 <div className="text-left">
                   <p className="font-medium">{t("packages.smartScanner")}</p>
@@ -348,11 +348,11 @@ const [, setLocation] = useLocation();
                   onClick={() => setLocation("/packages/unclaimed")}
                 >
                   <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center me-3">
-                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                   </div>
                   <div className="text-left">
                     <p className="font-medium">{t("packages.unclaimedPackages")}</p>
-                    <p className="text-xs text-amber-600">{stats?.unclaimed} packages waiting</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-300">{stats?.unclaimed} packages waiting</p>
                   </div>
                   <ChevronRight className="h-4 w-4 ml-auto" />
                 </Button>
@@ -401,7 +401,7 @@ const [, setLocation] = useLocation();
                       <div className="flex items-center gap-2">
                         <p className="font-mono font-medium text-sm">{pkg.packageCode}</p>
                         {pkg.isUnclaimed && (
-                          <Badge variant="outline" className="text-amber-600 border-amber-300 dark:border-amber-800/60 text-xs">
+                          <Badge variant="outline" className="text-amber-600 dark:text-amber-300 border-amber-300 dark:border-amber-800/60 text-xs">
                             {t("packages.unclaimedShortName")}
                           </Badge>
                         )}

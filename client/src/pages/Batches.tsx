@@ -438,7 +438,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       <div className="flex items-center gap-1">
         {priceText}
         {batch.hasCustomerPricing && (
-          <span title={`${batch.customerPricingCount} ${t('batches.vipCustomers')}`} className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-purple-600 bg-purple-100 dark:bg-purple-950/40 rounded-full">
+          <span title={`${batch.customerPricingCount} ${t('batches.vipCustomers')}`} className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-purple-600 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/40 rounded-full">
             <Users className="h-3 w-3" />
           </span>
         )}
@@ -778,7 +778,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             </CardHeader>
                             <CardContent className="space-y-3">
                               {pricingTiers.map((tier, index) => (
-                                <div key={index} className="flex items-center gap-2 p-3 border rounded-lg bg-white">
+                                <div key={index} className="flex items-center gap-2 p-3 border rounded-lg bg-white dark:bg-card">
                                   <div className="flex-1 grid grid-cols-3 gap-2">
                                     <div>
                                       <Label className="text-xs">From {getUnit(shippingType)}</Label>
@@ -816,7 +816,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                     </div>
                                   </div>
                                   <Button type="button" variant="ghost" size="icon" onClick={() => removeTier(index)}>
-                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                    <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                                   </Button>
                                 </div>
                               ))}
@@ -833,7 +833,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                         <span>
                                           {tier.minValue} - {tier.maxValue || "∞"} {getUnit(shippingType)}
                                         </span>
-                                        <span className="font-medium text-green-600">
+                                        <span className="font-medium text-green-600 dark:text-green-300">
                                           ${tier.pricePerUnit}/{getUnit(shippingType)}
                                         </span>
                                       </div>
@@ -894,7 +894,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             {customerPricing.map((cp) => {
                               const customer = customers?.find(c => c.id === cp.customerId);
                               return (
-                                <div key={cp.customerId} className="flex items-center gap-2 p-3 border rounded-lg bg-white">
+                                <div key={cp.customerId} className="flex items-center gap-2 p-3 border rounded-lg bg-white dark:bg-card">
                                   <div className="flex-1">
                                     <div className="font-medium text-sm mb-2">
                                       {customer?.customerCode} - {customer?.fullName}
@@ -934,7 +934,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                     </div>
                                   </div>
                                   <Button type="button" variant="ghost" size="icon" onClick={() => removeCustomerPricing(cp.customerId)}>
-                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                    <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                                   </Button>
                                 </div>
                               );
@@ -1029,9 +1029,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {batch.shippingType === "sea" ? (
-                          <Ship className="h-4 w-4 text-blue-600" />
+                          <Ship className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                         ) : (
-                          <Plane className="h-4 w-4 text-amber-600" />
+                          <Plane className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                         )}
                         <span className="font-mono font-medium">{batch.batchCode}</span>
                         <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
@@ -1057,7 +1057,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <span className="font-medium text-green-600">{formatPrice(batch)}</span>
+                      <span className="font-medium text-green-600 dark:text-green-300">{formatPrice(batch)}</span>
                     </TableCell>
                     <TableCell>{batch.totalPackages || 0}</TableCell>
                     <TableCell>
@@ -1136,7 +1136,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             onClick={() => setDeletingBatch(batch)}
                             title={t("batches.deleteBatch")}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                           </Button>
                         )}
                         <Link href={`/batches/${batch.id}/financial`}>
@@ -1238,7 +1238,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
+                <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
                 {t("batches.deleteBatch")}
               </AlertDialogTitle>
               <AlertDialogDescription>
@@ -1311,7 +1311,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             <div className="flex items-center gap-1">
                               <span>{chargeableWeight.toFixed(2)} kg</span>
                               {isVolumetric && (
-                                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 dark:bg-purple-950/40 text-purple-600 border-purple-200 dark:border-purple-800/60">
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
                                   {t('batches.volumetric')}
                                 </Badge>
                               )}
@@ -1357,7 +1357,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-primary/10 rounded-full">
-                      {financialSummary.shippingType === 'sea' ? <Ship className="h-6 w-6 text-cyan-600" /> : <Plane className="h-6 w-6 text-blue-600" />}
+                      {financialSummary.shippingType === 'sea' ? <Ship className="h-6 w-6 text-cyan-600 dark:text-cyan-300" /> : <Plane className="h-6 w-6 text-blue-600 dark:text-blue-300" />}
                     </div>
                     <div>
                       <p className="font-semibold">{batches?.find(b => b.id === financialBatchId)?.batchCode}</p>
@@ -1476,7 +1476,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                   : `${cb.weight.toFixed(2)} KG`
                                 }
                               </TableCell>
-                              <TableCell className="font-medium text-green-600">
+                              <TableCell className="font-medium text-green-600 dark:text-green-300">
                                 ${cb.revenue.toFixed(2)}
                               </TableCell>
                               <TableCell className="text-right text-muted-foreground">
@@ -1767,7 +1767,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </CardHeader>
                         <CardContent className="space-y-3">
                           {pricingTiers.map((tier, index) => (
-                            <div key={index} className="flex items-center gap-2 p-3 border rounded-lg bg-white">
+                            <div key={index} className="flex items-center gap-2 p-3 border rounded-lg bg-white dark:bg-card">
                               <div className="flex-1 grid grid-cols-3 gap-2">
                                 <div>
                                   <Label className="text-xs">From {getUnit(editingBatch.shippingType)}</Label>
@@ -1803,7 +1803,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                 </div>
                               </div>
                               <Button type="button" variant="ghost" size="icon" onClick={() => removeTier(index)}>
-                                <Trash2 className="h-4 w-4 text-red-500" />
+                                <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                               </Button>
                             </div>
                           ))}
@@ -1844,11 +1844,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 {auditData?.summary?.blocking ? (
-                  <AlertTriangle className="h-5 w-5 text-rose-600" />
+                  <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-300" />
                 ) : auditData?.summary?.warning ? (
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                 ) : (
-                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                  <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 )}
                 {pickLang(language, { ku: "پێش-پشکنینی گەیاندن", en: "Pre-delivery audit", ar: "تدقيق ما قبل التسليم", zh: "交付前审核" })}
                 {auditData && <Badge variant="outline" className="font-mono">{auditData.batchCode}</Badge>}

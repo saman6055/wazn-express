@@ -527,10 +527,10 @@ const [activeTab, setActiveTab] = useState("partners");
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("partners.totalCapital")}</CardTitle>
-              <PiggyBank className="h-4 w-4 text-blue-500" />
+              <PiggyBank className="h-4 w-4 text-blue-500 dark:text-blue-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-300">
                 {formatCurrency(totalCapital)}
               </div>
               <p className="text-xs text-muted-foreground">{t("partners.initialCapitalDesc")}</p>
@@ -539,7 +539,7 @@ const [activeTab, setActiveTab] = useState("partners");
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("partners.accumulatedBalance")}</CardTitle>
-              <Wallet className="h-4 w-4 text-green-500" />
+              <Wallet className="h-4 w-4 text-green-500 dark:text-green-400" />
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${totalRetained >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -551,10 +551,10 @@ const [activeTab, setActiveTab] = useState("partners");
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("partners.totalOwnersEquity")}</CardTitle>
-              <DollarSign className="h-4 w-4 text-purple-500" />
+              <DollarSign className="h-4 w-4 text-purple-500 dark:text-purple-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-300">
                 {formatCurrency(totalEquity)}
               </div>
               <p className="text-xs text-muted-foreground">{t("partners.capitalPlusBalance")}</p>
@@ -618,7 +618,7 @@ const [activeTab, setActiveTab] = useState("partners");
                     <div className="grid grid-cols-2 gap-4">
                       <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 p-3">
                         <p className="text-xs text-muted-foreground">{t("partners.initialCapitalDesc")}</p>
-                        <p className="text-lg font-bold text-blue-600">
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-300">
                           {formatCurrency(partner.initialCapital)}
                         </p>
                       </div>
@@ -634,7 +634,7 @@ const [activeTab, setActiveTab] = useState("partners");
                     <div className="rounded-lg bg-purple-50 dark:bg-purple-950/30 p-3">
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">{t("partners.totalCapital")}</p>
-                        <p className="text-xl font-bold text-purple-600">
+                        <p className="text-xl font-bold text-purple-600 dark:text-purple-300">
                           {formatCurrency(equity)}
                         </p>
                       </div>
@@ -673,7 +673,7 @@ const [activeTab, setActiveTab] = useState("partners");
                           }
                         }}
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                       </Button>
                     </div>
                   </div>

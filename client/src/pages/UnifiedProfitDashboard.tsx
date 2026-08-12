@@ -333,7 +333,7 @@ export default function UnifiedProfitDashboard() {
                   {isLoading ? (
                     <Skeleton className="h-7 w-20" />
                   ) : (
-                    <p className="text-2xl font-bold text-emerald-600">
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">
                       ${profitByType.full_package.toLocaleString()}
                     </p>
                   )}
@@ -342,7 +342,7 @@ export default function UnifiedProfitDashboard() {
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950/40 rounded-lg flex items-center justify-center">
-                  <Package className="w-5 h-5 text-emerald-600" />
+                  <Package className="w-5 h-5 text-emerald-600 dark:text-emerald-300" />
                 </div>
               </div>
             </CardContent>
@@ -360,7 +360,7 @@ export default function UnifiedProfitDashboard() {
                   {isLoading ? (
                     <Skeleton className="h-7 w-20" />
                   ) : (
-                    <p className="text-2xl font-bold text-amber-600">
+                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-300">
                       ${profitByType.commission.toLocaleString()}
                     </p>
                   )}
@@ -369,7 +369,7 @@ export default function UnifiedProfitDashboard() {
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-amber-100 dark:bg-amber-950/40 rounded-lg flex items-center justify-center">
-                  <Handshake className="w-5 h-5 text-amber-600" />
+                  <Handshake className="w-5 h-5 text-amber-600 dark:text-amber-300" />
                 </div>
               </div>
             </CardContent>
@@ -453,13 +453,13 @@ export default function UnifiedProfitDashboard() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{pickLang(language, { ku: "مانگ", en: "Month", ar: "الشهر", zh: "月份" })}</TableHead>
-                      <TableHead className="text-right text-emerald-600">
+                      <TableHead className="text-right text-emerald-600 dark:text-emerald-300">
                         {pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الحزمة الكاملة", zh: "全包服务" })}
                       </TableHead>
-                      <TableHead className="text-right text-purple-600">
+                      <TableHead className="text-right text-purple-600 dark:text-purple-300">
                         {pickLang(language, { ku: "داواکاری کڕین", en: "Purchase Request", ar: "طلب الشراء", zh: "采购请求" })}
                       </TableHead>
-                      <TableHead className="text-right text-amber-600">
+                      <TableHead className="text-right text-amber-600 dark:text-amber-300">
                         {pickLang(language, { ku: "عمولە", en: "Commission", ar: "العمولة", zh: "佣金" })}
                       </TableHead>
                       <TableHead className="text-right font-bold">
@@ -472,11 +472,11 @@ export default function UnifiedProfitDashboard() {
                       <TableRow key={row.month}>
                         <TableCell className="font-medium">{row.monthLabel}</TableCell>
                         <TableCell className="text-right">
-                          <span className="text-emerald-600">${row.full_package.toLocaleString()}</span>
+                          <span className="text-emerald-600 dark:text-emerald-300">${row.full_package.toLocaleString()}</span>
                         </TableCell>
 
                         <TableCell className="text-right">
-                          <span className="text-amber-600">${row.commission.toLocaleString()}</span>
+                          <span className="text-amber-600 dark:text-amber-300">${row.commission.toLocaleString()}</span>
                         </TableCell>
                         <TableCell className="text-right font-bold">
                           ${row.total.toLocaleString()}

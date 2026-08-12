@@ -224,7 +224,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
 
           {template.showTrackingNumber && (
             <div className="text-center py-2 border-y border-gray-300 dark:border-gray-800/60 my-2">
-              <p className="text-xs text-gray-500">Tracking Number</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Tracking Number</p>
               <p className="font-bold text-lg" style={{ color: template.primaryColor }}>
                 {pkg.trackingNumber || 'N/A'}
               </p>
@@ -399,7 +399,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900">
-                <Package className="h-5 w-5 text-blue-600" />
+                <Package className="h-5 w-5 text-blue-600 dark:text-blue-300" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("auto.text_132a2f")} </p>
@@ -411,7 +411,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="p-2 rounded-full bg-green-100 dark:bg-green-900">
-                <CheckSquare className="h-5 w-5 text-green-600" />
+                <CheckSquare className="h-5 w-5 text-green-600 dark:text-green-300" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("auto.text_cbfa7f")} </p>
@@ -423,7 +423,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900">
-                <Layers className="h-5 w-5 text-purple-600" />
+                <Layers className="h-5 w-5 text-purple-600 dark:text-purple-300" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("auto.text_97e6c6")} </p>
@@ -440,7 +440,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900">
-                <QrCode className="h-5 w-5 text-orange-600" />
+                <QrCode className="h-5 w-5 text-orange-600 dark:text-orange-300" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("auto.text_dc1105")} </p>

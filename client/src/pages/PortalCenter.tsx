@@ -508,13 +508,13 @@ function ProhibitedTab({ p }: { p: (v: L) => string }) {
                       <TableCell className="text-xs max-w-[200px] truncate">{reason ? p(reason) : (d.reasonNote || "—")}</TableCell>
                       <TableCell>{d.viewedByCustomerAt
                         ? <Badge className="text-[10px] border-0 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">{p({ ku: "بینیویەتی", en: "Seen", ar: "شوهد", zh: "已看" })}</Badge>
-                        : <Badge className="text-[10px] border-0 bg-slate-100 dark:bg-slate-950/40 text-slate-500">{p({ ku: "نەیبینیوە", en: "Not yet", ar: "لا", zh: "未看" })}</Badge>}</TableCell>
+                        : <Badge className="text-[10px] border-0 bg-slate-100 dark:bg-slate-950/40 text-slate-500 dark:text-slate-400">{p({ ku: "نەیبینیوە", en: "Not yet", ar: "لا", zh: "未看" })}</Badge>}</TableCell>
                       <TableCell className="text-xs font-medium">{choiceLabel(d.resolutionChoice)}</TableCell>
                       <TableCell>
                         {d.chargedAt ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-semibold text-amber-600">${Number(d.feeUsd).toFixed(2)}</span>
-                            <Button size="sm" variant="outline" className="h-7 gap-1 border-red-200 bg-red-50 px-2 text-[11px] font-medium text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-900 dark:bg-red-950/40" disabled={reverseFeeMut.isPending}
+                            <span className="text-xs font-semibold text-amber-600 dark:text-amber-300">${Number(d.feeUsd).toFixed(2)}</span>
+                            <Button size="sm" variant="outline" className="h-7 gap-1 border-red-200 bg-red-50 px-2 text-[11px] font-medium text-red-600 dark:text-red-300 hover:bg-red-100 hover:text-red-700 dark:border-red-900 dark:bg-red-950/40" disabled={reverseFeeMut.isPending}
                               onClick={() => { if (confirm(p({ ku: "کولفە بگەڕێندرێتەوە و لەسەر باڵانس لابردرێت؟", en: "Reverse the fee and remove it from the balance?", ar: "إلغاء الرسوم وإزالتها من الرصيد؟", zh: "撤销费用并从余额中移除？" }))) reverseFeeMut.mutate({ id: d.id }); }}>
                               {reverseFeeMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Undo2 className="h-3.5 w-3.5" />}
                               {p({ ku: "گەڕاندنەوەی کولفە", en: "Reverse fee", ar: "إلغاء الرسوم", zh: "撤销费用" })}
@@ -810,7 +810,7 @@ function NewsChannelsCard({ p }: { p: (v: L) => string }) {
       <CardContent className="p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-bold flex items-center gap-2">
-            <Newspaper className="h-4 w-4 text-orange-500" />
+            <Newspaper className="h-4 w-4 text-orange-500 dark:text-orange-400" />
             {p({ ku: "وەزن نیوز — کەناڵەکان و تیکەر", en: "Wazn News — channels & ticker", ar: "وزن نيوز — القنوات والشريط", zh: "Wazn 新闻——频道与滚动条" })}
           </h3>
           <div className="flex items-center gap-2">
@@ -924,7 +924,7 @@ function HomeAnnouncementsCard({ p }: { p: (v: L) => string }) {
       <CardContent className="p-4 space-y-4">
         <div>
           <h3 className="font-bold flex items-center gap-2">
-            <Megaphone className="h-4 w-4 text-blue-500" />
+            <Megaphone className="h-4 w-4 text-blue-500 dark:text-blue-400" />
             {p({ ku: "ڕاگەیاندنەکانی پەڕەی سەرەکی پۆرتاڵ", en: "Portal home announcements", ar: "إعلانات الصفحة الرئيسية للبوابة", zh: "门户首页公告" })}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -1000,7 +1000,7 @@ function HomeAnnouncementsCard({ p }: { p: (v: L) => string }) {
                           : p({ ku: "ڕەشنووس", en: "Draft", ar: "مسودة", zh: "草稿" })}
                       </Badge>
                       {post.isPinned && (
-                        <Pin className="h-3.5 w-3.5 fill-orange-500 text-orange-500" />
+                        <Pin className="h-3.5 w-3.5 fill-orange-500 text-orange-500 dark:text-orange-400" />
                       )}
                       {post.isFeatured && (
                         <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
@@ -1018,7 +1018,7 @@ function HomeAnnouncementsCard({ p }: { p: (v: L) => string }) {
                       onClick={() => update.mutate({ id: post.id, isPinned: !post.isPinned })}
                       title={p({ ku: "چەسپاندن لە سەرەوە", en: "Pin to top", ar: "تثبيت في الأعلى", zh: "置顶" })}
                     >
-                      <Pin className={cn("h-3.5 w-3.5", post.isPinned && "fill-orange-500 text-orange-500")} />
+                      <Pin className={cn("h-3.5 w-3.5", post.isPinned && "fill-orange-500 text-orange-500 dark:text-orange-400")} />
                     </Button>
                     <Button
                       size="sm" variant="outline" className="h-8 text-xs"
@@ -1089,7 +1089,7 @@ function PersonalNotificationCard({ p }: { p: (v: L) => string }) {
   return (
     <Card className="rounded-2xl">
       <CardContent className="p-4 space-y-3">
-        <h3 className="font-bold flex items-center gap-2"><Bell className="h-4 w-4 text-indigo-500" />
+        <h3 className="font-bold flex items-center gap-2"><Bell className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
           {p({ ku: "نۆتیفیکەیشنی شەخسی — بۆ یەک کۆد", en: "Personal notification — one customer", ar: "إشعار شخصي — لعميل واحد", zh: "个人通知 — 单个客户" })}
         </h3>
 
@@ -1176,7 +1176,7 @@ function BroadcastCard({ p }: { p: (v: L) => string }) {
   return (
     <Card className="rounded-2xl">
       <CardContent className="p-4 space-y-3">
-        <h3 className="font-bold flex items-center gap-2"><Megaphone className="h-4 w-4 text-amber-500" />
+        <h3 className="font-bold flex items-center gap-2"><Megaphone className="h-4 w-4 text-amber-500 dark:text-amber-400" />
           {p({ ku: "نۆتیفیکەیشنی گشتی — بۆ هەموو موشتەرە چالاکەکان", en: "Broadcast — all active customers", ar: "بث — لجميع العملاء النشطين", zh: "广播 — 所有活跃客户" })}
         </h3>
         <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200}
@@ -1230,7 +1230,7 @@ function AnnouncementCard({ p }: { p: (v: L) => string }) {
     <Card className="rounded-2xl">
       <CardContent className="p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold flex items-center gap-2"><Megaphone className="h-4 w-4 text-sky-500" />
+          <h3 className="font-bold flex items-center gap-2"><Megaphone className="h-4 w-4 text-sky-500 dark:text-sky-400" />
             {p({ ku: "بانەری ڕاگەیاندن لە پۆرتاڵ", en: "Portal announcement banner", ar: "لافتة إعلان البوابة", zh: "门户公告横幅" })}
           </h3>
           <div className="flex items-center gap-2">
@@ -1298,7 +1298,7 @@ function PricesTab({ p }: { p: (v: L) => string }) {
     <Card className="rounded-2xl">
       <CardContent className="p-4 space-y-4">
         <div>
-          <h3 className="font-bold flex items-center gap-2"><DollarSign className="h-4 w-4 text-emerald-500" />
+          <h3 className="font-bold flex items-center gap-2"><DollarSign className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
             {p({ ku: "نرخەکانی گواستنەوە لە پۆرتاڵ", en: "Portal shipping prices", ar: "أسعار الشحن في البوابة", zh: "门户运费价格" })}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
@@ -1393,7 +1393,7 @@ function CalcSettingsCard({ p }: { p: (v: L) => string }) {
       <CardContent className="p-4 space-y-4">
         <div>
           <h3 className="font-bold flex items-center gap-2">
-            <Activity className="h-4 w-4 text-purple-500" />
+            <Activity className="h-4 w-4 text-purple-500 dark:text-purple-400" />
             {p({ ku: "ڕێکخستنی حیسابکەری نرخ", en: "Price calculator settings", ar: "إعدادات حاسبة السعر", zh: "价格计算器设置" })}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
@@ -1634,7 +1634,7 @@ function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customer
           </Button>
           <Button size="sm" variant="outline" className="h-9 px-2 shrink-0" disabled={!newPw}
             title={p({ ku: "کۆپی", en: "Copy", ar: "نسخ", zh: "复制" })} onClick={copyPw}>
-            {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
           </Button>
         </div>
         <div className="flex items-center gap-1.5">
@@ -1645,7 +1645,7 @@ function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customer
           </Button>
           <Button size="sm" variant="outline" className="h-9 gap-1.5 shrink-0"
             disabled={!newPw || !sec.mobileNumber} onClick={waSend}>
-            <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+            <MessageCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-300" />
             {p({ ku: "واتساپ", en: "WhatsApp", ar: "واتساب", zh: "微信" })}
           </Button>
         </div>
@@ -1694,7 +1694,7 @@ function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customer
           {p({ ku: "دواین چوونەژوورەوە", en: "Last sign-in", ar: "آخر دخول", zh: "上次登录" })}: {fmtDateTime(sec.lastSignedIn)}
         </div>
         <div className="flex items-center gap-1.5">
-          <Power className={cn("h-3.5 w-3.5", sec.isActive ? "text-emerald-500" : "text-red-500")} />
+          <Power className={cn("h-3.5 w-3.5", sec.isActive ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400")} />
           <Switch checked={sec.isActive} disabled={setActive.isPending}
             onCheckedChange={(v) => setActive.mutate({ customerId, isActive: v })} />
         </div>
@@ -1726,7 +1726,7 @@ function CustomerTimelineDialog({ p, customer, onClose }: {
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-600" />
+            <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-300" />
             {customer.name}
             <span className="text-xs font-mono text-muted-foreground">{customer.code}</span>
           </DialogTitle>
@@ -1937,7 +1937,7 @@ function YuanSettingsCard({ p }: { p: (v: L) => string }) {
       <CardContent className="p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-bold flex items-center gap-2">
-            <span className="text-red-500 font-black">¥</span>
+            <span className="text-red-500 dark:text-red-400 font-black">¥</span>
             {p({ ku: "ڕێکخستنی فرۆشتنی یوان", en: "Yuan sell settings", ar: "إعدادات بيع اليوان", zh: "人民币出售设置" })}
           </h3>
           <div className="flex items-center gap-2">
@@ -2052,7 +2052,7 @@ function YuanOrderRow({ row, p }: { row: any; p: (v: L) => string }) {
             href={waLink(row.customerMobile)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 hover:text-emerald-700"
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-300 hover:text-emerald-700"
           >
             <WhatsAppIcon className="h-3.5 w-3.5" />
             {row.customerMobile}

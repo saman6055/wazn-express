@@ -211,7 +211,7 @@ export default function ServiceTypesManagement() {
             </div>
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-white text-violet-600 hover:bg-violet-50">
+                <Button className="bg-white dark:bg-card text-violet-600 dark:text-violet-300 hover:bg-violet-50">
                   <Plus className="h-4 w-4 ms-2" />
                   {pickLang(language, { ku: "زیادکردنی جۆری نوێ", en: "Add New Type", ar: "إضافة نوع جديد", zh: "添加新类型" })}
                 </Button>
@@ -331,13 +331,13 @@ export default function ServiceTypesManagement() {
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
                       <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" })}</p>
-                      <p className="font-bold text-red-600">
+                      <p className="font-bold text-red-600 dark:text-red-300">
                         ${type.defaultCost || "0.00"}
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
                       <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "نرخی فرۆشتن", en: "Selling Price", ar: "سعر البيع", zh: "售价" })}</p>
-                      <p className="font-bold text-green-600">
+                      <p className="font-bold text-green-600 dark:text-green-300">
                         ${type.defaultPrice || "0.00"}
                       </p>
                     </div>
@@ -350,8 +350,8 @@ export default function ServiceTypesManagement() {
                         <span className="text-sm text-muted-foreground">{pickLang(language, { ku: "قازانج:", en: "Profit:", ar: "الربح:", zh: "利润：" })}</span>
                         <span className={`font-bold ${
                           Number(type.defaultPrice) - Number(type.defaultCost) >= 0 
-                            ? "text-emerald-600" 
-                            : "text-red-600"
+                            ? "text-emerald-600 dark:text-emerald-300" 
+                            : "text-red-600 dark:text-red-300"
                         }`}>
                           ${(Number(type.defaultPrice) - Number(type.defaultCost)).toFixed(2)}
                         </span>
@@ -371,7 +371,7 @@ export default function ServiceTypesManagement() {
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                        <Button variant="outline" size="sm" className="text-red-600 dark:text-red-300 hover:text-red-700">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
@@ -534,8 +534,8 @@ function ServiceTypeForm({
               <span className="text-sm text-muted-foreground">{pickLang(language, { ku: "قازانجی پێشبینیکراو:", en: "Estimated Profit:", ar: "الربح المتوقع:", zh: "预计利润：" })}</span>
               <span className={`font-bold ${
                 Number(formData.defaultPrice) - Number(formData.defaultCost) >= 0 
-                  ? "text-green-600" 
-                  : "text-red-600"
+                  ? "text-green-600 dark:text-green-300" 
+                  : "text-red-600 dark:text-red-300"
               }`}>
                 ${(Number(formData.defaultPrice) - Number(formData.defaultCost)).toFixed(2)}
               </span>

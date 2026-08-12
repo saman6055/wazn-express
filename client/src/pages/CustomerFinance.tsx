@@ -1263,7 +1263,7 @@ export default function CustomerFinance() {
                     "هێنانە سفر" quick-mode pre-fills the form with the
                     exact amount + direction needed to zero the balance. */}
                 <Button
-                  className="bg-white text-purple-700 dark:text-purple-300 hover:bg-purple-50 rounded-xl shadow-lg"
+                  className="bg-white dark:bg-card text-purple-700 dark:text-purple-300 hover:bg-purple-50 rounded-xl shadow-lg"
                   onClick={openAdjustDialogToZero}
                 >
                   <Activity className="w-4 h-4 me-2" />
@@ -1274,7 +1274,7 @@ export default function CustomerFinance() {
                     step so staff can search/choose any reversible payment
                     without scrolling to the payments tab. */}
                 <Button
-                  className="bg-white text-amber-700 dark:text-amber-300 hover:bg-amber-50 rounded-xl shadow-lg"
+                  className="bg-white dark:bg-card text-amber-700 dark:text-amber-300 hover:bg-amber-50 rounded-xl shadow-lg"
                   onClick={() => {
                     setReverseTargetPayment(null);
                     setReverseMode('mistake');
@@ -1289,7 +1289,7 @@ export default function CustomerFinance() {
                 </Button>
                 <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-white text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl shadow-lg">
+                    <Button className="bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl shadow-lg">
                       <Plus className="w-4 h-4 me-2" />
                       {pickLang(language, { ku: "پارەدان", en: "Payment", ar: "دفعة", zh: "付款" })}
                     </Button>
@@ -1297,7 +1297,7 @@ export default function CustomerFinance() {
                   <DialogContent className="max-w-md">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
-                        <CreditCard className="w-5 h-5 text-emerald-600" />
+                        <CreditCard className="w-5 h-5 text-emerald-600 dark:text-emerald-300" />
                         {pickLang(language, { ku: "تۆمارکردنی پارەدان", en: "Record payment", ar: "تسجيل دفعة", zh: "登记付款" })}
                       </DialogTitle>
                     </DialogHeader>
@@ -1474,7 +1474,7 @@ export default function CustomerFinance() {
           <Card className="border-dashed border-2">
             <CardContent className="p-12 text-center">
               <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Wallet className="w-8 h-8 text-emerald-600" />
+                <Wallet className="w-8 h-8 text-emerald-600 dark:text-emerald-300" />
               </div>
               <h3 className="text-lg font-semibold mb-2">{pickLang(language, { ku: "هیچ حسابێک نییە بۆ ئەم کڕیارە", en: "No account exists for this customer", ar: "لا يوجد حساب لهذا العميل", zh: "此客户暂无账户" })}</h3>
               <p className="text-muted-foreground mb-6">{pickLang(language, { ku: "بۆ بەدواداچوونی دارایی، پێویستە حسابێک دروست بکەیت", en: "To track finances, you need to create an account", ar: "لمتابعة الأمور المالية، يجب إنشاء حساب", zh: "若要跟踪财务，需要创建一个账户" })}</p>
@@ -1506,18 +1506,18 @@ export default function CustomerFinance() {
                       <p className="text-sm text-muted-foreground mb-1">{pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })}</p>
                       <p className={cn(
                         "text-3xl font-bold",
-                        parseFloat(account.currentBalanceUsd || '0') > 0 ? "text-red-600" : "text-emerald-600"
+                        parseFloat(account.currentBalanceUsd || '0') > 0 ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                       )}>
                         ${parseFloat(account.currentBalanceUsd || '0').toFixed(2)}
                       </p>
                     </div>
                     <div className={cn(
                       "p-4 rounded-2xl",
-                      parseFloat(account.currentBalanceUsd || '0') > 0 ? "bg-red-200/50" : "bg-emerald-200/50"
+                      parseFloat(account.currentBalanceUsd || '0') > 0 ? "bg-red-200/50 dark:bg-red-900/50" : "bg-emerald-200/50 dark:bg-emerald-900/50"
                     )}>
                       <CircleDollarSign className={cn(
                         "w-8 h-8",
-                        parseFloat(account.currentBalanceUsd || '0') > 0 ? "text-red-600" : "text-emerald-600"
+                        parseFloat(account.currentBalanceUsd || '0') > 0 ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                       )} />
                     </div>
                   </div>
@@ -1544,8 +1544,8 @@ export default function CustomerFinance() {
                         {account.accountStatus === 'active' ? pickLang(language, { ku: '✓ چالاک', en: '✓ Active', ar: '✓ نشط', zh: '✓ 活跃' }) : pickLang(language, { ku: 'ناچالاک', en: 'Inactive', ar: 'غير نشط', zh: '停用' })}
                       </Badge>
                     </div>
-                    <div className="p-4 rounded-2xl bg-amber-200/50">
-                      <Activity className="w-8 h-8 text-amber-600" />
+                    <div className="p-4 rounded-2xl bg-amber-200/50 dark:bg-amber-900/50">
+                      <Activity className="w-8 h-8 text-amber-600 dark:text-amber-300" />
                     </div>
                   </div>
                 </CardContent>
@@ -1563,41 +1563,41 @@ export default function CustomerFinance() {
                 <Card className="border-0 shadow-lg">
                   <CardHeader className="pb-4">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <BarChart3 className="w-5 h-5 text-purple-600" />
+                      <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-300" />
                       {pickLang(language, { ku: "شیکاری فرۆشتن", en: "Sales breakdown", ar: "تفصيل المبيعات", zh: "销售明细" })}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                       <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-800/60">
-                        <Package className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                        <Package className="w-6 h-6 text-blue-600 dark:text-blue-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی پاکەتەکان", en: "Package charges", ar: "رسوم الطرود", zh: "包裹费用" })}</p>
-                        <p className="text-lg font-bold text-blue-600">${breakdown.packageDebt.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-300">${breakdown.packageDebt.toFixed(2)}</p>
                       </div>
                       <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-800/60">
-                        <ShoppingCart className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
+                        <ShoppingCart className="w-6 h-6 text-emerald-600 dark:text-emerald-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی پاکێجی تەواو", en: "Full package charges", ar: "رسوم الحزمة الكاملة", zh: "完整套餐费用" })}</p>
-                        <p className="text-lg font-bold text-emerald-600">${breakdown.fullPackageDebt.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-300">${breakdown.fullPackageDebt.toFixed(2)}</p>
                       </div>
                       <div className="text-center p-4 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-100 dark:border-amber-800/60">
-                        <Percent className="w-6 h-6 text-amber-600 mx-auto mb-2" />
+                        <Percent className="w-6 h-6 text-amber-600 dark:text-amber-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی عموڵە", en: "Commission charges", ar: "رسوم العمولة", zh: "佣金费用" })}</p>
-                        <p className="text-lg font-bold text-amber-600">${breakdown.commissionDebt.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-amber-600 dark:text-amber-300">${breakdown.commissionDebt.toFixed(2)}</p>
                       </div>
                       <div className="text-center p-4 bg-pink-50 dark:bg-pink-950/40 rounded-xl border border-pink-100 dark:border-pink-800/60">
-                        <Sparkles className="w-6 h-6 text-pink-600 mx-auto mb-2" />
+                        <Sparkles className="w-6 h-6 text-pink-600 dark:text-pink-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی خزمەتگوزاری", en: "Service charges", ar: "رسوم الخدمة", zh: "服务费用" })}</p>
-                        <p className="text-lg font-bold text-pink-600">${breakdown.serviceDebt.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-pink-600 dark:text-pink-300">${breakdown.serviceDebt.toFixed(2)}</p>
                       </div>
                       <div className="text-center p-4 bg-green-50 dark:bg-green-950/40 rounded-xl border border-green-100 dark:border-green-800/60">
-                        <Wallet className="w-6 h-6 text-green-600 mx-auto mb-2" />
+                        <Wallet className="w-6 h-6 text-green-600 dark:text-green-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "کۆی پارەدان", en: "Total paid", ar: "إجمالي المدفوع", zh: "已付总额" })}</p>
-                        <p className="text-lg font-bold text-green-600">${breakdown.creditBalance.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-300">${breakdown.creditBalance.toFixed(2)}</p>
                       </div>
                       <div className="text-center p-4 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-100 dark:border-red-800/60">
-                        <TrendingUp className="w-6 h-6 text-red-600 mx-auto mb-2" />
+                        <TrendingUp className="w-6 h-6 text-red-600 dark:text-red-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" })}</p>
-                        <p className="text-lg font-bold text-red-600">${breakdown.totalDebt.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-red-600 dark:text-red-300">${breakdown.totalDebt.toFixed(2)}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1635,7 +1635,7 @@ export default function CustomerFinance() {
                     <CardHeader>
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <CardTitle className="text-lg flex items-center gap-2">
-                          <Clock className="w-5 h-5 text-emerald-600" />
+                          <Clock className="w-5 h-5 text-emerald-600 dark:text-emerald-300" />
                           {pickLang(language, { ku: "داهاتی کڕیار", en: "Customer ledger", ar: "سجل العميل", zh: "客户账目" })}
                           {filteredTransactions && (
                             <Badge variant="secondary" className="me-2 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
@@ -1744,7 +1744,7 @@ export default function CustomerFinance() {
                                       </TableCell>
                                       <TableCell className={cn(
                                         "font-semibold",
-                                        txn.transactionType.startsWith('DEBIT') ? "text-red-600" : "text-emerald-600"
+                                        txn.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                       )}>
                                         {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(txn.amountUsd || '0').toFixed(2)}
                                       </TableCell>
@@ -1767,7 +1767,7 @@ export default function CustomerFinance() {
                                             openTransactionDetails(txn);
                                           }}
                                         >
-                                          <Eye className="w-4 h-4 text-emerald-600" />
+                                          <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-300" />
                                         </Button>
                                       </TableCell>
                                     </TableRow>
@@ -1804,7 +1804,7 @@ export default function CustomerFinance() {
                                       </TableCell>
                                       <TableCell className={cn(
                                         "font-semibold",
-                                        txn.transactionType.startsWith('DEBIT') ? "text-red-600" : "text-emerald-600"
+                                        txn.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                       )}>
                                         {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(txn.amountUsd || '0').toFixed(2)}
                                       </TableCell>
@@ -1827,7 +1827,7 @@ export default function CustomerFinance() {
                                               title={pickLang(language, { ku: "بینینی پسووڵە", en: "View invoice", ar: "عرض الفاتورة", zh: "查看发票" })}
                                               onClick={(e) => e.stopPropagation()}
                                             >
-                                              <ExternalLink className="w-4 h-4 text-blue-600" />
+                                              <ExternalLink className="w-4 h-4 text-blue-600 dark:text-blue-300" />
                                             </Button>
                                           </Link>
                                           <Button
@@ -1839,7 +1839,7 @@ export default function CustomerFinance() {
                                               openTransactionDetails(txn);
                                             }}
                                           >
-                                            <Eye className="w-4 h-4 text-emerald-600" />
+                                            <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-300" />
                                           </Button>
                                         </div>
                                       </TableCell>
@@ -1862,7 +1862,7 @@ export default function CustomerFinance() {
                                       className={cn(
                                         "cursor-pointer transition-colors border-l-4",
                                         isExpanded
-                                          ? "bg-emerald-50/40 hover:bg-emerald-50/60 border-l-emerald-500"
+                                          ? "bg-emerald-50/40 dark:bg-emerald-950/40 hover:bg-emerald-50/60 border-l-emerald-500"
                                           : "hover:bg-muted/30 border-l-transparent"
                                       )}
                                       onClick={() => toggleInvoiceGroup(group.invoiceId)}
@@ -1891,7 +1891,7 @@ export default function CustomerFinance() {
                                       </TableCell>
                                       <TableCell className={cn(
                                         "font-bold text-base",
-                                        isNetDebit ? "text-red-600" : "text-emerald-600"
+                                        isNetDebit ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                       )}>
                                         {isNetDebit ? '+' : '-'}${absNet.toFixed(2)}
                                       </TableCell>
@@ -1913,7 +1913,7 @@ export default function CustomerFinance() {
                                             title={pickLang(language, { ku: "بینینی پسووڵە", en: "View invoice", ar: "عرض الفاتورة", zh: "查看发票" })}
                                             onClick={(e) => e.stopPropagation()}
                                           >
-                                            <ExternalLink className="w-4 h-4 text-blue-600" />
+                                            <ExternalLink className="w-4 h-4 text-blue-600 dark:text-blue-300" />
                                           </Button>
                                         </Link>
                                       </TableCell>
@@ -1938,8 +1938,8 @@ export default function CustomerFinance() {
                                             className={cn(
                                               "gap-1 font-normal text-xs",
                                               txn.transactionType.startsWith('DEBIT')
-                                                ? "bg-red-50/70 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60"
-                                                : "bg-emerald-50/70 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
+                                                ? "bg-red-50/70 dark:bg-red-950/70 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60"
+                                                : "bg-emerald-50/70 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
                                             )}
                                           >
                                             {getTransactionTypeIcon(txn.transactionType)}
@@ -1948,7 +1948,7 @@ export default function CustomerFinance() {
                                         </TableCell>
                                         <TableCell className={cn(
                                           "font-semibold text-sm",
-                                          txn.transactionType.startsWith('DEBIT') ? "text-red-600" : "text-emerald-600"
+                                          txn.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                         )}>
                                           {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(txn.amountUsd || '0').toFixed(2)}
                                         </TableCell>
@@ -1971,7 +1971,7 @@ export default function CustomerFinance() {
                                               openTransactionDetails(txn);
                                             }}
                                           >
-                                            <Eye className="w-4 h-4 text-emerald-600" />
+                                            <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-300" />
                                           </Button>
                                         </TableCell>
                                       </TableRow>
@@ -1991,7 +1991,7 @@ export default function CustomerFinance() {
                   <Card className="border-0 shadow-lg">
                     <CardHeader>
                       <CardTitle className="text-lg flex items-center gap-2">
-                        <CreditCard className="w-5 h-5 text-emerald-600" />
+                        <CreditCard className="w-5 h-5 text-emerald-600 dark:text-emerald-300" />
                         {pickLang(language, { ku: "پارەدانەکان", en: "Payments", ar: "المدفوعات", zh: "付款记录" })}
                         {payments && (
                           <Badge variant="secondary" className="me-2 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
@@ -2048,7 +2048,7 @@ export default function CustomerFinance() {
                                     </TableCell>
                                     <TableCell className={cn(
                                       "font-semibold",
-                                      isFullyReversed ? "text-muted-foreground line-through" : "text-emerald-600"
+                                      isFullyReversed ? "text-muted-foreground line-through" : "text-emerald-600 dark:text-emerald-300"
                                     )}>
                                       ${original.toFixed(2)}
                                       {isPartiallyReversed && (
@@ -2128,7 +2128,7 @@ export default function CustomerFinance() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-purple-600" />
+              <Activity className="w-5 h-5 text-purple-600 dark:text-purple-300" />
               {pickLang(language, { ku: "ڕاستکردنەوەی بالانس بە دەستی", en: "Manual balance adjustment", ar: "تعديل الرصيد يدويًا", zh: "手动调整余额" })}
             </DialogTitle>
           </DialogHeader>
@@ -2148,8 +2148,8 @@ export default function CustomerFinance() {
                 <div className="text-[10px] text-muted-foreground uppercase">{pickLang(language, { ku: "بالانسی ئێستا", en: "Current balance", ar: "الرصيد الحالي", zh: "当前余额" })}</div>
                 <div className={cn(
                   "font-mono font-bold text-lg mt-1",
-                  parseFloat(account?.currentBalanceUsd || '0') > 0 ? "text-red-600"
-                    : parseFloat(account?.currentBalanceUsd || '0') < 0 ? "text-emerald-600"
+                  parseFloat(account?.currentBalanceUsd || '0') > 0 ? "text-red-600 dark:text-red-300"
+                    : parseFloat(account?.currentBalanceUsd || '0') < 0 ? "text-emerald-600 dark:text-emerald-300"
                     : "text-muted-foreground"
                 )}>
                   ${parseFloat(account?.currentBalanceUsd || '0').toFixed(2)}
@@ -2183,7 +2183,7 @@ export default function CustomerFinance() {
                   )}
                 >
                   <div className="font-bold flex items-center gap-1">
-                    <TrendingUp className="w-4 h-4 text-red-600" />
+                    <TrendingUp className="w-4 h-4 text-red-600 dark:text-red-300" />
                     DEBIT (+)
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
@@ -2201,7 +2201,7 @@ export default function CustomerFinance() {
                   )}
                 >
                   <div className="font-bold flex items-center gap-1">
-                    <TrendingDown className="w-4 h-4 text-emerald-600" />
+                    <TrendingDown className="w-4 h-4 text-emerald-600 dark:text-emerald-300" />
                     CREDIT (−)
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
@@ -2228,7 +2228,7 @@ export default function CustomerFinance() {
             {/* Reason — required */}
             <div>
               <Label className="text-sm">
-                {pickLang(language, { ku: "هۆکار", en: "Reason", ar: "السبب", zh: "原因" })} <span className="text-red-500">*</span>
+                {pickLang(language, { ku: "هۆکار", en: "Reason", ar: "السبب", zh: "原因" })} <span className="text-red-500 dark:text-red-400">*</span>
               </Label>
               <Textarea
                 value={adjustReason}
@@ -2285,7 +2285,7 @@ export default function CustomerFinance() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <RotateCcw className="w-5 h-5 text-amber-600" />
+              <RotateCcw className="w-5 h-5 text-amber-600 dark:text-amber-300" />
               {pickLang(language, { ku: "گەڕاندنەوەی پارەدان", en: "Reverse payment", ar: "عكس الدفعة", zh: "撤销付款" })}
             </DialogTitle>
           </DialogHeader>
@@ -2415,7 +2415,7 @@ export default function CustomerFinance() {
                     )}
                   >
                     <div className="font-bold flex items-center gap-1">
-                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-300" />
                       {pickLang(language, { ku: "هەڵە", en: "Mistake", ar: "خطأ", zh: "错误" })}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
@@ -2433,7 +2433,7 @@ export default function CustomerFinance() {
                     )}
                   >
                     <div className="font-bold flex items-center gap-1">
-                      <Banknote className="w-4 h-4 text-red-600" />
+                      <Banknote className="w-4 h-4 text-red-600 dark:text-red-300" />
                       Refund
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
@@ -2506,7 +2506,7 @@ export default function CustomerFinance() {
               {/* Reason — required */}
               <div>
                 <Label className="text-sm">
-                  {pickLang(language, { ku: "هۆکار", en: "Reason", ar: "السبب", zh: "原因" })} <span className="text-red-500">*</span>
+                  {pickLang(language, { ku: "هۆکار", en: "Reason", ar: "السبب", zh: "原因" })} <span className="text-red-500 dark:text-red-400">*</span>
                 </Label>
                 <Textarea
                   value={reverseReason}
@@ -2554,7 +2554,7 @@ export default function CustomerFinance() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Receipt className="w-5 h-5 text-emerald-600" />
+              <Receipt className="w-5 h-5 text-emerald-600 dark:text-emerald-300" />
               {pickLang(language, { ku: "وردەکاری جوڵە", en: "Transaction details", ar: "تفاصيل الحركة", zh: "交易详情" })}
             </DialogTitle>
           </DialogHeader>
@@ -2584,7 +2584,7 @@ export default function CustomerFinance() {
                 <div className="text-center">
                   <p className={cn(
                     "text-4xl font-bold",
-                    selectedTransaction.transactionType.startsWith('DEBIT') ? "text-red-600" : "text-emerald-600"
+                    selectedTransaction.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                   )}>
                     {selectedTransaction.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(selectedTransaction.amountUsd || '0').toFixed(2)}
                   </p>

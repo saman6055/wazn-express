@@ -100,7 +100,7 @@ export default function Invoices() {
                   <p className="text-xs text-muted-foreground font-medium">{t('invoicesList.totalInvoices')}</p>
                   <p className="text-2xl font-bold mt-1">{totalCount}</p>
                 </div>
-                <div className="p-2.5 bg-slate-100 dark:bg-slate-950/40 rounded-xl"><Hash className="h-5 w-5 text-slate-600" /></div>
+                <div className="p-2.5 bg-slate-100 dark:bg-slate-950/40 rounded-xl"><Hash className="h-5 w-5 text-slate-600 dark:text-slate-300" /></div>
               </div>
             </CardContent>
           </Card>
@@ -108,10 +108,10 @@ export default function Invoices() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-teal-600 font-medium">{t('invoicesList.totalAmount')}</p>
+                  <p className="text-xs text-teal-600 dark:text-teal-300 font-medium">{t('invoicesList.totalAmount')}</p>
                   <p className="text-2xl font-bold text-teal-700 dark:text-teal-300 font-mono mt-1">${stats.totalAmount.toFixed(0)}</p>
                 </div>
-                <div className="p-2.5 bg-teal-100 dark:bg-teal-950/40 rounded-xl"><DollarSign className="h-5 w-5 text-teal-600" /></div>
+                <div className="p-2.5 bg-teal-100 dark:bg-teal-950/40 rounded-xl"><DollarSign className="h-5 w-5 text-teal-600 dark:text-teal-300" /></div>
               </div>
             </CardContent>
           </Card>
@@ -119,10 +119,10 @@ export default function Invoices() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-blue-600 font-medium">{t('invoicesList.thisMonth')} ({stats.thisMonthCount})</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-300 font-medium">{t('invoicesList.thisMonth')} ({stats.thisMonthCount})</p>
                   <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 font-mono mt-1">${stats.thisMonthAmount.toFixed(0)}</p>
                 </div>
-                <div className="p-2.5 bg-blue-100 dark:bg-blue-950/40 rounded-xl"><CalendarDays className="h-5 w-5 text-blue-600" /></div>
+                <div className="p-2.5 bg-blue-100 dark:bg-blue-950/40 rounded-xl"><CalendarDays className="h-5 w-5 text-blue-600 dark:text-blue-300" /></div>
               </div>
             </CardContent>
           </Card>
@@ -130,10 +130,10 @@ export default function Invoices() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-emerald-600 font-medium">{t('invoicesList.today')} ({stats.todayCount})</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-300 font-medium">{t('invoicesList.today')} ({stats.todayCount})</p>
                   <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 font-mono mt-1">${stats.todayAmount.toFixed(0)}</p>
                 </div>
-                <div className="p-2.5 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl"><TrendingUp className="h-5 w-5 text-emerald-600" /></div>
+                <div className="p-2.5 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl"><TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-300" /></div>
               </div>
             </CardContent>
           </Card>
@@ -170,8 +170,8 @@ export default function Invoices() {
               <div className="p-6 space-y-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex items-center gap-4 animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-32" /><div className="h-4 bg-gray-200 rounded w-24" />
-                    <div className="h-4 bg-gray-200 rounded w-20" /><div className="h-4 bg-gray-200 rounded flex-1" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-800/50 rounded w-32" /><div className="h-4 bg-gray-200 dark:bg-gray-800/50 rounded w-24" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-800/50 rounded w-20" /><div className="h-4 bg-gray-200 dark:bg-gray-800/50 rounded flex-1" />
                   </div>
                 ))}
               </div>
@@ -187,7 +187,7 @@ export default function Invoices() {
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
+                    <TableRow className="bg-gray-50/80 dark:bg-gray-900/80 hover:bg-gray-50/80">
                       <TableHead className="font-semibold text-gray-700 dark:text-gray-300">{t('invoicesList.invoiceNumber')}</TableHead>
                       <TableHead className="font-semibold text-gray-700 dark:text-gray-300">{t('invoicesList.customer')}</TableHead>
                       <TableHead className="font-semibold text-gray-700 dark:text-gray-300">{t('invoicesList.date')}</TableHead>
@@ -206,7 +206,7 @@ export default function Invoices() {
                           onClick={() => navigate(`/invoices/${invoice.id}`)}>
                           <TableCell>
                             <div className="flex items-center gap-2.5">
-                              <div className="p-1.5 bg-teal-50 dark:bg-teal-950/40 rounded-lg"><FileText className="h-4 w-4 text-teal-600" /></div>
+                              <div className="p-1.5 bg-teal-50 dark:bg-teal-950/40 rounded-lg"><FileText className="h-4 w-4 text-teal-600 dark:text-teal-300" /></div>
                               <span className="font-mono text-sm font-medium">{invoice.invoiceNumber}</span>
                             </div>
                           </TableCell>
@@ -245,7 +245,7 @@ export default function Invoices() {
                   </TableBody>
                 </Table>
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50/50">
+                  <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50/50 dark:bg-gray-900/50">
                     <p className="text-sm text-muted-foreground">
                       {t('invoicesList.showing')} {((currentPage - 1) * 20) + 1} - {Math.min(currentPage * 20, totalCount)} {t('invoicesList.of')} {totalCount}
                     </p>

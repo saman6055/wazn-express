@@ -503,13 +503,13 @@ export default function TrackingAlerts() {
                         <Box className="h-6 w-6 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-red-600">
+                        <p className="text-sm font-medium text-red-600 dark:text-red-300">
                           {pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الباقة الكاملة", zh: "全包套餐" })}
                         </p>
                         <p className="text-3xl font-bold text-red-700 dark:text-red-300">{typeStats.full_package}</p>
                       </div>
                       {typeFilter === "full_package" && (
-                        <Check className="h-5 w-5 text-red-600" />
+                        <Check className="h-5 w-5 text-red-600 dark:text-red-300" />
                       )}
                     </div>
                   </CardContent>
@@ -531,13 +531,13 @@ export default function TrackingAlerts() {
                         <Percent className="h-6 w-6 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-amber-600">
+                        <p className="text-sm font-medium text-amber-600 dark:text-amber-300">
                           {pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission", ar: "بالعمولة", zh: "代购佣金" })}
                         </p>
                         <p className="text-3xl font-bold text-amber-700 dark:text-amber-300">{typeStats.commission}</p>
                       </div>
                       {typeFilter === "commission" && (
-                        <Check className="h-5 w-5 text-amber-600" />
+                        <Check className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                       )}
                     </div>
                   </CardContent>
@@ -709,19 +709,19 @@ export default function TrackingAlerts() {
                   {isLoading ? (
                     <div className="p-8 text-center">
                       <RefreshCw className="h-8 w-8 mx-auto animate-spin text-slate-400" />
-                      <p className="mt-2 text-slate-500">
+                      <p className="mt-2 text-slate-500 dark:text-slate-400">
                         {pickLang(language, { ku: "چاوەڕوان بە...", en: "Loading...", ar: "جارٍ التحميل...", zh: "加载中..." })}
                       </p>
                     </div>
                   ) : filteredOrders.length === 0 ? (
                     <div className="p-12 text-center">
                       <div className="inline-flex p-4 bg-green-100 dark:bg-green-950/40 rounded-full mb-4">
-                        <Check className="h-8 w-8 text-green-600" />
+                        <Check className="h-8 w-8 text-green-600 dark:text-green-300" />
                       </div>
                       <p className="text-xl font-bold text-green-700 dark:text-green-300">
                         {pickLang(language, { ku: "هیچ ئەنجامێک نییە", en: "No results found", ar: "لا توجد نتائج", zh: "未找到结果" })}
                       </p>
-                      <p className="text-sm text-slate-500 mt-2">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
                         {searchTerm || typeFilter !== "all" || daysFilter !== "all"
                           ? pickLang(language, { ku: "فلتەرەکان بگۆڕە", en: "Try changing filters", ar: "حاول تغيير عوامل التصفية", zh: "尝试更改筛选条件" })
                           : pickLang(language, { ku: "تەمامی پاکەتەکان تراکینگ نەمبەری تێدایە", en: "All packages have tracking numbers", ar: "جميع الطرود لديها أرقام تتبّع", zh: "所有包裹均已有追踪号" })
@@ -757,7 +757,7 @@ export default function TrackingAlerts() {
                           <TableHead className="w-10">
                             <input
                               type="checkbox"
-                              className="rounded border-slate-300 dark:border-slate-800/60 text-emerald-600 focus:ring-emerald-500"
+                              className="rounded border-slate-300 dark:border-slate-800/60 text-emerald-600 dark:text-emerald-300 focus:ring-emerald-500"
                               checked={filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length}
                               onChange={(e) => {
                                 if (e.target.checked) {
@@ -785,20 +785,20 @@ export default function TrackingAlerts() {
                           <TableRow
                             key={`${order.orderType}-${order.id}`}
                             className={`transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50 ${
-                              order.daysWaiting >= 7 ? "bg-red-50/50" :
-                              order.daysWaiting >= 5 ? "bg-orange-50/50" :
-                              order.daysWaiting >= 3 ? "bg-yellow-50/50" : ""
+                              order.daysWaiting >= 7 ? "bg-red-50/50 dark:bg-red-950/50" :
+                              order.daysWaiting >= 5 ? "bg-orange-50/50 dark:bg-orange-950/50" :
+                              order.daysWaiting >= 3 ? "bg-yellow-50/50 dark:bg-yellow-950/50" : ""
                             }`}
                           >
                             <TableCell>
                               <input
                                 type="checkbox"
-                                className="rounded border-slate-300 dark:border-slate-800/60 text-emerald-600 focus:ring-emerald-500"
+                                className="rounded border-slate-300 dark:border-slate-800/60 text-emerald-600 dark:text-emerald-300 focus:ring-emerald-500"
                                 checked={isOrderSelected(order.id)}
                                 onChange={() => { toggleOrderSelection(order); setMultiSelectMode(true); }}
                               />
                             </TableCell>
-                            <TableCell className="font-medium text-slate-500">
+                            <TableCell className="font-medium text-slate-500 dark:text-slate-400">
                               {index + 1}
                             </TableCell>
                             <TableCell>
@@ -821,7 +821,7 @@ export default function TrackingAlerts() {
                               </div>
                               {order.orderNumber && (
                                 <div className="flex items-center gap-1">
-                                  <p className="text-xs text-slate-500 mt-0.5">#{order.orderNumber}</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">#{order.orderNumber}</p>
                                   <CopyButton value={order.orderNumber} label="کۆپی ئۆردەر نەمبەر" />
                                 </div>
                               )}
@@ -834,7 +834,7 @@ export default function TrackingAlerts() {
                             <TableCell>
                               {getTypeBadge(order.orderType || "")}
                             </TableCell>
-                            <TableCell className="text-sm text-slate-600">
+                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">
                               {order.orderDate 
                                 ? new Date(order.orderDate).toLocaleDateString(pickLang(language, { ku: "ku", en: "en-US", ar: "ar", zh: "zh-CN" }))
                                 : "-"
@@ -879,7 +879,7 @@ export default function TrackingAlerts() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12 text-slate-500">
+                  <div className="text-center py-12 text-slate-500 dark:text-slate-400">
                     <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
                     <p>{pickLang(language, { ku: "بەزووی دێت...", en: "Coming soon...", ar: "قريبًا...", zh: "敬请期待..." })}</p>
                   </div>
@@ -894,7 +894,7 @@ export default function TrackingAlerts() {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-emerald-600" />
+                <Plus className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 {pickLang(language, { ku: "زیادکردنی تراکینگ نەمبەر", en: "Add Tracking Number(s)", ar: "إضافة رقم/أرقام التتبّع", zh: "添加追踪号" })}
               </DialogTitle>
               <DialogDescription>

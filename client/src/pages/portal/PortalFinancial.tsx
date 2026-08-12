@@ -284,7 +284,7 @@ const { t, language } = useLanguage();
                 ) : (
                   <p className={cn(
                     "text-4xl font-bold mt-1",
-                    isDebt ? "text-red-500" : "text-emerald-500"
+                    isDebt ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400"
                   )}>
                     <span dir="ltr">{isCredit ? "-" : ""}{formatCurrency(Math.abs(animatedBalance))}</span>
                   </p>
@@ -297,9 +297,9 @@ const { t, language } = useLanguage();
                   : isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
                 {isDebt ? (
-                  <TrendingDown className={cn("w-8 h-8", isDebt ? "text-red-500" : "text-emerald-500")} />
+                  <TrendingDown className={cn("w-8 h-8", isDebt ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400")} />
                 ) : (
-                  <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                  <CheckCircle2 className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
                 )}
               </div>
             </div>
@@ -313,15 +313,15 @@ const { t, language } = useLanguage();
             )}>
               {isDebt ? (
                 <>
-                  <AlertCircle className="w-4 h-4 text-red-500" />
-                  <span className={cn("text-sm font-medium", isDebt ? "text-red-600" : "text-emerald-600")}>
+                  <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400" />
+                  <span className={cn("text-sm font-medium", isDebt ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300")}>
                     {pickLang(language, { ku: "قەرزت هەیە", en: "You have outstanding balance", ar: "لديك رصيد مستحق", zh: "您有未结余额" })}
                   </span>
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span className="text-sm font-medium text-emerald-600">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                  <span className="text-sm font-medium text-emerald-600 dark:text-emerald-300">
                     {pickLang(language, { ku: "هیچ قەرزێکت نییە", en: "No outstanding balance", ar: "لا يوجد رصيد مستحق", zh: "无未结余额" })}
                   </span>
                 </>
@@ -353,7 +353,7 @@ const { t, language } = useLanguage();
               {summaryLoading ? (
                 <Skeleton className="h-6 w-16 mx-auto" />
               ) : (
-                <p className="text-lg font-bold text-emerald-500">
+                <p className="text-lg font-bold text-emerald-500 dark:text-emerald-400">
                   {formatCurrency(summary?.totalPaid || 0)}
                 </p>
               )}
@@ -424,12 +424,12 @@ const { t, language } = useLanguage();
                   "w-10 h-10 rounded-xl flex items-center justify-center mb-3",
                   isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
                 )}>
-                  <ArrowDownLeft className="w-5 h-5 text-emerald-500" />
+                  <ArrowDownLeft className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                 </div>
                 <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
                   {pickLang(language, { ku: "پارەدانی ئەم مانگە", en: "Payments This Month", ar: "مدفوعات هذا الشهر", zh: "本月付款" })}
                 </p>
-                <p className="text-xl font-bold text-emerald-500 mt-1">
+                <p className="text-xl font-bold text-emerald-500 dark:text-emerald-400 mt-1">
                   {formatCurrency(monthlyStats.payments)}
                 </p>
               </div>
@@ -441,12 +441,12 @@ const { t, language } = useLanguage();
                   "w-10 h-10 rounded-xl flex items-center justify-center mb-3",
                   isDark ? "bg-red-900/30" : "bg-red-100 dark:bg-red-950/40"
                 )}>
-                  <ArrowUpRight className="w-5 h-5 text-red-500" />
+                  <ArrowUpRight className="w-5 h-5 text-red-500 dark:text-red-400" />
                 </div>
                 <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
                   {pickLang(language, { ku: "کرێی ئەم مانگە", en: "Charges This Month", ar: "رسوم هذا الشهر", zh: "本月费用" })}
                 </p>
-                <p className="text-xl font-bold text-red-500 mt-1">
+                <p className="text-xl font-bold text-red-500 dark:text-red-400 mt-1">
                   {formatCurrency(monthlyStats.charges)}
                 </p>
               </div>
@@ -515,7 +515,7 @@ const { t, language } = useLanguage();
                 </h3>
                 <button 
                   onClick={() => changeTab("transactions")}
-                  className="text-sm text-indigo-500 font-medium flex items-center gap-1"
+                  className="text-sm text-indigo-500 dark:text-indigo-400 font-medium flex items-center gap-1"
                 >
                   {pickLang(language, { ku: "هەموو", en: "View All", ar: "عرض الكل", zh: "查看全部" })}
                   <ChevronRight className="w-4 h-4" />
@@ -717,8 +717,8 @@ const { t, language } = useLanguage();
                 <p className={cn(
                   "text-3xl font-bold",
                   isCreditTx(receiptData.transaction.transactionType) 
-                    ? "text-emerald-500" 
-                    : "text-red-500"
+                    ? "text-emerald-500 dark:text-emerald-400" 
+                    : "text-red-500 dark:text-red-400"
                 )}>
                   {txSign(receiptData.transaction.transactionType)}
                   {formatCurrency(Number(receiptData.transaction.amountUsd))}
@@ -1006,7 +1006,7 @@ const { t, language } = useLanguage();
                           <CheckCircle2 className="w-4 h-4 inline me-1" />
                           {pickLang(language, { ku: "بەرواری پارەدان", en: "Paid On", ar: "تاريخ الدفع", zh: "支付日期" })}
                         </span>
-                        <span className={cn("font-medium text-emerald-500")}>
+                        <span className={cn("font-medium text-emerald-500 dark:text-emerald-400")}>
                           {formatPortalDate(invoice.paidAt, language)}
                         </span>
                       </div>

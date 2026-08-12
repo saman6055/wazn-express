@@ -169,11 +169,11 @@ const [searchTerm, setSearchTerm] = useState("");
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("finance.totalDebt")}</p>
-                  <p className="text-2xl font-bold text-red-600">{formatCurrency(stats.totalDebt)}</p>
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-300">{formatCurrency(stats.totalDebt)}</p>
                   <p className="text-xs text-muted-foreground">{stats.totalDebtors} {t("auto.text_cfa8e7")}</p>
                 </div>
                 <div className="p-3 bg-red-100 dark:bg-red-950/40 rounded-full">
-                  <DollarSign className="w-5 h-5 text-red-600" />
+                  <DollarSign className="w-5 h-5 text-red-600 dark:text-red-300" />
                 </div>
               </div>
             </CardContent>
@@ -185,11 +185,11 @@ const [searchTerm, setSearchTerm] = useState("");
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("auto.text_9c94d3")} </p>
-                  <p className="text-xl font-bold text-green-600">{formatCurrency(stats.aging0_30)}</p>
+                  <p className="text-xl font-bold text-green-600 dark:text-green-300">{formatCurrency(stats.aging0_30)}</p>
                   <p className="text-xs text-muted-foreground">{stats.count0_30} {t("common.customer")}</p>
                 </div>
                 <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-full">
-                  <Clock className="w-4 h-4 text-green-600" />
+                  <Clock className="w-4 h-4 text-green-600 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
@@ -201,11 +201,11 @@ const [searchTerm, setSearchTerm] = useState("");
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("auto.text_89c656")} </p>
-                  <p className="text-xl font-bold text-yellow-600">{formatCurrency(stats.aging30_60)}</p>
+                  <p className="text-xl font-bold text-yellow-600 dark:text-yellow-300">{formatCurrency(stats.aging30_60)}</p>
                   <p className="text-xs text-muted-foreground">{stats.count30_60} {t("common.customer")}</p>
                 </div>
                 <div className="p-2 bg-yellow-100 dark:bg-yellow-950/40 rounded-full">
-                  <Clock className="w-4 h-4 text-yellow-600" />
+                  <Clock className="w-4 h-4 text-yellow-600 dark:text-yellow-300" />
                 </div>
               </div>
             </CardContent>
@@ -217,11 +217,11 @@ const [searchTerm, setSearchTerm] = useState("");
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("auto.text_aebd66")} </p>
-                  <p className="text-xl font-bold text-orange-600">{formatCurrency(stats.aging60_90)}</p>
+                  <p className="text-xl font-bold text-orange-600 dark:text-orange-300">{formatCurrency(stats.aging60_90)}</p>
                   <p className="text-xs text-muted-foreground">{stats.count60_90} {t("common.customer")}</p>
                 </div>
                 <div className="p-2 bg-orange-100 dark:bg-orange-950/40 rounded-full">
-                  <AlertTriangle className="w-4 h-4 text-orange-600" />
+                  <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-300" />
                 </div>
               </div>
             </CardContent>
@@ -366,7 +366,7 @@ const [searchTerm, setSearchTerm] = useState("");
                     <TableRow key={debtor.id}>
                       <TableCell className="font-medium">{debtor.customerCode}</TableCell>
                       <TableCell className="font-mono text-sm">{debtor.accountNumber}</TableCell>
-                      <TableCell className="text-right font-bold text-red-600">
+                      <TableCell className="text-right font-bold text-red-600 dark:text-red-300">
                         {formatCurrency(parseFloat(debtor.currentBalanceUsd || '0'))}
                       </TableCell>
                       <TableCell>{getAgingBadge(debtor.agingCategory)}</TableCell>

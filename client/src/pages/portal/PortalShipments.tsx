@@ -389,7 +389,7 @@ function ClassicPortalShipments() {
               className={cn(
                 "p-3 rounded-xl transition-all duration-300",
                 showFilters 
-                  ? "bg-white text-slate-800 dark:text-slate-200" 
+                  ? "bg-white dark:bg-card text-slate-800 dark:text-slate-200" 
                   : "bg-white/10 text-white hover:bg-white/20"
               )}
             >

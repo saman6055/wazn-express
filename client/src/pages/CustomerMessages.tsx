@@ -361,16 +361,16 @@ export default function CustomerMessages() {
                 <div className="p-4 space-y-3">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="animate-pulse flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gray-200 rounded-full" />
+                      <div className="w-12 h-12 bg-gray-200 dark:bg-gray-800/50 rounded-full" />
                       <div className="flex-1">
-                        <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
-                        <div className="h-3 bg-gray-200 rounded w-32" />
+                        <div className="h-4 bg-gray-200 dark:bg-gray-800/50 rounded w-24 mb-2" />
+                        <div className="h-3 bg-gray-200 dark:bg-gray-800/50 rounded w-32" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : !filteredChats?.length ? (
-                <div className="p-8 text-center text-gray-500">
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                   <Inbox className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p>{pickLang(language, { ku: "هیچ گفتوگۆیەک نییە", en: "No conversations", ar: "لا توجد محادثات", zh: "暂无会话" })}</p>
                 </div>
@@ -396,7 +396,7 @@ export default function CustomerMessages() {
                     </div>
                     <div className="flex-1 text-right min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {chat.lastMessageAt ? formatTime(chat.lastMessageAt) : ""}
                         </span>
                         <span className="font-semibold text-gray-900 dark:text-gray-200 dark:text-white truncate">
@@ -406,7 +406,7 @@ export default function CustomerMessages() {
                       <Badge variant="outline" className="text-xs px-1.5 py-0 mt-0.5">
                         {chat.customerCode || "-"}
                       </Badge>
-                      <p className="text-sm text-gray-500 truncate mt-1">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
                         {chat.totalMessages || 0} {pickLang(language, { ku: "پەیام", en: "messages", ar: "رسالة", zh: "条消息" })}
                       </p>
                     </div>
@@ -433,7 +433,7 @@ export default function CustomerMessages() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold">{selectedChat.customerName}</h3>
-                    <p className="text-sm text-gray-500">{selectedChat.customerCode}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{selectedChat.customerCode}</p>
                   </div>
                   <Badge
                     variant="outline"
@@ -452,10 +452,10 @@ export default function CustomerMessages() {
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-slate-950">
                   {loadingMessages ? (
                     <div className="flex items-center justify-center h-full">
-                      <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                      <Loader2 className="w-8 h-8 animate-spin text-blue-500 dark:text-blue-400" />
                     </div>
                   ) : !messages?.length ? (
-                    <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
                       <div className="text-center">
                         <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
                         <p>{pickLang(language, { ku: "هیچ پەیامێک نییە", en: "No messages", ar: "لا توجد رسائل", zh: "暂无消息" })}</p>
@@ -499,12 +499,12 @@ export default function CustomerMessages() {
                         <img src={attachmentPreview} alt="" className="w-16 h-16 rounded object-cover" />
                       ) : (
                         <div className="w-12 h-12 bg-blue-100 dark:bg-blue-950/40 rounded-lg flex items-center justify-center">
-                          <FileText className="w-6 h-6 text-blue-600" />
+                          <FileText className="w-6 h-6 text-blue-600 dark:text-blue-300" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{attachmentFile.name}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {(attachmentFile.size / 1024).toFixed(1)} KB
                         </p>
                       </div>
@@ -522,14 +522,14 @@ export default function CustomerMessages() {
                     <div className="flex gap-1">
                       <button
                         onClick={() => imageInputRef.current?.click()}
-                        className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 hover:text-blue-600"
+                        className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 dark:text-gray-400 hover:text-blue-600"
                         title={pickLang(language, { ku: "وێنە", en: "Image", ar: "صورة", zh: "图片" })}
                       >
                         <ImageIcon className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 hover:text-blue-600"
+                        className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 dark:text-gray-400 hover:text-blue-600"
                         title={pickLang(language, { ku: "فایل", en: "File", ar: "ملف", zh: "文件" })}
                       >
                         <Paperclip className="w-5 h-5" />
@@ -541,14 +541,14 @@ export default function CustomerMessages() {
                       <div className="flex-1 flex items-center gap-3">
                         <button
                           onClick={cancelRecording}
-                          className="p-2 rounded-lg bg-red-100 dark:bg-red-950/40 text-red-600 hover:bg-red-200 transition"
+                          className="p-2 rounded-lg bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-300 hover:bg-red-200 transition"
                         >
                           <X className="w-4 h-4" />
                         </button>
                         <div className="flex-1 flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
                           <span className="text-sm font-mono font-medium">{formattedDuration}</span>
-                          <span className="text-xs text-gray-500">{pickLang(language, { ku: "تۆمارکردن...", en: "Recording...", ar: "جارٍ التسجيل...", zh: "录音中..." })}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{pickLang(language, { ku: "تۆمارکردن...", en: "Recording...", ar: "جارٍ التسجيل...", zh: "录音中..." })}</span>
                         </div>
                         <Button
                           onClick={handleVoiceSend}
@@ -592,7 +592,7 @@ export default function CustomerMessages() {
                               const ok = await startRecording();
                               if (!ok) toast.error(pickLang(language, { ku: "ڕێگەپێدانی مایکرۆفۆن نییە", en: "No microphone permission", ar: "لا يوجد إذن للميكروفون", zh: "无麦克风权限" }));
                             }}
-                            className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 hover:text-blue-600"
+                            className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500 dark:text-gray-400 hover:text-blue-600"
                           >
                             <Mic className="w-5 h-5" />
                           </button>
@@ -619,7 +619,7 @@ export default function CustomerMessages() {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-500">
+              <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
                 <div className="text-center">
                   <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-30" />
                   <h3 className="text-lg font-semibold mb-2">{pickLang(language, { ku: "گفتوگۆیەک هەڵبژێرە", en: "Select a conversation", ar: "اختر محادثة", zh: "选择一个会话" })}</h3>

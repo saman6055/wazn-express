@@ -265,7 +265,7 @@ export default function HomeClassic() {
               <p className="text-white/90 mb-8 max-w-xl mx-auto">{t("auto.text_e7a0f7")}</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/customer-login">
-                  <Button size="lg" className="bg-white text-amber-600 hover:bg-slate-100 shadow-xl w-full sm:w-auto">
+                  <Button size="lg" className="bg-white dark:bg-card text-amber-600 dark:text-amber-300 hover:bg-slate-100 shadow-xl w-full sm:w-auto">
                     <Users className="me-2 h-5 w-5" />
                     {t("auto.text_410482")}
                   </Button>
@@ -361,7 +361,7 @@ function TrackingStep({ icon, title, date, active, completed }: { icon: React.Re
         <p className={cn("text-sm font-medium", active ? "text-[var(--landing-text)]" : "text-[var(--landing-text-muted)]")}>{title}</p>
         <p className="text-xs text-[var(--landing-text-muted)] opacity-80">{date}</p>
       </div>
-      {completed && <CheckCircle className="w-4 h-4 text-green-500" />}
+      {completed && <CheckCircle className="w-4 h-4 text-green-500 dark:text-green-400" />}
     </div>
   );
 }

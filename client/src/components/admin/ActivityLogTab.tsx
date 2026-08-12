@@ -53,7 +53,7 @@ export function ActivityLogTab({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-50 dark:bg-red-950/40 rounded-lg">
-                <RotateCcw className="h-5 w-5 text-red-600" />
+                <RotateCcw className="h-5 w-5 text-red-600 dark:text-red-300" />
               </div>
               <div>
                 <CardTitle className="text-red-700 dark:text-red-300">{t("dataManagement.resetHistory")}</CardTitle>
@@ -79,7 +79,7 @@ export function ActivityLogTab({
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
                         <div className="p-2 rounded-lg bg-red-100 dark:bg-red-950/40">
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-300" />
                         </div>
                         <div>
                           <div className="font-medium text-red-700 dark:text-red-300">{t("dataManagement.factoryReset")}</div>
@@ -98,7 +98,7 @@ export function ActivityLogTab({
                                     href={reset.backupFileUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                                    className="text-xs text-blue-600 dark:text-blue-300 hover:underline flex items-center gap-1"
                                   >
                                     <Download className="h-3 w-3" />
                                     {t("dataManagement.downloadBackup")}
@@ -130,7 +130,7 @@ export function ActivityLogTab({
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              <CheckCircle2 className="h-12 w-12 mx-auto mb-3 opacity-50 text-green-500" />
+              <CheckCircle2 className="h-12 w-12 mx-auto mb-3 opacity-50 text-green-500 dark:text-green-400" />
               <p>{t("dataManagement.noResetHistory")}</p>
               <p className="text-xs mt-1">{t("dataManagement.noResetHistoryDesc")}</p>
             </div>
@@ -143,7 +143,7 @@ export function ActivityLogTab({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-50 dark:bg-purple-950/40 rounded-lg">
-                <History className="h-5 w-5 text-purple-600" />
+                <History className="h-5 w-5 text-purple-600 dark:text-purple-300" />
               </div>
               <div>
                 <CardTitle>{t("dataManagement.deletionHistory")}</CardTitle>
@@ -180,10 +180,10 @@ export function ActivityLogTab({
                           <Trash2
                             className={`h-4 w-4 ${
                               log.deletionType === "factory_reset"
-                                ? "text-red-600"
+                                ? "text-red-600 dark:text-red-300"
                                 : log.deletionType === "old_data"
-                                  ? "text-amber-600"
-                                  : "text-slate-600"
+                                  ? "text-amber-600 dark:text-amber-300"
+                                  : "text-slate-600 dark:text-slate-300"
                             }`}
                           />
                         </div>

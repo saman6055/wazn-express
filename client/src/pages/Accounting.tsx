@@ -286,7 +286,7 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
                     <div className="flex items-end">
                       <div className="p-3 bg-muted rounded-lg">
                         <p className="text-xs text-muted-foreground">Current Balance</p>
-                        <p className={`text-xl font-bold ${(customerBalance || 0) > 0 ? "text-red-600" : "text-green-600"}`}>
+                        <p className={`text-xl font-bold ${(customerBalance || 0) > 0 ? "text-red-600 dark:text-red-300" : "text-green-600 dark:text-green-300"}`}>
                           ${Math.abs(customerBalance || 0).toFixed(2)}
                           <span className="text-xs font-normal ms-1">
                             {(customerBalance || 0) > 0 ? "owed" : (customerBalance || 0) < 0 ? "credit" : ""}
@@ -326,10 +326,10 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
                               </Badge>
                             </TableCell>
                             <TableCell>{txn.description || "-"}</TableCell>
-                            <TableCell className="text-right font-mono text-red-600">
+                            <TableCell className="text-right font-mono text-red-600 dark:text-red-300">
                               {isDebit ? `$${txn.amountUsd}` : "-"}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-green-600">
+                            <TableCell className="text-right font-mono text-green-600 dark:text-green-300">
                               {isCredit ? `$${txn.amountUsd}` : "-"}
                             </TableCell>
                             <TableCell className="text-right font-mono font-medium">
@@ -414,7 +414,7 @@ function CustomerBalanceRow({ customer }: { customer: any }) {
       <TableCell className="font-medium">{customer.fullName}</TableCell>
       <TableCell>{customer.mobileNumber}</TableCell>
       <TableCell className="text-right">
-        <span className={`font-mono font-medium ${(balance || 0) > 0 ? "text-red-600" : (balance || 0) < 0 ? "text-green-600" : ""}`}>
+        <span className={`font-mono font-medium ${(balance || 0) > 0 ? "text-red-600 dark:text-red-300" : (balance || 0) < 0 ? "text-green-600 dark:text-green-300" : ""}`}>
           ${Math.abs(balance || 0).toFixed(2)}
         </span>
       </TableCell>

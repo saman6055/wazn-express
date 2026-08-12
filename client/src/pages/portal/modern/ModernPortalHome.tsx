@@ -421,7 +421,7 @@ export default function ModernPortalHome() {
               )}
 
               <Link href="/portal/financial">
-                <span className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-emerald-700 dark:text-emerald-300 font-semibold text-sm hover:bg-white/90 transition-colors shadow-sm">
+                <span className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 font-semibold text-sm hover:bg-white/90 transition-colors shadow-sm">
                   <CreditCard className="w-4 h-4" />
                   {pickLang(language, { ku: "پارەدان", en: "Pay Now", ar: "الدفع", zh: "去支付" })}
                 </span>

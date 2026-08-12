@@ -121,7 +121,7 @@ export default function InvoiceView() {
             <Button variant="ghost" size="icon" onClick={() => navigate('/invoices')}><BackArrow className="h-5 w-5" /></Button>
             <div>
               <h1 className="text-xl font-bold flex items-center gap-2">
-                <FileText className="h-5 w-5 text-teal-600" />{t('invoiceView.invoice')} #{invoice.invoiceNumber}
+                <FileText className="h-5 w-5 text-teal-600 dark:text-teal-300" />{t('invoiceView.invoice')} #{invoice.invoiceNumber}
               </h1>
               <p className="text-sm text-muted-foreground">{t('invoiceView.viewAndPrint')}</p>
             </div>

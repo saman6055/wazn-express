@@ -724,7 +724,7 @@ function DashboardLayoutContent({
               onClick={() => setSidebarOpen(false)}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
-              <X className="h-5 w-5 text-gray-500" />
+              <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
             </button>
           )}
         </div>
@@ -1056,7 +1056,7 @@ function DashboardLayoutContent({
               aria-label={theme === "dark" ? (t("lightMode") || "دۆخی ڕووناک") : (t("darkMode") || "دۆخی تاریک")}
               onClick={toggleTheme}
             >
-              {theme === "dark" ? <Sun className="h-4 w-4 text-amber-500" /> : <Moon className="h-4 w-4 text-indigo-500" />}
+              {theme === "dark" ? <Sun className="h-4 w-4 text-amber-500 dark:text-amber-400" /> : <Moon className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />}
             </Button>
 
             {/* Language */}
@@ -1100,9 +1100,9 @@ function DashboardLayoutContent({
                 <div className="p-1">
                   <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer rounded-lg">
                     {theme === "dark" ? (
-                      <Sun className="me-2 h-4 w-4 text-amber-500" />
+                      <Sun className="me-2 h-4 w-4 text-amber-500 dark:text-amber-400" />
                     ) : (
-                      <Moon className="me-2 h-4 w-4 text-indigo-500" />
+                      <Moon className="me-2 h-4 w-4 text-indigo-500 dark:text-indigo-400" />
                     )}
                     <span>{theme === "dark" ? t("lightMode") || "دۆخی ڕووناک" : t("darkMode") || "دۆخی تاریک"}</span>
                   </DropdownMenuItem>

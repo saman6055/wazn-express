@@ -190,13 +190,13 @@ const [activeTab, setActiveTab] = useState("pnl");
           <Card className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-900 border-green-200 dark:border-green-800/60">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("finance.income")}</CardTitle>
-              <TrendingUp className="h-5 w-5 text-green-600" />
+              <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-300" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-700 dark:text-green-400">
                 {formatCurrency(profitLoss?.revenue.totalRevenue)}
               </div>
-              <p className="text-xs text-green-600/70">
+              <p className="text-xs text-green-600/70 dark:text-green-300">
                 {monthNames[selectedMonth - 1]} {selectedYear}
               </p>
             </CardContent>
@@ -204,13 +204,13 @@ const [activeTab, setActiveTab] = useState("pnl");
           <Card className="bg-gradient-to-br from-red-50 to-rose-100 dark:from-red-950 dark:to-rose-900 border-red-200 dark:border-red-800/60">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("auto.text_481d09")} </CardTitle>
-              <TrendingDown className="h-5 w-5 text-red-600" />
+              <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-300" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-700 dark:text-red-400">
                 {formatCurrency(profitLoss?.expenses.totalExpenses)}
               </div>
-              <p className="text-xs text-red-600/70">
+              <p className="text-xs text-red-600/70 dark:text-red-300">
                 {monthNames[selectedMonth - 1]} {selectedYear}
               </p>
             </CardContent>
@@ -240,7 +240,7 @@ const [activeTab, setActiveTab] = useState("pnl");
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("auto.text_3ec9b2")} </CardTitle>
-              <PiggyBank className="h-5 w-5 text-purple-600" />
+              <PiggyBank className="h-5 w-5 text-purple-600 dark:text-purple-300" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
@@ -330,7 +330,7 @@ const [activeTab, setActiveTab] = useState("pnl");
                       {profitLoss?.expenses.byCategory.map((cat, index) => (
                         <div key={index} className="flex justify-between py-1">
                           <span className="text-muted-foreground">{cat.categoryName}</span>
-                          <span className="font-medium text-red-600">-{formatCurrency(cat.total)}</span>
+                          <span className="font-medium text-red-600 dark:text-red-300">-{formatCurrency(cat.total)}</span>
                         </div>
                       ))}
                       {(!profitLoss?.expenses.byCategory || profitLoss.expenses.byCategory.length === 0) && (
@@ -432,7 +432,7 @@ const [activeTab, setActiveTab] = useState("pnl");
                       {debts.filter(d => d.status === "active" || d.status === "overdue").map((debt) => (
                         <div key={debt.id} className="flex justify-between py-1 pl-4">
                           <span className="text-sm">{debt.creditorName}</span>
-                          <span className="font-medium text-red-600">{formatCurrency(debt.remainingAmount)}</span>
+                          <span className="font-medium text-red-600 dark:text-red-300">{formatCurrency(debt.remainingAmount)}</span>
                         </div>
                       ))}
                       {debts.filter(d => d.status === "active" || d.status === "overdue").length === 0 && (

@@ -230,7 +230,7 @@ export default function ArrivalVerificationScanner() {
       soundManager.playComplete();
       toast.success(
         <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-green-500" />
+          <CheckCircle2 className="h-5 w-5 text-green-500 dark:text-green-400" />
           <div>
             <div className="font-medium">{t("scan.allPackagesArrived")}</div>
             <div className="text-sm text-muted-foreground">
@@ -270,7 +270,7 @@ export default function ArrivalVerificationScanner() {
           soundManager.playError();
           toast.error(
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
+              <AlertCircle className="h-5 w-5 text-red-500 dark:text-red-400" />
               <div>
                 <div className="font-medium">{t("scan.packageNotFoundExcl")}</div>
                 <div className="text-sm text-muted-foreground">{scannedValue}</div>
@@ -285,7 +285,7 @@ export default function ArrivalVerificationScanner() {
           soundManager.playDuplicate();
           toast.warning(
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
               <div>
                 <div className="font-medium">{t("scan.alreadyVerified")}</div>
                 <div className="text-sm text-muted-foreground">{scannedValue}</div>
@@ -340,7 +340,7 @@ export default function ArrivalVerificationScanner() {
             onError: (e) =>
               toast.warning(
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                  <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
                   <div>
                     <div className="font-medium">{t("scan.arrivalNotSaved")}</div>
                     <div className="text-sm text-muted-foreground">{e.message}</div>
@@ -352,7 +352,7 @@ export default function ArrivalVerificationScanner() {
         if (!hasCompleteData) {
           toast.warning(
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
               <div>
                 <div className="font-medium">{t("scan.verifiedIncomplete")}</div>
                 <div className="text-sm text-muted-foreground">{customer?.customerCode} - {scannedValue}</div>
@@ -362,7 +362,7 @@ export default function ArrivalVerificationScanner() {
         } else {
           toast.success(
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <CheckCircle2 className="h-5 w-5 text-green-500 dark:text-green-400" />
               <div>
                 <div className="font-medium">{t("scan.verifiedExcl")}</div>
                 <div className="text-sm text-muted-foreground">{customer?.customerCode} - {scannedValue}</div>
@@ -407,7 +407,7 @@ export default function ArrivalVerificationScanner() {
     
     toast.info(
       <div className="flex items-center gap-2">
-        <Plus className="h-5 w-5 text-blue-500" />
+        <Plus className="h-5 w-5 text-blue-500 dark:text-blue-400" />
         <div>
           <div className="font-medium">{t("scan.extraPackageRecorded")}</div>
           <div className="text-sm text-muted-foreground">{extraPackageDialog.trackingNumber}</div>
@@ -503,7 +503,7 @@ export default function ArrivalVerificationScanner() {
               <Card className="border-0 shadow-lg">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-emerald-600" />
+                    <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                     {t("scan.selectBatches")}
                     {selectedBatchIds.length > 0 && (
                       <Badge variant="secondary">{selectedBatchIds.length} {t("scan.selected")}</Badge>
@@ -555,7 +555,7 @@ export default function ArrivalVerificationScanner() {
               )}>
                 <div className={cn(
                   "h-1 transition-all duration-300",
-                  continuousMode && selectedBatchIds.length > 0 ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 animate-pulse" : "bg-slate-200"
+                  continuousMode && selectedBatchIds.length > 0 ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 animate-pulse" : "bg-slate-200 dark:bg-slate-800/50"
                 )} />
                 <CardContent className="p-6">
                   <div className={cn("transition-all", selectedBatchIds.length === 0 && "pointer-events-none")}>
@@ -577,7 +577,7 @@ export default function ArrivalVerificationScanner() {
                     />
                   </div>
                   {selectedBatchIds.length === 0 && (
-                    <div className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 mt-3">
+                    <div className="flex items-center justify-center gap-2 text-sm text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 mt-3">
                       <AlertTriangle className="h-4 w-4" />
                       {t("scan.selectBatchFirst")}
                     </div>
@@ -633,13 +633,13 @@ export default function ArrivalVerificationScanner() {
                                       {pkg.weight && <span>{pkg.weight}kg</span>}
                                     </div>
                                   </div>
-                                  <XCircle className="h-5 w-5 text-yellow-500" />
+                                  <XCircle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
                                 </div>
                               ))}
                             </div>
                           ) : (
                             <div className="text-center py-8 text-muted-foreground">
-                              <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-green-500" />
+                              <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-green-500 dark:text-green-400" />
                               <p>{t("scan.allPackagesVerified")}</p>
                             </div>
                           )}
@@ -712,7 +712,7 @@ export default function ArrivalVerificationScanner() {
               )}>
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className={cn("h-5 w-5", verificationStats.isComplete ? "text-white" : "text-emerald-600")} />
+                    <BarChart3 className={cn("h-5 w-5", verificationStats.isComplete ? "text-white" : "text-emerald-600 dark:text-emerald-300")} />
                     {t("scan.verificationStats")}
                   </CardTitle>
                 </CardHeader>
@@ -741,7 +741,7 @@ export default function ArrivalVerificationScanner() {
                     )}>
                       <div className={cn(
                         "text-2xl font-bold",
-                        verificationStats.isComplete ? "text-white" : "text-green-600"
+                        verificationStats.isComplete ? "text-white" : "text-green-600 dark:text-green-300"
                       )}>
                         {verificationStats.totalVerified}
                       </div>
@@ -758,7 +758,7 @@ export default function ArrivalVerificationScanner() {
                     )}>
                       <div className={cn(
                         "text-2xl font-bold",
-                        verificationStats.isComplete ? "text-white" : "text-yellow-600"
+                        verificationStats.isComplete ? "text-white" : "text-yellow-600 dark:text-yellow-300"
                       )}>
                         {verificationStats.totalMissing}
                       </div>
@@ -775,7 +775,7 @@ export default function ArrivalVerificationScanner() {
                     )}>
                       <div className={cn(
                         "text-2xl font-bold",
-                        verificationStats.isComplete ? "text-white" : "text-blue-600"
+                        verificationStats.isComplete ? "text-white" : "text-blue-600 dark:text-blue-300"
                       )}>
                         {verificationStats.totalExtra}
                       </div>
@@ -860,7 +860,7 @@ export default function ArrivalVerificationScanner() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-blue-500" />
+                <Plus className="h-5 w-5 text-blue-500 dark:text-blue-400" />
                 {t("scan.extraPackage")}
               </DialogTitle>
               <DialogDescription>
@@ -899,7 +899,7 @@ export default function ArrivalVerificationScanner() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-emerald-600" />
+                <FileText className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 {t("scan.verificationReport")}
               </DialogTitle>
             </DialogHeader>
@@ -912,15 +912,15 @@ export default function ArrivalVerificationScanner() {
                   <div className="text-xs text-muted-foreground">{t("scan.total")}</div>
                 </div>
                 <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-green-600">{verificationStats.totalVerified}</div>
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-300">{verificationStats.totalVerified}</div>
                   <div className="text-xs text-muted-foreground">{t("scan.verified")}</div>
                 </div>
                 <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-yellow-600">{verificationStats.totalMissing}</div>
+                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-300">{verificationStats.totalMissing}</div>
                   <div className="text-xs text-muted-foreground">{t("scan.missing")}</div>
                 </div>
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-blue-600">{verificationStats.totalExtra}</div>
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-300">{verificationStats.totalExtra}</div>
                   <div className="text-xs text-muted-foreground">{t("scan.extra")}</div>
                 </div>
               </div>
@@ -951,7 +951,7 @@ export default function ArrivalVerificationScanner() {
               {unverifiedPackages.length > 0 && (
                 <div>
                   <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <XCircle className="h-4 w-4 text-yellow-500" />
+                    <XCircle className="h-4 w-4 text-yellow-500 dark:text-yellow-400" />
                     {t("scan.missingPackages")}
                   </h4>
                   <ScrollArea className="h-[150px] border rounded-lg p-2">
@@ -971,7 +971,7 @@ export default function ArrivalVerificationScanner() {
               {verificationStats.totalExtra > 0 && (
                 <div>
                   <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <Plus className="h-4 w-4 text-blue-500" />
+                    <Plus className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                     {t("scan.extraPackages")}
                   </h4>
                   <ScrollArea className="h-[100px] border rounded-lg p-2">

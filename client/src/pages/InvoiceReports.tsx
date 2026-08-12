@@ -137,13 +137,13 @@ export default function InvoiceReports() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <Badge className="bg-green-500/20 text-green-600 border-green-500/30">{pickLang(language, {ku:"پارەدراو", en:"Paid", ar:"مدفوع", zh:"已付"})}</Badge>;
+        return <Badge className="bg-green-500/20 text-green-600 dark:text-green-300 border-green-500/30">{pickLang(language, {ku:"پارەدراو", en:"Paid", ar:"مدفوع", zh:"已付"})}</Badge>;
       case 'issued':
-        return <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30">{pickLang(language, {ku:"دەرچووە", en:"Issued", ar:"صادر", zh:"已开具"})}</Badge>;
+        return <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-300 border-blue-500/30">{pickLang(language, {ku:"دەرچووە", en:"Issued", ar:"صادر", zh:"已开具"})}</Badge>;
       case 'draft':
-        return <Badge className="bg-gray-500/20 text-gray-600 border-gray-500/30">{pickLang(language, {ku:"ڕەشنووس", en:"Draft", ar:"مسودة", zh:"草稿"})}</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-600 dark:text-gray-300 border-gray-500/30">{pickLang(language, {ku:"ڕەشنووس", en:"Draft", ar:"مسودة", zh:"草稿"})}</Badge>;
       case 'cancelled':
-        return <Badge className="bg-red-500/20 text-red-600 border-red-500/30">{pickLang(language, {ku:"هەڵوەشێنراوە", en:"Cancelled", ar:"ملغى", zh:"已取消"})}</Badge>;
+        return <Badge className="bg-red-500/20 text-red-600 dark:text-red-300 border-red-500/30">{pickLang(language, {ku:"هەڵوەشێنراوە", en:"Cancelled", ar:"ملغى", zh:"已取消"})}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -528,14 +528,14 @@ export default function InvoiceReports() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{pickLang(language, {ku:"پارەدراو", en:"Paid", ar:"مدفوع", zh:"已付"})}</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
             </CardHeader>
             <CardContent>
               {summaryLoading ? (
                 <Skeleton className="h-8 w-24" />
               ) : (
                 <>
-                  <div className="text-2xl font-bold text-green-600">{summary?.paidInvoices || 0}</div>
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-300">{summary?.paidInvoices || 0}</div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {formatCurrency(summary?.paidAmountUsd || 0)}
                   </p>
@@ -547,14 +547,14 @@ export default function InvoiceReports() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{pickLang(language, {ku:"ناوەندی پسوڵە", en:"Average invoice", ar:"متوسط الفاتورة", zh:"平均发票额"})}</CardTitle>
-              <TrendingUp className="h-4 w-4 text-blue-500" />
+              <TrendingUp className="h-4 w-4 text-blue-500 dark:text-blue-400" />
             </CardHeader>
             <CardContent>
               {summaryLoading ? (
                 <Skeleton className="h-8 w-24" />
               ) : (
                 <>
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-300">
                     {formatCurrency(summary?.averageInvoiceUsd || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -658,7 +658,7 @@ export default function InvoiceReports() {
                             <TableCell className="font-medium">{m.month}</TableCell>
                             <TableCell>{m.count}</TableCell>
                             <TableCell>{formatCurrency(m.total)}</TableCell>
-                            <TableCell className="text-green-600">{formatCurrency(m.paid)}</TableCell>
+                            <TableCell className="text-green-600 dark:text-green-300">{formatCurrency(m.paid)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -724,8 +724,8 @@ export default function InvoiceReports() {
                           </TableCell>
                           <TableCell>{c.totalInvoices}</TableCell>
                           <TableCell>{formatCurrency(c.totalAmountUsd)}</TableCell>
-                          <TableCell className="text-green-600">{formatCurrency(c.paidAmountUsd)}</TableCell>
-                          <TableCell className="text-amber-600">{formatCurrency(c.unpaidAmountUsd)}</TableCell>
+                          <TableCell className="text-green-600 dark:text-green-300">{formatCurrency(c.paidAmountUsd)}</TableCell>
+                          <TableCell className="text-amber-600 dark:text-amber-300">{formatCurrency(c.unpaidAmountUsd)}</TableCell>
                         </TableRow>
                       ))}
                       {(!customerReport || customerReport.length === 0) && (

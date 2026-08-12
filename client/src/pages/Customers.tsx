@@ -542,13 +542,13 @@ const [, setLocation] = useLocation();
                             <SelectContent>
                               <SelectItem value="male">
                                 <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-blue-500" />
+                                  <User className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                                   {t("common.male")}
                                 </div>
                               </SelectItem>
                               <SelectItem value="female">
                                 <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-pink-500" />
+                                  <User className="h-4 w-4 text-pink-500 dark:text-pink-400" />
                                   {t("common.female")}
                                 </div>
                               </SelectItem>
@@ -565,7 +565,7 @@ const [, setLocation] = useLocation();
                               {nationalities.map((nat: any) => (
                                 <SelectItem key={nat.id} value={nat.id}>
                                   <div className="flex items-center gap-2">
-                                    <Globe className="h-4 w-4 text-emerald-500" />
+                                    <Globe className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
                                     {nat.nameKu} - {nat.nameEn}
                                   </div>
                                 </SelectItem>
@@ -586,7 +586,7 @@ const [, setLocation] = useLocation();
                             {businessTypes.map((bt: any) => (
                               <SelectItem key={bt.id} value={bt.id}>
                                 <div className="flex items-center gap-2">
-                                  <Briefcase className="h-4 w-4 text-amber-500" />
+                                  <Briefcase className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                                   {bt.nameKu} - {bt.nameEn}
                                 </div>
                               </SelectItem>
@@ -871,7 +871,7 @@ const [, setLocation] = useLocation();
                         </div>
                       </div>
                       
-                      <p className="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg">
+                      <p className="text-xs text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg">
                         {t("customers.form.documentsUploadNote")}
                       </p>
                     </TabsContent>
@@ -912,7 +912,7 @@ const [, setLocation] = useLocation();
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t("customers.stats.active")}</p>
-                  <p className="text-3xl font-bold text-green-600">{activeCount}</p>
+                  <p className="text-3xl font-bold text-green-600 dark:text-green-300">{activeCount}</p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white shadow-lg shadow-green-200 dark:shadow-green-900/30">
                   <TrendingUp className="h-6 w-6" />
@@ -925,7 +925,7 @@ const [, setLocation] = useLocation();
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t("customers.stats.inactive")}</p>
-                  <p className="text-3xl font-bold text-slate-500">{inactiveCount}</p>
+                  <p className="text-3xl font-bold text-slate-500 dark:text-slate-400">{inactiveCount}</p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white shadow-lg shadow-slate-200 dark:shadow-slate-900/30">
                   <Users className="h-6 w-6" />
@@ -938,7 +938,7 @@ const [, setLocation] = useLocation();
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t("customers.stats.vip")}</p>
-                  <p className="text-3xl font-bold text-amber-600">{vipCount}</p>
+                  <p className="text-3xl font-bold text-amber-600 dark:text-amber-300">{vipCount}</p>
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-amber-200 dark:shadow-amber-900/30">
                   <Crown className="h-6 w-6" />
@@ -1074,7 +1074,7 @@ const [, setLocation] = useLocation();
                             <SelectItem value="all">{t("customers.allTypes")}</SelectItem>
                             <SelectItem value="vip">
                               <div className="flex items-center gap-2">
-                                <Crown className="h-3 w-3 text-amber-500" />
+                                <Crown className="h-3 w-3 text-amber-500 dark:text-amber-400" />
                                 {t("customers.vipOnly")}
                               </div>
                             </SelectItem>
@@ -1281,7 +1281,7 @@ const [, setLocation] = useLocation();
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                            className="h-8 w-8 text-red-500 dark:text-red-400 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
                             onClick={() => {
                               setDeleteCustomerId(customer.id);
                               setIsDeleteOpen(true);
@@ -1317,7 +1317,7 @@ const [, setLocation] = useLocation();
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <RotateCcw className="h-5 w-5 text-amber-500" />
+                <RotateCcw className="h-5 w-5 text-amber-500 dark:text-amber-400" />
                 {t("customers.resetPassword")}
               </DialogTitle>
               <DialogDescription>
@@ -1351,12 +1351,12 @@ const [, setLocation] = useLocation();
           <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertDialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-300">
                   <Trash2 className="h-5 w-5" />
                   {pickLang(language, { ku: "سڕینەوەی کڕیار", en: "Delete Customer", ar: "حذف العميل", zh: "删除客户" })}
                 </AlertDialogTitle>
                 <AlertDialogDescription className="text-right space-y-2">
-                  <p className="font-semibold text-red-500">
+                  <p className="font-semibold text-red-500 dark:text-red-400">
                     {pickLang(language, { ku: "ئایا دڵنیایت لە سڕینەوەی ئەم کڕیارە؟", en: "Are you sure you want to delete this customer?", ar: "هل أنت متأكد من حذف هذا العميل؟", zh: "确定要删除此客户吗？" })}
                   </p>
                   <p>

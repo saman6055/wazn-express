@@ -149,7 +149,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
               </div>
               {t("claimRequests.title")}
             </h1>
-            <p className="text-gray-500 mt-1">
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
               {t("claimRequests.subtitle")}
             </p>
           </div>
@@ -160,11 +160,11 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-950/40 rounded-lg flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-yellow-600" />
+                    <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-300" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{pendingCount || 0}</p>
-                    <p className="text-xs text-yellow-600">{t("common.pending")}</p>
+                    <p className="text-xs text-yellow-600 dark:text-yellow-300">{t("common.pending")}</p>
                   </div>
                 </div>
               </CardContent>
@@ -199,15 +199,15 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                 All Status
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("pending")}>
-                <Clock className="w-4 h-4 me-2 text-yellow-500" />
+                <Clock className="w-4 h-4 me-2 text-yellow-500 dark:text-yellow-400" />
                 Pending
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("approved")}>
-                <CheckCircle className="w-4 h-4 me-2 text-green-500" />
+                <CheckCircle className="w-4 h-4 me-2 text-green-500 dark:text-green-400" />
                 Approved
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("rejected")}>
-                <XCircle className="w-4 h-4 me-2 text-red-500" />
+                <XCircle className="w-4 h-4 me-2 text-red-500 dark:text-red-400" />
                 Rejected
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -227,7 +227,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
               <Package className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">No claim requests found</h3>
-            <p className="text-gray-500 mt-1">
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
               {statusFilter === "pending" 
                 ? "There are no pending claim requests at the moment."
                 : "No claim requests match your filters."}
@@ -250,15 +250,15 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                           )}>
                             <Package className={cn(
                               "w-6 h-6",
-                              request.status === "pending" ? "text-yellow-600" :
-                              request.status === "approved" ? "text-green-600" : "text-red-600"
+                              request.status === "pending" ? "text-yellow-600 dark:text-yellow-300" :
+                              request.status === "approved" ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"
                             )} />
                           </div>
                           <div>
                             <p className="font-semibold text-slate-800 dark:text-slate-200">
                               {request.trackingNumber}
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                               {request.requestNumber}
                             </p>
                           </div>
@@ -268,7 +268,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                       
                       {/* Customer & Date Info */}
                       <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                           <User className="w-4 h-4 text-gray-400" />
                           <span>
                             {getCustomerName(request.customerId)}
@@ -279,7 +279,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                             )}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                           <Calendar className="w-4 h-4 text-gray-400" />
                           <span>{formatDate(request.createdAt)}</span>
                         </div>
@@ -288,7 +288,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                       {/* Customer Note */}
                       {request.customerNote && (
                         <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg">
-                          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+                          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-1">
                             <MessageSquare className="w-4 h-4" />
                             Customer Note
                           </div>
@@ -299,7 +299,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                       {/* Proof of ownership images */}
                       {request.proofImages && request.proofImages.length > 0 && (
                         <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg">
-                          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
                             <ImageIcon className="w-4 h-4" />
                             {t("claimRequests.proofImages") || "Proof of ownership"} ({request.proofImages.length})
                           </div>
@@ -325,7 +325,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                         )}>
                           <div className={cn(
                             "flex items-center gap-2 text-sm mb-1",
-                            request.status === "approved" ? "text-green-600" : "text-red-600"
+                            request.status === "approved" ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"
                           )}>
                             {request.status === "approved" ? (
                               <CheckCircle className="w-4 h-4" />
@@ -363,7 +363,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                             setActionType("reject");
                           }}
                           variant="outline"
-                          className="flex-1 border-red-200 dark:border-red-800/60 text-red-600 hover:bg-red-50"
+                          className="flex-1 border-red-200 dark:border-red-800/60 text-red-600 dark:text-red-300 hover:bg-red-50"
                         >
                           <XCircle className="w-4 h-4 me-2" />
                           Reject
@@ -388,12 +388,12 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
               <DialogTitle className="flex items-center gap-2">
                 {actionType === "approve" ? (
                   <>
-                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-300" />
                     Approve Claim Request
                   </>
                 ) : (
                   <>
-                    <XCircle className="w-5 h-5 text-red-600" />
+                    <XCircle className="w-5 h-5 text-red-600 dark:text-red-300" />
                     Reject Claim Request
                   </>
                 )}
@@ -410,14 +410,14 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                 {/* Request Info */}
                 <div className="bg-gray-50 dark:bg-gray-950/40 rounded-lg p-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <Package className="w-5 h-5 text-slate-600" />
+                    <div className="w-10 h-10 bg-white dark:bg-card rounded-lg flex items-center justify-center shadow-sm">
+                      <Package className="w-5 h-5 text-slate-600 dark:text-slate-300" />
                     </div>
                     <div>
                       <p className="font-medium text-slate-800 dark:text-slate-200">
                         {selectedRequest.trackingNumber}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         Requested by: {getCustomerName(selectedRequest.customerId)}
                       </p>
                     </div>

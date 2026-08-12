@@ -113,17 +113,17 @@ const [selectedDate, setSelectedDate] = useState(() => {
           <div className="flex items-center justify-center gap-4 text-center">
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_ca725c")} </p>
-              <p className="text-3xl font-bold text-blue-600">${totalAssets.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-300">${totalAssets.toLocaleString()}</p>
             </div>
             <div className="text-2xl text-muted-foreground">=</div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_439568")} </p>
-              <p className="text-3xl font-bold text-red-600">${totalLiabilities.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-red-600 dark:text-red-300">${totalLiabilities.toLocaleString()}</p>
             </div>
             <div className="text-2xl text-muted-foreground">+</div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_e4735e")} </p>
-              <p className="text-3xl font-bold text-emerald-600">${equity.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-300">${equity.toLocaleString()}</p>
             </div>
           </div>
         </CardContent>
@@ -148,7 +148,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
-                      <Banknote className="h-4 w-4 text-emerald-600" />
+                      <Banknote className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
                     </div>
                     <span>{t("auto.text_7725d0")} </span>
                   </div>
@@ -158,7 +158,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center">
-                      <Building2 className="h-4 w-4 text-blue-600" />
+                      <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                     </div>
                     <span>{t("auto.text_e3d705")} </span>
                   </div>
@@ -168,7 +168,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
-                      <Users className="h-4 w-4 text-amber-600" />
+                      <Users className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                     </div>
                     <span>{t("auto.text_ddf1ac")} </span>
                   </div>
@@ -178,7 +178,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-950/40 flex items-center justify-center">
-                      <Package className="h-4 w-4 text-purple-600" />
+                      <Package className="h-4 w-4 text-purple-600 dark:text-purple-300" />
                     </div>
                     <span>{t("auto.text_a581a2")} </span>
                   </div>
@@ -215,7 +215,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-red-100 dark:bg-red-950/40 flex items-center justify-center">
-                      <Users className="h-4 w-4 text-red-600" />
+                      <Users className="h-4 w-4 text-red-600 dark:text-red-300" />
                     </div>
                     <span>{t("auto.text_7e7304")} </span>
                   </div>
@@ -225,7 +225,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center">
-                      <CreditCard className="h-4 w-4 text-orange-600" />
+                      <CreditCard className="h-4 w-4 text-orange-600 dark:text-orange-300" />
                     </div>
                     <span>{t("auto.text_a139ef")} </span>
                   </div>
@@ -235,7 +235,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-pink-100 dark:bg-pink-950/40 flex items-center justify-center">
-                      <Landmark className="h-4 w-4 text-pink-600" />
+                      <Landmark className="h-4 w-4 text-pink-600 dark:text-pink-300" />
                     </div>
                     <span>{t("auto.text_812278")} </span>
                   </div>
@@ -271,7 +271,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
-                      <PiggyBank className="h-4 w-4 text-emerald-600" />
+                      <PiggyBank className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
                     </div>
                     <span>{t("auto.text_444ee9")} </span>
                   </div>
@@ -281,7 +281,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center">
-                      <TrendingUp className="h-4 w-4 text-teal-600" />
+                      <TrendingUp className="h-4 w-4 text-teal-600 dark:text-teal-300" />
                     </div>
                     <span>{t("auto.text_2252fe")} </span>
                   </div>
@@ -291,11 +291,11 @@ const [selectedDate, setSelectedDate] = useState(() => {
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-cyan-100 dark:bg-cyan-950/40 flex items-center justify-center">
-                      <Wallet className="h-4 w-4 text-cyan-600" />
+                      <Wallet className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
                     </div>
                     <span>{t("auto.text_2c8e0f")} </span>
                   </div>
-                  <span className="font-semibold text-red-600">-$0</span>
+                  <span className="font-semibold text-red-600 dark:text-red-300">-$0</span>
                 </div>
               </div>
             </div>
@@ -321,7 +321,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-4 bg-muted/30 rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_1e7fbd")} </p>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-300">
                 {totalLiabilities > 0 ? (totalAssets / totalLiabilities).toFixed(2) : '∞'}
               </p>
               <p className="text-xs text-muted-foreground mt-1">{t("auto.text_5d5ee4")} </p>
@@ -329,7 +329,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
             <div className="p-4 bg-muted/30 rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_6324b1")} </p>
-              <p className="text-2xl font-bold text-red-600">
+              <p className="text-2xl font-bold text-red-600 dark:text-red-300">
                 {totalAssets > 0 ? ((totalLiabilities / totalAssets) * 100).toFixed(1) : '0'}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">{t("auto.text_777e54")} </p>
@@ -337,7 +337,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
             <div className="p-4 bg-muted/30 rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_efd50b")} </p>
-              <p className="text-2xl font-bold text-emerald-600">
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">
                 {totalAssets > 0 ? ((equity / totalAssets) * 100).toFixed(1) : '100'}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">{t("auto.text_d16b24")} </p>
@@ -345,7 +345,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
             <div className="p-4 bg-muted/30 rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_14042d")} </p>
-              <p className="text-2xl font-bold text-purple-600">
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-300">
                 ${(totalAssets - totalLiabilities).toLocaleString()}
               </p>
               <p className="text-xs text-muted-foreground mt-1">{t("auto.text_a2f5bf")} </p>

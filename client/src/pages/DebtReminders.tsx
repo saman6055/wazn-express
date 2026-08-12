@@ -100,7 +100,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
               <RefreshCw className="h-4 w-4 ms-2" />{t("blog.update")}</Button>
             <Dialog open={isSendDialogOpen} onOpenChange={setIsSendDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-white text-orange-600 hover:bg-orange-50" disabled={selectedCustomers.length === 0}>
+                <Button className="bg-white dark:bg-card text-orange-600 dark:text-orange-300 hover:bg-orange-50" disabled={selectedCustomers.length === 0}>
                   <Send className="h-4 w-4 ms-2" />
                   {t("auto.text_49e6d3")} ({selectedCustomers.length})
                 </Button>
@@ -128,17 +128,17 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
                       <SelectContent>
                         <SelectItem value="whatsapp">
                           <div className="flex items-center gap-2">
-                            <MessageSquare className="h-4 w-4 text-green-600" />
+                            <MessageSquare className="h-4 w-4 text-green-600 dark:text-green-300" />
                             {t("auto.text_218781")}
                           </div>
                         </SelectItem>
                         <SelectItem value="email">
                           <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-blue-600" />{t("auth.email")}</div>
+                            <Mail className="h-4 w-4 text-blue-600 dark:text-blue-300" />{t("auth.email")}</div>
                         </SelectItem>
                         <SelectItem value="both">
                           <div className="flex items-center gap-2">
-                            <Send className="h-4 w-4 text-purple-600" />
+                            <Send className="h-4 w-4 text-purple-600 dark:text-purple-300" />
                             {t("auto.text_837079")}
                           </div>
                         </SelectItem>
@@ -178,7 +178,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-red-100 dark:bg-red-950/40">
-                <Users className="h-6 w-6 text-red-600" />
+                <Users className="h-6 w-6 text-red-600 dark:text-red-300" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("auto.text_bb8925")} </p>
@@ -192,7 +192,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-950/40">
-                <DollarSign className="h-6 w-6 text-amber-600" />
+                <DollarSign className="h-6 w-6 text-amber-600 dark:text-amber-300" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("finance.totalDebt")}</p>
@@ -206,7 +206,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-950/40">
-                <CheckCircle className="h-6 w-6 text-blue-600" />
+                <CheckCircle className="h-6 w-6 text-blue-600 dark:text-blue-300" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("tables.selected")}</p>
@@ -220,7 +220,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-green-100 dark:bg-green-950/40">
-                <DollarSign className="h-6 w-6 text-green-600" />
+                <DollarSign className="h-6 w-6 text-green-600 dark:text-green-300" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("auto.text_9d2075")} </p>
@@ -289,7 +289,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-left">
-                      <p className="font-bold text-red-600">${(debtor.balanceUsd || 0).toLocaleString()}</p>
+                      <p className="font-bold text-red-600 dark:text-red-300">${(debtor.balanceUsd || 0).toLocaleString()}</p>
                       {debtor.balanceIqd > 0 && (
                         <p className="text-xs text-muted-foreground">
                           {debtor.balanceIqd.toLocaleString()} IQD
@@ -298,12 +298,12 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
                     </div>
                     <div className="flex gap-1">
                       {debtor.customer?.mobileNumber && (
-                        <Badge variant="outline" className="text-green-600">
+                        <Badge variant="outline" className="text-green-600 dark:text-green-300">
                           <Phone className="h-3 w-3" />
                         </Badge>
                       )}
                       {debtor.customer?.email && (
-                        <Badge variant="outline" className="text-blue-600">
+                        <Badge variant="outline" className="text-blue-600 dark:text-blue-300">
                           <Mail className="h-3 w-3" />
                         </Badge>
                       )}
@@ -314,7 +314,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500 dark:text-green-400" />
               <p>{t("auto.text_c74ac7")} </p>
             </div>
           )}

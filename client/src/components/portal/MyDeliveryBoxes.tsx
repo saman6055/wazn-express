@@ -101,7 +101,7 @@ function DeliveryProof({ boxId, label }: { boxId: number; label: Label }) {
           <img onError={onImageError}
             src={proof.data.signature}
             alt={label({ ku: "واژوو", en: "Signature", ar: "التوقيع", zh: "签名" })}
-            className="h-28 w-full rounded-lg border bg-white object-contain p-1"
+            className="h-28 w-full rounded-lg border bg-white dark:bg-card object-contain p-1"
             loading="lazy"
           />
           <figcaption className="mt-1 flex items-center gap-1 text-[10.5px] text-muted-foreground">
@@ -199,7 +199,7 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
               {isDone ? (
                 <>
                 <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-300" />
                   {confirmedByCustomer
                     ? label({
                         ku: "خۆت دووپاتت کردەوە کە وەرتگرتووە",

@@ -182,8 +182,8 @@ export default function ScanReports() {
             <CardContent className="pt-6">
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-slate-500" />
-                  <span className="text-sm text-slate-600">
+                  <Calendar className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                  <span className="text-sm text-slate-600 dark:text-slate-300">
                     {pickLang(language, { ku: "لە:", en: "From:", ar: "من:", zh: "从：" })}
                   </span>
                   <Input
@@ -194,7 +194,7 @@ export default function ScanReports() {
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-600">
+                  <span className="text-sm text-slate-600 dark:text-slate-300">
                     {pickLang(language, { ku: "بۆ:", en: "To:", ar: "إلى:", zh: "至：" })}
                   </span>
                   <Input
@@ -216,7 +216,7 @@ export default function ScanReports() {
                 </div>
                 <Select value={filterModule} onValueChange={setFilterModule}>
                   <SelectTrigger className="w-48">
-                    <Filter className="h-4 w-4 me-2 text-slate-500" />
+                    <Filter className="h-4 w-4 me-2 text-slate-500 dark:text-slate-400" />
                     <SelectValue placeholder={pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })} />
                   </SelectTrigger>
                   <SelectContent>
@@ -293,7 +293,7 @@ export default function ScanReports() {
                 <Card className="border-0 shadow-xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-indigo-600" />
+                      <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
                       {pickLang(language, { ku: "پوختەی ماوە", en: "Period Summary", ar: "ملخص الفترة", zh: "周期汇总" })}
                     </CardTitle>
                     <CardDescription>
@@ -303,19 +303,19 @@ export default function ScanReports() {
                   <CardContent>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 dark:border-indigo-800/60">
-                        <p className="text-sm text-indigo-600 font-medium">
+                        <p className="text-sm text-indigo-600 dark:text-indigo-300 font-medium">
                           {pickLang(language, { ku: "کۆی سکان", en: "Total Scans", ar: "إجمالي عمليات المسح", zh: "扫描总数" })}
                         </p>
                         <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">{totalScans}</p>
                       </div>
                       <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 dark:border-emerald-800/60">
-                        <p className="text-sm text-emerald-600 font-medium">
+                        <p className="text-sm text-emerald-600 dark:text-emerald-300 font-medium">
                           {pickLang(language, { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" })}
                         </p>
                         <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-300">{todayTotal}</p>
                       </div>
                       <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 dark:border-amber-800/60">
-                        <p className="text-sm text-amber-600 font-medium">
+                        <p className="text-sm text-amber-600 dark:text-amber-300 font-medium">
                           {pickLang(language, { ku: "ڕۆژانە بە تێکڕا", en: "Daily Average", ar: "المعدل اليومي", zh: "日均" })}
                         </p>
                         <p className="text-3xl font-bold text-amber-700 dark:text-amber-300">
@@ -323,7 +323,7 @@ export default function ScanReports() {
                         </p>
                       </div>
                       <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100 dark:border-blue-800/60">
-                        <p className="text-sm text-blue-600 font-medium">
+                        <p className="text-sm text-blue-600 dark:text-blue-300 font-medium">
                           {pickLang(language, { ku: "ژمارەی ڕۆژ", en: "Days", ar: "الأيام", zh: "天数" })}
                         </p>
                         <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">{dailyReport.length}</p>
@@ -336,7 +336,7 @@ export default function ScanReports() {
                 <Card className="border-0 shadow-xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-purple-600" />
+                      <Activity className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                       {pickLang(language, { ku: "شیکاری مۆدیولەکان", en: "Module Breakdown", ar: "تفصيل الوحدات", zh: "模块明细" })}
                     </CardTitle>
                   </CardHeader>
@@ -377,7 +377,7 @@ export default function ScanReports() {
               <Card className="border-0 shadow-xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-indigo-600" />
+                    <Calendar className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
                     {pickLang(language, { ku: "ڕاپۆرتی ڕۆژانە", en: "Daily Report", ar: "التقرير اليومي", zh: "每日报告" })}
                   </CardTitle>
                   <CardDescription>
@@ -432,7 +432,7 @@ export default function ScanReports() {
                   </Table>
                   
                   {dailyReport.length === 0 && (
-                    <div className="text-center py-12 text-slate-500">
+                    <div className="text-center py-12 text-slate-500 dark:text-slate-400">
                       <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
                       <p>{pickLang(language, { ku: "هیچ داتایەک نییە", en: "No data available", ar: "لا توجد بيانات متاحة", zh: "暂无数据" })}</p>
                     </div>
@@ -448,7 +448,7 @@ export default function ScanReports() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-indigo-600" />
+                        <Clock className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
                         {pickLang(language, { ku: "وردەکاری سکانەکان", en: "Scan Details", ar: "تفاصيل المسح", zh: "扫描明细" })}
                       </CardTitle>
                       <CardDescription>
@@ -486,7 +486,7 @@ export default function ScanReports() {
                             <TableCell>
                               {new Date(scan.scannedAt).toLocaleDateString(localeCode(language))}
                             </TableCell>
-                            <TableCell className="text-slate-500">
+                            <TableCell className="text-slate-500 dark:text-slate-400">
                               {new Date(scan.scannedAt).toLocaleTimeString(localeCode(language))}
                             </TableCell>
                             <TableCell>
@@ -502,14 +502,14 @@ export default function ScanReports() {
                   </Table>
                   
                   {filteredScans.length === 0 && (
-                    <div className="text-center py-12 text-slate-500">
+                    <div className="text-center py-12 text-slate-500 dark:text-slate-400">
                       <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
                       <p>{pickLang(language, { ku: "هیچ سکانێک نییە", en: "No scans found", ar: "لم يتم العثور على عمليات مسح", zh: "未找到扫描记录" })}</p>
                     </div>
                   )}
                   
                   {filteredScans.length > 50 && (
-                    <div className="text-center py-4 text-slate-500 border-t">
+                    <div className="text-center py-4 text-slate-500 dark:text-slate-400 border-t">
                       <p className="text-sm">
                         {pickLang(language, {
                           ku: `${filteredScans.length - 50} سکانی تر هەیە...`,

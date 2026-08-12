@@ -71,7 +71,7 @@ export default function StoreProduct() {
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/store">
             <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
-              <StoreIcon className="w-5 h-5 text-violet-600" />
+              <StoreIcon className="w-5 h-5 text-violet-600 dark:text-violet-300" />
               {label({ ku: "وەزن ستۆر", en: "Wazn Store", ar: "متجر وزن", zh: "Wazn 商店" })}
             </span>
           </Link>
@@ -81,7 +81,7 @@ export default function StoreProduct() {
 
       <main className="max-w-2xl mx-auto px-4 pb-32 pt-4">
         <Link href="/store">
-          <button className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
+          <button className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 mb-4">
             <ArrowLeft className={cn("w-4 h-4", isRTL && "rotate-180")} />
             {label({ ku: "گەڕانەوە", en: "Back", ar: "رجوع", zh: "返回" })}
           </button>
@@ -89,25 +89,25 @@ export default function StoreProduct() {
 
         {isLoading ? (
           <div className="animate-pulse space-y-4">
-            <div className="aspect-square w-full rounded-3xl bg-slate-200" />
-            <div className="h-8 w-2/3 rounded-lg bg-slate-200" />
-            <div className="h-6 w-1/3 rounded-lg bg-slate-200" />
+            <div className="aspect-square w-full rounded-3xl bg-slate-200 dark:bg-slate-800/50" />
+            <div className="h-8 w-2/3 rounded-lg bg-slate-200 dark:bg-slate-800/50" />
+            <div className="h-6 w-1/3 rounded-lg bg-slate-200 dark:bg-slate-800/50" />
           </div>
         ) : !product ? (
           <div className="text-center py-20">
             <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-950/40 flex items-center justify-center mx-auto mb-4">
               <ImageIcon className="w-8 h-8 text-slate-300" />
             </div>
-            <p className="font-medium text-slate-600">{label({ ku: "پرۆدیکت نەدۆزرایەوە", en: "Product not found", ar: "المنتج غير موجود", zh: "未找到产品" })}</p>
+            <p className="font-medium text-slate-600 dark:text-slate-300">{label({ ku: "پرۆدیکت نەدۆزرایەوە", en: "Product not found", ar: "المنتج غير موجود", zh: "未找到产品" })}</p>
           </div>
         ) : placed ? (
           <div className="text-center py-16">
             <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center mx-auto mb-5">
-              <CheckCircle2 className="w-11 h-11 text-emerald-600" />
+              <CheckCircle2 className="w-11 h-11 text-emerald-600 dark:text-emerald-300" />
             </div>
             <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">{label({ ku: "داواکارییەکەت نێردرا!", en: "Order sent!", ar: "تم إرسال طلبك!", zh: "订单已发送！" })}</h1>
-            <p className="text-slate-500 mt-2">{label({ ku: "لە ڕێگای WhatsApp پەیوەندیت پێوە دەکەین بۆ پشتڕاستکردنەوە.", en: "We'll contact you on WhatsApp to confirm.", ar: "سنتواصل معك عبر واتساب للتأكيد.", zh: "我们将通过 WhatsApp 与您确认。" })}</p>
-            <p className="mt-4 inline-block rounded-full bg-slate-100 dark:bg-slate-950/40 px-4 py-1.5 text-sm font-mono text-slate-600">{placed.orderCode}</p>
+            <p className="text-slate-500 dark:text-slate-400 mt-2">{label({ ku: "لە ڕێگای WhatsApp پەیوەندیت پێوە دەکەین بۆ پشتڕاستکردنەوە.", en: "We'll contact you on WhatsApp to confirm.", ar: "سنتواصل معك عبر واتساب للتأكيد.", zh: "我们将通过 WhatsApp 与您确认。" })}</p>
+            <p className="mt-4 inline-block rounded-full bg-slate-100 dark:bg-slate-950/40 px-4 py-1.5 text-sm font-mono text-slate-600 dark:text-slate-300">{placed.orderCode}</p>
             <div className="mt-8">
               <Link href="/store">
                 <button className="rounded-xl bg-violet-600 text-white px-6 py-3 font-medium hover:bg-violet-700 transition">
@@ -124,7 +124,7 @@ export default function StoreProduct() {
               const current = imgs[activeImg] || imgs[0];
               return (
                 <div>
-                  <div className="aspect-square w-full rounded-3xl overflow-hidden bg-white border border-slate-200 dark:border-slate-800/60 flex items-center justify-center">
+                  <div className="aspect-square w-full rounded-3xl overflow-hidden bg-white dark:bg-card border border-slate-200 dark:border-slate-800/60 flex items-center justify-center">
                     {current ? (
                       <img src={current} alt={pName(product, language)} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     ) : (
@@ -156,32 +156,32 @@ export default function StoreProduct() {
               )}
               <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200 leading-snug">{pName(product, language)}</h1>
               <div className="flex items-baseline gap-2 mt-3">
-                <span className="text-3xl font-bold text-violet-600">{money(product.price, product.currency)}</span>
+                <span className="text-3xl font-bold text-violet-600 dark:text-violet-300">{money(product.price, product.currency)}</span>
                 {product.compareAtPrice && Number(product.compareAtPrice) > Number(product.price) && (
                   <span className="text-lg text-slate-400 line-through">{money(product.compareAtPrice, product.currency)}</span>
                 )}
               </div>
               {product.status === "out_of_stock" && (
-                <p className="mt-3 inline-block rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 text-sm font-medium px-3 py-1.5">
+                <p className="mt-3 inline-block rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 text-sm font-medium px-3 py-1.5">
                   {label({ ku: "ئێستا نەماوە", en: "Out of stock", ar: "غير متوفر حالياً", zh: "暂时缺货" })}
                 </p>
               )}
               {pDesc(product, language) && (
-                <p className="mt-4 text-slate-600 leading-relaxed whitespace-pre-line">{pDesc(product, language)}</p>
+                <p className="mt-4 text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">{pDesc(product, language)}</p>
               )}
             </div>
 
             {/* Order form */}
             {product.status !== "out_of_stock" && (
-              <div className="mt-8 rounded-3xl bg-white border border-slate-200 dark:border-slate-800/60 p-5">
+              <div className="mt-8 rounded-3xl bg-white dark:bg-card border border-slate-200 dark:border-slate-800/60 p-5">
                 <h2 className="font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5 text-violet-600" />
+                  <ShoppingBag className="w-5 h-5 text-violet-600 dark:text-violet-300" />
                   {label({ ku: "داواکاری", en: "Place order", ar: "إتمام الطلب", zh: "下单" })}
                 </h2>
 
                 {/* Quantity */}
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-slate-600">{label({ ku: "عەدەد", en: "Quantity", ar: "الكمية", zh: "数量" })}</span>
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{label({ ku: "عەدەد", en: "Quantity", ar: "الكمية", zh: "数量" })}</span>
                   <div className="flex items-center gap-3">
                     <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-950/40 hover:bg-slate-200 flex items-center justify-center"><Minus className="w-4 h-4" /></button>
                     <span className="w-8 text-center font-bold text-slate-800 dark:text-slate-200">{qty}</span>
@@ -198,7 +198,7 @@ export default function StoreProduct() {
                 </div>
 
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
-                  <span className="text-sm text-slate-500">{label({ ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "总计" })}</span>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">{label({ ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "总计" })}</span>
                   <span className="text-xl font-bold text-slate-800 dark:text-slate-200">{money(Number(product.price) * qty, product.currency)}</span>
                 </div>
 

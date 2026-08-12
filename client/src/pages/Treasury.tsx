@@ -222,10 +222,10 @@ const [activeTab, setActiveTab] = useState("accounts");
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case "deposit": return <ArrowUpRight className="h-4 w-4 text-green-500" />;
-      case "withdrawal": return <ArrowDownRight className="h-4 w-4 text-red-500" />;
-      case "transfer_in": return <ArrowUpRight className="h-4 w-4 text-blue-500" />;
-      case "transfer_out": return <ArrowDownRight className="h-4 w-4 text-blue-500" />;
+      case "deposit": return <ArrowUpRight className="h-4 w-4 text-green-500 dark:text-green-400" />;
+      case "withdrawal": return <ArrowDownRight className="h-4 w-4 text-red-500 dark:text-red-400" />;
+      case "transfer_in": return <ArrowUpRight className="h-4 w-4 text-blue-500 dark:text-blue-400" />;
+      case "transfer_out": return <ArrowDownRight className="h-4 w-4 text-blue-500 dark:text-blue-400" />;
       default: return <ArrowLeftRight className="h-4 w-4" />;
     }
   };
@@ -509,19 +509,19 @@ const [activeTab, setActiveTab] = useState("accounts");
           <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800/60">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("treasury.totalCurrency")}</CardTitle>
-              <PiggyBank className="h-5 w-5 text-green-600" />
+              <PiggyBank className="h-5 w-5 text-green-600 dark:text-green-300" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-700 dark:text-green-400">
                 {formatCurrency(totalBalance)}
               </div>
-              <p className="text-xs text-green-600/70">{t("finance.allAccounts")}</p>
+              <p className="text-xs text-green-600/70 dark:text-green-300">{t("finance.allAccounts")}</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("treasury.cashBoxBalance")}</CardTitle>
-              <Banknote className="h-4 w-4 text-yellow-600" />
+              <Banknote className="h-4 w-4 text-yellow-600 dark:text-yellow-300" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -533,7 +533,7 @@ const [activeTab, setActiveTab] = useState("accounts");
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("finance.bank")}</CardTitle>
-              <Landmark className="h-4 w-4 text-blue-600" />
+              <Landmark className="h-4 w-4 text-blue-600 dark:text-blue-300" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -636,7 +636,7 @@ const [activeTab, setActiveTab] = useState("accounts");
                       }
                     }}
                   >
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                   </Button>
                 </div>
               </CardContent>
@@ -686,8 +686,8 @@ const [activeTab, setActiveTab] = useState("accounts");
                         <TableCell>{txn.description || "-"}</TableCell>
                         <TableCell className={`text-right font-medium ${
                           txn.transactionType === "deposit" || txn.transactionType === "transfer_in"
-                            ? "text-green-600"
-                            : "text-red-600"
+                            ? "text-green-600 dark:text-green-300"
+                            : "text-red-600 dark:text-red-300"
                         }`}>
                           {txn.transactionType === "deposit" || txn.transactionType === "transfer_in" ? "+" : "-"}
                           {formatCurrency(txn.amount)}

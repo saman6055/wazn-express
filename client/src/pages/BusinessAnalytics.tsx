@@ -185,7 +185,7 @@ export default function BusinessAnalytics() {
                   <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(totalProfit)}</p>
                 </div>
                 <div className="rounded-xl bg-emerald-100 dark:bg-emerald-950/40 p-3">
-                  <TrendingUp className="h-6 w-6 text-emerald-600" />
+                  <TrendingUp className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
                 </div>
               </div>
             </CardContent>
@@ -199,7 +199,7 @@ export default function BusinessAnalytics() {
                   <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">{totalOrders}</p>
                 </div>
                 <div className="rounded-xl bg-blue-100 dark:bg-blue-950/40 p-3">
-                  <Package className="h-6 w-6 text-blue-600" />
+                  <Package className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                 </div>
               </div>
             </CardContent>
@@ -213,7 +213,7 @@ export default function BusinessAnalytics() {
                   <p className="text-3xl font-bold text-amber-700 dark:text-amber-300">{formatCurrency(financialSummary?.totalDebtUsd || 0)}</p>
                 </div>
                 <div className="rounded-xl bg-amber-100 dark:bg-amber-950/40 p-3">
-                  <Wallet className="h-6 w-6 text-amber-600" />
+                  <Wallet className="h-6 w-6 text-amber-600 dark:text-amber-300" />
                 </div>
               </div>
             </CardContent>
@@ -227,7 +227,7 @@ export default function BusinessAnalytics() {
                   <p className="text-3xl font-bold text-rose-700 dark:text-rose-300">{financialSummary?.debtorsCount || 0}</p>
                 </div>
                 <div className="rounded-xl bg-rose-100 dark:bg-rose-950/40 p-3">
-                  <Users className="h-6 w-6 text-rose-600" />
+                  <Users className="h-6 w-6 text-rose-600 dark:text-rose-300" />
                 </div>
               </div>
             </CardContent>
@@ -239,7 +239,7 @@ export default function BusinessAnalytics() {
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <PieChart className="h-5 w-5 text-purple-600" />
+                <PieChart className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                 {pickLang(language, { ku: 'قازانج بە جۆری پاکەت', en: 'Profit by Package Type', ar: 'الربح حسب نوع الطرد', zh: '按包裹类型分类的利润' })}
               </CardTitle>
               <CardDescription>{pickLang(language, { ku: 'شیکاری قازانج بۆ هەر جۆرێکی پاکەت', en: 'Profit analysis for each package type', ar: 'تحليل الربح لكل نوع من أنواع الطرود', zh: '每种包裹类型的利润分析' })}</CardDescription>
@@ -250,16 +250,16 @@ export default function BusinessAnalytics() {
                 <div className="flex items-center justify-between p-4 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-800/60">
                   <div className="flex items-center gap-3">
                     <div className="rounded-lg bg-purple-100 dark:bg-purple-950/40 p-2">
-                      <Boxes className="h-5 w-5 text-purple-600" />
+                      <Boxes className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                     </div>
                     <div>
                       <p className="font-semibold text-purple-900 dark:text-purple-200">{pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全套服务' })}</p>
-                      <p className="text-sm text-purple-600">{profitByType?.fullPackage?.count || 0} {pickLang(language, { ku: 'ئۆردەر', en: 'orders', ar: 'طلب', zh: '订单' })}</p>
+                      <p className="text-sm text-purple-600 dark:text-purple-300">{profitByType?.fullPackage?.count || 0} {pickLang(language, { ku: 'ئۆردەر', en: 'orders', ar: 'طلب', zh: '订单' })}</p>
                     </div>
                   </div>
                   <div className="text-left">
                     <p className="text-xl font-bold text-purple-700 dark:text-purple-300">{formatCurrency(profitByType?.fullPackage?.totalProfit || 0)}</p>
-                    <p className="text-xs text-purple-500">{pickLang(language, { ku: 'تێکڕا', en: 'Avg', ar: 'المتوسط', zh: '平均' })}: {formatCurrency(profitByType?.fullPackage?.avgProfit || 0)}</p>
+                    <p className="text-xs text-purple-500 dark:text-purple-400">{pickLang(language, { ku: 'تێکڕا', en: 'Avg', ar: 'المتوسط', zh: '平均' })}: {formatCurrency(profitByType?.fullPackage?.avgProfit || 0)}</p>
                   </div>
                 </div>
 
@@ -267,16 +267,16 @@ export default function BusinessAnalytics() {
                 <div className="flex items-center justify-between p-4 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-100 dark:border-orange-800/60">
                   <div className="flex items-center gap-3">
                     <div className="rounded-lg bg-orange-100 dark:bg-orange-950/40 p-2">
-                      <Percent className="h-5 w-5 text-orange-600" />
+                      <Percent className="h-5 w-5 text-orange-600 dark:text-orange-300" />
                     </div>
                     <div>
                       <p className="font-semibold text-orange-900 dark:text-orange-200">{pickLang(language, { ku: 'کڕین بە تێچوو', en: 'Cost-based Purchase', ar: 'الشراء بالتكلفة', zh: '按成本采购' })}</p>
-                      <p className="text-sm text-orange-600">{profitByType?.commission?.count || 0} {pickLang(language, { ku: 'ئۆردەر', en: 'orders', ar: 'طلب', zh: '订单' })}</p>
+                      <p className="text-sm text-orange-600 dark:text-orange-300">{profitByType?.commission?.count || 0} {pickLang(language, { ku: 'ئۆردەر', en: 'orders', ar: 'طلب', zh: '订单' })}</p>
                     </div>
                   </div>
                   <div className="text-left">
                     <p className="text-xl font-bold text-orange-700 dark:text-orange-300">{formatCurrency(profitByType?.commission?.totalProfit || 0)}</p>
-                    <p className="text-xs text-orange-500">{pickLang(language, { ku: 'تێکڕا', en: 'Avg', ar: 'المتوسط', zh: '平均' })}: {formatCurrency(profitByType?.commission?.avgProfit || 0)}</p>
+                    <p className="text-xs text-orange-500 dark:text-orange-400">{pickLang(language, { ku: 'تێکڕا', en: 'Avg', ar: 'المتوسط', zh: '平均' })}: {formatCurrency(profitByType?.commission?.avgProfit || 0)}</p>
                   </div>
                 </div>
 
@@ -284,16 +284,16 @@ export default function BusinessAnalytics() {
                 <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60">
                   <div className="flex items-center gap-3">
                     <div className="rounded-lg bg-slate-100 dark:bg-slate-950/40 p-2">
-                      <Package className="h-5 w-5 text-slate-600" />
+                      <Package className="h-5 w-5 text-slate-600 dark:text-slate-300" />
                     </div>
                     <div>
                       <p className="font-semibold text-slate-900 dark:text-slate-200">{pickLang(language, { ku: 'پاکەتی ئاسایی', en: 'Regular Package', ar: 'الطرد العادي', zh: '普通包裹' })}</p>
-                      <p className="text-sm text-slate-600">{profitByType?.packages?.count || 0} {pickLang(language, { ku: 'پاکەت', en: 'packages', ar: 'طرد', zh: '包裹' })}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-300">{profitByType?.packages?.count || 0} {pickLang(language, { ku: 'پاکەت', en: 'packages', ar: 'طرد', zh: '包裹' })}</p>
                     </div>
                   </div>
                   <div className="text-left">
                     <p className="text-xl font-bold text-slate-700 dark:text-slate-300">{formatCurrency(profitByType?.packages?.totalRevenue || 0)}</p>
-                    <p className="text-xs text-slate-500">{pickLang(language, { ku: 'داهات', en: 'Revenue', ar: 'الإيراد', zh: '收入' })}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{pickLang(language, { ku: 'داهات', en: 'Revenue', ar: 'الإيراد', zh: '收入' })}</p>
                   </div>
                 </div>
               </div>
@@ -304,7 +304,7 @@ export default function BusinessAnalytics() {
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-blue-600" />
+                <Target className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                 {pickLang(language, { ku: 'ئاماری پاکەتەکان', en: 'Package Statistics', ar: 'إحصائيات الطرود', zh: '包裹统计' })}
               </CardTitle>
               <CardDescription>{pickLang(language, { ku: 'بارودۆخی پاکەتەکان بە ژمارە', en: 'Package status by count', ar: 'حالة الطرود حسب العدد', zh: '按数量统计的包裹状态' })}</CardDescription>
@@ -345,7 +345,7 @@ export default function BusinessAnalytics() {
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Crown className="h-5 w-5 text-amber-500" />
+                <Crown className="h-5 w-5 text-amber-500 dark:text-amber-400" />
                 {pickLang(language, { ku: 'باشترین ١٠ کڕیار', en: 'Top 10 Customers', ar: 'أفضل 10 عملاء', zh: '前10名客户' })}
               </CardTitle>
               <CardDescription>{pickLang(language, { ku: 'بە پێی داهات', en: 'By revenue', ar: 'حسب الإيراد', zh: '按收入' })}</CardDescription>
@@ -379,7 +379,7 @@ export default function BusinessAnalytics() {
                           <p className="text-xs text-muted-foreground font-mono">{getCustomerCode(customer.customerId)}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-left font-mono font-semibold text-emerald-600">
+                      <TableCell className="text-left font-mono font-semibold text-emerald-600 dark:text-emerald-300">
                         {formatCurrency(Number(customer.totalCharges) || 0)}
                       </TableCell>
                     </TableRow>
@@ -400,7 +400,7 @@ export default function BusinessAnalytics() {
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
+                <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
                 {pickLang(language, { ku: 'قەرزدارترین ١٠ کڕیار', en: 'Top 10 Debtors', ar: 'أكبر 10 مدينين', zh: '前10名欠款客户' })}
               </CardTitle>
               <CardDescription>{pickLang(language, { ku: 'کڕیارانی زۆرترین قەرز', en: 'Customers with the most debt', ar: 'العملاء الأكثر مديونية', zh: '欠款最多的客户' })}</CardDescription>
@@ -428,7 +428,7 @@ export default function BusinessAnalytics() {
                           <p className="text-xs text-muted-foreground font-mono">{debtor.customer?.customerCode || ''}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-left font-mono font-semibold text-red-600">
+                      <TableCell className="text-left font-mono font-semibold text-red-600 dark:text-red-300">
                         {formatCurrency(debtor.balanceUsd)}
                       </TableCell>
                     </TableRow>
@@ -452,7 +452,7 @@ export default function BusinessAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-emerald-600" />
+                  <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                   {pickLang(language, { ku: 'ڕەوتی قازانجی مانگانە', en: 'Monthly Profit Trend', ar: 'اتجاه الربح الشهري', zh: '月度利润趋势' })}
                 </CardTitle>
                 <CardDescription>{pickLang(language, { ku: 'قازانج و خەرجی لە ماوەی ساڵ', en: 'Profit and expenses over the year', ar: 'الربح والمصروفات على مدار السنة', zh: '全年利润与支出' })}</CardDescription>
@@ -493,9 +493,9 @@ export default function BusinessAnalytics() {
                     </div>
                     <div className="w-8">
                       {isPositive ? (
-                        <ArrowUpRight className="h-5 w-5 text-emerald-500" />
+                        <ArrowUpRight className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
                       ) : (
-                        <ArrowDownRight className="h-5 w-5 text-red-500" />
+                        <ArrowDownRight className="h-5 w-5 text-red-500 dark:text-red-400" />
                       )}
                     </div>
                   </div>

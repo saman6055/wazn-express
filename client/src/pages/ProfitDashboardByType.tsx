@@ -174,11 +174,11 @@ export default function ProfitDashboardByType() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-emerald-600 font-medium">{pickLang(language, { ku: "کۆی قازانج", en: "Total Profit", ar: "إجمالي الربح", zh: "总利润" })}</p>
+                  <p className="text-sm text-emerald-600 dark:text-emerald-300 font-medium">{pickLang(language, { ku: "کۆی قازانج", en: "Total Profit", ar: "إجمالي الربح", zh: "总利润" })}</p>
                   <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">${(totalProfit || 0).toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
-                  <DollarSign className="h-6 w-6 text-emerald-600" />
+                  <DollarSign className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
                 </div>
               </div>
             </CardContent>
@@ -188,11 +188,11 @@ export default function ProfitDashboardByType() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-600 font-medium">{pickLang(language, { ku: "کۆی ئۆردەرەکان", en: "Total Orders", ar: "إجمالي الطلبات", zh: "订单总数" })}</p>
+                  <p className="text-sm text-blue-600 dark:text-blue-300 font-medium">{pickLang(language, { ku: "کۆی ئۆردەرەکان", en: "Total Orders", ar: "إجمالي الطلبات", zh: "订单总数" })}</p>
                   <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{totalOrders}</p>
                 </div>
                 <div className="p-3 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
-                  <Package className="h-6 w-6 text-blue-600" />
+                  <Package className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                 </div>
               </div>
             </CardContent>
@@ -301,7 +301,7 @@ export default function ProfitDashboardByType() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-emerald-600">${Number(item.totalProfit || 0).toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">${Number(item.totalProfit || 0).toFixed(2)}</p>
                       <p className="text-sm text-muted-foreground">
                         {pickLang(language, { ku: "ناوەندی", en: "Average", ar: "المتوسط", zh: "平均" })}: ${Number(item.avgProfit || 0).toFixed(2)}
                       </p>

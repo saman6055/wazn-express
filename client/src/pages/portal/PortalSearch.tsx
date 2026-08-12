@@ -126,12 +126,12 @@ export default function PortalSearch() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "delivered":
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-5 h-5 text-green-500 dark:text-green-400" />;
       case "in_transit":
       case "out_for_delivery":
-        return <Truck className="w-5 h-5 text-blue-500" />;
+        return <Truck className="w-5 h-5 text-blue-500 dark:text-blue-400" />;
       case "customs_processing":
-        return <AlertCircle className="w-5 h-5 text-orange-500" />;
+        return <AlertCircle className="w-5 h-5 text-orange-500 dark:text-orange-400" />;
       default:
         return <Clock className="w-5 h-5 text-gray-400" />;
     }
@@ -211,7 +211,7 @@ export default function PortalSearch() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="w-full h-12 ps-12 pe-12 rounded-xl bg-white text-slate-800 dark:text-slate-200 placeholder:text-gray-400 border-0"
+            className="w-full h-12 ps-12 pe-12 rounded-xl bg-white dark:bg-card text-slate-800 dark:text-slate-200 placeholder:text-gray-400 border-0"
           />
           <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           {searchQuery && (
@@ -230,7 +230,7 @@ export default function PortalSearch() {
         <Button
           onClick={handleSearch}
           disabled={!searchQuery.trim() || isLoading}
-          className="w-full mt-3 h-12 bg-white text-slate-800 dark:text-slate-200 hover:bg-gray-100 font-medium rounded-xl"
+          className="w-full mt-3 h-12 bg-white dark:bg-card text-slate-800 dark:text-slate-200 hover:bg-gray-100 font-medium rounded-xl"
         >
           {isLoading ? t("searching") || "Searching..." : t("search") || "Search"}
         </Button>
@@ -275,7 +275,7 @@ export default function PortalSearch() {
             <div className="w-20 h-20 bg-gray-100 dark:bg-gray-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-10 h-10 text-gray-300" />
             </div>
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-400">
               {pickLang(language, {
                 ku: "تراکینگ نەمبەر یان ئۆردەر نەمبەر (FP-...) بنووسە بۆ گەڕان",
                 en: "Enter a tracking number or order number (FP-...) to search",
@@ -311,7 +311,7 @@ export default function PortalSearch() {
                 {photos && photos.length > 0 && (
                   <button
                     onClick={openPhotoViewer}
-                    className="flex items-center gap-1 px-3 py-2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                    className="flex items-center gap-1 px-3 py-2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
                   >
                     <Camera className="w-4 h-4" />
                     <span>{photos.length}</span>
@@ -344,14 +344,14 @@ export default function PortalSearch() {
                       </div>
                     ))}
                     {photos.length > 4 && (
-                      <div className="w-12 h-12 rounded-lg border-2 border-white shadow-sm bg-gray-200 flex items-center justify-center">
-                        <span className="text-xs text-gray-600 font-medium">+{photos.length - 4}</span>
+                      <div className="w-12 h-12 rounded-lg border-2 border-white shadow-sm bg-gray-200 dark:bg-gray-800/50 flex items-center justify-center">
+                        <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">+{photos.length - 4}</span>
                       </div>
                     )}
                   </div>
                   <div className="flex-1 text-start">
                     <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{t("packagePhotos") || "Package Photos"}</p>
-                    <p className="text-xs text-gray-500">{photos.length} {t("photos") || "photos"}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{photos.length} {t("photos") || "photos"}</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
                 </button>
@@ -389,7 +389,7 @@ export default function PortalSearch() {
                   <div className="flex items-center gap-2">
                     <Scale className="w-4 h-4 text-gray-400" />
                     <div>
-                      <p className="text-xs text-gray-500">{t("weight") || "Weight"}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t("weight") || "Weight"}</p>
                       <p className="font-medium text-slate-800 dark:text-slate-200">{result.weightKg} kg</p>
                     </div>
                   </div>
@@ -398,7 +398,7 @@ export default function PortalSearch() {
                   <div className="flex items-center gap-2">
                     <Ruler className="w-4 h-4 text-gray-400" />
                     <div>
-                      <p className="text-xs text-gray-500">{t("dimensions") || "Dimensions"}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t("dimensions") || "Dimensions"}</p>
                       <p className="font-medium text-slate-800 dark:text-slate-200">{result.lengthCm}×{result.widthCm}×{result.heightCm} cm</p>
                     </div>
                   </div>
@@ -407,14 +407,14 @@ export default function PortalSearch() {
 
               {/* Shipping Type */}
               <div>
-                <p className="text-xs text-gray-500">{t("shippingType") || "Shipping Type"}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t("shippingType") || "Shipping Type"}</p>
                 <p className="font-medium text-slate-800 dark:text-slate-200 capitalize">{result.shippingType.replace("_", " ")}</p>
               </div>
 
               {/* Description */}
               {result.description && (
                 <div>
-                  <p className="text-xs text-gray-500">{t("description") || "Description"}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("description") || "Description"}</p>
                   <p className="text-slate-800 dark:text-slate-200">{result.description}</p>
                 </div>
               )}
@@ -422,14 +422,14 @@ export default function PortalSearch() {
               {/* Dates */}
               <div className="grid grid-cols-2 gap-4 pt-3 border-t">
                 <div>
-                  <p className="text-xs text-gray-500">{t("registered") || "Registered"}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("registered") || "Registered"}</p>
                   <p className="text-sm text-slate-800 dark:text-slate-200">
                     {formatPortalDate(result.registeredAt, language)}
                   </p>
                 </div>
                 {result.deliveredAt && (
                   <div>
-                    <p className="text-xs text-gray-500">{t("delivered") || "Delivered"}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t("delivered") || "Delivered"}</p>
                     <p className="text-sm text-slate-800 dark:text-slate-200">
                       {formatPortalDate(result.deliveredAt, language)}
                     </p>
@@ -446,7 +446,7 @@ export default function PortalSearch() {
                 <img onError={onImageError} loading="lazy" decoding="async" src={orderResult.productImage} alt="" className="w-14 h-14 rounded-xl object-cover" />
               ) : (
                 <div className="w-14 h-14 bg-violet-100 dark:bg-violet-950/40 rounded-xl flex items-center justify-center">
-                  <Package className="w-7 h-7 text-violet-500" />
+                  <Package className="w-7 h-7 text-violet-500 dark:text-violet-400" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
@@ -463,12 +463,12 @@ export default function PortalSearch() {
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
-                <p className="text-xs text-gray-500">{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</p>
                 <p className="font-semibold text-slate-800 dark:text-slate-100">{orderResult.status}</p>
               </div>
               {orderResult.trackingNumber && (
                 <div>
-                  <p className="text-xs text-gray-500">{pickLang(language, { ku: "تراک", en: "Tracking", ar: "التتبع", zh: "运单号" })}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{pickLang(language, { ku: "تراک", en: "Tracking", ar: "التتبع", zh: "运单号" })}</p>
                   <p className="font-mono font-semibold text-slate-800 dark:text-slate-100" dir="ltr">{orderResult.trackingNumber}</p>
                 </div>
               )}
@@ -482,13 +482,13 @@ export default function PortalSearch() {
         ) : extra?.unclaimed ? (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 text-center space-y-3">
             <div className="w-16 h-16 bg-orange-100 dark:bg-orange-950/40 rounded-full flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-8 h-8 text-orange-500" />
+              <AlertTriangle className="w-8 h-8 text-orange-500 dark:text-orange-400" />
             </div>
             <div>
               <p className="font-bold text-slate-800 dark:text-slate-100">
                 {pickLang(language, { ku: "ئەم پاکەتە بێ‌خاوەنە", en: "This package is unclaimed", ar: "هذا الطرد بلا صاحب", zh: "此包裹无主" })}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {pickLang(language, { ku: "ئەگەر هی تۆیە، داوای خاوەنداری بکە و بەڵگە بنێرە", en: "If it's yours, submit a claim with proof", ar: "إذا كان لك، قدّم مطالبة مع الإثبات", zh: "如果是您的，请提交认领并附凭证" })}
               </p>
               <p className="font-mono text-sm mt-2" dir="ltr">{extra.unclaimed.trackingNumber || extra.unclaimed.packageCode}</p>
@@ -503,13 +503,13 @@ export default function PortalSearch() {
         ) : extra?.declared ? (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 text-center space-y-3">
             <div className="w-16 h-16 bg-teal-100 dark:bg-teal-950/40 rounded-full flex items-center justify-center mx-auto">
-              <PackagePlus className="w-8 h-8 text-teal-500" />
+              <PackagePlus className="w-8 h-8 text-teal-500 dark:text-teal-400" />
             </div>
             <div>
               <p className="font-bold text-slate-800 dark:text-slate-100">
                 {pickLang(language, { ku: "تۆ پێشوەخت ئەم تراکەت داخڵ کردووە", en: "You pre-declared this tracking", ar: "لقد سجّلت هذا التتبع مسبقاً", zh: "您已预先登记此运单号" })}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {pickLang(language, { ku: "چاوەڕوانی گەیشتنە — کاتێک بگات ئاگادار دەکرێیتەوە", en: "Awaiting arrival — you'll be notified when it arrives", ar: "بانتظار الوصول — سيتم إعلامك عند وصوله", zh: "等待到货 — 到货后将通知您" })}
               </p>
               <p className="font-mono text-sm mt-2" dir="ltr">{extra.declared.trackingNumber}</p>
@@ -532,7 +532,7 @@ export default function PortalSearch() {
             <p className="text-gray-800 dark:text-gray-200 font-medium">
               {pickLang(language, { ku: "هیچ نەدۆزرایەوە", en: "Nothing found", ar: "لم يتم العثور على شيء", zh: "未找到任何结果" })}
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {pickLang(language, {
                 ku: "تراکینگ یان ئۆردەر نەمبەرەکە بپشکنە و دووبارە هەوڵبدەرەوە",
                 en: "Check the tracking or order number and try again",

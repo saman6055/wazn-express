@@ -119,7 +119,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             </div>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-white text-green-600 hover:bg-white/90 shadow-lg">
+                <Button className="bg-white dark:bg-card text-green-600 dark:text-green-300 hover:bg-white/90 shadow-lg">
                   <Plus className="h-4 w-4 me-2" />
                   {pickLang(language, { ku: "تۆمارکردنی پارەدان", en: "Record Payment", ar: "تسجيل دفعة", zh: "记录付款" })}
                 </Button>
@@ -127,7 +127,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <DialogContent className="max-w-lg">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-green-500" />
+                    <CreditCard className="h-5 w-5 text-green-500 dark:text-green-400" />
                     {pickLang(language, { ku: "تۆمارکردنی پارەدان", en: "Record Payment", ar: "تسجيل دفعة", zh: "记录付款" })}
                   </DialogTitle>
                   <DialogDescription>
@@ -202,10 +202,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی پارەدانەکان", en: "Total Payments", ar: "إجمالي المدفوعات", zh: "付款总额" })}</p>
-                  <p className="text-2xl font-bold text-green-600">${totalPayments.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-300">${totalPayments.toFixed(2)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-green-600" />
+                  <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
@@ -218,7 +218,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <p className="text-2xl font-bold">${cashPayments.toFixed(2)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <Banknote className="h-6 w-6 text-green-600" />
+                  <Banknote className="h-6 w-6 text-green-600 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
@@ -231,7 +231,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <p className="text-2xl font-bold">${bankPayments.toFixed(2)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Building className="h-6 w-6 text-blue-600" />
+                  <Building className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                 </div>
               </div>
             </CardContent>
@@ -244,7 +244,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <p className="text-2xl font-bold">${cardPayments.toFixed(2)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                  <CreditCard className="h-6 w-6 text-purple-600" />
+                  <CreditCard className="h-6 w-6 text-purple-600 dark:text-purple-300" />
                 </div>
               </div>
             </CardContent>
@@ -312,7 +312,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className="font-semibold text-green-600">
+                        <span className="font-semibold text-green-600 dark:text-green-300">
                           ${Math.abs(Number(payment.amountUsd || 0)).toFixed(2)}
                         </span>
                       </TableCell>

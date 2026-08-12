@@ -1005,17 +1005,17 @@ export default function BatchFinancialReport() {
         
         {/* Details & Pricing — Professional cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="border border-slate-200/80 shadow-sm overflow-hidden transition-shadow hover:shadow-md duration-200">
-            <CardHeader className="pb-3 border-b bg-slate-50/60">
+          <Card className="border border-slate-200/80 dark:border-slate-800/60 shadow-sm overflow-hidden transition-shadow hover:shadow-md duration-200">
+            <CardHeader className="pb-3 border-b bg-slate-50/60 dark:bg-slate-900/60">
               <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200">
-                {batch.shippingType === 'sea' ? <Box className="h-5 w-5 text-cyan-600" /> : <Scale className="h-5 w-5 text-blue-600" />}
+                {batch.shippingType === 'sea' ? <Box className="h-5 w-5 text-cyan-600 dark:text-cyan-300" /> : <Scale className="h-5 w-5 text-blue-600 dark:text-blue-300" />}
                 {pickLang(language, { ku: "وردەکاری", en: "Details of", ar: "تفاصيل", zh: "明细" })} {batch.shippingType === 'sea' ? pickLang(language, { ku: "قەبارە", en: "volume", ar: "الحجم", zh: "体积" }) : pickLang(language, { ku: "کێش", en: "weight", ar: "الوزن", zh: "重量" })}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5">
-              <div className="flex justify-between items-center p-4 bg-amber-50/80 border border-amber-200/60 rounded-xl transition-colors">
+              <div className="flex justify-between items-center p-4 bg-amber-50/80 dark:bg-amber-950/80 border border-amber-200/60 dark:border-amber-800/60 rounded-xl transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-amber-200/80 rounded-xl">
+                  <div className="p-2.5 bg-amber-200/80 dark:bg-amber-900/80 rounded-xl">
                     <Calculator className="h-5 w-5 text-amber-700 dark:text-amber-300" />
                   </div>
                   <span className="font-medium text-amber-800 dark:text-amber-200">{unit} {pickLang(language, { ku: "حسابکراو", en: "chargeable", ar: "المحتسب", zh: "计费" })}</span>
@@ -1030,18 +1030,18 @@ export default function BatchFinancialReport() {
             </CardContent>
           </Card>
 
-          <Card className="border border-slate-200/80 shadow-sm overflow-hidden transition-shadow hover:shadow-md duration-200">
-            <CardHeader className="pb-3 border-b bg-slate-50/60">
+          <Card className="border border-slate-200/80 dark:border-slate-800/60 shadow-sm overflow-hidden transition-shadow hover:shadow-md duration-200">
+            <CardHeader className="pb-3 border-b bg-slate-50/60 dark:bg-slate-900/60">
               <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200">
-                <DollarSign className="h-5 w-5 text-green-600" />
+                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-300" />
                 {pickLang(language, { ku: "نرخەکان", en: "Prices", ar: "الأسعار", zh: "价格" })}
               </CardTitle>
-              <CardDescription className="text-slate-500 text-sm">{pickLang(language, { ku: "نرخی کڕین، فرۆشتن و قازانج بۆ هەر", en: "Cost, sale and profit price per", ar: "سعر الشراء والبيع والربح لكل", zh: "每单位的成本、售价与利润" })} {unit}</CardDescription>
+              <CardDescription className="text-slate-500 dark:text-slate-400 text-sm">{pickLang(language, { ku: "نرخی کڕین، فرۆشتن و قازانج بۆ هەر", en: "Cost, sale and profit price per", ar: "سعر الشراء والبيع والربح لكل", zh: "每单位的成本、售价与利润" })} {unit}</CardDescription>
             </CardHeader>
             <CardContent className="pt-5 space-y-3">
-              <div className="flex justify-between items-center p-4 bg-red-50/80 border border-red-200/50 rounded-xl">
+              <div className="flex justify-between items-center p-4 bg-red-50/80 dark:bg-red-950/80 border border-red-200/50 dark:border-red-800/60 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-red-200/80 rounded-xl">
+                  <div className="p-2.5 bg-red-200/80 dark:bg-red-900/80 rounded-xl">
                     <TrendingDown className="h-5 w-5 text-red-700 dark:text-red-300" />
                   </div>
                   <span className="font-medium text-red-800 dark:text-red-200">{pickLang(language, { ku: "نرخی کڕین", en: "Cost price", ar: "سعر الشراء", zh: "成本价" })}</span>
@@ -1050,9 +1050,9 @@ export default function BatchFinancialReport() {
                   ${batch.shippingType === 'sea' ? financial.costPerCbm : financial.costPerKg}/{unit}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-4 bg-green-50/80 border border-green-200/50 rounded-xl">
+              <div className="flex justify-between items-center p-4 bg-green-50/80 dark:bg-green-950/80 border border-green-200/50 dark:border-green-800/60 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-green-200/80 rounded-xl">
+                  <div className="p-2.5 bg-green-200/80 dark:bg-green-900/80 rounded-xl">
                     <TrendingUp className="h-5 w-5 text-green-700 dark:text-green-300" />
                   </div>
                   <span className="font-medium text-green-800 dark:text-green-200">{pickLang(language, { ku: "نرخی فرۆشتن (تێکڕا)", en: "Sale price (average)", ar: "سعر البيع (المتوسط)", zh: "售价（平均）" })}</span>
@@ -1089,13 +1089,13 @@ export default function BatchFinancialReport() {
         </div>
         
         {/* Customer Breakdown — Professional table */}
-        <Card className="border border-slate-200/80 shadow-sm overflow-hidden">
-          <CardHeader className="border-b bg-slate-50/60">
+        <Card className="border border-slate-200/80 dark:border-slate-800/60 shadow-sm overflow-hidden">
+          <CardHeader className="border-b bg-slate-50/60 dark:bg-slate-900/60">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200">
-              <Users className="h-5 w-5 text-indigo-600" />
+              <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
               {pickLang(language, { ku: "شیکاری بەپێی کڕیار", en: "Breakdown by customer", ar: "التحليل حسب العميل", zh: "按客户分析" })}
             </CardTitle>
-            <CardDescription className="text-slate-500">
+            <CardDescription className="text-slate-500 dark:text-slate-400">
               {pickLang(language, { ku: "داهات و وردەکاری هەر کڕیارێک لەم باچەدا — کلیک بکە بۆ بینینی پاکەت و پرینتی لەیبڵ", en: "Revenue and details of each customer in this batch — click to view packages and print labels", ar: "إيرادات وتفاصيل كل عميل في هذه الدفعة — انقر لعرض الطرود وطباعة الملصقات", zh: "本批次每位客户的收入与明细 — 点击查看包裹并打印标签" })}
             </CardDescription>
           </CardHeader>
@@ -1156,21 +1156,21 @@ export default function BatchFinancialReport() {
                           <td className="text-center py-4 px-4 font-mono">
                             {batch.shippingType === 'sea' 
                               ? item.cbm?.toFixed(3)
-                              : <span className="text-amber-600 font-bold">{item.chargeableWeight?.toFixed(2)}</span>
+                              : <span className="text-amber-600 dark:text-amber-300 font-bold">{item.chargeableWeight?.toFixed(2)}</span>
                             }
                           </td>
                           <td className="text-center py-4 px-4">
-                            <span className="font-bold text-green-600">{formatCurrency(item.revenue)}</span>
+                            <span className="font-bold text-green-600 dark:text-green-300">{formatCurrency(item.revenue)}</span>
                           </td>
                           <td className="text-center py-4 px-4">
                             <div className="flex items-center justify-center gap-2">
-                              <div className="w-20 h-3 bg-slate-200 rounded-full overflow-hidden">
+                              <div className="w-20 h-3 bg-slate-200 dark:bg-slate-800/50 rounded-full overflow-hidden">
                                 <div 
                                   className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all"
                                   style={{ width: `${financial.totalRevenue > 0 ? (item.revenue / financial.totalRevenue * 100) : 0}%` }}
                                 />
                               </div>
-                              <span className="text-sm font-medium text-slate-600 w-12">
+                              <span className="text-sm font-medium text-slate-600 dark:text-slate-300 w-12">
                                 {financial.totalRevenue > 0 ? (item.revenue / financial.totalRevenue * 100).toFixed(1) : 0}%
                               </span>
                             </div>
@@ -1179,7 +1179,7 @@ export default function BatchFinancialReport() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50"
+                              className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 hover:bg-indigo-50"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedCustomer({
@@ -1205,12 +1205,12 @@ export default function BatchFinancialReport() {
                       <td className="text-center py-4 px-4 font-mono">
                         {batch.shippingType === 'sea' 
                           ? financial.actualCbm?.toFixed(3)
-                          : <span className="text-amber-600 font-bold">
+                          : <span className="text-amber-600 dark:text-amber-300 font-bold">
                               {financial.customerBreakdown?.reduce((sum, c) => sum + (c.chargeableWeight || 0), 0).toFixed(2)}
                             </span>
                         }
                       </td>
-                      <td className="text-center py-4 px-4 text-green-600">
+                      <td className="text-center py-4 px-4 text-green-600 dark:text-green-300">
                         {formatCurrency(financial.totalRevenue)}
                       </td>
                       <td className="text-center py-4 px-4">100%</td>
@@ -1227,13 +1227,13 @@ export default function BatchFinancialReport() {
         {batch && <BatchPrintBoxesSection batchId={batch.id} batchCode={batch.batchCode} />}
 
         {/* پرینتی لەیبڵی باچ — یەک لەیبڵ بۆ هەر کڕیار */}
-        <Card className="border border-slate-200/80 shadow-sm overflow-hidden">
-          <CardHeader className="border-b bg-slate-50/60">
+        <Card className="border border-slate-200/80 dark:border-slate-800/60 shadow-sm overflow-hidden">
+          <CardHeader className="border-b bg-slate-50/60 dark:bg-slate-900/60">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200">
-              <Layers className="h-5 w-5 text-emerald-600" />
+              <Layers className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
               {pickLang(language, { ku: "پرینتی لەیبڵی باچ", en: "Print batch labels", ar: "طباعة ملصقات الدفعة", zh: "打印批次标签" })}
             </CardTitle>
-            <CardDescription className="text-slate-500">
+            <CardDescription className="text-slate-500 dark:text-slate-400">
               {pickLang(language, { ku: "یەک لەیبڵ بۆ هەر کڕیار — کۆی پاکەت، حەجم، کیلۆ، بارکۆد/QR، نرخ و ناوی کڕیار", en: "One label per customer — total packages, volume, weight, barcode/QR, price and customer name", ar: "ملصق واحد لكل عميل — إجمالي الطرود والحجم والوزن والباركود/QR والسعر واسم العميل", zh: "每位客户一张标签 — 包裹总数、体积、重量、条码/QR、价格及客户名" })}
             </CardDescription>
           </CardHeader>
@@ -1257,7 +1257,7 @@ export default function BatchFinancialReport() {
               </Select>
             </div>
             <Link href="/settings/batch-label-template">
-              <Button variant="ghost" size="sm" className="gap-1.5 text-slate-600">
+              <Button variant="ghost" size="sm" className="gap-1.5 text-slate-600 dark:text-slate-300">
                 <Settings2 className="h-4 w-4" />
                 {pickLang(language, { ku: "داڕشتەی تێمپلەیت", en: "Edit template", ar: "تصميم القالب", zh: "编辑模板" })}
               </Button>
@@ -1310,7 +1310,7 @@ export default function BatchFinancialReport() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
-                <Package className="h-5 w-5 text-indigo-600" />
+                <Package className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
               </div>
               <div>
                 <span className="text-lg">{selectedCustomer?.name}</span>
@@ -1334,13 +1334,13 @@ export default function BatchFinancialReport() {
               <div className="grid grid-cols-4 gap-4">
                 <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60">
                   <CardContent className="p-4 text-center">
-                    <p className="text-sm text-blue-600">{pickLang(language, { ku: "کۆی پاکەت", en: "Total packages", ar: "إجمالي الطرود", zh: "包裹总数" })}</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-300">{pickLang(language, { ku: "کۆی پاکەت", en: "Total packages", ar: "إجمالي الطرود", zh: "包裹总数" })}</p>
                     <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{customerPackages.length}</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800/60">
                   <CardContent className="p-4 text-center">
-                    <p className="text-sm text-green-600">
+                    <p className="text-sm text-green-600 dark:text-green-300">
                       {batch?.shippingType === 'sea' ? pickLang(language, { ku: "کۆی CBM", en: "Total CBM", ar: "إجمالي CBM", zh: "总 CBM" }) : pickLang(language, { ku: "کۆی کێش", en: "Total weight", ar: "إجمالي الوزن", zh: "总重量" })}
                     </p>
                     <p className="text-2xl font-bold text-green-700 dark:text-green-300">
@@ -1359,7 +1359,7 @@ export default function BatchFinancialReport() {
                 </Card>
                 <Card className="bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/60">
                   <CardContent className="p-4 text-center">
-                    <p className="text-sm text-purple-600">{pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "طرد كامل", zh: "整包" })}</p>
+                    <p className="text-sm text-purple-600 dark:text-purple-300">{pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "طرد كامل", zh: "整包" })}</p>
                     <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
                       {customerPackages.filter(p => p.isFullPackage && p.fullPackageOrderType === 'full_package').length}
                     </p>
@@ -1367,7 +1367,7 @@ export default function BatchFinancialReport() {
                 </Card>
                 <Card className="bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60">
                   <CardContent className="p-4 text-center">
-                    <p className="text-sm text-amber-600">{pickLang(language, { ku: "کڕین بە تێچوو", en: "Buy at cost", ar: "شراء بالتكلفة", zh: "代购按成本" })}</p>
+                    <p className="text-sm text-amber-600 dark:text-amber-300">{pickLang(language, { ku: "کڕین بە تێچوو", en: "Buy at cost", ar: "شراء بالتكلفة", zh: "代购按成本" })}</p>
                     <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
                       {customerPackages.filter(p => p.isFullPackage && p.fullPackageOrderType === 'commission').length}
                     </p>
@@ -1392,7 +1392,7 @@ export default function BatchFinancialReport() {
                   <tbody>
                     {customerPackages.map((pkg, idx) => (
                       <tr key={pkg.id} className="border-t hover:bg-slate-50">
-                        <td className="py-3 px-4 text-slate-600">{idx + 1}</td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{idx + 1}</td>
                         <td className="py-3 px-4">
                           <span className="font-mono text-sm bg-slate-100 dark:bg-slate-950/40 px-2 py-1 rounded">
                             {pkg.trackingNumber || '-'}
@@ -1412,7 +1412,7 @@ export default function BatchFinancialReport() {
                                   <div className="flex flex-col items-center">
                                     <span>{chargeableWeight.toFixed(2)}</span>
                                     {isVolumetric && (
-                                      <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 dark:bg-purple-950/40 text-purple-600 border-purple-200 dark:border-purple-800/60">
+                                      <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
                                         {pickLang(language, { ku: "قەبارەیی", en: "Volumetric", ar: "حجمي", zh: "体积重" })}
                                       </Badge>
                                     )}
@@ -1422,7 +1422,7 @@ export default function BatchFinancialReport() {
                           }
                         </td>
                         <td className="text-center py-3 px-4">
-                          <span className="font-bold text-green-600">
+                          <span className="font-bold text-green-600 dark:text-green-300">
                             {formatCurrency(pkg.calculatedCostUsd || 0)}
                           </span>
                         </td>
@@ -1440,7 +1440,7 @@ export default function BatchFinancialReport() {
                               </Badge>
                             )
                           ) : (
-                            <Badge variant="outline" className="text-slate-600">
+                            <Badge variant="outline" className="text-slate-600 dark:text-slate-300">
                               <Package className="h-3 w-3 ms-1" />
                               {pickLang(language, { ku: "ئاسایی", en: "Regular", ar: "عادي", zh: "普通" })}
                             </Badge>
@@ -1464,7 +1464,7 @@ export default function BatchFinancialReport() {
                             }, 0).toFixed(2)
                         }
                       </td>
-                      <td className="text-center py-3 px-4 font-bold text-green-600">
+                      <td className="text-center py-3 px-4 font-bold text-green-600 dark:text-green-300">
                         {formatCurrency(customerPackages.reduce((sum, p) => sum + (p.calculatedCostUsd || 0), 0))}
                       </td>
                       <td></td>
@@ -1492,7 +1492,7 @@ export default function BatchFinancialReport() {
                   </SelectContent>
                 </Select>
                 <Link href="/settings/label-templates">
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-slate-600">
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-slate-600 dark:text-slate-300">
                     <Settings2 className="h-4 w-4" />
                     {pickLang(language, { ku: "داڕشتەی تێمپلەیتەکان", en: "Edit templates", ar: "تصميم القوالب", zh: "编辑模板" })}
                   </Button>
@@ -1503,10 +1503,10 @@ export default function BatchFinancialReport() {
               <div className="pt-4 border-t border-slate-200 dark:border-slate-800/60 space-y-6">
                 <div>
                   <h4 className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-1">
-                    <Printer className="h-4 w-4 text-slate-600" />
+                    <Printer className="h-4 w-4 text-slate-600 dark:text-slate-300" />
                     {pickLang(language, { ku: "بژاردەکانی پرینت", en: "Print options", ar: "خيارات الطباعة", zh: "打印选项" })}
                   </h4>
-                  <p className="text-sm text-slate-500 mb-4">{pickLang(language, { ku: "ڕاپۆرتی پرینت بەپێی جۆری پاکەت هەڵبژێرە", en: "Choose a print report by package type", ar: "اختر تقرير الطباعة حسب نوع الطرد", zh: "按包裹类型选择打印报告" })}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{pickLang(language, { ku: "ڕاپۆرتی پرینت بەپێی جۆری پاکەت هەڵبژێرە", en: "Choose a print report by package type", ar: "اختر تقرير الطباعة حسب نوع الطرد", zh: "按包裹类型选择打印报告" })}</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <button
                       type="button"
@@ -1522,7 +1522,7 @@ export default function BatchFinancialReport() {
                       className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 text-right min-h-[100px]"
                     >
                       <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-950/40">
-                        <Package className="h-6 w-6 text-blue-600" />
+                        <Package className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                       </div>
                       <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{pickLang(language, { ku: "پاکەتی ئاسایی + عمولە", en: "Regular + commission packages", ar: "الطرود العادية + العمولة", zh: "普通 + 佣金包裹" })}</span>
                       <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-medium">
@@ -1543,7 +1543,7 @@ export default function BatchFinancialReport() {
                       className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 text-right min-h-[100px]"
                     >
                       <div className="p-2.5 rounded-xl bg-purple-100 dark:bg-purple-950/40">
-                        <ShoppingBag className="h-6 w-6 text-purple-600" />
+                        <ShoppingBag className="h-6 w-6 text-purple-600 dark:text-purple-300" />
                       </div>
                       <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{pickLang(language, { ku: "پاکێجی تەواو بەتەنیا", en: "Full package only", ar: "الطرد الكامل فقط", zh: "仅整包" })}</span>
                       <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-medium">
@@ -1563,7 +1563,7 @@ export default function BatchFinancialReport() {
                       className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 text-right min-h-[100px]"
                     >
                       <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/40">
-                        <Box className="h-6 w-6 text-emerald-600" />
+                        <Box className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
                       </div>
                       <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{pickLang(language, { ku: "هەموو (هەرسێ شیواز)", en: "All (all three types)", ar: "الكل (الأنواع الثلاثة)", zh: "全部（三种类型）" })}</span>
                       <Badge variant="secondary" className="bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium">
@@ -1575,10 +1575,10 @@ export default function BatchFinancialReport() {
 
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-800/60">
                   <h4 className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-1">
-                    <Tag className="h-4 w-4 text-slate-600" />
+                    <Tag className="h-4 w-4 text-slate-600 dark:text-slate-300" />
                     {pickLang(language, { ku: "پرینتی لەیبڵ (بەپێی تێمپلەیتی سیتینگ)", en: "Print labels (by settings template)", ar: "طباعة الملصقات (حسب قالب الإعدادات)", zh: "打印标签（按设置模板）" })}
                   </h4>
-                  <p className="text-sm text-slate-500 mb-4">{pickLang(language, { ku: "هەر پاکەتێک لەیبڵێکی تاک بە تێمپلەیتی هەڵبژێردراو", en: "One individual label per package with the selected template", ar: "ملصق فردي لكل طرد بالقالب المحدد", zh: "每个包裹一张单独标签，使用所选模板" })}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">{pickLang(language, { ku: "هەر پاکەتێک لەیبڵێکی تاک بە تێمپلەیتی هەڵبژێردراو", en: "One individual label per package with the selected template", ar: "ملصق فردي لكل طرد بالقالب المحدد", zh: "每个包裹一张单独标签，使用所选模板" })}</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button
                       type="button"

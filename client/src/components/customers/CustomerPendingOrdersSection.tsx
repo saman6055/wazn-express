@@ -148,7 +148,7 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
               <CardDescription className="text-amber-50">{t("customers.pendingOrdersDesc")}</CardDescription>
             </div>
           </div>
-          <Badge className="bg-white text-amber-700 dark:text-amber-300 border-0 text-base px-3 py-1">
+          <Badge className="bg-white dark:bg-card text-amber-700 dark:text-amber-300 border-0 text-base px-3 py-1">
             {count} {t("common.total")}
           </Badge>
         </div>
@@ -158,7 +158,7 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
         {count === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-full mb-3">
-              <Inbox className="h-12 w-12 text-emerald-500" />
+              <Inbox className="h-12 w-12 text-emerald-500 dark:text-emerald-400" />
             </div>
             <p className="font-medium text-slate-700 dark:text-slate-300">{t("customers.noPendingOrders")}</p>
             <p className="text-sm text-muted-foreground mt-1">{t("customers.noPendingOrdersDesc")}</p>
@@ -345,7 +345,7 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
 
             {/* Footer note */}
             <div className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-800/60 rounded-lg p-3 flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-300 flex-shrink-0 mt-0.5" />
               <span>{t("customers.pendingOrdersFooterNote")}</span>
             </div>
           </>

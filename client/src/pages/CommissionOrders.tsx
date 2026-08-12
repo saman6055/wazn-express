@@ -273,7 +273,7 @@ export default function CommissionOrders() {
               </div>
             </div>
             <Link href="/commission-orders/new">
-              <Button className="bg-white text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50">
+              <Button className="bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50">
                 <Plus className="h-4 w-4 ms-2" />
                 {pickLang(language, { ku: "ئۆردەری نوێ", en: "New order", ar: "طلب جديد", zh: "新订单" })}
               </Button>
@@ -287,11 +287,11 @@ export default function CommissionOrders() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-emerald-600 font-medium">{pickLang(language, { ku: "کۆی ئۆردەرەکان", en: "Total orders", ar: "إجمالي الطلبات", zh: "订单总数" })}</p>
+                  <p className="text-sm text-emerald-600 dark:text-emerald-300 font-medium">{pickLang(language, { ku: "کۆی ئۆردەرەکان", en: "Total orders", ar: "إجمالي الطلبات", zh: "订单总数" })}</p>
                   <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{totalOrders}</p>
                 </div>
                 <div className="p-3 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
-                  <Package className="h-6 w-6 text-emerald-600" />
+                  <Package className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
                 </div>
               </div>
             </CardContent>
@@ -301,11 +301,11 @@ export default function CommissionOrders() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-amber-600 font-medium">{pickLang(language, { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" })}</p>
+                  <p className="text-sm text-amber-600 dark:text-amber-300 font-medium">{pickLang(language, { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" })}</p>
                   <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{pendingOrders}</p>
                 </div>
                 <div className="p-3 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
-                  <Clock className="h-6 w-6 text-amber-600" />
+                  <Clock className="h-6 w-6 text-amber-600 dark:text-amber-300" />
                 </div>
               </div>
             </CardContent>
@@ -315,11 +315,11 @@ export default function CommissionOrders() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-600 font-medium">{pickLang(language, { ku: "لە ڕێگادا", en: "In transit", ar: "قيد الشحن", zh: "运输中" })}</p>
+                  <p className="text-sm text-blue-600 dark:text-blue-300 font-medium">{pickLang(language, { ku: "لە ڕێگادا", en: "In transit", ar: "قيد الشحن", zh: "运输中" })}</p>
                   <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{inTransitOrders}</p>
                 </div>
                 <div className="p-3 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
-                  <Clock className="h-6 w-6 text-blue-600" />
+                  <Clock className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                 </div>
               </div>
             </CardContent>
@@ -329,11 +329,11 @@ export default function CommissionOrders() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-600 font-medium">{pickLang(language, { ku: "قازانجی خاو", en: "Gross profit", ar: "الربح الإجمالي", zh: "毛利润" })}</p>
+                  <p className="text-sm text-green-600 dark:text-green-300 font-medium">{pickLang(language, { ku: "قازانجی خاو", en: "Gross profit", ar: "الربح الإجمالي", zh: "毛利润" })}</p>
                   <p className="text-2xl font-bold text-green-700 dark:text-green-300">${totalGrossProfit.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-green-100 dark:bg-green-950/40 rounded-xl">
-                  <DollarSign className="h-6 w-6 text-green-600" />
+                  <DollarSign className="h-6 w-6 text-green-600 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
@@ -343,11 +343,11 @@ export default function CommissionOrders() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-purple-600 font-medium">{pickLang(language, { ku: "قازانجی خاوێن", en: "Net profit", ar: "صافي الربح", zh: "净利润" })}</p>
+                  <p className="text-sm text-purple-600 dark:text-purple-300 font-medium">{pickLang(language, { ku: "قازانجی خاوێن", en: "Net profit", ar: "صافي الربح", zh: "净利润" })}</p>
                   <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">${totalNetProfit.toFixed(2)}</p>
                 </div>
                 <div className="p-3 bg-purple-100 dark:bg-purple-950/40 rounded-xl">
-                  <TrendingUp className="h-6 w-6 text-purple-600" />
+                  <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-300" />
                 </div>
               </div>
             </CardContent>
@@ -618,7 +618,7 @@ export default function CommissionOrders() {
                     >
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Badge variant="outline" className="font-mono text-emerald-600 border-emerald-300 dark:border-emerald-800/60">
+                          <Badge variant="outline" className="font-mono text-emerald-600 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/60">
                             {order.orderCode}
                           </Badge>
                           <CopyButton value={order.orderCode} label={pickLang(language, { ku: "کۆپی کۆدی ئۆردەر", en: "Copy order code", ar: "نسخ كود الطلب", zh: "复制订单编码" })} />
@@ -645,7 +645,7 @@ export default function CommissionOrders() {
                             />
                           ) : (
                             <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
-                              <Package className="h-5 w-5 text-emerald-600" />
+                              <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                             </div>
                           )}
                           <div>
@@ -672,8 +672,8 @@ export default function CommissionOrders() {
                         )}
                       </TableCell>
                       <TableCell className="font-mono">${order.purchasePriceUsd || "0.00"}</TableCell>
-                      <TableCell className="font-mono text-emerald-600">${order.sellingPriceUsd || "0.00"}</TableCell>
-                      <TableCell className="font-mono font-bold text-green-600">
+                      <TableCell className="font-mono text-emerald-600 dark:text-emerald-300">${order.sellingPriceUsd || "0.00"}</TableCell>
+                      <TableCell className="font-mono font-bold text-green-600 dark:text-green-300">
                         ${order.profitUsd || "0.00"}
                       </TableCell>
                       <TableCell>
@@ -755,7 +755,7 @@ export default function CommissionOrders() {
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-blue-600 dark:text-blue-300 hover:text-blue-800"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>

@@ -274,7 +274,7 @@ export default function WarehouseArrivalModal({
               </SelectContent>
             </Select>
             {filteredBatches.length === 0 && (
-              <p className="text-xs text-amber-600">
+              <p className="text-xs text-amber-600 dark:text-amber-300">
                 {t('warehouse.noBatchesAvailable')}
               </p>
             )}

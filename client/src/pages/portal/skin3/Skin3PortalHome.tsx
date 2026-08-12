@@ -317,7 +317,7 @@ export default function Skin3PortalHome() {
                 )}
               >
                 {pickLang(language, { ku: "سڵاو", en: "Hey", ar: "مرحبًا", zh: "你好" })},{" "}
-                <span className="text-indigo-500">{firstName}</span>{" "}
+                <span className="text-indigo-500 dark:text-indigo-400">{firstName}</span>{" "}
                 <span className="inline-block animate-[wave_1.5s_ease-in-out_infinite]">
                   {"👋"}
                 </span>
@@ -565,7 +565,7 @@ export default function Skin3PortalHome() {
               <span
                 className={cn(
                   "text-sm font-bold flex items-center gap-0.5",
-                  "text-indigo-500 hover:text-indigo-600"
+                  "text-indigo-500 dark:text-indigo-400 hover:text-indigo-600"
                 )}
               >
                 {pickLang(language, { ku: "هەموو", en: "View All", ar: "عرض الكل", zh: "查看全部" })}

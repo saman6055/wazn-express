@@ -103,7 +103,7 @@ export default function HomeLogistick() {
   const btnWhats = "inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:-translate-y-0.5 transition-all";
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen overflow-x-hidden bg-white text-slate-900 dark:text-slate-200 antialiased">
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen overflow-x-hidden bg-white dark:bg-card text-slate-900 dark:text-slate-200 antialiased">
       <style>{`
         @keyframes lkdrift{0%{transform:translateX(0) translateY(0)}50%{transform:translateX(28px) translateY(-10px)}100%{transform:translateX(0) translateY(0)}}
         @keyframes lkfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
@@ -116,7 +116,7 @@ export default function HomeLogistick() {
       `}</style>
 
       {/* ================= Navbar ================= */}
-      <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-slate-200/70 dark:border-slate-800/60 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-2.5">
             <CompanyLogo size={36} iconClassName="h-5 w-5 text-white" fallbackBg="bg-red-600" />
@@ -124,16 +124,16 @@ export default function HomeLogistick() {
           </div>
           <nav className="hidden items-center gap-7 lg:flex">
             {nav.map((n) => (
-              <a key={n.href} href={n.href} className="text-sm font-semibold text-slate-600 hover:text-red-600 transition-colors">{L(n.label)}</a>
+              <a key={n.href} href={n.href} className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-red-600 transition-colors">{L(n.label)}</a>
             ))}
           </nav>
           <div className="flex items-center gap-2">
             <Link href="/customer-login" className="hidden rounded-full px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 sm:inline-block">
               {L({ ku: "چوونەژوورەوە", en: "Sign in", ar: "تسجيل الدخول", zh: "登录" })}
             </Link>
-            <a href={waLink} target="_blank" rel="noreferrer" className={btnRed + " !px-5 !py-2"}>
+            <a href={waLink} target="_blank" rel="noreferrer" className={btnRed + "!px-5 !py-2"}>
               {L({ ku: "داوای نرخ", en: "Get a quote", ar: "اطلب عرض سعر", zh: "获取报价" })}
-              <ArrowRight className={"h-4 w-4 " + (isRTL ? "rotate-180" : "")} />
+              <ArrowRight className={"h-4 w-4" + (isRTL ? "rotate-180" : "")} />
             </a>
           </div>
         </div>
@@ -160,25 +160,25 @@ export default function HomeLogistick() {
             </span>
             <h1 className="mt-5 text-4xl font-black leading-[1.1] tracking-tight md:text-5xl lg:text-6xl">
               {L({ ku: "گواستنەوەی", en: "Reliable", ar: "شحن", zh: "可靠的" })}{" "}
-              <span className="text-red-600">
+              <span className="text-red-600 dark:text-red-300">
                 {L({ ku: "متمانەپێکراو", en: "shipping", ar: "موثوق", zh: "物流" })}
               </span>{" "}
               {L({ ku: "لە چینەوە بۆ عێراق", en: "from China to Iraq", ar: "من الصين إلى العراق", zh: "从中国到伊拉克" })}
             </h1>
-            <p className="mt-5 max-w-xl text-base text-slate-600 md:text-lg">
+            <p className="mt-5 max-w-xl text-base text-slate-600 dark:text-slate-300 md:text-lg">
               {L({ ku: "یاریدەدەری هەناردە/هاوردەکەت لە چین. گواستنەوەی ئاسمانی و دەریایی، کۆکردنەوە، مامەڵەی گومرگ و کۆنترۆڵی کوالیتی — هەمووی لە یەک شوێن.", en: "Your dedicated import/export partner in China. Air & sea freight, consolidation, customs clearance and quality control — all in one place.", ar: "شريكك المخصص للاستيراد/التصدير في الصين. شحن جوي وبحري، تجميع، تخليص جمركي ومراقبة الجودة — كل ذلك في مكان واحد.", zh: "您在中国的专属进出口伙伴。空运海运、集运、清关与质检——一站式服务。" })}
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href="/customer-login" className={btnRed}>
                 {L({ ku: "دەستپێبکە", en: "Get started", ar: "ابدأ الآن", zh: "开始使用" })}
-                <ArrowRight className={"h-4 w-4 " + (isRTL ? "rotate-180" : "")} />
+                <ArrowRight className={"h-4 w-4" + (isRTL ? "rotate-180" : "")} />
               </Link>
               <a href={waLink} target="_blank" rel="noreferrer" className={btnWhats}>
                 <MessageCircle className="h-4 w-4" /> {L({ ku: "واتساپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" })}
               </a>
             </div>
             {/* Tracking bar */}
-            <div className="mt-7 flex max-w-md items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800/60 bg-white p-1.5 shadow-sm">
+            <div className="mt-7 flex max-w-md items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-card p-1.5 shadow-sm">
               <Search className="ms-3 h-4 w-4 shrink-0 text-slate-400" />
               <input
                 value={tracking}
@@ -194,8 +194,8 @@ export default function HomeLogistick() {
             {/* Trust badges */}
             <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2">
               {trust.map((b, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                  <b.icon className="h-4 w-4 text-red-600" /> {L(b.label)}
+                <div key={i} className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                  <b.icon className="h-4 w-4 text-red-600 dark:text-red-300" /> {L(b.label)}
                 </div>
               ))}
             </div>
@@ -213,8 +213,8 @@ export default function HomeLogistick() {
                   { icon: Truck, k: { ku: "ڕێگا", en: "Road", ar: "بري", zh: "陆运" }, cls: "lkfloat2", red: false },
                   { icon: Warehouse, k: { ku: "کۆگا", en: "Warehouse", ar: "مستودع", zh: "仓储" }, cls: "lkfloat", red: true },
                 ].map((tile, i) => (
-                  <div key={i} className={"rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur " + tile.cls}>
-                    <span className={"mb-3 flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-lg " + (tile.red ? "bg-red-600" : "bg-white/20")}>
+                  <div key={i} className={"rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur" + tile.cls}>
+                    <span className={"mb-3 flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-lg" + (tile.red ? "bg-red-600" : "bg-white/20")}>
                       <tile.icon className="h-5 w-5" />
                     </span>
                     <p className="text-sm font-bold text-white">{L(tile.k)}</p>
@@ -238,15 +238,15 @@ export default function HomeLogistick() {
       </section>
 
       {/* ================= Features strip ================= */}
-      <section className="border-y border-slate-100 dark:border-slate-800/60 bg-white">
+      <section className="border-y border-slate-100 dark:border-slate-800/60 bg-white dark:bg-card">
         <div className="mx-auto grid max-w-7xl gap-5 px-4 py-14 md:grid-cols-2 md:px-6 lg:grid-cols-4">
           {features.map((f, i) => (
-            <div key={i} className="group rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
+            <div key={i} className="group rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
               <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg transition-transform group-hover:scale-105">
                 <f.icon className="h-6 w-6" />
               </span>
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-200">{L(f.t)}</h3>
-              <p className="mt-2 text-sm text-slate-600">{L(f.d)}</p>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{L(f.d)}</p>
             </div>
           ))}
         </div>
@@ -264,11 +264,11 @@ export default function HomeLogistick() {
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 md:px-6 lg:grid-cols-2">
           <div className="order-2 lg:order-1">
             <div className="flex items-baseline gap-3">
-              <span className="text-6xl font-black text-red-600 md:text-7xl"><CountUp value={12} />+</span>
-              <span className="max-w-[10rem] text-sm font-semibold text-slate-500">{L({ ku: "ساڵ ئەزموون لە گواستنەوەی چین بۆ عێراق", en: "years of China-to-Iraq shipping experience", ar: "سنوات خبرة في الشحن من الصين إلى العراق", zh: "年中国至伊拉克运输经验" })}</span>
+              <span className="text-6xl font-black text-red-600 dark:text-red-300 md:text-7xl"><CountUp value={12} />+</span>
+              <span className="max-w-[10rem] text-sm font-semibold text-slate-500 dark:text-slate-400">{L({ ku: "ساڵ ئەزموون لە گواستنەوەی چین بۆ عێراق", en: "years of China-to-Iraq shipping experience", ar: "سنوات خبرة في الشحن من الصين إلى العراق", zh: "年中国至伊拉克运输经验" })}</span>
             </div>
             <h2 className="mt-6 text-3xl font-black text-slate-900 dark:text-slate-200 md:text-4xl">{L({ ku: "بۆچی ئێمە بە باشترین دادەنرێین", en: "Why we're considered the best", ar: "لماذا نُعتبر الأفضل", zh: "为何我们被视为最佳之选" })}</h2>
-            <p className="mt-4 max-w-xl text-slate-600">{L({ ku: "لە بنکەکەمانەوە لە چین تا دەرگای ماڵت لە عێراق، هەموو هەنگاوێک بە شەفافیەت و کوالیتییەوە بەڕێوە دەبەین.", en: "From our hub in China to your door in Iraq, we manage every step with transparency and quality.", ar: "من مركزنا في الصين إلى بابك في العراق، ندير كل خطوة بشفافية وجودة.", zh: "从我们在中国的仓库到您在伊拉克的家门口，我们以透明和品质管理每一步。" })}</p>
+            <p className="mt-4 max-w-xl text-slate-600 dark:text-slate-300">{L({ ku: "لە بنکەکەمانەوە لە چین تا دەرگای ماڵت لە عێراق، هەموو هەنگاوێک بە شەفافیەت و کوالیتییەوە بەڕێوە دەبەین.", en: "From our hub in China to your door in Iraq, we manage every step with transparency and quality.", ar: "من مركزنا في الصين إلى بابك في العراق، ندير كل خطوة بشفافية وجودة.", zh: "从我们在中国的仓库到您在伊拉克的家门口，我们以透明和品质管理每一步。" })}</p>
             <ul className="mt-6 space-y-3">
               {[
                 { ku: "بنکەی خۆمان لە چین بۆ وەرگرتن و پشکنین", en: "Our own hub in China for receiving & inspection", ar: "مركزنا الخاص في الصين للاستلام والفحص", zh: "我们在中国的自有仓库负责接收与验货" },
@@ -277,14 +277,14 @@ export default function HomeLogistick() {
                 { ku: "پشتگیری بە چوار زمان", en: "Support in four languages", ar: "دعم بأربع لغات", zh: "四种语言的客户支持" },
               ].map((b, i) => (
                 <li key={i} className="flex items-start gap-3 text-slate-700 dark:text-slate-300">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-300" />
                   <span className="text-sm font-medium">{L(b)}</span>
                 </li>
               ))}
             </ul>
-            <a href={waLink} target="_blank" rel="noreferrer" className={btnRed + " mt-8"}>
+            <a href={waLink} target="_blank" rel="noreferrer" className={btnRed + "mt-8"}>
               {L({ ku: "پەیوەندیمان پێوە بکە", en: "Get in touch", ar: "تواصل معنا", zh: "联系我们" })}
-              <ArrowRight className={"h-4 w-4 " + (isRTL ? "rotate-180" : "")} />
+              <ArrowRight className={"h-4 w-4" + (isRTL ? "rotate-180" : "")} />
             </a>
           </div>
 
@@ -313,18 +313,18 @@ export default function HomeLogistick() {
       {/* ================= Services ================= */}
       <section id="services" className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
         <div className="mb-12 text-center">
-          <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-600">{L({ ku: "خزمەتگوزارییەکانمان", en: "Our services", ar: "خدماتنا", zh: "我们的服务" })}</span>
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-600 dark:text-red-300">{L({ ku: "خزمەتگوزارییەکانمان", en: "Our services", ar: "خدماتنا", zh: "我们的服务" })}</span>
           <h2 className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-200 md:text-4xl">{L({ ku: "خزمەتگوزارییەکانی گواستنەوە", en: "Transport services", ar: "خدمات النقل", zh: "运输服务" })}</h2>
-          <p className="mx-auto mt-3 max-w-xl text-slate-600">{L({ ku: "خزمەتگوزاری تەواو کە هەموو ڕێگای چین بۆ عێراق دەگرێتەوە.", en: "Comprehensive services spanning the whole China-to-Iraq journey.", ar: "خدمات شاملة تغطي كامل رحلة الصين إلى العراق.", zh: "覆盖中国到伊拉克全程的综合服务。" })}</p>
+          <p className="mx-auto mt-3 max-w-xl text-slate-600 dark:text-slate-300">{L({ ku: "خزمەتگوزاری تەواو کە هەموو ڕێگای چین بۆ عێراق دەگرێتەوە.", en: "Comprehensive services spanning the whole China-to-Iraq journey.", ar: "خدمات شاملة تغطي كامل رحلة الصين إلى العراق.", zh: "覆盖中国到伊拉克全程的综合服务。" })}</p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((s, i) => (
-            <div key={i} className="group rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
+            <div key={i} className="group rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
               <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg transition-transform group-hover:scale-105">
                 <s.icon className="h-6 w-6" />
               </span>
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-200">{L(s.t)}</h3>
-              <p className="mt-2 text-sm text-slate-600">{L(s.d)}</p>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{L(s.d)}</p>
             </div>
           ))}
         </div>
@@ -352,18 +352,18 @@ export default function HomeLogistick() {
       {/* ================= Why us ================= */}
       <section id="why" className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
         <div className="mb-12 text-center">
-          <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-600">{L({ ku: "بۆچی ئێمە", en: "Why us", ar: "لماذا نحن", zh: "为何选我们" })}</span>
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-600 dark:text-red-300">{L({ ku: "بۆچی ئێمە", en: "Why us", ar: "لماذا نحن", zh: "为何选我们" })}</span>
           <h2 className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-200 md:text-4xl">{L({ ku: "بۆچی وەزن هەڵبژێریت؟", en: "Why choose us?", ar: "لماذا تختارنا؟", zh: "为什么选择我们？" })}</h2>
         </div>
         <div className="grid gap-5 md:grid-cols-2">
           {why.map((w, i) => (
-            <div key={i} className="flex gap-4 rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600">
+            <div key={i} className="flex gap-4 rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300">
                 <w.icon className="h-6 w-6" />
               </span>
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-slate-200">{L(w.t)}</h3>
-                <p className="mt-1 text-sm text-slate-600">{L(w.d)}</p>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{L(w.d)}</p>
               </div>
             </div>
           ))}
@@ -374,19 +374,19 @@ export default function HomeLogistick() {
       <section id="how" className="bg-neutral-50 dark:bg-neutral-950/40 py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="mb-12 text-center">
-            <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-600">{L({ ku: "پرۆسەکە", en: "The process", ar: "العملية", zh: "流程" })}</span>
+            <span className="text-xs font-bold uppercase tracking-[0.3em] text-red-600 dark:text-red-300">{L({ ku: "پرۆسەکە", en: "The process", ar: "العملية", zh: "流程" })}</span>
             <h2 className="mt-3 text-3xl font-black text-slate-900 dark:text-slate-200 md:text-4xl">{L({ ku: "چۆن کاردەکات", en: "How it works", ar: "كيف يعمل", zh: "运作方式" })}</h2>
-            <p className="mx-auto mt-3 max-w-xl text-slate-600">{L({ ku: "چوار هەنگاوی سادە لە چینەوە تا دەرگای ماڵت.", en: "Four simple steps from China to your door.", ar: "أربع خطوات بسيطة من الصين إلى بابك.", zh: "从中国到您家门口，仅需四步。" })}</p>
+            <p className="mx-auto mt-3 max-w-xl text-slate-600 dark:text-slate-300">{L({ ku: "چوار هەنگاوی سادە لە چینەوە تا دەرگای ماڵت.", en: "Four simple steps from China to your door.", ar: "أربع خطوات بسيطة من الصين إلى بابك.", zh: "从中国到您家门口，仅需四步。" })}</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((s, i) => (
-              <div key={i} className="relative rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white p-6 pt-8 shadow-sm">
+              <div key={i} className="relative rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-card p-6 pt-8 shadow-sm">
                 <span className="absolute -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-sm font-black text-white shadow-lg" style={isRTL ? { right: "1.5rem" } : { left: "1.5rem" }}>{i + 1}</span>
                 <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl text-white" style={{ backgroundColor: NAVY }}>
                   <s.icon className="h-6 w-6" />
                 </span>
                 <h3 className="font-bold text-slate-900 dark:text-slate-200">{L(s.t)}</h3>
-                <p className="mt-1 text-sm text-slate-600">{L(s.d)}</p>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{L(s.d)}</p>
               </div>
             ))}
           </div>
@@ -406,8 +406,8 @@ export default function HomeLogistick() {
           <h2 className="text-3xl font-black md:text-4xl">{L({ ku: "ئامادەیت بارەکەت بگوازیتەوە؟", en: "Ready to ship your cargo?", ar: "جاهز لشحن بضاعتك؟", zh: "准备好发货了吗？" })}</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/85">{L({ ku: "پەیوەندیمان پێوە بکە بۆ نرخێکی بێبەرامبەر و ڕاوێژکاری.", en: "Talk to us for a free quote and a consultation.", ar: "تواصل معنا للحصول على عرض سعر مجاني واستشارة.", zh: "联系我们获取免费报价与咨询。" })}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a href={waLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-900 dark:text-slate-200 shadow-lg hover:-translate-y-0.5 transition-all">
-              <MessageCircle className="h-4 w-4 text-emerald-500" /> {L({ ku: "واتساپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" })}
+            <a href={waLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-card px-6 py-3 text-sm font-bold text-slate-900 dark:text-slate-200 shadow-lg hover:-translate-y-0.5 transition-all">
+              <MessageCircle className="h-4 w-4 text-emerald-500 dark:text-emerald-400" /> {L({ ku: "واتساپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" })}
             </a>
             <Link href="/customer-login" className="inline-flex items-center gap-2 rounded-full bg-white/15 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/30 backdrop-blur hover:bg-white/25 transition-all">
               {L({ ku: "چوونەژوورەوەی کڕیار", en: "Customer portal", ar: "بوابة العميل", zh: "客户门户" })}

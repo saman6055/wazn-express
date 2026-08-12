@@ -60,7 +60,7 @@ export function RevenueProfitChartsSection({ startDate, endDate }: Props) {
       <Card className="overflow-hidden border-0 shadow-lg">
         <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <TrendingUp className="h-5 w-5 text-emerald-500" />
+            <TrendingUp className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
             {t("reports.salesTrend")}
           </CardTitle>
         </CardHeader>
@@ -104,7 +104,7 @@ export function RevenueProfitChartsSection({ startDate, endDate }: Props) {
       <Card className="overflow-hidden border-0 shadow-lg">
         <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <PieChartIcon className="h-5 w-5 text-blue-500" />
+            <PieChartIcon className="h-5 w-5 text-blue-500 dark:text-blue-400" />
             {t("reports.profitBreakdown")}
           </CardTitle>
         </CardHeader>

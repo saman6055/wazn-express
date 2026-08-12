@@ -34,7 +34,7 @@ export function FullPackageServicesSection() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <ShoppingBag className="h-5 w-5 text-indigo-600" />
+                <ShoppingBag className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
                 {t("reports.fullPackageOverview")}
               </CardTitle>
               <CardDescription>{t("reports.fullPackageDesc")}</CardDescription>
@@ -60,7 +60,7 @@ export function FullPackageServicesSection() {
                 <DollarSign className="h-4 w-4" />
                 <span className="text-sm font-medium">{t("reports.netProfit")}</span>
               </div>
-              <p className="mt-1 text-2xl font-bold text-green-600">${fpStats.profit.toLocaleString()}</p>
+              <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-300">${fpStats.profit.toLocaleString()}</p>
             </div>
             <div className="rounded-xl bg-emerald-50 p-4 dark:bg-emerald-950/30">
               <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
@@ -86,7 +86,7 @@ export function FullPackageServicesSection() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Wrench className="h-5 w-5 text-emerald-600" />
+                <Wrench className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 {t("reports.servicesBreakdown")}
               </CardTitle>
               <CardDescription>{t("reports.servicesDesc")}</CardDescription>
@@ -108,7 +108,7 @@ export function FullPackageServicesSection() {
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/50">
-                      <Wrench className="h-4 w-4 text-emerald-600" />
+                      <Wrench className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
                     </div>
                     <div>
                       <p className="text-sm font-medium">{service.nameEn}</p>

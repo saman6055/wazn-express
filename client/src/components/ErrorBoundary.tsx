@@ -184,7 +184,7 @@ class ErrorBoundary extends Component<Props, State> {
                 )}
               >
                 {this.state.copied ? (
-                  <Check size={18} className="text-green-600" />
+                  <Check size={18} className="text-green-600 dark:text-green-300" />
                 ) : (
                   <Copy size={18} />
                 )}

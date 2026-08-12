@@ -599,7 +599,7 @@ const { t, language } = useLanguage();
                     tabIndex={0}
                     aria-label={pickLang(language, { ku: "زانیاری", en: "info", ar: "معلومات", zh: "信息" })}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenTileInfo(openTileInfo === index ? null : index); }}
-                    className={cn("absolute top-0 end-0 flex h-11 w-11 items-center justify-center transition-colors", lightHeader ? "text-slate-500 hover:text-slate-900" : "opacity-70 hover:opacity-100")} style={paleStyle}
+                    className={cn("absolute top-0 end-0 flex h-11 w-11 items-center justify-center transition-colors", lightHeader ? "text-slate-500 dark:text-slate-400 hover:text-slate-900" : "opacity-70 hover:opacity-100")} style={paleStyle}
                   >
                     <Info className="w-3.5 h-3.5" />
                   </span>
@@ -623,7 +623,7 @@ const { t, language } = useLanguage();
           {/* "What is this?" card — shown only after a tile's ⓘ is tapped. */}
           {openTileInfo !== null && (
             <div className={cn("mt-3 relative flex gap-3 rounded-2xl p-3.5 border backdrop-blur-sm", headGlass)}>
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-white dark:bg-card flex items-center justify-center shrink-0">
                 <Info className="w-5 h-5" style={{ color: pal.brand }} />
               </div>
               <div className="flex-1 min-w-0 pe-5">
@@ -634,7 +634,7 @@ const { t, language } = useLanguage();
                 </span>
               </div>
               <button onClick={() => setOpenTileInfo(null)} aria-label={pickLang(language, { ku: "داخستن", en: "close", ar: "إغلاق", zh: "关闭" })}
-                className={cn("absolute top-2 end-2 p-1 rounded-full transition-colors", lightHeader ? "text-slate-500 hover:bg-slate-900/10" : "text-white/60 hover:bg-white/10")}>
+                className={cn("absolute top-2 end-2 p-1 rounded-full transition-colors", lightHeader ? "text-slate-500 dark:text-slate-400 hover:bg-slate-900/10" : "text-white/60 hover:bg-white/10")}>
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -669,10 +669,10 @@ const { t, language } = useLanguage();
                 </p>
               </div>
               {/* Dollar sign flashes red when in debt, green when clear/credit. */}
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white shadow-md">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white dark:bg-card shadow-md">
                 <DollarSign className={cn(
                   "w-7 h-7 animate-pulse",
-                  hasDebt ? "text-red-600" : "text-emerald-600",
+                  hasDebt ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300",
                 )} />
               </div>
             </div>
@@ -964,11 +964,11 @@ const { t, language } = useLanguage();
         <div className="px-4 mt-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className={cn("text-lg font-bold flex items-center gap-2", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-              <Package className="w-5 h-5 text-blue-500" />
+              <Package className="w-5 h-5 text-blue-500 dark:text-blue-400" />
               {pickLang(language, { ku: "بارە خۆدەرخستووەکانم", en: "My declared packages", ar: "طرودي المُعلنة", zh: "我申报的包裹" })}
             </h2>
             <Link href="/portal/declare">
-              <span className="text-sm text-blue-500 font-medium flex items-center gap-1 hover:text-blue-600 transition-colors">
+              <span className="text-sm text-blue-500 dark:text-blue-400 font-medium flex items-center gap-1 hover:text-blue-600 transition-colors">
                 {t("portal.viewAll") || "هەموو ببینە"}
                 <ChevronRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
               </span>
@@ -1040,7 +1040,7 @@ const { t, language } = useLanguage();
             {t("portal.recentShipments") || "گواستنەوە نوێیەکان"}
           </h2>
           <Link href="/portal/shipments">
-            <span className="text-sm text-blue-500 font-medium flex items-center gap-1 hover:text-blue-600 transition-colors">
+            <span className="text-sm text-blue-500 dark:text-blue-400 font-medium flex items-center gap-1 hover:text-blue-600 transition-colors">
               {t("portal.viewAll") || "هەموو ببینە"}
               <ChevronRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
             </span>

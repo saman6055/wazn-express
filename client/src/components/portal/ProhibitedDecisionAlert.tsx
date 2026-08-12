@@ -56,7 +56,7 @@ export function ProhibitedDecisionAlert({ isDark, className }: { isDark?: boolea
             })}
           </p>
         </div>
-        <ChevronLeft className="h-5 w-5 shrink-0 text-red-500 rtl:rotate-180" />
+        <ChevronLeft className="h-5 w-5 shrink-0 text-red-500 dark:text-red-400 rtl:rotate-180" />
       </div>
     </Link>
   );

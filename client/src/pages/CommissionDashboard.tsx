@@ -548,11 +548,11 @@ export default function CommissionDashboard() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={exportToExcel}>
-                    <FileSpreadsheet className="h-4 w-4 ms-2 text-green-600" />
+                    <FileSpreadsheet className="h-4 w-4 ms-2 text-green-600 dark:text-green-300" />
                     {t("commission.exportExcel")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={exportToPDF}>
-                    <FileText className="h-4 w-4 ms-2 text-red-600" />
+                    <FileText className="h-4 w-4 ms-2 text-red-600 dark:text-red-300" />
                     {t("commission.exportPDF")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -568,7 +568,7 @@ export default function CommissionDashboard() {
               </Button>
               <Button
                 onClick={() => navigate("/commission/new")}
-                className="bg-white text-amber-700 dark:text-amber-300 hover:bg-amber-50"
+                className="bg-white dark:bg-card text-amber-700 dark:text-amber-300 hover:bg-amber-50"
               >
                 <Plus className="h-4 w-4 ms-2" />
                 {t("commission.newOrder")}
@@ -583,11 +583,11 @@ export default function CommissionDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-amber-600 font-medium">{t("commission.totalOrdersLabel")}</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-300 font-medium">{t("commission.totalOrdersLabel")}</p>
                   <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{totalOrders}</p>
                 </div>
                 <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
-                  <Package className="h-5 w-5 text-amber-600" />
+                  <Package className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                 </div>
               </div>
             </CardContent>
@@ -597,11 +597,11 @@ export default function CommissionDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-orange-600 font-medium">{t("commission.pendingLabel")}</p>
+                  <p className="text-xs text-orange-600 dark:text-orange-300 font-medium">{t("commission.pendingLabel")}</p>
                   <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{pendingOrders}</p>
                 </div>
                 <div className="p-2 bg-orange-100 dark:bg-orange-950/40 rounded-xl">
-                  <Clock className="h-5 w-5 text-orange-600" />
+                  <Clock className="h-5 w-5 text-orange-600 dark:text-orange-300" />
                 </div>
               </div>
             </CardContent>
@@ -611,11 +611,11 @@ export default function CommissionDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-blue-600 font-medium">{t("commission.orderedLabel")}</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-300 font-medium">{t("commission.orderedLabel")}</p>
                   <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{orderedOrders}</p>
                 </div>
                 <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
-                  <Truck className="h-5 w-5 text-blue-600" />
+                  <Truck className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                 </div>
               </div>
             </CardContent>
@@ -625,11 +625,11 @@ export default function CommissionDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-green-600 font-medium">{t("commission.deliveredLabel")}</p>
+                  <p className="text-xs text-green-600 dark:text-green-300 font-medium">{t("commission.deliveredLabel")}</p>
                   <p className="text-2xl font-bold text-green-700 dark:text-green-300">{deliveredOrders}</p>
                 </div>
                 <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-xl">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
@@ -639,7 +639,7 @@ export default function CommissionDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-red-600 font-medium">{t("commission.totalCostLabel")}</p>
+                  <p className="text-xs text-red-600 dark:text-red-300 font-medium">{t("commission.totalCostLabel")}</p>
                   {/* "کۆی کڕین" must show the goods-only purchase total,
                       NOT goods + commission. Commission has its own card
                       below; lumping them together here was confusing
@@ -650,7 +650,7 @@ export default function CommissionDashboard() {
                   <p className="text-xl font-bold text-red-700 dark:text-red-300">${totalItemValue.toFixed(2)}</p>
                 </div>
                 <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-xl">
-                  <ShoppingCart className="h-5 w-5 text-red-600" />
+                  <ShoppingCart className="h-5 w-5 text-red-600 dark:text-red-300" />
                 </div>
               </div>
             </CardContent>
@@ -726,7 +726,7 @@ export default function CommissionDashboard() {
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium text-sm">{t("commission.advancedFiltersTitle")}</h4>
                     {hasActiveFilters && (
-                      <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-red-600 hover:text-red-700">
+                      <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-red-600 dark:text-red-300 hover:text-red-700">
                         <X className="h-4 w-4 ms-1" />
                         {t("commission.clearAllFilters")}
                       </Button>
@@ -874,7 +874,7 @@ export default function CommissionDashboard() {
                 <div className="text-sm text-muted-foreground">
                   {t("commission.ordersCountFound", { count: String(filteredOrders.length) })}
                   {hasActiveFilters && (
-                    <span className="text-amber-600 me-2">{t("commission.filteredBadge")}</span>
+                    <span className="text-amber-600 dark:text-amber-300 me-2">{t("commission.filteredBadge")}</span>
                   )}
                 </div>
                 
@@ -994,7 +994,7 @@ export default function CommissionDashboard() {
                               </>
                             ) : (
                               <>
-                                <Badge variant="outline" className="font-mono text-amber-600 border-amber-300 dark:border-amber-800/60">
+                                <Badge variant="outline" className="font-mono text-amber-600 dark:text-amber-300 border-amber-300 dark:border-amber-800/60">
                                   {order.orderCode}
                                 </Badge>
                                 <CopyButton value={order.orderCode} label={pickLang(language, { ku: "کۆپی کۆد", en: "Copy code", ar: "نسخ الرمز", zh: "复制代码" })} />
@@ -1023,7 +1023,7 @@ export default function CommissionDashboard() {
                               />
                             ) : (
                               <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
-                                <Package className="h-5 w-5 text-amber-600" />
+                                <Package className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                               </div>
                             )}
                             <div>
@@ -1058,7 +1058,7 @@ export default function CommissionDashboard() {
                         <TableCell className="font-mono">
                           ${(parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2)}
                         </TableCell>
-                        <TableCell className="font-mono text-amber-600">
+                        <TableCell className="font-mono text-amber-600 dark:text-amber-300">
                           ${(parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2)}
                         </TableCell>
                         <TableCell>

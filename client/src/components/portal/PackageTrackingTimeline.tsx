@@ -173,7 +173,7 @@ export function PackageTrackingTimeline({
                 className={cn(
                   "text-sm font-medium",
                   isCurrent && "text-foreground",
-                  isDone && "text-emerald-600",
+                  isDone && "text-emerald-600 dark:text-emerald-300",
                   !isDone && !isCurrent && "text-muted-foreground"
                 )}
               >

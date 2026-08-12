@@ -280,9 +280,9 @@ export default function SystemMonitorDashboard() {
   
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
-      case 'critical': return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'warning': return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-      default: return <Info className="h-4 w-4 text-blue-500" />;
+      case 'critical': return <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400" />;
+      case 'warning': return <AlertTriangle className="h-4 w-4 text-amber-500 dark:text-amber-400" />;
+      default: return <Info className="h-4 w-4 text-blue-500 dark:text-blue-400" />;
     }
   };
   
@@ -344,26 +344,26 @@ export default function SystemMonitorDashboard() {
         </Card>
         
         <Card className={cn(
-          Number(statsData?.unread || 0) > 0 && "border-amber-500 bg-amber-50/50"
+          Number(statsData?.unread || 0) > 0 && "border-amber-500 bg-amber-50/50 dark:bg-amber-950/50"
         )}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t.unreadAlerts}</CardTitle>
-            <EyeOff className="h-4 w-4 text-amber-500" />
+            <EyeOff className="h-4 w-4 text-amber-500 dark:text-amber-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{statsData?.unread || 0}</div>
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">{statsData?.unread || 0}</div>
           </CardContent>
         </Card>
         
         <Card className={cn(
-          ((statsData?.bySeverity as any)?.find((s: any) => s.severity === 'critical')?.count || 0) > 0 && "border-red-500 bg-red-50/50"
+          ((statsData?.bySeverity as any)?.find((s: any) => s.severity === 'critical')?.count || 0) > 0 && "border-red-500 bg-red-50/50 dark:bg-red-950/50"
         )}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t.criticalAlerts}</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-500" />
+            <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-300">
               {(statsData?.bySeverity as any)?.find((s: any) => s.severity === 'critical')?.count || 0}
             </div>
           </CardContent>
@@ -372,10 +372,10 @@ export default function SystemMonitorDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t.warningAlerts}</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <AlertTriangle className="h-4 w-4 text-amber-500 dark:text-amber-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600">
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">
               {(statsData?.bySeverity as any)?.find((s: any) => s.severity === 'warning')?.count || 0}
             </div>
           </CardContent>
@@ -384,10 +384,10 @@ export default function SystemMonitorDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t.infoAlerts}</CardTitle>
-            <Info className="h-4 w-4 text-blue-500" />
+            <Info className="h-4 w-4 text-blue-500 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-300">
               {(statsData?.bySeverity as any)?.find((s: any) => s.severity === 'info')?.count || 0}
             </div>
           </CardContent>
@@ -405,10 +405,10 @@ export default function SystemMonitorDashboard() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/60">
-              <Database className="h-8 w-8 text-green-600" />
+              <Database className="h-8 w-8 text-green-600 dark:text-green-300" />
               <div>
                 <p className="text-sm text-muted-foreground">{t.databaseStatus}</p>
-                <p className="text-lg font-semibold text-green-600 flex items-center gap-1">
+                <p className="text-lg font-semibold text-green-600 dark:text-green-300 flex items-center gap-1">
                   <CheckCircle className="h-4 w-4" />
                   {t.healthy}
                 </p>
@@ -416,10 +416,10 @@ export default function SystemMonitorDashboard() {
             </div>
             
             <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/60">
-              <Server className="h-8 w-8 text-green-600" />
+              <Server className="h-8 w-8 text-green-600 dark:text-green-300" />
               <div>
                 <p className="text-sm text-muted-foreground">{t.serverStatus}</p>
-                <p className="text-lg font-semibold text-green-600 flex items-center gap-1">
+                <p className="text-lg font-semibold text-green-600 dark:text-green-300 flex items-center gap-1">
                   <CheckCircle className="h-4 w-4" />
                   {t.healthy}
                 </p>
@@ -427,10 +427,10 @@ export default function SystemMonitorDashboard() {
             </div>
             
             <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/60">
-              <Shield className="h-8 w-8 text-green-600" />
+              <Shield className="h-8 w-8 text-green-600 dark:text-green-300" />
               <div>
                 <p className="text-sm text-muted-foreground">{t.backupStatus}</p>
-                <p className="text-lg font-semibold text-green-600 flex items-center gap-1">
+                <p className="text-lg font-semibold text-green-600 dark:text-green-300 flex items-center gap-1">
                   <CheckCircle className="h-4 w-4" />
                   {backupsData?.[0] 
                     ? formatTimeAgo(backupsData[0].createdAt)
@@ -565,7 +565,7 @@ export default function SystemMonitorDashboard() {
                 </div>
               ) : alertsData?.alerts?.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
-                  <CheckCircle className="h-12 w-12 mb-2 text-green-500" />
+                  <CheckCircle className="h-12 w-12 mb-2 text-green-500 dark:text-green-400" />
                   <p>{t.noAlerts}</p>
                 </div>
               ) : (
@@ -578,8 +578,8 @@ export default function SystemMonitorDashboard() {
                         className={cn(
                           "p-4 rounded-lg border transition-colors",
                           !alert.isRead && "bg-muted/50 border-primary/20",
-                          alert.severity === 'critical' && !alert.isRead && "bg-red-50/50 border-red-200 dark:border-red-800/60",
-                          alert.severity === 'warning' && !alert.isRead && "bg-amber-50/50 border-amber-200 dark:border-amber-800/60"
+                          alert.severity === 'critical' && !alert.isRead && "bg-red-50/50 dark:bg-red-950/50 border-red-200 dark:border-red-800/60",
+                          alert.severity === 'warning' && !alert.isRead && "bg-amber-50/50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800/60"
                         )}
                       >
                         <div className="flex items-start gap-3">
@@ -591,9 +591,9 @@ export default function SystemMonitorDashboard() {
                           )}>
                             <CategoryIcon className={cn(
                               "h-5 w-5",
-                              alert.severity === 'critical' && "text-red-600",
-                              alert.severity === 'warning' && "text-amber-600",
-                              alert.severity === 'info' && "text-blue-600"
+                              alert.severity === 'critical' && "text-red-600 dark:text-red-300",
+                              alert.severity === 'warning' && "text-amber-600 dark:text-amber-300",
+                              alert.severity === 'info' && "text-blue-600 dark:text-blue-300"
                             )} />
                           </div>
                           <div className="flex-1 min-w-0">

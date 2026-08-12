@@ -203,14 +203,14 @@ export default function CompanyFinanceDashboard() {
                 <CardContent className="pt-6 pr-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-emerald-600">{t("companyFinance.totalRevenue") || "کۆی داهات"}</p>
+                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">{t("companyFinance.totalRevenue") || "کۆی داهات"}</p>
                       <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
                         {isLoading ? '...' : formatCurrency(pl?.totalRevenue || 0)}
                       </p>
-                      <p className="text-xs text-emerald-500 mt-1">{getPeriodLabel(period)}</p>
+                      <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-1">{getPeriodLabel(period)}</p>
                     </div>
                     <div className="p-3 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
-                      <DollarSign className="h-6 w-6 text-emerald-600" />
+                      <DollarSign className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
                     </div>
                   </div>
                 </CardContent>
@@ -222,14 +222,14 @@ export default function CompanyFinanceDashboard() {
                 <CardContent className="pt-6 pr-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-red-600">{t("companyFinance.totalExpenses") || "کۆی خەرجی"}</p>
+                      <p className="text-sm font-medium text-red-600 dark:text-red-300">{t("companyFinance.totalExpenses") || "کۆی خەرجی"}</p>
                       <p className="text-2xl font-bold text-red-700 dark:text-red-300 mt-1">
                         {isLoading ? '...' : formatCurrency(pl?.totalExpenses || 0)}
                       </p>
-                      <p className="text-xs text-red-500 mt-1">{getPeriodLabel(period)}</p>
+                      <p className="text-xs text-red-500 dark:text-red-400 mt-1">{getPeriodLabel(period)}</p>
                     </div>
                     <div className="p-3 bg-red-100 dark:bg-red-950/40 rounded-xl">
-                      <CreditCard className="h-6 w-6 text-red-600" />
+                      <CreditCard className="h-6 w-6 text-red-600 dark:text-red-300" />
                     </div>
                   </div>
                 </CardContent>
@@ -263,9 +263,9 @@ export default function CompanyFinanceDashboard() {
                     </div>
                     <div className={`p-3 rounded-xl ${(pl?.netProfit || 0) >= 0 ? 'bg-blue-100 dark:bg-blue-950/40' : 'bg-orange-100 dark:bg-orange-950/40'}`}>
                       {(pl?.netProfit || 0) >= 0 ? (
-                        <TrendingUp className="h-6 w-6 text-blue-600" />
+                        <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                       ) : (
-                        <TrendingDown className="h-6 w-6 text-orange-600" />
+                        <TrendingDown className="h-6 w-6 text-orange-600 dark:text-orange-300" />
                       )}
                     </div>
                   </div>
@@ -278,14 +278,14 @@ export default function CompanyFinanceDashboard() {
                 <CardContent className="pt-6 pr-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-purple-600">{t("companyFinance.profitMargin") || "ڕێژەی قازانج"}</p>
+                      <p className="text-sm font-medium text-purple-600 dark:text-purple-300">{t("companyFinance.profitMargin") || "ڕێژەی قازانج"}</p>
                       <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 mt-1">
                         {isLoading ? '...' : formatPercent(pl?.profitMargin || 0)}
                       </p>
-                      <p className="text-xs text-purple-500 mt-1">{getPeriodLabel(period)}</p>
+                      <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">{getPeriodLabel(period)}</p>
                     </div>
                     <div className="p-3 bg-purple-100 dark:bg-purple-950/40 rounded-xl">
-                      <Activity className="h-6 w-6 text-purple-600" />
+                      <Activity className="h-6 w-6 text-purple-600 dark:text-purple-300" />
                     </div>
                   </div>
                 </CardContent>
@@ -295,7 +295,7 @@ export default function CompanyFinanceDashboard() {
             {/* Revenue by Source - 6 Cards */}
             <div>
               <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Layers className="w-5 h-5 text-blue-500" />
+                <Layers className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                 {t("companyFinance.revenueBySource") || "داهات بە سەرچاوە"}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -305,7 +305,7 @@ export default function CompanyFinanceDashboard() {
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="p-2.5 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
-                          <Plane className="h-5 w-5 text-blue-600" />
+                          <Plane className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{t("companyFinance.batchProfitAir") || "باچی ئاسمانی"}</p>
@@ -315,11 +315,11 @@ export default function CompanyFinanceDashboard() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">{t("companyFinance.revenue") || "داهات"}</span>
-                          <span className="font-medium text-green-600">{formatCurrency(revenueBySource?.batchProfit?.air_regular?.revenue || 0)}</span>
+                          <span className="font-medium text-green-600 dark:text-green-300">{formatCurrency(revenueBySource?.batchProfit?.air_regular?.revenue || 0)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">{t("companyFinance.cost") || "تێچوو"}</span>
-                          <span className="font-medium text-red-600">{formatCurrency(revenueBySource?.batchProfit?.air_regular?.cost || 0)}</span>
+                          <span className="font-medium text-red-600 dark:text-red-300">{formatCurrency(revenueBySource?.batchProfit?.air_regular?.cost || 0)}</span>
                         </div>
                         <Separator />
                         <div className="flex justify-between text-sm font-bold">
@@ -343,7 +343,7 @@ export default function CompanyFinanceDashboard() {
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="p-2.5 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
-                          <AlertTriangle className="h-5 w-5 text-amber-600" />
+                          <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{t("companyFinance.batchProfitIrregular") || "ئاسمانی مەترسیدار"}</p>
@@ -353,11 +353,11 @@ export default function CompanyFinanceDashboard() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">{t("companyFinance.revenue") || "داهات"}</span>
-                          <span className="font-medium text-green-600">{formatCurrency(revenueBySource?.batchProfit?.air_irregular?.revenue || 0)}</span>
+                          <span className="font-medium text-green-600 dark:text-green-300">{formatCurrency(revenueBySource?.batchProfit?.air_irregular?.revenue || 0)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">{t("companyFinance.cost") || "تێچوو"}</span>
-                          <span className="font-medium text-red-600">{formatCurrency(revenueBySource?.batchProfit?.air_irregular?.cost || 0)}</span>
+                          <span className="font-medium text-red-600 dark:text-red-300">{formatCurrency(revenueBySource?.batchProfit?.air_irregular?.cost || 0)}</span>
                         </div>
                         <Separator />
                         <div className="flex justify-between text-sm font-bold">
@@ -381,7 +381,7 @@ export default function CompanyFinanceDashboard() {
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="p-2.5 bg-cyan-100 dark:bg-cyan-950/40 rounded-xl">
-                          <Ship className="h-5 w-5 text-cyan-600" />
+                          <Ship className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{t("companyFinance.batchProfitSea") || "باچی دەریایی"}</p>
@@ -391,11 +391,11 @@ export default function CompanyFinanceDashboard() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">{t("companyFinance.revenue") || "داهات"}</span>
-                          <span className="font-medium text-green-600">{formatCurrency(revenueBySource?.batchProfit?.sea?.revenue || 0)}</span>
+                          <span className="font-medium text-green-600 dark:text-green-300">{formatCurrency(revenueBySource?.batchProfit?.sea?.revenue || 0)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">{t("companyFinance.cost") || "تێچوو"}</span>
-                          <span className="font-medium text-red-600">{formatCurrency(revenueBySource?.batchProfit?.sea?.cost || 0)}</span>
+                          <span className="font-medium text-red-600 dark:text-red-300">{formatCurrency(revenueBySource?.batchProfit?.sea?.cost || 0)}</span>
                         </div>
                         <Separator />
                         <div className="flex justify-between text-sm font-bold">
@@ -419,7 +419,7 @@ export default function CompanyFinanceDashboard() {
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="p-2.5 bg-green-100 dark:bg-green-950/40 rounded-xl">
-                          <ShoppingBag className="h-5 w-5 text-green-600" />
+                          <ShoppingBag className="h-5 w-5 text-green-600 dark:text-green-300" />
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{t("companyFinance.fullPackageProfit") || "قازانجی پاکێجی تەواو"}</p>
@@ -429,15 +429,15 @@ export default function CompanyFinanceDashboard() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">{t("companyFinance.sellingPrice") || "نرخی فرۆشتن"}</span>
-                          <span className="font-medium text-green-600">{formatCurrency(revenueBySource?.fullPackage?.revenue || 0)}</span>
+                          <span className="font-medium text-green-600 dark:text-green-300">{formatCurrency(revenueBySource?.fullPackage?.revenue || 0)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">{t("companyFinance.purchasePrice") || "نرخی کڕین"}</span>
-                          <span className="font-medium text-red-600">{formatCurrency(revenueBySource?.fullPackage?.cost || 0)}</span>
+                          <span className="font-medium text-red-600 dark:text-red-300">{formatCurrency(revenueBySource?.fullPackage?.cost || 0)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">{t("companyFinance.shippingCost") || "تێچووی گواستنەوە"}</span>
-                          <span className="font-medium text-orange-600">{formatCurrency(revenueBySource?.fullPackage?.shippingCost || 0)}</span>
+                          <span className="font-medium text-orange-600 dark:text-orange-300">{formatCurrency(revenueBySource?.fullPackage?.shippingCost || 0)}</span>
                         </div>
                         <Separator />
                         <div className="flex justify-between text-sm font-bold">
@@ -457,7 +457,7 @@ export default function CompanyFinanceDashboard() {
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="p-2.5 bg-violet-100 dark:bg-violet-950/40 rounded-xl">
-                          <Briefcase className="h-5 w-5 text-violet-600" />
+                          <Briefcase className="h-5 w-5 text-violet-600 dark:text-violet-300" />
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{t("companyFinance.commissionIncome") || "عمولەی کڕین"}</p>
@@ -468,7 +468,7 @@ export default function CompanyFinanceDashboard() {
                         <Separator />
                         <div className="flex justify-between text-sm font-bold">
                           <span>{t("companyFinance.totalCommission") || "کۆی عمولە"}</span>
-                          <span className="text-violet-600">
+                          <span className="text-violet-600 dark:text-violet-300">
                             {formatCurrency(revenueBySource?.commission?.totalCommission || 0)}
                           </span>
                         </div>
@@ -483,7 +483,7 @@ export default function CompanyFinanceDashboard() {
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="p-2.5 bg-pink-100 dark:bg-pink-950/40 rounded-xl">
-                          <Wrench className="h-5 w-5 text-pink-600" />
+                          <Wrench className="h-5 w-5 text-pink-600 dark:text-pink-300" />
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{t("companyFinance.serviceProfit") || "قازانجی خزمەتگوزاری"}</p>
@@ -493,11 +493,11 @@ export default function CompanyFinanceDashboard() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">{t("companyFinance.revenue") || "داهات"}</span>
-                          <span className="font-medium text-green-600">{formatCurrency(revenueBySource?.service?.revenue || 0)}</span>
+                          <span className="font-medium text-green-600 dark:text-green-300">{formatCurrency(revenueBySource?.service?.revenue || 0)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">{t("companyFinance.cost") || "تێچوو"}</span>
-                          <span className="font-medium text-red-600">{formatCurrency(revenueBySource?.service?.cost || 0)}</span>
+                          <span className="font-medium text-red-600 dark:text-red-300">{formatCurrency(revenueBySource?.service?.cost || 0)}</span>
                         </div>
                         <Separator />
                         <div className="flex justify-between text-sm font-bold">
@@ -516,7 +516,7 @@ export default function CompanyFinanceDashboard() {
             {/* Activity Stats */}
             <div>
               <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-indigo-500" />
+                <Activity className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
                 {t("companyFinance.activityStats") || "ئاماری چالاکی"}
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -539,25 +539,25 @@ export default function CompanyFinanceDashboard() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <Link href="/finance/reports">
                     <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:bg-blue-50 hover:border-blue-200">
-                      <BarChart3 className="h-6 w-6 text-blue-500" />
+                      <BarChart3 className="h-6 w-6 text-blue-500 dark:text-blue-400" />
                       <span className="text-sm">{t("reports.title") || "ڕاپۆرتەکان"}</span>
                     </Button>
                   </Link>
                   <Link href="/finance/expenses">
                     <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:bg-red-50 hover:border-red-200">
-                      <CreditCard className="h-6 w-6 text-red-500" />
+                      <CreditCard className="h-6 w-6 text-red-500 dark:text-red-400" />
                       <span className="text-sm">{t("companyFinance.expenses") || "خەرجییەکان"}</span>
                     </Button>
                   </Link>
                   <Link href="/finance/bank-accounts">
                     <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:bg-purple-50 hover:border-purple-200">
-                      <Building2 className="h-6 w-6 text-purple-500" />
+                      <Building2 className="h-6 w-6 text-purple-500 dark:text-purple-400" />
                       <span className="text-sm">{t("bankAccounts.pageTitle") || "حسابە بانکییەکان"}</span>
                     </Button>
                   </Link>
                   <Link href="/finance">
                     <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:bg-green-50 hover:border-green-200">
-                      <CircleDollarSign className="h-6 w-6 text-green-500" />
+                      <CircleDollarSign className="h-6 w-6 text-green-500 dark:text-green-400" />
                       <span className="text-sm">{t("companyFinance.financeManagement") || "بەڕێوەبردنی دارایی"}</span>
                     </Button>
                   </Link>
@@ -588,7 +588,7 @@ export default function CompanyFinanceDashboard() {
             <Card className="border-0 shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5 text-blue-500" />
+                  <Package className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                   {t("companyFinance.batchProfitBreakdown") || "وردەکاری قازانجی باچەکان"}
                 </CardTitle>
                 <CardDescription>{t("companyFinance.batchProfitDesc") || "قازانجی خاوێن بۆ هەموو جۆرە باچەکان"}</CardDescription>
@@ -601,34 +601,34 @@ export default function CompanyFinanceDashboard() {
                         <th className="text-right py-3 px-4 font-semibold">{t("companyFinance.shippingType") || "جۆری گواستنەوە"}</th>
                         <th className="text-right py-3 px-4 font-semibold">{t("companyFinance.batchCount") || "ژمارەی باچ"}</th>
                         <th className="text-right py-3 px-4 font-semibold">{t("companyFinance.packageCount") || "ژمارەی پاکەت"}</th>
-                        <th className="text-right py-3 px-4 font-semibold text-green-600">{t("companyFinance.revenue") || "داهات"}</th>
-                        <th className="text-right py-3 px-4 font-semibold text-red-600">{t("companyFinance.cost") || "تێچوو"}</th>
-                        <th className="text-right py-3 px-4 font-semibold text-blue-600">{t("companyFinance.netProfit") || "قازانجی خاوێن"}</th>
+                        <th className="text-right py-3 px-4 font-semibold text-green-600 dark:text-green-300">{t("companyFinance.revenue") || "داهات"}</th>
+                        <th className="text-right py-3 px-4 font-semibold text-red-600 dark:text-red-300">{t("companyFinance.cost") || "تێچوو"}</th>
+                        <th className="text-right py-3 px-4 font-semibold text-blue-600 dark:text-blue-300">{t("companyFinance.netProfit") || "قازانجی خاوێن"}</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr className="border-b hover:bg-muted/30">
-                        <td className="py-3 px-4 flex items-center gap-2"><Plane className="w-4 h-4 text-blue-500" /> {t("companyFinance.airRegular") || "ئاسمانی ئاسایی"}</td>
+                        <td className="py-3 px-4 flex items-center gap-2"><Plane className="w-4 h-4 text-blue-500 dark:text-blue-400" /> {t("companyFinance.airRegular") || "ئاسمانی ئاسایی"}</td>
                         <td className="py-3 px-4 text-right">{revenueBySource?.batchProfit?.air_regular?.batchCount || 0}</td>
                         <td className="py-3 px-4 text-right">{revenueBySource?.batchProfit?.air_regular?.count || 0}</td>
-                        <td className="py-3 px-4 text-right text-green-600 font-medium">{formatCurrency(revenueBySource?.batchProfit?.air_regular?.revenue || 0)}</td>
-                        <td className="py-3 px-4 text-right text-red-600 font-medium">{formatCurrency(revenueBySource?.batchProfit?.air_regular?.cost || 0)}</td>
+                        <td className="py-3 px-4 text-right text-green-600 dark:text-green-300 font-medium">{formatCurrency(revenueBySource?.batchProfit?.air_regular?.revenue || 0)}</td>
+                        <td className="py-3 px-4 text-right text-red-600 dark:text-red-300 font-medium">{formatCurrency(revenueBySource?.batchProfit?.air_regular?.cost || 0)}</td>
                         <td className={`py-3 px-4 text-right font-bold ${(revenueBySource?.batchProfit?.air_regular?.profit || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatCurrency(revenueBySource?.batchProfit?.air_regular?.profit || 0)}</td>
                       </tr>
                       <tr className="border-b hover:bg-muted/30">
-                        <td className="py-3 px-4 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500" /> {t("companyFinance.airIrregular") || "ئاسمانی مەترسیدار"}</td>
+                        <td className="py-3 px-4 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400" /> {t("companyFinance.airIrregular") || "ئاسمانی مەترسیدار"}</td>
                         <td className="py-3 px-4 text-right">{revenueBySource?.batchProfit?.air_irregular?.batchCount || 0}</td>
                         <td className="py-3 px-4 text-right">{revenueBySource?.batchProfit?.air_irregular?.count || 0}</td>
-                        <td className="py-3 px-4 text-right text-green-600 font-medium">{formatCurrency(revenueBySource?.batchProfit?.air_irregular?.revenue || 0)}</td>
-                        <td className="py-3 px-4 text-right text-red-600 font-medium">{formatCurrency(revenueBySource?.batchProfit?.air_irregular?.cost || 0)}</td>
+                        <td className="py-3 px-4 text-right text-green-600 dark:text-green-300 font-medium">{formatCurrency(revenueBySource?.batchProfit?.air_irregular?.revenue || 0)}</td>
+                        <td className="py-3 px-4 text-right text-red-600 dark:text-red-300 font-medium">{formatCurrency(revenueBySource?.batchProfit?.air_irregular?.cost || 0)}</td>
                         <td className={`py-3 px-4 text-right font-bold ${(revenueBySource?.batchProfit?.air_irregular?.profit || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatCurrency(revenueBySource?.batchProfit?.air_irregular?.profit || 0)}</td>
                       </tr>
                       <tr className="border-b hover:bg-muted/30">
-                        <td className="py-3 px-4 flex items-center gap-2"><Ship className="w-4 h-4 text-cyan-500" /> {t("companyFinance.seaShipping") || "دەریایی"}</td>
+                        <td className="py-3 px-4 flex items-center gap-2"><Ship className="w-4 h-4 text-cyan-500 dark:text-cyan-400" /> {t("companyFinance.seaShipping") || "دەریایی"}</td>
                         <td className="py-3 px-4 text-right">{revenueBySource?.batchProfit?.sea?.batchCount || 0}</td>
                         <td className="py-3 px-4 text-right">{revenueBySource?.batchProfit?.sea?.count || 0}</td>
-                        <td className="py-3 px-4 text-right text-green-600 font-medium">{formatCurrency(revenueBySource?.batchProfit?.sea?.revenue || 0)}</td>
-                        <td className="py-3 px-4 text-right text-red-600 font-medium">{formatCurrency(revenueBySource?.batchProfit?.sea?.cost || 0)}</td>
+                        <td className="py-3 px-4 text-right text-green-600 dark:text-green-300 font-medium">{formatCurrency(revenueBySource?.batchProfit?.sea?.revenue || 0)}</td>
+                        <td className="py-3 px-4 text-right text-red-600 dark:text-red-300 font-medium">{formatCurrency(revenueBySource?.batchProfit?.sea?.cost || 0)}</td>
                         <td className={`py-3 px-4 text-right font-bold ${(revenueBySource?.batchProfit?.sea?.profit || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatCurrency(revenueBySource?.batchProfit?.sea?.profit || 0)}</td>
                       </tr>
                       <tr className="bg-blue-50 dark:bg-blue-950/40 font-bold">
@@ -639,14 +639,14 @@ export default function CompanyFinanceDashboard() {
                         <td className="py-3 px-4 text-right">
                           {(revenueBySource?.batchProfit?.air_regular?.count || 0) + (revenueBySource?.batchProfit?.air_irregular?.count || 0) + (revenueBySource?.batchProfit?.sea?.count || 0)}
                         </td>
-                        <td className="py-3 px-4 text-right text-green-600">
+                        <td className="py-3 px-4 text-right text-green-600 dark:text-green-300">
                           {formatCurrency(
                             (revenueBySource?.batchProfit?.air_regular?.revenue || 0) +
                             (revenueBySource?.batchProfit?.air_irregular?.revenue || 0) +
                             (revenueBySource?.batchProfit?.sea?.revenue || 0)
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right text-red-600">
+                        <td className="py-3 px-4 text-right text-red-600 dark:text-red-300">
                           {formatCurrency(
                             (revenueBySource?.batchProfit?.air_regular?.cost || 0) +
                             (revenueBySource?.batchProfit?.air_irregular?.cost || 0) +
@@ -669,7 +669,7 @@ export default function CompanyFinanceDashboard() {
               <Card className="border-0 shadow-md">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <ShoppingBag className="w-5 h-5 text-green-500" />
+                    <ShoppingBag className="w-5 h-5 text-green-500 dark:text-green-400" />
                     {t("companyFinance.fullPackageProfit") || "قازانجی پاکێجی تەواو"}
                   </CardTitle>
                 </CardHeader>
@@ -689,14 +689,14 @@ export default function CompanyFinanceDashboard() {
               <Card className="border-0 shadow-md">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <Briefcase className="w-5 h-5 text-violet-500" />
+                    <Briefcase className="w-5 h-5 text-violet-500 dark:text-violet-400" />
                     {t("companyFinance.commissionIncome") || "عمولەی کڕین"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="text-center py-4">
-                      <p className="text-3xl font-bold text-violet-600">{formatCurrency(revenueBySource?.commission?.totalCommission || 0)}</p>
+                      <p className="text-3xl font-bold text-violet-600 dark:text-violet-300">{formatCurrency(revenueBySource?.commission?.totalCommission || 0)}</p>
                       <p className="text-sm text-muted-foreground mt-2">{revenueBySource?.commission?.count || 0} {t("companyFinance.commissionOrders") || "کڕینی عمولە"}</p>
                     </div>
                   </div>
@@ -707,7 +707,7 @@ export default function CompanyFinanceDashboard() {
               <Card className="border-0 shadow-md">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <Wrench className="w-5 h-5 text-pink-500" />
+                    <Wrench className="w-5 h-5 text-pink-500 dark:text-pink-400" />
                     {t("companyFinance.serviceProfit") || "قازانجی خزمەتگوزاری"}
                   </CardTitle>
                 </CardHeader>
@@ -773,7 +773,7 @@ export default function CompanyFinanceDashboard() {
                             <span className="font-medium">{cat.nameKu || cat.nameEn}</span>
                             <Badge variant="secondary" className="text-xs">{cat.count}</Badge>
                           </div>
-                          <span className="font-bold text-red-600">{formatCurrency(cat.amount)}</span>
+                          <span className="font-bold text-red-600 dark:text-red-300">{formatCurrency(cat.amount)}</span>
                         </div>
                         <div className="h-2 bg-gray-100 dark:bg-gray-950/40 rounded-full overflow-hidden">
                           <div 
@@ -912,7 +912,7 @@ export default function CompanyFinanceDashboard() {
             <Card className="border-0 shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <PieChartIcon className="w-5 h-5 text-blue-500" />
+                  <PieChartIcon className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                   {t("companyFinance.revenueDistribution") || "دابەشبوونی داهات بە سەرچاوە"}
                 </CardTitle>
               </CardHeader>
@@ -950,7 +950,7 @@ export default function CompanyFinanceDashboard() {
             <Card className="border-0 shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-indigo-500" />
+                  <BarChart3 className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
                   {t("companyFinance.monthlyTrend") || "ڕەوتی مانگانە"}
                 </CardTitle>
               </CardHeader>
@@ -994,7 +994,7 @@ export default function CompanyFinanceDashboard() {
             <Card className="border-0 shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-purple-500" />
+                  <BarChart3 className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                   {t("companyFinance.revenueComparison") || "بەراوردی داهات بە سەرچاوە"}
                 </CardTitle>
               </CardHeader>

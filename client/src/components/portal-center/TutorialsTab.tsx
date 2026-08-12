@@ -125,7 +125,7 @@ export function TutorialsTab({ p }: { p: (v: L) => string }) {
       <Card>
         <CardContent className="pt-5 space-y-3">
           <div className="flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-sky-600" />
+            <GraduationCap className="h-5 w-5 text-sky-600 dark:text-sky-300" />
             <h3 className="font-bold">
               {editing
                 ? p({ ku: "دەستکاری فێرکاری", en: "Edit tutorial", ar: "تعديل الشرح", zh: "编辑教程" })
@@ -260,7 +260,7 @@ export function TutorialsTab({ p }: { p: (v: L) => string }) {
               className={cn("mt-5 inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition",
                 form.isFeatured ? "bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-300" : "bg-muted/40")}
             >
-              <Star className={cn("h-4 w-4", form.isFeatured && "fill-amber-500 text-amber-500")} />
+              <Star className={cn("h-4 w-4", form.isFeatured && "fill-amber-500 text-amber-500 dark:text-amber-400")} />
               {p({ ku: "سەرەکی", en: "Featured", ar: "مميّز", zh: "推荐" })}
             </button>
           </div>
@@ -303,7 +303,7 @@ export function TutorialsTab({ p }: { p: (v: L) => string }) {
                       )}>
                         {LANGUAGE_NAME[t.language as TutorialLanguage] ?? t.language}
                       </span>
-                      {t.isFeatured && <Star className="h-3 w-3 fill-amber-500 text-amber-500" />}
+                      {t.isFeatured && <Star className="h-3 w-3 fill-amber-500 text-amber-500 dark:text-amber-400" />}
                       {!t.isPublished && (
                         <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
                           {p({ ku: "ڕەشنووس", en: "Draft", ar: "مسودة", zh: "草稿" })}

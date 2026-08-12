@@ -50,7 +50,7 @@ export default function NotFound() {
             {L({ ku: "پەڕەی سەرەکی", en: "Go home", ar: "الصفحة الرئيسية", zh: "返回首页" })}
           </Button>
           <Button variant="ghost" onClick={() => window.history.back()} className="gap-2 rounded-full text-slate-600 dark:text-slate-300">
-            <ArrowLeft className={"h-4 w-4 " + (isRTL ? "rotate-180" : "")} />
+            <ArrowLeft className={"h-4 w-4" + (isRTL ? "rotate-180" : "")} />
             {L({ ku: "گەڕانەوە", en: "Go back", ar: "رجوع", zh: "返回" })}
           </Button>
         </div>

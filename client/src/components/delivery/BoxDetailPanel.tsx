@@ -561,10 +561,10 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                         ) : null;
                       })()}
                       {item.itemType === 'commission' && item.calculatedCostUsd && (
-                        <p className="text-muted-foreground">{t("delivery.totalWithCommission")}: <span className="font-mono font-semibold text-amber-600">${Number(item.calculatedCostUsd || 0).toFixed(2)}</span></p>
+                        <p className="text-muted-foreground">{t("delivery.totalWithCommission")}: <span className="font-mono font-semibold text-amber-600 dark:text-amber-300">${Number(item.calculatedCostUsd || 0).toFixed(2)}</span></p>
                       )}
                       {item.itemType === 'full_package' && item.calculatedCostUsd && (
-                        <p className="text-muted-foreground">{t("delivery.sellingPrice")}: <span className="font-mono font-semibold text-purple-600">${Number(item.calculatedCostUsd || 0).toFixed(2)}</span></p>
+                        <p className="text-muted-foreground">{t("delivery.sellingPrice")}: <span className="font-mono font-semibold text-purple-600 dark:text-purple-300">${Number(item.calculatedCostUsd || 0).toFixed(2)}</span></p>
                       )}
                     </TableCell>
                     {/* Source (batch code / order code). sourceInfo comes as

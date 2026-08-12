@@ -184,7 +184,7 @@ export default function AwaitingArrival() {
         <Card className="rounded-2xl">
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-950/50 dark:to-teal-950/50">
-              <CheckCircle2 className="h-7 w-7 text-emerald-500" />
+              <CheckCircle2 className="h-7 w-7 text-emerald-500 dark:text-emerald-400" />
             </div>
             <p className="text-sm text-muted-foreground">
               {all.length === 0

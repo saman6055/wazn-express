@@ -99,7 +99,7 @@ const [search, setSearch] = useState("");
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <AlertTriangle className="h-6 w-6 text-amber-500" />
+              <AlertTriangle className="h-6 w-6 text-amber-500 dark:text-amber-400" />
               {t("packages.unclaimedPackages")}
             </h1>
             <p className="text-muted-foreground">{t("packages.unclaimedDesc")}</p>
@@ -118,7 +118,7 @@ const [search, setSearch] = useState("");
                   <p className="text-sm text-muted-foreground">{t("packages.totalUnclaimed")}</p>
                   <p className="text-3xl font-bold">{unclaimedPackages?.length || 0}</p>
                 </div>
-                <Package className="h-10 w-10 text-amber-500 opacity-50" />
+                <Package className="h-10 w-10 text-amber-500 dark:text-amber-400 opacity-50" />
               </div>
             </CardContent>
           </Card>
@@ -131,7 +131,7 @@ const [search, setSearch] = useState("");
                     {unclaimedPackages?.filter(p => p.shippingType.startsWith("air")).length || 0}
                   </p>
                 </div>
-                <Package className="h-10 w-10 text-blue-500 opacity-50" />
+                <Package className="h-10 w-10 text-blue-500 dark:text-blue-400 opacity-50" />
               </div>
             </CardContent>
           </Card>
@@ -144,7 +144,7 @@ const [search, setSearch] = useState("");
                     {unclaimedPackages?.filter(p => p.shippingType === "sea").length || 0}
                   </p>
                 </div>
-                <Package className="h-10 w-10 text-cyan-500 opacity-50" />
+                <Package className="h-10 w-10 text-cyan-500 dark:text-cyan-400 opacity-50" />
               </div>
             </CardContent>
           </Card>
@@ -169,7 +169,7 @@ const [search, setSearch] = useState("");
           <CardContent>
             {filteredPackages.length === 0 ? (
               <div className="text-center py-12">
-                <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-4" />
+                <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 dark:text-green-400 mb-4" />
                 <h3 className="text-lg font-medium">{t("packages.noUnclaimed")}</h3>
                 <p className="text-muted-foreground">{t("packages.allAssigned")}</p>
               </div>
@@ -295,7 +295,7 @@ const [search, setSearch] = useState("");
               
               {selectedCustomerId && (
                 <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950 rounded-md">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-300" />
                   <div>
                     <div className="font-medium text-green-700 dark:text-green-400">
                       {customers?.find(c => c.id === selectedCustomerId)?.customerCode}

@@ -276,7 +276,7 @@ const [editingTemplate, setEditingTemplate] = useState<any>(null);
           {/* Tracking Number */}
           {template.showTrackingNumber && (
             <div className="text-center py-2 border-y border-gray-300 dark:border-gray-800/60 my-2">
-              <p className="text-xs text-gray-500">Tracking Number</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Tracking Number</p>
               <p className="font-bold text-lg" style={{ color: template.primaryColor }}>
                 {samplePackage.trackingNumber}
               </p>

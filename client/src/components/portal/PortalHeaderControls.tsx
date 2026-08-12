@@ -163,7 +163,7 @@ export function PortalHeaderControls({
                   >
                     <span>{l.flag}</span>
                     <span className="flex-1 text-start">{l.nativeName}</span>
-                    {language === l.code && <Check className="h-3.5 w-3.5 text-emerald-600" />}
+                    {language === l.code && <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-300" />}
                   </button>
                 ))}
               </div>

@@ -159,7 +159,7 @@ function PackageTypeBadge({
 
   if (!lookup || !lookup.found) {
     return (
-      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-700">
+      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">
         📋 {pickLang(language, { ku: "ئاسایی", en: "Regular", ar: "عادي", zh: "普通" })}
       </Badge>
     );
@@ -622,7 +622,7 @@ export default function BulkRegister() {
 
                 {customerId && !isUnclaimed && (
                   <div className="mt-2 flex items-center gap-1.5 p-1.5 bg-green-50 dark:bg-green-950 rounded-md">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-300 shrink-0" />
                     <span className="text-[11px] text-green-700 dark:text-green-400 font-medium truncate">
                       {customers?.find(c => c.id === customerId)?.customerCode} - {customers?.find(c => c.id === customerId)?.fullName}
                     </span>
@@ -663,14 +663,14 @@ export default function BulkRegister() {
                 </Select>
                 {selectedWarehouse && (
                   <div className="mt-2 flex items-center gap-1.5 p-1.5 bg-slate-50 dark:bg-slate-900 rounded-md">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-slate-600 shrink-0" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300 shrink-0" />
                     <span className="text-[11px] text-slate-700 dark:text-slate-300 font-medium truncate">
                       {selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? `${pickLang(language, { ku: "کۆگا", en: "Warehouse", ar: "مستودع", zh: "仓库" })} ${selectedWarehouse.id}`}
                     </span>
                   </div>
                 )}
                 {!warehouses?.length && (
-                  <p className="mt-2 text-[10px] text-amber-600">
+                  <p className="mt-2 text-[10px] text-amber-600 dark:text-amber-300">
                     {pickLang(language, { ku: "تکایە لە ڕێکخستنەکان کۆگا زیاد بکە.", en: "Please add a warehouse in settings.", ar: "الرجاء إضافة مستودع في الإعدادات.", zh: "请在设置中添加仓库。" })}
                   </p>
                 )}
@@ -810,7 +810,7 @@ export default function BulkRegister() {
                     <div className="h-px bg-border/50" />
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">{t('packages.estimatedPrice')}</span>
-                      <span className="text-base font-bold text-green-600">${totals.totalCost.toFixed(2)}</span>
+                      <span className="text-base font-bold text-green-600 dark:text-green-300">${totals.totalCost.toFixed(2)}</span>
                     </div>
                   </>
                 )}
@@ -944,7 +944,7 @@ export default function BulkRegister() {
                                   </div>
                                 )}
                                 {isDuplicate && (
-                                  <div className="mt-0.5 text-[10px] text-red-600 font-medium">
+                                  <div className="mt-0.5 text-[10px] text-red-600 dark:text-red-300 font-medium">
                                     ⚠️ {pickLang(language, { ku: "ئەم تراکینگە پێشتر تۆمار کراوە", en: "This tracking number is already registered", ar: "رقم التتبع هذا مسجل مسبقاً", zh: "此运单号已登记" })} ({pkg.trackingLookup?.existingPackageCode})
                                   </div>
                                 )}
@@ -1008,7 +1008,7 @@ export default function BulkRegister() {
                                       <TooltipTrigger asChild>
                                         <span className={cn(
                                           "text-xs font-bold cursor-help",
-                                          isVolumetricHigher ? "text-orange-600" : "text-foreground"
+                                          isVolumetricHigher ? "text-orange-600 dark:text-orange-300" : "text-foreground"
                                         )}>
                                           {chargeableKg.toFixed(2)}
                                           {isVolumetricHigher && <span className="text-[8px] ms-0.5">📐</span>}

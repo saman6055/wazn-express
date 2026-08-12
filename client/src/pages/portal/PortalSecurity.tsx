@@ -233,13 +233,13 @@ export default function PortalSecurity() {
                   </span>
                   <span className={cn(
                     "text-xs font-bold",
-                    strength <= 1 ? "text-red-500" : strength === 2 ? "text-amber-500" : strength === 3 ? "text-lime-600" : "text-emerald-500",
+                    strength <= 1 ? "text-red-500 dark:text-red-400" : strength === 2 ? "text-amber-500 dark:text-amber-400" : strength === 3 ? "text-lime-600 dark:text-lime-300" : "text-emerald-500 dark:text-emerald-400",
                   )}>
                     {pick(strengthLabel)}
                   </span>
                 </div>
                 {tooShort && (
-                  <p className="text-xs text-red-500 mt-1.5">
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1.5">
                     {pick({ ku: "دەبێت بەلایەنی کەمەوە ٦ پیت بێت", en: "Must be at least 6 characters", ar: "يجب ألا تقل عن ٦ أحرف", zh: "至少需 6 个字符" })}
                   </p>
                 )}
@@ -260,11 +260,11 @@ export default function PortalSecurity() {
                 placeholder="••••••••"
               />
               {confirmPassword.length > 0 && !mismatch && (
-                <CheckCircle2 className="w-5 h-5 text-emerald-500 absolute top-1/2 -translate-y-1/2 end-3" />
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400 absolute top-1/2 -translate-y-1/2 end-3" />
               )}
             </div>
             {mismatch && (
-              <p className="text-xs text-red-500 mb-3">
+              <p className="text-xs text-red-500 dark:text-red-400 mb-3">
                 {pick({ ku: "وشە نهێنییەکان یەک ناگرنەوە", en: "Passwords do not match", ar: "كلمتا المرور غير متطابقتين", zh: "密码不一致" })}
               </p>
             )}
@@ -304,7 +304,7 @@ export default function PortalSecurity() {
             <ul className="space-y-2.5">
               {tips.map((tip, i) => (
                 <li key={i} className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4.5 h-4.5 text-emerald-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4.5 h-4.5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <span className={cn("text-sm", isDark ? "text-slate-300" : "text-slate-600")}>
                     {pick(tip)}
                   </span>

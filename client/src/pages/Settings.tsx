@@ -785,7 +785,7 @@ const [companyData, setCompanyData] = useState({
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <DollarSign className="h-5 w-5 text-green-600 dark:text-green-300" />
                   {t("settings.exchangeRates") || "Exchange Rates"}
                 </CardTitle>
                 <CardDescription>
@@ -1039,7 +1039,7 @@ function ProductAttributesSettings() {
     <Card className="overflow-hidden">
       <CardHeader className="bg-gradient-to-l from-violet-50 to-purple-50 border-b">
         <CardTitle className="flex items-center gap-2">
-          <Tag className="h-5 w-5 text-violet-600" />
+          <Tag className="h-5 w-5 text-violet-600 dark:text-violet-300" />
           {pickLang(language, { ku: "زانیاری کاڵا", en: "Product Info", ar: "معلومات المنتج", zh: "商品信息" })}
         </CardTitle>
         <CardDescription>{pickLang(language, { ku: "ڕەنگ، قەبارە و جۆری کاڵا بەڕێوە ببە — لە کاتی دروستکردنی ئۆردەر نیشان دەدرێن", en: "Manage colors, sizes, and product types — shown when creating an order", ar: "إدارة الألوان والأحجام وأنواع المنتجات — تظهر عند إنشاء طلب", zh: "管理颜色、尺寸和商品类型——创建订单时显示" })}</CardDescription>
@@ -1061,7 +1061,7 @@ function ProductAttributesSettings() {
             >
               <span>{typeIcons[type]}</span>
               {pickLang(language, typeLabels[type])}
-              <span className={`text-xs px-1.5 py-0.5 rounded-full font-mono ${activeType === type ? "bg-violet-100 dark:bg-violet-950/40 text-violet-600" : "bg-gray-100 dark:bg-gray-950/40 text-gray-500"}`}>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full font-mono ${activeType === type ? "bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-300" : "bg-gray-100 dark:bg-gray-950/40 text-gray-500 dark:text-gray-400"}`}>
                 {allAttrs?.filter(a => a.type === type).length ?? 0}
               </span>
             </button>
@@ -1090,7 +1090,7 @@ function ProductAttributesSettings() {
 
         {/* List */}
         {isLoading ? (
-          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-violet-500" /></div>
+          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-violet-500 dark:text-violet-400" /></div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground">
             <span className="text-4xl">{typeIcons[activeType]}</span>
@@ -1115,7 +1115,7 @@ function ProductAttributesSettings() {
                       className="flex-1 h-9"
                       autoFocus
                     />
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600 hover:bg-green-50"
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600 dark:text-green-300 hover:bg-green-50"
                       onClick={() => handleSaveEdit(attr.id)} disabled={updateMutation.isPending}>
                       <Check className="h-4 w-4" />
                     </Button>
@@ -1128,7 +1128,7 @@ function ProductAttributesSettings() {
                   <>
                     <span className="flex-1 font-medium text-gray-800 dark:text-gray-200">{attr.value}</span>
                     <Button size="icon" variant="ghost"
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 text-violet-500 hover:bg-violet-100 transition-opacity"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 text-violet-500 dark:text-violet-400 hover:bg-violet-100 transition-opacity"
                       onClick={() => handleEdit(attr.id, attr.value)}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>

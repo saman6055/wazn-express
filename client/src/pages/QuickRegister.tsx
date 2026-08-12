@@ -188,7 +188,7 @@ export default function QuickRegister() {
             soundManager.playDuplicate();
             toast.warning(
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
                 <div>
                   <div className="font-medium">{t("quickRegister.trackingAlreadyRegistered")}</div>
                   <div className="text-sm text-muted-foreground">
@@ -201,7 +201,7 @@ export default function QuickRegister() {
             soundManager.playFound();
             toast.success(
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                <CheckCircle2 className="h-5 w-5 text-green-500 dark:text-green-400" />
                 <div>
                   <div className="font-medium">{t("quickRegister.trackingFound")}</div>
                   <div className="text-sm text-muted-foreground">
@@ -236,7 +236,7 @@ export default function QuickRegister() {
           soundManager.playFound();
           toast.success(
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
               <div>
                 <div className="font-medium">{pickLang(language, { ku: "کڕیار پێشوەخت ئەم تراکەی داخڵ کردووە", en: "Customer pre-declared this tracking", ar: "العميل سجّل هذا التتبع مسبقاً", zh: "客户已预先登记此运单号" })}</div>
                 <div className="text-sm text-muted-foreground">{dmCustomer.customerCode || dmCustomer.fullName}</div>
@@ -547,7 +547,7 @@ export default function QuickRegister() {
       toast.success(
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center">
-            <CheckCircle2 className="h-6 w-6 text-green-600" />
+            <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-300" />
           </div>
           <div>
             <div className="font-bold text-lg">{t("quickRegister.packageRegistered")}</div>
@@ -654,7 +654,7 @@ export default function QuickRegister() {
       soundManager.playDuplicate();
       toast.error(
         <div className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-red-500" />
+          <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
           <div>
             <div className="font-medium">{t("quickRegister.trackingAlreadyRegistered")}</div>
             <div className="text-sm">{t("quickRegister.cannotReRegister")}</div>
@@ -898,7 +898,7 @@ export default function QuickRegister() {
                         <PackageSearch className="h-4 w-4" />
                       </div>
                       <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{t("quickRegister.stepTracking")}</span>
-                      {isSearching && <Loader2 className="h-4 w-4 animate-spin text-amber-500" />}
+                      {isSearching && <Loader2 className="h-4 w-4 animate-spin text-amber-500 dark:text-amber-400" />}
                     </div>
                     <div className="flex gap-2">
                       <Input
@@ -950,9 +950,9 @@ export default function QuickRegister() {
                       )}>
                         <div className="flex items-center gap-2">
                           {foundOrder.source === "package" ? (
-                            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-300" />
                           ) : (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-300" />
                           )}
                           <span className={cn(
                             "font-bold",
@@ -1048,7 +1048,7 @@ export default function QuickRegister() {
                                   {isThis ? (
                                     <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-[10px]">{t("quickRegister.cartonNow")}</span>
                                   ) : reg ? (
-                                    <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 dark:text-slate-300 text-[10px]">✅ {reg.packageCode}</span>
+                                    <span className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 text-[10px]">✅ {reg.packageCode}</span>
                                   ) : (
                                     <span className="px-1.5 py-0.5 rounded border border-muted text-muted-foreground text-[10px]">⏳ {t("quickRegister.cartonWaiting")}</span>
                                   )}
@@ -1334,7 +1334,7 @@ export default function QuickRegister() {
                       className="w-16 h-16 rounded-xl border-2 border-emerald-200 dark:border-emerald-800"
                       fallback={
                         <div className="w-16 h-16 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
-                          <Package className="h-7 w-7 text-emerald-500" />
+                          <Package className="h-7 w-7 text-emerald-500 dark:text-emerald-400" />
                         </div>
                       }
                     />
@@ -1356,7 +1356,7 @@ export default function QuickRegister() {
                         {declaredMatch.notes ? `${(declaredMatch.platform || declaredMatch.productName) ? " · " : ""}${declaredMatch.notes}` : ""}
                       </p>
                     </div>
-                    <CheckCircle2 className="h-6 w-6 text-emerald-500 shrink-0" />
+                    <CheckCircle2 className="h-6 w-6 text-emerald-500 dark:text-emerald-400 shrink-0" />
                   </CardContent>
                 </Card>
               )}
@@ -1516,10 +1516,10 @@ export default function QuickRegister() {
                         disabled={isUploading}
                       />
                       {isUploading ? (
-                        <Loader2 className="h-6 w-6 animate-spin text-sky-500" />
+                        <Loader2 className="h-6 w-6 animate-spin text-sky-500 dark:text-sky-400" />
                       ) : (
                         <>
-                          <ImagePlus className="h-6 w-6 text-sky-500" />
+                          <ImagePlus className="h-6 w-6 text-sky-500 dark:text-sky-400" />
                           <span className="text-[9.5px] text-sky-600 dark:text-sky-400">{t("quickRegister.addPhoto")}</span>
                         </>
                       )}
@@ -1589,7 +1589,7 @@ export default function QuickRegister() {
                       <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
                         <Warehouse className="h-3.5 w-3.5 shrink-0" />
                         <span className="truncate">{pickLang(language, { ku: "کۆگا", en: "Warehouse", ar: "المستودع", zh: "仓库" })}</span>
-                        {selectedWarehouse && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 ms-auto shrink-0" />}
+                        {selectedWarehouse && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400 ms-auto shrink-0" />}
                       </div>
                       <Select
                         value={originWarehouseId != null ? String(originWarehouseId) : ""}
@@ -1624,19 +1624,19 @@ export default function QuickRegister() {
                         <SelectContent>
                           <SelectItem value="air_regular">
                             <div className="flex items-center gap-2">
-                              <Plane className="h-4 w-4 text-blue-500" />
+                              <Plane className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                               <span>{t("quickRegister.airRegular")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="air_irregular">
                             <div className="flex items-center gap-2">
-                              <Plane className="h-4 w-4 text-purple-500" />
+                              <Plane className="h-4 w-4 text-purple-500 dark:text-purple-400" />
                               <span>{t("quickRegister.airIrregular")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="sea">
                             <div className="flex items-center gap-2">
-                              <Ship className="h-4 w-4 text-cyan-500" />
+                              <Ship className="h-4 w-4 text-cyan-500 dark:text-cyan-400" />
                               <span>{t("quickRegister.sea")}</span>
                             </div>
                           </SelectItem>
@@ -1809,9 +1809,9 @@ export default function QuickRegister() {
                     {registerMutation.isPending ? (
                       <Loader2 className="h-6 w-6 animate-spin ms-2" />
                     ) : foundOrder?.source === "package" ? (
-                      <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600" />
+                      <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600 dark:text-yellow-300" />
                     ) : expandedLookup?.flags?.customerMismatch ? (
-                      <AlertTriangle className="h-6 w-6 ms-2 text-rose-600" />
+                      <AlertTriangle className="h-6 w-6 ms-2 text-rose-600 dark:text-rose-300" />
                     ) : (
                       <Plus className="h-6 w-6 ms-2" />
                     )}

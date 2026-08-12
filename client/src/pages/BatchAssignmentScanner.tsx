@@ -194,7 +194,7 @@ export default function BatchAssignmentScanner() {
           soundManager.playError();
           toast.error(
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
+              <AlertCircle className="h-5 w-5 text-red-500 dark:text-red-400" />
               <div>
                 <div className="font-medium">{t("scan.packageNotFound")}</div>
                 <div className="text-sm text-muted-foreground">{trackingValue}</div>
@@ -211,7 +211,7 @@ export default function BatchAssignmentScanner() {
           soundManager.playDuplicate();
           toast.warning(
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
               <div>
                 <div className="font-medium">{t("scan.alreadyInBatch")}</div>
                 <div className="text-sm text-muted-foreground">{trackingValue}</div>
@@ -279,7 +279,7 @@ export default function BatchAssignmentScanner() {
 
         toast.success(
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <CheckCircle2 className="h-5 w-5 text-green-500 dark:text-green-400" />
             <div>
               <div className="font-medium">{t("scan.addedToBatch")}</div>
               <div className="text-sm text-muted-foreground">
@@ -310,7 +310,7 @@ export default function BatchAssignmentScanner() {
       soundManager.playSuccess();
       toast.success(
         <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-green-500" />
+          <CheckCircle2 className="h-5 w-5 text-green-500 dark:text-green-400" />
           <div>
             <div className="font-medium">{t("scan.batchChanged")}</div>
             <div className="text-sm text-muted-foreground">
@@ -484,7 +484,7 @@ export default function BatchAssignmentScanner() {
                     "h-1 transition-all duration-300",
                     continuousMode && selectedBatchId
                       ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 animate-pulse"
-                      : "bg-slate-200"
+                      : "bg-slate-200 dark:bg-slate-800/50"
                   )}
                 />
                 <CardContent className="p-6">
@@ -508,7 +508,7 @@ export default function BatchAssignmentScanner() {
                     }}
                   />
                   {!selectedBatchId && (
-                    <div className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 mt-4">
+                    <div className="flex items-center justify-center gap-2 text-sm text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 mt-4">
                       <AlertTriangle className="h-4 w-4" />
                       {t("scan.selectBatch")}
                     </div>
@@ -521,7 +521,7 @@ export default function BatchAssignmentScanner() {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-300" />
                       {t("scan.packages")}
                       <Badge variant="secondary">{scannedPackages.length}</Badge>
                     </span>
@@ -624,7 +624,7 @@ export default function BatchAssignmentScanner() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                <AlertTriangle className="h-5 w-5 text-amber-500 dark:text-amber-400" />
                 {t("scan.packageInAnotherBatch")}
               </DialogTitle>
               <DialogDescription>
@@ -668,7 +668,7 @@ export default function BatchAssignmentScanner() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-yellow-500" />
+                <AlertCircle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
                 {t("scan.incompleteData")}
               </DialogTitle>
               <DialogDescription>
@@ -694,7 +694,7 @@ export default function BatchAssignmentScanner() {
               <Button
                 variant="outline"
                 onClick={handleGoToQuickRegister}
-                className="border-indigo-300 dark:border-indigo-800/60 text-indigo-600 hover:bg-indigo-50"
+                className="border-indigo-300 dark:border-indigo-800/60 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50"
               >
                 <ExternalLink className="h-4 w-4 me-2" />
                 {t("scan.goToQuickRegister")}

@@ -78,7 +78,7 @@ export function BatchPerformanceSection() {
         <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-muted/30">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Layers className="h-5 w-5 text-blue-500" />
+              <Layers className="h-5 w-5 text-blue-500 dark:text-blue-400" />
               {t("reports.topBatches")}
             </CardTitle>
             <Link href="/reports/batches">
@@ -127,11 +127,11 @@ export function BatchPerformanceSection() {
           {chartData.length > 0 && (
             <div className="flex items-center justify-center gap-6 mt-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
-                <Plane className="h-3.5 w-3.5 text-blue-500" />
+                <Plane className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
                 <span>{t("reports.airShipment")}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Ship className="h-3.5 w-3.5 text-cyan-500" />
+                <Ship className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
                 <span>{t("reports.seaShipment")}</span>
               </div>
             </div>

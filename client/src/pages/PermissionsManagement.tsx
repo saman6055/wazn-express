@@ -400,7 +400,7 @@ export default function PermissionsManagement() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
               <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-900/30">
-                <Shield className="h-7 w-7 text-blue-600" />
+                <Shield className="h-7 w-7 text-blue-600 dark:text-blue-300" />
               </div>
               {pickLang(language, { ku: "بەڕێوەبردنی مۆڵەتەکان", en: "Permissions Management", ar: "إدارة الصلاحيات", zh: "权限管理" })}
             </h1>
@@ -458,7 +458,7 @@ export default function PermissionsManagement() {
                                 {getRoleLabel(user.role)}
                               </Badge>
                             </div>
-                            {isSelected && <Check className="h-4 w-4 text-blue-600 shrink-0" />}
+                            {isSelected && <Check className="h-4 w-4 text-blue-600 dark:text-blue-300 shrink-0" />}
                           </div>
                         </button>
                       );
@@ -511,7 +511,7 @@ export default function PermissionsManagement() {
                         {/* Progress indicator */}
                         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800">
                           <div className="text-xs text-muted-foreground">{pickLang(language, { ku: "مۆڵەتی چالاک:", en: "Active permissions:", ar: "الصلاحيات النشطة:", zh: "已启用权限：" })}</div>
-                          <div className="text-sm font-bold text-blue-600">{enabled}</div>
+                          <div className="text-sm font-bold text-blue-600 dark:text-blue-300">{enabled}</div>
                           <div className="text-xs text-muted-foreground">/ {total}</div>
                         </div>
                         <Button variant="outline" size="sm" onClick={enableAll} className="text-xs">
@@ -657,7 +657,7 @@ export default function PermissionsManagement() {
                                             <ActionIcon className="h-3 w-3" />
                                             {pickLang(language, ACTION_LABELS[action])}
                                             {isOn ? (
-                                              <Check className="h-3 w-3 text-blue-600" />
+                                              <Check className="h-3 w-3 text-blue-600 dark:text-blue-300" />
                                             ) : (
                                               <X className="h-3 w-3 text-gray-400" />
                                             )}

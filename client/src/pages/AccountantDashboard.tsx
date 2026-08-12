@@ -279,7 +279,7 @@ export default function AccountantDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-red-500" />
+                    <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
                     {t("accountantDashboard.debtorsList")}
                   </CardTitle>
                   <CardDescription>{t("accountantDashboard.top20Debtors")}</CardDescription>
@@ -323,7 +323,7 @@ export default function AccountantDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Receipt className="h-5 w-5 text-green-500" />
+                    <Receipt className="h-5 w-5 text-green-500 dark:text-green-400" />
                     {t("accountantDashboard.recentPayments")}
                   </CardTitle>
                   <CardDescription>{t("accountantDashboard.last20Payments")}</CardDescription>
@@ -382,9 +382,9 @@ export default function AccountantDashboard() {
                 <p className="text-xl font-bold">${(financialStats?.monthRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
                 <p className="text-xs flex items-center gap-1">
                   {(financialStats?.monthChange ?? 0) >= 0 ? (
-                    <TrendingUp className="h-3 w-3 text-green-500" />
+                    <TrendingUp className="h-3 w-3 text-green-500 dark:text-green-400" />
                   ) : (
-                    <TrendingDown className="h-3 w-3 text-red-500" />
+                    <TrendingDown className="h-3 w-3 text-red-500 dark:text-red-400" />
                   )}
                   {Math.abs(financialStats?.monthChange ?? 0)}% {t("accountantDashboard.vsLastMonth")}
                 </p>

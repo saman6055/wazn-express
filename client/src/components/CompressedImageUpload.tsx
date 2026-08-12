@@ -446,7 +446,7 @@ export default function CompressedImageUpload({
             <button
               type="button"
               onClick={() => onChange([])}
-              className="text-red-500 hover:text-red-700 transition-colors"
+              className="text-red-500 dark:text-red-400 hover:text-red-700 transition-colors"
             >
               {t('common.deleteAll')}
             </button>
