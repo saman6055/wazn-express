@@ -1134,7 +1134,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <TableCell>
                       <span className="font-medium text-green-600 dark:text-green-300">{formatPrice(batch)}</span>
                     </TableCell>
-                    <TableCell>{batch.totalPackages || 0}</TableCell>
+                    <TableCell>{batch.packageCount ?? 0}</TableCell>
                     <TableCell>
                       {batch.departureDate ? new Date(batch.departureDate).toLocaleDateString() : "-"}
                     </TableCell>
@@ -1204,7 +1204,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             decremented, so a zero here really is empty; the
                             server counts the rows itself and refuses if
                             anything at all is attached. */}
-                        {!batch.totalPackages && (
+                        {!batch.packageCount && (
                           <Button
                             variant="ghost"
                             size="icon"

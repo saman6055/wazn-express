@@ -199,7 +199,35 @@ export async function getAllBatches(options: { page?: number; pageSize?: number 
     .limit(pageSize)
     .offset(offset);
 
-  return { data, total, page, pageSize, totalPages };
+  /**
+   * The real number of parcels in each batch, counted rather than read.
+   *
+   * `batches.totalPackages` is incremented when a package is assigned and is
+   * never decremented, never recomputed, and not written at all by some of
+   * the paths that assign one — so it drifts in both directions. Every batch
+   * in the list was showing 0 while holding parcels, and the delete button
+   * (offered only for an empty batch) appeared on batches that were not
+   * empty. The server refused those, so nothing was lost, but the screen was
+   * lying either way.
+   *
+   * One grouped query for the whole page, not one per row.
+   */
+  const ids = data.map((b) => b.id);
+  const counts = ids.length
+    ? await db
+        .select({ batchId: packages.batchId, n: count() })
+        .from(packages)
+        .where(inArray(packages.batchId, ids))
+        .groupBy(packages.batchId)
+    : [];
+  const countByBatch = new Map(counts.map((r) => [r.batchId, Number(r.n)]));
+
+  const withCounts = data.map((batch) => ({
+    ...batch,
+    packageCount: countByBatch.get(batch.id) ?? 0,
+  }));
+
+  return { data: withCounts, total, page, pageSize, totalPages };
 }
 
 export async function getBatchById(id: number): Promise<Batch | undefined> {

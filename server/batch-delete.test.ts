@@ -105,9 +105,11 @@ describe("deleting a batch", () => {
 
   it("is offered in the UI only for a batch that looks empty", () => {
     const page = read("client/src/pages/Batches.tsx");
-    // The counter only over-reports, so a zero is trustworthy in the one
-    // direction that matters: it never hides a real package.
-    expect(page).toContain("{!batch.totalPackages && (");
+    // Gated on the counted number, not on batches.totalPackages — that
+    // column drifts in both directions and was showing 0 for batches that
+    // held parcels, putting a delete button on every one of them.
+    expect(page).toContain("{!batch.packageCount && (");
+    expect(page, "the drifting counter must not decide this").not.toContain("batch.totalPackages");
     expect(page, "a destructive action needs confirming").toContain("batches.deleteBatchWarning");
   });
 });
