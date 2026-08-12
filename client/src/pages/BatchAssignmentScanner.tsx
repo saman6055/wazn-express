@@ -438,6 +438,17 @@ export default function BatchAssignmentScanner() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {openBatches.length === 0 && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 mt-3">
+                      <span className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        {t("scan.noBatchesAvailable")}
+                      </span>
+                      <Button size="sm" variant="outline" onClick={() => setLocation("/batches")}>
+                        {t("batches.createBatch")}
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
