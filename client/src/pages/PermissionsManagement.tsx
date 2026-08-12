@@ -352,13 +352,30 @@ export default function PermissionsManagement() {
     }
 
     if (!searchQuery.trim()) return groups;
-    const q = searchQuery.toLowerCase();
-    return groups.map(g => ({
-      ...g,
-      modules: g.modules.filter(m =>
-        m.labelKu.includes(q) || m.label.toLowerCase().includes(q) || m.module.includes(q)
-      ),
-    })).filter(g => g.modules.length > 0);
+    const q = searchQuery.toLowerCase().trim();
+
+    // Searching only the module's own two labels meant typing the name of a
+    // section ("ڕێکخستنەکان") or of a specific permission inside a module
+    // ("بینینی زانیاری دارایی") found nothing at all. Both are what somebody
+    // actually remembers when they come here looking for a switch.
+    const matches = (...values: (string | undefined)[]) =>
+      values.some((v) => v?.toLowerCase().includes(q));
+
+    return groups
+      .map((g) => {
+        // A group whose own name matches keeps all of its modules — you asked
+        // for the section, not for one row inside it.
+        if (matches(g.label, g.labelKu, g.id)) return g;
+        return {
+          ...g,
+          modules: g.modules.filter(
+            (m) =>
+              matches(m.label, m.labelKu, m.module) ||
+              m.subPermissions.some((sp) => matches(sp.label, sp.labelKu, sp.key))
+          ),
+        };
+      })
+      .filter((g) => g.modules.length > 0);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, showAllGroups, selectedUserId, permState.permissions]);
 
