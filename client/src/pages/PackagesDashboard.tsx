@@ -344,7 +344,7 @@ const [, setLocation] = useLocation();
               {(stats?.unclaimed || 0) > 0 && (
                 <Button 
                   variant="outline" 
-                  className="w-full justify-start h-auto py-3 border-amber-200 dark:border-amber-800/60 bg-amber-50/50"
+                  className="w-full justify-start h-auto py-3 border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/40"
                   onClick={() => setLocation("/packages/unclaimed")}
                 >
                   <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center me-3">

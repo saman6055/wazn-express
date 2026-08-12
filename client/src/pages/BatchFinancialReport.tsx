@@ -1110,7 +1110,7 @@ export default function BatchFinancialReport() {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[640px]">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800/60 bg-slate-100/80">
+                    <tr className="border-b border-slate-200 dark:border-slate-800/60 bg-slate-100/80 dark:bg-slate-900/60">
                       <th className="text-right py-4 px-4 font-semibold text-slate-700 dark:text-slate-300 text-sm">{pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</th>
                       <th className="text-center py-4 px-4 font-semibold text-slate-700 dark:text-slate-300 text-sm">{pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" })}</th>
                       <th className="text-center py-4 px-4 font-semibold text-slate-700 dark:text-slate-300 text-sm">
@@ -1519,7 +1519,7 @@ export default function BatchFinancialReport() {
                         openPrintWindow(generatePrintContent(pickLang(language, { ku: "پاکەتی ئاسایی + کڕین بە تێچوو", en: "Regular + buy-at-cost packages", ar: "الطرود العادية + الشراء بالتكلفة", zh: "普通包裹 + 代购按成本" }), regularAndCommission, batch, selectedCustomer, company, language));
                         toast.success(pickLang(language, { ku: "پرینت ئامادەیە", en: "Print ready", ar: "الطباعة جاهزة", zh: "打印已就绪" }));
                       }}
-                      className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800/60 bg-slate-50/50 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 text-right min-h-[100px]"
+                      className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 text-right min-h-[100px]"
                     >
                       <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-950/40">
                         <Package className="h-6 w-6 text-blue-600" />
@@ -1540,7 +1540,7 @@ export default function BatchFinancialReport() {
                         openPrintWindow(generatePrintContent(pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "طرد كامل", zh: "整包" }), fullPackages, batch, selectedCustomer, company, language));
                         toast.success(pickLang(language, { ku: "پرینت ئامادەیە", en: "Print ready", ar: "الطباعة جاهزة", zh: "打印已就绪" }));
                       }}
-                      className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800/60 bg-slate-50/50 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 text-right min-h-[100px]"
+                      className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 text-right min-h-[100px]"
                     >
                       <div className="p-2.5 rounded-xl bg-purple-100 dark:bg-purple-950/40">
                         <ShoppingBag className="h-6 w-6 text-purple-600" />
@@ -1560,7 +1560,7 @@ export default function BatchFinancialReport() {
                         openPrintWindow(generatePrintContent(pickLang(language, { ku: "هەموو پاکەتەکان", en: "All packages", ar: "جميع الطرود", zh: "所有包裹" }), customerPackages, batch, selectedCustomer, company, language));
                         toast.success(pickLang(language, { ku: "پرینت ئامادەیە", en: "Print ready", ar: "الطباعة جاهزة", zh: "打印已就绪" }));
                       }}
-                      className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800/60 bg-slate-50/50 hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 text-right min-h-[100px]"
+                      className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 text-right min-h-[100px]"
                     >
                       <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/40">
                         <Box className="h-6 w-6 text-emerald-600" />

@@ -74,7 +74,7 @@ export function ActivityLogTab({
           ) : resetHistory?.resets && resetHistory.resets.length > 0 ? (
             <div className="space-y-4">
               {resetHistory.resets.map((reset) => (
-                <Card key={String(reset.id)} className="border-red-100 dark:border-red-800/60 bg-red-50/30">
+                <Card key={String(reset.id)} className="border-red-100 dark:border-red-800/60 bg-red-50/30 dark:bg-red-950/30">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">

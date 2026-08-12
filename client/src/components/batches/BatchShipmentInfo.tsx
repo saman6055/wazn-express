@@ -47,10 +47,10 @@ export function BatchShipmentInfo({
   };
 
   return (
-    <Card className="border-violet-100 dark:border-violet-800/60 bg-violet-50/30">
+    <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
-          <Barcode className="h-4 w-4 text-violet-600" />
+          <Barcode className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           {t("batches.shipmentInfo")}
         </CardTitle>
       </CardHeader>

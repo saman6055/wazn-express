@@ -516,10 +516,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </div>
                     {/* Shipping Details - Dynamic based on type */}
                     {shippingType && shippingType !== "sea" && (
-                      <Card className="border-blue-100 dark:border-blue-800/60 bg-blue-50/30">
+                      <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
-                            <Plane className="h-4 w-4 text-blue-600" />
+                            <Plane className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                             {t('batches.flightInfo')}
                           </CardTitle>
                         </CardHeader>
@@ -550,10 +550,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     )}
 
                     {shippingType === "sea" && (
-                      <Card className="border-cyan-100 dark:border-cyan-800/60 bg-cyan-50/30">
+                      <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
-                            <Ship className="h-4 w-4 text-cyan-600" />
+                            <Ship className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                             {t('batches.seaInfo')}
                           </CardTitle>
                         </CardHeader>
@@ -608,7 +608,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </div>
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="notes">Notes</Label>
+                      <Label htmlFor="notes">{t("batches.notes")}</Label>
                       <Input id="notes" name="notes" placeholder={t("common.notes")} />
                     </div>
                   </TabsContent>
@@ -617,25 +617,25 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <TabsContent value="volume" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
                     {shippingType ? (
                       <>
-                        <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50">
+                        <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm flex items-center gap-2">
                               <Package className="h-4 w-4" />
-                              Actual Measurements
+                              {t("batches.actualMeasurements")}
                             </CardTitle>
-                            <CardDescription>Real weight/volume of the batch</CardDescription>
+                            <CardDescription>{t("batches.realWeightVolume")}</CardDescription>
                           </CardHeader>
                           <CardContent>
                             <div className="grid grid-cols-2 gap-4">
                               {shippingType !== "sea" && (
                                 <div className="grid gap-2">
-                                  <Label>Actual Weight (KG)</Label>
+                                  <Label>{t("batches.actualWeight")}</Label>
                                   <Input name="actualWeightKg" type="number" step="0.01" placeholder="e.g., 17.00" />
                                 </div>
                               )}
                               {shippingType === "sea" && (
                                 <div className="grid gap-2">
-                                  <Label>Actual CBM</Label>
+                                  <Label>{t("batches.actualCbm")}</Label>
                                   <Input name="actualCbm" type="number" step="0.0001" placeholder="e.g., 18.0000" />
                                 </div>
                               )}
@@ -643,25 +643,25 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           </CardContent>
                         </Card>
                         
-                        <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50">
+                        <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm flex items-center gap-2">
                               <Calculator className="h-4 w-4" />
-                              Charged Measurements
+                              {t("batches.chargedMeasurements")}
                             </CardTitle>
-                            <CardDescription>What we pay for (may differ from actual)</CardDescription>
+                            <CardDescription>{t("batches.whatWePayFor")}</CardDescription>
                           </CardHeader>
                           <CardContent>
                             <div className="grid grid-cols-2 gap-4">
                               {shippingType !== "sea" && (
                                 <div className="grid gap-2">
-                                  <Label>Charged Weight (KG)</Label>
+                                  <Label>{t("batches.chargedWeight")}</Label>
                                   <Input name="chargedWeightKg" type="number" step="0.01" placeholder="e.g., 20.00" />
                                 </div>
                               )}
                               {shippingType === "sea" && (
                                 <div className="grid gap-2">
-                                  <Label>Charged CBM</Label>
+                                  <Label>{t("batches.chargedCbm")}</Label>
                                   <Input name="chargedCbm" type="number" step="0.0001" placeholder="e.g., 20.0000" />
                                 </div>
                               )}
@@ -669,19 +669,19 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           </CardContent>
                         </Card>
                         
-                        <Card className="border-red-200 dark:border-red-800/60 bg-red-50/50">
+                        <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm flex items-center gap-2">
                               <DollarSign className="h-4 w-4" />
                               Our Cost ({t("auto.text_080d04")})
                             </CardTitle>
-                            <CardDescription>What we pay per unit</CardDescription>
+                            <CardDescription>{t("batches.whatWePayPerUnit")}</CardDescription>
                           </CardHeader>
                           <CardContent>
                             <div className="grid gap-2">
                               {shippingType !== "sea" ? (
                                 <>
-                                  <Label>Cost per KG (USD)</Label>
+                                  <Label>{t("batches.costPerKg")}</Label>
                                   <div className="relative">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                     <Input name="costPerKg" type="number" step="0.01" className="pl-7" placeholder="e.g., 7.00" />
@@ -689,7 +689,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                 </>
                               ) : (
                                 <>
-                                  <Label>Cost per CBM (USD)</Label>
+                                  <Label>{t("batches.costPerCbm")}</Label>
                                   <div className="relative">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                     <Input name="costPerCbm" type="number" step="0.01" className="pl-7" placeholder="e.g., 110.00" />
@@ -715,7 +715,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         {(shippingType === "sea" || shippingType === "air_irregular") && (
                           <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
                             <div>
-                              <Label className="font-semibold">Use Tiered Pricing</Label>
+                              <Label className="font-semibold">{t("batches.useTieredPricing")}</Label>
                               <p className="text-sm text-muted-foreground">
                                 Different prices based on customer's total {getUnit(shippingType)}
                               </p>
@@ -725,18 +725,18 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         )}
                         
                         {!useTieredPricing ? (
-                          <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
+                          <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                             <CardHeader className="pb-2">
                               <CardTitle className="text-sm flex items-center gap-2">
-                                <DollarSign className="h-4 w-4 text-green-600" />
-                                Default Selling Price
+                                <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                {t("batches.defaultSellingPrice")}
                               </CardTitle>
                             </CardHeader>
                             <CardContent>
                               <div className="grid gap-2">
                                 {shippingType !== "sea" ? (
                                   <>
-                                    <Label>Price per KG (USD)</Label>
+                                    <Label>{t("batches.pricePerKg")}</Label>
                                     <div className="relative">
                                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                       <Input name="pricePerKg" type="number" step="0.01" className="pl-7" placeholder="e.g., 11.00" />
@@ -744,7 +744,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                   </>
                                 ) : (
                                   <>
-                                    <Label>Price per CBM (USD)</Label>
+                                    <Label>{t("batches.pricePerCbm")}</Label>
                                     <div className="relative">
                                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                       <Input name="pricePerCbm" type="number" step="0.01" className="pl-7" placeholder="e.g., 150.00" />
@@ -755,10 +755,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             </CardContent>
                           </Card>
                         ) : (
-                          <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
+                          <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                             <CardHeader className="pb-2">
                               <CardTitle className="text-sm flex items-center gap-2">
-                                <Layers className="h-4 w-4 text-green-600" />
+                                <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                 Tiered Pricing Rules
                               </CardTitle>
                               <CardDescription>
@@ -790,7 +790,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                       />
                                     </div>
                                     <div>
-                                      <Label className="text-xs">Price (USD)</Label>
+                                      <Label className="text-xs">{t("batches.priceUsd")}</Label>
                                       <div className="relative">
                                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
                                         <Input
@@ -835,10 +835,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         )}
                         
                         {/* Customer-Specific Pricing Section */}
-                        <Card className="border-purple-200 dark:border-purple-800/60 bg-purple-50/50 mt-4">
+                        <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40 mt-4">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm flex items-center gap-2">
-                              <Users className="h-4 w-4 text-purple-600" />
+                              <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                               {t("auto.text_21ba20")} (Customer-Specific Pricing)
                             </CardTitle>
                             <CardDescription>
@@ -946,7 +946,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 </Tabs>
                 
                 <DialogFooter className="mt-6">
-                  <Button type="button" variant="outline" onClick={() => { setIsCreateOpen(false); resetForm(); }}>Cancel</Button>
+                  <Button type="button" variant="outline" onClick={() => { setIsCreateOpen(false); resetForm(); }}>{t("common.cancel")}</Button>
                   <Button type="submit" disabled={createMutation.isPending}>
                     {createMutation.isPending ? t("common.creating") : t("batches.createBatch")}
                   </Button>
@@ -960,7 +960,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Preparing</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("batches.preparing")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{batches?.filter(b => b.status === "preparing").length || 0}</p>
@@ -968,7 +968,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">In Transit</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("batches.inTransit")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{batches?.filter(b => b.status === "in_transit").length || 0}</p>
@@ -976,7 +976,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">At Customs</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("batches.customs")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{batches?.filter(b => b.status === "customs").length || 0}</p>
@@ -984,7 +984,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Delivered</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("batches.delivered")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{batches?.filter(b => b.status === "delivered").length || 0}</p>
@@ -1150,13 +1150,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="preparing">Preparing</SelectItem>
-                              <SelectItem value="in_transit">In Transit</SelectItem>
-                              <SelectItem value="arrived">Arrived</SelectItem>
-                              <SelectItem value="customs">Customs</SelectItem>
-                              <SelectItem value="at_depot">In Erbil depot</SelectItem>
-                              <SelectItem value="delivered">Delivered</SelectItem>
-                              <SelectItem value="closed">Closed</SelectItem>
+                              <SelectItem value="preparing">{t("batches.preparing")}</SelectItem>
+                              <SelectItem value="in_transit">{t("batches.inTransit")}</SelectItem>
+                              <SelectItem value="arrived">{t("batches.arrived")}</SelectItem>
+                              <SelectItem value="customs">{t("batches.customs")}</SelectItem>
+                              <SelectItem value="at_depot">{t("batches.atDepot")}</SelectItem>
+                              <SelectItem value="delivered">{t("batches.delivered")}</SelectItem>
+                              <SelectItem value="closed">{t("batches.closed")}</SelectItem>
                             </SelectContent>
                           </Select>
                         )}
@@ -1196,7 +1196,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         <Dialog open={!!selectedBatch} onOpenChange={(open) => !open && setSelectedBatch(null)}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Batch Packages</DialogTitle>
+              <DialogTitle>{t("batches.batchPackages")}</DialogTitle>
               <DialogDescription>
                 Packages in batch {batches?.find(b => b.id === selectedBatch)?.batchCode}
               </DialogDescription>
@@ -1426,7 +1426,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         <Dialog open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if (!open) { setEditingBatch(null); resetForm(); } }}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Batch</DialogTitle>
+              <DialogTitle>{t("batches.editBatch")}</DialogTitle>
               <DialogDescription>
                 Update batch details and pricing for {editingBatch?.batchCode}
               </DialogDescription>
@@ -1443,7 +1443,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   {/* Tab 1: Basic Info */}
                   <TabsContent value="basic" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
                     <div className="grid gap-2">
-                      <Label>Batch Code</Label>
+                      <Label>{t("batches.batchCode")}</Label>
                       <Input name="batchCode" defaultValue={editingBatch.batchCode} />
                     </div>
                     <div className="p-3 bg-muted rounded-lg">
@@ -1457,7 +1457,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </div>
                     </div>
                     <div className="grid gap-2">
-                      <Label>Carrier Information</Label>
+                      <Label>{t("batches.carrierInfo")}</Label>
                       <Input name="carrierInfo" defaultValue={editingBatch.carrierInfo || ""} />
                     </div>
 
@@ -1469,10 +1469,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       there was no way to record them at all.
                     */}
                     {editingBatch.shippingType !== "sea" ? (
-                      <Card className="border-blue-100 dark:border-blue-800/60 bg-blue-50/30">
+                      <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
-                            <Plane className="h-4 w-4 text-blue-600" />
+                            <Plane className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                             {t("batches.flightInfo")}
                           </CardTitle>
                         </CardHeader>
@@ -1500,10 +1500,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </CardContent>
                       </Card>
                     ) : (
-                      <Card className="border-cyan-100 dark:border-cyan-800/60 bg-cyan-50/30">
+                      <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
-                            <Ship className="h-4 w-4 text-cyan-600" />
+                            <Ship className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                             {t("batches.seaInfo")}
                           </CardTitle>
                         </CardHeader>
@@ -1535,40 +1535,40 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     />
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
-                        <Label>Departure Date</Label>
+                        <Label>{t("batches.departureDate")}</Label>
                         <Input name="departureDate" type="date" defaultValue={editingBatch.departureDate ? new Date(editingBatch.departureDate).toISOString().split('T')[0] : ""} />
                       </div>
                       <div className="grid gap-2">
-                        <Label>Est. Arrival</Label>
+                        <Label>{t("batches.estimatedArrival")}</Label>
                         <Input name="estimatedArrival" type="date" defaultValue={editingBatch.estimatedArrival ? new Date(editingBatch.estimatedArrival).toISOString().split('T')[0] : ""} />
                       </div>
                     </div>
                     <div className="grid gap-2">
-                      <Label>Notes</Label>
+                      <Label>{t("batches.notes")}</Label>
                       <Input name="notes" defaultValue={editingBatch.notes || ""} />
                     </div>
                   </TabsContent>
                   
                   {/* Tab 2: Volume & Cost */}
                   <TabsContent value="volume" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
-                    <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50">
+                    <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm flex items-center gap-2">
                           <Package className="h-4 w-4" />
-                          Actual Measurements
+                          {t("batches.actualMeasurements")}
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-2 gap-4">
                           {editingBatch.shippingType !== "sea" && (
                             <div className="grid gap-2">
-                              <Label>Actual Weight (KG)</Label>
+                              <Label>{t("batches.actualWeight")}</Label>
                               <Input name="actualWeightKg" type="number" step="0.01" defaultValue={editingBatch.actualWeightKg || ""} />
                             </div>
                           )}
                           {editingBatch.shippingType === "sea" && (
                             <div className="grid gap-2">
-                              <Label>Actual CBM</Label>
+                              <Label>{t("batches.actualCbm")}</Label>
                               <Input name="actualCbm" type="number" step="0.0001" defaultValue={editingBatch.actualCbm || ""} />
                             </div>
                           )}
@@ -1576,24 +1576,24 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </CardContent>
                     </Card>
                     
-                    <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50">
+                    <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm flex items-center gap-2">
                           <Calculator className="h-4 w-4" />
-                          Charged Measurements
+                          {t("batches.chargedMeasurements")}
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-2 gap-4">
                           {editingBatch.shippingType !== "sea" && (
                             <div className="grid gap-2">
-                              <Label>Charged Weight (KG)</Label>
+                              <Label>{t("batches.chargedWeight")}</Label>
                               <Input name="chargedWeightKg" type="number" step="0.01" defaultValue={editingBatch.chargedWeightKg || ""} />
                             </div>
                           )}
                           {editingBatch.shippingType === "sea" && (
                             <div className="grid gap-2">
-                              <Label>Charged CBM</Label>
+                              <Label>{t("batches.chargedCbm")}</Label>
                               <Input name="chargedCbm" type="number" step="0.0001" defaultValue={editingBatch.chargedCbm || ""} />
                             </div>
                           )}
@@ -1601,7 +1601,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </CardContent>
                     </Card>
                     
-                    <Card className="border-red-200 dark:border-red-800/60 bg-red-50/50">
+                    <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm flex items-center gap-2">
                           <DollarSign className="h-4 w-4" />
@@ -1612,7 +1612,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <div className="grid gap-2">
                           {editingBatch.shippingType !== "sea" ? (
                             <>
-                              <Label>Cost per KG (USD)</Label>
+                              <Label>{t("batches.costPerKg")}</Label>
                               <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                 <Input name="costPerKg" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.costPerKg || ""} />
@@ -1620,7 +1620,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             </>
                           ) : (
                             <>
-                              <Label>Cost per CBM (USD)</Label>
+                              <Label>{t("batches.costPerCbm")}</Label>
                               <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                 <Input name="costPerCbm" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.costPerCbm || ""} />
@@ -1638,7 +1638,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     {(editingBatch.shippingType === "sea" || editingBatch.shippingType === "air_irregular") && (
                       <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
                         <div>
-                          <Label className="font-semibold">Use Tiered Pricing</Label>
+                          <Label className="font-semibold">{t("batches.useTieredPricing")}</Label>
                           <p className="text-sm text-muted-foreground">
                             Different prices based on customer's total {getUnit(editingBatch.shippingType)}
                           </p>
@@ -1648,18 +1648,18 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     )}
                     
                     {!useTieredPricing ? (
-                      <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
+                      <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
-                            <DollarSign className="h-4 w-4 text-green-600" />
-                            Default Selling Price
+                            <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            {t("batches.defaultSellingPrice")}
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="grid gap-2">
                             {editingBatch.shippingType !== "sea" ? (
                               <>
-                                <Label>Price per KG (USD)</Label>
+                                <Label>{t("batches.pricePerKg")}</Label>
                                 <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                   <Input name="pricePerKg" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.pricePerKg || ""} />
@@ -1667,7 +1667,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               </>
                             ) : (
                               <>
-                                <Label>Price per CBM (USD)</Label>
+                                <Label>{t("batches.pricePerCbm")}</Label>
                                 <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                   <Input name="pricePerCbm" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.pricePerCbm || ""} />
@@ -1678,10 +1678,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </CardContent>
                       </Card>
                     ) : (
-                      <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
+                      <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
-                            <Layers className="h-4 w-4 text-green-600" />
+                            <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                             Tiered Pricing Rules
                           </CardTitle>
                         </CardHeader>
@@ -1709,7 +1709,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                   />
                                 </div>
                                 <div>
-                                  <Label className="text-xs">Price (USD)</Label>
+                                  <Label className="text-xs">{t("batches.priceUsd")}</Label>
                                   <div className="relative">
                                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
                                     <Input
@@ -1737,7 +1737,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 </Tabs>
                 
                 <DialogFooter className="mt-6">
-                  <Button type="button" variant="outline" onClick={() => { setIsEditOpen(false); setEditingBatch(null); resetForm(); }}>Cancel</Button>
+                  <Button type="button" variant="outline" onClick={() => { setIsEditOpen(false); setEditingBatch(null); resetForm(); }}>{t("common.cancel")}</Button>
                   <Button type="submit" disabled={updateMutation.isPending}>
                     {updateMutation.isPending ? t("common.saving") : t("common.saveChanges")}
                   </Button>

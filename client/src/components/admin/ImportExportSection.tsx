@@ -146,7 +146,7 @@ export function ImportExportSection({
           </div>
 
           {importPreview && (
-            <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
+            <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50 dark:bg-green-950/40">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Eye className="h-4 w-4" />

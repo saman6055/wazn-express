@@ -251,7 +251,7 @@ const [, setLocation] = useLocation();
     return (
       <DashboardLayout>
         <div className="max-w-2xl mx-auto space-y-6">
-          <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50">
+          <Card className="border-green-200 dark:border-green-800/60 bg-green-50/50 dark:bg-green-950/40">
             <CardHeader className="text-center">
               <div className="mx-auto h-16 w-16 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center mb-4">
                 <Check className="h-8 w-8 text-green-600" />

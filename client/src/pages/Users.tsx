@@ -182,7 +182,7 @@ const [search, setSearch] = useState("");
           </CardContent>
         </Card>
 
-        <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50">
+        <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/40">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-amber-600 mt-0.5" />
