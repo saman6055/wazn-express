@@ -1841,7 +1841,15 @@
     "cbm": "CBM",
     "cubicMeters": "متر مكعب",
     "analysisByCustomer": "التحليل حسب العميل",
-    "refresh": "تحديث الدفعات"
+    "refresh": "تحديث الدفعات",
+    "awbNumber": "بوليصة الشحن الجوي (AWB)",
+    "shipmentInfo": "الإرسال إلى المستودع",
+    "shipmentTrackings": "أرقام تتبع الإرسال",
+    "addTrackingPlaceholder": "أضف رقم تتبع...",
+    "cartonCount": "عدد الكراتين",
+    "shipmentCount": "عدد الإرساليات",
+    "pieceCountHint": "{{count}} قطعة أُدخلت في هذه الدفعة (تُحسب تلقائياً)",
+    "fillLaterHint": "هذه الحقول اختيارية — يمكنك تعبئتها لاحقاً من التعديل"
   },
   "scanning": {
     "title": "المسح",

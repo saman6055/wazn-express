@@ -203,8 +203,11 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
     .map(batch => {
       const size = sizeByBatch.get(batch.id) ?? { kg: 0, cbm: 0 };
       const bySea = String(batch.shippingType) === "sea";
+      // Internal: these trackings cover every customer in the batch, so one
+      // could follow another's goods. Container/AWB are shown instead.
+      const { shipmentTrackings: _internalTrackings, ...customerVisible } = batch;
       return {
-        ...batch,
+        ...customerVisible,
         customerPackageCount: countByBatch.get(batch.id) || 0,
         /** This customer's own total, in the unit this batch is billed by. */
         customerChargeable: Number((bySea ? size.cbm : size.kg).toFixed(bySea ? 3 : 2)),

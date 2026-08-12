@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
+import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
@@ -62,6 +63,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [customerPricing, setCustomerPricing] = useState<CustomerPricing[]>([]);
   const [custPriceOpen, setCustPriceOpen] = useState(false);
   const [exportingBatchId, setExportingBatchId] = useState<number | null>(null);
+  // Shipment trackings and carton count live in state rather than the form,
+  // because the trackings are a growing list of chips, not one input.
+  const [shipmentTrackings, setShipmentTrackings] = useState<string[]>([]);
+  const [cartonCount, setCartonCount] = useState<string>("");
 
   // Pre-delivery audit dialog state. Holds the batchId+target status the
   // operator is trying to switch to, plus the audit findings the server
@@ -250,6 +255,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     setUseTieredPricing(false);
     setPricingTiers([]);
     setCustomerPricing([]);
+    setShipmentTrackings([]);
+    setCartonCount("");
   };
 
   const addTier = () => {
@@ -321,6 +328,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       shippingCompany: formData.get("shippingCompany") as string || undefined,
       containerNumber: formData.get("containerNumber") as string || undefined,
       vesselName: formData.get("vesselName") as string || undefined,
+      awbNumber: formData.get("awbNumber") as string || undefined,
+      shipmentTrackings,
+      cartonCount: cartonCount.trim() ? Number(cartonCount) : undefined,
       shippingCost: formData.get("shippingCost") as string || undefined,
       departureDate: formData.get("departureDate") ? new Date(formData.get("departureDate") as string) : undefined,
       estimatedArrival: formData.get("estimatedArrival") ? new Date(formData.get("estimatedArrival") as string) : undefined,
@@ -361,6 +371,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       shippingCompany: formData.get("shippingCompany") as string || undefined,
       containerNumber: formData.get("containerNumber") as string || undefined,
       vesselName: formData.get("vesselName") as string || undefined,
+      awbNumber: formData.get("awbNumber") as string || undefined,
+      shipmentTrackings,
+      // null clears a count that was entered and is now known to be wrong;
+      // undefined would leave the old value in place.
+      cartonCount: cartonCount.trim() ? Number(cartonCount) : null,
       shippingCost: formData.get("shippingCost") as string || undefined,
       departureDate: formData.get("departureDate") ? new Date(formData.get("departureDate") as string) : undefined,
       estimatedArrival: formData.get("estimatedArrival") ? new Date(formData.get("estimatedArrival") as string) : undefined,
@@ -389,6 +404,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     setEditingBatch(batch);
     setShippingType(batch.shippingType);
     setUseTieredPricing(batch.useTieredPricing || false);
+    setShipmentTrackings(Array.isArray(batch.shipmentTrackings) ? batch.shipmentTrackings : []);
+    setCartonCount(batch.cartonCount != null ? String(batch.cartonCount) : "");
     setIsEditOpen(true);
   };
 
@@ -516,14 +533,21 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               <Input name="flightNumber" placeholder="e.g., TK123" className="h-9" />
                             </div>
                           </div>
-                          <div className="grid gap-1.5">
-                            <Label className="text-xs">{t('batches.shippingCompany')}</Label>
-                            <Input name="shippingCompany" placeholder={t('batches.companyName')} className="h-9" />
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="grid gap-1.5">
+                              <Label className="text-xs">{t('batches.awbNumber')}</Label>
+                              <Input name="awbNumber" placeholder="176-48293011" className="h-9 font-mono" />
+                            </div>
+                            <div className="grid gap-1.5">
+                              <Label className="text-xs">{t('batches.shippingCompany')}</Label>
+                              <Input name="shippingCompany" placeholder={t('batches.companyName')} className="h-9" />
+                            </div>
                           </div>
+                          <p className="text-xs text-muted-foreground">{t('batches.fillLaterHint')}</p>
                         </CardContent>
                       </Card>
                     )}
-                    
+
                     {shippingType === "sea" && (
                       <Card className="border-cyan-100 dark:border-cyan-800/60 bg-cyan-50/30">
                         <CardHeader className="pb-2">
@@ -547,10 +571,20 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             <Label className="text-xs">{t('batches.shippingCompany')}</Label>
                             <Input name="shippingCompany" placeholder={t('batches.companyName')} className="h-9" />
                           </div>
+                          <p className="text-xs text-muted-foreground">{t('batches.fillLaterHint')}</p>
                         </CardContent>
                       </Card>
                     )}
-                    
+
+                    {shippingType && (
+                      <BatchShipmentInfo
+                        trackings={shipmentTrackings}
+                        onTrackingsChange={setShipmentTrackings}
+                        cartonCount={cartonCount}
+                        onCartonCountChange={setCartonCount}
+                      />
+                    )}
+
                     {/* Shipping Cost */}
                     {shippingType && (
                       <div className="grid gap-2">
@@ -1414,6 +1448,79 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <Label>Carrier Information</Label>
                       <Input name="carrierInfo" defaultValue={editingBatch.carrierInfo || ""} />
                     </div>
+
+                    {/*
+                      The air waybill / container number and the flight or
+                      vessel are almost never known when a batch is created —
+                      the cartons are still being filled. They were only ever
+                      offered on the create form, so once a batch existed
+                      there was no way to record them at all.
+                    */}
+                    {editingBatch.shippingType !== "sea" ? (
+                      <Card className="border-blue-100 dark:border-blue-800/60 bg-blue-50/30">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Plane className="h-4 w-4 text-blue-600" />
+                            {t("batches.flightInfo")}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="grid gap-1.5">
+                              <Label className="text-xs">{t("batches.flightName")}</Label>
+                              <Input name="airlineName" defaultValue={editingBatch.airlineName || ""} className="h-9" />
+                            </div>
+                            <div className="grid gap-1.5">
+                              <Label className="text-xs">{t("batches.flightNumber")}</Label>
+                              <Input name="flightNumber" defaultValue={editingBatch.flightNumber || ""} className="h-9" />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="grid gap-1.5">
+                              <Label className="text-xs">{t("batches.awbNumber")}</Label>
+                              <Input name="awbNumber" defaultValue={editingBatch.awbNumber || ""} placeholder="176-48293011" className="h-9 font-mono" />
+                            </div>
+                            <div className="grid gap-1.5">
+                              <Label className="text-xs">{t("batches.shippingCompany")}</Label>
+                              <Input name="shippingCompany" defaultValue={editingBatch.shippingCompany || ""} className="h-9" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Card className="border-cyan-100 dark:border-cyan-800/60 bg-cyan-50/30">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Ship className="h-4 w-4 text-cyan-600" />
+                            {t("batches.seaInfo")}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="grid gap-1.5">
+                              <Label className="text-xs">{t("batches.shipName")}</Label>
+                              <Input name="vesselName" defaultValue={editingBatch.vesselName || ""} className="h-9" />
+                            </div>
+                            <div className="grid gap-1.5">
+                              <Label className="text-xs">{t("batches.containerNumber")}</Label>
+                              <Input name="containerNumber" defaultValue={editingBatch.containerNumber || ""} placeholder="MSCU1234567" className="h-9 font-mono" />
+                            </div>
+                          </div>
+                          <div className="grid gap-1.5">
+                            <Label className="text-xs">{t("batches.shippingCompany")}</Label>
+                            <Input name="shippingCompany" defaultValue={editingBatch.shippingCompany || ""} className="h-9" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    <BatchShipmentInfo
+                      trackings={shipmentTrackings}
+                      onTrackingsChange={setShipmentTrackings}
+                      cartonCount={cartonCount}
+                      onCartonCountChange={setCartonCount}
+                      pieceCount={editingBatch.totalPackages ?? 0}
+                    />
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label>Departure Date</Label>

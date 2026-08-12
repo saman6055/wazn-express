@@ -249,6 +249,33 @@ const { t, language } = useLanguage();
                 </span>
               </div>
             )}
+            {/*
+              The carrier's own reference for this shipment: the container
+              number by sea, the air waybill by air. Shown only once it is
+              known — it is blank while the cartons are still being filled.
+              These two are the customer's half of the shipping detail; the
+              courier trackings the cartons travelled under stay internal.
+            */}
+            {batch && (batch.containerNumber || batch.awbNumber) && (
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                {batch.containerNumber && (
+                  <span className="px-2.5 py-1 rounded-lg bg-white/10 text-xs">
+                    <span className="text-slate-400">
+                      {pickLang(language, { ku: "کۆنتەینەر", en: "Container", ar: "الحاوية", zh: "集装箱" })}:
+                    </span>{" "}
+                    <span className="font-mono">{batch.containerNumber}</span>
+                  </span>
+                )}
+                {batch.awbNumber && (
+                  <span className="px-2.5 py-1 rounded-lg bg-white/10 text-xs">
+                    <span className="text-slate-400">
+                      {pickLang(language, { ku: "بارنامەی ئاسمانی", en: "Air waybill", ar: "بوليصة الشحن الجوي", zh: "空运提单" })}:
+                    </span>{" "}
+                    <span className="font-mono">{batch.awbNumber}</span>
+                  </span>
+                )}
+              </div>
+            )}
             {batch && (
               <div className="mt-3">
                 <WhatsAppHelpButton

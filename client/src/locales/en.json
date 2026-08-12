@@ -1841,7 +1841,15 @@
     "cbm": "CBM",
     "cubicMeters": "Cubic Meters",
     "analysisByCustomer": "Analysis by Customer",
-    "refresh": "Refresh Batches"
+    "refresh": "Refresh Batches",
+    "awbNumber": "Air waybill (AWB)",
+    "shipmentInfo": "Shipment to warehouse",
+    "shipmentTrackings": "Shipment tracking numbers",
+    "addTrackingPlaceholder": "Add a tracking number...",
+    "cartonCount": "Cartons",
+    "shipmentCount": "Shipments",
+    "pieceCountHint": "{{count}} pieces scanned into this batch (counted automatically)",
+    "fillLaterHint": "These are optional — you can fill them in later from Edit"
   },
   "scanning": {
     "title": "Scanning",

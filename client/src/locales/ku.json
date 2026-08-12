@@ -1861,7 +1861,15 @@
     "cbm": "CBM",
     "cubicMeters": "مەتری مکعەب",
     "analysisByCustomer": "شیکاری بەپێی کڕیار",
-    "refresh": "نوێکردنەوەی باچەکان"
+    "refresh": "نوێکردنەوەی باچەکان",
+    "awbNumber": "ژمارەی بارنامەی ئاسمانی (AWB)",
+    "shipmentInfo": "زانیاری ناردن بۆ مەخزەن",
+    "shipmentTrackings": "ژمارەکانی تراکینگی ناردن",
+    "addTrackingPlaceholder": "ژمارەی تراکینگ زیاد بکە...",
+    "cartonCount": "ژمارەی کارتۆن",
+    "shipmentCount": "ژمارەی تراک",
+    "pieceCountHint": "{{count}} پارچە خراوەتە ناو ئەم باچە (خۆکار لە سکانکردنەوە)",
+    "fillLaterHint": "ئەم خانانە ئارەزوومەندانەن — دواتر لە دەستکاریدا پڕیان دەکەیتەوە"
   },
   "scanning": {
     "title": "سکان",

@@ -755,6 +755,9 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       shippingCompany VARCHAR(100),
       containerNumber VARCHAR(50),
       vesselName VARCHAR(100),
+      awbNumber VARCHAR(50),
+      shipmentTrackings JSON,
+      cartonCount INT,
       shippingCost DECIMAL(12, 2),
       departureDate TIMESTAMP,
       estimatedArrival TIMESTAMP,
@@ -2426,6 +2429,19 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
     name: "batches.status.at_depot",
     sql: "ALTER TABLE batches MODIFY COLUMN status ENUM('preparing','in_transit','arrived','customs','at_depot','delivered','closed') NOT NULL DEFAULT 'preparing'",
   },
+
+  // How a batch physically reached the carrier, and how big it was.
+  //
+  // The air waybill is the air counterpart of the container number, and like
+  // it, is unknown while the cartons are still being filled — so both are
+  // nullable and filled in later. shipmentTrackings holds the courier
+  // trackings the cartons travelled under, cartonCount how many cartons went;
+  // the piece count needs no column because every item is scanned into the
+  // batch. All additive and nullable: existing batches keep working with none
+  // of them set.
+  { name: "batches.awbNumber", sql: "ALTER TABLE batches ADD COLUMN awbNumber VARCHAR(50) NULL" },
+  { name: "batches.shipmentTrackings", sql: "ALTER TABLE batches ADD COLUMN shipmentTrackings JSON NULL" },
+  { name: "batches.cartonCount", sql: "ALTER TABLE batches ADD COLUMN cartonCount INT NULL" },
 ];
 
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {

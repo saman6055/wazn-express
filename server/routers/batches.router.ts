@@ -7,6 +7,30 @@ import * as db from "../db";
 import { notifyBatchStatusChange } from "../services/notification.service";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema } from "./schemas";
 
+/**
+ * The courier trackings the batch's cartons travelled to the depot under.
+ *
+ * Trimmed, blanks dropped, duplicates dropped — the list is typed by hand in
+ * the warehouse, so the same number arriving twice is a slip, not two
+ * shipments. Capped so a paste accident can't grow the row without bound.
+ */
+const shipmentTrackingsSchema = z
+  .array(z.string().max(100))
+  .max(200)
+  .optional()
+  .transform((list) => {
+    if (list === undefined) return undefined;
+    const seen = new Set<string>();
+    const unique: string[] = [];
+    for (const raw of list) {
+      const value = raw.trim();
+      if (!value || seen.has(value)) continue;
+      seen.add(value);
+      unique.push(value);
+    }
+    return unique;
+  });
+
 /* ──────────────────────────────────────────────────────────────────────────
  * Consolidated Batch Delivery Invoice Helpers
  *
@@ -832,6 +856,10 @@ export const batchesRouter = router({
         shippingCompany: z.string().max(100).optional(),
         containerNumber: z.string().max(50).optional(),
         vesselName: z.string().max(100).optional(),
+        // Usually blank at creation and filled in later — see the schema note.
+        awbNumber: z.string().max(50).optional(),
+        shipmentTrackings: shipmentTrackingsSchema,
+        cartonCount: z.number().int().min(0).max(100000).optional(),
         shippingCost: z.string().max(50).optional(),
         departureDate: z.date().optional(),
         estimatedArrival: z.date().optional(),
@@ -1642,6 +1670,9 @@ export const batchesRouter = router({
         shippingCompany: z.string().optional(),
         containerNumber: z.string().optional(),
         vesselName: z.string().optional(),
+        awbNumber: z.string().optional(),
+        shipmentTrackings: shipmentTrackingsSchema,
+        cartonCount: z.number().int().min(0).max(100000).nullable().optional(),
         shippingCost: z.string().optional(),
         departureDate: z.date().optional(),
         estimatedArrival: z.date().optional(),

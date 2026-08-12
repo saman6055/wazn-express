@@ -150,8 +150,15 @@ describe("the stepper can date every step it shows", () => {
   it("the server sends them with the batch list, in one query", () => {
     const db = fs.readFileSync(
       path.resolve(__dirname, "../../server/db/portal.db.ts"), "utf8");
-    const fn = db.slice(db.indexOf("export async function getCustomerBatches"));
-    expect(fn.slice(0, 4000)).toContain("getBatchStatusTimestamps(batchIds)");
-    expect(fn.slice(0, 4000)).toContain("statusDates:");
+    // Bounded by the next function, not by a character count: a 4000-char
+    // window failed the day a comment was added above the return statement,
+    // which says nothing about whether the dates still ship with the list.
+    const start = db.indexOf("export async function getCustomerBatches");
+    expect(start, "getCustomerBatches not found").toBeGreaterThan(-1);
+    const end = db.indexOf("export async function", start + 1);
+    expect(end, "end of getCustomerBatches not found").toBeGreaterThan(start);
+    const fn = db.slice(start, end);
+    expect(fn).toContain("getBatchStatusTimestamps(batchIds)");
+    expect(fn).toContain("statusDates:");
   });
 });

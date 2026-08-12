@@ -1846,7 +1846,15 @@
     "cbm": "CBM",
     "cubicMeters": "立方米",
     "analysisByCustomer": "按客户分析",
-    "refresh": "刷新批次"
+    "refresh": "刷新批次",
+    "awbNumber": "空运提单 (AWB)",
+    "shipmentInfo": "发往仓库的运输",
+    "shipmentTrackings": "运输追踪号",
+    "addTrackingPlaceholder": "添加追踪号...",
+    "cartonCount": "纸箱数",
+    "shipmentCount": "运输次数",
+    "pieceCountHint": "本批次已扫描 {{count}} 件（自动统计）",
+    "fillLaterHint": "这些为选填 — 之后可在编辑中补充"
   },
   "scan": {
     "register": "登记",

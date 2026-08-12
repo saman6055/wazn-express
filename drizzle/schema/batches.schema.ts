@@ -13,6 +13,28 @@ export const batches = mysqlTable("batches", {
   shippingCompany: varchar("shippingCompany", { length: 100 }), // Shipping/logistics company name
   containerNumber: varchar("containerNumber", { length: 50 }), // For sea shipping
   vesselName: varchar("vesselName", { length: 100 }), // Ship name for sea shipping
+  /**
+   * Air waybill — the air equivalent of a container number, and the number
+   * the carrier and customs both quote back at you. Neither it nor the
+   * container number is known when the batch is created (the cartons are
+   * still being filled), so both are nullable and editable afterwards.
+   */
+  awbNumber: varchar("awbNumber", { length: 50 }),
+  /**
+   * The tracking numbers of the shipments that carried this batch's cartons
+   * to the airline's / shipping line's warehouse, and how many cartons went.
+   *
+   * A batch is not one parcel: dozens of customer items are packed into a
+   * few cartons, and those cartons travel to the depot under their own
+   * courier trackings. Without these, "how did this batch get to the
+   * warehouse, and how many cartons was it" was unanswerable — the piece
+   * count was known (every item is scanned into the batch) but nothing above
+   * it was. A JSON array rather than a child table: the list is short, it is
+   * always read whole with its batch, and no row of it is referenced from
+   * anywhere else.
+   */
+  shipmentTrackings: json("shipmentTrackings").$type<string[]>(),
+  cartonCount: int("cartonCount"),
   shippingCost: decimal("shippingCost", { precision: 12, scale: 2 }), // Total cost we pay to carrier
   departureDate: timestamp("departureDate"),
   estimatedArrival: timestamp("estimatedArrival"),
