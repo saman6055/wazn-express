@@ -1854,7 +1854,9 @@
     "cartonCount": "纸箱数",
     "shipmentCount": "运输次数",
     "pieceCountHint": "本批次已扫描 {{count}} 件（自动统计）",
-    "fillLaterHint": "这些为选填 — 之后可在编辑中补充"
+    "fillLaterHint": "这些为选填 — 之后可在编辑中补充",
+    "trackOnCarrierSite": "在承运人网站上追踪",
+    "trackingCopiedPaste": "号码已复制 — 请粘贴到打开的页面"
   },
   "scan": {
     "register": "登记",

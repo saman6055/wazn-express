@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
+import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
 
 // Timeline step type
 interface TimelineStep {
@@ -263,7 +264,13 @@ const { t, language } = useLanguage();
                     <span className="text-slate-400">
                       {pickLang(language, { ku: "کۆنتەینەر", en: "Container", ar: "الحاوية", zh: "集装箱" })}:
                     </span>{" "}
-                    <span className="font-mono">{batch.containerNumber}</span>
+                    <TrackingNumberLink
+                      kind="container"
+                      value={batch.containerNumber}
+                      shippingCompany={batch.shippingCompany}
+                      showCarrier={false}
+                      className="text-white"
+                    />
                   </span>
                 )}
                 {batch.awbNumber && (
@@ -271,7 +278,12 @@ const { t, language } = useLanguage();
                     <span className="text-slate-400">
                       {pickLang(language, { ku: "بارنامەی ئاسمانی", en: "Air waybill", ar: "بوليصة الشحن الجوي", zh: "空运提单" })}:
                     </span>{" "}
-                    <span className="font-mono">{batch.awbNumber}</span>
+                    <TrackingNumberLink
+                      kind="awb"
+                      value={batch.awbNumber}
+                      showCarrier={false}
+                      className="text-white"
+                    />
                   </span>
                 )}
               </div>

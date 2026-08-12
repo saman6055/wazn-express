@@ -70,6 +70,33 @@ describe("batch shipment identifiers", () => {
       .not.toMatch(/return\s*\{\s*\.\.\.batch\s*,/);
   });
 
+  it("the batch list carries every field the edit dialog writes back", () => {
+    // The edit dialog is populated from a row of the LIST query, not from a
+    // fresh fetch of the batch. That query names its columns explicitly, so
+    // one left out arrives as undefined, renders as an empty field, and is
+    // saved back over a real value. Trackings and carton count are sent
+    // unconditionally by the form, so for those the loss is silent.
+    const listQuery = slice(
+      read("server/db/batches.db.ts"),
+      "export async function getAllBatches",
+      "export async function getBatchById",
+      "getAllBatches"
+    );
+    for (const field of [
+      "awbNumber",
+      "containerNumber",
+      "vesselName",
+      "airlineName",
+      "flightNumber",
+      "shippingCompany",
+      "shipmentTrackings",
+      "cartonCount",
+    ]) {
+      expect(listQuery, `${field} must be selected — the edit form writes it back`)
+        .toContain(`${field}: batches.${field}`);
+    }
+  });
+
   it("the new columns are additive and nullable, safe on live data", () => {
     const migrations = read("server/_core/migrations.ts");
     for (const col of ["awbNumber", "shipmentTrackings", "cartonCount"]) {

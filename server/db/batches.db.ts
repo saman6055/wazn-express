@@ -165,6 +165,18 @@ export async function getAllBatches(options: { page?: number; pageSize?: number 
     destinationCountryId: batches.destinationCountryId,
     shippingType: batches.shippingType,
     carrierInfo: batches.carrierInfo,
+    // The carrier's own identifiers. These are not decoration on the list:
+    // the edit dialog is populated from this very row, so a column missing
+    // here reaches the form as blank — and a blank the operator then saves
+    // over is how a recorded container number or tracking list disappears.
+    airlineName: batches.airlineName,
+    flightNumber: batches.flightNumber,
+    shippingCompany: batches.shippingCompany,
+    containerNumber: batches.containerNumber,
+    vesselName: batches.vesselName,
+    awbNumber: batches.awbNumber,
+    shipmentTrackings: batches.shipmentTrackings,
+    cartonCount: batches.cartonCount,
     status: batches.status,
     totalPackages: batches.totalPackages,
     totalWeight: batches.totalWeight,

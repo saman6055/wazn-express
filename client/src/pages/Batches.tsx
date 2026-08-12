@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
 import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
+import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
 import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
@@ -1023,6 +1024,17 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <span className="font-mono font-medium">{batch.batchCode}</span>
                         <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
                       </div>
+                      {/* One click from the list to wherever the carrier says
+                          the shipment is — the number is no use sitting here. */}
+                      {(batch.awbNumber || batch.containerNumber) && (
+                        <div className="mt-1 text-xs">
+                          <TrackingNumberLink
+                            kind={batch.containerNumber ? "container" : "awb"}
+                            value={batch.containerNumber || batch.awbNumber}
+                            shippingCompany={batch.shippingCompany}
+                          />
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       {getWarehouseName(batch.originWarehouseId)} → {getCountryName(batch.destinationCountryId)}

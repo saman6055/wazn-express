@@ -1849,7 +1849,9 @@
     "cartonCount": "Cartons",
     "shipmentCount": "Shipments",
     "pieceCountHint": "{{count}} pieces scanned into this batch (counted automatically)",
-    "fillLaterHint": "These are optional — you can fill them in later from Edit"
+    "fillLaterHint": "These are optional — you can fill them in later from Edit",
+    "trackOnCarrierSite": "Track on the carrier's site",
+    "trackingCopiedPaste": "Number copied — paste it on the page that opened"
   },
   "scanning": {
     "title": "Scanning",
