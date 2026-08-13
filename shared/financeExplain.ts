@@ -103,19 +103,21 @@ export function sameMoney(a: number, b: number): boolean {
 }
 
 /**
- * The caveat that keeps this honest.
+ * What this figure is, said plainly.
  *
- * The card is labelled "total revenue" but every part of it is a PROFIT
- * figure — each source contributes `profit`, which is its revenue less its
- * own cost. The net profit below it is therefore right (gross profit less
- * operating expenses), but the top line is not revenue and a reader comparing
- * it against sales would be confused for a long time before finding out why.
+ * It was labelled "total revenue" and is nothing of the kind: every part of
+ * it contributes `profit`, its revenue less its own cost. The net profit
+ * below it was therefore right — gross profit less operating expenses — but
+ * the top line was misnamed, and a reader comparing it against sales would
+ * have been confused for a long time before finding out why. The label is
+ * fixed now; this stays because "gross profit" still needs saying out loud
+ * to anyone reading a figure made of seven different sources.
  */
-const REVENUE_IS_ACTUALLY_GROSS_PROFIT: Localised = {
-  ku: "ئەم ژمارەیە قازانجی سەرەتاییە نەک داهاتی خاو — تێچووی هەر سەرچاوەیەک پێشتر لێی کەمکراوەتەوە",
-  en: "This is gross profit, not raw revenue — each source's own cost is already deducted",
-  ar: "هذا هو الربح الإجمالي وليس الإيراد الخام — تكلفة كل مصدر مخصومة بالفعل",
-  zh: "这是毛利而非营业额 — 每个来源的成本已扣除",
+const WHAT_GROSS_PROFIT_MEANS: Localised = {
+  ku: "ئەمە قازانجی سەرەتاییە نەک داهاتی خاو — تێچووی هەر سەرچاوەیەک پێشتر لێی کەمکراوەتەوە. خەرجییە گشتییەکان لە قازانجی خاوێندا کەم دەکرێنەوە",
+  en: "This is gross profit, not raw revenue — each source's own cost is already deducted. Operating expenses come off separately, in net profit",
+  ar: "هذا هو الربح الإجمالي وليس الإيراد الخام — تكلفة كل مصدر مخصومة بالفعل. المصروفات التشغيلية تُخصم لاحقاً في صافي الربح",
+  zh: "这是毛利而非营业额 — 每个来源的成本已扣除。营运支出在净利润中另行扣除",
 };
 
 export function explainTotalRevenue(stats: DashboardStatsLike): FigureExplanation {
@@ -179,7 +181,7 @@ export function explainTotalRevenue(stats: DashboardStatsLike): FigureExplanatio
 
   return {
     figure: "totalRevenue",
-    label: { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيراد", zh: "总收入" },
+    label: { ku: "قازانجی سەرەتایی", en: "Gross profit", ar: "الربح الإجمالي", zh: "毛利" },
     value,
     formula: {
       ku: "کۆی قازانجی هەر سەرچاوەیەک: باچە هەوایی و دەریاییەکان + پاکێجی تەواو + عمولە + خزمەتگوزاری + سندوقی گەیاندن",
@@ -190,7 +192,7 @@ export function explainTotalRevenue(stats: DashboardStatsLike): FigureExplanatio
     components,
     componentTotal,
     reconciles: sameMoney(value, componentTotal),
-    caveat: REVENUE_IS_ACTUALLY_GROSS_PROFIT,
+    caveat: WHAT_GROSS_PROFIT_MEANS,
   };
 }
 

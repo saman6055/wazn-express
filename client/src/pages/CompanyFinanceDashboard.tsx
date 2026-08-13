@@ -204,7 +204,7 @@ export default function CompanyFinanceDashboard() {
                 <CardContent className="pt-6 pr-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">{t("companyFinance.totalRevenue") || "کۆی داهات"}</p>
+                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">{t("companyFinance.totalRevenue") || "قازانجی سەرەتایی"}</p>
                       <ExplainableFigure
                         figure="totalRevenue"
                         period={period}
@@ -583,7 +583,7 @@ export default function CompanyFinanceDashboard() {
               <CardContent className="py-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-emerald-100 text-sm">{t("companyFinance.totalRevenue") || "کۆی داهات"} - {getPeriodLabel(period)}</p>
+                    <p className="text-emerald-100 text-sm">{t("companyFinance.totalRevenue") || "قازانجی سەرەتایی"} - {getPeriodLabel(period)}</p>
                     <p className="text-4xl font-bold mt-1">{formatCurrency(pl?.totalRevenue || 0)}</p>
                   </div>
                   <div className="text-right">
@@ -858,7 +858,7 @@ export default function CompanyFinanceDashboard() {
                   <div className="bg-emerald-50 dark:bg-emerald-950/40 rounded-xl p-5 mb-4">
                     <h3 className="font-bold text-emerald-800 dark:text-emerald-200 text-lg mb-4 flex items-center gap-2">
                       <Plus className="w-5 h-5" />
-                      {t("companyFinance.totalRevenue") || "کۆی داهات (قازانج)"}
+                      {t("companyFinance.totalRevenue") || "قازانجی سەرەتایی"}
                     </h3>
                     <div className="space-y-3 me-6">
                       <PLRow label={`🛫 ${t("companyFinance.batchProfitAir") || "قازانجی باچی ئاسمانی"}`} value={revenueBySource?.batchProfit?.air_regular?.profit || 0} />
@@ -869,7 +869,7 @@ export default function CompanyFinanceDashboard() {
                       <PLRow label={`🔧 ${t("companyFinance.serviceProfit") || "قازانجی خزمەتگوزاری"}`} value={revenueBySource?.service?.profit || 0} />
                       <Separator className="my-2" />
                       <div className="flex justify-between items-center font-bold text-lg">
-                        <span className="text-emerald-800 dark:text-emerald-200">{t("companyFinance.totalRevenueLabel") || "کۆی گشتی داهات"}</span>
+                        <span className="text-emerald-800 dark:text-emerald-200">{t("companyFinance.totalRevenueLabel") || "کۆی قازانجی سەرەتایی"}</span>
                         <span className="text-emerald-700 dark:text-emerald-300">{formatCurrency(pl?.totalRevenue || 0)}</span>
                       </div>
                     </div>
