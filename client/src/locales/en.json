@@ -1883,7 +1883,10 @@
     "awaitingNumberTitle": "{{count}} batches are waiting for a waybill or container number",
     "awaitingNumberDesc": "These were created a while ago and still have no number recorded. Without it staff cannot look the shipment up with the carrier, and the customer has nothing to click in the portal. Click a batch to add it.",
     "daysWaiting": "{{count}} days",
-    "andMore": "and {{count}} more"
+    "andMore": "and {{count}} more",
+    "deleteReleasesPackages": "{{count}} packages are in this batch — they are not deleted. They go back to registered and can be scanned into another batch.",
+    "deleteNeedsSuperAdmin": "More than 24 hours old — this needs a super admin",
+    "batchRestoredWithPackages": "Batch restored with {{count}} packages"
   },
   "scanning": {
     "title": "Scanning",

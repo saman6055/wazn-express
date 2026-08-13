@@ -1888,7 +1888,10 @@
     "awaitingNumberTitle": "{{count}} 个批次正在等待提单号或集装箱号",
     "awaitingNumberDesc": "这些批次创建已有一段时间，但仍未记录号码。没有它，员工无法向承运人查询货物，客户在门户中也无处可点。点击批次以添加。",
     "daysWaiting": "{{count}} 天",
-    "andMore": "还有 {{count}} 个"
+    "andMore": "还有 {{count}} 个",
+    "deleteReleasesPackages": "此批次中有 {{count}} 个包裹 — 它们不会被删除，将恢复为已登记状态，可扫描到其他批次。",
+    "deleteNeedsSuperAdmin": "已超过 24 小时 — 需要超级管理员",
+    "batchRestoredWithPackages": "批次已恢复，含 {{count}} 个包裹"
   },
   "scan": {
     "register": "登记",

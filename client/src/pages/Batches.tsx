@@ -22,6 +22,8 @@ import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, P
 import { Link, useLocation } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
 import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
+import { canDeleteBatch } from "@shared/batchDeletion";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -58,6 +60,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isFinancialOpen, setIsFinancialOpen] = useState(false);
   const [editingBatch, setEditingBatch] = useState<any>(null);
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const userRole = user?.role;
   const [selectedBatch, setSelectedBatch] = useState<number | null>(null);
   const [financialBatchId, setFinancialBatchId] = useState<number | null>(null);
   const [shippingType, setShippingType] = useState<string>("");
@@ -1204,7 +1208,16 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             decremented, so a zero here really is empty; the
                             server counts the rows itself and refuses if
                             anything at all is attached. */}
-                        {!batch.packageCount && (
+                        {canDeleteBatch({
+                          role: userRole,
+                          status: batch.status,
+                          createdAt: batch.createdAt,
+                          // The list does not carry these counts, so the
+                          // button is offered optimistically and the server
+                          // refuses with the reason. Better than hiding it
+                          // and leaving no way to find out why.
+                          ties: { invoices: 0, deliveryBoxes: 0, fullPackageOrders: 0 },
+                        }).allowed && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1318,6 +1331,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {t("batches.deleteBatchWarning", { code: deletingBatch?.batchCode ?? "" })}
+                {deletingBatch?.packageCount ? (
+                  <span className="mt-2 block font-medium">
+                    {t("batches.deleteReleasesPackages", { count: deletingBatch.packageCount })}
+                  </span>
+                ) : null}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

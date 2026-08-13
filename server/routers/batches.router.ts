@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { canDeleteBatch, REFUSAL_MESSAGE } from "@shared/batchDeletion";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -967,18 +968,36 @@ export const batchesRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "باچەکە نەدۆزرایەوە" });
         }
 
+        // Parcels are no longer a reason to refuse. A batch created by
+        // mistake usually has parcels scanned into it already — that is how
+        // the mistake gets noticed — and they survive the deletion by going
+        // back to unassigned. Only money still blocks.
         const blockers = await db.getBatchDeletionBlockers(input.id);
-        if (blockers.total > 0) {
-          const parts: string[] = [];
-          if (blockers.packages) parts.push(`${blockers.packages} پاکێج`);
-          if (blockers.deliveryBoxes) parts.push(`${blockers.deliveryBoxes} سندوقی گەیاندن`);
-          if (blockers.invoices) parts.push(`${blockers.invoices} پسوڵە`);
-          if (blockers.fullPackageOrders) parts.push(`${blockers.fullPackageOrders} داواکاری پاکێجی تەواو`);
+        const verdict = canDeleteBatch({
+          role: ctx.user.role,
+          status: batch.status,
+          createdAt: batch.createdAt,
+          ties: {
+            invoices: blockers.invoices,
+            deliveryBoxes: blockers.deliveryBoxes,
+            fullPackageOrders: blockers.fullPackageOrders,
+          },
+        });
+
+        if (!verdict.allowed) {
           throw new TRPCError({
-            code: "CONFLICT",
-            message: `ناتوانرێت بسڕدرێتەوە — ${parts.join(" و ")} بەم باچەوە بەستراوە. سەرەتا دەریانبهێنە.`,
+            // A super admin could do this one; the rest are not about
+            // permission at all, and saying FORBIDDEN would send somebody
+            // hunting for a bigger role that cannot help either.
+            code: verdict.refusal === "needs_super_admin" ? "FORBIDDEN" : "CONFLICT",
+            message: REFUSAL_MESSAGE[verdict.refusal!].ku,
           });
         }
+
+        // Let the parcels go before the batch does, and remember which ones,
+        // so restoring can put exactly those back rather than guessing from a
+        // batchId that will no longer exist anywhere.
+        const releasedPackageIds = await db.releasePackagesFromBatch(input.id);
 
         // A complete copy into the bin before the row goes, so a deletion
         // made in error can be undone. Written first: if this insert fails,
@@ -987,7 +1006,7 @@ export const batchesRouter = router({
           entityType: "batch",
           entityId: batch.id,
           label: batch.batchCode,
-          snapshot: batch as unknown as Record<string, unknown>,
+          snapshot: { ...batch, releasedPackageIds } as unknown as Record<string, unknown>,
           deletedById: ctx.user.id,
           deletedByName: ctx.user.name ?? null,
           deletionReason: input.reason ?? null,
@@ -1003,7 +1022,13 @@ export const batchesRouter = router({
         });
 
         await db.deleteBatch(input.id);
-        return { success: true, batchCode: batch.batchCode };
+        return {
+          success: true,
+          batchCode: batch.batchCode,
+          // So the screen can say what happened to the parcels rather than
+          // leaving the operator wondering where thirty-seven of them went.
+          releasedPackages: releasedPackageIds.length,
+        };
       }),
 
     updateStatus: staffProcedure

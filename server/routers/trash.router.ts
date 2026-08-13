@@ -46,7 +46,22 @@ export const trashRouter = router({
           // back would fail at the database — better to say why here.
           if (code && !(await db.isBatchCodeFree(code))) blocked("label_taken");
 
-          await db.restoreBatchFromSnapshot(snapshot);
+          // releasedPackageIds rides in the snapshot but is not a column, so
+          // it must not reach the insert.
+          const { releasedPackageIds, ...batchRow } = snapshot as {
+            releasedPackageIds?: number[];
+          } & Record<string, unknown>;
+
+          await db.restoreBatchFromSnapshot(batchRow);
+
+          // Put back only the parcels still unassigned. One scanned into
+          // another batch meanwhile belongs there now, and dragging it back
+          // would move somebody's goods onto the wrong shipment.
+          const parcels = await db.reattachPackagesToBatch(
+            input.entityId,
+            Array.isArray(releasedPackageIds) ? releasedPackageIds : []
+          );
+
           await db.removeDeletedRecord("batch", input.entityId);
 
           await db.createAuditLog({
@@ -57,7 +72,7 @@ export const trashRouter = router({
             entityId: input.entityId,
             newValues: snapshot,
           });
-          return { success: true, label: code };
+          return { success: true, label: code, ...parcels };
         }
 
         const order = await db.getDeletedFullPackageOrder(input.entityId);

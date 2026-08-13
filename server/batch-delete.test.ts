@@ -54,8 +54,12 @@ describe("deleting a batch", () => {
     expect(deleteAt, "must call through to the delete").toBeGreaterThan(-1);
     expect(checkAt, "the check has to come first, or it is not a check")
       .toBeLessThan(deleteAt);
-    expect(body, "a non-zero blocker count must stop the deletion")
-      .toMatch(/blockers\.total\s*>\s*0/);
+    // The verdict decides, and a refusal must actually stop the deletion
+    // rather than merely being computed and ignored.
+    expect(body, "the verdict must be consulted").toContain("canDeleteBatch");
+    expect(body, "a refusal must throw").toMatch(/if\s*\(!verdict\.allowed\)/);
+    expect(body.indexOf("!verdict.allowed"), "the check has to come before the delete")
+      .toBeLessThan(deleteAt);
   });
 
   it("decides on real rows, never on the totalPackages counter", () => {
@@ -70,11 +74,53 @@ describe("deleting a batch", () => {
       "getBatchDeletionBlockers"
     );
     expect(blockers).not.toContain("batches.totalPackages");
-    // Everything that means real work has been done against this batch.
-    for (const table of ["packages", "deliveryBoxes", "invoices", "fullPackageOrders"]) {
-      expect(blockers, `${table} references a batch and must block its deletion`)
+    for (const table of ["deliveryBoxes", "invoices", "fullPackageOrders"]) {
+      expect(blockers, `${table} means money was counted and must block deletion`)
         .toContain(table);
     }
+  });
+
+  it("only money blocks it — parcels are released instead", () => {
+    // A batch created by mistake usually has parcels scanned into it; that is
+    // how the mistake gets noticed. Refusing on them would refuse the exact
+    // case this exists for.
+    const body = procedure();
+    expect(body, "the parcels must be let go, not used as a reason to refuse")
+      .toContain("releasePackagesFromBatch");
+    const ties = body.slice(body.indexOf("ties: {"), body.indexOf("});", body.indexOf("ties: {")));
+    expect(ties.length, "ties block not found").toBeGreaterThan(20);
+    expect(ties, "packages must not be passed as a financial tie").not.toContain("packages:");
+  });
+
+  it("releases the parcels before the batch row goes", () => {
+    const body = procedure();
+    const releaseAt = body.indexOf("releasePackagesFromBatch");
+    const deleteAt = body.indexOf("db.deleteBatch");
+    expect(releaseAt).toBeGreaterThan(-1);
+    expect(releaseAt, "after the batch is gone the parcels cannot be found")
+      .toBeLessThan(deleteAt);
+  });
+
+  it("remembers which parcels it released, so a restore can put them back", () => {
+    expect(procedure()).toContain("releasedPackageIds");
+    const trash = read("server/routers/trash.router.ts");
+    expect(trash).toContain("reattachPackagesToBatch");
+    // A parcel scanned into another batch meanwhile belongs there now.
+    const reattach = slice(
+      dbLayer,
+      "export async function reattachPackagesToBatch",
+      "\n}\n",
+      "reattachPackagesToBatch"
+    );
+    expect(reattach, "only still-unassigned parcels may be pulled back")
+      .toContain("isNull(packages.batchId)");
+  });
+
+  it("the time and role rule lives in one shared place", () => {
+    // The button on the page and the refusal on the server have to agree, or
+    // the operator sees a button that always fails.
+    expect(procedure()).toContain("canDeleteBatch");
+    expect(read("client/src/pages/Batches.tsx")).toContain("canDeleteBatch");
   });
 
   it("writes the audit entry while there is still something to record", () => {
@@ -103,13 +149,14 @@ describe("deleting a batch", () => {
     }
   });
 
-  it("is offered in the UI only for a batch that looks empty", () => {
+  it("tells the operator what happens to the parcels before they confirm", () => {
     const page = read("client/src/pages/Batches.tsx");
-    // Gated on the counted number, not on batches.totalPackages — that
-    // column drifts in both directions and was showing 0 for batches that
-    // held parcels, putting a delete button on every one of them.
-    expect(page).toContain("{!batch.packageCount && (");
-    expect(page, "the drifting counter must not decide this").not.toContain("batch.totalPackages");
+    // Thirty-seven parcels disappearing from a screen with no explanation is
+    // how somebody concludes the system ate them.
     expect(page, "a destructive action needs confirming").toContain("batches.deleteBatchWarning");
+    expect(page, "the confirm must say the parcels survive")
+      .toContain("batches.deleteReleasesPackages");
+    expect(page, "the drifting counter must not decide anything")
+      .not.toContain("batch.totalPackages");
   });
 });

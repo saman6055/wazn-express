@@ -803,3 +803,66 @@ export async function deleteBatch(batchId: number): Promise<void> {
   await db.delete(batchStatusHistory).where(eq(batchStatusHistory.batchId, batchId));
   await db.delete(batches).where(eq(batches.id, batchId));
 }
+
+/**
+ * Let go of every parcel in a batch, and say which ones they were.
+ *
+ * A batch created by mistake usually has parcels scanned into it already —
+ * that is how the mistake gets noticed. Deleting the batch must not take
+ * them with it: they go back to unassigned, exactly as they were before the
+ * scan, and can be scanned into the right batch straight away.
+ *
+ * Returns the ids so the recycle bin can record them. Restoring the batch
+ * then knows which parcels to put back, rather than guessing from a batchId
+ * that no longer exists anywhere.
+ */
+export async function releasePackagesFromBatch(batchId: number): Promise<number[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const rows = await db
+    .select({ id: packages.id })
+    .from(packages)
+    .where(eq(packages.batchId, batchId));
+  const ids = rows.map((r) => r.id);
+  if (ids.length === 0) return [];
+
+  await db
+    .update(packages)
+    // Back to where a parcel sits before anyone scans it into a shipment.
+    .set({ batchId: null, status: "registered" })
+    .where(eq(packages.batchId, batchId));
+
+  return ids;
+}
+
+/**
+ * Put released parcels back into a restored batch.
+ *
+ * Only the ones still free: a parcel scanned into another batch in the
+ * meantime belongs there now, and dragging it back would silently move
+ * somebody's goods onto the wrong shipment. Returns how many were reattached
+ * and how many had moved on, so the restore can say so.
+ */
+export async function reattachPackagesToBatch(
+  batchId: number,
+  packageIds: number[]
+): Promise<{ reattached: number; movedOn: number }> {
+  const db = await getDb();
+  if (!db || packageIds.length === 0) return { reattached: 0, movedOn: 0 };
+
+  const free = await db
+    .select({ id: packages.id })
+    .from(packages)
+    .where(and(inArray(packages.id, packageIds), isNull(packages.batchId)));
+  const freeIds = free.map((r) => r.id);
+
+  if (freeIds.length > 0) {
+    await db
+      .update(packages)
+      .set({ batchId, status: "in_batch" })
+      .where(inArray(packages.id, freeIds));
+  }
+
+  return { reattached: freeIds.length, movedOn: packageIds.length - freeIds.length };
+}
