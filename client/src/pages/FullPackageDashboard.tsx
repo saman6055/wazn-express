@@ -1089,11 +1089,12 @@ export default function FullPackageDashboard() {
                               {order.quantity > 1 && (
                                 <p className="text-xs text-muted-foreground">{order.quantity} {t("fullPackage.quantityUnit")}</p>
                               )}
-                              {(order as any).orderNumber && (
-                                <p className="text-xs text-blue-600 dark:text-blue-300 font-mono mt-0.5">
-                                  # {(order as any).orderNumber}
-                                </p>
-                              )}
+                              {/* The shop's order number is not repeated here.
+                                  It sits in the first column with the order
+                                  code and its copy button, where the row's
+                                  identifiers belong — printing it twice made
+                                  the product cell look like it held a second,
+                                  different number. */}
                             </div>
                           </div>
                         </TableCell>
