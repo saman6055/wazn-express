@@ -66,6 +66,11 @@ export const batches = mysqlTable("batches", {
   useTieredPricing: boolean("useTieredPricing").default(false).notNull(), // True for air_irregular and sea
   notes: text("notes"),
   createdById: int("createdById").notNull(),
+  // Where the person who made this batch was working, copied in at creation.
+  // Stored rather than looked up from the user later: if they move office
+  // next year, this batch must still say where it was actually made.
+  createdInCountryId: int("createdInCountryId"),
+  createdInCity: varchar("createdInCity", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

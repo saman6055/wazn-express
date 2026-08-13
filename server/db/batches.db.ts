@@ -178,6 +178,10 @@ export async function getAllBatches(options: { page?: number; pageSize?: number 
     awbNumber: batches.awbNumber,
     shipmentTrackings: batches.shipmentTrackings,
     cartonCount: batches.cartonCount,
+    // Where the work was done — Guangzhou or Erbil.
+    createdInCountryId: batches.createdInCountryId,
+    createdInCity: batches.createdInCity,
+    createdById: batches.createdById,
     status: batches.status,
     totalPackages: batches.totalPackages,
     totalWeight: batches.totalWeight,

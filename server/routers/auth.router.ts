@@ -122,6 +122,11 @@ export const authRouter = router({
       mobileNumber: phoneSchema.optional(),
       password: z.string().min(6).max(500),
       role: z.enum(["admin", "employee", "accountant"]),
+      // Where this person works. Stamped onto every batch and registration
+      // they make, so a shipment can say whether it was handled in Guangzhou
+      // or in Erbil.
+      workCountryId: idSchema.optional(),
+      workCity: z.string().max(100).optional(),
     }))
     .mutation(async ({ input }) => {
       if (!input.username && !input.email && !input.mobileNumber) {
@@ -147,6 +152,8 @@ export const authRouter = router({
         mobileNumber: input.mobileNumber,
         passwordHash,
         role: input.role,
+        workCountryId: input.workCountryId,
+        workCity: input.workCity,
       });
       return { success: true, user };
     }),

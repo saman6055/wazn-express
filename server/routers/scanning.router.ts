@@ -246,6 +246,11 @@ export const scanningRouter = router({
         photoUrl: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        // Where the person at the counter works. Copied onto the row rather
+        // than read back later, so it still says Guangzhou after they have
+        // moved to Erbil.
+        const registrationLocation = await db.getUserWorkLocation(ctx.user.id);
+
         // Generate package code
         const packageCode = `PKG-${Date.now().toString(36).toUpperCase()}`;
 
@@ -312,6 +317,9 @@ export const scanningRouter = router({
           status: 'registered',
           batchId: input.batchId,
           registeredById: ctx.user.id,
+          // Where this parcel was registered — Guangzhou or Erbil.
+          registeredInCountryId: registrationLocation.countryId,
+          registeredInCity: registrationLocation.city,
           notes: input.notes,
           /**
            * The photo taken at the counter, on the parcel itself.

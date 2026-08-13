@@ -329,6 +329,8 @@ export async function createStaffUser(data: {
   mobileNumber?: string;
   passwordHash: string;
   role: "admin" | "employee" | "accountant";
+  workCountryId?: number;
+  workCity?: string;
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -344,6 +346,8 @@ export async function createStaffUser(data: {
     role: data.role,
     loginMethod: "username",
     isActive: true,
+    workCountryId: data.workCountryId ?? null,
+    workCity: data.workCity ?? null,
   };
 
   try {
@@ -3528,3 +3532,37 @@ export async function deleteStaffUser(userId: number) {
   return { success: true };
 }
 
+
+/**
+ * Where a member of staff works.
+ *
+ * Read once when they create something, and the answer is copied onto that
+ * record. Never read again for a record that already carries a stamp — if
+ * somebody moves office, last year's shipments must still say where they
+ * were actually handled.
+ */
+export async function getUserWorkLocation(
+  userId: number
+): Promise<{ countryId: number | null; city: string | null }> {
+  const db = await getDb();
+  if (!db) return { countryId: null, city: null };
+  const [row] = await db
+    .select({ countryId: users.workCountryId, city: users.workCity })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return { countryId: row?.countryId ?? null, city: row?.city ?? null };
+}
+
+/** Set or change where a member of staff works, from now on. */
+export async function setUserWorkLocation(
+  userId: number,
+  location: { countryId: number | null; city: string | null }
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(users)
+    .set({ workCountryId: location.countryId, workCity: location.city })
+    .where(eq(users.id, userId));
+}

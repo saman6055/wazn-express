@@ -15,6 +15,13 @@ export const users = mysqlTable("users", {
   isActive: boolean("isActive").default(true).notNull(),
   notes: text("notes"),
   createdById: int("createdById"), // Who created this staff user
+
+  // Where this person works. Set when the account is made, and stamped onto
+  // everything they create — so a batch can say whether the work was done in
+  // Guangzhou or in Erbil. Nullable: accounts that predate this have no
+  // location until somebody sets one.
+  workCountryId: int("workCountryId"),
+  workCity: varchar("workCity", { length: 100 }),
   
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

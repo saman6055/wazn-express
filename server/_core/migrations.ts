@@ -2457,6 +2457,43 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // history each time and discarding almost all of it.
   { name: "idx.packages_customer_batch", sql: "CREATE INDEX idx_packages_customer_batch ON packages (customerId, batchId)" },
 
+  // ---- where the work was done
+  //
+  // Some customers' goods never reach the China warehouse: they arrive in
+  // Erbil, are registered and batched and boxed there, all inside two days.
+  // The system handles both identically, which is right — but it left no way
+  // to tell afterwards which shipments were handled where.
+  //
+  // The location lives on the staff account and is stamped onto whatever they
+  // create. Stamped, not looked up: if somebody changes office next year,
+  // last year's batches must still say where they were actually made.
+  { name: "users.workCountryId", sql: "ALTER TABLE users ADD COLUMN workCountryId INT NULL" },
+  { name: "users.workCity", sql: "ALTER TABLE users ADD COLUMN workCity VARCHAR(100) NULL" },
+  { name: "batches.createdInCountryId", sql: "ALTER TABLE batches ADD COLUMN createdInCountryId INT NULL" },
+  { name: "batches.createdInCity", sql: "ALTER TABLE batches ADD COLUMN createdInCity VARCHAR(100) NULL" },
+  { name: "packages.registeredInCountryId", sql: "ALTER TABLE packages ADD COLUMN registeredInCountryId INT NULL" },
+  { name: "packages.registeredInCity", sql: "ALTER TABLE packages ADD COLUMN registeredInCity VARCHAR(100) NULL" },
+  // Grouping a report by where the work happened.
+  { name: "idx.batches_created_in_country", sql: "CREATE INDEX idx_batches_created_in_country ON batches (createdInCountryId)" },
+
+  // Backfill from the creator's location, once. Everything already in the
+  // database predates the stamp, and the only honest source for it is where
+  // the person who made it works now — which is exactly the rule the office
+  // was going to apply by hand anyway. Runs only over rows with no stamp, so
+  // it never overwrites a real one.
+  {
+    name: "backfill.batches.createdInLocation",
+    sql: `UPDATE batches b JOIN users u ON u.id = b.createdById
+          SET b.createdInCountryId = u.workCountryId, b.createdInCity = u.workCity
+          WHERE b.createdInCountryId IS NULL AND u.workCountryId IS NOT NULL`,
+  },
+  {
+    name: "backfill.packages.registeredInLocation",
+    sql: `UPDATE packages p JOIN users u ON u.id = p.registeredById
+          SET p.registeredInCountryId = u.workCountryId, p.registeredInCity = u.workCity
+          WHERE p.registeredInCountryId IS NULL AND u.workCountryId IS NOT NULL`,
+  },
+
   // ---- expenseCategories: the table and the code described different tables
   //
   // CREATE TABLE above makes `name`, `nameKu`, `description`, `isActive`.

@@ -903,11 +903,18 @@ export const batchesRouter = router({
             message: `کۆدی باچ «${typedCode}» پێشتر بەکارهاتووە — تکایە کۆدێکی جیاواز بنووسە`,
           });
         }
+        // Where the work was done, copied in now rather than looked up later.
+        // If this person changes office next year, this batch must still say
+        // where it was actually made.
+        const workLocation = await db.getUserWorkLocation(ctx.user.id);
+
         const batch = await db.createBatch({
           ...batchData,
           // "" (or undefined) → createBatch mints a code for us.
           batchCode: input.batchCode ?? "",
           createdById: ctx.user.id,
+          createdInCountryId: workLocation.countryId,
+          createdInCity: workLocation.city,
         });
         
         // Create pricing tiers if provided

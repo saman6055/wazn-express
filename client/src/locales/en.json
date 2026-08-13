@@ -5614,7 +5614,11 @@
     "cannotDeleteSelf": "You Cannot Delete Yourself",
     "noPermissionDelete": "No Permission to Delete This User",
     "emailOrMobileRequired": "Email or mobile number is required",
-    "emailOrMobileHint": "Email or mobile number is required (either one or both)"
+    "emailOrMobileHint": "Email or mobile number is required (either one or both)",
+    "workCountry": "Work country",
+    "workCity": "Work city",
+    "selectCountry": "Select a country",
+    "workCityPlaceholder": "Guangzhou / Erbil"
   },
   "roles": {
     "admin": "Admin",

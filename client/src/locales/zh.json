@@ -5566,7 +5566,11 @@
     "cannotDeleteSelf": "不能删除自己",
     "noPermissionDelete": "没有删除此用户的权限",
     "emailOrMobileRequired": "需要邮箱或手机号码",
-    "emailOrMobileHint": "需要邮箱或手机号码（其一或两者）"
+    "emailOrMobileHint": "需要邮箱或手机号码（其一或两者）",
+    "workCountry": "工作国家",
+    "workCity": "工作城市",
+    "selectCountry": "选择国家",
+    "workCityPlaceholder": "广州 / 埃尔比勒"
   },
   "roles": {
     "admin": "管理员",

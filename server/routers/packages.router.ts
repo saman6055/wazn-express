@@ -434,6 +434,11 @@ export const packagesRouter = router({
         linkedOrderIds: z.array(idSchema).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        // Where the person registering this parcel works. Copied onto the row
+        // rather than read back later, so it still says Guangzhou after they
+        // have moved to Erbil.
+        const registrationLocation = await db.getUserWorkLocation(ctx.user.id);
+
         const warehouse = await db.getWarehouseById(input.originWarehouseId);
         if (!warehouse) {
           throw new TRPCError({ code: "NOT_FOUND", message: "کۆگا نەدۆزرایەوە. تکایە کۆگایەک زیاد بکە یان هەڵبژێرە." });
@@ -610,6 +615,9 @@ export const packagesRouter = router({
               calculatedCostUsd: input.isUnclaimed ? undefined : calculatedCostUsd,
               appliedPricingRuleId: input.isUnclaimed ? undefined : appliedPricingRuleId,
               registeredById: ctx.user.id,
+              // Where this parcel was registered — Guangzhou or Erbil.
+              registeredInCountryId: registrationLocation.countryId,
+              registeredInCity: registrationLocation.city,
               batchId: input.batchId,
               categoryId: input.categoryId,
               isUnclaimed: input.isUnclaimed || false,

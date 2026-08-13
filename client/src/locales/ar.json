@@ -5631,7 +5631,11 @@
     "cannotDeleteSelf": "لا يمكنك حذف نفسك",
     "noPermissionDelete": "لا توجد صلاحية لحذف هذا المستخدم",
     "emailOrMobileRequired": "البريد الإلكتروني أو رقم الجوال مطلوب",
-    "emailOrMobileHint": "البريد الإلكتروني أو رقم الجوال مطلوب (أحدهما أو كلاهما)"
+    "emailOrMobileHint": "البريد الإلكتروني أو رقم الجوال مطلوب (أحدهما أو كلاهما)",
+    "workCountry": "بلد العمل",
+    "workCity": "مدينة العمل",
+    "selectCountry": "اختر البلد",
+    "workCityPlaceholder": "قوانغتشو / أربيل"
   },
   "roles": {
     "admin": "مدير",

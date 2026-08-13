@@ -5349,7 +5349,11 @@
     "cannotDeleteSelf": "ناتوانیت خۆت بسڕیتەوە",
     "noPermissionDelete": "مۆڵەتی سڕینەوەی ئەم بەکارهێنەرەت نییە",
     "emailOrMobileRequired": "ئیمەیڵ یان ژمارەی مۆبایل پێویستە",
-    "emailOrMobileHint": "ئیمەیڵ یان ژمارەی مۆبایل پێویستە (یەکێکیان یان هەردووکیان)"
+    "emailOrMobileHint": "ئیمەیڵ یان ژمارەی مۆبایل پێویستە (یەکێکیان یان هەردووکیان)",
+    "workCountry": "وڵاتی کار",
+    "workCity": "شاری کار",
+    "selectCountry": "وڵات هەڵبژێرە",
+    "workCityPlaceholder": "گوانگجۆ / هەولێر"
   },
   "roles": {
     "admin": "ئەدمین",

@@ -36,6 +36,8 @@ export default function StaffManagement() {
     mobileNumber: "",
     password: "",
     role: "employee" as "admin" | "employee" | "accountant",
+    workCountryId: "",
+    workCity: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   
@@ -45,13 +47,14 @@ export default function StaffManagement() {
 
   // Fetch staff list
   const { data: staffList, isLoading } = trpc.auth.getStaffList.useQuery();
+  const { data: countries } = trpc.countries.list.useQuery();
 
   // Mutations
   const registerMutation = trpc.auth.registerStaff.useMutation({
     onSuccess: () => {
       toast.success(t('staff.staffAdded'));
       setAddDialogOpen(false);
-      setNewStaff({ name: "", email: "", mobileNumber: "", password: "", role: "employee" });
+      setNewStaff({ name: "", email: "", mobileNumber: "", password: "", role: "employee", workCountryId: "", workCity: "" });
       utils.auth.getStaffList.invalidate();
     },
     onError: (err) => {
@@ -123,6 +126,8 @@ export default function StaffManagement() {
       mobileNumber: newStaff.mobileNumber || undefined,
       password: newStaff.password,
       role: newStaff.role,
+      workCountryId: newStaff.workCountryId ? Number(newStaff.workCountryId) : undefined,
+      workCity: newStaff.workCity || undefined,
     });
   };
 
@@ -244,6 +249,35 @@ export default function StaffManagement() {
                       <SelectItem value="admin">{t('roles.admin')}</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                {/* Where this person works. Stamped onto every batch and
+                    registration they make, so a shipment can say whether it
+                    was handled in Guangzhou or in Erbil. */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>{t('staff.workCountry')}</Label>
+                    <Select
+                      value={newStaff.workCountryId}
+                      onValueChange={(value) => setNewStaff({ ...newStaff, workCountryId: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('staff.selectCountry')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countries?.map((c: any) => (
+                          <SelectItem key={c.id} value={c.id.toString()}>{c.nameEn}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('staff.workCity')}</Label>
+                    <Input
+                      value={newStaff.workCity}
+                      onChange={(e) => setNewStaff({ ...newStaff, workCity: e.target.value })}
+                      placeholder={t('staff.workCityPlaceholder')}
+                    />
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setAddDialogOpen(false)}>

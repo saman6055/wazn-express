@@ -18,7 +18,7 @@ import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
 import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
-import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive } from "lucide-react";
+import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
 import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
@@ -1115,6 +1115,18 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <span className="font-mono font-medium">{batch.batchCode}</span>
                         <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
                       </div>
+                      {/* Where the work was done. Some customers' goods never
+                          reach the China warehouse — they arrive in Erbil and
+                          are registered, batched and boxed there — and until
+                          now nothing said which was which. */}
+                      {batch.createdInCity && (
+                        <div className="mt-1">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal">
+                            <MapPin className="h-3 w-3 me-1" />
+                            {batch.createdInCity}
+                          </Badge>
+                        </div>
+                      )}
                       {/* One click from the list to wherever the carrier says
                           the shipment is — the number is no use sitting here. */}
                       {(batch.awbNumber || batch.containerNumber) && (

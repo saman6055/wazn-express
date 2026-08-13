@@ -40,6 +40,10 @@ export const packages = mysqlTable("packages", {
   ]).default("registered").notNull(),
   registeredAt: timestamp("registeredAt").defaultNow().notNull(),
   registeredById: int("registeredById").notNull(),
+  // Where this parcel was registered — Guangzhou or Erbil. Stamped at
+  // registration for the same reason as on a batch.
+  registeredInCountryId: int("registeredInCountryId"),
+  registeredInCity: varchar("registeredInCity", { length: 100 }),
   deliveredAt: timestamp("deliveredAt"),
   deliveredById: int("deliveredById"),
   // Volumetric billing: air charges the greater of scale weight and
