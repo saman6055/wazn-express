@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { partitionArchived, FINISHED_BOX_STATUSES } from "@shared/archive";
 import { toast } from "sonner";
-import { Package, Plus } from "lucide-react";
+import { Package, Plus, Archive } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -60,8 +61,19 @@ export default function CustomerDeliveryScanner() {
   } = trpc.deliveryBox.list.useQuery(queryParams);
 
   const customers = customersData ?? [];
-  const boxes = boxesData?.boxes ?? [];
+  const [showArchivedBoxes, setShowArchivedBoxes] = useState(false);
+  const allBoxes = boxesData?.boxes ?? [];
   const totalBoxes = boxesData?.total ?? 0;
+
+  // Finished boxes drop out of the table after ten days — the same rule, and
+  // the same ten days, as batches. Delivered and cancelled both count as
+  // finished: a box cancelled by mistake is still a record of what happened,
+  // so it stops crowding the list rather than disappearing.
+  const { current: currentBoxes, archived: archivedBoxes } = useMemo(
+    () => partitionArchived(allBoxes as any[], FINISHED_BOX_STATUSES),
+    [allBoxes]
+  );
+  const boxes = showArchivedBoxes ? allBoxes : currentBoxes;
 
   // Handlers
   const handleFilterChange = useCallback((newFilters: FilterState) => {
@@ -166,6 +178,18 @@ export default function CustomerDeliveryScanner() {
                 {t("delivery.createBox")}
               </Button>
             </div>
+
+            {archivedBoxes.length > 0 && (
+              <div className="flex items-center justify-between gap-2 mb-4 text-sm">
+                <span className="text-muted-foreground">
+                  {t("delivery.archivedHidden", { count: archivedBoxes.length })}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => setShowArchivedBoxes((v) => !v)}>
+                  <Archive className="h-4 w-4 me-2" />
+                  {showArchivedBoxes ? t("batches.hideArchived") : t("batches.showArchived")}
+                </Button>
+              </div>
+            )}
 
             {/* Table */}
             <BoxTable

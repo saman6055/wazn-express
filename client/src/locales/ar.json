@@ -5997,7 +5997,11 @@
     "status": "الحالة",
     "toDate": "إلى",
     "totalBoxes": "إجمالي الصناديق",
-    "view": "عرض التفاصيل"
+    "view": "عرض التفاصيل",
+    "archivedHidden": "{{count}} صناديق منتهية مخفية",
+    "cancelBoxWhy": "لماذا يتم إلغاء هذا الصندوق؟ لن يُحذف الصندوق — يبقى سجله — لذا يجب تسجيل السبب.",
+    "cancelReasonPlaceholder": "مثال: أُنشئ بالخطأ، عميل خاطئ",
+    "cancelledBecause": "أُلغي: {{reason}}"
   },
   "pushAdmin": {
     "title": "مركز إرسال الإشعارات",

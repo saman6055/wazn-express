@@ -5922,7 +5922,11 @@
     "status": "Status",
     "toDate": "To",
     "totalBoxes": "Total Boxes",
-    "view": "View Details"
+    "view": "View Details",
+    "archivedHidden": "{{count}} finished boxes hidden",
+    "cancelBoxWhy": "Why is this box being cancelled? The box is not deleted — its record stays — so the reason needs to be on it.",
+    "cancelReasonPlaceholder": "e.g. created by mistake, wrong customer",
+    "cancelledBecause": "Cancelled: {{reason}}"
   },
   "pushAdmin": {
     "title": "Push Notification Center",

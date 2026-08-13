@@ -5984,7 +5984,11 @@
     "view": "查看详情",
     "details": "详情",
     "totalWithCommission": "总计（产品+佣金）",
-    "sellingPrice": "销售价格"
+    "sellingPrice": "销售价格",
+    "archivedHidden": "已隐藏 {{count}} 个完成的箱子",
+    "cancelBoxWhy": "为何取消此箱？箱子不会被删除 — 记录会保留 — 因此需要记录原因。",
+    "cancelReasonPlaceholder": "例如：误建、客户错误",
+    "cancelledBecause": "已取消：{{reason}}"
   },
   "pushAdmin": {
     "title": "推送通知中心",

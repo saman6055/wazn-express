@@ -28,6 +28,11 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** Statuses that mean a batch's work is over. */
 export const FINISHED_BATCH_STATUSES = ["delivered", "closed"] as const;
 
+/** Statuses that mean a delivery box is finished with — handed over, or
+ *  cancelled. A cancelled box is not deleted: the mistake is part of the
+ *  record. It just stops crowding the list once it is old. */
+export const FINISHED_BOX_STATUSES = ["delivered", "cancelled"] as const;
+
 export interface ArchivableRecord {
   status?: string | null;
   /**

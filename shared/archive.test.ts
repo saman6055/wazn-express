@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ARCHIVE_AFTER_DAYS,
   FINISHED_BATCH_STATUSES,
+  FINISHED_BOX_STATUSES,
   isArchived,
   isBatchArchived,
   partitionArchived,
@@ -68,5 +69,28 @@ describe("archiving", () => {
     expect(current.map((r) => r.id)).toEqual([1, 3]);
     expect(archived.map((r) => r.id)).toEqual([2, 4]);
     expect(current.length + archived.length).toBe(records.length);
+  });
+});
+
+describe("archiving delivery boxes", () => {
+  it("uses the same ten days as everything else", () => {
+    // The point of one shared rule: a box and a batch cannot disagree about
+    // what counts as old.
+    for (const status of FINISHED_BOX_STATUSES) {
+      expect(isArchived({ status, updatedAt: daysAgo(ARCHIVE_AFTER_DAYS + 1) }, FINISHED_BOX_STATUSES, NOW), status).toBe(true);
+      expect(isArchived({ status, updatedAt: daysAgo(ARCHIVE_AFTER_DAYS - 1) }, FINISHED_BOX_STATUSES, NOW), status).toBe(false);
+    }
+  });
+
+  it("counts a cancelled box as finished, not as live work", () => {
+    // A box cancelled by mistake is still a record of what happened. It stops
+    // crowding the list, it does not disappear.
+    expect(isArchived({ status: "cancelled", updatedAt: daysAgo(30) }, FINISHED_BOX_STATUSES, NOW)).toBe(true);
+  });
+
+  it("leaves a box that is still going", () => {
+    for (const status of ["open", "ready", "in_transit"]) {
+      expect(isArchived({ status, updatedAt: daysAgo(400) }, FINISHED_BOX_STATUSES, NOW), status).toBe(false);
+    }
   });
 });
