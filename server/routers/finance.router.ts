@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { explainFigure } from "@shared/financeExplain";
+import { explainFigure, explainCashOnHand } from "@shared/financeExplain";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -1510,7 +1510,7 @@ export const financeIntegrationRouter = router({
      */
     explainFigure: accountantProcedure
       .input(z.object({
-        figure: z.enum(['totalRevenue', 'totalExpenses', 'netProfit']),
+        figure: z.enum(['totalRevenue', 'totalExpenses', 'netProfit', 'cashOnHand']),
         period: z.enum(['today', 'week', 'month', 'year']).optional(),
       }))
       .query(async ({ input }) => {
@@ -1532,6 +1532,14 @@ export const financeIntegrationRouter = router({
           case 'month':
           default:
             startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+
+        // Cash is a balance, not a period figure: it is whatever is in the
+        // accounts right now, so it reads a different source and ignores the
+        // date range rather than pretending to honour it.
+        if (input.figure === 'cashOnHand') {
+          const summary = await db.getCashAccountsSummary();
+          return { ...explainCashOnHand(summary as never), startDate, endDate };
         }
 
         const stats = await db.getComprehensiveDashboardStats(startDate, endDate);

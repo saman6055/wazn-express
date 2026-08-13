@@ -7,6 +7,9 @@ import {
   explainTotalExpenses,
   explainTotalRevenue,
   sameMoney,
+  currenciesInPlay,
+  explainCashOnHand,
+  type CashSummaryLike,
   type DashboardStatsLike,
 } from "./financeExplain";
 
@@ -163,5 +166,114 @@ describe("net profit", () => {
 
   it("is reachable through the same entry point as the others", () => {
     expect(explainFigure("netProfit", stats())).toEqual(explanation);
+  });
+});
+
+describe("cash on hand", () => {
+  const summary = (over: Partial<CashSummaryLike> = {}): CashSummaryLike => ({
+    totalCash: 1500,
+    totalBank: 3200,
+    totalBalance: 4700,
+    accounts: [
+      { id: 1, accountName: "Main cash box", accountType: "cash", currency: "USD", currentBalance: "1500.00", isActive: true },
+      { id: 2, accountName: "FIB", accountType: "bank", currency: "USD", currentBalance: "3200.00", isActive: true },
+    ],
+    ...over,
+  });
+
+  it("names every account the money is sitting in", () => {
+    const explained = explainCashOnHand(summary());
+    expect(explained.components.map((c) => c.label.en)).toEqual([
+      "Main cash box (USD)",
+      "FIB (USD)",
+    ]);
+    expect(explained.reconciles).toBe(true);
+  });
+
+  it("puts the currency in the name, because the number alone says nothing", () => {
+    const explained = explainCashOnHand(summary());
+    for (const component of explained.components) {
+      expect(component.label.en, component.key).toMatch(/\((USD|IQD)\)$/);
+    }
+  });
+
+  it("warns when dollars and dinars have been added together", () => {
+    // The account form offers both and nothing anywhere converts, so one
+    // dinar account makes the headline meaningless — a million dinars reads
+    // as a million dollars.
+    const mixed = explainCashOnHand(summary({
+      totalBalance: 1001500,
+      accounts: [
+        { id: 1, accountName: "Cash box", currency: "USD", currentBalance: "1500.00", isActive: true },
+        { id: 2, accountName: "Dinar box", currency: "IQD", currentBalance: "1000000.00", isActive: true },
+      ],
+    }));
+    expect(mixed.caveat, "a mixed-currency total must say so").toBeTruthy();
+    expect(mixed.caveat!.en).toContain("without converting");
+    // It still reconciles: the arithmetic is faithful to what the page shows.
+    // The problem is the meaning, not the sum, and saying so is the point.
+    expect(mixed.reconciles).toBe(true);
+  });
+
+  it("says nothing about currency when there is only one", () => {
+    expect(explainCashOnHand(summary()).caveat).toBeUndefined();
+    expect(currenciesInPlay(summary())).toEqual(["USD"]);
+  });
+
+  it("treats a missing currency as dollars rather than a third currency", () => {
+    const noCurrency = summary({
+      accounts: [{ id: 1, accountName: "Old account", currentBalance: "100", isActive: true }],
+      totalBalance: 100,
+    });
+    expect(currenciesInPlay(noCurrency)).toEqual(["USD"]);
+    expect(explainCashOnHand(noCurrency).caveat).toBeUndefined();
+  });
+
+  it("ignores closed accounts, in the breakdown and in the currency check", () => {
+    const withClosed = summary({
+      accounts: [
+        { id: 1, accountName: "Cash box", currency: "USD", currentBalance: "1500.00", isActive: true },
+        { id: 2, accountName: "FIB", currency: "USD", currentBalance: "3200.00", isActive: true },
+        { id: 3, accountName: "Closed dinar box", currency: "IQD", currentBalance: "999.00", isActive: false },
+      ],
+    });
+    expect(explainCashOnHand(withClosed).components).toHaveLength(2);
+    // An account nobody uses any more must not raise a currency warning.
+    expect(currenciesInPlay(withClosed)).toEqual(["USD"]);
+    expect(explainCashOnHand(withClosed).caveat).toBeUndefined();
+  });
+
+  it("notices when the headline and the accounts disagree", () => {
+    // If the total ever stops matching the accounts behind it, that is a real
+    // problem and this is where it shows.
+    const wrong = explainCashOnHand(summary({ totalBalance: 9999 }));
+    expect(wrong.reconciles).toBe(false);
+  });
+
+  it("survives an account with no balance recorded", () => {
+    const empty = explainCashOnHand({
+      totalBalance: 0,
+      accounts: [{ id: 1, accountName: "New account", currency: "USD", currentBalance: null, isActive: true }],
+    });
+    expect(empty.components[0].value).toBe(0);
+    expect(empty.reconciles).toBe(true);
+  });
+
+  it("survives having no accounts at all", () => {
+    const none = explainCashOnHand({});
+    expect(none.components).toEqual([]);
+    expect(none.value).toBe(0);
+    expect(none.reconciles).toBe(true);
+    expect(none.caveat).toBeUndefined();
+  });
+
+  it("reads the balance however the driver hands it over", () => {
+    // Decimal columns arrive as strings.
+    const asNumbers = explainCashOnHand({
+      totalBalance: 250,
+      accounts: [{ id: 1, accountName: "A", currency: "USD", currentBalance: 250, isActive: true }],
+    });
+    expect(asNumbers.components[0].value).toBe(250);
+    expect(asNumbers.reconciles).toBe(true);
   });
 });

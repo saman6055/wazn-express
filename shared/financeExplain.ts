@@ -24,7 +24,8 @@
 export type FigureId =
   | "totalRevenue"
   | "totalExpenses"
-  | "netProfit";
+  | "netProfit"
+  | "cashOnHand";
 
 export interface Localised {
   ku: string;
@@ -270,20 +271,121 @@ export function explainNetProfit(stats: DashboardStatsLike): FigureExplanation {
   };
 }
 
-const EXPLAINERS: Record<FigureId, (stats: DashboardStatsLike) => FigureExplanation> = {
+/** The figures computed from the period stats. Cash is not one: it is a
+ *  balance read from the accounts, so it has its own explainer. */
+export type PeriodFigureId = Exclude<FigureId, "cashOnHand">;
+
+const EXPLAINERS: Record<PeriodFigureId, (stats: DashboardStatsLike) => FigureExplanation> = {
   totalRevenue: explainTotalRevenue,
   totalExpenses: explainTotalExpenses,
   netProfit: explainNetProfit,
 };
 
-export const EXPLAINABLE_FIGURES = Object.keys(EXPLAINERS) as FigureId[];
+export const EXPLAINABLE_FIGURES = Object.keys(EXPLAINERS) as PeriodFigureId[];
 
 /** Explain one figure from the very object the dashboard is rendering. */
-export function explainFigure(figure: FigureId, stats: DashboardStatsLike): FigureExplanation {
+export function explainFigure(figure: PeriodFigureId, stats: DashboardStatsLike): FigureExplanation {
   return EXPLAINERS[figure](stats);
 }
 
 /** Explain every figure — used by the tests to check they all reconcile. */
 export function explainAll(stats: DashboardStatsLike): FigureExplanation[] {
   return EXPLAINABLE_FIGURES.map((figure) => explainFigure(figure, stats));
+}
+
+/* ------------------------------------------------------------------ */
+/* Cash and bank                                                       */
+/* ------------------------------------------------------------------ */
+
+/** The shape returned by cashAccounts.getSummary. */
+export interface CashSummaryLike {
+  totalCash?: number;
+  totalBank?: number;
+  totalBalance?: number;
+  accounts?: Array<{
+    id: number;
+    accountName?: string | null;
+    accountType?: string | null;
+    currency?: string | null;
+    currentBalance?: string | number | null;
+    isActive?: boolean | null;
+  }>;
+}
+
+/**
+ * Dinars added to dollars.
+ *
+ * Every cash total in the system is a plain SUM over `currentBalance` with no
+ * grouping by currency and no conversion, while the account form offers both
+ * USD and IQD. One dinar account is therefore enough to make the headline
+ * meaningless — a million dinars reads as a million dollars.
+ *
+ * Rather than silently changing a figure the office may already be quoting,
+ * the breakdown names every account's currency and this says so plainly when
+ * more than one is in play.
+ */
+const CASH_MIXES_CURRENCIES: Localised = {
+  ku: "ئاگاداری: ئەم کۆیە حسابی دۆلار و دیناری تێکەڵ کردووە بەبێ گۆڕین — ژمارەکە بەراورد ناکرێت",
+  en: "Warning: this total adds dollar and dinar accounts together without converting — the figure is not comparable",
+  ar: "تحذير: هذا المجموع يجمع حسابات الدولار والدينار دون تحويل — الرقم غير قابل للمقارنة",
+  zh: "警告：此合计将美元和第纳尔账户相加而未换算 — 该数字不可比",
+};
+
+/** Distinct currencies across the accounts that make up a total. */
+export function currenciesInPlay(summary: CashSummaryLike): string[] {
+  const seen = new Set<string>();
+  for (const account of summary.accounts ?? []) {
+    if (account.isActive === false) continue;
+    seen.add((account.currency ?? "USD").toUpperCase());
+  }
+  return Array.from(seen).sort();
+}
+
+/**
+ * Where the money on hand is, account by account.
+ *
+ * Reads the same summary the Treasury page renders, so the panel and the card
+ * cannot disagree — and lists each account with its currency, which is the
+ * only way to see that a total spanning two of them is not a number.
+ */
+export function explainCashOnHand(summary: CashSummaryLike): FigureExplanation {
+  const accounts = (summary.accounts ?? []).filter((a) => a.isActive !== false);
+
+  const components: ExplainComponent[] = accounts.map((account) => {
+    const currency = (account.currency ?? "USD").toUpperCase();
+    const name = account.accountName || `#${account.id}`;
+    return {
+      key: String(account.id),
+      // The currency is part of the name here on purpose: a row reading
+      // "1,000,000" means nothing until you know which money it is.
+      label: {
+        ku: `${name} (${currency})`,
+        en: `${name} (${currency})`,
+        ar: `${name} (${currency})`,
+        zh: `${name}（${currency}）`,
+      },
+      value: n(account.currentBalance),
+      href: "/company/treasury",
+    };
+  });
+
+  const value = n(summary.totalBalance);
+  const componentTotal = components.reduce((sum, c) => sum + c.value, 0);
+  const currencies = currenciesInPlay(summary);
+
+  return {
+    figure: "cashOnHand",
+    label: { ku: "پارەی بەردەست", en: "Cash on hand", ar: "النقد المتاح", zh: "现有现金" },
+    value,
+    formula: {
+      ku: "باڵانسی هەموو حسابە چالاکەکان کۆکراوەتەوە — سندوق و بانک",
+      en: "The balance of every active account added together — cash and bank",
+      ar: "مجموع أرصدة كل الحسابات النشطة — النقد والبنك",
+      zh: "所有活跃账户余额之和 — 现金与银行",
+    },
+    components,
+    componentTotal,
+    reconciles: sameMoney(value, componentTotal),
+    caveat: currencies.length > 1 ? CASH_MIXES_CURRENCIES : undefined,
+  };
 }
