@@ -725,12 +725,77 @@ export const expensesRouter = router({
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        return db.updateExpense(id, data);
+        // Read it before the change: the daily summary is a running total, so
+        // reversing the old figure needs the old figure. Creating an expense
+        // added to that total and nothing ever took anything back out — edit
+        // 100 down to 50 and the day still counted 100, delete it and the day
+        // still counted it at all.
+        const before = await db.getExpenseById(id);
+        const updated = await db.updateExpense(id, data);
+
+        try {
+          if (before) {
+            const oldAmount = parseFloat(before.amountUsd);
+            const newAmount = parseFloat(updated.amountUsd);
+            const sameDay =
+              new Date(before.expenseDate).toDateString() ===
+              new Date(updated.expenseDate).toDateString();
+
+            if (sameDay) {
+              const delta = newAmount - oldAmount;
+              if (delta !== 0) {
+                await db.updateDailyFinancialSummary(updated.expenseDate, {
+                  addExpense: delta,
+                  expenseType: String(updated.categoryId ?? 'other'),
+                });
+              }
+            } else {
+              // Moved to another day: take it off the old one and put it on
+              // the new, or both days are wrong from here on.
+              await db.updateDailyFinancialSummary(before.expenseDate, {
+                addExpense: -oldAmount,
+                expenseType: String(before.categoryId ?? 'other'),
+              });
+              await db.updateDailyFinancialSummary(updated.expenseDate, {
+                addExpense: newAmount,
+                expenseType: String(updated.categoryId ?? 'other'),
+              });
+            }
+          }
+        } catch (e) {
+          appLogger.error('[Finance] Failed to adjust daily summary after expense edit', { error: e instanceof Error ? e.message : String(e) });
+        }
+
+        return updated;
       }),
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const expense = await db.getExpenseById(input.id);
         await db.deleteExpense(input.id);
+
+        // Take it back out of the day it was counted in.
+        if (expense) {
+          try {
+            await db.updateDailyFinancialSummary(expense.expenseDate, {
+              addExpense: -parseFloat(expense.amountUsd),
+              expenseType: String(expense.categoryId ?? 'other'),
+            });
+          } catch (e) {
+            appLogger.error('[Finance] Failed to adjust daily summary after expense delete', { error: e instanceof Error ? e.message : String(e) });
+          }
+
+          // Money leaving the books is worth a record of who took it out.
+          await db.createAuditLog({
+            userId: ctx.user.id,
+            userRole: ctx.user.role,
+            action: 'delete_expense',
+            entityType: 'expense',
+            entityId: input.id,
+            oldValues: expense,
+          });
+        }
+
         return { success: true };
       }),
 });

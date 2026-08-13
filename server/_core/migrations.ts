@@ -2457,6 +2457,69 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // history each time and discarding almost all of it.
   { name: "idx.packages_customer_batch", sql: "CREATE INDEX idx_packages_customer_batch ON packages (customerId, batchId)" },
 
+  // ---- expenseCategories: the table and the code described different tables
+  //
+  // CREATE TABLE above makes `name`, `nameKu`, `description`, `isActive`.
+  // The code inserts `nameEn`, `nameAr`, `icon`, `color`, `isRecurring` and
+  // `sortOrder`. So creating a category wrote columns that did not exist and
+  // omitted a NOT NULL one — it could not have worked, which is exactly what
+  // the expenses screen showed: no categories, and a form that did nothing.
+  //
+  // Additive and idempotent, so it repairs a table created either way.
+  { name: "expenseCategories.nameEn", sql: "ALTER TABLE expenseCategories ADD COLUMN nameEn VARCHAR(100)" },
+  { name: "expenseCategories.nameAr", sql: "ALTER TABLE expenseCategories ADD COLUMN nameAr VARCHAR(100)" },
+  { name: "expenseCategories.icon", sql: "ALTER TABLE expenseCategories ADD COLUMN icon VARCHAR(50)" },
+  { name: "expenseCategories.color", sql: "ALTER TABLE expenseCategories ADD COLUMN color VARCHAR(20)" },
+  { name: "expenseCategories.isRecurring", sql: "ALTER TABLE expenseCategories ADD COLUMN isRecurring BOOLEAN NOT NULL DEFAULT FALSE" },
+  { name: "expenseCategories.sortOrder", sql: "ALTER TABLE expenseCategories ADD COLUMN sortOrder INT NOT NULL DEFAULT 0" },
+  // The legacy `name` column is NOT NULL and nothing writes it any more, so
+  // every insert failed on it. Widened to accept nothing rather than dropped:
+  // a column that existing rows may still be read through is not worth
+  // removing for the sake of tidiness.
+  { name: "expenseCategories.name.nullable", sql: "ALTER TABLE expenseCategories MODIFY COLUMN name VARCHAR(100) NULL" },
+  // Backfill so rows written under either shape read correctly from both.
+  { name: "expenseCategories.backfill.nameEn", sql: "UPDATE expenseCategories SET nameEn = name WHERE (nameEn IS NULL OR nameEn = '') AND name IS NOT NULL" },
+
+  // ---- the categories this company actually spends money on
+  //
+  // The table shipped empty, so the expenses screen opened with nothing to
+  // file anything under and the first job was inventing fourteen categories
+  // by hand. These are the ones named by the office, plus the recurring bills
+  // every freight operation has.
+  //
+  // Each insert is guarded on its own name, so re-running adds nothing and a
+  // category the office later renames or deletes does not come back.
+  ...([
+    ["Fuel", "بەنزین", "وقود", "⛽", "amber", 0, 1],
+    ["Meals", "نانخواردن", "وجبات", "🍽️", "orange", 0, 2],
+    ["Supplies", "کەل و پەل", "مستلزمات", "📦", "blue", 0, 3],
+    ["Vehicle maintenance", "مەسارفی سەیارە", "صيانة المركبات", "🚗", "slate", 0, 4],
+    ["Rent", "کرێی بینا", "إيجار", "🏢", "violet", 1, 5],
+    ["Salaries", "موچەی فەرمانبەران", "رواتب", "👥", "green", 1, 6],
+    ["Freight charges", "کرێی گواستنەوە", "أجور الشحن", "✈️", "cyan", 0, 7],
+    ["Customs and duties", "گومرگ و باج", "جمارك ورسوم", "🛃", "red", 0, 8],
+    ["Electricity and water", "کارەبا و ئاو", "كهرباء وماء", "💡", "yellow", 1, 9],
+    ["Generator", "مۆلیدە", "مولدة", "🔌", "stone", 1, 10],
+    ["Internet and phone", "ئینتەرنێت و تەلەفۆن", "إنترنت وهاتف", "📶", "sky", 1, 11],
+    ["Repairs", "چاککردنەوە", "تصليحات", "🔧", "zinc", 0, 12],
+    ["Marketing", "بانگەشە", "تسويق", "📣", "pink", 0, 13],
+    ["Bank charges", "کرێی بانک", "رسوم بنكية", "🏦", "indigo", 0, 14],
+    ["Other", "هیتر", "أخرى", "•", "gray", 0, 99],
+  ].map(([en, ku, ar, icon, color, recurring, order]) => {
+    // Single quotes, not JSON's double ones: under ANSI_QUOTES a double-quoted
+    // literal is read as an identifier and the whole statement fails.
+    const q = (v: unknown) => `'${String(v).replace(/'/g, "''")}'`;
+    return {
+      name: `seed.expenseCategory.${String(en).toLowerCase().replace(/[^a-z]+/g, "_")}`,
+      sql:
+        `INSERT INTO expenseCategories (nameEn, nameKu, nameAr, icon, color, isRecurring, sortOrder, isActive) ` +
+        `SELECT ${q(en)}, ${q(ku)}, ${q(ar)}, ${q(icon)}, ${q(color)}, ${recurring}, ${order}, TRUE FROM DUAL ` +
+        // The derived table keeps MySQL happy about reading the table it is
+        // inserting into.
+        `WHERE NOT EXISTS (SELECT 1 FROM (SELECT nameEn FROM expenseCategories) c WHERE c.nameEn = ${q(en)})`,
+    };
+  })),
+
   {
     name: "batches.status.at_depot",
     sql: "ALTER TABLE batches MODIFY COLUMN status ENUM('preparing','in_transit','arrived','customs','at_depot','delivered','closed') NOT NULL DEFAULT 'preparing'",
