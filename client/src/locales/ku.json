@@ -2250,7 +2250,17 @@
     "debtAging": "تەمەنی قەرز",
     "aging0_30": "٠–٣٠ ڕۆژ",
     "aging30_60": "٣٠–٦٠ ڕۆژ",
-    "aging60Plus": "٦٠+ ڕۆژ"
+    "aging60Plus": "٦٠+ ڕۆژ",
+    "explainHint": "کلیک بکە بۆ بینینی سەرچاوەکانی ئەم ژمارەیە",
+    "explainTitle": "سەرچاوەی ژمارەکە",
+    "howItIsCalculated": "چۆن دەژمێردرێت",
+    "components": "پێکهاتەکان",
+    "noComponents": "هیچ پێکهاتەیەک نییە لەم ماوەیەدا",
+    "componentTotal": "کۆی پێکهاتەکان",
+    "reconciles": "کۆی پێکهاتەکان یەکسانە بە سەرەوە",
+    "doesNotReconcile": "ئاگاداری: پێکهاتەکان یەکسان نین لەگەڵ ژمارەی سەرەوە",
+    "copyExplanation": "کۆپیکردنی ڕوونکردنەوە",
+    "explanationCopied": "ڕوونکردنەوەکە کۆپی کرا"
   },
   "customerOptions": {
     "title": "ڕێکخستنەکانی کڕیار",

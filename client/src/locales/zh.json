@@ -2169,7 +2169,17 @@
     "debtAging": "账龄分析",
     "aging0_30": "0–30 天",
     "aging30_60": "30–60 天",
-    "aging60Plus": "60+ 天"
+    "aging60Plus": "60+ 天",
+    "explainHint": "点击查看此数字的来源",
+    "explainTitle": "此数字的来源",
+    "howItIsCalculated": "如何计算",
+    "components": "组成部分",
+    "noComponents": "本期没有任何贡献",
+    "componentTotal": "组成部分合计",
+    "reconciles": "各部分之和等于上方数字",
+    "doesNotReconcile": "警告：各部分之和与上方数字不符",
+    "copyExplanation": "复制说明",
+    "explanationCopied": "说明已复制"
   },
   "reports": {
     "title": "报告",

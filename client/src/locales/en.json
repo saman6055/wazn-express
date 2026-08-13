@@ -2230,7 +2230,17 @@
     "debtAging": "Debt aging",
     "aging0_30": "0–30 days",
     "aging30_60": "30–60 days",
-    "aging60Plus": "60+ days"
+    "aging60Plus": "60+ days",
+    "explainHint": "Click to see where this number comes from",
+    "explainTitle": "Where this number comes from",
+    "howItIsCalculated": "How it is calculated",
+    "components": "Components",
+    "noComponents": "Nothing contributed in this period",
+    "componentTotal": "Components total",
+    "reconciles": "The parts add up to the figure above",
+    "doesNotReconcile": "Warning: the parts do not add up to the figure above",
+    "copyExplanation": "Copy explanation",
+    "explanationCopied": "Explanation copied"
   },
   "companyFinance": {
     "dashboardTitle": "Company Finance Dashboard",

@@ -2230,7 +2230,17 @@
     "debtAging": "أعمار الديون",
     "aging0_30": "٠–٣٠ يوماً",
     "aging30_60": "٣٠–٦٠ يوماً",
-    "aging60Plus": "٦٠+ يوماً"
+    "aging60Plus": "٦٠+ يوماً",
+    "explainHint": "انقر لمعرفة مصدر هذا الرقم",
+    "explainTitle": "مصدر هذا الرقم",
+    "howItIsCalculated": "كيف يُحتسب",
+    "components": "المكونات",
+    "noComponents": "لا توجد مساهمات في هذه الفترة",
+    "componentTotal": "مجموع المكونات",
+    "reconciles": "مجموع الأجزاء يساوي الرقم أعلاه",
+    "doesNotReconcile": "تحذير: الأجزاء لا تساوي الرقم أعلاه",
+    "copyExplanation": "نسخ الشرح",
+    "explanationCopied": "تم نسخ الشرح"
   },
   "companyFinance": {
     "title": "مالية الشركة",

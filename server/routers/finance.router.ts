@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { explainFigure } from "@shared/financeExplain";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -1486,12 +1487,58 @@ export const financeIntegrationRouter = router({
         }
         
         const comprehensive = await db.getComprehensiveDashboardStats(startDate, endDate);
-        
+
         return {
           period: input?.period || 'month',
           startDate,
           endDate,
           ...comprehensive,
+        };
+      }),
+
+    /**
+     * Where one figure on the dashboard came from.
+     *
+     * Read-only, and deliberately derived from the same stats object the
+     * dashboard renders rather than re-querying. A second query would be a
+     * second answer, and the two would eventually disagree — which is the
+     * problem this is meant to solve, not a new one to introduce.
+     *
+     * The decomposition itself is a pure function in shared/, so it is tested
+     * without a database, including the rule that matters: the parts must add
+     * up to the whole.
+     */
+    explainFigure: accountantProcedure
+      .input(z.object({
+        figure: z.enum(['totalRevenue', 'totalExpenses', 'netProfit']),
+        period: z.enum(['today', 'week', 'month', 'year']).optional(),
+      }))
+      .query(async ({ input }) => {
+        const now = new Date();
+        let startDate: Date;
+        const endDate = now;
+
+        switch (input.period || 'month') {
+          case 'today':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            break;
+          case 'week':
+            startDate = new Date(now);
+            startDate.setDate(now.getDate() - 7);
+            break;
+          case 'year':
+            startDate = new Date(now.getFullYear(), 0, 1);
+            break;
+          case 'month':
+          default:
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+
+        const stats = await db.getComprehensiveDashboardStats(startDate, endDate);
+        return {
+          ...explainFigure(input.figure, stats as never),
+          startDate,
+          endDate,
         };
       }),
 });

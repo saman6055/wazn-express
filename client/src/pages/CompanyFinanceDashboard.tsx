@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
+import { ExplainableFigure } from "@/components/finance/ExplainableFigure";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -204,9 +205,12 @@ export default function CompanyFinanceDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">{t("companyFinance.totalRevenue") || "کۆی داهات"}</p>
-                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
-                        {isLoading ? '...' : formatCurrency(pl?.totalRevenue || 0)}
-                      </p>
+                      <ExplainableFigure
+                        figure="totalRevenue"
+                        period={period}
+                        className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1"
+                        value={isLoading ? '...' : formatCurrency(pl?.totalRevenue || 0)}
+                      />
                       <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-1">{getPeriodLabel(period)}</p>
                     </div>
                     <div className="p-3 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
@@ -223,9 +227,12 @@ export default function CompanyFinanceDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-red-600 dark:text-red-300">{t("companyFinance.totalExpenses") || "کۆی خەرجی"}</p>
-                      <p className="text-2xl font-bold text-red-700 dark:text-red-300 mt-1">
-                        {isLoading ? '...' : formatCurrency(pl?.totalExpenses || 0)}
-                      </p>
+                      <ExplainableFigure
+                        figure="totalExpenses"
+                        period={period}
+                        className="text-2xl font-bold text-red-700 dark:text-red-300 mt-1"
+                        value={isLoading ? '...' : formatCurrency(pl?.totalExpenses || 0)}
+                      />
                       <p className="text-xs text-red-500 dark:text-red-400 mt-1">{getPeriodLabel(period)}</p>
                     </div>
                     <div className="p-3 bg-red-100 dark:bg-red-950/40 rounded-xl">
@@ -244,9 +251,12 @@ export default function CompanyFinanceDashboard() {
                       <p className={`text-sm font-medium ${(pl?.netProfit || 0) >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
                         {t("companyFinance.netProfit") || "قازانجی خاوێن"}
                       </p>
-                      <p className={`text-2xl font-bold mt-1 ${(pl?.netProfit || 0) >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-orange-700 dark:text-orange-300'}`}>
-                        {isLoading ? '...' : formatCurrency(pl?.netProfit || 0)}
-                      </p>
+                      <ExplainableFigure
+                        figure="netProfit"
+                        period={period}
+                        className={`text-2xl font-bold mt-1 ${(pl?.netProfit || 0) >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-orange-700 dark:text-orange-300'}`}
+                        value={isLoading ? '...' : formatCurrency(pl?.netProfit || 0)}
+                      />
                       <div className="flex items-center gap-1 mt-1">
                         {(pl?.netProfit || 0) >= 0 ? (
                           <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-xs">
