@@ -39,8 +39,11 @@ export function ScrollButtons() {
   const btn =
     "h-9 w-9 rounded-full bg-white/90 dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700 shadow-md backdrop-blur flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors disabled:opacity-30 disabled:pointer-events-none";
 
+  // `end-2`, not a fixed left: the sidebar sits at the start of the reading
+  // direction and moves with it, so a hardcoded left parked these on top of
+  // it the moment anyone switched to English.
   return (
-    <div className="fixed left-2 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2 print:hidden">
+    <div className="fixed end-2 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2 print:hidden">
       <button onClick={up} disabled={atTop} aria-label="Scroll up" className={btn}>
         <ChevronUp className="h-5 w-5" />
       </button>

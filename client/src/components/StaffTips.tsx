@@ -5,8 +5,13 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Lightbulb, X, ChevronDown, ChevronUp } from "lucide-react";
 import { STAFF_TIPS, MOTIVATION_MESSAGES, type TipLang } from "@/constants/staffTips";
 
-// A "tip of the day" card (bottom-left) that teaches good system use, plus a
+// A "tip of the day" card that teaches good system use, plus a
 // delightful, one-time motivation celebration 10 minutes into the session.
+//
+// It sits in the bottom corner the reader's language ends at — `end-4`, not
+// `left-4`. The sidebar follows the reading direction too, so a hardcoded
+// left put the card underneath the sidebar the moment anyone switched to
+// English, where it was clipped by the screen edge.
 //
 // Timing is deliberately UN-intrusive: a tip greets the staff member on each
 // app (re)load, but NOT again while they're actively working. It only goes quiet
@@ -237,7 +242,7 @@ export function StaffTips() {
           }}
           title={labels.tip}
           aria-label={labels.tip}
-          className="fixed bottom-4 left-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg hover:bg-amber-600 transition-colors"
+          className="fixed bottom-4 end-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg hover:bg-amber-600 transition-colors"
         >
           <Lightbulb className="h-5 w-5" />
         </button>
@@ -257,7 +262,7 @@ export function StaffTips() {
       {overlay}
       <div
         dir={isRTL ? "rtl" : "ltr"}
-        className="fixed bottom-4 left-4 z-40 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-amber-200 dark:border-amber-900/50 bg-white dark:bg-gray-900 shadow-lg"
+        className="fixed bottom-4 end-4 z-40 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-amber-200 dark:border-amber-900/50 bg-white dark:bg-gray-900 shadow-lg"
       >
         <div className="flex items-center gap-2 border-b border-amber-100 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 rounded-t-xl">
           <Lightbulb className="h-4 w-4 text-amber-500 dark:text-amber-400" />
