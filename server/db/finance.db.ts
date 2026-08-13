@@ -2277,7 +2277,21 @@ export async function getAllCashTransactions(filters?: {
   return await query;
 }
 
-export async function createCashTransaction(data: Omit<InsertCashTransaction, 'balanceBefore' | 'balanceAfter'>): Promise<CashTransaction> {
+export async function createCashTransaction(
+  data: Omit<InsertCashTransaction, 'balanceBefore' | 'balanceAfter'>,
+  options: {
+    /**
+     * Let the balance go negative instead of refusing the movement.
+     *
+     * For money the operator is *instructing* — a withdrawal, a transfer —
+     * refusing is right: the money is not there. For money that has already
+     * left, refusing does not put it back; it only stops us recording what
+     * happened, and then the books disagree with the world for a different
+     * reason. An expense is the second kind.
+     */
+    allowOverdraft?: boolean;
+  } = {}
+): Promise<CashTransaction> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -2294,7 +2308,7 @@ export async function createCashTransaction(data: Omit<InsertCashTransaction, 'b
     let newBalance = currentBalance;
 
     const debitTypes = ['withdrawal', 'transfer_out', 'expense', 'debt_payment', 'partner_withdrawal'];
-    if (debitTypes.includes(data.transactionType)) {
+    if (debitTypes.includes(data.transactionType) && !options.allowOverdraft) {
       if (currentBalance < amountNum) {
         throw new Error(
           `Insufficient balance in cash account ${data.accountId}: balance ${currentBalance}, attempted ${data.amount}`
@@ -3494,3 +3508,111 @@ export async function updateAccountBreakdown(accountId: number): Promise<void> {
     .where(eq(customerAccounts.id, accountId));
 }
 
+
+// ============ EXPENSES ↔ CASH ============
+
+/**
+ * Move the money an expense actually spent.
+ *
+ * The expenses screen has always asked which account paid, stored the answer,
+ * and done nothing with it — so the Treasury went on showing money that had
+ * already left the building. Everything needed was already here: a cash
+ * transaction type of `expense`, a `relatedEntityType`/`relatedEntityId` pair
+ * to tie it back, and a balance update that locks the account row. Only the
+ * call was missing.
+ *
+ * Overdraft is allowed on purpose. The money is already gone; refusing to
+ * record it would not bring it back, and would leave the books wrong in a way
+ * nobody can see. A negative balance is visible and can be investigated.
+ */
+export async function recordExpenseCashMovement(params: {
+  expenseId: number;
+  accountId: number;
+  amountUsd: string;
+  expenseDate: Date;
+  description?: string | null;
+  createdById: number;
+}): Promise<{ newBalance: number; wentNegative: boolean }> {
+  const transaction = await createCashTransaction(
+    {
+      accountId: params.accountId,
+      transactionType: 'expense',
+      amount: params.amountUsd,
+      relatedEntityType: 'expense',
+      relatedEntityId: params.expenseId,
+      description: params.description ?? null,
+      transactionDate: params.expenseDate,
+      createdById: params.createdById,
+    },
+    { allowOverdraft: true }
+  );
+
+  const newBalance = Number(transaction.balanceAfter);
+  return { newBalance, wentNegative: newBalance < 0 };
+}
+
+/** Every cash movement recorded against one expense. */
+export async function getExpenseCashMovements(expenseId: number): Promise<CashTransaction[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(cashTransactions)
+    .where(
+      and(
+        eq(cashTransactions.relatedEntityType, 'expense'),
+        eq(cashTransactions.relatedEntityId, expenseId)
+      )
+    )
+    .orderBy(cashTransactions.id);
+}
+
+/**
+ * Undo an expense's effect on the cash balance.
+ *
+ * Posts an opposing entry rather than deleting the original. The running
+ * `balanceBefore`/`balanceAfter` on every later row was computed against the
+ * original, so removing it would leave every statement after it describing a
+ * balance the account never had. A reversal leaves the history readable: the
+ * money went out, then it came back.
+ *
+ * Reverses the net of whatever is currently recorded, so it is safe to call
+ * on an expense that has already been reversed — the net is then zero and
+ * nothing is posted.
+ */
+export async function reverseExpenseCashMovement(params: {
+  expenseId: number;
+  createdById: number;
+  reason: string;
+}): Promise<void> {
+  const movements = await getExpenseCashMovements(params.expenseId);
+  if (movements.length === 0) return;
+
+  // Group by account: an edited expense may have been paid from one account
+  // and then re-pointed at another.
+  const netByAccount = new Map<number, number>();
+  for (const movement of movements) {
+    const signed = movement.transactionType === 'expense'
+      ? -Number(movement.amount)
+      : Number(movement.amount);
+    netByAccount.set(movement.accountId, (netByAccount.get(movement.accountId) ?? 0) + signed);
+  }
+
+  for (const [accountId, net] of Array.from(netByAccount.entries())) {
+    // net is negative when money is still out. Put back exactly that much.
+    if (net === 0) continue;
+    await createCashTransaction(
+      {
+        accountId,
+        transactionType: 'adjustment',
+        amount: Math.abs(net).toFixed(2),
+        relatedEntityType: 'expense',
+        relatedEntityId: params.expenseId,
+        description: params.reason,
+        transactionDate: new Date(),
+        createdById: params.createdById,
+      },
+      { allowOverdraft: true }
+    );
+  }
+}

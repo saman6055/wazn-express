@@ -673,7 +673,33 @@ export const expensesRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const expense = await db.createExpense({ ...input, createdById: ctx.user.id });
-        
+
+        // Take the money out of the account that paid it. The screen has
+        // always asked which account, stored the answer and done nothing with
+        // it, so the Treasury went on showing money that had already left.
+        let cashWarning: string | null = null;
+        if (input.cashAccountId) {
+          try {
+            const { wentNegative, newBalance } = await db.recordExpenseCashMovement({
+              expenseId: expense.id,
+              accountId: input.cashAccountId,
+              amountUsd: input.amountUsd,
+              expenseDate: input.expenseDate,
+              description: input.description ?? input.vendor ?? null,
+              createdById: ctx.user.id,
+            });
+            // Recorded either way — the money is already gone, and refusing to
+            // write it down would not bring it back. But a negative balance
+            // means something is wrong and somebody should look.
+            if (wentNegative) {
+              cashWarning = `باڵانسی حساب بووە ${newBalance.toFixed(2)} — لە سفر کەمترە`;
+            }
+          } catch (e) {
+            appLogger.error('[Finance] Expense recorded but cash movement failed', { expenseId: expense.id, error: e instanceof Error ? e.message : String(e) });
+            cashWarning = 'خەرجییەکە تۆمارکرا بەڵام پارەکە لە حسابەکە کەم نەکرایەوە';
+          }
+        }
+
         // Update daily financial summary with expense
         try {
           await db.updateDailyFinancialSummary(input.expenseDate, { addExpense: parseFloat(input.amountUsd), expenseType: input.categoryId?.toString() || 'other' });
@@ -701,8 +727,10 @@ export const expensesRouter = router({
         } catch (e) {
           appLogger.error('[ExpenseAlert] Failed to check thresholds', { error: e instanceof Error ? e.message : String(e) });
         }
-        
-        return expense;
+
+        // The warning travels back with the expense so the screen can say so.
+        // The expense itself is saved either way.
+        return { ...expense, cashWarning };
       }),
     update: accountantProcedure
       .input(z.object({
@@ -723,7 +751,7 @@ export const expensesRouter = router({
         referenceNumber: z.string().optional(),
         notes: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
         // Read it before the change: the daily summary is a running total, so
         // reversing the old figure needs the old figure. Creating an expense
@@ -732,6 +760,39 @@ export const expensesRouter = router({
         // still counted it at all.
         const before = await db.getExpenseById(id);
         const updated = await db.updateExpense(id, data);
+
+        // If the amount, the date or the paying account moved, the cash
+        // movement has to move with it. Reversing then re-posting rather than
+        // editing the old row: the running balance on every later statement
+        // line was computed against the original, and rewriting it would
+        // leave them all describing a balance the account never had.
+        try {
+          const amountChanged = before && before.amountUsd !== updated.amountUsd;
+          const accountChanged = before && before.cashAccountId !== updated.cashAccountId;
+          const dateChanged =
+            before &&
+            new Date(before.expenseDate).getTime() !== new Date(updated.expenseDate).getTime();
+
+          if (before && (amountChanged || accountChanged || dateChanged)) {
+            await db.reverseExpenseCashMovement({
+              expenseId: id,
+              createdById: ctx.user.id,
+              reason: `ڕاستکردنەوەی خەرجی #${id}`,
+            });
+            if (updated.cashAccountId) {
+              await db.recordExpenseCashMovement({
+                expenseId: id,
+                accountId: updated.cashAccountId,
+                amountUsd: updated.amountUsd,
+                expenseDate: updated.expenseDate,
+                description: updated.description ?? updated.vendor ?? null,
+                createdById: ctx.user.id,
+              });
+            }
+          }
+        } catch (e) {
+          appLogger.error('[Finance] Failed to adjust cash after expense edit', { expenseId: id, error: e instanceof Error ? e.message : String(e) });
+        }
 
         try {
           if (before) {
@@ -772,6 +833,21 @@ export const expensesRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input, ctx }) => {
         const expense = await db.getExpenseById(input.id);
+
+        // Put the money back before the expense is gone — after it, there is
+        // nothing left to say what should be reversed or why.
+        if (expense?.cashAccountId) {
+          try {
+            await db.reverseExpenseCashMovement({
+              expenseId: input.id,
+              createdById: ctx.user.id,
+              reason: `سڕینەوەی خەرجی #${input.id}`,
+            });
+          } catch (e) {
+            appLogger.error('[Finance] Failed to return cash after expense delete', { expenseId: input.id, error: e instanceof Error ? e.message : String(e) });
+          }
+        }
+
         await db.deleteExpense(input.id);
 
         // Take it back out of the day it was counted in.
