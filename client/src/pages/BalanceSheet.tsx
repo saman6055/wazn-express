@@ -35,7 +35,14 @@ const [selectedDate, setSelectedDate] = useState(() => {
   const { data: cashAccounts } = trpc.cashAccounts?.list?.useQuery() || { data: [] };
 
   // Calculate totals
-  const totalCash = (cashAccounts as any[] || []).reduce((sum: number, acc: any) => sum + parseFloat(acc.balance || '0'), 0);
+  // `acc.balance` is not a column. The account row carries `currentBalance`,
+  // so this read `parseFloat(undefined || '0')` for every account and the
+  // page reported the company held no cash at all, however much was in the
+  // Treasury.
+  const totalCash = (cashAccounts as any[] || []).reduce(
+    (sum: number, acc: any) => sum + parseFloat(acc.currentBalance ?? '0'),
+    0
+  );
   const totalReceivables = (dashboardStats as any)?.profitLoss?.netProfit || 0; // Money owed to us (approximation)
   const totalPayables = 0; // Money we owe (would come from supplier debts)
   
