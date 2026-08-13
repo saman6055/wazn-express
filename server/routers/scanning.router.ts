@@ -1407,6 +1407,55 @@ export const deliveryBoxRouter = router({
       return cancelled;
     }),
 
+  /**
+   * Delete a box outright, into the recycle bin.
+   *
+   * Cancelling keeps the box and records why; this is for the other case —
+   * a box created by mistake that should never have existed at all. A
+   * delivered box is refused: it was handed over and charged, so it is a
+   * record rather than a mistake, and cancelling is what that case has.
+   *
+   * Nothing financial points at a box — only its own items do — so the box
+   * and its items go to the bin together and can be put back as one.
+   */
+  delete: adminProcedure
+    .input(z.object({ id: z.number(), reason: z.string().trim().max(500).optional() }))
+    .mutation(async ({ input, ctx }) => {
+      const box = await db.getDeliveryBoxById(input.id);
+      if (!box) throw new TRPCError({ code: "NOT_FOUND" });
+      if (box.status === 'delivered') {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "بۆکسی گەیەنراو ناسڕدرێتەوە — گەیەنراوە و حسابی بۆ کراوە. هەڵیبوەشێنەرەوە لەبری ئەوە",
+        });
+      }
+
+      // Written before the row goes, so a deletion made in error can be
+      // undone. If this fails, nothing is deleted.
+      const items = await db.getBoxItems(input.id);
+      await db.recordDeletion({
+        entityType: "delivery_box",
+        entityId: box.id,
+        label: box.boxCode,
+        snapshot: { ...box, items } as unknown as Record<string, unknown>,
+        deletedById: ctx.user.id,
+        deletedByName: ctx.user.name ?? null,
+        deletionReason: input.reason ?? null,
+      });
+
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "delete_delivery_box",
+        entityType: "delivery_box",
+        entityId: box.id,
+        oldValues: box,
+      });
+
+      await db.deleteDeliveryBoxWithItems(input.id);
+      return { success: true, boxCode: box.boxCode, itemCount: items.length };
+    }),
+
   // Profit report
   profitReport: accountantProcedure
     .input(z.object({

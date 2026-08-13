@@ -5988,7 +5988,10 @@
     "archivedHidden": "已隐藏 {{count}} 个完成的箱子",
     "cancelBoxWhy": "为何取消此箱？箱子不会被删除 — 记录会保留 — 因此需要记录原因。",
     "cancelReasonPlaceholder": "例如：误建、客户错误",
-    "cancelledBecause": "已取消：{{reason}}"
+    "cancelledBecause": "已取消：{{reason}}",
+    "deleteBox": "删除箱子",
+    "deleteBoxConfirm": "此箱及其中所有内容将移入回收站，可从那里恢复。",
+    "toastBoxDeleted": "箱子「{{code}}」已移入回收站"
   },
   "pushAdmin": {
     "title": "推送通知中心",

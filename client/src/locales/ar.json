@@ -6001,7 +6001,10 @@
     "archivedHidden": "{{count}} صناديق منتهية مخفية",
     "cancelBoxWhy": "لماذا يتم إلغاء هذا الصندوق؟ لن يُحذف الصندوق — يبقى سجله — لذا يجب تسجيل السبب.",
     "cancelReasonPlaceholder": "مثال: أُنشئ بالخطأ، عميل خاطئ",
-    "cancelledBecause": "أُلغي: {{reason}}"
+    "cancelledBecause": "أُلغي: {{reason}}",
+    "deleteBox": "حذف الصندوق",
+    "deleteBoxConfirm": "سينتقل هذا الصندوق وكل ما فيه إلى سلة المحذوفات. يمكنك استعادته من هناك.",
+    "toastBoxDeleted": "تم نقل الصندوق «{{code}}» إلى السلة"
   },
   "pushAdmin": {
     "title": "مركز إرسال الإشعارات",

@@ -5926,7 +5926,10 @@
     "archivedHidden": "{{count}} finished boxes hidden",
     "cancelBoxWhy": "Why is this box being cancelled? The box is not deleted — its record stays — so the reason needs to be on it.",
     "cancelReasonPlaceholder": "e.g. created by mistake, wrong customer",
-    "cancelledBecause": "Cancelled: {{reason}}"
+    "cancelledBecause": "Cancelled: {{reason}}",
+    "deleteBox": "Delete box",
+    "deleteBoxConfirm": "This box and everything in it goes to the recycle bin. You can restore it from there.",
+    "toastBoxDeleted": "Box \"{{code}}\" moved to the bin"
   },
   "pushAdmin": {
     "title": "Push Notification Center",

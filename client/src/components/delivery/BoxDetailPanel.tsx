@@ -121,6 +121,9 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // record — so without a reason the row says only that something went wrong.
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  // Deleting is the other case: a box that should never have existed at all,
+  // rather than one that existed and was called off.
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [scanInput, setScanInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -197,6 +200,15 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       toast.success(t("delivery.toastBoxDelivered"));
       soundManager.playComplete();
       refetchBox();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const deleteBox = trpc.deliveryBox.delete.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(t("delivery.toastBoxDeleted", { code: data?.boxCode ?? "" }));
+      utils.deliveryBox.list.invalidate();
+      onClose();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -315,6 +327,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const isOpen = status === "open";
   const isReady = status === "ready";
   const isInTransit = status === "in_transit";
+  // A delivered box was handed over and charged — a record, not a mistake.
+  const isDelivered = status === "delivered";
   const statusCfg = STATUS_CONFIG[status] || STATUS_CONFIG.open;
 
   // Sea (دەریایی) batches are billed by CBM, not weight — the measurement
@@ -759,6 +773,40 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
               {t("delivery.cancelBox")}
             </Button>
           )}
+
+          {!isDelivered && (
+            <Button variant="outline" onClick={() => setDeleteOpen(true)} disabled={deleteBox.isPending}>
+              {deleteBox.isPending ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Trash2 className="h-4 w-4 me-1 text-red-500 dark:text-red-400" />}
+              {t("delivery.deleteBox")}
+            </Button>
+          )}
+
+          <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <Trash2 className="h-5 w-5 text-red-500 dark:text-red-400" />
+                  {t("delivery.deleteBox")}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("delivery.deleteBoxConfirm")}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700"
+                  disabled={deleteBox.isPending}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    deleteBox.mutate({ id: boxId }, { onSuccess: () => setDeleteOpen(false) });
+                  }}
+                >
+                  {deleteBox.isPending ? "..." : t("forms.delete")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
             <AlertDialogContent>
