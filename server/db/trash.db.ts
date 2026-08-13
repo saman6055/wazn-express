@@ -1,6 +1,6 @@
 import { getDb } from "./connection";
 import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
-import { batches, deletedRecords, fullPackageOrders, users } from "../../drizzle/schema";
+import { batches, deletedRecords, deliveryBoxItems, deliveryBoxes, fullPackageOrders, users } from "../../drizzle/schema";
 import type { InsertDeletedRecord } from "../../drizzle/schema";
 import type { TrashItem } from "@shared/trash";
 
@@ -34,6 +34,7 @@ export async function listTrash(): Promise<TrashItem[]> {
       orderCode: fullPackageOrders.orderCode,
       deletedAt: fullPackageOrders.deletedAt,
       deletionReason: fullPackageOrders.deletionReason,
+      deletedById: fullPackageOrders.deletedById,
       deletedByName: users.name,
     })
     .from(fullPackageOrders)
@@ -48,6 +49,7 @@ export async function listTrash(): Promise<TrashItem[]> {
       entityId: r.entityId,
       label: r.label,
       deletedAt: r.deletedAt,
+      deletedById: r.deletedById,
       deletedByName: r.deletedByName,
       deletionReason: r.deletionReason,
     })),
@@ -57,6 +59,7 @@ export async function listTrash(): Promise<TrashItem[]> {
       entityId: o.id,
       label: o.orderCode ?? `#${o.id}`,
       deletedAt: o.deletedAt!,
+      deletedById: o.deletedById,
       deletedByName: o.deletedByName,
       deletionReason: o.deletionReason,
     })),
@@ -152,4 +155,63 @@ export async function purgeFullPackageOrder(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(fullPackageOrders).where(and(eq(fullPackageOrders.id, id), isNotNull(fullPackageOrders.deletedAt)));
+}
+
+// ============ DELIVERY BOXES ↔ TRASH ============
+
+/**
+ * Delete a box and the items inside it, returning what was there.
+ *
+ * The items are snapshots of what was scanned in, not the parcels
+ * themselves — nothing else in the system points at a box, and no invoice or
+ * ledger entry references one — so a box that was never delivered can be
+ * removed cleanly. The rows come back so the bin can put them all back.
+ */
+export async function deleteDeliveryBoxWithItems(
+  boxId: number
+): Promise<Record<string, unknown>[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const items = await db.select().from(deliveryBoxItems).where(eq(deliveryBoxItems.boxId, boxId));
+  await db.delete(deliveryBoxItems).where(eq(deliveryBoxItems.boxId, boxId));
+  await db.delete(deliveryBoxes).where(eq(deliveryBoxes.id, boxId));
+  return items as unknown as Record<string, unknown>[];
+}
+
+/** Is a box with this id already back? Guards a double restore. */
+export async function deliveryBoxExists(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const [row] = await db.select({ id: deliveryBoxes.id }).from(deliveryBoxes).where(eq(deliveryBoxes.id, id)).limit(1);
+  return !!row;
+}
+
+/** Is a box code free? Checked before restoring — it may have been reused. */
+export async function isBoxCodeFree(boxCode: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const [row] = await db.select({ id: deliveryBoxes.id }).from(deliveryBoxes).where(eq(deliveryBoxes.boxCode, boxCode)).limit(1);
+  return !row;
+}
+
+/** Put a box and its items back, with the ids they had. */
+export async function restoreDeliveryBoxFromSnapshot(
+  box: Record<string, unknown>,
+  items: Record<string, unknown>[]
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const dates = ["createdAt", "updatedAt", "deliveredAt", "cancelledAt", "readyAt", "customerConfirmedAt"];
+  const revive = (row: Record<string, unknown>) => {
+    const out = { ...row };
+    for (const key of dates) if (out[key]) out[key] = new Date(out[key] as string);
+    return out;
+  };
+
+  await db.insert(deliveryBoxes).values(revive(box) as any);
+  if (items.length > 0) {
+    await db.insert(deliveryBoxItems).values(items.map(revive) as any);
+  }
 }

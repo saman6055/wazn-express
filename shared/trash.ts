@@ -15,7 +15,7 @@
  * trying to undo a mistake.
  */
 
-export type TrashEntityType = "batch" | "full_package_order";
+export type TrashEntityType = "batch" | "full_package_order" | "delivery_box";
 
 export interface TrashEntityDefinition {
   type: TrashEntityType;
@@ -35,6 +35,14 @@ export const TRASH_ENTITIES: readonly TrashEntityDefinition[] = [
     label: "Batch",
     labelAr: "دفعة",
     labelZh: "批次",
+  },
+  {
+    type: "delivery_box",
+    storage: "snapshot",
+    labelKu: "بۆکسی گەیاندن",
+    label: "Delivery box",
+    labelAr: "صندوق تسليم",
+    labelZh: "配送箱",
   },
   {
     type: "full_package_order",
@@ -58,8 +66,26 @@ export interface TrashItem {
   entityId: number;
   label: string;
   deletedAt: Date | string;
+  /** Who deleted it. An admin sees only their own; a super admin sees all. */
+  deletedById?: number | null;
   deletedByName?: string | null;
   deletionReason?: string | null;
+}
+
+/**
+ * Whose deletions a person may see.
+ *
+ * An admin gets their own back — that is what the bin is for, undoing your
+ * own mistake. Seeing the whole company's deletions is a supervisory view,
+ * not an operational one, so it belongs to the super admin. Written here so
+ * the list, the restore and the purge cannot each answer it differently.
+ */
+export function canSeeTrashItem(
+  item: { deletedById?: number | null },
+  viewer: { id: number; role?: string | null }
+): boolean {
+  if (viewer.role === "super_admin") return true;
+  return item.deletedById === viewer.id;
 }
 
 /**

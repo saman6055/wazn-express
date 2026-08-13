@@ -3,10 +3,10 @@ import { TRPCError } from "@trpc/server";
 import { router } from "../_core/trpc";
 import { staffProcedure, adminProcedure } from "../middleware/auth";
 import * as db from "../db";
-import { RESTORE_BLOCKED_MESSAGE, type RestoreBlockedReason } from "@shared/trash";
+import { RESTORE_BLOCKED_MESSAGE, canSeeTrashItem, type RestoreBlockedReason } from "@shared/trash";
 
 const idSchema = z.number().int().positive();
-const entityTypeSchema = z.enum(["batch", "full_package_order"]);
+const entityTypeSchema = z.enum(["batch", "full_package_order", "delivery_box"]);
 
 /** Refuse a restore with the reason spelled out, in the reader's language. */
 function blocked(reason: RestoreBlockedReason): never {
@@ -27,13 +27,49 @@ function blocked(reason: RestoreBlockedReason): never {
  * later.
  */
 export const trashRouter = router({
-    list: staffProcedure.query(async () => {
-      return db.listTrash();
+    list: staffProcedure.query(async ({ ctx }) => {
+      // An admin gets their own deletions back — that is what the bin is
+      // for. Seeing the whole company's is a supervisory view, so it belongs
+      // to the super admin.
+      const all = await db.listTrash();
+      return all.filter((item) => canSeeTrashItem(item, ctx.user));
     }),
+
 
     restore: staffProcedure
       .input(z.object({ entityType: entityTypeSchema, entityId: idSchema }))
       .mutation(async ({ input, ctx }) => {
+        // Not visible, not restorable. Otherwise knowing an id would be
+        // enough to reach into somebody else's deletions.
+        const visible = (await db.listTrash()).find(
+          (item) => item.entityType === input.entityType && item.entityId === input.entityId
+        );
+        if (!visible || !canSeeTrashItem(visible, ctx.user)) blocked("already_present");
+
+        if (input.entityType === "delivery_box") {
+          const entry = await db.getDeletedRecord("delivery_box", input.entityId);
+          if (!entry) blocked("already_present");
+          if (await db.deliveryBoxExists(input.entityId)) blocked("already_present");
+
+          const snapshot = entry!.snapshot as { items?: Record<string, unknown>[] } & Record<string, unknown>;
+          const { items, ...boxRow } = snapshot;
+          const code = String(boxRow.boxCode ?? "");
+          if (code && !(await db.isBoxCodeFree(code))) blocked("label_taken");
+
+          await db.restoreDeliveryBoxFromSnapshot(boxRow, Array.isArray(items) ? items : []);
+          await db.removeDeletedRecord("delivery_box", input.entityId);
+
+          await db.createAuditLog({
+            userId: ctx.user.id,
+            userRole: ctx.user.role,
+            action: "restore_delivery_box",
+            entityType: "delivery_box",
+            entityId: input.entityId,
+            newValues: boxRow,
+          });
+          return { success: true, label: code };
+        }
+
         if (input.entityType === "batch") {
           const entry = await db.getDeletedRecord("batch", input.entityId);
           if (!entry) blocked("already_present");
@@ -103,6 +139,13 @@ export const trashRouter = router({
     purge: adminProcedure
       .input(z.object({ entityType: entityTypeSchema, entityId: idSchema }))
       .mutation(async ({ input, ctx }) => {
+        const visible = (await db.listTrash()).find(
+          (item) => item.entityType === input.entityType && item.entityId === input.entityId
+        );
+        if (!visible || !canSeeTrashItem(visible, ctx.user)) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "لە سەبەتەکەدا نییە" });
+        }
+
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
@@ -111,10 +154,10 @@ export const trashRouter = router({
           entityId: input.entityId,
         });
 
-        if (input.entityType === "batch") {
-          const entry = await db.getDeletedRecord("batch", input.entityId);
+        if (input.entityType === "batch" || input.entityType === "delivery_box") {
+          const entry = await db.getDeletedRecord(input.entityType, input.entityId);
           if (!entry) throw new TRPCError({ code: "NOT_FOUND", message: "لە سەبەتەکەدا نییە" });
-          await db.removeDeletedRecord("batch", input.entityId);
+          await db.removeDeletedRecord(input.entityType, input.entityId);
           return { success: true };
         }
 
