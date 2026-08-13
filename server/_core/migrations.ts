@@ -2457,6 +2457,12 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // history each time and discarding almost all of it.
   { name: "idx.packages_customer_batch", sql: "CREATE INDEX idx_packages_customer_batch ON packages (customerId, batchId)" },
 
+  // A cancelled delivery box keeps the record of what happened, so it needs
+  // to say why — otherwise the row reports only that something went wrong.
+  { name: "deliveryBoxes.cancellationReason", sql: "ALTER TABLE deliveryBoxes ADD COLUMN cancellationReason TEXT NULL" },
+  { name: "deliveryBoxes.cancelledById", sql: "ALTER TABLE deliveryBoxes ADD COLUMN cancelledById INT NULL" },
+  { name: "deliveryBoxes.cancelledAt", sql: "ALTER TABLE deliveryBoxes ADD COLUMN cancelledAt TIMESTAMP NULL" },
+
   // ---- where the work was done
   //
   // Some customers' goods never reach the China warehouse: they arrive in

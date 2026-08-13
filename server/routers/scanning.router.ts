@@ -1376,12 +1376,35 @@ export const deliveryBoxRouter = router({
 
   // Cancel a box
   cancel: staffProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    // A reason is required, not optional. The box is not deleted — the
+    // mistake stays in the record — so without one the row reports that
+    // something went wrong and never what, which is the state this whole
+    // change exists to fix.
+    .input(z.object({ id: z.number(), reason: z.string().trim().min(3).max(500) }))
+    .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) throw new TRPCError({ code: "NOT_FOUND" });
       if (box.status === 'delivered') throw new TRPCError({ code: "BAD_REQUEST", message: "بۆکسی گەیاندراو هەڵناوەشێنرێتەوە" });
-      return db.updateDeliveryBox(input.id, { status: 'cancelled' });
+      if (box.status === 'cancelled') throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم بۆکسە پێشتر هەڵوەشێنراوەتەوە" });
+
+      const cancelled = await db.updateDeliveryBox(input.id, {
+        status: 'cancelled',
+        cancellationReason: input.reason,
+        cancelledById: ctx.user.id,
+        cancelledAt: new Date(),
+      });
+
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "cancel_delivery_box",
+        entityType: "delivery_box",
+        entityId: input.id,
+        oldValues: box,
+        newValues: { reason: input.reason },
+      });
+
+      return cancelled;
     }),
 
   // Profit report

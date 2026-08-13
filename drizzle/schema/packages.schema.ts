@@ -343,6 +343,13 @@ export const deliveryBoxes = mysqlTable("deliveryBoxes", {
   // بارودۆخ
   status: mysqlEnum("status", ["open", "ready", "in_transit", "delivered", "cancelled"]).default("open").notNull(),
 
+  // Why a box was cancelled, and by whom. A cancelled box is not deleted —
+  // the mistake is part of the record — so the row survives, and without a
+  // reason it says only that something went wrong, never what.
+  cancellationReason: text("cancellationReason"),
+  cancelledById: int("cancelledById"),
+  cancelledAt: timestamp("cancelledAt"),
+
   // واژوو و وێنە
   signature: text("signature"), // base64
   deliveryPhoto: text("deliveryPhoto"),

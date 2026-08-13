@@ -9,6 +9,10 @@ import { pickLang } from "@/lib/lang";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -113,6 +117,10 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const isRtl = language === "ku" || language === "ar";
   const utils = trpc.useUtils();
 
+  // Cancelling asks why. The box is not deleted — the mistake stays in the
+  // record — so without a reason the row says only that something went wrong.
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [scanInput, setScanInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -744,13 +752,49 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           {(isOpen || isReady) && (
             <Button
               variant="destructive"
-              onClick={() => cancelBox.mutate({ id: boxId })}
+              onClick={() => { setCancelReason(""); setCancelOpen(true); }}
               disabled={cancelBox.isPending}
             >
               {cancelBox.isPending ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Ban className="h-4 w-4 me-1" />}
               {t("delivery.cancelBox")}
             </Button>
           )}
+
+          <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <Ban className="h-5 w-5 text-red-500 dark:text-red-400" />
+                  {t("delivery.cancelBox")}
+                </AlertDialogTitle>
+                <AlertDialogDescription>{t("delivery.cancelBoxWhy")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <Input
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder={t("delivery.cancelReasonPlaceholder")}
+                autoFocus
+              />
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700"
+                  // Three characters is not a reason. Better to keep the
+                  // dialog open than to store "x" and call it a record.
+                  disabled={cancelReason.trim().length < 3 || cancelBox.isPending}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    cancelBox.mutate(
+                      { id: boxId, reason: cancelReason.trim() },
+                      { onSuccess: () => setCancelOpen(false) }
+                    );
+                  }}
+                >
+                  {cancelBox.isPending ? "..." : t("delivery.cancelBox")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <div className="flex-1" />
 
