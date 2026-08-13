@@ -80,7 +80,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import { CommandPalette } from "./CommandPalette";
@@ -1036,6 +1036,24 @@ function DashboardLayoutContent({
 
             {/* Recently viewed pages dropdown */}
             <RecentlyViewed className="h-8 w-8" />
+
+            {/* The recycle bin. Up here rather than only in the sidebar
+                because you reach for it right after a mistake, and hunting
+                through a menu is the last thing wanted at that moment. */}
+            {canViewPath("/trash") && (
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                title={t("nav.trash") || "سەبەتەی سڕاوەکان"}
+                aria-label={t("nav.trash") || "سەبەتەی سڕاوەکان"}
+              >
+                <Link href="/trash">
+                  <Trash2 className="h-4 w-4" />
+                </Link>
+              </Button>
+            )}
 
             {/* Quick create ("+ New") */}
             <QuickCreate />
