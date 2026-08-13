@@ -420,6 +420,23 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     setIsEditOpen(true);
   };
 
+  /**
+   * Arriving from the dashboard's reminder as /batches?edit=<id>.
+   *
+   * Waits for the list, because the dialog is filled from the row rather than
+   * from a fetch of its own. Runs once: the id is cleared from the URL after
+   * opening, so closing the dialog and refreshing does not reopen it.
+   */
+  useEffect(() => {
+    if (!batches?.length) return;
+    const asked = new URLSearchParams(window.location.search).get("edit");
+    if (!asked) return;
+    const batch = batches.find((b: any) => String(b.id) === asked);
+    if (batch) openEditDialog(batch);
+    window.history.replaceState({}, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [batches]);
+
   const openFinancialDialog = (batchId: number) => {
     setFinancialBatchId(batchId);
     setIsFinancialOpen(true);

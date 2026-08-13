@@ -42,8 +42,10 @@ import { pickLang } from "@/lib/lang";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, memo, useEffect } from "react";
+import { useLocation } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -153,6 +155,14 @@ export default function Dashboard() {
   };
   
   // Existing queries
+  const [, setLocation] = useLocation();
+  const { data: batchesForReminder } = trpc.batches.list.useQuery();
+  const awaitingNumber = useMemo(
+    () => batchesAwaitingShippingNumber(
+      (Array.isArray(batchesForReminder) ? batchesForReminder : batchesForReminder?.data ?? []) as any[]
+    ),
+    [batchesForReminder]
+  );
   const { data: packageStats } = trpc.reports.packagesByStatus.useQuery();
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: topCustomers } = trpc.reports.topCustomers.useQuery({ limit: 10 });
@@ -310,6 +320,49 @@ export default function Dashboard() {
             </>
           }
         />
+
+        {/* Batches travelling without their waybill or container number.
+            The Batches page already chases these; on the dashboard it is the
+            first thing seen in the morning, which is when there is still time
+            to go and ask for the number. Clicking one opens that batch. */}
+        {awaitingNumber.length > 0 && (
+          <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/40">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">
+                    {t("batches.awaitingNumberTitle", { count: awaitingNumber.length })}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {t("batches.awaitingNumberDesc")}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {awaitingNumber.slice(0, 6).map((batch: any) => (
+                      <Button
+                        key={batch.id}
+                        size="sm"
+                        variant={batch.severity === "urgent" ? "default" : "outline"}
+                        className={batch.severity === "urgent" ? "bg-amber-600 hover:bg-amber-700" : ""}
+                        onClick={() => setLocation(`/batches?edit=${batch.id}`)}
+                      >
+                        <span className="font-mono">{batch.batchCode}</span>
+                        <Badge variant="secondary" className="ms-2">
+                          {t("batches.daysWaiting", { count: batch.daysWaiting })}
+                        </Badge>
+                      </Button>
+                    ))}
+                    {awaitingNumber.length > 6 && (
+                      <Button size="sm" variant="ghost" onClick={() => setLocation("/batches")}>
+                        {t("batches.andMore", { count: awaitingNumber.length - 6 })}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Today at a glance — uses only data already on the page */}
         <TodayGlance
