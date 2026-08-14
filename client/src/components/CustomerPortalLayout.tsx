@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 import { usePortalWidthClass } from "@/hooks/usePortalWidth";
+import { PortalWidthSwitch } from "@/components/portal/PortalWidthSwitch";
 import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
@@ -262,6 +263,11 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
           <NewsTicker language={language} />
         </div>
       </main>
+
+      {/* Staff at a desk, and customers on one, can see the portal at
+          another screen's width. Renders nothing on a phone unless the
+          reader is staff. */}
+      <PortalWidthSwitch />
 
       {/* Bottom Navigation - fixed with smooth transitions */}
       <nav className={cn(
