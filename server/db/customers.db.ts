@@ -197,10 +197,30 @@ export async function updateCustomer(id: number, data: Partial<InsertCustomer>) 
   await db.update(customers).set(data).where(eq(customers.id, id));
 }
 
-export async function updateCustomerPassword(id: number, passwordHash: string) {
+/**
+ * Set a customer's password.
+ *
+ * `changedByCustomer` distinguishes the customer choosing their own from
+ * staff resetting it to the shared default. Only the first stamps
+ * passwordChangedAt, because that stamp is what tells the office whether an
+ * account is still on the password they handed out.
+ */
+export async function updateCustomerPassword(
+  id: number,
+  passwordHash: string,
+  options: { changedByCustomer?: boolean } = {}
+) {
   const db = await getDb();
   if (!db) return;
-  await db.update(customers).set({ passwordHash }).where(eq(customers.id, id));
+  await db
+    .update(customers)
+    .set({
+      passwordHash,
+      // A staff reset deliberately clears it: the account is back on a
+      // password we know, and saying otherwise would be worse than silence.
+      passwordChangedAt: options.changedByCustomer ? new Date() : null,
+    })
+    .where(eq(customers.id, id));
 }
 
 export async function getCustomerByUserId(userId: number): Promise<Customer | undefined> {

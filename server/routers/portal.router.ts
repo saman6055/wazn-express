@@ -99,7 +99,7 @@ export const customerPortalRouter = router({
         }
 
         const newHash = await bcrypt.hash(input.newPassword, 12);
-        await db.updateCustomerPassword(customerId, newHash);
+        await db.updateCustomerPassword(customerId, newHash, { changedByCustomer: true });
         logPortal(ctx, customerId, "change_password", "profile");
         return { success: true };
       }),

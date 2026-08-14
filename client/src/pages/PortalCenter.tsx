@@ -1688,6 +1688,37 @@ function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customer
         )}
       </div>
 
+      {/* Which password this account is on.
+          The password itself cannot be shown — it is hashed one way, on
+          purpose. This answers the question behind the question: if they are
+          still on the one we handed out, read it back to them; if they chose
+          their own, nobody can recover it and the reset above is the answer. */}
+      <div className={cn(
+        "flex items-start gap-2 rounded-md px-2 py-1.5 text-[10px]",
+        (sec as any).isOnDefaultPassword
+          ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200"
+          : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200"
+      )}>
+        <KeyRound className="h-3.5 w-3.5 shrink-0 mt-px" />
+        <span>
+          {(sec as any).isOnDefaultPassword
+            ? p({
+                ku: `هێشتا لەسەر ئەو وشەیەیە کە ئێمە داومانە (${DEFAULT_RESET_PASSWORD}) — دەتوانیت پێی بڵێیت`,
+                en: `Still on the password we set (${DEFAULT_RESET_PASSWORD}) — you can read it back to them`,
+                ar: `ما زال على كلمة المرور التي وضعناها (${DEFAULT_RESET_PASSWORD}) — يمكنك إخباره بها`,
+                zh: `仍使用我们设置的密码（${DEFAULT_RESET_PASSWORD}）— 可以直接告知客户`,
+              })
+            : (sec as any).passwordChangedAt
+              ? `${p({ ku: "کڕیار وشەی خۆی داناوە", en: "The customer set their own", ar: "العميل وضع كلمة مروره", zh: "客户已自行设置密码" })} — ${fmtDateTime((sec as any).passwordChangedAt)}. ${p({ ku: "کەس نایزانێت — ڕیسێتی بکە", en: "Nobody can read it — reset it instead", ar: "لا يمكن لأحد قراءتها — أعد تعيينها", zh: "无人可读取 — 请重置" })}`
+              : p({
+                  ku: "وشەیەکی نەناسراوی هەیە — کەس نایزانێت. ڕیسێتی بکە",
+                  en: "On a password nobody here knows — reset it instead",
+                  ar: "على كلمة مرور لا يعرفها أحد هنا — أعد تعيينها",
+                  zh: "使用了无人知晓的密码 — 请重置",
+                })}
+        </span>
+      </div>
+
       {/* Last sign-in + enable/disable */}
       <div className="flex items-center justify-between pt-1 border-t border-cyan-200/60 dark:border-cyan-900/40">
         <div className="text-[10px] text-muted-foreground">

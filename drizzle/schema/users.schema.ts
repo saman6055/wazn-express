@@ -47,6 +47,14 @@ export const customers = mysqlTable("customers", {
   mobileNumber: varchar("mobileNumber", { length: 20 }).notNull().unique(),
   secondaryMobile: varchar("secondaryMobile", { length: 20 }),
   passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  // When the customer last set their own password.
+  //
+  // The password itself is bcrypt-hashed and cannot be read back — that is
+  // the point of hashing it. What the office actually needs when somebody
+  // rings up unable to sign in is whether this account is still on the
+  // password we handed out or one the customer chose, and this answers that
+  // without keeping anything readable.
+  passwordChangedAt: timestamp("passwordChangedAt"),
   email: varchar("email", { length: 320 }),
   country: varchar("country", { length: 100 }),
   city: varchar("city", { length: 100 }),

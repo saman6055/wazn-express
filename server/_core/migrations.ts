@@ -2457,6 +2457,10 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // history each time and discarding almost all of it.
   { name: "idx.packages_customer_batch", sql: "CREATE INDEX idx_packages_customer_batch ON packages (customerId, batchId)" },
 
+  // When a customer last set their own password. The password stays
+  // hashed and unreadable; this only records that they chose one.
+  { name: "customers.passwordChangedAt", sql: "ALTER TABLE customers ADD COLUMN passwordChangedAt TIMESTAMP NULL" },
+
   // A cancelled delivery box keeps the record of what happened, so it needs
   // to say why — otherwise the row reports only that something went wrong.
   { name: "deliveryBoxes.cancellationReason", sql: "ALTER TABLE deliveryBoxes ADD COLUMN cancellationReason TEXT NULL" },

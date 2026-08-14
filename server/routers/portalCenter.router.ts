@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { router } from "../_core/trpc";
 import { adminProcedure } from "../middleware/auth";
 import { phoneSchema } from "./schemas";
+import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
 import * as db from "../db";
 
 const ANNOUNCEMENT_KEY = "portal_announcement";
@@ -193,6 +194,25 @@ export const portalCenterRouter = router({
         isActive: c.isActive,
         lastSignedIn: c.lastSignedIn ?? null,
         hasPassword: !!c.passwordHash,
+
+        /**
+         * What the office actually needs when somebody rings up unable to
+         * sign in.
+         *
+         * The password itself cannot be shown: it is bcrypt-hashed, which is
+         * one-way on purpose, and keeping a readable copy would mean one
+         * database leak exposing every customer's password — and, because
+         * people reuse them, their other accounts too.
+         *
+         * These two answer the question behind the question. If the account
+         * is still on the password we handed out, read it back to them. If
+         * they chose their own, nobody can recover it and a reset is the
+         * answer — which is one tap away on this same panel.
+         */
+        passwordChangedAt: c.passwordChangedAt ?? null,
+        isOnDefaultPassword: c.passwordHash
+          ? await bcrypt.compare(DEFAULT_RESET_PASSWORD, c.passwordHash)
+          : false,
       };
     }),
 
