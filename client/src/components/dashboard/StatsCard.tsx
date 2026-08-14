@@ -1,6 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { memo } from "react";
 import { cn } from "@/lib/utils";
+import { ExplainableStat } from "@/components/dashboard/ExplainableStat";
+import type { DashboardFigureId } from "@shared/dashboardExplain";
 import { Sparkline } from "./Sparkline";
 import { CountUp } from "@/components/CountUp";
 
@@ -32,6 +34,11 @@ export interface StatsCardProps {
   isLoading?: boolean;
   /** Optional tiny trend series for a sparkline at the bottom of the card. */
   trend?: number[];
+  /**
+   * Which dashboard figure this is, when it has an explanation. Clicking the
+   * number then opens where it came from instead of doing nothing.
+   */
+  figure?: DashboardFigureId;
 }
 
 export const StatsCard = memo(function StatsCard({
@@ -42,6 +49,7 @@ export const StatsCard = memo(function StatsCard({
   color = "blue",
   isLoading = false,
   trend,
+  figure,
 }: StatsCardProps) {
   const gradient = colorStyles[color];
 
@@ -54,7 +62,15 @@ export const StatsCard = memo(function StatsCard({
             {isLoading ? (
               <div className="h-9 w-24 animate-pulse rounded-md bg-muted" />
             ) : (
-              <p className="text-3xl font-bold tracking-tight"><CountUp value={value} /></p>
+              <p className="text-3xl font-bold tracking-tight">
+                {figure ? (
+                  <ExplainableStat figure={figure} value={value}>
+                    <CountUp value={value} />
+                  </ExplainableStat>
+                ) : (
+                  <CountUp value={value} />
+                )}
+              </p>
             )}
             {description && (
               <p className="text-xs text-muted-foreground">{description}</p>

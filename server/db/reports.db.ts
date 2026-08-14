@@ -4,6 +4,8 @@ import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotN
 import { getTotalDebtAmount } from './finance.db';
 import { getDeliveryBoxProfitBreakdown } from './deliveryBoxes.db';
 import { selfOrderConditions } from './selfOrder.filter';
+import { ACTIVE_BATCH_STATUSES } from '@shared/listLinks';
+import type { DashboardFigureId } from '@shared/dashboardExplain';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -679,7 +681,9 @@ export async function getDashboardActiveBatches(): Promise<{
       shippingType: batches.shippingType,
       createdAt: batches.createdAt
     }).from(batches)
-      .where(inArray(batches.status, ['preparing', 'in_transit', 'arrived']))
+      // The same set the dashboard's link filter uses, so the figure and the
+      // list it opens can never count different shipments.
+      .where(inArray(batches.status, ACTIVE_BATCH_STATUSES))
       .orderBy(desc(batches.createdAt))
       .limit(5);
 
@@ -2638,4 +2642,144 @@ export async function getOrdersByPlatform(startDate?: Date, endDate?: Date) {
 
   // Busiest first — the question this report answers is "where do we buy most".
   return Array.from(byPlatform.values()).sort((a, b) => b.orders - a.orders);
+}
+
+
+/**
+ * The parts behind one dashboard figure.
+ *
+ * Every part is read from the same table and the same window as the figure
+ * itself — the money figures use the identical `amountUsd - reversedAmountUsd`
+ * expression the card is built from — so the panel adds up to the card rather
+ * than to a second opinion computed another way. A drill-down that disagrees
+ * with the number above it is worse than none: two numbers of equal authority
+ * and nothing to say which is wrong.
+ *
+ * Figures with nothing meaningful to break down return no parts. That is said
+ * plainly in the panel; an invented split would be worse than an empty one.
+ */
+export async function getDashboardFigureParts(
+  figure: DashboardFigureId
+): Promise<{ parts: { key: string; value: number; count: number }[]; recordCount: number }> {
+  const empty = { parts: [], recordCount: 0 };
+  const db = await getDb();
+  if (!db) return empty;
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  try {
+    switch (figure) {
+      case "todayIncome":
+      case "weekIncome":
+      case "monthIncome": {
+        const since =
+          figure === "todayIncome" ? todayStart : figure === "weekIncome" ? weekStart : monthStart;
+        // Grouped by how the money arrived. The same net-of-reversals sum the
+        // dashboard card uses, so these add up to it exactly.
+        const rows = await db
+          .select({
+            method: paymentRecords.paymentMethod,
+            total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`,
+            count: count(),
+          })
+          .from(paymentRecords)
+          .where(gte(paymentRecords.createdAt, since))
+          .groupBy(paymentRecords.paymentMethod);
+        return {
+          parts: rows.map((r) => ({
+            key: String(r.method ?? "OTHER"),
+            value: parseFloat(r.total || "0"),
+            count: Number(r.count) || 0,
+          })),
+          recordCount: rows.reduce((sum, r) => sum + (Number(r.count) || 0), 0),
+        };
+      }
+
+      case "totalDebt": {
+        // No split worth showing — what the reader wants is who, and that is
+        // the debtors report the panel links to.
+        const rows = await db
+          .select({ count: count() })
+          .from(customerAccounts)
+          .where(gt(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`, 0));
+        return { parts: [], recordCount: Number(rows[0]?.count) || 0 };
+      }
+
+      case "totalCustomers": {
+        const rows = await db
+          .select({ isActive: customers.isActive, count: count() })
+          .from(customers)
+          .groupBy(customers.isActive);
+        return {
+          parts: rows.map((r) => ({
+            key: r.isActive ? "active" : "inactive",
+            value: Number(r.count) || 0,
+            count: Number(r.count) || 0,
+          })),
+          recordCount: rows.reduce((sum, r) => sum + (Number(r.count) || 0), 0),
+        };
+      }
+
+      case "newCustomers": {
+        const rows = await db
+          .select({ count: count() })
+          .from(customers)
+          .where(gte(customers.createdAt, weekStart));
+        return { parts: [], recordCount: Number(rows[0]?.count) || 0 };
+      }
+
+      case "activeBatches": {
+        const rows = await db
+          .select({ status: batches.status, count: count() })
+          .from(batches)
+          .where(inArray(batches.status, ACTIVE_BATCH_STATUSES))
+          .groupBy(batches.status);
+        return {
+          parts: rows.map((r) => ({
+            key: String(r.status),
+            value: Number(r.count) || 0,
+            count: Number(r.count) || 0,
+          })),
+          recordCount: rows.reduce((sum, r) => sum + (Number(r.count) || 0), 0),
+        };
+      }
+
+      case "totalPackages": {
+        const rows = await db
+          .select({ status: packages.status, count: count() })
+          .from(packages)
+          .groupBy(packages.status);
+        return {
+          parts: rows.map((r) => ({
+            key: String(r.status),
+            value: Number(r.count) || 0,
+            count: Number(r.count) || 0,
+          })),
+          recordCount: rows.reduce((sum, r) => sum + (Number(r.count) || 0), 0),
+        };
+      }
+
+      case "deliveredPackages": {
+        const rows = await db
+          .select({ count: count() })
+          .from(packages)
+          .where(eq(packages.status, "delivered"));
+        return { parts: [], recordCount: Number(rows[0]?.count) || 0 };
+      }
+
+      default:
+        return empty;
+    }
+  } catch (e) {
+    // A panel that cannot load its parts still shows the figure and its
+    // explanation, which is most of the value.
+    appLogger.error("Dashboard: figure parts query failed", {
+      figure,
+      error: e instanceof Error ? e.message : String(e),
+    });
+    return empty;
+  }
 }

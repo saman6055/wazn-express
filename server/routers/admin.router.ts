@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { DASHBOARD_FIGURE_IDS, type DashboardFigureId } from "@shared/dashboardExplain";
 import { eq, desc } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -343,6 +344,24 @@ export const dashboardRouter = router({
     financialStats: staffProcedure.query(async () => {
       return cacheGetOrSet("dashboard:financialStats", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardFinancialStats());
     }),
+
+    /**
+     * What one dashboard figure is made of.
+     *
+     * Asked for only when somebody opens a figure, not with the dashboard —
+     * eleven breakdowns nobody looked at would be eleven queries on every
+     * page load. Cached like the figures themselves so opening the same one
+     * twice costs nothing.
+     */
+    figureParts: staffProcedure
+      .input(z.object({ figure: z.enum(DASHBOARD_FIGURE_IDS as [DashboardFigureId, ...DashboardFigureId[]]) }))
+      .query(async ({ input }) => {
+        return cacheGetOrSet(
+          `dashboard:figureParts:${input.figure}`,
+          CACHE_TTL.DASHBOARD_STATS_MS,
+          () => db.getDashboardFigureParts(input.figure),
+        );
+      }),
     
     // Revenue chart data (30 days) (cached 30s)
     revenueChart: staffProcedure

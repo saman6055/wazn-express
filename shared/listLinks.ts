@@ -67,17 +67,22 @@ export const BATCH_STATUSES = [
 export type BatchStatus = (typeof BATCH_STATUSES)[number];
 
 /**
- * "Active" is not a status a shipment has — it is every status before the
- * goods are handed over. The dashboard counts them that way, so a link that
- * says active has to mean the same set, and it is defined here rather than
- * re-derived on each screen.
+ * What the dashboard's "active shipments" figure counts.
+ *
+ * "Active" is not a status a shipment has, so somebody has to decide which
+ * statuses it means — and the count and the list have to decide it the same
+ * way, or clicking a figure of 4 opens a list of 7 and neither number can be
+ * trusted afterwards.
+ *
+ * This is the set the dashboard query has always used. It leaves out customs
+ * and at_depot, which are arguably active work; that is a question about the
+ * figure, not about this list, and changing it here would silently change a
+ * number the office reads every morning.
  */
 export const ACTIVE_BATCH_STATUSES: BatchStatus[] = [
   "preparing",
   "in_transit",
   "arrived",
-  "customs",
-  "at_depot",
 ];
 
 export type BatchStatusFilter = "all" | "active" | BatchStatus;

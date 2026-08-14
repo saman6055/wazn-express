@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import fs from "fs";
+import path from "path";
 import {
   ACTIVE_BATCH_STATUSES,
   BATCH_STATUSES,
@@ -91,11 +93,24 @@ describe("shipments", () => {
     expect(batchMatchesStatus("closed", "active")).toBe(false);
   });
 
-  it("active and finished together are every status there is", () => {
-    // If a new status is added and left out of both, it would vanish from
-    // the active list without anybody noticing.
-    const finished = ["delivered", "closed"];
-    expect([...ACTIVE_BATCH_STATUSES, ...finished].sort()).toEqual([...BATCH_STATUSES].sort());
+  it("means exactly what the dashboard counts", () => {
+    // The figure and the list it opens must agree. This reads the server
+    // query rather than trusting a comment: a status added to one side and
+    // not the other is a count of 4 opening a list of 7.
+    const src = fs
+      .readFileSync(path.resolve(__dirname, "../server/db/reports.db.ts"), "utf8")
+      .replace(/\r\n/g, "\n");
+    const start = src.indexOf("export async function getDashboardActiveBatches");
+    expect(start, "getDashboardActiveBatches not found").toBeGreaterThan(-1);
+    const fn = src.slice(start, src.indexOf("\n}\n", start));
+    expect(fn.length).toBeGreaterThan(200);
+    expect(fn).toContain("ACTIVE_BATCH_STATUSES");
+  });
+
+  it("does not claim a finished shipment is active", () => {
+    for (const finished of ["delivered", "closed"] as const) {
+      expect(batchMatchesStatus(finished, "active"), finished).toBe(false);
+    }
   });
 
   it("matches a single status exactly", () => {

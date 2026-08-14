@@ -2,6 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { memo } from "react";
 import { cn } from "@/lib/utils";
+import { ExplainableStat } from "@/components/dashboard/ExplainableStat";
+import type { DashboardFigureId } from "@shared/dashboardExplain";
 import { Sparkline } from "./Sparkline";
 import { CountUp } from "@/components/CountUp";
 
@@ -41,6 +43,11 @@ export interface FinancialCardProps {
   isDebt?: boolean;
   /** Optional tiny trend series for a sparkline at the bottom of the card. */
   trend?: number[];
+  /**
+   * Which dashboard figure this is, when it has an explanation. Clicking the
+   * number then opens where it came from instead of doing nothing.
+   */
+  figure?: DashboardFigureId;
 }
 
 export const FinancialCard = memo(function FinancialCard({
@@ -52,8 +59,15 @@ export const FinancialCard = memo(function FinancialCard({
   prefix = "",
   isDebt = false,
   trend,
+  figure,
 }: FinancialCardProps) {
   const styles = colorStyles[color];
+  const amount = (
+    <>
+      {prefix}
+      <CountUp value={value} format={(n) => Math.round(n).toLocaleString("en-US")} />
+    </>
+  );
 
   return (
     <Card className="pro-stat-card overflow-hidden transition-all duration-300 hover:shadow-md">
@@ -86,8 +100,13 @@ export const FinancialCard = memo(function FinancialCard({
             isDebt && "text-red-600 dark:text-red-400"
           )}
         >
-          {prefix}
-          <CountUp value={value} format={(n) => Math.round(n).toLocaleString("en-US")} />
+          {figure ? (
+            <ExplainableStat figure={figure} value={value}>
+              {amount}
+            </ExplainableStat>
+          ) : (
+            amount
+          )}
         </p>
         {trend && trend.length >= 2 && (
           <Sparkline data={trend} className={cn("mt-3 opacity-80", sparkColor[color])} />

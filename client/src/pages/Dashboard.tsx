@@ -8,6 +8,7 @@ import {
   DashboardSection,
 } from "@/components/dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ExplainableStat } from "@/components/dashboard/ExplainableStat";
 import { TodayGlance } from "@/components/dashboard/TodayGlance";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { trpc } from "@/lib/trpc";
@@ -370,22 +371,38 @@ export default function Dashboard() {
             {
               icon: <DollarSign />,
               label: t("dashboard.todayIncome") || pickLang(language, { ku: "داهاتی ئەمڕۆ", en: "Today's income", ar: "دخل اليوم", zh: "今日收入" }),
-              value: `$${(financialStats?.todayRevenue || 0).toFixed(2)}`,
+              value: (
+                <ExplainableStat figure="todayIncome" value={financialStats?.todayRevenue || 0}>
+                  {`$${(financialStats?.todayRevenue || 0).toFixed(2)}`}
+                </ExplainableStat>
+              ),
             },
             {
               icon: <Users />,
               label: t("dashboard.newCustomers7Days") || pickLang(language, { ku: "کڕیاری نوێ (٧ ڕۆژ)", en: "New customers (7 days)", ar: "عملاء جدد (٧ أيام)", zh: "新客户（7天）" }),
-              value: newCustomersCount ?? 0,
+              value: (
+                <ExplainableStat figure="newCustomers" value={newCustomersCount ?? 0}>
+                  {newCustomersCount ?? 0}
+                </ExplainableStat>
+              ),
             },
             {
               icon: <Users />,
               label: t("dashboard.totalCustomers") || pickLang(language, { ku: "کۆی کڕیاران", en: "Total customers", ar: "إجمالي العملاء", zh: "客户总数" }),
-              value: customers?.length ?? 0,
+              value: (
+                <ExplainableStat figure="totalCustomers" value={customers?.length ?? 0}>
+                  {customers?.length ?? 0}
+                </ExplainableStat>
+              ),
             },
             {
               icon: <Layers />,
               label: t("dashboard.activeBatches") || pickLang(language, { ku: "باچە چالاکەکان", en: "Active batches", ar: "الدفعات النشطة", zh: "活跃批次" }),
-              value: activeBatches?.length || 0,
+              value: (
+                <ExplainableStat figure="activeBatches" value={activeBatches?.length || 0}>
+                  {activeBatches?.length || 0}
+                </ExplainableStat>
+              ),
             },
           ]}
         />
@@ -400,6 +417,7 @@ export default function Dashboard() {
           <FinancialCard
             title={t('dashboard.todayIncome')}
             value={financialStats?.todayRevenue || 0}
+            figure="todayIncome"
             change={financialStats?.todayChange || 0}
             icon={<DollarSign className="h-5 w-5" />}
             color="green"
@@ -408,6 +426,7 @@ export default function Dashboard() {
           <FinancialCard
             title={t('dashboard.weeklyIncome')}
             value={financialStats?.weekRevenue || 0}
+            figure="weekIncome"
             change={financialStats?.weekChange || 0}
             icon={<TrendingUp className="h-5 w-5" />}
             color="blue"
@@ -417,6 +436,7 @@ export default function Dashboard() {
           <FinancialCard
             title={t('dashboard.monthlyIncome')}
             value={financialStats?.monthRevenue || 0}
+            figure="monthIncome"
             change={financialStats?.monthChange || 0}
             icon={<Wallet className="h-5 w-5" />}
             color="purple"
@@ -426,6 +446,7 @@ export default function Dashboard() {
           <FinancialCard
             title={t('dashboard.totalDebt')}
             value={financialStats?.totalDebt || 0}
+            figure="totalDebt"
             icon={<CreditCard className="h-5 w-5" />}
             color="red"
             prefix="$"
@@ -440,6 +461,7 @@ export default function Dashboard() {
           <StatsCard
             title={t("dashboard.totalCustomers") ?? "Total Customers"}
             value={customers?.length ?? 0}
+            figure="totalCustomers"
             description={t("dashboard.activeCustomers") ?? "Active customers"}
             icon={<Users className="h-5 w-5" />}
             color="emerald"
@@ -447,6 +469,7 @@ export default function Dashboard() {
           <StatsCard
             title={t("dashboard.totalPackages") ?? "Total Packages"}
             value={totalPackages}
+            figure="totalPackages"
             description={t("dashboard.registeredToday")}
             icon={<Package className="h-5 w-5" />}
             color="blue"
@@ -455,6 +478,7 @@ export default function Dashboard() {
           <StatsCard
             title={t("dashboard.activeBatches")}
             value={activeBatches?.length || 0}
+            figure="activeBatches"
             description={t("dashboard.onRouteOrPreparing")}
             icon={<Layers className="h-5 w-5" />}
             color="amber"
@@ -462,6 +486,7 @@ export default function Dashboard() {
           <StatsCard
             title={t("dashboard.delivered")}
             value={deliveredPackages}
+            figure="deliveredPackages"
             description={`${deliveryRate}% ${t("dashboard.deliveryRate")}`}
             icon={<CheckCircle className="h-5 w-5" />}
             color="green"
