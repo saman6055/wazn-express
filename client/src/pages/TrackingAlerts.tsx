@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
@@ -471,19 +471,14 @@ export default function TrackingAlerts() {
         </div>
         
         <div className="container py-8">
-          {/* Tabs */}
+          {/* One tab, so no tab strip.
+              There was a second, "History", which showed the words "Coming
+              soon" and nothing else. It was meant to report statistics about
+              tracking numbers as they were added — and nothing records when a
+              tracking number was added, only that one is there now. So the
+              history could not be shown without inventing it, and an empty
+              promise in a finished product is worse than no tab. */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="alerts" className="gap-2">
-                <AlertCircle className="h-4 w-4" />
-                {pickLang(language, { ku: "ئاگادارکردنەوەکان", en: "Alerts", ar: "التنبيهات", zh: "提醒" })}
-              </TabsTrigger>
-              <TabsTrigger value="history" className="gap-2">
-                <TrendingUp className="h-4 w-4" />
-                {pickLang(language, { ku: "رابردوو", en: "History", ar: "السجلّ", zh: "历史" })}
-              </TabsTrigger>
-            </TabsList>
-
             {/* Alerts Tab */}
             <TabsContent value="alerts" className="space-y-6">
               {/* Type Stats Cards */}
@@ -858,31 +853,6 @@ export default function TrackingAlerts() {
                       </TableBody>
                     </Table>
                   )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* History Tab */}
-            <TabsContent value="history" className="space-y-6">
-              <Card className="border-0 shadow-xl">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg">
-                      <BarChart3 className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle>{pickLang(language, { ku: "مێژووی تراکینگ", en: "Tracking History", ar: "سجلّ التتبّع", zh: "追踪历史" })}</CardTitle>
-                      <CardDescription>
-                        {pickLang(language, { ku: "ئاماری تراکینگە زیادکراوەکان", en: "Statistics of added tracking numbers", ar: "إحصاءات أرقام التتبّع المضافة", zh: "已添加追踪号的统计" })}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                    <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                    <p>{pickLang(language, { ku: "بەزووی دێت...", en: "Coming soon...", ar: "قريبًا...", zh: "敬请期待..." })}</p>
-                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
