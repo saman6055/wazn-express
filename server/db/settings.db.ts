@@ -1049,3 +1049,15 @@ export async function updatePricingRulePortalFields(
   await db.update(pricingRules).set(fields).where(eq(pricingRules.id, id));
 }
 
+
+/**
+ * The ids of countries we ship FROM.
+ *
+ * Used to decide whether a parcel was registered at an origin depot — which
+ * is what tells the portal whether its journey includes the China warehouse
+ * at all. Read rarely and changes almost never, so a plain query is fine.
+ */
+export async function getOriginCountryIds(): Promise<Set<number>> {
+  const rows = await getOriginCountries();
+  return new Set(rows.map((c) => c.id));
+}

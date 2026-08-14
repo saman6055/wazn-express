@@ -2,6 +2,7 @@ import { CheckCircle, Truck, Package, MapPin, Clock, Warehouse, Ship, AlertCircl
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { formatPortalDate, formatClockTime } from "@/lib/portalClock";
+import { progressIndex, stageReachedBy, stagesFor, type JourneyStage } from "@shared/packageJourney";
 
 // ---------------------------------------------------------------------------
 // PackageTrackingTimeline — the customer-facing movement timeline.
@@ -49,6 +50,12 @@ interface PackageTrackingTimelineProps {
   estimatedDelivery?: string | null;
   language?: string;
   className?: string;
+  /**
+   * Whether the parcel was registered at an origin depot. Null or undefined
+   * when it was never recorded, which means China — everything predating the
+   * location stamp went through that depot.
+   */
+  registeredAtOrigin?: boolean | null;
 }
 
 /**
@@ -71,19 +78,36 @@ export function PackageTrackingTimeline({
   estimatedDelivery,
   language = "en",
   className,
+  registeredAtOrigin,
 }: PackageTrackingTimelineProps) {
+  // The journey this parcel actually has. One registered in Erbil never sees
+  // the China warehouse, so that step is not merely un-reached — it is not
+  // coming, and showing it pending promises something that will not happen.
+  const journey = { registeredAtOrigin };
+  const stages = STAGES.filter((s) => stagesFor(journey).includes(s.key as JourneyStage));
   // First timestamp per canonical stage, from real events.
   const stageDates = new Map<string, string | Date>();
   for (const e of events ?? []) {
-    const stage = RAW_TO_STAGE[e.status];
-    if (stage && !stageDates.has(stage)) stageDates.set(stage, e.at);
+    const raw = RAW_TO_STAGE[e.status];
+    if (!raw) continue;
+    // The registration event carries the China-warehouse date too, because
+    // registering it there is the same moment as arriving.
+    const stage = stageReachedBy(raw as JourneyStage, journey);
+    if (!stageDates.has(stage)) stageDates.set(stage, e.at);
   }
 
   const normalizedCurrent = RAW_TO_STAGE[currentStatus] ?? currentStatus;
-  // The furthest stage reached: prefer real events, fall back to currentStatus.
-  let currentIndex = STAGES.findIndex((s) => s.key === normalizedCurrent);
-  for (let i = STAGES.length - 1; i >= 0; i--) {
-    if (stageDates.has(STAGES[i].key)) { currentIndex = Math.max(currentIndex, i); break; }
+
+  /**
+   * The furthest stage reached: prefer real events, fall back to the status.
+   *
+   * Registering a parcel at the China depot IS its arrival there — the
+   * notification sent for that same scan already says so — so `registered`
+   * resolves to the warehouse step rather than sitting one short of it.
+   */
+  let currentIndex = progressIndex(normalizedCurrent, journey);
+  for (let i = stages.length - 1; i >= 0; i--) {
+    if (stageDates.has(stages[i].key)) { currentIndex = Math.max(currentIndex, i); break; }
   }
   const safeIndex = currentIndex >= 0 ? currentIndex : 0;
   const isDeliveredAll = normalizedCurrent === "delivered" || stageDates.has("delivered");
@@ -144,7 +168,7 @@ export function PackageTrackingTimeline({
 
   return (
     <div className={cn("space-y-0", className)}>
-      {STAGES.map((stage, index) => {
+      {stages.map((stage, index) => {
         const isDone = index < safeIndex || isDeliveredAll;
         const isCurrent = index === safeIndex && !isDeliveredAll;
         const Icon = stage.icon;
@@ -164,11 +188,11 @@ export function PackageTrackingTimeline({
               >
                 {isDone ? <CheckCircle className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
               </div>
-              {index < STAGES.length - 1 && (
+              {index < stages.length - 1 && (
                 <div className={cn("w-0.5 min-h-[20px] flex-1", isDone ? "bg-emerald-500" : "bg-muted")} />
               )}
             </div>
-            <div className={cn("pb-1", index === STAGES.length - 1 && "pb-0")}>
+            <div className={cn("pb-1", index === stages.length - 1 && "pb-0")}>
               <p
                 className={cn(
                   "text-sm font-medium",

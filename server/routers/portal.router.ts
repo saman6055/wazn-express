@@ -337,7 +337,23 @@ export const customerPortalRouter = router({
       .query(async ({ ctx, input }) => {
         const customerId = ctx.customerId;
         logPortal(ctx, customerId, "search", "search", { detail: input.trackingNumber });
-        return db.searchCustomerPackage(customerId, input.trackingNumber);
+        const found = await db.searchCustomerPackage(customerId, input.trackingNumber);
+        if (!found) return found;
+
+        /**
+         * Whether this parcel was registered at an origin depot.
+         *
+         * The journey it shows depends on it: registered in China it is
+         * already in that warehouse, registered in Erbil it never goes there.
+         * Null when the location was never recorded, which the portal reads
+         * as China — everything predating the stamp went through that depot.
+         */
+        const originIds = await db.getOriginCountryIds();
+        const countryId = (found as any).registeredInCountryId ?? null;
+        return {
+          ...found,
+          registeredAtOrigin: countryId == null ? null : originIds.has(countryId),
+        };
       }),
 
     // Same search box, but for full-package/commission orders: matches the

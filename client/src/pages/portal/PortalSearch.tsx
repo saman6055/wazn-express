@@ -15,7 +15,7 @@ import { TutorialHint } from "@/components/TutorialHint";
 import { pickLang } from "@/lib/lang";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { formatPortalDate } from "@/lib/portalClock";
+import { formatPortalDate, formatPortalDateTime } from "@/lib/portalClock";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 function getInitialSearchQuery(): string {
@@ -368,6 +368,7 @@ export default function PortalSearch() {
                 events={timelineEvents as any}
                 estimatedDelivery={(result as any).estimatedArrival ?? (result as any).batchEstimatedArrival ?? null}
                 language={language}
+                registeredAtOrigin={(result as any).registeredAtOrigin}
               />
             </div>
 
@@ -423,15 +424,18 @@ export default function PortalSearch() {
               <div className="grid grid-cols-2 gap-4 pt-3 border-t">
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{t("registered") || "Registered"}</p>
+                  {/* With the time. A parcel registered and batched on the
+                      same day reads as two identical dates otherwise, and the
+                      customer cannot tell what happened when. */}
                   <p className="text-sm text-slate-800 dark:text-slate-200">
-                    {formatPortalDate(result.registeredAt, language)}
+                    {formatPortalDateTime(result.registeredAt, language)}
                   </p>
                 </div>
                 {result.deliveredAt && (
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{t("delivered") || "Delivered"}</p>
                     <p className="text-sm text-slate-800 dark:text-slate-200">
-                      {formatPortalDate(result.deliveredAt, language)}
+                      {formatPortalDateTime(result.deliveredAt, language)}
                     </p>
                   </div>
                 )}

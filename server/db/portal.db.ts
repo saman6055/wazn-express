@@ -391,6 +391,10 @@ const CUSTOMER_PACKAGE_FIELDS = {
   updatedAt: packages.updatedAt,
   registeredAt: packages.registeredAt,
   deliveredAt: packages.deliveredAt,
+  // Where it was registered. The journey a parcel shows depends on it: one
+  // registered at the China depot is already in that warehouse, and one
+  // registered in Erbil never goes there at all.
+  registeredInCountryId: packages.registeredInCountryId,
 } as const;
 
 /**
@@ -941,6 +945,7 @@ export async function getUnclaimedPackagesWithSearch(options?: {
     isUnclaimed: packages.isUnclaimed,
     createdAt: packages.createdAt,
     registeredAt: packages.registeredAt,
+    registeredInCountryId: packages.registeredInCountryId,
   })
     .from(packages)
     .where(whereClause)
