@@ -51,6 +51,12 @@ export interface PackagesLink {
   search?: string;
   /** A batch id, as the table's own filter expects it. */
   batch?: string;
+  /**
+   * Registered on this day, as YYYY-MM-DD. What a point on the dashboard's
+   * daily chart means — without it, clicking a bar could only ever open the
+   * whole table.
+   */
+  day?: string;
 }
 
 /* ─── shipments ─────────────────────────────────────────────────────────── */
@@ -157,7 +163,7 @@ export function readCustomersLink(search: string): CustomersLink {
 
 /** The parcels table lives at /packages/all — /packages is the summary. */
 export function packagesHref(link: PackagesLink = {}): string {
-  return `/packages/all${query({ tab: link.tab, search: link.search, batch: link.batch })}`;
+  return `/packages/all${query({ tab: link.tab, search: link.search, batch: link.batch, day: link.day })}`;
 }
 
 export function readPackagesLink(search: string): PackagesLink {
@@ -166,6 +172,9 @@ export function readPackagesLink(search: string): PackagesLink {
     tab: oneOf(p.get("tab"), ["all", "no_batch", "no_tracking", "pending_delivery", "delivered"] as const),
     search: p.get("search") || undefined,
     batch: p.get("batch") || undefined,
+    // Anything that is not a plain calendar date is no filter, rather than a
+    // filter that quietly matches nothing.
+    day: /^\d{4}-\d{2}-\d{2}$/.test(p.get("day") ?? "") ? p.get("day")! : undefined,
   };
 }
 

@@ -52,6 +52,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { readPackagesLink } from "@shared/listLinks";
+import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
@@ -327,6 +328,9 @@ const [, setLocation] = useLocation();
     typeof window === "undefined" ? {} : readPackagesLink(window.location.search),
   );
   const [searchInput, setSearchInput] = useState(() => linkFilters.search ?? "");
+  // Cleared by the banner rather than by a control: there is no day picker on
+  // this table, so without a way out a reader would be stuck on one day.
+  const [dayFilter, setDayFilter] = useState<string | undefined>(() => linkFilters.day);
   const [minWeight, setMinWeight] = useState<string>("");
   const [maxWeight, setMaxWeight] = useState<string>("");
   const [batchFilter, setBatchFilter] = useState<string>(() => linkFilters.batch ?? "all");
@@ -575,9 +579,17 @@ const [, setLocation] = useLocation();
       const matchesMaxWeight = !maxWeight || weight <= parseFloat(maxWeight);
       const pkgType = (pkg as any).orderType || 'regular';
       const matchesPackageType = packageTypeFilter === "all" || pkgType === packageTypeFilter;
-      return matchesBatch && matchesAlert && matchesMinWeight && matchesMaxWeight && matchesPackageType;
+      // One day, when a point on the dashboard's daily chart was clicked.
+      // Compared in local time, because the chart's days are local days.
+      let matchesDay = true;
+      if (dayFilter) {
+        const d = registeredAt;
+        const local = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        matchesDay = local === dayFilter;
+      }
+      return matchesBatch && matchesAlert && matchesMinWeight && matchesMaxWeight && matchesPackageType && matchesDay;
     });
-  }, [packages, batchFilter, alertFilter, minWeight, maxWeight, packageTypeFilter]);
+  }, [packages, batchFilter, alertFilter, minWeight, maxWeight, packageTypeFilter, dayFilter]);
 
   // Stats calculations - use totalPackages from server for total count
   const stats = useMemo(() => {
@@ -1155,6 +1167,17 @@ const [, setLocation] = useLocation();
         <Card>
           <CardHeader>
             <div className="space-y-4">
+              {/* Why the table arrived short, when it came from a chart point */}
+              <FilteredByLinkBanner
+                filters={dayFilter ? [{ ku: `تۆمارکراو لە ${dayFilter}`, en: `Registered on ${dayFilter}`, ar: `مسجلة في ${dayFilter}`, zh: `登记于 ${dayFilter}` }] : []}
+                onClear={() => {
+                  setDayFilter(undefined);
+                  if (typeof window !== "undefined") {
+                    history.replaceState(null, "", window.location.pathname);
+                  }
+                }}
+              />
+
               {/* Search and Filter Toggle Row */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1 max-w-sm">

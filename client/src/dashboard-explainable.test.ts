@@ -67,6 +67,39 @@ describe("every headline figure can be opened", () => {
   });
 });
 
+describe("nothing on the page is a dead end", () => {
+  it("a point on the daily chart opens that day's parcels", () => {
+    // The chart drops the real date when it formats "Aug 16" for the axis,
+    // so the day is carried separately — without it a click could only ever
+    // open the whole table.
+    expect(DASHBOARD).toContain("openChartDay");
+    expect(DASHBOARD).toMatch(/packagesHref\(\{\s*day\s*\}\)/);
+    expect(DASHBOARD).toContain("onClick={openChartDay}");
+  });
+
+  it("the parcels table honours the day it is given", () => {
+    // Otherwise the link lands on an unfiltered list, which looks like an
+    // answer and is not one.
+    const packages = read("client/src/pages/Packages.tsx");
+    expect(packages).toContain("dayFilter");
+    expect(packages).toContain("readPackagesLink");
+    expect(packages).toContain("FilteredByLinkBanner");
+  });
+
+  it("a debtor, a shipment and a top customer each open their own record", () => {
+    expect(DASHBOARD).toContain("/finance/customer/${debtor.customerId}");
+    expect(DASHBOARD).toContain("/batches/${batch.id}/financial");
+    expect(DASHBOARD).toContain("/finance/customer/${customer.customerId}");
+  });
+
+  it("the self-order tiles all open the self orders", () => {
+    // Three of the four were plain divs, so two thirds of the card was inert
+    // beside a fourth tile that linked.
+    const links = [...DASHBOARD.matchAll(/href="\/self-orders"/g)];
+    expect(links.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
 describe("the panel is one panel", () => {
   it("every card goes through the same component", () => {
     // A dozen slightly different drill-downs is how they drift apart, and the

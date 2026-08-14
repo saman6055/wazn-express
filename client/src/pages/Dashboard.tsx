@@ -9,6 +9,7 @@ import {
 } from "@/components/dashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExplainableStat } from "@/components/dashboard/ExplainableStat";
+import { batchesHref, customersHref, packagesHref } from "@shared/listLinks";
 import { TodayGlance } from "@/components/dashboard/TodayGlance";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { trpc } from "@/lib/trpc";
@@ -192,13 +193,25 @@ export default function Dashboard() {
 
   const chartData = useMemo(
     () =>
-      revenueChart?.map(d => ({
-        date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        revenue: d.revenue,
-        packages: d.packages
-      })) || [],
+      revenueChart?.map(d => {
+        const on = new Date(d.date);
+        return {
+          date: on.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          // The axis label is for reading; this is for linking. Kept apart
+          // because "Aug 16" cannot be turned back into a date reliably.
+          day: `${on.getFullYear()}-${String(on.getMonth() + 1).padStart(2, '0')}-${String(on.getDate()).padStart(2, '0')}`,
+          revenue: d.revenue,
+          packages: d.packages,
+        };
+      }) || [],
     [revenueChart]
   );
+
+  /** Opens the parcels registered on a clicked point of the daily chart. */
+  const openChartDay = (state: any) => {
+    const day = state?.activePayload?.[0]?.payload?.day;
+    if (day) setLocation(packagesHref({ day }));
+  };
 
   const profitLossChartData = useMemo(
     () =>
@@ -644,7 +657,7 @@ export default function Dashboard() {
               </div>
 
               {/* New customers */}
-              <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+              <Link href={customersHref({ createdWithin: 7 })} className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
                   <Users className="h-5 w-5" />
                 </span>
@@ -653,7 +666,7 @@ export default function Dashboard() {
                   <p className="text-xl font-bold">{highlights.newCustomers.thisWeek}</p>
                   <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "هەفتەی ڕابردوو", en: "Last week", ar: "الأسبوع الماضي", zh: "上周" })}: {highlights.newCustomers.lastWeek}</p>
                 </div>
-              </div>
+              </Link>
 
               {/* Orders */}
               <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
@@ -669,7 +682,10 @@ export default function Dashboard() {
 
               {/* Most active customer */}
               {highlights.topCustomer && (
-                <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+                <Link
+                  href={customersHref({ search: highlights.topCustomer.code || highlights.topCustomer.name || "" })}
+                  className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors"
+                >
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                     <Crown className="h-5 w-5" />
                   </span>
@@ -678,12 +694,15 @@ export default function Dashboard() {
                     <p className="text-base font-bold truncate">{highlights.topCustomer.name || highlights.topCustomer.code}</p>
                     <p className="text-xs text-muted-foreground">{highlights.topCustomer.orders} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })} · ${highlights.topCustomer.spentUsd.toFixed(0)}</p>
                   </div>
-                </div>
+                </Link>
               )}
 
               {/* Fastest batch */}
               {highlights.fastestBatch && (
-                <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+                <Link
+                  href={batchesHref({ status: "all" })}
+                  className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors"
+                >
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400">
                     <Ship className="h-5 w-5" />
                   </span>
@@ -692,7 +711,7 @@ export default function Dashboard() {
                     <p className="text-base font-bold truncate font-mono">{highlights.fastestBatch.code}</p>
                     <p className="text-xs text-muted-foreground">{highlights.fastestBatch.days} {pickLang(language, { ku: "ڕۆژ لە ڕێگادا", en: "days in transit", ar: "أيام في الطريق", zh: "天在途" })}</p>
                   </div>
-                </div>
+                </Link>
               )}
             </div>
           </DashboardSection>
@@ -706,18 +725,18 @@ export default function Dashboard() {
             description={pickLang(language, { ku: "پاکێجی خۆکڕاو (تەنها گواستنەوە) — ٣٠ ڕۆژی ڕابردوو", en: "Self-bought packages (shipping only) — last 30 days", ar: "طرود اشتراها العميل (شحن فقط) — آخر ٣٠ يوماً", zh: "客户自购包裹（仅运输）— 最近 30 天" })}
           >
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+              <Link href="/self-orders" className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"><Package className="h-5 w-5" /></span>
                 <div><p className="text-xs text-muted-foreground">{pickLang(language, { ku: "ژمارە", en: "Count", ar: "العدد", zh: "数量" })}</p><p className="text-xl font-bold">{selfOrders.summary.count}</p></div>
-              </div>
-              <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+              </Link>
+              <Link href="/self-orders" className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"><DollarSign className="h-5 w-5" /></span>
                 <div><p className="text-xs text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</p><p className="text-xl font-bold">${selfOrders.summary.revenueUsd.toFixed(0)}</p></div>
-              </div>
-              <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+              </Link>
+              <Link href="/self-orders" className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400"><TrendingUp className="h-5 w-5" /></span>
                 <div><p className="text-xs text-muted-foreground">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</p><p className="text-xl font-bold text-teal-700 dark:text-teal-400">${selfOrders.summary.profitUsd.toFixed(0)}</p></div>
-              </div>
+              </Link>
               <Link href="/self-orders" className="rounded-xl border bg-card p-4 flex items-center justify-between gap-3 hover:bg-accent transition-colors">
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "باشترین کڕیار", en: "Top customer", ar: "أفضل عميل", zh: "最佳客户" })}</p>
@@ -750,7 +769,7 @@ export default function Dashboard() {
               <div className="h-[300px] min-h-0 w-full">
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
+                    <LineChart data={chartData} onClick={openChartDay} style={{ cursor: "pointer" }}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis 
                         dataKey="date" 
@@ -813,7 +832,7 @@ export default function Dashboard() {
               <div className="h-[250px]">
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} onClick={openChartDay} style={{ cursor: "pointer" }}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                       <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
@@ -989,7 +1008,11 @@ export default function Dashboard() {
             <CardContent className="p-0">
               <div className="divide-y">
                 {topDebtors?.map((debtor, index) => (
-                  <div key={debtor.customerId} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
+                  <Link
+                    key={debtor.customerId}
+                    href={`/finance/customer/${debtor.customerId}`}
+                    className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                  >
                     <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm
                       ${index === 0 ? 'bg-gradient-to-br from-red-500 to-red-600 text-white' : 
                         index === 1 ? 'bg-gradient-to-br from-orange-400 to-orange-500 text-white' :
@@ -1010,7 +1033,7 @@ export default function Dashboard() {
                           : t('dashboard.noPayment')}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
                 {(!topDebtors || topDebtors.length === 0) && (
                   <div className="p-8 text-center text-muted-foreground">
@@ -1043,7 +1066,11 @@ export default function Dashboard() {
             <CardContent className="p-0">
               <div className="divide-y">
                 {activeBatches?.map((batch) => (
-                  <div key={batch.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
+                  <Link
+                    key={batch.id}
+                    href={`/batches/${batch.id}/financial`}
+                    className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                  >
                     <div className={`h-10 w-10 rounded-xl flex items-center justify-center
                       ${batch.shippingType === 'sea' 
                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' 
@@ -1065,7 +1092,7 @@ export default function Dashboard() {
                         {new Date(batch.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
                 {(!activeBatches || activeBatches.length === 0) && (
                   <div className="p-8 text-center text-muted-foreground">
@@ -1104,7 +1131,11 @@ export default function Dashboard() {
                   const customerData = customers?.find(c => c.id === customer.customerId);
                   const isVip = vipCustomers?.some(v => v.customerId === customer.customerId);
                   return (
-                    <div key={customer.customerId} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
+                    <Link
+                      key={customer.customerId}
+                      href={`/finance/customer/${customer.customerId}`}
+                      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                    >
                       <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm
                         ${index === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-200 dark:shadow-amber-900/30' : 
                           index === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-700 dark:from-slate-600 dark:to-slate-700 dark:text-slate-200' :
@@ -1127,7 +1158,7 @@ export default function Dashboard() {
                         </p>
                         <p className="text-xs text-muted-foreground">{t('common.revenue')}</p>
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
                 {(!topCustomers || topCustomers.length === 0) && (
