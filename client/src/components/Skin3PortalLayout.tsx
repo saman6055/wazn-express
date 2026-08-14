@@ -5,6 +5,7 @@ import { Home, Package, Wallet, User, ShoppingBag } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
+import { usePortalWidthClass } from "@/hooks/usePortalWidth";
 import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
@@ -16,6 +17,9 @@ interface Skin3PortalLayoutProps {
 }
 
 export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) {
+  // How wide this portal sits: grows with the screen unless the reader
+  // has chosen a fixed width for themselves.
+  const portalWidth = usePortalWidthClass();
   useDynamicFavicon();
   const [location] = useLocation();
   const { language } = useLanguage();
@@ -84,7 +88,7 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
       <PortalTopBar />
 
       {/* Main Content */}
-      <main className="relative max-w-lg mx-auto w-full flex-1 flex flex-col">
+      <main className={cn("relative", portalWidth, "mx-auto w-full flex-1 flex flex-col")}>
         {children}
         {/* Wazn News strip — in-flow at the very end of the content, the same
             as the classic skin. It was only ever rendered there, so on this

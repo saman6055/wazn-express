@@ -5,6 +5,7 @@ import { Home, Package, Wallet, User, ShoppingBag } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
+import { usePortalWidthClass } from "@/hooks/usePortalWidth";
 import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
@@ -18,6 +19,9 @@ interface ModernPortalLayoutProps {
 export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
   useDynamicFavicon();
   const [location] = useLocation();
+  // How wide this portal sits: grows with the screen unless the reader
+  // has chosen a fixed width for themselves.
+  const portalWidth = usePortalWidthClass();
   const { language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -84,7 +88,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
       <PortalTopBar />
 
       {/* Main Content */}
-      <main className="relative max-w-lg mx-auto w-full flex-1 flex flex-col">
+      <main className={cn("relative", portalWidth, "mx-auto w-full flex-1 flex flex-col")}>
         {children}
         {/* Wazn News strip — in-flow at the very end of the content, the same
             as the classic skin. It was only ever rendered there, so on this
@@ -113,7 +117,10 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
         />
 
         {/* Nav content */}
-        <div className="relative max-w-lg mx-auto px-4">
+        {/* The bottom bar stays phone-width whatever the page does: it is a
+            thumb-reach pattern, and stretched across a monitor its items end
+            up a hand-span apart with a hole in the middle. */}
+        <div className={cn("relative", "max-w-lg", "mx-auto px-4")}>
           <div className="flex items-center justify-around h-[72px]">
             {navItems.map((item) => {
               const active = isActive(item.path);

@@ -3,6 +3,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useLanguage, LANGUAGES, type Language } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
+import { PortalWidthPicker } from "@/components/portal/PortalWidthPicker";
 import {
   PORTAL_MODES,
   PORTAL_MODE_KEY,
@@ -127,6 +128,8 @@ export function PortalHeaderControls({
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Desktop only — on a phone there is nothing to choose. */}
+        <PortalWidthPicker />
         {showClock && <PortalClock onLight={light} compact />}
 
         {/* Language */}

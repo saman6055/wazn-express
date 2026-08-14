@@ -5,6 +5,7 @@ import { Home, Package, Wallet, User, ShoppingBag, Search } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
+import { usePortalWidthClass } from "@/hooks/usePortalWidth";
 import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
@@ -26,6 +27,9 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   const [location, setLocation] = useLocation();
   const isSearchPage = location.startsWith("/portal/search");
   const searchString = useSearch();
+  // How wide this portal sits: grows with the screen unless the reader
+  // has chosen a fixed width for themselves.
+  const portalWidth = usePortalWidthClass();
   const { language, t } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -212,7 +216,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         "sticky top-0 z-40 border-b transition-colors duration-300",
         isDark ? "bg-slate-900/95 border-slate-700/50 backdrop-blur-sm" : "bg-slate-50/95 border-slate-200/50 backdrop-blur-sm"
       )}>
-        <div className="max-w-lg mx-auto px-3 py-2 flex items-center gap-2">
+        <div className={cn(portalWidth, "mx-auto px-3 py-2 flex items-center gap-2")}>
           {/* Company logo (uploaded in Settings) at the leading edge */}
           <CompanyLogo size={36} className="shrink-0" />
           <PortalNavButtons />
@@ -245,7 +249,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
           be pushed to the bottom on a short page — without it the strip landed
           wherever the content happened to end, halfway up the screen on a page
           like Shipments with only a couple of rows. */}
-      <main className="max-w-lg mx-auto w-full flex-1 flex flex-col">
+      <main className={cn(portalWidth, "mx-auto w-full flex-1 flex flex-col")}>
         {/* Admin-set announcement banner — shown on every portal page */}
         <AnnouncementBanner />
         {/* Prominent pre-declaration CTA — home only, above every skin */}
@@ -273,7 +277,10 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         )} />
         
         {/* Navigation content */}
-        <div className="relative max-w-lg mx-auto">
+        {/* The bottom bar stays phone-width whatever the page does: it is a
+            thumb-reach pattern, and stretched across a monitor its items end
+            up a hand-span apart with a hole in the middle. */}
+        <div className={cn("relative", "max-w-lg", "mx-auto")}>
           <div className="flex items-end justify-between px-4 h-20">
             {/* Left Side - Shipments & Full Pack */}
             <div className="flex items-center gap-1">
