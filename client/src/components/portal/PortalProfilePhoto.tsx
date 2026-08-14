@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { compressImage } from "@/lib/imageCompression";
+import { onImageError } from "@/lib/imageFallback";
 import { isSafeAvatar, MAX_AVATAR_STRING_LENGTH } from "@shared/customerImages";
 
 /**
@@ -57,6 +58,9 @@ export function PortalProfilePhoto({
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Which photo failed to load, not merely that one did — otherwise a
+  // failed photo would keep its replacement hidden too.
+  const [brokenUrl, setBrokenUrl] = useState<string | null>(null);
   const utils = trpc.useUtils();
 
   const refresh = () => {
@@ -164,12 +168,18 @@ export function PortalProfilePhoto({
   return (
     <div className={cn("relative", className)}>
       <div className={cn(sizeClass, shapeClass, "overflow-hidden flex items-center justify-center shadow-lg", frameClass)}>
-        {photoUrl ? (
+        {photoUrl && brokenUrl !== photoUrl ? (
           <img
             src={photoUrl}
             alt={fullName || label}
             className="w-full h-full object-cover"
             loading="lazy"
+            // A photo that will not load leaves the initials showing rather
+            // than a torn-page glyph in the middle of the profile.
+            onError={(e) => {
+              onImageError(e);
+              setBrokenUrl(photoUrl);
+            }}
           />
         ) : (
           fallback ?? <User className="w-1/2 h-1/2 text-white" />
