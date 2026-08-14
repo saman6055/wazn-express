@@ -413,6 +413,12 @@ function PriceCalculator({
 
   // Muted label color — flips for the violet (embedded) card so text stays legible.
   const muted = violet ? "text-purple-100/80" : isDark ? "text-slate-400" : "text-slate-500";
+  /** The tint behind each of the two ways of answering. */
+  const panelCls = violet
+    ? "bg-white/10 border border-white/15"
+    : isDark
+      ? "bg-slate-900/60 border border-slate-700"
+      : "bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-700";
   const strong = violet ? "text-purple-50" : isDark ? "text-slate-300" : "text-slate-600";
   const accent = violet ? "text-amber-200" : "text-amber-500";
   const inputCls = violet ? "bg-white/15 border-white/25 text-white placeholder:text-white/50" : (isDark ? "bg-slate-900 border-slate-600" : "");
@@ -477,42 +483,155 @@ function PriceCalculator({
         })}
       </div>
 
-      {/* Inputs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {isSea ? (
-          <div className="relative col-span-2 sm:col-span-1">
-            <Input
-              type="number" inputMode="decimal" min="0" step="0.01"
-              stepper={false}
-              value={cbmDirect}
-              onChange={(e) => setCbmDirect(e.target.value)}
-              placeholder="0.25"
-              className={cn("pe-10 font-mono font-bold", inputCls)}
-            />
-            <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>m³</span>
+      {/* Inputs
+          Two ways of answering, kept apart on purpose. A customer who knows
+          their volume was previously faced with four boxes and no way to tell
+          which ones were for them, so they filled dimensions they had not
+          measured. Sea asks for one or the other; air asks for the weight and
+          takes the dimensions only to work out whether volume bills higher. */}
+      {isSea ? (
+        <div className="space-y-3">
+          <div className={cn("rounded-xl p-3", panelCls)}>
+            <p className={cn("text-[11px] font-semibold mb-2", strong)}>
+              {pickLang(lang, {
+                ku: "ئەگەر قەبارەی بارەکەت (m³) دەزانیت، لێرە بینووسە",
+                en: "If you know your volume (m³), type it here",
+                ar: "إذا كنت تعرف حجم شحنتك (m³)، اكتبه هنا",
+                zh: "如果您知道货物体积（m³），请在此填写",
+              })}
+            </p>
+            <div className="relative">
+              <Input
+                type="number" inputMode="decimal" min="0" step="0.01"
+                stepper={false}
+                value={cbmDirect}
+                onChange={(e) => setCbmDirect(e.target.value)}
+                placeholder="0.25"
+                className={cn("pe-10 font-mono font-bold text-lg", inputCls)}
+              />
+              <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>m³</span>
+            </div>
           </div>
-        ) : (
-          <div className="relative col-span-2 sm:col-span-1">
-            <Input
-              type="number" inputMode="decimal" min="0" step="0.1"
-              stepper={false}
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              placeholder="1.0"
-              className={cn("pe-10 font-mono font-bold", inputCls)}
-            />
-            <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>kg</span>
+
+          <div className="flex items-center gap-3">
+            <span className={cn("h-px flex-1", violet ? "bg-white/20" : isDark ? "bg-slate-700" : "bg-slate-200")} />
+            <span className={cn("text-[10px] font-bold uppercase tracking-wide", muted)}>
+              {pickLang(lang, { ku: "یان", en: "or", ar: "أو", zh: "或" })}
+            </span>
+            <span className={cn("h-px flex-1", violet ? "bg-white/20" : isDark ? "bg-slate-700" : "bg-slate-200")} />
           </div>
-        )}
-        {dimInput(len, setLen, pickLang(lang, { ku: "درێژی", en: "L", ar: "طول", zh: "长" }))}
-        {dimInput(wid, setWid, pickLang(lang, { ku: "پانی", en: "W", ar: "عرض", zh: "宽" }))}
-        {dimInput(hei, setHei, pickLang(lang, { ku: "بەرزی", en: "H", ar: "ارتفاع", zh: "高" }))}
-      </div>
-      <p className={cn("mt-1.5 text-[10px]", violet ? "text-purple-100/70" : isDark ? "text-slate-500" : "text-slate-400")}>
-        {isSea
-          ? pickLang(lang, { ku: "درێژی/پانی/بەرزی بە سانتیمەتر — یان ڕاستەوخۆ m³ بنووسە", en: "L/W/H in centimeters — or enter m³ directly", ar: "الأبعاد بالسنتيمتر — أو أدخل m³ مباشرة", zh: "长/宽/高以厘米为单位——或直接输入 m³" })
-          : pickLang(lang, { ku: `درێژی/پانی/بەرزی بە سانتیمەتر بۆ کێشی قەبارەیی (÷${calc.volumetricDivisor})`, en: `L/W/H in centimeters for volumetric weight (÷${calc.volumetricDivisor})`, ar: `الأبعاد بالسنتيمتر للوزن الحجمي (÷${calc.volumetricDivisor})`, zh: `长/宽/高以厘米为单位计算体积重（÷${calc.volumetricDivisor}）` })}
-      </p>
+
+          <div className={cn("rounded-xl p-3", panelCls)}>
+            <p className={cn("text-[11px] font-semibold mb-2", strong)}>
+              {pickLang(lang, {
+                ku: "ئەگەر نایزانیت، درێژی و پانی و بەرزی پڕبکەوە — قەبارەکەت بۆ دەردەهێنین",
+                en: "If you don't, fill in length, width and height — we will work your volume out",
+                ar: "إذا كنت لا تعرفه، أدخل الطول والعرض والارتفاع — سنحسب الحجم لك",
+                zh: "如果不知道，请填写长、宽、高——我们会为您算出体积",
+              })}
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {dimInput(len, setLen, pickLang(lang, { ku: "درێژی", en: "L", ar: "طول", zh: "长" }))}
+              {dimInput(wid, setWid, pickLang(lang, { ku: "پانی", en: "W", ar: "عرض", zh: "宽" }))}
+              {dimInput(hei, setHei, pickLang(lang, { ku: "بەرزی", en: "H", ar: "ارتفاع", zh: "高" }))}
+            </div>
+            <p className={cn("mt-2 text-[10px]", muted)}>
+              {pickLang(lang, { ku: "بە سانتیمەتر", en: "In centimetres", ar: "بالسنتيمتر", zh: "单位：厘米" })}
+            </p>
+            {volCm3 > 0 && (
+              <p className={cn("mt-1.5 text-[11px] font-mono", strong)} dir="ltr">
+                {L} × {W} × {H} ÷ 1,000,000 = {(volCm3 / 1_000_000).toFixed(3)} m³
+              </p>
+            )}
+          </div>
+
+          {num(cbmDirect) > 0 && volCm3 > 0 && (
+            <p className={cn("text-[11px]", accent)}>
+              {pickLang(lang, {
+                ku: "هەردووکیان پڕکراونەتەوە — ئەو m³ـەی خۆت نووسیوتە بەکاردێت",
+                en: "Both are filled — the m³ you typed is the one being used",
+                ar: "كلاهما مُعبأ — يُستخدم الحجم الذي كتبته",
+                zh: "两者都已填写——以您输入的 m³ 为准",
+              })}
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className={cn("rounded-xl p-3", panelCls)}>
+            <p className={cn("text-[11px] font-semibold mb-2", strong)}>
+              {pickLang(lang, {
+                ku: "کێشی بارەکەت بە کیلۆ",
+                en: "The weight of your goods, in kilograms",
+                ar: "وزن بضاعتك بالكيلوغرام",
+                zh: "货物重量（公斤）",
+              })}
+            </p>
+            <div className="relative">
+              <Input
+                type="number" inputMode="decimal" min="0" step="0.1"
+                stepper={false}
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder="1.0"
+                className={cn("pe-10 font-mono font-bold text-lg", inputCls)}
+              />
+              <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>kg</span>
+            </div>
+          </div>
+
+          <div className={cn("rounded-xl p-3", panelCls)}>
+            <p className={cn("text-[11px] font-semibold mb-2", strong)}>
+              {pickLang(lang, {
+                ku: "قەبارەی بارەکەش — چونکە شتی سووک و گەورە بە قەبارە حیساب دەکرێت",
+                en: "And its size — because light, bulky goods are billed by volume",
+                ar: "وحجمها أيضاً — لأن البضائع الخفيفة الضخمة تُحتسب بالحجم",
+                zh: "以及尺寸——因为轻抛货按体积计费",
+              })}
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {dimInput(len, setLen, pickLang(lang, { ku: "درێژی", en: "L", ar: "طول", zh: "长" }))}
+              {dimInput(wid, setWid, pickLang(lang, { ku: "پانی", en: "W", ar: "عرض", zh: "宽" }))}
+              {dimInput(hei, setHei, pickLang(lang, { ku: "بەرزی", en: "H", ar: "ارتفاع", zh: "高" }))}
+            </div>
+            <p className={cn("mt-2 text-[10px]", muted)}>
+              {pickLang(lang, { ku: "بە سانتیمەتر", en: "In centimetres", ar: "بالسنتيمتر", zh: "单位：厘米" })}
+            </p>
+          </div>
+
+          {/* The rule, worked through with the customer's own numbers. Being
+              charged for 12 kg when the scale said 8 is the single most
+              common surprise on an invoice. */}
+          <div className={cn("rounded-xl p-3 space-y-1.5", panelCls)}>
+            <p className={cn("text-[11px] font-bold", strong)}>
+              {pickLang(lang, {
+                ku: "کێشی قەبارەیی چۆن دەردەچێت؟",
+                en: "How volumetric weight works",
+                ar: "كيف يُحسب الوزن الحجمي؟",
+                zh: "体积重是怎么算的？",
+              })}
+            </p>
+            <p className={cn("text-[11px] leading-relaxed", muted)}>
+              {pickLang(lang, {
+                ku: `درێژی × پانی × بەرزی (بە سانتیمەتر) ÷ ${calc.volumetricDivisor} = کێشی قەبارەیی. ئەوەی گەورەترە — کێشی تەرازوو یان کێشی قەبارەیی — ئەوە حیساب دەکرێت.`,
+                en: `Length × width × height in centimetres, divided by ${calc.volumetricDivisor}, gives the volumetric weight. Whichever is greater — the scale or the volume — is what you are billed for.`,
+                ar: `الطول × العرض × الارتفاع بالسنتيمتر ÷ ${calc.volumetricDivisor} = الوزن الحجمي. ويُحتسب الأكبر بين وزن الميزان والوزن الحجمي.`,
+                zh: `长 × 宽 × 高（厘米）÷ ${calc.volumetricDivisor} = 体积重。按实际重量与体积重中较大的一个计费。`,
+              })}
+            </p>
+            {volCm3 > 0 && (
+              <p className={cn("text-[11px] font-mono", strong)} dir="ltr">
+                {L} × {W} × {H} ÷ {calc.volumetricDivisor} = {volumetricKg.toFixed(2)} kg
+              </p>
+            )}
+            {volCm3 > 0 && actualKg > 0 && (
+              <p className={cn("text-[11px] font-semibold", usedVolumetric ? accent : strong)} dir="ltr">
+                max({actualKg.toFixed(2)} kg, {volumetricKg.toFixed(2)} kg) = {airChargeable.toFixed(2)} kg
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Result */}
       <div className={cn(
@@ -527,6 +646,11 @@ function PriceCalculator({
                   <div className={cn("font-semibold", strong)}>
                     {pickLang(lang, { ku: "قەبارە: ", en: "Volume: ", ar: "الحجم: ", zh: "体积：" })}
                     <span className="font-mono">{cbm.toFixed(3)} m³</span>
+                  </div>
+                  <div className={cn("text-[10px]", muted)}>
+                    {num(cbmDirect) > 0
+                      ? pickLang(lang, { ku: "ئەوەی خۆت نووسیوتە", en: "As you entered it", ar: "كما أدخلته", zh: "按您输入的数值" })
+                      : pickLang(lang, { ku: "لە ڕەهەندەکانتەوە دەرهێنراوە", en: "Worked out from your dimensions", ar: "محسوب من أبعادك", zh: "根据您的尺寸算出" })}
                   </div>
                 </>
               ) : (
