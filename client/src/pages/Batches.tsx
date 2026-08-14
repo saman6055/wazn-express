@@ -21,6 +21,13 @@ import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
 import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
+import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
+import {
+  FILTER_LABEL,
+  batchMatchesStatus,
+  readBatchesLink,
+  type Localised,
+} from "@shared/listLinks";
 import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
 import { canDeleteBatch } from "@shared/batchDeletion";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -480,7 +487,38 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     () => partitionArchived(batches ?? [], FINISHED_BATCH_STATUSES),
     [batches]
   );
-  const visibleBatches = showArchived ? (batches ?? []) : currentBatches;
+  const shownBatches = showArchived ? (batches ?? []) : currentBatches;
+
+  /**
+   * A filter carried in from a dashboard figure — /batches?status=active.
+   *
+   * Read once, on mount, and cleared by the banner rather than by a control:
+   * there is no status picker on this page, so without the banner a reader
+   * would see a short list and no way back to the whole one.
+   */
+  const [linkFilters, setLinkFilters] = useState(() =>
+    typeof window === "undefined" ? {} : readBatchesLink(window.location.search),
+  );
+
+  const visibleBatches = useMemo(
+    () => shownBatches.filter((b: any) =>
+      batchMatchesStatus(b.status, linkFilters.status)
+      && (!linkFilters.type || linkFilters.type === "all" || b.shippingType === linkFilters.type)
+    ),
+    [shownBatches, linkFilters.status, linkFilters.type],
+  );
+
+  const linkFilterLabels: Localised[] = [
+    linkFilters.status && linkFilters.status !== "all"
+      ? (FILTER_LABEL[linkFilters.status] ?? { ku: linkFilters.status, en: linkFilters.status, ar: linkFilters.status, zh: linkFilters.status })
+      : null,
+    linkFilters.type && linkFilters.type !== "all" ? FILTER_LABEL[linkFilters.type] : null,
+  ].filter((v): v is Localised => Boolean(v));
+
+  const clearLinkFilters = () => {
+    setLinkFilters({});
+    if (typeof window !== "undefined") history.replaceState(null, "", window.location.pathname);
+  };
 
   // Batches that have been travelling for days with no waybill or container
   // number recorded. Nothing used to ask for these, so a shipment could reach
@@ -1088,6 +1126,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
         <Card>
           <CardContent className="pt-6">
+            {/* Why the table arrived short, when it came from a dashboard figure */}
+            <FilteredByLinkBanner filters={linkFilterLabels} onClear={clearLinkFilters} />
+
             {/* Finished shipments drop out of the table but stay in the counts
                 above — sixteen delivered batches were burying the four that
                 anyone was actually working on. */}

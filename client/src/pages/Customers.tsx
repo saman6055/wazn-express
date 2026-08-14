@@ -19,7 +19,7 @@ import {
   Phone, Mail, MapPin, Filter, X, ChevronDown, Upload, FileText,
   CreditCard, FileCheck, DollarSign, Package, Wallet, User, Briefcase, Globe, Settings, Trash2
 } from "lucide-react";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { IRAQI_GOVERNORATES, IRAQI_CITIES } from "../../../shared/iraqi-cities";
@@ -31,6 +31,13 @@ import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips } from "@/components/ui/filter-chips";
+import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
+import {
+  FILTER_LABEL,
+  readCustomersLink,
+  withinDaysLabel,
+  type Localised,
+} from "@shared/listLinks";
 
 // Default options - these can be customized in settings
 const DEFAULT_NATIONALITIES = [
@@ -153,6 +160,16 @@ const [, setLocation] = useLocation();
   const [balanceFilter, setBalanceFilter] = useState<"all" | "positive" | "negative" | "zero">("all");
   const [vipFilter, setVipFilter] = useState<"all" | "vip" | "regular">("all");
   const [serviceTypeFilter, setServiceTypeFilter] = useState<"all" | "full_package" | "commission" | "self_order">("all");
+
+  /**
+   * Filters carried in from a dashboard figure — /customers?createdWithin=7.
+   *
+   * Read once, on mount: after that the controls own the state, so clearing a
+   * filter here must not be undone by the URL it arrived on.
+   */
+  const [linkFilters, setLinkFilters] = useState(() =>
+    typeof window === "undefined" ? {} : readCustomersLink(window.location.search),
+  );
   
   // Form state - persisted across tab switches
   const [formData, setFormData] = useState<CustomerFormData>(initialFormData);
@@ -240,11 +257,51 @@ const [, setLocation] = useLocation();
     ? IRAQI_CITIES.filter(city => city.governorateId === governorateFilter)
     : IRAQI_CITIES;
 
+  // Seed the ordinary controls from the link, once. After this the controls
+  // own their state — a filter the reader clears must stay cleared.
+  useEffect(() => {
+    if (linkFilters.status) setStatusFilter(linkFilters.status);
+    if (linkFilters.service) setServiceTypeFilter(linkFilters.service);
+    if (linkFilters.city) setCityFilter(linkFilters.city);
+    if (linkFilters.search) setSearch(linkFilters.search);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const filteredCustomers = useFilteredCustomers(
     customers as any,
     vipCustomers?.map((v: any) => v.customerId),
-    { search, statusFilter, cityFilter, governorateFilter, balanceFilter, vipFilter, serviceTypeFilter }
+    {
+      search,
+      statusFilter,
+      cityFilter,
+      governorateFilter,
+      balanceFilter,
+      vipFilter,
+      serviceTypeFilter,
+      // No control on this page offers it — it exists so the dashboard's
+      // "new customers" figure can open exactly the rows it counted.
+      createdWithinDays: linkFilters.createdWithin,
+    }
   );
+
+  /** What the banner says arrived with the link. */
+  const linkFilterLabels: Localised[] = [
+    linkFilters.createdWithin ? withinDaysLabel(linkFilters.createdWithin) : null,
+    linkFilters.status ? FILTER_LABEL[linkFilters.status] : null,
+    linkFilters.service ? FILTER_LABEL[linkFilters.service] : null,
+  ].filter((v): v is Localised => Boolean(v));
+
+  const clearLinkFilters = () => {
+    setLinkFilters({});
+    if (linkFilters.status) setStatusFilter("all");
+    if (linkFilters.service) setServiceTypeFilter("all");
+    if (linkFilters.city) setCityFilter("");
+    if (linkFilters.search) setSearch("");
+    // Drop the query string too, so a refresh does not bring it back.
+    if (typeof window !== "undefined") {
+      history.replaceState(null, "", window.location.pathname);
+    }
+  };
 
   const activeCount = customers.filter((c) => c.isActive).length;
   const inactiveCount = customers.filter((c) => !c.isActive).length;
@@ -1111,6 +1168,9 @@ const [, setLocation] = useLocation();
                   </div>
                 </CollapsibleContent>
               </Collapsible>
+
+              {/* Why the list arrived short, when it came from a dashboard figure */}
+              <FilteredByLinkBanner filters={linkFilterLabels} onClear={clearLinkFilters} />
 
               {/* Active filter chips */}
               <FilterChips

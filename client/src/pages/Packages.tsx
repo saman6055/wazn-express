@@ -51,6 +51,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { readPackagesLink } from "@shared/listLinks";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
@@ -319,17 +320,20 @@ const [, setLocation] = useLocation();
   // Deep link: /packages/all?search=PKG-XYZ opens the table already looking
   // for that parcel. Anything that used to link to /packages/:id — which has
   // never been a route — now points here instead of at a 404.
-  const [searchInput, setSearchInput] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return new URLSearchParams(window.location.search).get("search") ?? "";
-  });
+  // The whole link, read once. `search` was already honoured here; the tab and
+  // the batch come in the same way now, so a dashboard figure can open the
+  // rows it counted rather than the whole table.
+  const [linkFilters] = useState(() =>
+    typeof window === "undefined" ? {} : readPackagesLink(window.location.search),
+  );
+  const [searchInput, setSearchInput] = useState(() => linkFilters.search ?? "");
   const [minWeight, setMinWeight] = useState<string>("");
   const [maxWeight, setMaxWeight] = useState<string>("");
-  const [batchFilter, setBatchFilter] = useState<string>("all");
+  const [batchFilter, setBatchFilter] = useState<string>(() => linkFilters.batch ?? "all");
   const [alertFilter, setAlertFilter] = useState<string>("all");
   const [packageTypeFilter, setPackageTypeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<string>(() => linkFilters.tab ?? "all");
 
   const {
     packages: packagesFromHook,

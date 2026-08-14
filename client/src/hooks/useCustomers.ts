@@ -70,7 +70,7 @@ export function useCustomerById(customerId: number | null) {
 }
 
 export function useFilteredCustomers(
-  customers: Array<{ id: number; fullName?: string; customerCode?: string; mobileNumber?: string; isActive?: boolean; city?: string; serviceTypes?: string[] | null }>,
+  customers: Array<{ id: number; fullName?: string; customerCode?: string; mobileNumber?: string; isActive?: boolean; city?: string; serviceTypes?: string[] | null; createdAt?: string | Date | null }>,
   vipCustomerIds: number[] | undefined,
   options: {
     search: string;
@@ -80,6 +80,11 @@ export function useFilteredCustomers(
     balanceFilter?: string;
     vipFilter?: string;
     serviceTypeFilter?: string;
+    /**
+     * Registered within this many days — what the dashboard's "new customers"
+     * figure counts, so opening it lands on exactly those rows.
+     */
+    createdWithinDays?: number;
   }
 ) {
   return useMemo(() => {
@@ -104,7 +109,16 @@ export function useFilteredCustomers(
         !options.serviceTypeFilter ||
         options.serviceTypeFilter === "all" ||
         (Array.isArray(c.serviceTypes) && c.serviceTypes.includes(options.serviceTypeFilter));
-      return matchesSearch && matchesStatus && matchesCity && matchesVip && matchesServiceType;
+      // A row whose date cannot be read is kept rather than hidden: the
+      // filter is here to narrow a list, not to lose people.
+      let matchesCreated = true;
+      if (options.createdWithinDays && options.createdWithinDays > 0) {
+        const created = c.createdAt ? new Date(c.createdAt).getTime() : NaN;
+        if (Number.isFinite(created)) {
+          matchesCreated = created >= Date.now() - options.createdWithinDays * 86_400_000;
+        }
+      }
+      return matchesSearch && matchesStatus && matchesCity && matchesVip && matchesServiceType && matchesCreated;
     });
-  }, [customers, vipCustomerIds, options.search, options.statusFilter, options.cityFilter, options.vipFilter, options.serviceTypeFilter]);
+  }, [customers, vipCustomerIds, options.search, options.statusFilter, options.cityFilter, options.vipFilter, options.serviceTypeFilter, options.createdWithinDays]);
 }

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { readFinanceLink } from "@shared/listLinks";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,7 +88,11 @@ type AccountFilter = 'all' | 'debtors' | 'credit' | 'zero' | 'active' | 'inactiv
 
 export default function Finance() {
   const { t, language } = useTranslation();
-  const [activeTab, setActiveTab] = useState("overview");
+  // A dashboard figure can open the tab its number came from —
+  // /finance?tab=payments — rather than the overview every time.
+  const [activeTab, setActiveTab] = useState<string>(() =>
+    (typeof window === "undefined" ? undefined : readFinanceLink(window.location.search).tab) ?? "overview",
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentSearch, setPaymentSearch] = useState("");
   const [methodFilter, setMethodFilter] = useState<string>("all");
