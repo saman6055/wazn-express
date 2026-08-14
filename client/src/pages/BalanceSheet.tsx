@@ -21,10 +21,13 @@ import {
   ArrowRight
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { useTranslation, useLanguage } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
+import { Link } from "wouter";
 
 export default function BalanceSheet() {
     const { t } = useTranslation();
+  const { language } = useLanguage();
 const [selectedDate, setSelectedDate] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -33,6 +36,11 @@ const [selectedDate, setSelectedDate] = useState(() => {
   // Fetch financial data
   const { data: dashboardStats } = trpc.financeIntegration.dashboardStats.useQuery();
   const { data: cashAccounts } = trpc.cashAccounts?.list?.useQuery() || { data: [] };
+  // The two sides of the sheet, each read from the screen that owns it: the
+  // customer ledger for what is owed to us and held for customers, and the
+  // company debts register for what we owe.
+  const { data: ledgerSummary } = trpc.ledger.getSummary.useQuery();
+  const { data: companyDebts } = trpc.companyDebts.list.useQuery();
 
   // Calculate totals
   // `acc.balance` is not a column. The account row carries `currentBalance`,
@@ -43,8 +51,36 @@ const [selectedDate, setSelectedDate] = useState(() => {
     (sum: number, acc: any) => sum + parseFloat(acc.currentBalance ?? '0'),
     0
   );
-  const totalReceivables = (dashboardStats as any)?.profitLoss?.netProfit || 0; // Money owed to us (approximation)
-  const totalPayables = 0; // Money we owe (would come from supplier debts)
+  /**
+   * What customers owe us — the debtors report, summed.
+   *
+   * This was the month's net profit. Not an approximation of receivables: a
+   * different quantity entirely, which happened to be a number in dollars, so
+   * nothing about the page looked wrong.
+   */
+  const totalReceivables = Number((ledgerSummary as any)?.totalDebtUsd ?? 0);
+  const debtorsCount = Number((ledgerSummary as any)?.debtorsCount ?? 0);
+
+  /**
+   * Money customers paid in advance and have not used. Ours to hold, not ours
+   * to keep — a balance sheet that leaves it out overstates the company by
+   * exactly that amount.
+   */
+  const customerCredit = Number((ledgerSummary as any)?.totalCreditUsd ?? 0);
+
+  /**
+   * Loans and supplier debts still outstanding.
+   *
+   * This was the literal 0, so the company appeared to owe nobody anything
+   * however many debts were recorded on the screen next door.
+   */
+  const outstandingDebts = ((companyDebts as any[]) || []).filter((d) => d?.status !== "paid");
+  const totalCompanyDebt = outstandingDebts.reduce(
+    (sum: number, d: any) => sum + parseFloat(d?.remainingAmount ?? "0"),
+    0,
+  );
+
+  const totalPayables = totalCompanyDebt + customerCredit;
   
   const totalAssets = totalCash + totalReceivables;
   const totalLiabilities = totalPayables;
@@ -62,20 +98,26 @@ const [selectedDate, setSelectedDate] = useState(() => {
   }
 
   const exportToExcel = () => {
-    let csv = '{t("auto.text_ebf719")}\n';
-    csv += `{t("auto.text_cb2f35")}: ${selectedDate}\n\n`;
-    
-    csv += '{t("auto.text_921f9e")} (Assets)\n';
-    csv += `{t("auto.text_647643")},$${totalCash}\n`;
-    csv += `{t("auto.text_ddf1ac")},$${totalReceivables}\n`;
-    csv += `{t("auto.text_6ca2b0")},$${totalAssets}\n\n`;
-    
-    csv += '{t("auto.text_701a1e")} (Liabilities)\n';
-    csv += `{t("auto.text_7e7304")},$${totalPayables}\n`;
-    csv += `{t("auto.text_96973f")},$${totalLiabilities}\n\n`;
-    
-    csv += '{t("auto.text_cdeec4")} (Equity)\n';
-    csv += `{t("auto.text_04b4f4")},$${equity}\n`;
+    // These lines wrote the source of the translation call into the file:
+    // the export was a spreadsheet of `{t("auto.text_ebf719")}` rows.
+    const money = (n: number) => n.toFixed(2);
+    const label = (key: string, fallback: string) => t(key) || fallback;
+
+    let csv = `${label("nav.balanceSheet", "Balance sheet")}\n`;
+    csv += `${label("common.date", "Date")}: ${selectedDate}\n\n`;
+
+    csv += `${label("balanceSheet.assets", "Assets")}\n`;
+    csv += `${label("balanceSheet.cash", "Cash")},$${money(totalCash)}\n`;
+    csv += `${label("balanceSheet.receivables", "Receivables")},$${money(totalReceivables)}\n`;
+    csv += `${label("balanceSheet.totalAssets", "Total assets")},$${money(totalAssets)}\n\n`;
+
+    csv += `${label("balanceSheet.liabilities", "Liabilities")}\n`;
+    csv += `${label("balanceSheet.companyDebts", "Loans and supplier debts")},$${money(totalCompanyDebt)}\n`;
+    csv += `${label("balanceSheet.customerCredit", "Customer credit held")},$${money(customerCredit)}\n`;
+    csv += `${label("balanceSheet.totalLiabilities", "Total liabilities")},$${money(totalLiabilities)}\n\n`;
+
+    csv += `${label("balanceSheet.equity", "Equity")}\n`;
+    csv += `${label("balanceSheet.netWorth", "Net worth")},$${money(equity)}\n`;
 
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -151,46 +193,51 @@ const [selectedDate, setSelectedDate] = useState(() => {
             <div className="p-4 border-b">
               <h4 className="font-semibold text-sm text-muted-foreground mb-3">{t("auto.text_425771")} </h4>
               
+              {/* One row per real account, and nothing else.
+                  This used to show "cash on hand" as 60% of the total and
+                  "bank" as 40% — a split nobody chose, printed on a financial
+                  statement as though it had been counted. */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
-                      <Banknote className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
-                    </div>
-                    <span>{t("auto.text_7725d0")} </span>
-                  </div>
-                  <span className="font-semibold">${(totalCash * 0.6).toLocaleString()}</span>
-                </div>
+                {((cashAccounts as any[]) || []).map((acc: any) => (
+                  <SheetRow
+                    key={acc.id}
+                    icon={<Banknote className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}
+                    tint="bg-emerald-100 dark:bg-emerald-950/40"
+                    label={acc.name || acc.accountName || t("finance.cashAccount") || "Cash account"}
+                    amount={parseFloat(acc.currentBalance ?? "0")}
+                    href="/company/treasury"
+                  />
+                ))}
 
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center">
-                      <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-                    </div>
-                    <span>{t("auto.text_e3d705")} </span>
-                  </div>
-                  <span className="font-semibold">${(totalCash * 0.4).toLocaleString()}</span>
-                </div>
+                {((cashAccounts as any[]) || []).length === 0 && (
+                  <p className="px-3 py-2 text-sm text-muted-foreground">
+                    {pickLang(language, {
+                      ku: "هیچ حسابێکی پارە تۆمار نەکراوە",
+                      en: "No cash accounts recorded",
+                      ar: "لا توجد حسابات نقدية مسجلة",
+                      zh: "未记录任何现金账户",
+                    })}
+                  </p>
+                )}
 
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
-                      <Users className="h-4 w-4 text-amber-600 dark:text-amber-300" />
-                    </div>
-                    <span>{t("auto.text_ddf1ac")} </span>
-                  </div>
-                  <span className="font-semibold">${totalReceivables.toLocaleString()}</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-950/40 flex items-center justify-center">
-                      <Package className="h-4 w-4 text-purple-600 dark:text-purple-300" />
-                    </div>
-                    <span>{t("auto.text_a581a2")} </span>
-                  </div>
-                  <span className="font-semibold">$0</span>
-                </div>
+                <SheetRow
+                  icon={<Users className="h-4 w-4 text-amber-600 dark:text-amber-300" />}
+                  tint="bg-amber-100 dark:bg-amber-950/40"
+                  label={pickLang(language, {
+                    ku: "قەرزی کڕیاران بەسەرمانەوە",
+                    en: "Owed to us by customers",
+                    ar: "مستحقات على العملاء",
+                    zh: "客户欠款",
+                  })}
+                  note={pickLang(language, {
+                    ku: `${debtorsCount} کڕیار`,
+                    en: `${debtorsCount} customers`,
+                    ar: `${debtorsCount} عميل`,
+                    zh: `${debtorsCount} 位客户`,
+                  })}
+                  amount={totalReceivables}
+                  href="/finance/debtors"
+                />
               </div>
             </div>
 
@@ -218,36 +265,48 @@ const [selectedDate, setSelectedDate] = useState(() => {
             <div className="p-4 border-b">
               <h4 className="font-semibold text-sm text-muted-foreground mb-3">{t("auto.text_7f8766")} </h4>
               
+              {/* Both lines are real records now. This card used to be one
+                  figure that was always 0 and two rows hardcoded to $0, so
+                  the company appeared to owe nobody anything however many
+                  loans were entered on the debts screen. */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-red-100 dark:bg-red-950/40 flex items-center justify-center">
-                      <Users className="h-4 w-4 text-red-600 dark:text-red-300" />
-                    </div>
-                    <span>{t("auto.text_7e7304")} </span>
-                  </div>
-                  <span className="font-semibold">${totalPayables.toLocaleString()}</span>
-                </div>
+                <SheetRow
+                  icon={<Landmark className="h-4 w-4 text-red-600 dark:text-red-300" />}
+                  tint="bg-red-100 dark:bg-red-950/40"
+                  label={pickLang(language, {
+                    ku: "قەرز و داوای دابینکەران",
+                    en: "Loans and supplier debts",
+                    ar: "القروض وديون الموردين",
+                    zh: "贷款与供应商欠款",
+                  })}
+                  note={pickLang(language, {
+                    ku: `${outstandingDebts.length} تۆمار`,
+                    en: `${outstandingDebts.length} records`,
+                    ar: `${outstandingDebts.length} سجل`,
+                    zh: `${outstandingDebts.length} 条记录`,
+                  })}
+                  amount={totalCompanyDebt}
+                  href="/company/debts"
+                />
 
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center">
-                      <CreditCard className="h-4 w-4 text-orange-600 dark:text-orange-300" />
-                    </div>
-                    <span>{t("auto.text_a139ef")} </span>
-                  </div>
-                  <span className="font-semibold">$0</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-pink-100 dark:bg-pink-950/40 flex items-center justify-center">
-                      <Landmark className="h-4 w-4 text-pink-600 dark:text-pink-300" />
-                    </div>
-                    <span>{t("auto.text_812278")} </span>
-                  </div>
-                  <span className="font-semibold">$0</span>
-                </div>
+                <SheetRow
+                  icon={<CreditCard className="h-4 w-4 text-orange-600 dark:text-orange-300" />}
+                  tint="bg-orange-100 dark:bg-orange-950/40"
+                  label={pickLang(language, {
+                    ku: "پارەی پێشەکی کڕیاران لای ئێمە",
+                    en: "Customer credit we are holding",
+                    ar: "أرصدة العملاء المدفوعة مقدماً",
+                    zh: "代客户保管的预付款",
+                  })}
+                  note={pickLang(language, {
+                    ku: "پارەیە کە دراوە و هێشتا بەکارنەهاتووە",
+                    en: "Paid in advance and not yet used",
+                    ar: "دفعت مقدماً ولم تُستخدم بعد",
+                    zh: "已预付但尚未使用",
+                  })}
+                  amount={customerCredit}
+                  href="/finance?tab=credit-customers"
+                />
               </div>
             </div>
 
@@ -274,36 +333,22 @@ const [selectedDate, setSelectedDate] = useState(() => {
             <div className="p-4 border-b">
               <h4 className="font-semibold text-sm text-muted-foreground mb-3">{t("auto.text_f7cab8")} </h4>
               
+              {/* Equity is what is left, and saying so is the whole of it.
+                  Two of the three rows here were hardcoded zeros dressed as
+                  capital and drawings, which the company does not track. */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
-                      <PiggyBank className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
-                    </div>
-                    <span>{t("auto.text_444ee9")} </span>
-                  </div>
-                  <span className="font-semibold">$0</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center">
-                      <TrendingUp className="h-4 w-4 text-teal-600 dark:text-teal-300" />
-                    </div>
-                    <span>{t("auto.text_2252fe")} </span>
-                  </div>
-                  <span className="font-semibold">${equity.toLocaleString()}</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-cyan-100 dark:bg-cyan-950/40 flex items-center justify-center">
-                      <Wallet className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
-                    </div>
-                    <span>{t("auto.text_2c8e0f")} </span>
-                  </div>
-                  <span className="font-semibold text-red-600 dark:text-red-300">-$0</span>
-                </div>
+                <SheetRow
+                  icon={<PiggyBank className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}
+                  tint="bg-emerald-100 dark:bg-emerald-950/40"
+                  label={pickLang(language, {
+                    ku: "سامان − قەرز",
+                    en: "Assets − liabilities",
+                    ar: "الأصول − الالتزامات",
+                    zh: "资产 − 负债",
+                  })}
+                  note={`$${totalAssets.toLocaleString()} − $${totalLiabilities.toLocaleString()}`}
+                  amount={equity}
+                />
               </div>
             </div>
 
@@ -377,5 +422,52 @@ const [selectedDate, setSelectedDate] = useState(() => {
       </Card>
     </div>
     </DashboardLayout>
+  );
+}
+
+/**
+ * One line of the sheet: what it is, how much, and where the records are.
+ *
+ * Every line on a financial statement should be answerable. Before this the
+ * page carried invented splits and hardcoded zeros that looked exactly like
+ * the real figures beside them, and nothing distinguished the two.
+ */
+function SheetRow({
+  icon,
+  tint,
+  label,
+  note,
+  amount,
+  href,
+}: {
+  icon: React.ReactNode;
+  tint: string;
+  label: string;
+  note?: string;
+  amount: number;
+  href?: string;
+}) {
+  const body = (
+    <div className="flex items-center justify-between gap-3 p-3 bg-muted/30 rounded-lg">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className={`h-8 w-8 shrink-0 rounded-full ${tint} flex items-center justify-center`}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate">{label}</p>
+          {note && <p className="text-xs text-muted-foreground truncate">{note}</p>}
+        </div>
+      </div>
+      <span className="font-semibold shrink-0" dir="ltr">
+        ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </span>
+    </div>
+  );
+
+  if (!href) return body;
+  return (
+    <Link href={href} className="block hover:opacity-80 transition-opacity">
+      {body}
+    </Link>
   );
 }
