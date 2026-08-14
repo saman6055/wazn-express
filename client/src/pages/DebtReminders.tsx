@@ -283,7 +283,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
                       onCheckedChange={() => handleSelectCustomer(debtor.customerId)}
                     />
                     <div>
-                      <p className="font-medium">{debtor.customer?.fullName || '{t("common.customer")}'}</p>
+                      <p className="font-medium">{debtor.customer?.fullName || t("common.customer")}</p>
                       <p className="text-sm text-muted-foreground">{debtor.customer?.customerCode || ''}</p>
                     </div>
                   </div>

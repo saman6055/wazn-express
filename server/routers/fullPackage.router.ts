@@ -1534,8 +1534,40 @@ export const fullPackageRouter = router({
           notes: input.notes || `Quoted: $${input.sellingPriceUsd}`,
         });
         
-        // TODO: Send notification to customer about the quote
-        
+        /**
+         * Tell the customer they have a price to answer.
+         *
+         * The order now waits on them — nothing moves until they approve it —
+         * and until this was sent, nothing told them so. They asked us to buy
+         * something and then heard nothing, while the order sat quoted on our
+         * side waiting for a reply they did not know was wanted.
+         *
+         * Best-effort, and after the quote is saved: a notification that fails
+         * must not cost the office the price they just entered.
+         */
+        if (existing.customerId) {
+          try {
+            await db.createCustomerNotification({
+              customerId: existing.customerId,
+              type: "info",
+              relatedType: "full_package",
+              relatedId: existing.id,
+              actionUrl: "/portal/full-package",
+              title: "Your price is ready",
+              titleKu: "نرخەکەت ئامادەیە",
+              titleAr: "سعرك جاهز",
+              message: `Order ${existing.orderCode}: $${input.sellingPriceUsd}. Open it to accept or decline.`,
+              messageKu: `ئۆردەری ${existing.orderCode}: $${input.sellingPriceUsd}. بیکەرەوە بۆ پەسەندکردن یان ڕەتکردنەوە.`,
+              messageAr: `الطلب ${existing.orderCode}: $${input.sellingPriceUsd}. افتحه للموافقة أو الرفض.`,
+            });
+          } catch (e) {
+            appLogger.error("[FullPackage] Failed to notify customer of quote", {
+              orderId: existing.id,
+              error: e instanceof Error ? e.message : String(e),
+            });
+          }
+        }
+
         return { success: true };
       }),
     

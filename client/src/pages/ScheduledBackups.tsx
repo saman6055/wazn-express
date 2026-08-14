@@ -6,18 +6,23 @@ import { Switch } from "@/components/ui/switch";
 import { Database, Clock, Calendar, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { toast } from "sonner";
 
 
 export default function ScheduledBackups() {
   const { language } = useTranslation();
   const { data: schedules, refetch } = trpc.backup.getScheduleConfig.useQuery();
   const updateSchedule = trpc.backup.updateSchedule.useMutation({
+    // Toasts, like the rest of the app. `alert()` blocks the page until it is
+    // dismissed, cannot be styled, ignores the dark theme and — on a phone —
+    // names the site in a browser chrome box that looks like a warning from
+    // somewhere else entirely.
     onSuccess: () => {
-      alert(pickLang(language, { ku: "ڕێکخستنەکان نوێکرانەوە", en: "Settings updated", ar: "تم تحديث الإعدادات", zh: "设置已更新" }));
+      toast.success(pickLang(language, { ku: "ڕێکخستنەکان نوێکرانەوە", en: "Settings updated", ar: "تم تحديث الإعدادات", zh: "设置已更新" }));
       refetch();
     },
     onError: (error) => {
-      alert(pickLang(language, { ku: "هەڵە: ", en: "Error: ", ar: "خطأ: ", zh: "错误：" }) + error.message);
+      toast.error(pickLang(language, { ku: "هەڵە: ", en: "Error: ", ar: "خطأ: ", zh: "错误：" }) + error.message);
     },
   });
 

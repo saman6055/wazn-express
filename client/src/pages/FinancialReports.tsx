@@ -291,7 +291,7 @@ const [activeTab, setActiveTab] = useState("pnl");
                   disabled={generatePnLPDF.isPending}
                 >
                   <Download className="h-4 w-4 me-2" />
-                  {generatePnLPDF.isPending ? '{t("auto.text_8d68fe")}...' : 'PDF'}
+                  {generatePnLPDF.isPending ? `${t("auto.text_8d68fe")}...` : 'PDF'}
                 </Button>
               </CardHeader>
               <CardContent>
@@ -392,7 +392,7 @@ const [activeTab, setActiveTab] = useState("pnl");
                   disabled={generateBalanceSheetPDF.isPending}
                 >
                   <Download className="h-4 w-4 me-2" />
-                  {generateBalanceSheetPDF.isPending ? '{t("auto.text_8d68fe")}...' : 'PDF'}
+                  {generateBalanceSheetPDF.isPending ? `${t("auto.text_8d68fe")}...` : 'PDF'}
                 </Button>
               </CardHeader>
               <CardContent>
