@@ -127,6 +127,25 @@ export function formatPortalDate(value: string | Date | null | undefined, langua
 }
 
 /**
+ * A date with the time beside it, in the portal's own forms.
+ *
+ * Composed from the two formatters rather than a third
+ * `toLocaleString` call, so a moment reads the same here as the date
+ * alone reads everywhere else — and the clock matches the one in the
+ * header. Returns the em dash on its own for a missing value, exactly
+ * as the date formatter does, so a caller never prints "— · 00:00".
+ */
+export function formatPortalDateTime(
+  value: string | Date | null | undefined,
+  language: string
+): string {
+  const day = formatPortalDate(value, language);
+  if (day === "—") return day;
+  const date = value instanceof Date ? value : new Date(value as string);
+  return `${day} · ${formatClockTime(date, language)}`;
+}
+
+/**
  * Milliseconds until the top of the next minute. The header ticks on the
  * minute instead of every second — the seconds are never shown, so a
  * per-second timer would re-render for nothing.
