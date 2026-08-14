@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import * as db from './db';
+import { hasDb } from "./testEnv";
 
-describe('Invoice Reports', () => {
+describe.skipIf(!hasDb())('Invoice Reports', () => {
   // Test getInvoiceSummary
   describe('getInvoiceSummary', () => {
     it('should return invoice summary with correct structure', async () => {

@@ -9,8 +9,9 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as db from './db';
+import { hasDb } from "./testEnv";
 
-describe('Full Package Linked Package Shipping', () => {
+describe.skipIf(!hasDb())('Full Package Linked Package Shipping', () => {
   let testCustomerId: number;
   let testCustomerCode: string;
   let testFullPackageOrderId: number;

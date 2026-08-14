@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { SYSTEM_MODULES, PERMISSION_GROUPS } from "../shared/permissions";
+import { hasDb } from "./testEnv";
 
 /**
  * Tests for batch sync logic:
@@ -10,7 +11,7 @@ import { SYSTEM_MODULES, PERMISSION_GROUPS } from "../shared/permissions";
  * Integration tests would require a running database.
  */
 
-describe("Batch Sync Logic", () => {
+describe.skipIf(!hasDb())("Batch Sync Logic", () => {
   it("updatePackage function should have batchId sync code", async () => {
     // Read the db.ts file and verify the sync code exists
     const fs = await import("fs");

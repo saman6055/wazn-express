@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import * as db from "./db";
+import { hasDb } from "./testEnv";
 
-describe("Package Claim Requests", () => {
+describe.skipIf(!hasDb())("Package Claim Requests", () => {
   describe("getUnclaimedPackagesWithSearch", () => {
     it("should return unclaimed packages", async () => {
       const result = await db.getUnclaimedPackagesWithSearch();

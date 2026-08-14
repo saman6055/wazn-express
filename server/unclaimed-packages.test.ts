@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { appRouter } from "./routers";
 import * as db from "./db";
+import { hasDb } from "./testEnv";
 
 // Create test context
 const createTestContext = (role: "admin" | "employee" | "accountant" | "customer" = "admin") => ({
@@ -32,7 +33,7 @@ const createTestContext = (role: "admin" | "employee" | "accountant" | "customer
   },
 });
 
-describe("Unclaimed Packages System", () => {
+describe.skipIf(!hasDb())("Unclaimed Packages System", () => {
   let testWarehouseId: number;
   let testCustomerId: number;
   let unclaimedPackageId: number;

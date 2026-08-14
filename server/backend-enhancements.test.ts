@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import * as db from "./db";
+import { hasDb } from "./testEnv";
 
-describe("Backend Enhancements", () => {
+describe.skipIf(!hasDb())("Backend Enhancements", () => {
   let testCustomerId: number;
 
   beforeAll(async () => {

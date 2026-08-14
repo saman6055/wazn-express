@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as db from './db';
+import { hasDb } from "./testEnv";
 
-describe('Batch Operations', () => {
+describe.skipIf(!hasDb())('Batch Operations', () => {
   let testWarehouseId: number;
   let testCountryId: number;
 

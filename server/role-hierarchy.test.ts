@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import * as db from "./db";
+import { hasDb } from "./testEnv";
 
-describe("Role Hierarchy Tests", () => {
+describe.skipIf(!hasDb())("Role Hierarchy Tests", () => {
   let superAdminId: number;
   let adminId: number;
   let employeeId: number;

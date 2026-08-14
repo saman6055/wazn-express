@@ -14,8 +14,9 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as db from './db';
+import { hasDb } from "./testEnv";
 
-describe('Unified Financial Model', () => {
+describe.skipIf(!hasDb())('Unified Financial Model', () => {
   let testCustomerId: number;
   let testCustomerCode: string;
   let testFullPackageOrderId: number;

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { hasDb } from "./testEnv";
 
 function createAdminContext(): TrpcContext {
   return {
@@ -20,7 +21,7 @@ function createAdminContext(): TrpcContext {
   };
 }
 
-describe("Advanced Settings System", () => {
+describe.skipIf(!hasDb())("Advanced Settings System", () => {
   let adminCaller: ReturnType<typeof appRouter.createCaller>;
   let testCurrencyId: number;
   let testTaxRateId: number;

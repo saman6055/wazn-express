@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as db from './db';
+import { hasDb } from "./testEnv";
 
-describe('Package Status Sync to FullPackageOrder', () => {
+describe.skipIf(!hasDb())('Package Status Sync to FullPackageOrder', () => {
   let testCustomerId: number;
   let testPackageId: number;
   let testFullPackageOrderId: number;

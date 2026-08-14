@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { hasDb } from "./testEnv";
 
 // Mock storagePut to avoid actual S3 uploads during tests
 vi.mock("./storage", () => ({
@@ -51,7 +52,7 @@ function createUnauthContext(): TrpcContext {
   };
 }
 
-describe("storage.upload", () => {
+describe.skipIf(!hasDb())("storage.upload", () => {
   it("uploads a base64 image and returns a URL", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
@@ -99,7 +100,7 @@ describe("storage.upload", () => {
   });
 });
 
-describe("fullPackage.bulkCreate with images", () => {
+describe.skipIf(!hasDb())("fullPackage.bulkCreate with images", () => {
   it("accepts productImage and productImages fields in bulk create items", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
@@ -173,7 +174,7 @@ describe("fullPackage.bulkCreate with images", () => {
   });
 });
 
-describe("fullPackage.create with images", () => {
+describe.skipIf(!hasDb())("fullPackage.create with images", () => {
   it("accepts productImage and productImages in single create", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);

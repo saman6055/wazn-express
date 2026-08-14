@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import * as db from "./db";
+import { hasDb } from "./testEnv";
 
-describe("Customer Ledger System", () => {
+describe.skipIf(!hasDb())("Customer Ledger System", () => {
   let testCustomerId: number;
   let testAccountId: number;
   let testCustomerCode: string;

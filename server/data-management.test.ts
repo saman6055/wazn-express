@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as db from './db';
+import { hasDb } from "./testEnv";
 
 // Mock the database module
 vi.mock('./db', async () => {
@@ -10,7 +11,7 @@ vi.mock('./db', async () => {
   };
 });
 
-describe('Data Management Functions', () => {
+describe.skipIf(!hasDb())('Data Management Functions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

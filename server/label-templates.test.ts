@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { appRouter } from "./routers";
+import { hasDb } from "./testEnv";
 
 const createTestContext = (role: "admin" | "employee" | "accountant" | "customer" = "admin") => ({
   user: {
@@ -19,7 +20,7 @@ const createTestContext = (role: "admin" | "employee" | "accountant" | "customer
   } as any,
 });
 
-describe("Label Templates", () => {
+describe.skipIf(!hasDb())("Label Templates", () => {
   let adminCtx: any;
   let createdTemplateId: number;
 
@@ -111,7 +112,7 @@ describe("Label Templates", () => {
   });
 });
 
-describe("Notification Templates", () => {
+describe.skipIf(!hasDb())("Notification Templates", () => {
   let adminCtx: any;
 
   beforeAll(async () => {

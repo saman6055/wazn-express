@@ -2,6 +2,7 @@ import { describe, expect, it, beforeAll } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import * as db from "./db";
+import { hasDb } from "./testEnv";
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
@@ -31,7 +32,7 @@ function createStaffContext(role: "admin" | "employee" | "accountant" = "admin")
   };
 }
 
-describe("Package Registration with Batch", () => {
+describe.skipIf(!hasDb())("Package Registration with Batch", () => {
   let testCustomerId: number;
   let testWarehouseId: number;
   let testBatchId: number;
@@ -142,7 +143,7 @@ describe("Package Registration with Batch", () => {
   });
 });
 
-describe("Automatic Pricing on Delivery", () => {
+describe.skipIf(!hasDb())("Automatic Pricing on Delivery", () => {
   let testPackageId: number;
   let testCustomerId: number;
   let testWarehouseId: number;

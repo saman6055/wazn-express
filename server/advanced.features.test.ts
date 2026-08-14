@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as db from './db';
+import { hasDb } from "./testEnv";
 
-describe('Advanced Features - Profit Reports & Notifications', () => {
+describe.skipIf(!hasDb())('Advanced Features - Profit Reports & Notifications', () => {
   let testCustomerId: number;
   let testOrder1Id: number;
   let testOrder2Id: number;

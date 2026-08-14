@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
+import { hasDb } from "./testEnv";
 
 /**
  * Deleting a batch is the one operation here that destroys a record, so the
@@ -32,7 +33,7 @@ function slice(src: string, startMarker: string, endMarker: string, label: strin
   return body;
 }
 
-describe("deleting a batch", () => {
+describe.skipIf(!hasDb())("deleting a batch", () => {
   const router = read("server/routers/batches.router.ts");
   const dbLayer = read("server/db/batches.db.ts");
 

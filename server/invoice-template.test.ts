@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as db from './db';
+import { hasDb } from "./testEnv";
 
-describe('Invoice Template System', () => {
+describe.skipIf(!hasDb())('Invoice Template System', () => {
   
   describe('getInvoiceTemplates', () => {
     it('should return an array of templates', async () => {

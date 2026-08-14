@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import * as db from "./db";
+import { hasDb } from "./testEnv";
 
-describe("Permissions System", () => {
+describe.skipIf(!hasDb())("Permissions System", () => {
   let testUserId: number;
   let testAdminId: number;
 

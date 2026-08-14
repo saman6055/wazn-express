@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { hasDb } from "./testEnv";
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
@@ -29,7 +30,7 @@ function createAdminContext(): TrpcContext {
   };
 }
 
-describe("Suppliers Router", () => {
+describe.skipIf(!hasDb())("Suppliers Router", () => {
   const ctx = createAdminContext();
   const caller = appRouter.createCaller(ctx);
 
@@ -104,7 +105,7 @@ describe("Suppliers Router", () => {
   });
 });
 
-describe("Full Package Router", () => {
+describe.skipIf(!hasDb())("Full Package Router", () => {
   const ctx = createAdminContext();
   const caller = appRouter.createCaller(ctx);
 

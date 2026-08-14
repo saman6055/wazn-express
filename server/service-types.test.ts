@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import * as db from "./db";
+import { hasDb } from "./testEnv";
 
-describe("Service Types", () => {
+describe.skipIf(!hasDb())("Service Types", () => {
   describe("getAllServiceTypes", () => {
     it("should return all service types", async () => {
       const types = await db.getAllServiceTypes();
@@ -112,7 +113,7 @@ describe("Service Types", () => {
   });
 });
 
-describe("Extra Services", () => {
+describe.skipIf(!hasDb())("Extra Services", () => {
   let testServiceTypeId: number;
   let testCustomerId: number;
   

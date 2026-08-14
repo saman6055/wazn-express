@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { hasDb } from "./testEnv";
 
 type CookieCall = {
   name: string;
@@ -90,7 +91,7 @@ function createRegularUserContext(): { ctx: TrpcContext } {
   return { ctx };
 }
 
-describe("customers router", () => {
+describe.skipIf(!hasDb())("customers router", () => {
   it("admin can list customers", async () => {
     const { ctx } = createAdminContext();
     const caller = appRouter.createCaller(ctx);
@@ -144,7 +145,7 @@ describe("customers router", () => {
   });
 });
 
-describe("auth router", () => {
+describe.skipIf(!hasDb())("auth router", () => {
   it("returns current user from me query", async () => {
     const { ctx } = createAdminContext();
     const caller = appRouter.createCaller(ctx);
@@ -190,7 +191,7 @@ describe("auth router", () => {
   });
 });
 
-describe("role-based access control", () => {
+describe.skipIf(!hasDb())("role-based access control", () => {
   it("admin can access admin procedures", async () => {
     const { ctx } = createAdminContext();
     const caller = appRouter.createCaller(ctx);
