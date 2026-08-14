@@ -1141,6 +1141,36 @@ export const batchesRouter = router({
           const pricePerCbm = batch ? parseFloat(batch.pricePerCbm?.toString() || "0") : 0;
           const isSea = batch?.shippingType === 'sea';
 
+          /**
+           * The rate each customer is billed at in this shipment.
+           *
+           * This run used to charge everybody the shipment default. A rate
+           * agreed with one customer was stored, shown to them in the portal
+           * and counted in the profit report — and then not used to invoice
+           * them, which is the one place it mattered.
+           *
+           * Resolved once per customer: the run touches every parcel and the
+           * lookup reads all of that customer's parcels to place them in a
+           * tier.
+           */
+          const rateCache = new Map<number, { kg: number; cbm: number }>();
+          const ratesFor = async (customerId: number | null | undefined) => {
+            if (!customerId) return { kg: pricePerKg, cbm: pricePerCbm };
+            const cached = rateCache.get(customerId);
+            if (cached) return cached;
+            const resolved = await db.getBatchRateForCustomer(id, customerId, {
+              unit: isSea ? 'cbm' : 'kg',
+            });
+            // Only the unit this shipment bills in is re-rated. The other one
+            // stays the shipment default, so the existing fallback — a sea
+            // shipment priced only per kg — behaves exactly as it did.
+            const rates = isSea
+              ? { kg: pricePerKg, cbm: resolved.rate || pricePerCbm }
+              : { kg: resolved.rate || pricePerKg, cbm: pricePerCbm };
+            rateCache.set(customerId, rates);
+            return rates;
+          };
+
           // Consolidation buckets — one entry per (customer, order/pkg).
           type FpItem = { order: any; chargeAmount: number; shippingShare: number; pkg: any };
           type CmItem = { order: any; chargeAmount: number; shippingShare: number; pkg: any };
@@ -1229,17 +1259,18 @@ export const batchesRouter = router({
 
                 // 1. Calculate total shipping cost for this package
                 let shippingCost = 0;
-                if (isSea && pricePerCbm > 0) {
+                const { kg: pkgRateKg, cbm: pkgRateCbm } = await ratesFor(pkg.customerId);
+                if (isSea && pkgRateCbm > 0) {
                   const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
-                  shippingCost = cbm * pricePerCbm;
-                } else if (pricePerKg > 0) {
+                  shippingCost = cbm * pkgRateCbm;
+                } else if (pkgRateKg > 0) {
                   const actualKg = parseFloat(pkg.weightKg?.toString() || "0");
                   const lengthCm = parseFloat(pkg.lengthCm?.toString() || "0");
                   const widthCm = parseFloat(pkg.widthCm?.toString() || "0");
                   const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
                   const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
                   const chargeableKg = Math.max(actualKg, volumetricKg);
-                  shippingCost = chargeableKg * pricePerKg;
+                  shippingCost = chargeableKg * pkgRateKg;
                 }
 
                 // 2. Save calculated shipping to package (for reference)
@@ -1448,6 +1479,10 @@ export const batchesRouter = router({
               let totalCbm = 0;
               const lineItems = [];
 
+              // This customer's rate: agreed with them, else their tier, else
+              // the shipment's own. Every line on this invoice uses it.
+              const { kg: custRateKg, cbm: custRateCbm } = await ratesFor(customerId);
+
               for (const pkg of unchargedPackages) {
                 let pkgPrice = 0;
                 let quantity = 0;
@@ -1464,12 +1499,12 @@ export const batchesRouter = router({
                 const chargeableKg = Math.max(actualKg, volumetricKg);
                 const cartonCount = (pkg as any).cartonCount ?? 1;
 
-                if (isSea && pricePerCbm > 0) {
-                  pkgPrice = cbm * pricePerCbm;
+                if (isSea && custRateCbm > 0) {
+                  pkgPrice = cbm * custRateCbm;
                   quantity = cbm;
                   unit = 'CBM';
-                } else if (pricePerKg > 0) {
-                  pkgPrice = chargeableKg * pricePerKg;
+                } else if (custRateKg > 0) {
+                  pkgPrice = chargeableKg * custRateKg;
                   quantity = chargeableKg;
                   unit = 'KG';
                 }
@@ -1507,7 +1542,7 @@ export const batchesRouter = router({
                   if (lengthCm > 0) measureParts.push(`${lengthCm}×${widthCm}×${heightCm} cm`);
                   if (cartonCount > 1) measureParts.push(`CTN: ${cartonCount}`);
                   descParts.push(measureParts.join(' · '));
-                  descParts.push(`نرخ: ${cbm.toFixed(3)} m³ × $${pricePerCbm.toFixed(2)}/m³ = $${pkgPrice.toFixed(2)}`);
+                  descParts.push(`نرخ: ${cbm.toFixed(3)} m³ × $${custRateCbm.toFixed(2)}/m³ = $${pkgPrice.toFixed(2)}`);
                 } else {
                   const measureParts: string[] = [];
                   if (actualKg > 0) measureParts.push(`کێشی ڕاستەقینە: ${actualKg.toFixed(2)} kg`);
@@ -1518,7 +1553,7 @@ export const batchesRouter = router({
                   // Always show which weight was used for billing so the customer
                   // understands the higher-of rule without having to ask.
                   descParts.push(
-                    `نرخ: ${chargeableKg.toFixed(2)} kg (${chargeableKg === volumetricKg && volumetricKg > actualKg ? 'قەبارەیی' : 'ڕاستەقینە'}) × $${pricePerKg.toFixed(2)}/kg = $${pkgPrice.toFixed(2)}`
+                    `نرخ: ${chargeableKg.toFixed(2)} kg (${chargeableKg === volumetricKg && volumetricKg > actualKg ? 'قەبارەیی' : 'ڕاستەقینە'}) × $${custRateKg.toFixed(2)}/kg = $${pkgPrice.toFixed(2)}`
                   );
                 }
 
@@ -1547,8 +1582,8 @@ export const batchesRouter = router({
                 notesParts.push(`ژمارەی پاکەت: ${unchargedPackages.length}`);
                 if (totalWeight > 0) notesParts.push(`کۆی کێش: ${totalWeight.toFixed(2)} kg`);
                 if (totalCbm > 0) notesParts.push(`کۆی قەبارە: ${totalCbm.toFixed(3)} m³`);
-                if (isSea && pricePerCbm > 0) notesParts.push(`نرخی m³: $${pricePerCbm.toFixed(2)}`);
-                if (!isSea && pricePerKg > 0) notesParts.push(`نرخی kg: $${pricePerKg.toFixed(2)}`);
+                if (isSea && custRateCbm > 0) notesParts.push(`نرخی m³: $${custRateCbm.toFixed(2)}`);
+                if (!isSea && custRateKg > 0) notesParts.push(`نرخی kg: $${custRateKg.toFixed(2)}`);
                 notesParts.push(`کۆی گشتی: $${totalAmount.toFixed(2)}`);
                 // Tracking-number list at the end so customers can ctrl-F match
                 // their external tracking references without scrolling through
@@ -1577,10 +1612,10 @@ export const batchesRouter = router({
                 if (customer) {
                   for (const pkg of unchargedPackages) {
                     let pkgPrice = 0;
-                    if (isSea && pricePerCbm > 0) {
+                    if (isSea && custRateCbm > 0) {
                       const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
-                      pkgPrice = cbm * pricePerCbm;
-                    } else if (pricePerKg > 0) {
+                      pkgPrice = cbm * custRateCbm;
+                    } else if (custRateKg > 0) {
                       // Use chargeable weight (max of actual and volumetric)
                       const actualKg = parseFloat(pkg.weightKg?.toString() || "0");
                       const lengthCm = parseFloat(pkg.lengthCm?.toString() || "0");
@@ -1588,7 +1623,7 @@ export const batchesRouter = router({
                       const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
                       const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
                       const chargeableKg = Math.max(actualKg, volumetricKg);
-                      pkgPrice = chargeableKg * pricePerKg;
+                      pkgPrice = chargeableKg * custRateKg;
                     }
 
                     if (pkgPrice > 0) {
@@ -1951,32 +1986,21 @@ export const batchesRouter = router({
         
         const unit = batch.shippingType === 'sea' ? 'cbm' : 'kg';
         const customerTotal = await db.getCustomerTotalInBatch(input.batchId, input.customerId, unit);
-        
-        // Check if batch uses tiered pricing
-        if (batch.useTieredPricing) {
-          const tierPrice = await db.getApplicableTierPrice(input.batchId, customerTotal);
-          if (tierPrice !== null) {
-            return {
-              customerTotal,
-              unit,
-              pricePerUnit: tierPrice,
-              totalPrice: customerTotal * tierPrice,
-              isTiered: true,
-            };
-          }
-        }
-        
-        // Use default price
-        const defaultPrice = unit === 'cbm' 
-          ? Number(batch.pricePerCbm) || 0 
-          : Number(batch.pricePerKg) || 0;
-        
+
+        // What this customer will actually be invoiced at — staff quote from
+        // this, so it must be the same order the invoice run uses. It used to
+        // check the tier and the shipment default only, and so quoted the
+        // wrong figure to any customer with a rate agreed for this shipment.
+        const resolved = await db.getBatchRateForCustomer(input.batchId, input.customerId, { unit, customerTotal });
+
         return {
           customerTotal,
           unit,
-          pricePerUnit: defaultPrice,
-          totalPrice: customerTotal * defaultPrice,
-          isTiered: false,
+          pricePerUnit: resolved.rate,
+          totalPrice: customerTotal * resolved.rate,
+          isTiered: resolved.source === 'tier',
+          /** Where the rate came from: customer / tier / batch / none. */
+          rateSource: resolved.source,
         };
       }),
 });

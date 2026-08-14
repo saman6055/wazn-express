@@ -1,6 +1,7 @@
 import { getDb } from './connection';
 import { appLogger } from '../utils/logger';
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from '@shared/chargeableWeight';
+import { billingUnit, resolveBatchRate, type BatchRate } from '@shared/batchRate';
 import { getSetting, getVolumetricDivisor } from './settings.db';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import {
@@ -404,6 +405,52 @@ export async function getApplicableTierPrice(batchId: number, customerTotalValue
 }
 
 /**
+ * The rate one customer is billed at for one shipment.
+ *
+ * Everything that charges money asks this, so the agreed rate, the tier and
+ * the shipment default cannot be ordered differently on the invoice than on
+ * the report the office reads. They were: two of the four places that decided
+ * this had left the customer's own agreed rate out entirely, so a customer
+ * with a negotiated price was quietly billed the shipment default.
+ *
+ * `customerTotal` is only needed for tiered shipments — it is what decides
+ * which tier they fall into — and is looked up when it is not supplied.
+ */
+export async function getBatchRateForCustomer(
+  batchId: number,
+  customerId: number,
+  opts: { unit?: "kg" | "cbm"; customerTotal?: number } = {}
+): Promise<BatchRate & { unit: "kg" | "cbm" }> {
+  const db = await getDb();
+  const batch = await getBatchById(batchId);
+  if (!db || !batch) return { rate: 0, source: "none", unit: opts.unit ?? "kg" };
+
+  const unit = opts.unit ?? billingUnit(batch.shippingType);
+
+  const override = await getCustomerPricingInBatch(batchId, customerId);
+
+  // Only a tiered shipment needs the customer's total, and working it out
+  // means reading every parcel they have in the batch.
+  let tierRate: number | null = null;
+  if (batch.useTieredPricing) {
+    const total = opts.customerTotal ?? await getCustomerTotalInBatch(batchId, customerId, unit);
+    tierRate = await getApplicableTierPrice(batchId, total);
+  }
+
+  const resolved = resolveBatchRate({
+    unit,
+    customerPricePerKg: override?.pricePerKg,
+    customerPricePerCbm: override?.pricePerCbm,
+    useTieredPricing: batch.useTieredPricing,
+    tierRate,
+    batchPricePerKg: batch.pricePerKg,
+    batchPricePerCbm: batch.pricePerCbm,
+  });
+
+  return { ...resolved, unit };
+}
+
+/**
  * The divisor every volumetric calculation must agree on.
  *
  * It was written as a literal 6000 in three places here while the register
@@ -647,24 +694,23 @@ export async function getBatchFinancialSummary(batchId: number) {
 
     for (const customerEntry of Object.values(customerBreakdown)) {
       const customerTotal = unit === 'kg' ? customerEntry.chargeableWeight : customerEntry.cbm;
-      let rate: number | null = null;
-
-      // 1. Customer-specific override
       const override = overrideMap.get(customerEntry.customerId);
-      if (override) {
-        const v = unit === 'kg' ? override.pricePerKg : override.pricePerCbm;
-        if (v != null && v !== '') rate = Number(v);
-      }
 
-      // 2. Tiered pricing (rate depends on this customer's total in the batch)
-      if (rate === null && batchData.useTieredPricing) {
-        rate = await getApplicableTierPrice(batchId, customerTotal);
-      }
+      // The order the invoice uses, from the one place that decides it —
+      // this report is what the office checks the invoice against.
+      const { rate } = resolveBatchRate({
+        unit,
+        customerPricePerKg: override?.pricePerKg,
+        customerPricePerCbm: override?.pricePerCbm,
+        useTieredPricing: batchData.useTieredPricing,
+        tierRate: batchData.useTieredPricing
+          ? await getApplicableTierPrice(batchId, customerTotal)
+          : null,
+        batchPricePerKg: unit === 'kg' ? batchDefaultRate : null,
+        batchPricePerCbm: unit === 'cbm' ? batchDefaultRate : null,
+      });
 
-      // 3. Batch default
-      if (rate === null) rate = batchDefaultRate;
-
-      customerEntry.revenue = (rate || 0) * customerTotal;
+      customerEntry.revenue = rate * customerTotal;
     }
   }
 

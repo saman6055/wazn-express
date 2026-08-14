@@ -130,10 +130,12 @@ describe("the shipment's rate reaches the screens that need it", () => {
     // parcelPriceDisplay cannot tell a rated shipment from an unrated one
     // without these, and silently returns "pending" for everything if they
     // stop being selected — hiding every price rather than failing loudly.
+    // Normalised: the markers span lines, and a CRLF working copy would make
+    // every "\n}" miss — a slice that finds nothing asserts nothing.
     const src = fs.readFileSync(
       path.resolve(__dirname, "../../server/db/portal.db.ts"),
       "utf8",
-    );
+    ).replace(/\r\n/g, "\n");
     const start = src.indexOf("export async function getSelfOrderPackages");
     expect(start, "getSelfOrderPackages not found").toBeGreaterThan(-1);
     const end = src.indexOf("\n}\n", start);

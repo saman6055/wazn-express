@@ -847,8 +847,22 @@ export const packagesRouter = router({
         if (pkg && pkg.batchId) {
           const batch = await db.getBatchById(pkg.batchId);
           if (batch) {
+            // The new owner's own rate where they have one, so this stored
+            // figure matches the invoice they will actually receive.
+            const isSea = batch.shippingType === 'sea';
+            const owner = pkg.customerId;
+            const ownerRate = owner
+              ? (await db.getBatchRateForCustomer(pkg.batchId, owner, { unit: isSea ? 'cbm' : 'kg' })).rate
+              : 0;
+            const ratePerKg = !isSea && ownerRate > 0
+              ? ownerRate
+              : parseFloat(batch.pricePerKg?.toString() || "0") || 0;
+            const ratePerCbm = isSea && ownerRate > 0
+              ? ownerRate
+              : parseFloat(batch.pricePerCbm?.toString() || "0") || 0;
+
             let calculatedCost = 0;
-            if (batch.pricePerKg && pkg.weightKg) {
+            if (ratePerKg > 0 && pkg.weightKg) {
               // Use chargeable weight (max of actual and volumetric)
               const actualKg = parseFloat(pkg.weightKg?.toString() || "0");
               const lengthCm = parseFloat(pkg.lengthCm?.toString() || "0");
@@ -856,9 +870,9 @@ export const packagesRouter = router({
               const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
               const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
               const chargeableKg = Math.max(actualKg, volumetricKg);
-              calculatedCost = parseFloat(batch.pricePerKg) * chargeableKg;
-            } else if (batch.pricePerCbm && pkg.volumeCbm) {
-              calculatedCost = parseFloat(batch.pricePerCbm) * parseFloat(pkg.volumeCbm);
+              calculatedCost = ratePerKg * chargeableKg;
+            } else if (ratePerCbm > 0 && pkg.volumeCbm) {
+              calculatedCost = ratePerCbm * parseFloat(pkg.volumeCbm);
             }
             
             if (calculatedCost > 0) {
@@ -953,8 +967,18 @@ export const packagesRouter = router({
             // Mirrors batches.router.ts Phase 2C exactly so a late-claim
             // and a normal-flow charge produce the same number.
             const isSea = batch.shippingType === 'sea';
-            const pricePerKg = parseFloat(batch.pricePerKg?.toString() || '0') || 0;
-            const pricePerCbm = parseFloat(batch.pricePerCbm?.toString() || '0') || 0;
+            // The claimant's own rate, by the same order Phase 2C uses — a
+            // customer with an agreed rate must not be billed differently
+            // just because their parcel was claimed after delivery.
+            const claimantRate = await db.getBatchRateForCustomer(updated.batchId, input.customerId, {
+              unit: isSea ? 'cbm' : 'kg',
+            });
+            const pricePerKg = isSea
+              ? parseFloat(batch.pricePerKg?.toString() || '0') || 0
+              : claimantRate.rate;
+            const pricePerCbm = isSea
+              ? claimantRate.rate
+              : parseFloat(batch.pricePerCbm?.toString() || '0') || 0;
             const actualKg = parseFloat(updated.weightKg?.toString() || '0') || 0;
             const lengthCm = parseFloat(updated.lengthCm?.toString() || '0') || 0;
             const widthCm = parseFloat(updated.widthCm?.toString() || '0') || 0;
@@ -1208,24 +1232,16 @@ export const packagesRouter = router({
               if (batch) {
                 unit = batch.shippingType === 'sea' ? 'cbm' : 'kg';
                 const customerTotal = await db.getCustomerTotalInBatch(pkg.batchId, pkg.customerId, unit);
-                
-                // Check if batch uses tiered pricing
-                if (batch.useTieredPricing) {
-                  const tierPrice = await db.getApplicableTierPrice(pkg.batchId, customerTotal);
-                  if (tierPrice !== null) {
-                    pricePerUnit = tierPrice;
-                    pricingSource = 'batch_tiered';
-                  }
-                }
-                
-                // If no tiered price, use batch default price
-                if (pricePerUnit === 0) {
-                  pricePerUnit = unit === 'cbm' 
-                    ? Number(batch.pricePerCbm) || 0 
-                    : Number(batch.pricePerKg) || 0;
-                  pricingSource = 'batch_default';
-                }
-                
+
+                // The agreed rate, then the tier, then the shipment's own.
+                // This used to start at the tier, so a customer with a rate
+                // agreed for this shipment was charged the default anyway.
+                const resolved = await db.getBatchRateForCustomer(pkg.batchId, pkg.customerId, { unit, customerTotal });
+                pricePerUnit = resolved.rate;
+                pricingSource = resolved.source === 'customer' ? 'batch_customer'
+                  : resolved.source === 'tier' ? 'batch_tiered'
+                  : 'batch_default';
+
                 // Calculate charge based on unit
                 if (pricePerUnit > 0) {
                   if (unit === 'cbm' && pkg.volumeCbm) {
@@ -1330,16 +1346,16 @@ export const packagesRouter = router({
                       const batch = await db.getBatchById(pkg.batchId);
                       if (batch) {
                         unit = batch.shippingType === 'sea' ? 'cbm' : 'kg';
-                        const customerTotal = pkg.customerId ? await db.getCustomerTotalInBatch(pkg.batchId, pkg.customerId, unit) : 0;
-                        
-                        if (batch.useTieredPricing) {
-                          const tierPrice = await db.getApplicableTierPrice(pkg.batchId, customerTotal);
-                          if (tierPrice !== null) pricePerUnit = tierPrice;
-                        }
-                        
-                        if (pricePerUnit === 0) {
-                          pricePerUnit = unit === 'cbm' 
-                            ? Number(batch.pricePerCbm) || 0 
+                        if (pkg.customerId) {
+                          // Same order as the invoice — this figure feeds the
+                          // Full Package profit, so a rate that disagreed with
+                          // the one we bill at would misstate the margin.
+                          const customerTotal = await db.getCustomerTotalInBatch(pkg.batchId, pkg.customerId, unit);
+                          const resolved = await db.getBatchRateForCustomer(pkg.batchId, pkg.customerId, { unit, customerTotal });
+                          pricePerUnit = resolved.rate;
+                        } else {
+                          pricePerUnit = unit === 'cbm'
+                            ? Number(batch.pricePerCbm) || 0
                             : Number(batch.pricePerKg) || 0;
                         }
                       }

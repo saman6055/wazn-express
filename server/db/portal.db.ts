@@ -5,7 +5,7 @@ import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from '@shared/ledgerTypes';
 import { getVolumetricDivisor } from './settings.db';
 import { getCustomerAccountByCustomerId } from './finance.db';
 import { selfOrderWhere } from './selfOrder.filter';
-import { getBatchStatusTimestamps } from './batches.db';
+import { getBatchStatusTimestamps, getBatchRateForCustomer } from './batches.db';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -261,40 +261,11 @@ export async function getCustomerPackagesInBatch(customerId: number, batchId: nu
       }
     }
 
-    // 1. Customer-specific override.
-    const override = await db.select().from(batchCustomerPricing)
-      .where(and(
-        eq(batchCustomerPricing.batchId, batchId),
-        eq(batchCustomerPricing.customerId, customerId)
-      ))
-      .limit(1);
-    if (override[0]) {
-      const v = unit === 'kg' ? override[0].pricePerKg : override[0].pricePerCbm;
-      if (v != null && v !== '') liveRate = Number(v);
-    }
-
-    // 2. Tier price based on this customer's total.
-    if (liveRate === null && batch.useTieredPricing) {
-      const tiers = await db.select().from(batchPricingTiers)
-        .where(eq(batchPricingTiers.batchId, batchId))
-        .orderBy(batchPricingTiers.sortOrder);
-      if (tiers.length > 0) {
-        for (const tier of tiers) {
-          const minVal = Number(tier.minValue);
-          const maxVal = tier.maxValue ? Number(tier.maxValue) : Infinity;
-          if (customerTotal >= minVal && customerTotal < maxVal) {
-            liveRate = Number(tier.pricePerUnit);
-            break;
-          }
-        }
-        if (liveRate === null) liveRate = Number(tiers[tiers.length - 1].pricePerUnit);
-      }
-    }
-
-    // 3. Batch default.
-    if (liveRate === null) {
-      liveRate = isSea ? Number(batch.pricePerCbm) || 0 : Number(batch.pricePerKg) || 0;
-    }
+    // The agreed rate, then the tier, then the shipment's own — decided in
+    // one place, so what the customer is shown here and what they are
+    // invoiced cannot come apart.
+    const rate = await getBatchRateForCustomer(batchId, customerId, { unit, customerTotal });
+    liveRate = rate.rate;
   }
 
   // Check if each package is linked to a Full Package order — one batched
