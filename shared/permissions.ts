@@ -153,11 +153,11 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ],
   },
 
-  // ─── 3. Full Package (فول پاکێج) ───
+  // ─── 3. Full Package (پاکێجی تەواو) ───
   {
     id: "fullPackage",
     label: "Full Package",
-    labelKu: "فول پاکێج",
+    labelKu: "پاکێجی تەواو",
     color: "violet",
     icon: "Boxes",
     modules: [
@@ -171,7 +171,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       {
         module: "full_package",
         label: "Full Package",
-        labelKu: "فول پاکێج",
+        labelKu: "پاکێجی تەواو",
         actions: ["view", "create", "edit", "delete"],
         subPermissions: [],
       },

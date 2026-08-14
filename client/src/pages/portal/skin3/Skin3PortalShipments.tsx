@@ -756,7 +756,7 @@ export default function Skin3PortalShipments() {
                                                   : "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300"
                                               )}
                                             >
-                                              {pickLang(language, { ku: "فول پاکەج", en: "Full Pkg", ar: "الطلب الكامل", zh: "整包代购" })}
+                                              {pickLang(language, { ku: "پاکێجی تەواو", en: "Full Pkg", ar: "الطلب الكامل", zh: "整包代购" })}
                                             </span>
                                           )}
                                         </div>

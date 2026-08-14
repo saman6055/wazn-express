@@ -681,7 +681,7 @@ export default function ModernPortalShipments() {
                                           )}
                                           {pkg.isFullPackage && (
                                             <span className="text-[10px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/40 px-1.5 py-0.5 rounded">
-                                              {pickLang(language, { ku: "فول پاکەج", en: "Full Pkg", ar: "الطلب الكامل", zh: "整包代购" })}
+                                              {pickLang(language, { ku: "پاکێجی تەواو", en: "Full Pkg", ar: "الطلب الكامل", zh: "整包代购" })}
                                             </span>
                                           )}
                                         </div>

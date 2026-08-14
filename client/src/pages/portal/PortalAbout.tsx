@@ -68,7 +68,7 @@ export default function PortalAbout() {
     },
     {
       icon: ShoppingBag, grad: "from-violet-500 to-purple-600",
-      title: { ku: "خزمەتگوزاری فوڵ پاکێج", en: "Full-Package Service", ar: "خدمة الطرد الكامل", zh: "全包服务" },
+      title: { ku: "خزمەتگوزاری پاکێجی تەواو", en: "Full-Package Service", ar: "خدمة الطرد الكامل", zh: "全包服务" },
       desc: {
         ku: "بۆت دەکڕین، پارە دەدەین و دەگەیەنین — تۆ تەنها داواکارییەکەت بنێرە.",
         en: "We buy, pay, and ship on your behalf — you just send the request.",

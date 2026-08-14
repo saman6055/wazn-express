@@ -2320,7 +2320,12 @@
     "thisYear": "This Year",
     "allTime": "All Time",
     "noActivityHintTitle": "All figures are zero",
-    "noActivityHintBody": "No revenue or expenses recorded in the selected period. Batch revenue is tied to batches created during this period. Try selecting \"This Year\" or a different time range."
+    "noActivityHintBody": "No revenue or expenses recorded in the selected period. Batch revenue is tied to batches created during this period. Try selecting \"This Year\" or a different time range.",
+    "dashboard": "Dashboard",
+    "bankAccounts": "Bank accounts",
+    "debts": "Debts",
+    "debtAmount": "Debt amount",
+    "progress": "Progress"
   },
   "reports": {
     "title": "Reports",
@@ -2824,7 +2829,7 @@
       "showShippingRates": "Show shipping rates",
       "showServices": "Show services",
       "showRmbEquivalent": "Show ¥ RMB equivalent",
-      "showIqdEquivalent": "Show د.ع IQD equivalent",
+      "showIqdEquivalent": "Show IQD equivalent",
       "layoutLabel": "Layout",
       "layoutTabs": "Tabs",
       "layoutStacked": "Stacked",

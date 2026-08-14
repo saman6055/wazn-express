@@ -443,7 +443,7 @@ const { t, language } = useLanguage();
       href: "/portal/full-package",
       info: {
         title: pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" }),
-        desc: pickLang(language, { ku: "داوای کڕینی کاڵا بکە (فوڵ-پاکێج/کۆمیشن) و ئێمە بۆت دەیکڕین.", en: "Ask us to buy an item for you (full-package / commission).", ar: "اطلب منا شراء منتج لك (باقة كاملة/عمولة).", zh: "让我们为您购买商品（全包/代购）。" }),
+        desc: pickLang(language, { ku: "داوای کڕینی کاڵا بکە (پاکێجی تەواو/عمولە) و ئێمە بۆت دەیکڕین.", en: "Ask us to buy an item for you (full-package / commission).", ar: "اطلب منا شراء منتج لك (باقة كاملة/عمولة).", zh: "让我们为您购买商品（全包/代购）。" }),
         example: pickLang(language, { ku: "نموونە: لینکی کاڵا بنێرە → بۆت دەکڕدرێت", en: "e.g. send a product link → we buy it for you", ar: "مثال: أرسل رابط المنتج → نشتريه لك", zh: "例如：发送商品链接 → 我们为您购买" }),
       },
     },

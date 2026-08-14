@@ -96,7 +96,7 @@ const translations = {
     customer: "کڕیار",
     package: "پاکەت",
     batch: "باتچ",
-    full_package: "فول پاکەج",
+    full_package: "پاکێجی تەواو",
 
     commission: "کۆمیشن",
     finance: "دارایی",
