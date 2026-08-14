@@ -60,6 +60,12 @@ export const customers = mysqlTable("customers", {
   city: varchar("city", { length: 100 }),
   district: varchar("district", { length: 100 }),
   address: text("address"),
+  // The photo the customer chose for themselves in the portal.
+  //
+  // Stored as the image itself, shrunk to 512px by the portal before it is
+  // sent — small enough to keep beside the row, and it means one fewer thing
+  // to lose when files and rows are backed up separately.
+  photoUrl: text("photoUrl"),
   passportUrl: text("passportUrl"),
   nationalIdUrl: text("nationalIdUrl"),
   contractUrl: text("contractUrl"),

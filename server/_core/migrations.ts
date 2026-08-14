@@ -2460,6 +2460,7 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // When a customer last set their own password. The password stays
   // hashed and unreadable; this only records that they chose one.
   { name: "customers.passwordChangedAt", sql: "ALTER TABLE customers ADD COLUMN passwordChangedAt TIMESTAMP NULL" },
+  { name: "customers.photoUrl", sql: "ALTER TABLE customers ADD COLUMN photoUrl TEXT NULL" },
 
   // A cancelled delivery box keeps the record of what happened, so it needs
   // to say why — otherwise the row reports only that something went wrong.

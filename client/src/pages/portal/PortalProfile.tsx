@@ -21,6 +21,7 @@ import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { PortalProfilePhoto } from "@/components/portal/PortalProfilePhoto";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { toast } from "sonner";
 import { copyText } from "@/lib/copyText";
@@ -288,12 +289,14 @@ const { t, language, setLanguage } = useLanguage();
           {/* Profile Card */}
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className={cn(
-                "w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg",
-                "bg-gradient-to-br from-indigo-500 to-purple-600"
-              )}>
-                <User className="w-10 h-10 text-white" />
-              </div>
+              <PortalProfilePhoto
+                photoUrl={account?.photoUrl}
+                fullName={account?.fullName}
+                sizeClass="w-20 h-20"
+                shapeClass="rounded-2xl"
+                frameClass="bg-gradient-to-br from-indigo-500 to-purple-600"
+                fallback={<User className="w-10 h-10 text-white" />}
+              />
               {/* VIP Badge */}
               {summary?.status === "active" && (
                 <div className="absolute -top-1 -right-1 w-7 h-7 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">

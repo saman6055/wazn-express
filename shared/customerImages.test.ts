@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import {
+  isSafeAvatar,
   isSafeCustomerImage,
+  MAX_AVATAR_STRING_LENGTH,
   MAX_CUSTOMER_IMAGES,
   MAX_IMAGE_STRING_LENGTH,
 } from "./customerImages";
@@ -60,6 +62,39 @@ describe("what a customer may attach", () => {
   });
 });
 
+describe("a profile photo", () => {
+  it("accepts an ordinary photo the portal produced", () => {
+    expect(isSafeAvatar(png())).toBe(true);
+    expect(isSafeAvatar(`data:image/jpeg;base64,${"A".repeat(50_000)}`)).toBe(true);
+    expect(isSafeAvatar("/uploads/avatars/abc123.jpg")).toBe(true);
+  });
+
+  it("refuses anything that is not an image", () => {
+    // The same trap the attachments have: this one is rendered on the
+    // customer's own screen and on the office's customer page.
+    expect(isSafeAvatar("data:text/html,<script>alert(1)</script>")).toBe(false);
+    expect(isSafeAvatar("javascript:alert(1)")).toBe(false);
+    expect(isSafeAvatar("/uploads/../../etc/passwd")).toBe(false);
+  });
+
+  it("is capped tighter than an attachment", () => {
+    // It travels with the account on every screen that shows who is signed
+    // in, so a 4 MB one would be paid for over and over.
+    expect(MAX_AVATAR_STRING_LENGTH).toBeLessThan(MAX_IMAGE_STRING_LENGTH);
+    const tooBig = `data:image/jpeg;base64,${"A".repeat(MAX_AVATAR_STRING_LENGTH)}`;
+    expect(isSafeAvatar(tooBig)).toBe(false);
+    // Still fine as an attachment — only the profile photo is held to this.
+    expect(isSafeCustomerImage(tooBig)).toBe(true);
+  });
+
+  it("refuses an empty value rather than storing a blank photo", () => {
+    // Removing a photo is its own action; it must not travel as "".
+    expect(isSafeAvatar("")).toBe(false);
+    expect(isSafeAvatar(null)).toBe(false);
+    expect(isSafeAvatar(undefined)).toBe(false);
+  });
+});
+
 describe("the endpoints agree with the upload widget", () => {
   const ROUTER = fs.readFileSync(
     path.resolve(__dirname, "../server/routers/portal.router.ts"), "utf8");
@@ -72,6 +107,29 @@ describe("the endpoints agree with the upload widget", () => {
       "use customerImagesSchema — a bare string array is unbounded and unchecked",
     ).toEqual([]);
     expect(ROUTER).toContain("customerImagesSchema");
+  });
+
+  it("the profile photo endpoint checks what it stores", () => {
+    // It writes to the customer's own row and is rendered back on their
+    // screen and on the office's customer page.
+    expect(ROUTER).toContain("setMyPhoto: customerProcedure");
+    expect(ROUTER).toMatch(/photo: z\.string\(\)\.refine\(isSafeAvatar/);
+    // Removing is its own endpoint, so "no photo" never travels as a value
+    // that has to be recognised as meaning nothing.
+    expect(ROUTER).toContain("removeMyPhoto: customerProcedure");
+  });
+
+  it("every skin shows the photo through the same component", () => {
+    // Three copies of shrink-check-upload would be three chances for one
+    // skin to send a 6 MB photo straight from a camera roll.
+    for (const skin of [
+      "../client/src/pages/portal/PortalProfile.tsx",
+      "../client/src/pages/portal/modern/ModernPortalProfile.tsx",
+      "../client/src/pages/portal/skin3/Skin3PortalProfile.tsx",
+    ]) {
+      const src = fs.readFileSync(path.resolve(__dirname, skin), "utf8");
+      expect(src, skin).toContain("PortalProfilePhoto");
+    }
   });
 
   it("the cap matches what the widget offers", () => {

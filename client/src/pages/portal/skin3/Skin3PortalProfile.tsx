@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { PortalProfilePhoto } from "@/components/portal/PortalProfilePhoto";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -382,22 +383,26 @@ export default function Skin3PortalProfile() {
             transition={spring}
             className="flex flex-col items-center pt-4 pb-2"
           >
-            {/* Avatar with violet ring */}
-            <div
-              className={cn(
-                "w-28 h-28 rounded-full flex items-center justify-center text-4xl font-black",
-                "ring-[5px] ring-offset-4",
+            {/* Avatar with violet ring — the customer's own photo when set */}
+            <PortalProfilePhoto
+              photoUrl={account?.photoUrl}
+              fullName={account?.fullName}
+              sizeClass="w-28 h-28"
+              shapeClass="rounded-full ring-[5px] ring-offset-4"
+              frameClass={cn(
+                "text-4xl font-black",
                 isDark
                   ? "bg-indigo-950/60 text-indigo-400 ring-indigo-500/40 ring-offset-zinc-950"
                   : "bg-gradient-to-br from-indigo-100 to-violet-100 text-indigo-700 dark:text-indigo-300 ring-indigo-400/50 ring-offset-amber-50/50"
               )}
-            >
-              {accountLoading ? (
-                <Skeleton className="w-14 h-10 rounded" />
-              ) : (
-                getInitials(account?.fullName || user?.name)
-              )}
-            </div>
+              fallback={
+                accountLoading ? (
+                  <Skeleton className="w-14 h-10 rounded" />
+                ) : (
+                  <span>{getInitials(account?.fullName || user?.name)}</span>
+                )
+              }
+            />
 
             {/* Name */}
             {accountLoading ? (

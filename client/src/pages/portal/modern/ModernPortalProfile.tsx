@@ -13,6 +13,7 @@ import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { PortalProfilePhoto } from "@/components/portal/PortalProfilePhoto";
 import { motion } from "framer-motion";
 import { getLoginUrl } from "@/const";
 
@@ -241,22 +242,27 @@ export default function ModernPortalProfile() {
             transition={{ duration: 0.4 }}
             className="flex flex-col items-center pt-4 pb-2"
           >
-            {/* Avatar circle */}
-            <div
-              className={cn(
-                "w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold mb-4",
-                "ring-4",
+            {/* Avatar circle — the customer's own photo when they have set one */}
+            <PortalProfilePhoto
+              className="mb-4"
+              photoUrl={account?.photoUrl}
+              fullName={account?.fullName}
+              sizeClass="w-24 h-24"
+              shapeClass="rounded-full ring-4"
+              frameClass={cn(
+                "text-3xl font-bold",
                 isDark
                   ? "bg-emerald-600/20 text-emerald-400 ring-emerald-500/20"
                   : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 ring-emerald-100"
               )}
-            >
-              {accountLoading ? (
-                <Skeleton className="w-12 h-8 rounded" />
-              ) : (
-                getInitials(account?.fullName || user?.name)
-              )}
-            </div>
+              fallback={
+                accountLoading ? (
+                  <Skeleton className="w-12 h-8 rounded" />
+                ) : (
+                  <span>{getInitials(account?.fullName || user?.name)}</span>
+                )
+              }
+            />
 
             {/* Name */}
             {accountLoading ? (

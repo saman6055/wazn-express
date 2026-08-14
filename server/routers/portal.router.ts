@@ -7,7 +7,7 @@ import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { getVapidPublicKey, isPushEnabled, sendPushToCustomer } from "../services/push.service";
 import { toCustomerVisibleOrder, toCustomerVisibleOrders } from "../lib/customerVisibleOrder";
-import { isSafeCustomerImage, MAX_CUSTOMER_IMAGES } from "@shared/customerImages";
+import { isSafeAvatar, isSafeCustomerImage, MAX_CUSTOMER_IMAGES } from "@shared/customerImages";
 
 /**
  * Photos a customer attaches, checked before they are stored.
@@ -58,6 +58,7 @@ export const customerPortalRouter = router({
           country: (customer.country as string) || '',
           city: (customer.city as string) || '',
           address: (customer.address as string) || '',
+          photoUrl: (customer.photoUrl as string) || null,
         };
       }
       // Legacy: find customer linked to this user. Hand-picked to the same
@@ -75,6 +76,7 @@ export const customerPortalRouter = router({
         country: customer.country || '',
         city: customer.city || '',
         address: customer.address || '',
+        photoUrl: customer.photoUrl || null,
       };
     }),
 
@@ -103,6 +105,34 @@ export const customerPortalRouter = router({
         logPortal(ctx, customerId, "change_password", "profile");
         return { success: true };
       }),
+
+    /**
+     * The customer's own profile photo.
+     *
+     * Theirs to set and theirs to remove — nothing else about the account is
+     * editable from the portal, so this is deliberately narrow: one column,
+     * checked against the same allow-list as every other image a customer
+     * sends us, and nothing about who they are can be changed through it.
+     */
+    setMyPhoto: customerProcedure
+      .input(z.object({
+        photo: z.string().refine(isSafeAvatar, "Unsupported image"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const customerId = ctx.customerId;
+        await db.updateCustomerPhoto(customerId, input.photo);
+        logPortal(ctx, customerId, "set_photo", "profile");
+        return { success: true };
+      }),
+
+    removeMyPhoto: customerProcedure.mutation(async ({ ctx }) => {
+      const customerId = ctx.customerId;
+      // Cleared, not blanked: an empty string would read as a photo we
+      // could not display rather than as no photo at all.
+      await db.updateCustomerPhoto(customerId, null);
+      logPortal(ctx, customerId, "remove_photo", "profile");
+      return { success: true };
+    }),
 
     /**
      * The customer's own delivery boxes — the goods packed for them

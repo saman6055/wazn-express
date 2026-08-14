@@ -223,6 +223,20 @@ export async function updateCustomerPassword(
     .where(eq(customers.id, id));
 }
 
+/**
+ * Set or clear a customer's own profile photo.
+ *
+ * Its own function rather than a general update: this is the one thing about
+ * their account a customer can change from the portal, and routing it through
+ * a partial-update helper would put every other column within reach of that
+ * same endpoint.
+ */
+export async function updateCustomerPhoto(id: number, photoUrl: string | null) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(customers).set({ photoUrl }).where(eq(customers.id, id));
+}
+
 export async function getCustomerByUserId(userId: number): Promise<Customer | undefined> {
   const db = await getDb();
   if (!db) return undefined;

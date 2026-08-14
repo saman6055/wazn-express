@@ -59,3 +59,20 @@ export function isSafeCustomerImage(value: unknown): value is string {
   if (value.length === 0 || value.length > MAX_IMAGE_STRING_LENGTH) return false;
   return DATA_IMAGE.test(value) || UPLOAD_PATH.test(value) || HTTPS_URL.test(value);
 }
+
+/**
+ * A profile photo is smaller than an attachment, and kept smaller on purpose.
+ *
+ * It lives in a column beside the customer's own row and is sent with the
+ * account on every portal screen that shows who is signed in, so a 4 MB one
+ * would be paid for over and over. The portal shrinks to 512px before
+ * sending, which lands around 40 KB; this is the ceiling, not the target.
+ */
+export const MAX_AVATAR_STRING_LENGTH = 400_000;
+
+/** Is this something we are willing to store as somebody's profile photo? */
+export function isSafeAvatar(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  if (value.length > MAX_AVATAR_STRING_LENGTH) return false;
+  return isSafeCustomerImage(value);
+}
