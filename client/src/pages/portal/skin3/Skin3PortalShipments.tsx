@@ -29,6 +29,7 @@ import { BatchJourneyTimeline } from "@/components/portal/BatchJourneyTimeline";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { ESTIMATE_EXCLUDES, parcelPriceDisplay } from "@shared/parcelPrice";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "wouter";
 import { formatPortalDate } from "@/lib/portalClock";
@@ -624,6 +625,22 @@ export default function Skin3PortalShipments() {
                                     const pkgStatus = getPackageStatusConfig(
                                       pkg.status
                                     );
+                                    /**
+                                     * What may be said about this parcel's
+                                     * price. The figure is live-computed
+                                     * against the shipment's rate, so until
+                                     * that rate exists there is nothing to
+                                     * quote - and while the shipment is still
+                                     * moving it is an estimate, not a bill.
+                                     */
+                                    const pkgPrice = parcelPriceDisplay({
+                                      isCharged: pkg.isCharged,
+                                      calculatedCostUsd: pkg.calculatedCostUsd,
+                                      batchPricePerKg: batch.pricePerKg,
+                                      batchPricePerCbm: batch.pricePerCbm,
+                                      shippingType: batch.shippingType,
+                                      batchId: batch.id,
+                                    });
                                     return (
                                       <motion.div
                                         key={pkg.id}
@@ -698,7 +715,7 @@ export default function Skin3PortalShipments() {
                                             ).toFixed(1)}{" "}
                                             kg
                                           </span>
-                                          {pkg.calculatedCostUsd > 0 && (
+                                          {pkgPrice.kind !== "pending" && (
                                             <span
                                               className={cn(
                                                 "flex items-center gap-1",
@@ -706,15 +723,28 @@ export default function Skin3PortalShipments() {
                                                   ? "text-zinc-500"
                                                   : "text-gray-500"
                                               )}
+                                              title={
+                                                pkgPrice.kind === "estimate"
+                                                  ? pickLang(language, ESTIMATE_EXCLUDES)
+                                                  : undefined
+                                              }
                                             >
                                               <DollarSign
                                                 className="w-3 h-3"
                                                 strokeWidth={2.5}
                                               />
                                               $
-                                              {Number(
-                                                pkg.calculatedCostUsd
-                                              ).toFixed(2)}
+                                              {pkgPrice.amount!.toFixed(2)}
+                                              {pkgPrice.kind === "estimate" && (
+                                                <span className="text-[10px] font-black text-amber-600 dark:text-amber-400">
+                                                  {pickLang(language, {
+                                                    ku: "خەمڵێنراو",
+                                                    en: "est.",
+                                                    ar: "تقديري",
+                                                    zh: "估价",
+                                                  })}
+                                                </span>
+                                              )}
                                             </span>
                                           )}
                                           {pkg.isFullPackage && (

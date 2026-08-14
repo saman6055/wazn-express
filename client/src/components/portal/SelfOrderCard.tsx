@@ -6,6 +6,7 @@ import { pickLang } from "@/lib/lang";
 import { copyText } from "@/lib/copyText";
 import { cn } from "@/lib/utils";
 import { formatPortalDate } from "@/lib/portalClock";
+import { ESTIMATE_EXCLUDES, PRICE_NOT_SET_YET, parcelPriceDisplay } from "@shared/parcelPrice";
 
 /**
  * One parcel the customer bought themselves — we only shipped it.
@@ -34,6 +35,9 @@ export interface SelfOrderPackage {
   volumeCbm: string | null;
   calculatedCostUsd: string | null;
   isCharged: boolean;
+  batchPricePerKg?: string | null;
+  batchPricePerCbm?: string | null;
+  batchId?: number | null;
   batchCode: string | null;
   createdAt: string | Date;
   deliveredAt: string | Date | null;
@@ -87,7 +91,22 @@ export function SelfOrderCard({
     : { value: pkg.weightKg, unit: "KG", icon: Scale };
   const measureValue = parseFloat(String(measure.value ?? "0"));
 
-  const cost = parseFloat(String(pkg.calculatedCostUsd ?? "0"));
+  /**
+   * What may be said about the price.
+   *
+   * Not simply the stored figure: that comes from the general route rule and
+   * is not what the customer is charged. Until the shipment has its own rate
+   * there is nothing honest to quote, and a precise number seen once becomes
+   * a price the customer expects to pay.
+   */
+  const price = parcelPriceDisplay({
+    isCharged: pkg.isCharged,
+    calculatedCostUsd: pkg.calculatedCostUsd,
+    batchPricePerKg: pkg.batchPricePerKg,
+    batchPricePerCbm: pkg.batchPricePerCbm,
+    shippingType: pkg.shippingType,
+    batchId: pkg.batchId,
+  });
 
   // navigator.clipboard is undefined in the Facebook and Instagram webviews
   // — where a customer arriving from an advert actually is — so this threw
@@ -173,21 +192,38 @@ export function SelfOrderCard({
             </span>
           </div>
 
-          {cost > 0 && (
-            <div className="mt-2 flex items-center gap-2">
-              <span className={cn("text-base font-black tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")} dir="ltr">
-                ${cost.toFixed(2)}
+          {price.kind === "pending" && (
+            <div className="mt-2">
+              <span className={cn("text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
+                {pick(PRICE_NOT_SET_YET)}
               </span>
-              <span className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                pkg.isCharged
-                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                  : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-              )}>
-                {pkg.isCharged
-                  ? pick({ ku: "خرایە سەر حساب", en: "Charged", ar: "تمت الفوترة", zh: "已计费" })
-                  : pick({ ku: "هێشتا نەخراوەتە سەر حساب", en: "Not charged yet", ar: "لم تُفوتر بعد", zh: "尚未计费" })}
-              </span>
+            </div>
+          )}
+
+          {price.kind !== "pending" && (
+            <div className="mt-2">
+              <div className="flex items-center gap-2">
+                <span className={cn("text-base font-black tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")} dir="ltr">
+                  ${price.amount!.toFixed(2)}
+                </span>
+                <span className={cn(
+                  "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                  price.kind === "final"
+                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                    : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+                )}>
+                  {price.kind === "final"
+                    ? pick({ ku: "خرایە سەر حساب", en: "Charged", ar: "تمت الفوترة", zh: "已计费" })
+                    : pick({ ku: "نرخی خەمڵێنراو", en: "Estimated price", ar: "سعر تقديري", zh: "估价" })}
+                </span>
+              </div>
+              {/* Named in advance, because the gap between an estimate and an
+                  invoice is exactly where an argument starts. */}
+              {price.kind === "estimate" && (
+                <p className={cn("mt-1 text-[10px] leading-snug", isDark ? "text-slate-400" : "text-slate-500")}>
+                  {pick(ESTIMATE_EXCLUDES)}
+                </p>
+              )}
             </div>
           )}
         </div>

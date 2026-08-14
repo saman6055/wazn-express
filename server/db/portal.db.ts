@@ -477,6 +477,11 @@ export async function getSelfOrderPackagesByCustomer(customerId: number) {
       batchId: packages.batchId,
       batchCode: batches.batchCode,
       batchStatus: batches.status,
+      // The batch's own rate. Until it exists there is nothing honest to
+      // quote: the figure stored at registration comes from the general
+      // route rule, which is not what the customer ends up charged.
+      batchPricePerKg: batches.pricePerKg,
+      batchPricePerCbm: batches.pricePerCbm,
       createdAt: packages.createdAt,
       deliveredAt: packages.deliveredAt,
     })
