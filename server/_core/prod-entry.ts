@@ -20,7 +20,7 @@ import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
 import { startScheduledCampaignsPoller } from "../services/push.service";
 import { initializeScheduledBackups } from "../services/scheduledBackups.service";
 import { loadConfig } from "../config";
-import { globalLimiter, authLimiterMiddleware } from "../middleware/rateLimiter";
+import { globalLimiter, authLimiterMiddleware, writeLimiterMiddleware } from "../middleware/rateLimiter";
 import { registerHealthRoutes } from "./health";
 import { registerAppIconRoutes } from "../services/appIcons.service";
 import { appLogger, requestLoggingMiddleware } from "../utils/logger";
@@ -142,6 +142,10 @@ async function startServer() {
   app.use(
     "/api/trpc",
     authLimiterMiddleware,
+    // Writes and uploads, counted per signed-in person rather than per
+    // address — the office shares one public IP, so a per-IP write ceiling
+    // would throttle the company rather than an abuser.
+    writeLimiterMiddleware,
     createExpressMiddleware({
       router: appRouter,
       createContext,
