@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="760" height="300" fill="#ffffff"/>
+  <rect x="0.5" y="0.5" width="759" height="299" fill="none" stroke="#cbd5e1"/>
+
+  <!-- sidebar -->
+  <rect x="1" y="1" width="240" height="298" fill="#0f172a"/>
+  <text x="24" y="38" fill="#ffffff" font-size="15" font-weight="600">Wazn Express</text>
+
+  <text x="24" y="76" fill="#94a3b8" font-size="12">Dashboard</text>
+  <text x="24" y="104" fill="#94a3b8" font-size="12">Packages</text>
+  <text x="24" y="132" fill="#94a3b8" font-size="12">Batches</text>
+
+  <!-- Scanning group, open -->
+  <text x="24" y="160" fill="#e2e8f0" font-size="12" font-weight="600">Scanning</text>
+  <text x="210" y="160" fill="#e2e8f0" font-size="11">▾</text>
+
+  <rect x="14" y="172" width="214" height="30" rx="6" fill="#2563eb"/>
+  <text x="36" y="192" fill="#ffffff" font-size="12" font-weight="600">Batch Assignment</text>
+
+  <text x="36" y="222" fill="#94a3b8" font-size="12">Quick Register</text>
+  <text x="36" y="248" fill="#94a3b8" font-size="12">Delivery Scan</text>
+
+  <text x="24" y="282" fill="#94a3b8" font-size="12">Finance</text>
+
+  <!-- content -->
+  <text x="272" y="44" fill="#0f172a" font-size="17" font-weight="600">Batch Assignment</text>
+  <text x="272" y="68" fill="#64748b" font-size="12">Scan packages into an open batch</text>
+
+  <rect x="272" y="92" width="456" height="72" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="292" y="120" fill="#475569" font-size="12">Select a batch</text>
+  <rect x="292" y="130" width="416" height="24" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="304" y="147" fill="#94a3b8" font-size="11">Choose…</text>
+
+  <rect x="272" y="180" width="456" height="86" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="292" y="206" fill="#94a3b8" font-size="12">Scan or type a tracking number</text>
+  <rect x="292" y="218" width="300" height="28" rx="5" fill="#f1f5f9" stroke="#e2e8f0"/>
+  <text x="640" y="238" fill="#94a3b8" font-size="11">disabled</text>
+</svg>

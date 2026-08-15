@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="760" height="300" fill="#f1f5f9"/>
+  <rect x="60.5" y="12.5" width="639" height="275" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+
+  <text x="84" y="46" fill="#0f172a" font-size="16" font-weight="600">New Batch</text>
+  <text x="672" y="46" fill="#94a3b8" font-size="15" text-anchor="middle">✕</text>
+
+  <line x1="84" y1="70" x2="676" y2="70" stroke="#e2e8f0"/>
+  <text x="84" y="64" fill="#94a3b8" font-size="12">Basic Information</text>
+  <text x="228" y="64" fill="#2563eb" font-size="12" font-weight="600">Volume &amp; Cost</text>
+  <rect x="226" y="68" width="106" height="3" fill="#2563eb"/>
+  <text x="348" y="64" fill="#94a3b8" font-size="12">Selling Price</text>
+
+  <g font-size="11.5">
+    <text x="84" y="102" fill="#475569">Actual weight (kg)</text>
+    <rect x="84" y="110" width="260" height="28" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="96" y="129" fill="#0f172a" font-family="Consolas, monospace">840.00</text>
+
+    <text x="416" y="102" fill="#475569">Charged weight (kg)</text>
+    <rect x="416" y="110" width="260" height="28" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="428" y="129" fill="#0f172a" font-family="Consolas, monospace">905.00</text>
+
+    <text x="84" y="166" fill="#475569">Cost per KG (USD)</text>
+    <rect x="84" y="174" width="260" height="28" rx="5" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="96" y="193" fill="#0f172a" font-family="Consolas, monospace">6.50</text>
+    <text x="356" y="193" fill="#94a3b8" font-size="10.5">what we pay the carrier</text>
+
+    <text x="84" y="230" fill="#64748b" font-size="10.5">Charged weight is what the carrier bills for when it differs from the scale. Estimates are fine — both can be edited later.</text>
+  </g>
+
+  <rect x="546" y="244" width="130" height="30" rx="6" fill="#2563eb"/>
+  <text x="611" y="264" fill="#ffffff" font-size="12" font-weight="600" text-anchor="middle">Create Batch</text>
+</svg>
