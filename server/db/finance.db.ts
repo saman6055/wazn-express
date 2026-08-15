@@ -2202,18 +2202,37 @@ export async function deleteCashAccount(id: number): Promise<void> {
 }
 
 export async function getCashAccountsSummary(): Promise<{
+  /** All figures below are US dollars. */
   totalCash: number;
   totalBank: number;
   totalBalance: number;
+  /** Dinar held, reported apart because it is not converted. */
+  totalIqd: number;
+  iqdAccounts: number;
   accounts: CashAccount[];
 }> {
   const db = await getDb();
-  if (!db) return { totalCash: 0, totalBank: 0, totalBalance: 0, accounts: [] };
+  if (!db) return { totalCash: 0, totalBank: 0, totalBalance: 0, totalIqd: 0, iqdAccounts: 0, accounts: [] };
 
+  /**
+   * Dollars only.
+   *
+   * Every account carries a currency, and these sums ignored it: an account
+   * holding 1,500,000 IQD added 1,500,000 to a figure printed with a dollar
+   * sign, which made the company look several hundred times richer than it
+   * was. Nothing was wrong with the accounts — only with adding them up.
+   *
+   * Converting would need a rate, and which rate (today's? the day each
+   * amount arrived?) is an accounting decision nobody has made. So the totals
+   * are dollar totals and say so, and dinar accounts are reported separately
+   * rather than folded in or hidden.
+   */
   const [summary] = await db.select({
-    totalCash: sql<string>`COALESCE(SUM(CASE WHEN ${cashAccounts.accountType} = 'cash' THEN CAST(${cashAccounts.currentBalance} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
-    totalBank: sql<string>`COALESCE(SUM(CASE WHEN ${cashAccounts.accountType} = 'bank' THEN CAST(${cashAccounts.currentBalance} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
-    totalBalance: sql<string>`COALESCE(SUM(CAST(${cashAccounts.currentBalance} AS DECIMAL(14,2))), 0)`,
+    totalCash: sql<string>`COALESCE(SUM(CASE WHEN ${cashAccounts.accountType} = 'cash' AND ${cashAccounts.currency} = 'USD' THEN CAST(${cashAccounts.currentBalance} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    totalBank: sql<string>`COALESCE(SUM(CASE WHEN ${cashAccounts.accountType} = 'bank' AND ${cashAccounts.currency} = 'USD' THEN CAST(${cashAccounts.currentBalance} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    totalBalance: sql<string>`COALESCE(SUM(CASE WHEN ${cashAccounts.currency} = 'USD' THEN CAST(${cashAccounts.currentBalance} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    totalIqd: sql<string>`COALESCE(SUM(CASE WHEN ${cashAccounts.currency} = 'IQD' THEN CAST(${cashAccounts.currentBalance} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    iqdAccounts: sql<number>`COUNT(CASE WHEN ${cashAccounts.currency} = 'IQD' THEN 1 END)`,
   }).from(cashAccounts).where(eq(cashAccounts.isActive, true));
 
   const accounts = await db.select().from(cashAccounts).where(eq(cashAccounts.isActive, true));
@@ -2222,6 +2241,8 @@ export async function getCashAccountsSummary(): Promise<{
     totalCash: Number(summary?.totalCash ?? 0),
     totalBank: Number(summary?.totalBank ?? 0),
     totalBalance: Number(summary?.totalBalance ?? 0),
+    totalIqd: Number(summary?.totalIqd ?? 0),
+    iqdAccounts: Number(summary?.iqdAccounts ?? 0),
     accounts,
   };
 }

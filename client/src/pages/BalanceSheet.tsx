@@ -47,7 +47,22 @@ const [selectedDate, setSelectedDate] = useState(() => {
   // so this read `parseFloat(undefined || '0')` for every account and the
   // page reported the company held no cash at all, however much was in the
   // Treasury.
-  const totalCash = (cashAccounts as any[] || []).reduce(
+  /**
+   * Dollars only.
+   *
+   * This added every account together regardless of currency, so an account
+   * holding 1,500,000 IQD put 1,500,000 into a figure printed with a dollar
+   * sign. Converting needs a rate, and which rate is an accounting decision
+   * nobody has made — so dinar is reported separately rather than folded in
+   * at a made-up rate or dropped without a word.
+   */
+  const usdAccounts = ((cashAccounts as any[]) || []).filter((acc: any) => (acc.currency ?? "USD") === "USD");
+  const iqdAccounts = ((cashAccounts as any[]) || []).filter((acc: any) => acc.currency === "IQD");
+  const totalCash = usdAccounts.reduce(
+    (sum: number, acc: any) => sum + parseFloat(acc.currentBalance ?? '0'),
+    0
+  );
+  const totalIqd = iqdAccounts.reduce(
     (sum: number, acc: any) => sum + parseFloat(acc.currentBalance ?? '0'),
     0
   );
@@ -198,7 +213,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                   "bank" as 40% — a split nobody chose, printed on a financial
                   statement as though it had been counted. */}
               <div className="space-y-3">
-                {((cashAccounts as any[]) || []).map((acc: any) => (
+                {usdAccounts.map((acc: any) => (
                   <SheetRow
                     key={acc.id}
                     icon={<Banknote className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}
@@ -209,7 +224,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                   />
                 ))}
 
-                {((cashAccounts as any[]) || []).length === 0 && (
+                {usdAccounts.length === 0 && (
                   <p className="px-3 py-2 text-sm text-muted-foreground">
                     {pickLang(language, {
                       ku: "هیچ حسابێکی پارە تۆمار نەکراوە",
@@ -218,6 +233,30 @@ const [selectedDate, setSelectedDate] = useState(() => {
                       zh: "未记录任何现金账户",
                     })}
                   </p>
+                )}
+
+                {iqdAccounts.length > 0 && (
+                  <div className="rounded-lg border border-dashed border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs">
+                    <p className="font-semibold text-amber-900 dark:text-amber-200">
+                      {pickLang(language, {
+                        ku: `${iqdAccounts.length} حسابی دیناری — لەم کۆکردنەوەیەدا نییە`,
+                        en: `${iqdAccounts.length} dinar account(s) — not in this total`,
+                        ar: `${iqdAccounts.length} حساب بالدينار — غير مشمول في هذا المجموع`,
+                        zh: `${iqdAccounts.length} 个第纳尔账户——未计入此合计`,
+                      })}
+                    </p>
+                    <p className="mt-1 text-amber-800 dark:text-amber-300" dir="ltr">
+                      {totalIqd.toLocaleString()} IQD
+                    </p>
+                    <p className="mt-1 text-amber-700 dark:text-amber-400">
+                      {pickLang(language, {
+                        ku: "بۆ دۆلار نەگۆڕدراوە — نرخی ئاڵوگۆڕ هێشتا دیاری نەکراوە",
+                        en: "Not converted to dollars — no exchange rate has been agreed for this",
+                        ar: "لم يُحوّل إلى الدولار — لم يُعتمد سعر صرف لذلك",
+                        zh: "未折算为美元——尚未确定折算汇率",
+                      })}
+                    </p>
+                  </div>
                 )}
 
                 <SheetRow
