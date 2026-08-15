@@ -7,6 +7,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 import { usePortalWidthClass } from "@/hooks/usePortalWidth";
 import { PortalWidthSwitch } from "@/components/portal/PortalWidthSwitch";
+import { usePortalIdleLogout } from "@/hooks/usePortalIdleLogout";
 import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
@@ -21,6 +22,9 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
   // How wide this portal sits: grows with the screen unless the reader
   // has chosen a fixed width for themselves.
   const portalWidth = usePortalWidthClass();
+  // Half an hour of nothing and the customer is signed out. A shared computer
+  // at an internet cafe should not stay open behind them.
+  usePortalIdleLogout(true);
   useDynamicFavicon();
   const [location] = useLocation();
   const { language } = useLanguage();

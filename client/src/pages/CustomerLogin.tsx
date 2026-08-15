@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import { Package, Phone, Lock, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { consumeIdleLogoutFlag } from "@/hooks/usePortalIdleLogout";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -18,6 +19,9 @@ const PHONE_RE = /^[+]?[\d٠-٩۰-۹\s-]{7,20}$/;
 export default function CustomerLogin() {
     const { t, language } = useTranslation();
 const [, setLocation] = useLocation();
+  // Read once on mount, and cleared as it is read — a refresh should not keep
+  // repeating why the last session ended.
+  const [timedOut] = useState(consumeIdleLogoutFlag);
   const [mobileNumber, setMobileNumber] = useState("");
   const [password, setPassword] = useState("");
 
@@ -85,6 +89,19 @@ const [, setLocation] = useLocation();
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Why they are looking at this page again. Without it, being
+                signed out after half an hour reads as the portal losing the
+                session for no reason. */}
+            {timedOut && (
+              <div className="mb-4 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 px-3 py-2.5 text-sm text-amber-900 dark:text-amber-200">
+                {pickLang(language, {
+                  ku: "بۆ پاراستنی هەژمارەکەت، دوای ٣٠ خولەک بێکاری دەرچوویت. تکایە دووبارە بچۆرە ژوورەوە.",
+                  en: "You were signed out after 30 minutes of inactivity, to keep your account safe. Please sign in again.",
+                  ar: "تم تسجيل خروجك بعد ٣٠ دقيقة دون نشاط للحفاظ على أمان حسابك. يرجى تسجيل الدخول مجدداً.",
+                  zh: "为保护您的账户，闲置 30 分钟后已自动退出。请重新登录。",
+                })}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="mobile">{t("customers.form.mobileNumber")}</Label>
