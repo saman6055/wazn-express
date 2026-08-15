@@ -16,6 +16,7 @@ import { getUploadsDir, UPLOADS_ROUTE } from "../services/localUpload";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
+import { startFlightWatch } from "../services/flightWatch.service";
 import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
 import { startScheduledCampaignsPoller } from "../services/push.service";
 import { initializeScheduledBackups } from "../services/scheduledBackups.service";
@@ -176,6 +177,10 @@ async function startServer() {
     appLogger.info("Tracking alerts notification scheduler started");
     await scheduleOpenBoxAlerts();
     appLogger.info("Open delivery box reminder scheduler started");
+    // Watches the airport's arrivals board for the flights our shipments are
+    // on, and tells the office and the customers when one lands.
+    await startFlightWatch();
+    appLogger.info("Flight arrival watcher started");
   } catch (error) {
     appLogger.error("Failed to start notification scheduler", { error: error instanceof Error ? error.message : String(error) });
   }

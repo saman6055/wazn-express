@@ -343,6 +343,22 @@ export async function createBatchPricingTier(data: InsertBatchPricingTier) {
   return { id: Number(result[0].insertId), ...data };
 }
 
+/**
+ * Write down that this shipment's flight has landed.
+ *
+ * Its own function, and called before anybody is notified: the twenty-three
+ * customers on a batch must not be told twice because a later step failed and
+ * the run started again.
+ */
+export async function recordBatchFlightArrival(id: number, arrivedAt: Date, status: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(batches)
+    .set({ flightArrivedAt: arrivedAt, flightStatus: status })
+    .where(eq(batches.id, id));
+}
+
 export async function updateBatchPricingTier(id: number, data: Partial<InsertBatchPricingTier>) {
   const db = await getDb();
   if (!db) return;

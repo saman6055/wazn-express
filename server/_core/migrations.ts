@@ -2464,6 +2464,8 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "customers.failedLoginAttempts", sql: "ALTER TABLE customers ADD COLUMN failedLoginAttempts INT NOT NULL DEFAULT 0" },
   { name: "customers.lastFailedLoginAt", sql: "ALTER TABLE customers ADD COLUMN lastFailedLoginAt TIMESTAMP NULL" },
   { name: "customers.lockedUntil", sql: "ALTER TABLE customers ADD COLUMN lockedUntil TIMESTAMP NULL" },
+  { name: "batches.flightStatus", sql: "ALTER TABLE batches ADD COLUMN flightStatus VARCHAR(40) NULL" },
+  { name: "batches.flightArrivedAt", sql: "ALTER TABLE batches ADD COLUMN flightArrivedAt TIMESTAMP NULL" },
 
   // A cancelled delivery box keeps the record of what happened, so it needs
   // to say why — otherwise the row reports only that something went wrong.

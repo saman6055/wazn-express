@@ -36,6 +36,15 @@ export const batches = mysqlTable("batches", {
   shipmentTrackings: json("shipmentTrackings").$type<string[]>(),
   cartonCount: int("cartonCount"),
   shippingCost: decimal("shippingCost", { precision: 12, scale: 2 }), // Total cost we pay to carrier
+  /**
+   * What the arrivals board said, and when it said it.
+   *
+   * `flightArrivedAt` is written once, the first time the flight is seen on
+   * the ground — it is what stops the watcher looking again and what the
+   * customs move counts its morning from.
+   */
+  flightStatus: varchar("flightStatus", { length: 40 }),
+  flightArrivedAt: timestamp("flightArrivedAt"),
   departureDate: timestamp("departureDate"),
   estimatedArrival: timestamp("estimatedArrival"),
   actualArrival: timestamp("actualArrival"),
