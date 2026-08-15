@@ -22,7 +22,16 @@ import { SCHEMA_PATCHES } from "./_core/migrations";
  */
 
 const ROOT = path.join(__dirname, "..");
-const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
+
+/**
+ * Line endings normalised on the way in.
+ *
+ * The markers below span lines — `"\n}\n"` closes a function. On a checkout
+ * with CRLF endings that is `"\n}\r\n"`, the marker matches nothing, and the
+ * guard fails for a reason that has nothing to do with the code it guards.
+ */
+const read = (p: string) =>
+  fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 function slice(src: string, startMarker: string, endMarker: string, label: string): string {
   const start = src.indexOf(startMarker);

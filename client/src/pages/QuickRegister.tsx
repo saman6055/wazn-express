@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { trpc } from "@/lib/trpc";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
-import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse } from "lucide-react";
+import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse, Palette, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlatformChip } from "@/components/PlatformChip";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -1217,25 +1217,54 @@ export default function QuickRegister() {
                         </div>
                       </div>
                     </div>
-                    {/* Volumetric Weight Result */}
-                    {volumetricWeight > 0 && (
-                      <div className="mt-4 p-4 bg-violet-50 dark:bg-violet-950/30 rounded-xl border border-violet-200 dark:border-violet-900/50">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Calculator className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-                            <div>
-                              <span className="text-sm text-violet-700 dark:text-violet-300">{t("quickRegister.volumetricWeight")}: </span>
-                              <span className="font-bold text-violet-900 dark:text-violet-200">{volumetricWeight.toFixed(2)} kg</span>
-                              <span className="text-xs text-muted-foreground me-2">(÷ {volumetricDivisor})</span>
+                    {/* The weight this parcel is charged on.
+                        One figure with its own name, rather than two figures
+                        and a third called "chargeable" — the larger of the two
+                        IS the chargeable one, and saying so separately was
+                        what made three numbers out of one answer.
+                        The sum is shown only when volume wins, because that is
+                        the only case anybody questions, and it lets staff
+                        catch a mistyped dimension at a glance. */}
+                    {(volumetricWeight > 0 || parseFloat(weightKg) > 0) && (() => {
+                      const actual = parseFloat(weightKg) || 0;
+                      const byVolume = volumetricWeight > actual;
+                      return (
+                        <div className={cn(
+                          "mt-4 p-4 rounded-xl border",
+                          byVolume
+                            ? "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-900/60"
+                            : "bg-card border-border",
+                        )}>
+                          <div className="flex items-baseline justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className={cn(
+                                "text-sm font-bold",
+                                byVolume ? "text-amber-700 dark:text-amber-300" : "text-foreground",
+                              )}>
+                                {byVolume ? t("packages.volumetricWeight") : t("packages.actualWeight")}
+                              </p>
+                              {byVolume && actual > 0 && (
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {t("packages.actualWeight")}: {actual.toFixed(2)} kg
+                                </p>
+                              )}
                             </div>
+                            <span className={cn(
+                              "text-3xl font-black tabular-nums shrink-0",
+                              byVolume ? "text-amber-700 dark:text-amber-300" : "text-foreground",
+                            )} dir="ltr">
+                              {chargeableWeight.toFixed(2)} kg
+                            </span>
                           </div>
-                          <div className="p-3 bg-card rounded-lg shadow-sm border">
-                            <span className="font-bold text-xl text-violet-800 dark:text-violet-300">{chargeableWeight.toFixed(2)} kg</span>
-                            <span className="text-xs text-muted-foreground block">{t("quickRegister.chargeableWeight")}</span>
-                          </div>
+
+                          {byVolume && (
+                            <p className="mt-2 font-mono text-xs text-amber-700 dark:text-amber-400" dir="ltr">
+                              {lengthCm || 0} × {widthCm || 0} × {heightCm || 0} ÷ {volumetricDivisor} = {volumetricWeight.toFixed(2)}
+                            </p>
+                          )}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               )}
@@ -1387,7 +1416,7 @@ export default function QuickRegister() {
                               ? pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission", ar: "شراء بعمولة", zh: "代购" })
                               : foundOrder.order.orderType === "purchase_request"
                               ? pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" })
-                              : pickLang(language, { ku: "فوول پاکەج", en: "Full package", ar: "طرد كامل", zh: "整包" })}
+                              : pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "طرد كامل", zh: "整包" })}
                           </span>
                           {foundOrder.order.orderCode && (
                             <span className="text-sm font-mono font-bold text-indigo-900 dark:text-indigo-200" dir="ltr">{foundOrder.order.orderCode}</span>
@@ -1395,6 +1424,40 @@ export default function QuickRegister() {
                         </div>
                         {foundOrder.order.productName && (
                           <p className="text-base font-semibold text-foreground truncate mt-1" title={String(foundOrder.order.productName)}>{foundOrder.order.productName}</p>
+                        )}
+
+                        {/* What the parcel should contain, beside the picture
+                            of it. The person holding the goods is checking
+                            them against the order, and size and colour are
+                            what they are checking — they were recorded and
+                            then shown nowhere on this screen. Hidden when
+                            blank rather than shown as a dash: an empty field
+                            here is normal, and four "—" would crowd out the
+                            two that are filled in. */}
+                        {(foundOrder.order.size || foundOrder.order.color || (foundOrder.order.quantity ?? 0) > 1) && (
+                          <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                            {foundOrder.order.size && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 px-2 py-1">
+                                <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
+                                {pickLang(language, { ku: "قەبارە", en: "Size", ar: "المقاس", zh: "尺码" })}:
+                                <b className="font-bold">{foundOrder.order.size}</b>
+                              </span>
+                            )}
+                            {foundOrder.order.color && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 px-2 py-1">
+                                <Palette className="h-3.5 w-3.5 text-muted-foreground" />
+                                {pickLang(language, { ku: "ڕەنگ", en: "Colour", ar: "اللون", zh: "颜色" })}:
+                                <b className="font-bold">{foundOrder.order.color}</b>
+                              </span>
+                            )}
+                            {(foundOrder.order.quantity ?? 0) > 1 && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 px-2 py-1">
+                                <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                                {pickLang(language, { ku: "دانە", en: "Qty", ar: "الكمية", zh: "数量" })}:
+                                <b className="font-bold">{foundOrder.order.quantity}</b>
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1439,9 +1502,17 @@ export default function QuickRegister() {
                               <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", allRegistered ? "bg-emerald-500" : "bg-red-500")} />
                               <span className="text-sm font-semibold truncate">{pickLang(language, { ku: "ئۆردەرەکانی ئەم کڕیارە", en: "This customer's orders", ar: "طلبات هذا العميل", zh: "该客户的订单" })}</span>
                             </div>
-                            <span className="shrink-0">
-                              <span className={cn("font-mono font-bold text-base", allRegistered ? "text-emerald-600" : "text-indigo-700 dark:text-indigo-300")}>{registered}</span>
-                              <span className="font-mono text-muted-foreground">/{total}</span>
+                            {/* "4 of 16 registered", not "4/16".
+                                In a right-to-left line the slash and its two
+                                numbers come apart — the 4 lands on one side
+                                and the /16 on the other, and the reader has
+                                to work out which is which. Words do not
+                                reorder. */}
+                            <span className="shrink-0 text-sm">
+                              <b className={cn("font-bold text-lg", allRegistered ? "text-emerald-600" : "text-indigo-700 dark:text-indigo-300")}>{registered}</b>
+                              <span className="text-muted-foreground"> {pickLang(language, { ku: "لە", en: "of", ar: "من", zh: "/" })} </span>
+                              <b className="font-bold">{total}</b>
+                              <span className="text-muted-foreground"> {pickLang(language, { ku: "تۆمار کراون", en: "registered", ar: "مسجّلة", zh: "已登记" })}</span>
                             </span>
                           </div>
                           <div className="h-2 w-full rounded-full bg-red-200 dark:bg-red-950/50 overflow-hidden">
@@ -1449,7 +1520,12 @@ export default function QuickRegister() {
                           </div>
                           {remaining > 0 && (
                             <span className="text-xs font-medium text-red-600 dark:text-red-400">
-                              {pickLang(language, { ku: "ماوە بۆ گەیشتن و تۆمارکردن", en: "Remaining to arrive & register", ar: "المتبقي للوصول والتسجيل", zh: "待到达并登记" })}: {remaining}
+                              {pickLang(language, {
+                                ku: `${remaining} ئۆردەر ماوە بۆ گەیشتن و تۆمارکردن`,
+                                en: `${remaining} still to arrive and be registered`,
+                                ar: `${remaining} طلب متبقٍ للوصول والتسجيل`,
+                                zh: `还有 ${remaining} 单待到达并登记`,
+                              })}
                             </span>
                           )}
                         </div>

@@ -48,7 +48,10 @@ describe("a label is a label, not the code that would produce one", () => {
   it("no string literal contains a translation call", () => {
     const offenders: string[] = [];
     for (const file of FILES) {
-      const src = fs.readFileSync(file, "utf8");
+      // Normalised first: on a CRLF checkout, splitting on \n leaves a \r at
+      // the end of every line, and `.` does not cross a carriage return — so
+      // `//.*$` matched nothing and every comment was read as code.
+      const src = fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n");
       src.split("\n").forEach((line, i) => {
         // A comment quoting the bug is how it gets explained, not committed.
         const code = line.replace(/\/\/.*$/, "").replace(/\/\*.*?\*\//g, "");
