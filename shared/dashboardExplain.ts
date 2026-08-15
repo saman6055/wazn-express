@@ -14,8 +14,8 @@
  *    raised today adds nothing to today's income.
  *  - "this week" is the last seven days, rolling — not Saturday to Friday.
  *    "This month" really is the calendar month, from the 1st.
- *  - "active shipments" is three statuses, not everything before delivery:
- *    a shipment in customs or sitting at the Erbil depot is not counted.
+ *  - "active shipments" means every stage before the goods are handed over,
+ *    customs and the Erbil depot included.
  *
  * Each figure names the list that holds its records, filtered to exactly what
  * it counted, using the shared link vocabulary — so a figure of 6 opens a list
@@ -168,10 +168,10 @@ const FIGURES: Record<DashboardFigureId, DashboardFigureMeta> = {
     label: { ku: "باچە چالاکەکان", en: "Active shipments", ar: "الشحنات النشطة", zh: "进行中的批次" },
     kind: "count",
     formula: {
-      ku: "بارەکانی لە ئامادەکاری، لە ڕێگا و گەیشتوو. ئەوانەی لە گومرگ یان لە کۆگای هەولێرن لێرەدا نەژمێردراون",
-      en: "Shipments preparing, in transit or arrived. Ones in customs or at the Erbil depot are not counted here",
-      ar: "الشحنات قيد التحضير أو في الطريق أو التي وصلت. تلك في الجمارك أو مستودع أربيل غير محسوبة هنا",
-      zh: "准备中、运输中或已抵达的批次。在海关或埃尔比勒仓库的不计入",
+      ku: "هەموو بارێک پێش ئەوەی بگەیەنرێت — لە ئامادەکاری، لە ڕێگا، گەیشتوو، لە گومرگ، یان لە کۆگای هەولێر. گەیەنراوەکان و داخراوەکان نایانگرێتەوە",
+      en: "Every shipment before hand-over — preparing, in transit, arrived, in customs, or at the Erbil depot. Delivered and closed ones are not counted",
+      ar: "كل شحنة قبل التسليم — قيد التحضير أو في الطريق أو وصلت أو في الجمارك أو في مستودع أربيل. المسلّمة والمغلقة غير محسوبة",
+      zh: "交付前的所有批次——准备中、运输中、已抵达、清关中或在埃尔比勒仓库。已送达和已关闭的不计入",
     },
     href: batchesHref({ status: "active" }),
     hrefLabel: { ku: "بارەکان", en: "Shipments", ar: "الشحنات", zh: "批次" },

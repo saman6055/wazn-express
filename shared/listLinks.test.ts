@@ -113,6 +113,15 @@ describe("shipments", () => {
     }
   });
 
+  it("active and finished together are every status there is", () => {
+    // Active means everything before hand-over, so a new status added to
+    // neither set would vanish from the figure without anybody noticing —
+    // which is how customs and at_depot went uncounted for as long as they
+    // did.
+    const finished = ["delivered", "closed"];
+    expect([...ACTIVE_BATCH_STATUSES, ...finished].sort()).toEqual([...BATCH_STATUSES].sort());
+  });
+
   it("matches a single status exactly", () => {
     expect(batchMatchesStatus("customs", "customs")).toBe(true);
     expect(batchMatchesStatus("arrived", "customs")).toBe(false);

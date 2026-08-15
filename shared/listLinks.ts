@@ -80,15 +80,21 @@ export type BatchStatus = (typeof BATCH_STATUSES)[number];
  * way, or clicking a figure of 4 opens a list of 7 and neither number can be
  * trusted afterwards.
  *
- * This is the set the dashboard query has always used. It leaves out customs
- * and at_depot, which are arguably active work; that is a question about the
- * figure, not about this list, and changing it here would silently change a
- * number the office reads every morning.
+ * Everything before the goods are handed over. It used to be the first three
+ * only, which left a shipment sitting in customs or at the Erbil depot out of
+ * the count — the two stages where somebody most often has work to do. The
+ * office reads this figure to answer "how much is in flight", and a shipment
+ * stuck at customs is very much in flight.
+ *
+ * Expect the number to be larger than it was. That is the correction, not a
+ * fault.
  */
 export const ACTIVE_BATCH_STATUSES: BatchStatus[] = [
   "preparing",
   "in_transit",
   "arrived",
+  "customs",
+  "at_depot",
 ];
 
 export type BatchStatusFilter = "all" | "active" | BatchStatus;
