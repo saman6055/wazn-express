@@ -6,6 +6,12 @@ import { useTranslation } from '@/contexts/LanguageContext';
 import { pickLang } from '@/lib/lang';
 import { useCompanyInfo } from '@/hooks/useCompanyInfo';
 
+/**
+ * Remembered for good once the app has been installed, so the prompt does not
+ * come back when the customer later opens the site in an ordinary tab.
+ */
+const INSTALLED_KEY = 'pwa-installed';
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -18,12 +24,42 @@ export function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  /** Installed at some point, whether or not this visit is inside the app. */
+  const [alreadyInstalled, setAlreadyInstalled] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
+    // Check if the app is running as an installed app right now
     const standalone = window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true;
     setIsStandalone(standalone);
+
+    /**
+     * Running as an app and having installed it are different questions.
+     *
+     * `display-mode: standalone` is only true inside the installed app. A
+     * customer who installed it in March and then opens the website in an
+     * ordinary tab in April was asked to install it all over again — for an
+     * app already sitting on their home screen. Being asked to do something
+     * you have already done reads as the app not knowing you.
+     *
+     * So the fact is remembered the first time it is seen, and remembered for
+     * good. Two ways to learn it: the browser fires `appinstalled` at the
+     * moment it happens, and running in standalone mode proves it after the
+     * fact — which is the only signal iOS gives, since it never fires the
+     * event.
+     */
+    if (standalone) localStorage.setItem(INSTALLED_KEY, String(Date.now()));
+    const onInstalled = () => {
+      localStorage.setItem(INSTALLED_KEY, String(Date.now()));
+      setShowPrompt(false);
+    };
+    window.addEventListener('appinstalled', onInstalled);
+
+    // Installed once, never asked again.
+    if (localStorage.getItem(INSTALLED_KEY)) {
+      setAlreadyInstalled(true);
+      return () => window.removeEventListener('appinstalled', onInstalled);
+    }
 
     // Check if iOS
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -61,6 +97,7 @@ export function PWAInstallPrompt() {
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
 
@@ -82,8 +119,8 @@ export function PWAInstallPrompt() {
     localStorage.setItem('pwa-install-dismissed', String(Date.now()));
   };
 
-  // Don't show if already installed
-  if (isStandalone || !showPrompt) return null;
+  // Never ask somebody to install what they have already installed.
+  if (isStandalone || alreadyInstalled || !showPrompt) return null;
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
