@@ -5,6 +5,13 @@ import { getSessionCookieOptions } from "../_core/cookies";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { adminProcedure } from "../middleware/auth";
 import * as db from "../db";
+import {
+  LOCKED_MESSAGE,
+  LOCK_MINUTES,
+  MAX_LOGIN_ATTEMPTS,
+  lockState,
+  registerFailure,
+} from "@shared/loginLockout";
 import { runMigration } from "../services/migration.service";
 import { getConfig } from "../config";
 import { phoneSchema, emailSchema, idSchema } from "./schemas";
@@ -34,9 +41,63 @@ export const authRouter = router({
       if (!customer.passwordHash) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "وشەی نهێنی دانەنراوە" });
       }
+
+      /**
+       * Five wrong passwords and the account stops answering for a quarter of
+       * an hour.
+       *
+       * The per-IP limiter above cannot see the attack this is for: one
+       * account, tried from a hundred addresses, each of them well under the
+       * limit. The count has to belong to the account.
+       *
+       * Checked before the password is compared, so a locked account costs an
+       * attacker nothing to discover and gains them nothing either — the
+       * answer is the same whatever they type.
+       */
+      const now = new Date();
+      const lock = lockState({ lockedUntil: customer.lockedUntil, now });
+      if (lock.locked) {
+        void db.logCustomerActivity({
+          customerId: customer.id,
+          action: "login_blocked",
+          category: "auth",
+          detail: `Locked, ${lock.remainingMinutes} min remaining`,
+          ipAddress: (ctx.req.ip || "").slice(0, 64) || null,
+          userAgent: (ctx.req.headers["user-agent"] || "").slice(0, 400) || null,
+        });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: LOCKED_MESSAGE.ku });
+      }
+
       const isValid = await bcrypt.compare(input.password, customer.passwordHash);
       if (!isValid) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە" });
+        const after = registerFailure({
+          failedAttempts: customer.failedLoginAttempts,
+          lastFailedAt: customer.lastFailedLoginAt,
+          now,
+        });
+        // Awaited, not fired and forgotten: a counter that loses races is a
+        // counter an attacker can outrun.
+        await db.recordFailedCustomerLogin(customer.id, after.failedAttempts, now, after.lockedUntil);
+        void db.logCustomerActivity({
+          customerId: customer.id,
+          action: after.justLocked ? "login_locked" : "login_failed",
+          category: "auth",
+          detail: after.justLocked
+            ? `Locked for ${LOCK_MINUTES} minutes after ${after.failedAttempts} failed attempts`
+            : `Failed attempt ${after.failedAttempts} of ${MAX_LOGIN_ATTEMPTS}`,
+          ipAddress: (ctx.req.ip || "").slice(0, 64) || null,
+          userAgent: (ctx.req.headers["user-agent"] || "").slice(0, 400) || null,
+        });
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: after.justLocked ? LOCKED_MESSAGE.ku : "ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە",
+        });
+      }
+
+      // A good password ends the run. Otherwise four old mistakes would sit
+      // there waiting to lock the account on the next single typo.
+      if (customer.failedLoginAttempts > 0 || customer.lockedUntil) {
+        void db.clearFailedCustomerLogins(customer.id);
       }
       const { SignJWT } = await import("jose");
       const secret = new TextEncoder().encode(getConfig().jwtSecret);

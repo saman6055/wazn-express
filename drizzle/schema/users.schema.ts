@@ -55,6 +55,16 @@ export const customers = mysqlTable("customers", {
   // password we handed out or one the customer chose, and this answers that
   // without keeping anything readable.
   passwordChangedAt: timestamp("passwordChangedAt"),
+  /**
+   * Wrong passwords in the current run, and when the account reopens.
+   *
+   * The per-IP login limiter cannot see the attack these are for: one
+   * account, tried from many addresses, each one well under the limit. The
+   * count has to belong to the account.
+   */
+  failedLoginAttempts: int("failedLoginAttempts").default(0).notNull(),
+  lastFailedLoginAt: timestamp("lastFailedLoginAt"),
+  lockedUntil: timestamp("lockedUntil"),
   email: varchar("email", { length: 320 }),
   country: varchar("country", { length: 100 }),
   city: varchar("city", { length: 100 }),

@@ -32,7 +32,7 @@ import {
   UserCheck, PackageCheck, Ban, Sparkles, Send, Bell, Megaphone,
   StickyNote, DollarSign, Plane, Zap, Ship, Loader2, Star, Newspaper, Pin, Eye,
   EyeOff, KeyRound, ShieldCheck, Copy, Check, RefreshCw, Phone, Power, Undo2,
-  GraduationCap,
+  GraduationCap, AlertTriangle, Lock,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -63,6 +63,40 @@ const CATEGORY_META: Record<string, { color: string; icon: React.ComponentType<{
   profile:     { color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",      icon: UserCheck,         label: { ku: "پرۆفایل", en: "Profile", ar: "الملف", zh: "资料" } },
   other:       { color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",             icon: Activity,          label: { ku: "چالاکی", en: "Activity", ar: "نشاط", zh: "活动" } },
 };
+
+/**
+ * A sign-in that failed is not a sign-in.
+ *
+ * Every auth row was drawn the same green "Login", so five wrong passwords
+ * followed by a lock looked, at a glance, like six people arriving safely.
+ * These three actions get their own colour and their own word.
+ */
+const FAILED_LOGIN_ACTIONS: Record<string, { color: string; icon: React.ComponentType<{ className?: string }>; label: L }> = {
+  login_failed: {
+    color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+    icon: AlertTriangle,
+    label: { ku: "هەوڵی سەرنەکەوتوو", en: "Failed attempt", ar: "محاولة فاشلة", zh: "登录失败" },
+  },
+  login_locked: {
+    color: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+    icon: Lock,
+    label: { ku: "هەژمار قوفڵ کرا", en: "Account locked", ar: "تم قفل الحساب", zh: "账户已锁定" },
+  },
+  login_blocked: {
+    color: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+    icon: Lock,
+    label: { ku: "هەوڵدان لەکاتی قوفڵدا", en: "Tried while locked", ar: "محاولة أثناء القفل", zh: "锁定期间尝试" },
+  },
+};
+
+/** How one activity row should be drawn: by its action first, then category. */
+function rowMeta(activity: { action?: string | null; category: string }) {
+  return (
+    (activity.action ? FAILED_LOGIN_ACTIONS[activity.action] : undefined)
+    ?? CATEGORY_META[activity.category]
+    ?? CATEGORY_META.other
+  );
+}
 
 // Convert a local Iraqi mobile (07xx…) to wa.me international format.
 function waLink(mobile: string, text?: string): string {
@@ -337,7 +371,7 @@ function ActivityTab({ p }: { p: (v: L) => string }) {
           <>
             <div className="space-y-1.5">
               {data.data.map((a) => {
-                const meta = CATEGORY_META[a.category] ?? CATEGORY_META.other;
+                const meta = rowMeta(a);
                 return (
                   <div key={a.id} className="flex items-start gap-3 rounded-xl p-2.5 hover:bg-muted/50">
                     <div className={cn("mt-0.5 p-1.5 rounded-lg shrink-0", meta.color)}><meta.icon className="h-4 w-4" /></div>
@@ -1801,7 +1835,7 @@ function CustomerTimelineDialog({ p, customer, onClose }: {
         ) : (
           <div className="relative ps-4 space-y-3 before:absolute before:top-1 before:bottom-1 before:start-[7px] before:w-px before:bg-border">
             {data.map((e, i) => {
-              const meta = CATEGORY_META[e.category] ?? CATEGORY_META.other;
+              const meta = rowMeta(e);
               return (
                 <div key={i} className="relative flex items-start gap-3">
                   <div className={cn("relative z-10 -ms-4 mt-0.5 p-1 rounded-full ring-4 ring-background shrink-0", meta.color)}>

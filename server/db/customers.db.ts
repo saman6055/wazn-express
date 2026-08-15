@@ -237,6 +237,37 @@ export async function updateCustomerPhoto(id: number, photoUrl: string | null) {
   await db.update(customers).set({ photoUrl }).where(eq(customers.id, id));
 }
 
+/**
+ * Record one wrong password, and shut the account if that was the fifth.
+ *
+ * Awaited by the caller rather than fired and forgotten — a counter that
+ * loses races is a counter an attacker can outrun by sending their guesses
+ * in parallel.
+ */
+export async function recordFailedCustomerLogin(
+  id: number,
+  failedAttempts: number,
+  lastFailedAt: Date,
+  lockedUntil: Date | null
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(customers)
+    .set({ failedLoginAttempts: failedAttempts, lastFailedLoginAt: lastFailedAt, lockedUntil })
+    .where(eq(customers.id, id));
+}
+
+/** A good password ends the run. */
+export async function clearFailedCustomerLogins(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(customers)
+    .set({ failedLoginAttempts: 0, lastFailedLoginAt: null, lockedUntil: null })
+    .where(eq(customers.id, id));
+}
+
 export async function getCustomerByUserId(userId: number): Promise<Customer | undefined> {
   const db = await getDb();
   if (!db) return undefined;

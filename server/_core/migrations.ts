@@ -2461,6 +2461,9 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // hashed and unreadable; this only records that they chose one.
   { name: "customers.passwordChangedAt", sql: "ALTER TABLE customers ADD COLUMN passwordChangedAt TIMESTAMP NULL" },
   { name: "customers.photoUrl", sql: "ALTER TABLE customers ADD COLUMN photoUrl TEXT NULL" },
+  { name: "customers.failedLoginAttempts", sql: "ALTER TABLE customers ADD COLUMN failedLoginAttempts INT NOT NULL DEFAULT 0" },
+  { name: "customers.lastFailedLoginAt", sql: "ALTER TABLE customers ADD COLUMN lastFailedLoginAt TIMESTAMP NULL" },
+  { name: "customers.lockedUntil", sql: "ALTER TABLE customers ADD COLUMN lockedUntil TIMESTAMP NULL" },
 
   // A cancelled delivery box keeps the record of what happened, so it needs
   // to say why — otherwise the row reports only that something went wrong.
