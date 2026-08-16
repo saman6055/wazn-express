@@ -482,7 +482,7 @@ export const usersRouter = router({
     updateRole: adminProcedure
       .input(z.object({
         userId: z.number(),
-        role: z.enum(["super_admin", "admin", "employee", "accountant"]),
+        role: z.enum(["super_admin", "admin", "employee", "accountant", "auditor"]),
       }))
       .mutation(async ({ input, ctx }) => {
         await db.updateUserRole(input.userId, input.role);
@@ -994,10 +994,13 @@ async function assertCanManagePermissions(
   if (ctx.user.role === "super_admin") return;
   if (ctx.user.role === "admin") {
     // An admin must not be able to edit another admin, or themselves upward.
-    if (targetUser.role !== "employee" && targetUser.role !== "accountant") {
+    // An auditor is in the list because it is the one role that cannot be
+    // escalated into: whatever permissions it is given, the server refuses
+    // every write it attempts (shared/readOnlyRole.ts).
+    if (!["employee", "accountant", "auditor"].includes(targetUser.role)) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Admin can only manage Employee and Accountant roles",
+        message: "Admin can only manage Employee, Accountant and Auditor roles",
       });
     }
     return;

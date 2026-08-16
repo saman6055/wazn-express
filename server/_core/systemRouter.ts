@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { notifyOwner } from "./notification";
-import { adminProcedure, publicProcedure, protectedProcedure, router } from "./trpc";
+import { publicProcedure, protectedProcedure, router } from "./trpc";
+import { adminProcedure } from "../middleware/auth";
 import { systemSettings } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { getDb } from "../db/connection";

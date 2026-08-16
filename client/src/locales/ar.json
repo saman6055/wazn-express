@@ -5571,6 +5571,8 @@
     "admin": "مدير",
     "employee": "موظف",
     "accountant": "محاسب",
+    "auditor": "مراقب (اطّلاع فقط)",
+    "auditorNotice": "هذا الحساب للاطّلاع فقط. يرى كل شيء، لكن لا يُحفظ أي تغيير يقوم به.",
     "superAdmin": "مدير عام"
   },
   "claimRequests": {

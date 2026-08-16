@@ -12,9 +12,9 @@ type CommonUserProps = {
   mobileNumber?: string | null;
 };
 
-// Staff user type (admin, employee, accountant)
+// Staff user type (admin, employee, accountant, auditor)
 export type StaffUser = User & {
-  role: "super_admin" | "admin" | "employee" | "accountant";
+  role: "super_admin" | "admin" | "employee" | "accountant" | "auditor";
   isCustomer: false;
 };
 

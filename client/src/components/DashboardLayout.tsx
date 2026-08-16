@@ -77,6 +77,7 @@ import {
   Plus,
   Minus,
   Trash2,
+  Eye,
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
@@ -315,10 +316,15 @@ function DashboardLayoutContent({
   const getMenuGroups = (): MenuGroup[] => {
     const groups: MenuGroup[] = [];
     
+    // The auditor sees every section. It is here to check the whole system, so
+    // a hidden section is a section nobody checks — and there is no risk in
+    // showing it, because the server refuses every write the account makes
+    // (shared/readOnlyRole.ts).
+    const isAuditor = userRole === "auditor";
     const isSuperAdmin = userRole === "super_admin";
-    const isAdmin = isSuperAdmin || userRole === "admin";
-    const isEmployee = isSuperAdmin || ["admin", "employee"].includes(userRole);
-    const isAccountant = isSuperAdmin || ["admin", "accountant"].includes(userRole);
+    const isAdmin = isSuperAdmin || isAuditor || userRole === "admin";
+    const isEmployee = isSuperAdmin || isAuditor || ["admin", "employee"].includes(userRole);
+    const isAccountant = isSuperAdmin || isAuditor || ["admin", "accountant"].includes(userRole);
 
     // 1. Main Dashboard - Always visible
     groups.push({
@@ -1106,7 +1112,7 @@ function DashboardLayoutContent({
                   <div className="hidden lg:block text-start leading-tight">
                     <p className="text-xs font-semibold truncate max-w-[120px]">{user?.name || "User"}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {userRole === "admin" ? t("roles.admin") : userRole === "employee" ? t("roles.employee") : userRole === "accountant" ? t("roles.accountant") : userRole === "super_admin" ? t("roles.superAdmin") || "Super Admin" : userRole}
+                      {userRole === "admin" ? t("roles.admin") : userRole === "employee" ? t("roles.employee") : userRole === "accountant" ? t("roles.accountant") : userRole === "auditor" ? t("roles.auditor") : userRole === "super_admin" ? t("roles.superAdmin") || "Super Admin" : userRole}
                     </p>
                   </div>
                   <ChevronDown className="hidden lg:block h-3 w-3 opacity-50" />
@@ -1138,6 +1144,20 @@ function DashboardLayoutContent({
             </DropdownMenu>
           </div>
         </div>
+        {/* Said out loud, on every screen, for the read-only account.
+            The buttons are all still drawn — there are hundreds of them and
+            hiding each one would be a list that goes stale. So instead of
+            pretending, the bar states the rule up front: press what you like,
+            nothing will change. Without it the first save would look like a
+            broken system rather than the account working as designed. */}
+        {userRole === "auditor" && (
+          <div className="px-4 md:px-6 pt-4 max-w-[1600px] mx-auto">
+            <div className="flex items-center gap-2 rounded-lg border border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+              <Eye className="h-4 w-4 shrink-0" />
+              <span>{t("roles.auditorNotice")}</span>
+            </div>
+          </div>
+        )}
         <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
           {children}
         </div>

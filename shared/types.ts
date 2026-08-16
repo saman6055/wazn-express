@@ -7,7 +7,8 @@ export type * from "../drizzle/schema";
 export * from "./_core/errors";
 
 // User roles
-export type UserRole = "user" | "admin" | "employee" | "accountant";
+// Kept in step with the role column in drizzle/schema/users.schema.ts.
+export type UserRole = "super_admin" | "admin" | "employee" | "accountant" | "auditor";
 
 // Package statuses
 export type PackageStatus =

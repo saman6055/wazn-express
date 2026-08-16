@@ -2578,6 +2578,14 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
     sql: "ALTER TABLE batches MODIFY COLUMN status ENUM('preparing','in_transit','arrived','customs','at_depot','delivered','closed') NOT NULL DEFAULT 'preparing'",
   },
 
+  // The read-only account. Without this the role cannot be saved at all, and
+  // MySQL reports it as truncated data for column 'role' — an error nobody
+  // would trace back to a new feature. See shared/readOnlyRole.ts.
+  {
+    name: "users.role.auditor",
+    sql: "ALTER TABLE users MODIFY COLUMN role ENUM('super_admin','admin','employee','accountant','auditor') NOT NULL DEFAULT 'employee'",
+  },
+
   // How a batch physically reached the carrier, and how big it was.
   //
   // The air waybill is the air counterpart of the container number, and like

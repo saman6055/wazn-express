@@ -47,9 +47,12 @@ describe("a staff account carries where its owner works", () => {
   });
 
   it("is asked for when the account is made", () => {
+    // The marker is the role enum, which grows whenever a role is added — it
+    // did when "auditor" arrived. Anchor on the stable head of the line so the
+    // next role does not break a test about work locations.
     const create = slice(
       read("server/routers/auth.router.ts"),
-      "role: z.enum([\"admin\", \"employee\", \"accountant\"]),",
+      "role: z.enum([\"admin\", \"employee\", \"accountant\"",
       ".mutation(",
       "registerStaff input"
     );

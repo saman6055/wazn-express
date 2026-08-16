@@ -5506,6 +5506,8 @@
     "admin": "管理员",
     "employee": "员工",
     "accountant": "会计",
+    "auditor": "审计员（只读）",
+    "auditorNotice": "此账户为只读。可以查看全部内容，但所做的任何更改都不会被保存。",
     "superAdmin": "超级管理员"
   },
   "claimRequests": {

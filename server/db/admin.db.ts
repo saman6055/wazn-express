@@ -315,7 +315,7 @@ export async function getAllUsers() {
     .orderBy(desc(users.createdAt));
 }
 
-export async function updateUserRole(userId: number, role: "super_admin" | "admin" | "employee" | "accountant") {
+export async function updateUserRole(userId: number, role: "super_admin" | "admin" | "employee" | "accountant" | "auditor") {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ role }).where(eq(users.id, userId));
@@ -328,7 +328,7 @@ export async function createStaffUser(data: {
   email?: string;
   mobileNumber?: string;
   passwordHash: string;
-  role: "admin" | "employee" | "accountant";
+  role: "admin" | "employee" | "accountant" | "auditor";
   workCountryId?: number;
   workCity?: string;
 }) {

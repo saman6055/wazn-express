@@ -37,8 +37,17 @@ export const customerProcedure = protectedProcedure.use(async ({ ctx, next }) =>
   return next({ ctx: { ...ctx, customerId } });
 });
 
+/**
+ * The auditor is on both staff lists on purpose.
+ *
+ * It is here to read — the packages, the batches, the customers, the finance
+ * figures — and a reader kept out of the data has nothing to audit. What stops
+ * it changing anything is not this list; it is the single check in
+ * server/_core/trpc.ts that every one of these procedures passes through
+ * first. See shared/readOnlyRole.ts.
+ */
 export const staffProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!["super_admin", "admin", "employee", "accountant"].includes(ctx.user.role)) {
+  if (!["super_admin", "admin", "employee", "accountant", "auditor"].includes(ctx.user.role)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Staff access required" });
   }
   return next({ ctx });
@@ -59,7 +68,7 @@ export const superAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
 });
 
 export const accountantProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!["super_admin", "admin", "accountant"].includes(ctx.user.role)) {
+  if (!["super_admin", "admin", "accountant", "auditor"].includes(ctx.user.role)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Accountant access required" });
   }
   return next({ ctx });

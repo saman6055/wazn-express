@@ -5629,6 +5629,8 @@
     "admin": "Admin",
     "employee": "Employee",
     "accountant": "Accountant",
+    "auditor": "Auditor (read-only)",
+    "auditorNotice": "This account is read-only. It can see everything, but no change it makes will be saved.",
     "superAdmin": "Super Admin"
   },
   "claimRequests": {

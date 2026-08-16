@@ -7,7 +7,10 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }), // "manus", "mobile", or "username"
-  role: mysqlEnum("role", ["super_admin", "admin", "employee", "accountant"]).default("employee").notNull(),
+  // "auditor" reads the whole system and writes no part of it. The guarantee
+  // is not here — it is one check in server/_core/trpc.ts — but the role has
+  // to be a value the column will accept. See shared/readOnlyRole.ts.
+  role: mysqlEnum("role", ["super_admin", "admin", "employee", "accountant", "auditor"]).default("employee").notNull(),
   
   // Staff login fields
   mobileNumber: varchar("mobileNumber", { length: 20 }).unique(), // For mobile login
