@@ -121,7 +121,10 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 400, damping: 30, delay: 0.2 }}
           className={cn(
-            "rounded-full px-2 py-2 flex items-center gap-1",
+            // mb-3 because a floating pill pressed against the window edge is
+            // no longer floating. `pb-safe` covers the phone; a desktop
+            // window has no safe area to inset from.
+            "rounded-full px-2 py-2 mb-3 flex items-center gap-1",
             isDark
               ? "bg-zinc-900/90 backdrop-blur-xl border-2 border-zinc-700/60 shadow-[0px_4px_20px_rgba(0,0,0,0.5)]"
               : "bg-white/90 backdrop-blur-xl border-2 border-black/10 shadow-[4px_4px_0px_rgba(0,0,0,0.08)]"

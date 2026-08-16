@@ -130,7 +130,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
         {/* The bottom bar stays phone-width whatever the page does: it is a
             thumb-reach pattern, and stretched across a monitor its items end
             up a hand-span apart with a hole in the middle. */}
-        <div className={cn("relative", "max-w-lg", "mx-auto px-4")}>
+        <div className={cn("relative", "max-w-lg", "mx-auto px-4", "pb-2")}>
           <div className="flex items-center justify-around h-[72px]">
             {navItems.map((item) => {
               const active = isActive(item.path);

@@ -290,7 +290,11 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         {/* The bottom bar stays phone-width whatever the page does: it is a
             thumb-reach pattern, and stretched across a monitor its items end
             up a hand-span apart with a hole in the middle. */}
-        <div className={cn("relative", "max-w-lg", "mx-auto")}>
+        {/* On a phone `pb-safe` lifts the row clear of the home indicator. A
+            desktop window has no safe area, so the row sat flush against the
+            bottom edge and the home button's label — which hangs below the
+            button — was cut in half by it. This is that missing clearance. */}
+        <div className={cn("relative", "max-w-lg", "mx-auto", "pb-3")}>
           <div className="flex items-end justify-between px-4 h-20">
             {/* Left Side - Shipments & Full Pack */}
             <div className="flex items-center gap-1">
@@ -301,8 +305,11 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
               })}
             </div>
 
-            {/* Center - Home Button (Large & Prominent) */}
-            <div className="relative -top-4">
+            {/* Center - Home Button (Large & Prominent).
+                Raised further than the four flat items so its label, which
+                sits below the circle rather than beside it, has somewhere to
+                go. At -top-4 the label ran past the bottom of the bar. */}
+            <div className="relative -top-6">
               <Link
                 href={homeItem.path}
                 aria-current={isHomeActive ? "page" : undefined}
