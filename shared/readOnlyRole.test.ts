@@ -90,6 +90,15 @@ describe("the rule is actually wired in", () => {
     expect(schema).toContain(`"${AUDITOR_ROLE}"`);
   });
 
+  it("can actually be chosen by somebody making an account", () => {
+    // The role worked end to end on the server and appeared in no dropdown,
+    // so the only way to create one was to edit the database by hand. A
+    // permission nobody can grant is a permission that does not exist.
+    for (const page of ["client/src/pages/StaffManagement.tsx", "client/src/pages/Users.tsx"]) {
+      expect(read(page), `${page} offers no way to pick the role`).toContain(`value="${AUDITOR_ROLE}"`);
+    }
+  });
+
   it("tells the caller why in a language they read", () => {
     expect(READ_ONLY_REFUSAL.length).toBeGreaterThan(20);
     expect(READ_ONLY_REFUSAL).toMatch(/[؀-ۿ]/);

@@ -153,7 +153,7 @@ const [search, setSearch] = useState("");
                         value={user.role}
                         onValueChange={(value) => updateRoleMutation.mutate({
                           userId: user.id,
-                          role: value as "super_admin" | "admin" | "employee" | "accountant",
+                          role: value as "super_admin" | "admin" | "employee" | "accountant" | "auditor",
                         })}
                       >
                         <SelectTrigger className="w-[130px] h-8">
@@ -164,6 +164,7 @@ const [search, setSearch] = useState("");
                           <SelectItem value="admin">Admin</SelectItem>
                           <SelectItem value="employee">Employee</SelectItem>
                           <SelectItem value="accountant">Accountant</SelectItem>
+                          <SelectItem value="auditor">Auditor (read-only)</SelectItem>
 
                         </SelectContent>
                       </Select>

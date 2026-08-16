@@ -35,7 +35,7 @@ export default function StaffManagement() {
     email: "",
     mobileNumber: "",
     password: "",
-    role: "employee" as "admin" | "employee" | "accountant",
+    role: "employee" as "admin" | "employee" | "accountant" | "auditor",
     workCountryId: "",
     workCity: "",
   });
@@ -105,7 +105,7 @@ export default function StaffManagement() {
     if (currentUser.role === 'super_admin') return true;
     // Admin can delete employees and accountants only
     if (currentUser.role === 'admin') {
-      return staff.role === 'employee' || staff.role === 'accountant';
+      return staff.role === 'employee' || staff.role === 'accountant' || staff.role === 'auditor';
     }
     return false;
   };
@@ -151,6 +151,8 @@ export default function StaffManagement() {
         return <Badge className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">{t('roles.employee')}</Badge>;
       case "accountant":
         return <Badge className="bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300">{t('roles.accountant')}</Badge>;
+      case "auditor":
+        return <Badge className="bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">{t('roles.auditor')}</Badge>;
       default:
         return <Badge>{role}</Badge>;
     }
@@ -236,7 +238,7 @@ export default function StaffManagement() {
                   <Label>{t('common.role')}</Label>
                   <Select
                     value={newStaff.role}
-                    onValueChange={(value: "admin" | "employee" | "accountant") => 
+                    onValueChange={(value: "admin" | "employee" | "accountant" | "auditor") => 
                       setNewStaff({ ...newStaff, role: value })
                     }
                   >
@@ -246,6 +248,7 @@ export default function StaffManagement() {
                     <SelectContent>
                       <SelectItem value="employee">{t('roles.employee')}</SelectItem>
                       <SelectItem value="accountant">{t('roles.accountant')}</SelectItem>
+                      <SelectItem value="auditor">{t('roles.auditor')}</SelectItem>
                       <SelectItem value="admin">{t('roles.admin')}</SelectItem>
                     </SelectContent>
                   </Select>
