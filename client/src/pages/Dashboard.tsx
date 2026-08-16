@@ -361,6 +361,15 @@ export default function Dashboard() {
                         onClick={() => setLocation(`/batches?edit=${batch.id}`)}
                       >
                         <span className="font-mono">{batch.batchCode}</span>
+                        {/* Which piece, not just that something is missing.
+                            "Waiting for a waybill" and "waiting for a flight
+                            number" are different jobs for whoever picks this
+                            up, and one word for both wastes their time. */}
+                        {(batch.missing ?? []).map((piece: string) => (
+                          <Badge key={piece} variant="secondary" className="ms-2">
+                            {t(`batches.missing.${piece === "flight-number" ? "flightNumber" : piece}`)}
+                          </Badge>
+                        ))}
                         <Badge variant="secondary" className="ms-2">
                           {t("batches.daysWaiting", { count: batch.daysWaiting })}
                         </Badge>

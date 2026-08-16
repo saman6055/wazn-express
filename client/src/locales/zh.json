@@ -1891,7 +1891,12 @@
     "andMore": "还有 {{count}} 个",
     "deleteReleasesPackages": "此批次中有 {{count}} 个包裹 — 它们不会被删除，将恢复为已登记状态，可扫描到其他批次。",
     "deleteNeedsSuperAdmin": "已超过 24 小时 — 需要超级管理员",
-    "batchRestoredWithPackages": "批次已恢复，含 {{count}} 个包裹"
+    "batchRestoredWithPackages": "批次已恢复，含 {{count}} 个包裹",
+    "missing": {
+      "awb": "无提单号",
+      "container": "无集装箱号",
+      "flightNumber": "无航班号"
+    }
   },
   "scan": {
     "register": "登记",

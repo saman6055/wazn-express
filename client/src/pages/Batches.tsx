@@ -22,6 +22,7 @@ import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, P
 import { Link, useLocation } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
 import { BAND_CLASS, BAND_MEANING, ageLabel, batchAge } from "@shared/batchAge";
+import { watchDecision, watchExplain } from "@shared/flightWatch";
 import { cn } from "@/lib/utils";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import {
@@ -1202,6 +1203,39 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               title={pickLang(language, BAND_MEANING[age.band])}
                             >
                               {pickLang(language, ageLabel(age.days))}
+                            </span>
+                          </div>
+                        );
+                      })()}
+                      {/* Whether the airport is being checked for this batch,
+                          and if not, why not.
+                          The decision was already being made every six hours
+                          and thrown away, so a shipment nobody was watching
+                          looked exactly like one watched four times a day.
+                          Two of the reasons are ordinary and stay quiet in
+                          grey; two of them mean somebody has to do something,
+                          and those are the ones that were silent. */}
+                      {(() => {
+                        const decision = watchDecision(batch as never, new Date());
+                        const explain = watchExplain(decision);
+                        if (!explain.needsAction && !decision.watch) {
+                          return (
+                            <div className="mt-1 text-[10px] text-muted-foreground">
+                              {pickLang(language, explain.text)}
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="mt-1">
+                            <span
+                              className={cn(
+                                "inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                                explain.needsAction
+                                  ? "bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-200"
+                                  : "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200"
+                              )}
+                            >
+                              {pickLang(language, explain.text)}
                             </span>
                           </div>
                         );

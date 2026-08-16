@@ -186,6 +186,94 @@ export function arrivedMessage(batchCode: string, parcelCount: number): Localise
   };
 }
 
+/**
+ * Why this batch is not being watched, in a few words on the batch itself.
+ *
+ * The decision to skip was already being made and thrown away, so a shipment
+ * nobody was checking looked exactly like one being checked every six hours.
+ * Two of these reasons are ordinary — a sea batch is never on an arrivals
+ * board, and a four-day-old batch is not there yet. Two of them mean somebody
+ * has to do something, and those are the ones that were silent.
+ */
+export function watchExplain(decision: WatchDecision): { text: Localised; needsAction: boolean } {
+  const days = decision.ageDays;
+
+  if (decision.watch) {
+    return {
+      needsAction: false,
+      text: {
+        ku: "چاودێری دەکرێت",
+        en: "Being watched",
+        ar: "قيد المتابعة",
+        zh: "监控中",
+      },
+    };
+  }
+
+  switch (decision.reason) {
+    case "no-flight-number":
+      return {
+        needsAction: true,
+        text: {
+          ku: "ژمارەی فڕین نییە — چاودێری ناکرێت",
+          en: "No flight number — not being watched",
+          ar: "لا يوجد رقم رحلة — لا تتم المتابعة",
+          zh: "无航班号 — 未监控",
+        },
+      };
+    case "gave-up":
+      return {
+        needsAction: true,
+        text: {
+          ku: `${days} ڕۆژ بەبێ نیشانە — وازی لێهێنرا`,
+          en: `${days} days with no sighting — gave up`,
+          ar: `${days} يوماً دون أي أثر — توقفت المتابعة`,
+          zh: `${days} 天未见踪迹 — 已停止监控`,
+        },
+      };
+    case "not-air":
+      return {
+        needsAction: false,
+        text: {
+          ku: "دەریایی — بە دەست چێک دەکرێت",
+          en: "Sea — checked by hand",
+          ar: "بحري — تتم المتابعة يدوياً",
+          zh: "海运 — 人工查询",
+        },
+      };
+    case "too-early":
+      return {
+        needsAction: false,
+        text: {
+          ku: `هێشتا زووە (${days} ڕۆژ)`,
+          en: `Too early (${days} days)`,
+          ar: `ما زال مبكراً (${days} أيام)`,
+          zh: `尚早（${days} 天）`,
+        },
+      };
+    case "already-arrived":
+      return {
+        needsAction: false,
+        text: {
+          ku: "گەیشتووە",
+          en: "Landed",
+          ar: "وصلت",
+          zh: "已抵达",
+        },
+      };
+    default:
+      return {
+        needsAction: false,
+        text: {
+          ku: "تەواو بووە",
+          en: "Finished",
+          ar: "منتهية",
+          zh: "已完成",
+        },
+      };
+  }
+}
+
 /** The office's alert. Short, because it is one line in a list of alerts. */
 export function adminAlertTitle(batchCode: string, flight: string): Localised {
   return {

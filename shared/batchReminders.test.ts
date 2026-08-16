@@ -6,6 +6,7 @@ import {
   daysSinceCreated,
   isSeaBatch,
   missingShippingNumber,
+  missingPieces,
   reminderSeverity,
 } from "./batchReminders";
 
@@ -72,7 +73,7 @@ describe("how overdue a batch is", () => {
   });
 
   it("says nothing once the number is filled in", () => {
-    expect(reminderSeverity(air({ createdAt: daysAgo(60), awbNumber: "176-48293011" }), NOW)).toBe("none");
+    expect(reminderSeverity(air({ createdAt: daysAgo(60), awbNumber: "176-48293011", flightNumber: "TK6894" }), NOW)).toBe("none");
   });
 
   it("stops chasing a batch whose journey is over", () => {
@@ -111,7 +112,7 @@ describe("the list of batches to chase", () => {
       { id: 2, ...air({ createdAt: daysAgo(30) }) },
       { id: 3, ...air({ createdAt: daysAgo(1) }) },
       { id: 4, ...sea({ createdAt: daysAgo(20) }) },
-      { id: 5, ...air({ createdAt: daysAgo(40), awbNumber: "176-48293011" }) },
+      { id: 5, ...air({ createdAt: daysAgo(40), awbNumber: "176-48293011", flightNumber: "TK6894" }) },
       { id: 6, ...air({ createdAt: daysAgo(40), status: "delivered" }) },
     ];
     const result = batchesAwaitingShippingNumber(batches, NOW);
@@ -122,6 +123,66 @@ describe("the list of batches to chase", () => {
 
   it("is empty when there is nothing to chase", () => {
     expect(batchesAwaitingShippingNumber([], NOW)).toEqual([]);
-    expect(batchesAwaitingShippingNumber([air({ awbNumber: "176-48293011" })], NOW)).toEqual([]);
+    expect(batchesAwaitingShippingNumber([air({ awbNumber: "176-48293011", flightNumber: "TK6894" })], NOW)).toEqual([]);
+  });
+});
+
+describe("the piece a batch is still missing", () => {
+  it("asks a sea batch only for its container number", () => {
+    // A flight number on a container ship is noise nobody can act on, and a
+    // reminder list that cries wolf is a list that stops being read.
+    expect(missingPieces({ shippingType: "sea", containerNumber: null })).toEqual(["container"]);
+    expect(missingPieces({ shippingType: "sea", containerNumber: "MSKU1234567" })).toEqual([]);
+  });
+
+  it("asks an air batch for both the waybill and the flight number", () => {
+    expect(missingPieces({ shippingType: "air_regular" })).toEqual(["awb", "flight-number"]);
+  });
+
+  it("catches the batch that used to look complete", () => {
+    // This is the gap. A waybill was enough to clear the old check, but the
+    // airport watcher matches on the flight number and nothing else — so this
+    // batch was never checked and no screen ever said so.
+    expect(
+      missingPieces({ shippingType: "air_regular", awbNumber: "235-12345678", flightNumber: null }),
+    ).toEqual(["flight-number"]);
+  });
+
+  it("is satisfied when an air batch has both", () => {
+    expect(
+      missingPieces({ shippingType: "air_regular", awbNumber: "235-12345678", flightNumber: "TK6894" }),
+    ).toEqual([]);
+  });
+
+  it("treats whitespace as missing", () => {
+    expect(missingPieces({ shippingType: "air_regular", awbNumber: "  ", flightNumber: "   " })).toEqual([
+      "awb",
+      "flight-number",
+    ]);
+  });
+});
+
+describe("a missing flight number is chased like any other gap", () => {
+  const base = { shippingType: "air_regular", awbNumber: "235-12345678", status: "in_transit" };
+  const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+
+  it("stays quiet inside the grace period", () => {
+    expect(reminderSeverity({ ...base, createdAt: daysAgo(2) })).toBe("none");
+  });
+
+  it("speaks up once the watcher would already have been looking", () => {
+    // The watcher starts at four days. A batch that reaches five without a
+    // flight number has already missed a check.
+    expect(reminderSeverity({ ...base, createdAt: daysAgo(6) })).toBe("due");
+  });
+
+  it("appears in the list with the reason named", () => {
+    const rows = batchesAwaitingShippingNumber([{ ...base, createdAt: daysAgo(6) }]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].missing).toEqual(["flight-number"]);
+  });
+
+  it("stops once the batch is delivered", () => {
+    expect(reminderSeverity({ ...base, status: "delivered", createdAt: daysAgo(60) })).toBe("none");
   });
 });

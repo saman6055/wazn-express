@@ -12,6 +12,8 @@ import {
   isAirBatch,
   normaliseFlightNumber,
   watchDecision,
+  watchExplain,
+  type WatchableBatch,
 } from "./flightWatch";
 
 /**
@@ -220,6 +222,89 @@ describe("what the office is told", () => {
     // Silence from a scraper is a fault, not an answer, and has to be said.
     for (const lang of ["ku", "en", "ar", "zh"] as const) {
       expect(WATCHER_BROKEN[lang]?.trim(), lang).toBeTruthy();
+    }
+  });
+});
+
+describe("saying why a batch is not being watched", () => {
+  const now = new Date("2026-08-16T09:00:00Z");
+  const daysAgo = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000);
+  const explainFor = (batch: Partial<WatchableBatch>) =>
+    watchExplain(watchDecision({ id: 1, ...batch } as WatchableBatch, now));
+
+  it("calls for action when the flight number is missing", () => {
+    // The gap this was written for. The batch had a waybill, so nothing on
+    // any screen asked for anything — and the watcher, which matches on the
+    // flight number alone, skipped it every six hours in silence.
+    const explain = explainFor({
+      shippingType: "air_regular",
+      status: "in_transit",
+      createdAt: daysAgo(10),
+    });
+    expect(explain.needsAction).toBe(true);
+  });
+
+  it("calls for action when the watcher has given up", () => {
+    const explain = explainFor({
+      shippingType: "air_regular",
+      status: "in_transit",
+      flightNumber: "TK6894",
+      createdAt: daysAgo(GIVE_UP_AFTER_DAYS + 1),
+    });
+    expect(explain.needsAction).toBe(true);
+  });
+
+  it("stays quiet for the ordinary reasons", () => {
+    // A sea batch and a two-day-old batch are both working exactly as
+    // intended. Colouring them like a problem is how a screen full of
+    // warnings becomes a screen nobody reads.
+    const sea = explainFor({ shippingType: "sea", status: "in_transit", createdAt: daysAgo(10) });
+    const early = explainFor({
+      shippingType: "air_regular",
+      status: "in_transit",
+      flightNumber: "TK6894",
+      createdAt: daysAgo(2),
+    });
+    const landed = explainFor({
+      shippingType: "air_regular",
+      status: "in_transit",
+      flightNumber: "TK6894",
+      createdAt: daysAgo(10),
+      flightArrivedAt: daysAgo(1),
+    });
+
+    expect(sea.needsAction).toBe(false);
+    expect(early.needsAction).toBe(false);
+    expect(landed.needsAction).toBe(false);
+  });
+
+  it("says so plainly when it is watching", () => {
+    const explain = explainFor({
+      shippingType: "air_regular",
+      status: "in_transit",
+      flightNumber: "TK6894",
+      createdAt: daysAgo(10),
+    });
+    expect(explain.needsAction).toBe(false);
+    expect(explain.text.ku).toContain("چاودێری");
+  });
+
+  it("has every language filled in, whatever the reason", () => {
+    // A blank label in one language is how a screen ends up half in English.
+    const cases: Partial<WatchableBatch>[] = [
+      { shippingType: "sea", createdAt: daysAgo(10) },
+      { shippingType: "air_regular", createdAt: daysAgo(1), flightNumber: "TK1" },
+      { shippingType: "air_regular", createdAt: daysAgo(10) },
+      { shippingType: "air_regular", createdAt: daysAgo(99), flightNumber: "TK1" },
+      { shippingType: "air_regular", createdAt: daysAgo(10), flightNumber: "TK1", flightArrivedAt: daysAgo(1) },
+      { shippingType: "air_regular", createdAt: daysAgo(10), flightNumber: "TK1", status: "delivered" },
+    ];
+
+    for (const batch of cases) {
+      const { text } = explainFor(batch);
+      for (const lang of ["ku", "en", "ar", "zh"] as const) {
+        expect(text[lang], `${JSON.stringify(batch)} has no ${lang}`).toBeTruthy();
+      }
     }
   });
 });

@@ -1886,7 +1886,12 @@
     "andMore": "و {{count}} أخرى",
     "deleteReleasesPackages": "{{count}} طرود في هذه الدفعة — لن تُحذف. تعود إلى حالة مسجل ويمكن مسحها إلى دفعة أخرى.",
     "deleteNeedsSuperAdmin": "مضى أكثر من ٢٤ ساعة — يتطلب مشرفاً عاماً",
-    "batchRestoredWithPackages": "تمت استعادة الدفعة مع {{count}} طرود"
+    "batchRestoredWithPackages": "تمت استعادة الدفعة مع {{count}} طرود",
+    "missing": {
+      "awb": "لا يوجد AWB",
+      "container": "لا يوجد رقم حاوية",
+      "flightNumber": "لا يوجد رقم رحلة"
+    }
   },
   "scanning": {
     "title": "المسح",

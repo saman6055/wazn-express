@@ -1886,7 +1886,12 @@
     "andMore": "and {{count}} more",
     "deleteReleasesPackages": "{{count}} packages are in this batch — they are not deleted. They go back to registered and can be scanned into another batch.",
     "deleteNeedsSuperAdmin": "More than 24 hours old — this needs a super admin",
-    "batchRestoredWithPackages": "Batch restored with {{count}} packages"
+    "batchRestoredWithPackages": "Batch restored with {{count}} packages",
+    "missing": {
+      "awb": "No AWB",
+      "container": "No container number",
+      "flightNumber": "No flight number"
+    }
   },
   "scanning": {
     "title": "Scanning",

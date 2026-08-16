@@ -1906,7 +1906,12 @@
     "andMore": "و {{count}} ی تر",
     "deleteReleasesPackages": "{{count}} پاکێج لەم باچەدان — نەدەسڕدرێنەوە، دەگەڕێنەوە بۆ دۆخی تۆمارکراو و دەتوانیت بیانخەیتە ناو باچێکی تر.",
     "deleteNeedsSuperAdmin": "زیاتر لە ٢٤ کاتژمێری بەسەردا تێپەڕیوە — پێویستی بە سوپەر ئەدمینە",
-    "batchRestoredWithPackages": "باچەکە گەڕێنرایەوە لەگەڵ {{count}} پاکێج"
+    "batchRestoredWithPackages": "باچەکە گەڕێنرایەوە لەگەڵ {{count}} پاکێج",
+    "missing": {
+      "awb": "AWB نییە",
+      "container": "ژمارەی کۆنتێنەر نییە",
+      "flightNumber": "ژمارەی فڕین نییە"
+    }
   },
   "scanning": {
     "title": "سکان",
