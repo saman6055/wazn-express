@@ -95,23 +95,28 @@ describe('dark mode is not optional', () => {
   });
 
   it('never fades a gradient into solid white', () => {
-    // `from-emerald-50 to-white` is the other half of the same mistake: the
-    // pale end adapts and the white end does not, so the card ends up half
-    // dark and half paper. A translucent white — from-white/10 over a coloured
-    // header — is a deliberate sheen and stays.
+    // `from-teal-50 dark:from-teal-950/40 to-white` — the invoice cards. Dark
+    // at one end, paper at the other, so on the dark theme each card started
+    // as a card and finished as a torch.
+    //
+    // The first version of this test passed them, because it accepted *any*
+    // dark stop on the line as the pair and those lines had `dark:from-`. A
+    // gradient has ends, and each end needs its own answer: the counterpart to
+    // `to-white` is `dark:to-`, and nothing else will do. A translucent white
+    // — from-white/10 over a coloured header — is a deliberate sheen and stays.
     const offenders: string[] = [];
 
     for (const file of FILES) {
       const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
       lines.forEach((line, i) => {
-        for (const m of line.matchAll(/(?<![:\w-])((?:from|via|to)-white)\b(?!\/)/g)) {
-          if (/dark:(?:from|via|to)-/.test(line)) continue;
-          offenders.push(`${path.relative(ROOT, file)}:${i + 1}  ${m[1]}`);
+        for (const m of line.matchAll(/(?<![:\w-])(from|via|to)-white\b(?!\/)/g)) {
+          if (new RegExp(`dark:${m[1]}-`).test(line)) continue;
+          offenders.push(`${path.relative(ROOT, file)}:${i + 1}  ${m[0]}`);
         }
       });
     }
 
-    expect(offenders, `pair these with dark:to-card or similar:\n${offenders.slice(0, 25).join('\n')}`).toEqual([]);
+    expect(offenders, `each end needs its own dark: stop:\n${offenders.slice(0, 25).join('\n')}`).toEqual([]);
   });
 
   it('never leaves a pale border without a dark counterpart', () => {

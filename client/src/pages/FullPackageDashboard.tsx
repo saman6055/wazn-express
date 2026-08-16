@@ -612,7 +612,7 @@ export default function FullPackageDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-white border-emerald-200 dark:border-emerald-800/60">
+          <Card className="bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -626,7 +626,7 @@ export default function FullPackageDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-white border-amber-200 dark:border-amber-800/60">
+          <Card className="bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -640,7 +640,7 @@ export default function FullPackageDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-white border-blue-200 dark:border-blue-800/60">
+          <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -654,7 +654,7 @@ export default function FullPackageDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 dark:from-red-950/40 to-white border-red-200 dark:border-red-800/60">
+          <Card className="bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -668,7 +668,7 @@ export default function FullPackageDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 dark:from-green-950/40 to-white border-green-200 dark:border-green-800/60">
+          <Card className="bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -682,7 +682,7 @@ export default function FullPackageDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 dark:from-purple-950/40 to-white border-purple-200 dark:border-purple-800/60">
+          <Card className="bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>

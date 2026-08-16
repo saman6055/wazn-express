@@ -141,7 +141,7 @@ export default function HomeModern() {
       </header>
 
       {/* ================= Hero ================= */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 dark:from-slate-950/40 to-white">
+      <section className="relative overflow-hidden bg-slate-50 dark:bg-slate-950/40">
         <div className="pointer-events-none absolute -top-24 end-0 h-96 w-96 rounded-full bg-sky-300/30 blur-3xl" />
         <div className="pointer-events-none absolute top-40 start-0 h-80 w-80 rounded-full bg-violet-300/25 blur-3xl" />
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 md:px-6 lg:grid-cols-2 lg:py-20">
@@ -261,7 +261,7 @@ export default function HomeModern() {
         </section>
 
         {/* Sea */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-sky-50 dark:from-sky-950/40 to-white py-16 md:py-24">
+        <section className="relative overflow-hidden bg-sky-50 dark:bg-sky-950/40 py-16 md:py-24">
           <Cloud className="wxdrift absolute top-8 end-[12%] h-12 w-28 text-white" />
           <div className="mx-auto max-w-3xl px-4 text-center md:px-6">
             <h2 className="text-3xl font-black text-slate-900 dark:text-slate-200 md:text-5xl">
@@ -281,7 +281,7 @@ export default function HomeModern() {
         </section>
 
         {/* Road */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-white to-slate-50 dark:to-slate-950/40 py-16 md:py-24">
+        <section className="relative overflow-hidden bg-gradient-to-b from-white dark:from-slate-950/40 to-slate-50 dark:to-slate-950/40 py-16 md:py-24">
           <div className="mx-auto max-w-3xl px-4 text-center md:px-6">
             <h2 className="text-3xl font-black text-slate-900 dark:text-slate-200 md:text-5xl">
               {L({ ku: "گەیاندنی ناوخۆیی", en: "Comprehensive road delivery" , ar: "توصيل بري شامل", zh: "全面的陆运派送" })}{" "}

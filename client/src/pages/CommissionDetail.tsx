@@ -833,7 +833,7 @@ export default function CommissionDetail() {
             <div className="lg:col-span-2 space-y-6">
               {/* Product Info Card */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-purple-50 dark:from-purple-950/40 to-white">
+                <CardHeader className="border-b bg-purple-50 dark:bg-purple-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
                       <Package className="h-5 w-5 text-purple-600 dark:text-purple-300" />
@@ -927,7 +927,7 @@ export default function CommissionDetail() {
 
               {/* Product Images Gallery */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-purple-50 dark:from-purple-950/40 to-white">
+                <CardHeader className="border-b bg-purple-50 dark:bg-purple-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
                       <ImageIcon className="h-5 w-5 text-purple-600 dark:text-purple-300" />
@@ -957,7 +957,7 @@ export default function CommissionDetail() {
 
               {/* Customer Info Card */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-purple-50 dark:from-purple-950/40 to-white">
+                <CardHeader className="border-b bg-purple-50 dark:bg-purple-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
                       <User className="h-5 w-5 text-purple-600 dark:text-purple-300" />
@@ -996,7 +996,7 @@ export default function CommissionDetail() {
             <div className="space-y-6">
               {/* Pricing Card */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-green-50 dark:from-green-950/40 to-white">
+                <CardHeader className="border-b bg-green-50 dark:bg-green-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
                       <DollarSign className="h-5 w-5 text-green-600 dark:text-green-300" />
@@ -1120,7 +1120,7 @@ export default function CommissionDetail() {
 
               {/* Status & Date Card */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-blue-50 dark:from-blue-950/40 to-white">
+                <CardHeader className="border-b bg-blue-50 dark:bg-blue-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
                       <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-300" />
@@ -1161,7 +1161,7 @@ export default function CommissionDetail() {
 
               {/* Notes */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-purple-50 dark:from-purple-950/40 to-white">
+                <CardHeader className="border-b bg-purple-50 dark:bg-purple-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
                       <FileText className="h-5 w-5 text-purple-600 dark:text-purple-300" />

@@ -53,14 +53,14 @@ const orderTypeLabelMap: Record<string, { ku: string; en: string; ar: string; zh
  */
 const CARD_STYLE = {
   full_package: {
-    card: "bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-white dark:to-card border-emerald-200 dark:border-emerald-900/60",
+    card: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60",
     label: "text-emerald-600 dark:text-emerald-300",
     value: "text-emerald-700 dark:text-emerald-300",
     iconBg: "bg-emerald-100 dark:bg-emerald-950/50",
     icon: "text-emerald-600 dark:text-emerald-300",
   },
   commission: {
-    card: "bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-white dark:to-card border-amber-200 dark:border-amber-900/60",
+    card: "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60",
     label: "text-amber-600 dark:text-amber-300",
     value: "text-amber-700 dark:text-amber-300",
     iconBg: "bg-amber-100 dark:bg-amber-950/50",
@@ -200,7 +200,7 @@ export default function ProfitDashboardByType() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-white border-emerald-200 dark:border-emerald-800/60">
+          <Card className="bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -214,7 +214,7 @@ export default function ProfitDashboardByType() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-white border-blue-200 dark:border-blue-800/60">
+          <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
