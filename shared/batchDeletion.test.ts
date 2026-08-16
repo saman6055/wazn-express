@@ -58,17 +58,22 @@ describe("the first day", () => {
     expect(ask({ createdAt: hoursAgo(DELETE_GRACE_HOURS) }).allowed).toBe(false);
   });
 
-  it("sends an admin to a super admin once the day is up", () => {
+  it("refuses once the day is up, and does not send anybody looking for help", () => {
     const verdict = ask({ createdAt: hoursAgo(30) });
     expect(verdict.allowed).toBe(false);
-    expect(verdict.refusal).toBe("needs_super_admin");
-    // The one case where telling somebody to go and ask is useful.
-    expect(verdict.wouldSuperAdminHelp).toBe(true);
+    expect(verdict.refusal).toBe("too_old");
+    // Nobody can help. Saying otherwise sends an admin to interrupt the owner
+    // for something the owner cannot do either.
+    expect(verdict.wouldSuperAdminHelp).toBe(false);
   });
 
-  it("lets a super admin delete an old batch", () => {
-    expect(ask({ role: "super_admin", createdAt: hoursAgo(30) }).allowed).toBe(true);
-    expect(ask({ role: "super_admin", createdAt: hoursAgo(5000) }).allowed).toBe(true);
+  it("refuses a super admin too, once the day is up", () => {
+    // The rule is about the age of the record, not about who is asking. By
+    // day two the batch has been scanned into and worked from; deleting it is
+    // removing a record rather than correcting a mistake.
+    for (const age of [25, 30, 5000]) {
+      expect(ask({ role: "super_admin", createdAt: hoursAgo(age) }).allowed, `${age}h`).toBe(false);
+    }
   });
 });
 
@@ -115,11 +120,12 @@ describe("working out how old a batch is", () => {
   });
 
   it("treats a missing or unreadable date as ancient", () => {
-    // Erring towards needing a super admin: a batch whose age we cannot
-    // establish should not fall into the easy path.
+    // A batch whose age cannot be established must not fall into the easy
+    // path — an unreadable date is the one input an accidental deletion would
+    // most like to have.
     expect(hoursSince(null, NOW)).toBe(Number.POSITIVE_INFINITY);
     expect(hoursSince("not a date", NOW)).toBe(Number.POSITIVE_INFINITY);
-    expect(ask({ createdAt: null }).refusal).toBe("needs_super_admin");
+    expect(ask({ createdAt: null }).refusal).toBe("too_old");
   });
 
   it("never reports a negative age for a clock that is ahead", () => {

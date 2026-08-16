@@ -993,10 +993,11 @@ export const batchesRouter = router({
 
         if (!verdict.allowed) {
           throw new TRPCError({
-            // A super admin could do this one; the rest are not about
-            // permission at all, and saying FORBIDDEN would send somebody
-            // hunting for a bigger role that cannot help either.
-            code: verdict.refusal === "needs_super_admin" ? "FORBIDDEN" : "CONFLICT",
+            // Only "you are not staff" is about permission. Everything else —
+            // money against the batch, the shipment being over, the day
+            // having passed — is a fact about the record, and FORBIDDEN would
+            // send somebody hunting for a bigger role that cannot help.
+            code: verdict.refusal === "not_permitted" ? "FORBIDDEN" : "CONFLICT",
             message: REFUSAL_MESSAGE[verdict.refusal!].ku,
           });
         }

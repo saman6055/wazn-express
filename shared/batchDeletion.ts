@@ -15,8 +15,10 @@
  *      not a permission problem, and a bigger role does not make it safe.
  *
  *   2. Time. Inside the first day it is still plausibly a mistake, and an
- *      admin may undo it. After that, deleting is a decision rather than a
- *      correction, and it takes a super admin.
+ *      admin may undo it. After that nobody may — not an admin, not a super
+ *      admin. A day-old batch has been scanned into, looked at and worked
+ *      from; by then deleting it is not correcting a mistake, it is removing
+ *      a record, and the escalation path only ever made that easier to do.
  *
  *   3. Parcels. Packages scanned into the batch do NOT block it. They are
  *      released back to unassigned and survive the deletion — that is the
@@ -45,7 +47,7 @@ export interface FinancialTies {
 
 export type DeletionRefusal =
   | "has_financial_records"
-  | "needs_super_admin"
+  | "too_old"
   | "not_permitted"
   | "already_finished";
 
@@ -113,10 +115,10 @@ export function canDeleteBatch(params: {
   // 2. Inside the first day, an admin may undo their own mistake.
   if (withinGrace) return { ...base, allowed: true, wouldSuperAdminHelp: false };
 
-  // 3. After that it takes a super admin.
-  if (isSuperAdmin(params.role)) return { ...base, allowed: true, wouldSuperAdminHelp: false };
-
-  return { ...base, allowed: false, refusal: "needs_super_admin", wouldSuperAdminHelp: true };
+  // 3. After that, nobody. A super admin is not told to come and help,
+  //    because a super admin cannot help either — this is a rule about the
+  //    age of the record, not about who is asking.
+  return { ...base, allowed: false, refusal: "too_old", wouldSuperAdminHelp: false };
 }
 
 export const REFUSAL_MESSAGE: Record<DeletionRefusal, { ku: string; en: string; ar: string; zh: string }> = {
@@ -126,11 +128,11 @@ export const REFUSAL_MESSAGE: Record<DeletionRefusal, { ku: string; en: string; 
     ar: "لا يمكن الحذف — توجد فواتير أو صناديق تسليم أو طلبات مرتبطة به. تم احتساب أموال عليه",
     zh: "无法删除 — 有发票、配送箱或订单与之关联，已计入款项",
   },
-  needs_super_admin: {
-    ku: "زیاتر لە ٢٤ کاتژمێری بەسەردا تێپەڕیوە — پێویستی بە ڕەزامەندی سوپەر ئەدمینە",
-    en: "More than 24 hours old — this needs a super admin",
-    ar: "مضى أكثر من ٢٤ ساعة — يتطلب موافقة مشرف عام",
-    zh: "已超过 24 小时 — 需要超级管理员",
+  too_old: {
+    ku: "زیاتر لە ٢٤ کاتژمێری بەسەردا تێپەڕیوە — ئیتر ناسڕدرێتەوە. دۆخەکەی بگۆڕە یان بیخە ئەرشیفەوە",
+    en: "More than 24 hours old — it can no longer be deleted. Change its status or archive it",
+    ar: "مضى أكثر من ٢٤ ساعة — لم يعد قابلاً للحذف. غيّر حالته أو أرشفه",
+    zh: "已超过 24 小时——不能再删除。请更改其状态或归档",
   },
   not_permitted: {
     ku: "دەسەڵاتی سڕینەوەت نییە",
