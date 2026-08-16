@@ -772,7 +772,7 @@ const { t, language } = useLanguage();
                 "text-center p-3 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105",
                 isDark 
                   ? "bg-slate-700/50 hover:bg-slate-700" 
-                  : "bg-gradient-to-br from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200"
+                  : "bg-gradient-to-br from-slate-50 dark:from-slate-950/40 to-slate-100 dark:to-slate-900/40 hover:from-slate-100 hover:to-slate-200"
               )}>
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg",
@@ -799,7 +799,7 @@ const { t, language } = useLanguage();
                 "text-center p-3 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105",
                 isDark 
                   ? "bg-blue-900/30 hover:bg-blue-900/50" 
-                  : "bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200"
+                  : "bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-100 dark:to-blue-900/40 hover:from-blue-100 hover:to-blue-200"
               )}>
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg",
@@ -828,7 +828,7 @@ const { t, language } = useLanguage();
                 "text-center p-3 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105",
                 isDark 
                   ? "bg-amber-900/30 hover:bg-amber-900/50" 
-                  : "bg-gradient-to-br from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200"
+                  : "bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-amber-100 dark:to-amber-900/40 hover:from-amber-100 hover:to-amber-200"
               )}>
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg",
@@ -855,7 +855,7 @@ const { t, language } = useLanguage();
                 "text-center p-3 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105",
                 isDark 
                   ? "bg-emerald-900/30 hover:bg-emerald-900/50" 
-                  : "bg-gradient-to-br from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200"
+                  : "bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-emerald-100 dark:to-emerald-900/40 hover:from-emerald-100 hover:to-emerald-200"
               )}>
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg",
@@ -887,7 +887,7 @@ const { t, language } = useLanguage();
               "relative overflow-hidden rounded-2xl p-5 shadow-lg cursor-pointer hover:scale-[1.01] transition-all",
               isDark
                 ? "bg-gradient-to-br from-amber-900/60 to-orange-900/60 border border-amber-700/50"
-                : "bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 dark:border-amber-800/60"
+                : "bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40 border border-amber-200 dark:border-amber-800/60"
             )}>
               <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
               <div className="relative flex items-start justify-between">

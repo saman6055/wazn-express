@@ -1141,7 +1141,7 @@ export default function Finance() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {debtors?.slice(0, 4).map((debtor) => (
-                    <div key={debtor.customerId} className="p-4 border rounded-xl bg-gradient-to-br from-red-50 to-rose-50 border-red-200 dark:border-red-800/60 hover:shadow-md transition-shadow">
+                    <div key={debtor.customerId} className="p-4 border rounded-xl bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 border-red-200 dark:border-red-800/60 hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between mb-2">
                         <Badge variant="outline" className="bg-white dark:bg-card">{debtor.customer?.customerCode}</Badge>
                         <span className="text-red-600 dark:text-red-300 font-bold">{formatCurrency(String(debtor.balanceUsd || 0))}</span>

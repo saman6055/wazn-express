@@ -393,7 +393,7 @@ export default function Skin3PortalProfile() {
                 "text-4xl font-black",
                 isDark
                   ? "bg-indigo-950/60 text-indigo-400 ring-indigo-500/40 ring-offset-zinc-950"
-                  : "bg-gradient-to-br from-indigo-100 to-violet-100 text-indigo-700 dark:text-indigo-300 ring-indigo-400/50 ring-offset-amber-50/50"
+                  : "bg-gradient-to-br from-indigo-100 dark:from-indigo-900/40 to-violet-100 dark:to-violet-900/40 text-indigo-700 dark:text-indigo-300 ring-indigo-400/50 ring-offset-amber-50/50"
               )}
               fallback={
                 accountLoading ? (

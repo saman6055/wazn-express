@@ -283,7 +283,7 @@ export default function CommissionOrders() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 dark:border-emerald-800/60">
+          <Card className="bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-white border-emerald-200 dark:border-emerald-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -297,7 +297,7 @@ export default function CommissionOrders() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-200 dark:border-amber-800/60">
+          <Card className="bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-white border-amber-200 dark:border-amber-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -311,7 +311,7 @@ export default function CommissionOrders() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200 dark:border-blue-800/60">
+          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-white border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -325,7 +325,7 @@ export default function CommissionOrders() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-white border-green-200 dark:border-green-800/60">
+          <Card className="bg-gradient-to-br from-green-50 dark:from-green-950/40 to-white border-green-200 dark:border-green-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -339,7 +339,7 @@ export default function CommissionOrders() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-200 dark:border-purple-800/60">
+          <Card className="bg-gradient-to-br from-purple-50 dark:from-purple-950/40 to-white border-purple-200 dark:border-purple-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>

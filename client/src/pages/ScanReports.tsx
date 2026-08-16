@@ -141,7 +141,7 @@ export default function ScanReports() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 dark:from-slate-950/40 via-white to-slate-100 dark:to-slate-900/40">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white relative overflow-hidden">
           <div className="absolute inset-0 opacity-20" style={{
@@ -302,19 +302,19 @@ export default function ScanReports() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 dark:border-indigo-800/60">
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-50 dark:from-indigo-950/40 to-purple-50 dark:to-purple-950/40 border border-indigo-100 dark:border-indigo-800/60">
                         <p className="text-sm text-indigo-600 dark:text-indigo-300 font-medium">
                           {pickLang(language, { ku: "کۆی سکان", en: "Total Scans", ar: "إجمالي عمليات المسح", zh: "扫描总数" })}
                         </p>
                         <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">{totalScans}</p>
                       </div>
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 dark:border-emerald-800/60">
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-50 dark:to-teal-950/40 border border-emerald-100 dark:border-emerald-800/60">
                         <p className="text-sm text-emerald-600 dark:text-emerald-300 font-medium">
                           {pickLang(language, { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" })}
                         </p>
                         <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-300">{todayTotal}</p>
                       </div>
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 dark:border-amber-800/60">
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40 border border-amber-100 dark:border-amber-800/60">
                         <p className="text-sm text-amber-600 dark:text-amber-300 font-medium">
                           {pickLang(language, { ku: "ڕۆژانە بە تێکڕا", en: "Daily Average", ar: "المعدل اليومي", zh: "日均" })}
                         </p>
@@ -322,7 +322,7 @@ export default function ScanReports() {
                           {dailyReport.length > 0 ? Math.round(totalScans / dailyReport.length) : 0}
                         </p>
                       </div>
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100 dark:border-blue-800/60">
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-cyan-50 dark:to-cyan-950/40 border border-blue-100 dark:border-blue-800/60">
                         <p className="text-sm text-blue-600 dark:text-blue-300 font-medium">
                           {pickLang(language, { ku: "ژمارەی ڕۆژ", en: "Days", ar: "الأيام", zh: "天数" })}
                         </p>

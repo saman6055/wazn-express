@@ -172,7 +172,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
       </div>
 
       {/* Balance Equation */}
-      <Card className="bg-gradient-to-r from-blue-50 via-white to-purple-50 border-2 border-blue-200 dark:border-blue-800/60">
+      <Card className="bg-gradient-to-r from-blue-50 dark:from-blue-950/40 via-white to-purple-50 dark:to-purple-950/40 border-2 border-blue-200 dark:border-blue-800/60">
         <CardContent className="p-6">
           <div className="flex items-center justify-center gap-4 text-center">
             <div className="flex-1">

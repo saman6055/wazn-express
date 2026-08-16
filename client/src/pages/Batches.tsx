@@ -1557,7 +1557,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-4 gap-4">
-                  <Card className="border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 to-red-100">
+                  <Card className="border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-red-100 dark:to-red-900/40">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm text-red-700 dark:text-red-300 flex items-center gap-1">
                         <DollarSign className="h-4 w-4" />
@@ -1574,7 +1574,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </p>
                     </CardContent>
                   </Card>
-                  <Card className="border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 to-green-100">
+                  <Card className="border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 dark:from-green-950/40 to-green-100 dark:to-green-900/40">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm text-green-700 dark:text-green-300 flex items-center gap-1">
                         <TrendingUp className="h-4 w-4" />
@@ -1586,7 +1586,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <p className="text-xs text-muted-foreground mt-1">{t('batches.fromPackages', { count: financialSummary.totalPackages })}</p>
                     </CardContent>
                   </Card>
-                  <Card className={`border-2 ${financialSummary.profit >= 0 ? 'border-green-500 bg-gradient-to-br from-green-100 to-emerald-100' : 'border-red-500 bg-gradient-to-br from-red-100 to-rose-100'}`}>
+                  <Card className={`border-2 ${financialSummary.profit >= 0 ? 'border-green-500 bg-gradient-to-br from-green-100 dark:from-green-900/40 to-emerald-100 dark:to-emerald-900/40' : 'border-red-500 bg-gradient-to-br from-red-100 dark:from-red-900/40 to-rose-100 dark:to-rose-900/40'}`}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-1">
                         <BarChart3 className="h-4 w-4" />
@@ -1602,7 +1602,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </p>
                     </CardContent>
                   </Card>
-                  <Card className="border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 to-blue-100">
+                  <Card className="border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-100 dark:to-blue-900/40">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-1">
                         <Package className="h-4 w-4" />

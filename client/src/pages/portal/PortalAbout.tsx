@@ -226,7 +226,7 @@ export default function PortalAbout() {
           {/* Mission */}
           <div className={cn(
             "rounded-3xl p-5 ring-1 relative overflow-hidden",
-            isDark ? "bg-gradient-to-br from-indigo-950/40 to-purple-950/40 ring-indigo-900/40" : "bg-gradient-to-br from-indigo-50 to-purple-50 ring-indigo-100",
+            isDark ? "bg-gradient-to-br from-indigo-950/40 to-purple-950/40 ring-indigo-900/40" : "bg-gradient-to-br from-indigo-50 dark:from-indigo-950/40 to-purple-50 dark:to-purple-950/40 ring-indigo-100",
           )}>
             <div className="flex items-center gap-2.5 mb-2">
               <Target className={cn("w-5 h-5", isDark ? "text-indigo-400" : "text-indigo-600")} />

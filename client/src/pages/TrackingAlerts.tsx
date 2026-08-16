@@ -411,7 +411,7 @@ export default function TrackingAlerts() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 dark:from-slate-950/40 via-white to-slate-100 dark:to-slate-900/40">
         {/* Professional Header */}
         <div className="bg-gradient-to-r from-red-600 via-rose-600 to-orange-600 text-white relative overflow-hidden">
           <div className="absolute inset-0 opacity-20" style={{

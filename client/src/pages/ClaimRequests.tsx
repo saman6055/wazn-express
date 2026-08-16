@@ -156,7 +156,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
           
           {/* Stats */}
           <div className="flex gap-3">
-            <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 dark:border-yellow-800/60">
+            <Card className="bg-gradient-to-br from-yellow-50 dark:from-yellow-950/40 to-orange-50 dark:to-orange-950/40 border-yellow-200 dark:border-yellow-800/60">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-950/40 rounded-lg flex items-center justify-center">

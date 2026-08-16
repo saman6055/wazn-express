@@ -181,7 +181,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
             <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
           ) : notifications?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mb-4">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 dark:from-blue-900/40 to-blue-200 flex items-center justify-center mb-4">
                 <Bell className="h-10 w-10 text-blue-500 dark:text-blue-400" />
               </div>
               <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">{pickLang(language, { ku: "هیچ ئاگادارکردنەوەیەک نییە", en: "No notifications", ar: "لا توجد إشعارات", zh: "暂无通知" })}</h3>

@@ -464,7 +464,7 @@ export default function PortalMessages() {
                       "w-24 h-24 rounded-full flex items-center justify-center mb-4",
                       isDark 
                         ? "bg-gradient-to-br from-purple-500/20 to-indigo-500/20" 
-                        : "bg-gradient-to-br from-purple-100 to-indigo-100"
+                        : "bg-gradient-to-br from-purple-100 dark:from-purple-900/40 to-indigo-100 dark:to-indigo-900/40"
                     )}
                   >
                     <Sparkles className={cn(

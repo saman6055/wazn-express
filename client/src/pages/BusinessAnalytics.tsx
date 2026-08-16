@@ -177,7 +177,7 @@ export default function BusinessAnalytics() {
 
         {/* Summary Stats */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-teal-50">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-50 dark:to-teal-950/40">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -191,7 +191,7 @@ export default function BusinessAnalytics() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-cyan-50 dark:to-cyan-950/40">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -205,7 +205,7 @@ export default function BusinessAnalytics() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-50">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -219,7 +219,7 @@ export default function BusinessAnalytics() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-rose-50 to-pink-50">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-rose-50 dark:from-rose-950/40 to-pink-50 dark:to-pink-950/40">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>

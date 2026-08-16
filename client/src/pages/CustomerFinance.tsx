@@ -1497,8 +1497,8 @@ export default function CustomerFinance() {
               <Card className={cn(
                 "overflow-hidden border-0 shadow-lg",
                 parseFloat(account.currentBalanceUsd || '0') > 0 
-                  ? "bg-gradient-to-br from-red-50 to-rose-100" 
-                  : "bg-gradient-to-br from-emerald-50 to-teal-100"
+                  ? "bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-100 dark:to-rose-900/40" 
+                  : "bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-100 dark:to-teal-900/40"
               )}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -1527,7 +1527,7 @@ export default function CustomerFinance() {
 
               
               {/* Account Status */}
-              <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-100">
+              <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-orange-100 dark:to-orange-900/40">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>

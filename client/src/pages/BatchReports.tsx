@@ -494,7 +494,7 @@ export default function BatchReports() {
         {/* Overview Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* Total Batches */}
-          <Card className="border-2 border-indigo-200 dark:border-indigo-800/60 bg-gradient-to-br from-indigo-50 to-violet-50">
+          <Card className="border-2 border-indigo-200 dark:border-indigo-800/60 bg-gradient-to-br from-indigo-50 dark:from-indigo-950/40 to-violet-50 dark:to-violet-950/40">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-indigo-700 dark:text-indigo-300">{pickLang(language, { ku: "کۆی باچەکان", en: "Total batches", ar: "إجمالي الدفعات", zh: "批次总数" })}</CardTitle>
               <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
@@ -510,7 +510,7 @@ export default function BatchReports() {
           </Card>
 
           {/* Total Cost */}
-          <Card className="border-2 border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 to-rose-50">
+          <Card className="border-2 border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</CardTitle>
               <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-lg">
@@ -527,7 +527,7 @@ export default function BatchReports() {
           </Card>
 
           {/* Total Revenue */}
-          <Card className="border-2 border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 to-emerald-50">
+          <Card className="border-2 border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</CardTitle>
               <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
@@ -544,8 +544,8 @@ export default function BatchReports() {
 
           {/* Total Profit */}
           <Card className={`border-2 ${totals.totalProfit >= 0 
-            ? 'border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50 to-teal-50' 
-            : 'border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 to-rose-50'}`}>
+            ? 'border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-50 dark:to-teal-950/40' 
+            : 'border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40'}`}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className={`text-sm font-medium ${totals.totalProfit >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
                 {totals.totalProfit >= 0
@@ -998,7 +998,7 @@ export default function BatchReports() {
         <div className="grid gap-4 md:grid-cols-3">
           {/* Air Regular */}
           <Card className="border-2 border-blue-200 dark:border-blue-800/60">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-sky-50 rounded-t-lg">
+            <CardHeader className="bg-gradient-to-r from-blue-50 dark:from-blue-950/40 to-sky-50 dark:to-sky-950/40 rounded-t-lg">
               <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                 <Plane className="h-5 w-5" />
                 {pickLang(language, { ku: "ئاسمانی", en: "Air", ar: "جوي", zh: "空运" })}
@@ -1030,7 +1030,7 @@ export default function BatchReports() {
 
           {/* Air Irregular */}
           <Card className="border-2 border-orange-200 dark:border-orange-800/60">
-            <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-t-lg">
+            <CardHeader className="bg-gradient-to-r from-orange-50 dark:from-orange-950/40 to-amber-50 dark:to-amber-950/40 rounded-t-lg">
               <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
                 <AlertTriangle className="h-5 w-5" />
                 {pickLang(language, { ku: "ئاسمانی مەترسیدار", en: "Air (hazardous)", ar: "جوي خطر", zh: "空运（危险品）" })}
@@ -1062,7 +1062,7 @@ export default function BatchReports() {
 
           {/* Sea */}
           <Card className="border-2 border-cyan-200 dark:border-cyan-800/60">
-            <CardHeader className="bg-gradient-to-r from-cyan-50 to-teal-50 rounded-t-lg">
+            <CardHeader className="bg-gradient-to-r from-cyan-50 dark:from-cyan-950/40 to-teal-50 dark:to-teal-950/40 rounded-t-lg">
               <CardTitle className="flex items-center gap-2 text-cyan-700 dark:text-cyan-300">
                 <Ship className="h-5 w-5" />
                 {pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" })}

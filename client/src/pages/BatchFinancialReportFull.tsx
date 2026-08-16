@@ -252,7 +252,7 @@ export default function BatchFinancialReportFull() {
         {/* Executive Summary - 4 Main Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Cost */}
-          <Card className="border-2 border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 to-rose-50 shadow-lg">
+          <Card className="border-2 border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</CardTitle>
               <div className="p-3 bg-red-100 dark:bg-red-950/40 rounded-xl">
@@ -272,7 +272,7 @@ export default function BatchFinancialReportFull() {
           </Card>
           
           {/* Total Revenue */}
-          <Card className="border-2 border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg">
+          <Card className="border-2 border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40 shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</CardTitle>
               <div className="p-3 bg-green-100 dark:bg-green-950/40 rounded-xl">
@@ -290,8 +290,8 @@ export default function BatchFinancialReportFull() {
           
           {/* Net Profit */}
           <Card className={`border-2 shadow-lg ${isProfitable 
-            ? 'border-emerald-300 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50 to-teal-50' 
-            : 'border-red-300 dark:border-red-800/60 bg-gradient-to-br from-red-50 to-rose-50'
+            ? 'border-emerald-300 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-50 dark:to-teal-950/40' 
+            : 'border-red-300 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40'
           }`}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className={`text-sm font-medium ${isProfitable ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
@@ -328,7 +328,7 @@ export default function BatchFinancialReportFull() {
           </Card>
           
           {/* Profit Margin */}
-          <Card className="border-2 border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg">
+          <Card className="border-2 border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-indigo-50 dark:to-indigo-950/40 shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">{pickLang(language, { ku: "ڕێژەی قازانج", en: "Profit margin", ar: "هامش الربح", zh: "利润率" })}</CardTitle>
               <div className="p-3 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
@@ -366,7 +366,7 @@ export default function BatchFinancialReportFull() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              <div className="flex justify-between items-center p-5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200 dark:border-amber-800/60">
+              <div className="flex justify-between items-center p-5 bg-gradient-to-r from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40 rounded-xl border border-amber-200 dark:border-amber-800/60">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-amber-200 dark:bg-amber-900/50 rounded-xl">
                     <Calculator className="h-5 w-5 text-amber-700 dark:text-amber-300" />
@@ -408,7 +408,7 @@ export default function BatchFinancialReportFull() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              <div className="flex justify-between items-center p-5 bg-gradient-to-r from-red-50 to-rose-50 rounded-xl border border-red-200 dark:border-red-800/60">
+              <div className="flex justify-between items-center p-5 bg-gradient-to-r from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 rounded-xl border border-red-200 dark:border-red-800/60">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-red-200 dark:bg-red-900/50 rounded-xl">
                     <TrendingDown className="h-5 w-5 text-red-700 dark:text-red-300" />
@@ -423,7 +423,7 @@ export default function BatchFinancialReportFull() {
                 </span>
               </div>
               
-              <div className="flex justify-between items-center p-5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 dark:border-green-800/60">
+              <div className="flex justify-between items-center p-5 bg-gradient-to-r from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40 rounded-xl border border-green-200 dark:border-green-800/60">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-green-200 dark:bg-green-900/50 rounded-xl">
                     <TrendingUp className="h-5 w-5 text-green-700 dark:text-green-300" />
@@ -445,8 +445,8 @@ export default function BatchFinancialReportFull() {
               
               <div className={`flex justify-between items-center p-5 rounded-xl border ${
                 isProfitable 
-                  ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:border-blue-800/60' 
-                  : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-200 dark:border-red-800/60'
+                  ? 'bg-gradient-to-r from-blue-50 dark:from-blue-950/40 to-indigo-50 dark:to-indigo-950/40 border-blue-200 dark:border-blue-800/60' 
+                  : 'bg-gradient-to-r from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 border-red-200 dark:border-red-800/60'
               }`}>
                 <div className="flex items-center gap-4">
                   <div className={`p-3 rounded-xl ${isProfitable ? 'bg-blue-200' : 'bg-red-200'}`}>
@@ -605,8 +605,8 @@ export default function BatchFinancialReportFull() {
 
         {/* Status Summary Card */}
         <Card className={`border-2 shadow-lg ${isProfitable 
-          ? 'border-green-300 dark:border-green-800/60 bg-gradient-to-r from-green-50 to-emerald-50' 
-          : 'border-red-300 dark:border-red-800/60 bg-gradient-to-r from-red-50 to-rose-50'
+          ? 'border-green-300 dark:border-green-800/60 bg-gradient-to-r from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40' 
+          : 'border-red-300 dark:border-red-800/60 bg-gradient-to-r from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40'
         }`}>
           <CardContent className="flex items-center justify-between py-8 px-8">
             <div className="flex items-center gap-6">

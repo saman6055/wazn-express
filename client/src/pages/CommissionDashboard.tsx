@@ -579,7 +579,7 @@ export default function CommissionDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 dark:border-amber-800/60">
+          <Card className="bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-yellow-50 dark:to-yellow-950/40 border-amber-200 dark:border-amber-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -593,7 +593,7 @@ export default function CommissionDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 dark:border-orange-800/60">
+          <Card className="bg-gradient-to-br from-orange-50 dark:from-orange-950/40 to-amber-50 dark:to-amber-950/40 border-orange-200 dark:border-orange-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -607,7 +607,7 @@ export default function CommissionDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-sky-50 border-blue-200 dark:border-blue-800/60">
+          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-sky-50 dark:to-sky-950/40 border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -621,7 +621,7 @@ export default function CommissionDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 dark:border-green-800/60">
+          <Card className="bg-gradient-to-br from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40 border-green-200 dark:border-green-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -635,7 +635,7 @@ export default function CommissionDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 dark:border-red-800/60">
+          <Card className="bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 border-red-200 dark:border-red-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -656,7 +656,7 @@ export default function CommissionDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200 dark:border-yellow-800/60">
+          <Card className="bg-gradient-to-br from-yellow-50 dark:from-yellow-950/40 to-amber-50 dark:to-amber-950/40 border-yellow-200 dark:border-yellow-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>

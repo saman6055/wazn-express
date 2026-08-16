@@ -406,7 +406,7 @@ export default function AuditLogs() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-5">
-          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200 dark:border-slate-800/60">
+          <Card className="bg-gradient-to-br from-slate-50 dark:from-slate-950/40 to-slate-100 dark:to-slate-900/40 border-slate-200 dark:border-slate-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-slate-200 dark:bg-slate-800/50 rounded-lg">
@@ -420,7 +420,7 @@ export default function AuditLogs() {
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 dark:border-green-800/60">
+          <Card className="bg-gradient-to-br from-green-50 dark:from-green-950/40 to-green-100 dark:to-green-900/40 border-green-200 dark:border-green-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-200 dark:bg-green-900/50 rounded-lg">
@@ -439,7 +439,7 @@ export default function AuditLogs() {
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 dark:border-blue-800/60">
+          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-100 dark:to-blue-900/40 border-blue-200 dark:border-blue-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-200 dark:bg-blue-900/50 rounded-lg">
@@ -458,7 +458,7 @@ export default function AuditLogs() {
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 dark:border-red-800/60">
+          <Card className="bg-gradient-to-br from-red-50 dark:from-red-950/40 to-red-100 dark:to-red-900/40 border-red-200 dark:border-red-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-red-200 dark:bg-red-900/50 rounded-lg">
@@ -477,7 +477,7 @@ export default function AuditLogs() {
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 dark:border-purple-800/60">
+          <Card className="bg-gradient-to-br from-purple-50 dark:from-purple-950/40 to-purple-100 dark:to-purple-900/40 border-purple-200 dark:border-purple-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-200 dark:bg-purple-900/50 rounded-lg">

@@ -1621,7 +1621,7 @@ export default function BatchFinancialReport() {
                         openLabelPrintWindow(html);
                         toast.success(pickLang(language, { ku: "لەیبڵەکان ئامادەن بۆ پرینت", en: "Labels ready to print", ar: "الملصقات جاهزة للطباعة", zh: "标签已准备好打印" }));
                       }}
-                      className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-b from-emerald-50 to-white hover:border-emerald-400 hover:shadow-lg transition-all duration-200 text-right min-h-[120px] group"
+                      className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-b from-emerald-50 dark:from-emerald-950/40 to-white hover:border-emerald-400 hover:shadow-lg transition-all duration-200 text-right min-h-[120px] group"
                     >
                       <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                         <Tag className="h-8 w-8 text-white" />
@@ -1674,7 +1674,7 @@ export default function BatchFinancialReport() {
                         openLabelPrintWindow(html);
                         toast.success(pickLang(language, { ku: "لەیبڵەکان ئامادەن بۆ پرینت", en: "Labels ready to print", ar: "الملصقات جاهزة للطباعة", zh: "标签已准备好打印" }));
                       }}
-                      className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-violet-200 dark:border-violet-800/60 bg-gradient-to-b from-violet-50 to-white hover:border-violet-400 hover:shadow-lg transition-all duration-200 text-right min-h-[120px] group"
+                      className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-violet-200 dark:border-violet-800/60 bg-gradient-to-b from-violet-50 dark:from-violet-950/40 to-white hover:border-violet-400 hover:shadow-lg transition-all duration-200 text-right min-h-[120px] group"
                     >
                       <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                         <Tag className="h-8 w-8 text-white" />

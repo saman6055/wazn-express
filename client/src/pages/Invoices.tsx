@@ -93,7 +93,7 @@ export default function Invoices() {
 
         {/* Stats */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-slate-50 to-white">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-slate-50 dark:from-slate-950/40 to-white">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -104,7 +104,7 @@ export default function Invoices() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-teal-50 to-white">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-teal-50 dark:from-teal-950/40 to-white">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -115,7 +115,7 @@ export default function Invoices() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-white">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-white">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -126,7 +126,7 @@ export default function Invoices() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-white">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-white">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>

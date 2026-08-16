@@ -245,7 +245,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
             <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
           ) : addresses?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-100 to-teal-200 flex items-center justify-center mb-4">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-100 dark:from-teal-900/40 to-teal-200 flex items-center justify-center mb-4">
                 <MapPin className="h-10 w-10 text-teal-500 dark:text-teal-400" />
               </div>
               <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">{pickLang(language, { ku: "هێشتا هیچ ناونیشانێک نییە", en: "No addresses yet", ar: "لا توجد عناوين بعد", zh: "暂无地址" })}</h3>

@@ -81,7 +81,7 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
         "relative overflow-hidden rounded-2xl p-5 shadow-sm",
         isDark
           ? "bg-gradient-to-br from-fuchsia-900/50 to-purple-900/40 border border-fuchsia-800/40"
-          : "bg-gradient-to-br from-fuchsia-50 to-purple-50 border border-fuchsia-200 dark:border-fuchsia-800/60"
+          : "bg-gradient-to-br from-fuchsia-50 dark:from-fuchsia-950/40 to-purple-50 dark:to-purple-950/40 border border-fuchsia-200 dark:border-fuchsia-800/60"
       )}>
         <div className="absolute -top-8 -end-8 w-28 h-28 rounded-full bg-fuchsia-500/10" />
         <div className="relative flex items-start gap-3">

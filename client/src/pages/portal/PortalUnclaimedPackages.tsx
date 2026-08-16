@@ -228,7 +228,7 @@ export default function PortalUnclaimedPackages() {
                           photos={pkg.photos ?? []}
                           className="w-12 h-12 rounded-xl border border-orange-100 dark:border-orange-800/60"
                           fallback={
-                            <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center shrink-0">
+                            <div className="w-12 h-12 bg-gradient-to-br from-orange-100 dark:from-orange-900/40 to-yellow-100 dark:to-yellow-900/40 rounded-xl flex items-center justify-center shrink-0">
                               <Package className="w-6 h-6 text-orange-600 dark:text-orange-300" />
                             </div>
                           }

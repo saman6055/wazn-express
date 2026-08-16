@@ -199,7 +199,7 @@ export default function CompanyFinanceDashboard() {
             {/* Top 4 Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Total Revenue */}
-              <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-green-50">
+              <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-green-50 dark:to-green-950/40">
                 <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500 rounded-r-full"></div>
                 <CardContent className="pt-6 pr-6">
                   <div className="flex items-center justify-between">
@@ -221,7 +221,7 @@ export default function CompanyFinanceDashboard() {
               </Card>
 
               {/* Total Expenses */}
-              <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-red-50 to-rose-50">
+              <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40">
                 <div className="absolute top-0 left-0 w-1.5 h-full bg-red-500 rounded-r-full"></div>
                 <CardContent className="pt-6 pr-6">
                   <div className="flex items-center justify-between">
@@ -243,7 +243,7 @@ export default function CompanyFinanceDashboard() {
               </Card>
 
               {/* Net Profit */}
-              <Card className={`relative overflow-hidden border-0 shadow-lg ${(pl?.netProfit || 0) >= 0 ? 'bg-gradient-to-br from-blue-50 to-indigo-50' : 'bg-gradient-to-br from-orange-50 to-amber-50'}`}>
+              <Card className={`relative overflow-hidden border-0 shadow-lg ${(pl?.netProfit || 0) >= 0 ? 'bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-indigo-50 dark:to-indigo-950/40' : 'bg-gradient-to-br from-orange-50 dark:from-orange-950/40 to-amber-50 dark:to-amber-950/40'}`}>
                 <div className={`absolute top-0 left-0 w-1.5 h-full ${(pl?.netProfit || 0) >= 0 ? 'bg-blue-500' : 'bg-orange-500'} rounded-r-full`}></div>
                 <CardContent className="pt-6 pr-6">
                   <div className="flex items-center justify-between">
@@ -283,7 +283,7 @@ export default function CompanyFinanceDashboard() {
               </Card>
 
               {/* Profit Margin */}
-              <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-50 to-violet-50">
+              <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-50 dark:from-purple-950/40 to-violet-50 dark:to-violet-950/40">
                 <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500 rounded-r-full"></div>
                 <CardContent className="pt-6 pr-6">
                   <div className="flex items-center justify-between">
@@ -841,7 +841,7 @@ export default function CompanyFinanceDashboard() {
           <TabsContent value="profitloss" className="space-y-6 mt-6">
             {/* P&L Statement */}
             <Card className="border-0 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-t-xl">
+              <CardHeader className="bg-gradient-to-r from-slate-50 dark:from-slate-950/40 to-blue-50 dark:to-blue-950/40 rounded-t-xl">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-xl">{t("companyFinance.plStatement") || "بەیاننامەی قازانج و زەرەر"}</CardTitle>

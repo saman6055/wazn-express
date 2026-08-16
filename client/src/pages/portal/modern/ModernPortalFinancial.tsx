@@ -105,7 +105,7 @@ export default function ModernPortalFinancial() {
               "rounded-2xl p-6 shadow-sm relative overflow-hidden",
               isDark
                 ? "bg-gradient-to-br from-emerald-900/60 to-teal-900/40 border border-emerald-800/40"
-                : "bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 dark:border-emerald-800/60"
+                : "bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-50 dark:to-teal-950/40 border border-emerald-100 dark:border-emerald-800/60"
             )}
           >
             <div className="absolute top-0 end-0 w-32 h-32 rounded-full bg-emerald-400/10 -translate-y-1/2 translate-x-1/2" />

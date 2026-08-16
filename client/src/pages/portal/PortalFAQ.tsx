@@ -181,7 +181,7 @@ export default function PortalFAQ() {
           {/* Still stuck → WhatsApp */}
           <div className={cn(
             "rounded-3xl p-5 text-center",
-            isDark ? "bg-gradient-to-br from-slate-900 to-slate-800" : "bg-gradient-to-br from-cyan-50 to-blue-50 ring-1 ring-cyan-100",
+            isDark ? "bg-gradient-to-br from-slate-900 to-slate-800" : "bg-gradient-to-br from-cyan-50 dark:from-cyan-950/40 to-blue-50 dark:to-blue-950/40 ring-1 ring-cyan-100",
           )}>
             <p className={cn("text-sm font-semibold mb-3", isDark ? "text-white" : "text-slate-700 dark:text-slate-300")}>
               {pick(faqHeader.stillStuck)}

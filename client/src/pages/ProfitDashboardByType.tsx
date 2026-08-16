@@ -38,6 +38,36 @@ const orderTypeLabelMap: Record<string, { ku: string; en: string; ar: string; zh
   commission: { ku: "کڕین بە تێچوو", en: "Buy at Cost", ar: "الشراء بالتكلفة", zh: "代购按成本" },
 };
 
+/**
+ * Both colour sets, spelled out.
+ *
+ * These were built by interpolation: `from-${c}-50`, `bg-${c}-100`,
+ * `text-${c}-600`. Tailwind finds class names by reading the source text, and
+ * those names never appear in it, so none of them were ever generated — the
+ * card had no background, no border and no colour at all. One was worse
+ * still: `text-${c}-700` sat inside an ordinary string, so that literal text
+ * was emitted as a class name.
+ *
+ * Written out, both halves visible to the compiler, with the dark variants
+ * their light counterparts always needed.
+ */
+const CARD_STYLE = {
+  full_package: {
+    card: "bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-white dark:to-card border-emerald-200 dark:border-emerald-900/60",
+    label: "text-emerald-600 dark:text-emerald-300",
+    value: "text-emerald-700 dark:text-emerald-300",
+    iconBg: "bg-emerald-100 dark:bg-emerald-950/50",
+    icon: "text-emerald-600 dark:text-emerald-300",
+  },
+  commission: {
+    card: "bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-white dark:to-card border-amber-200 dark:border-amber-900/60",
+    label: "text-amber-600 dark:text-amber-300",
+    value: "text-amber-700 dark:text-amber-300",
+    iconBg: "bg-amber-100 dark:bg-amber-950/50",
+    icon: "text-amber-600 dark:text-amber-300",
+  },
+} as const;
+
 export default function ProfitDashboardByType() {
   const { language } = useTranslation();
   const orderTypeLabel = (orderType: string) =>
@@ -170,7 +200,7 @@ export default function ProfitDashboardByType() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 dark:border-emerald-800/60">
+          <Card className="bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-white border-emerald-200 dark:border-emerald-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -184,7 +214,7 @@ export default function ProfitDashboardByType() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200 dark:border-blue-800/60">
+          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-white border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -200,19 +230,19 @@ export default function ProfitDashboardByType() {
 
           {profitByType.map(item => {
             const Icon = item.orderType === "full_package" ? ShoppingCart : HandCoins;
-            const colorClass = item.orderType === "full_package" ? "emerald" : "amber";
+            const style = CARD_STYLE[item.orderType === "full_package" ? "full_package" : "commission"];
             
             return (
-              <Card key={item.orderType} className={`bg-gradient-to-br from-${colorClass}-50 to-white border-${colorClass}-200`}>
+              <Card key={item.orderType} className={style.card}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className={`text-sm text-${colorClass}-600 font-medium`}>{orderTypeLabel(item.orderType)}</p>
-                      <p className="text-2xl font-bold text-${colorClass}-700">${Number(item.totalProfit || 0).toFixed(2)}</p>
+                      <p className={`text-sm font-medium ${style.label}`}>{orderTypeLabel(item.orderType)}</p>
+                      <p className={`text-2xl font-bold ${style.value}`}>${Number(item.totalProfit || 0).toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground">{item.totalOrders} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })}</p>
                     </div>
-                    <div className={`p-3 bg-${colorClass}-100 rounded-xl`}>
-                      <Icon className={`h-6 w-6 text-${colorClass}-600`} />
+                    <div className={`p-3 rounded-xl ${style.iconBg}`}>
+                      <Icon className={`h-6 w-6 ${style.icon}`} />
                     </div>
                   </div>
                 </CardContent>

@@ -123,7 +123,7 @@ const [, setLocation] = useLocation();
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200 dark:border-blue-800/60">
+          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-100/50 border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -137,7 +137,7 @@ const [, setLocation] = useLocation();
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-200 dark:border-amber-800/60">
+          <Card className="bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-amber-100/50 border-amber-200 dark:border-amber-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -151,7 +151,7 @@ const [, setLocation] = useLocation();
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100/50 border-purple-200 dark:border-purple-800/60">
+          <Card className="bg-gradient-to-br from-purple-50 dark:from-purple-950/40 to-purple-100/50 border-purple-200 dark:border-purple-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -165,7 +165,7 @@ const [, setLocation] = useLocation();
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100/50 border-orange-200 dark:border-orange-800/60">
+          <Card className="bg-gradient-to-br from-orange-50 dark:from-orange-950/40 to-orange-100/50 border-orange-200 dark:border-orange-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -179,7 +179,7 @@ const [, setLocation] = useLocation();
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 dark:border-green-800/60">
+          <Card className="bg-gradient-to-br from-green-50 dark:from-green-950/40 to-green-100/50 border-green-200 dark:border-green-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -193,7 +193,7 @@ const [, setLocation] = useLocation();
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-cyan-50 to-cyan-100/50 border-cyan-200 dark:border-cyan-800/60">
+          <Card className="bg-gradient-to-br from-cyan-50 dark:from-cyan-950/40 to-cyan-100/50 border-cyan-200 dark:border-cyan-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>

@@ -179,7 +179,7 @@ const [startDate, setStartDate] = useState<string>("");
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 dark:border-blue-800/60">
+          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-100 dark:to-blue-900/40 border-blue-200 dark:border-blue-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -194,7 +194,7 @@ const [startDate, setStartDate] = useState<string>("");
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 dark:border-red-800/60">
+          <Card className="bg-gradient-to-br from-red-50 dark:from-red-950/40 to-red-100 dark:to-red-900/40 border-red-200 dark:border-red-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -208,7 +208,7 @@ const [startDate, setStartDate] = useState<string>("");
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 dark:border-green-800/60">
+          <Card className="bg-gradient-to-br from-green-50 dark:from-green-950/40 to-green-100 dark:to-green-900/40 border-green-200 dark:border-green-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -223,7 +223,7 @@ const [startDate, setStartDate] = useState<string>("");
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 dark:border-amber-800/60">
+          <Card className="bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-amber-100 dark:to-amber-900/40 border-amber-200 dark:border-amber-800/60">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>

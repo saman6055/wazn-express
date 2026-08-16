@@ -81,6 +81,39 @@ describe('dark mode is not optional', () => {
     expect(unpaired, `add a dark: variant:\n${unpaired.slice(0, 25).join('\n')}`).toEqual([]);
   });
 
+  it('never leaves a pale gradient stop without a dark counterpart', () => {
+    // `bg-gradient-to-br from-emerald-50 to-green-50` is a white card, and the
+    // earlier checks did not see it: they look for `bg-emerald-50`, not
+    // `from-emerald-50`. A hundred and thirty of these went in unnoticed, and
+    // the company finance dashboard was four white tiles on a black page.
+    const unpaired = findUnpaired(
+      new RegExp(`(?<![:\\w-])(((?:from|via|to)-(${SEMANTIC}|${GREY})-(50|100)))\\b(?!\\/)`, 'g'),
+      'dark:(?:from|via|to)',
+    );
+
+    expect(unpaired, `add a dark: gradient stop:\n${unpaired.slice(0, 25).join('\n')}`).toEqual([]);
+  });
+
+  it('never fades a gradient into solid white', () => {
+    // `from-emerald-50 to-white` is the other half of the same mistake: the
+    // pale end adapts and the white end does not, so the card ends up half
+    // dark and half paper. A translucent white — from-white/10 over a coloured
+    // header — is a deliberate sheen and stays.
+    const offenders: string[] = [];
+
+    for (const file of FILES) {
+      const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+      lines.forEach((line, i) => {
+        for (const m of line.matchAll(/(?<![:\w-])((?:from|via|to)-white)\b(?!\/)/g)) {
+          if (/dark:(?:from|via|to)-/.test(line)) continue;
+          offenders.push(`${path.relative(ROOT, file)}:${i + 1}  ${m[1]}`);
+        }
+      });
+    }
+
+    expect(offenders, `pair these with dark:to-card or similar:\n${offenders.slice(0, 25).join('\n')}`).toEqual([]);
+  });
+
   it('never leaves a pale border without a dark counterpart', () => {
     const unpaired = findUnpaired(
       new RegExp(`(?<![:\\w-])((border-(${SEMANTIC}|${GREY})-(100|200|300)))\\b(?!\\/)`, 'g'),

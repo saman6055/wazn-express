@@ -141,7 +141,7 @@ export default function HomeModern() {
       </header>
 
       {/* ================= Hero ================= */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white">
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 dark:from-slate-950/40 to-white">
         <div className="pointer-events-none absolute -top-24 end-0 h-96 w-96 rounded-full bg-sky-300/30 blur-3xl" />
         <div className="pointer-events-none absolute top-40 start-0 h-80 w-80 rounded-full bg-violet-300/25 blur-3xl" />
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 md:px-6 lg:grid-cols-2 lg:py-20">
@@ -261,7 +261,7 @@ export default function HomeModern() {
         </section>
 
         {/* Sea */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-sky-50 to-white py-16 md:py-24">
+        <section className="relative overflow-hidden bg-gradient-to-b from-sky-50 dark:from-sky-950/40 to-white py-16 md:py-24">
           <Cloud className="wxdrift absolute top-8 end-[12%] h-12 w-28 text-white" />
           <div className="mx-auto max-w-3xl px-4 text-center md:px-6">
             <h2 className="text-3xl font-black text-slate-900 dark:text-slate-200 md:text-5xl">
@@ -281,7 +281,7 @@ export default function HomeModern() {
         </section>
 
         {/* Road */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-white to-slate-50 py-16 md:py-24">
+        <section className="relative overflow-hidden bg-gradient-to-b from-white to-slate-50 dark:to-slate-950/40 py-16 md:py-24">
           <div className="mx-auto max-w-3xl px-4 text-center md:px-6">
             <h2 className="text-3xl font-black text-slate-900 dark:text-slate-200 md:text-5xl">
               {L({ ku: "گەیاندنی ناوخۆیی", en: "Comprehensive road delivery" , ar: "توصيل بري شامل", zh: "全面的陆运派送" })}{" "}
@@ -350,7 +350,7 @@ export default function HomeModern() {
         <div className="grid gap-5 md:grid-cols-2">
           {why.map((w, i) => (
             <div key={i} className="flex gap-4 rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-card p-6 shadow-sm">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-violet-100 text-violet-600 dark:text-violet-300">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 dark:from-sky-900/40 to-violet-100 dark:to-violet-900/40 text-violet-600 dark:text-violet-300">
                 <w.icon className="h-6 w-6" />
               </span>
               <div>

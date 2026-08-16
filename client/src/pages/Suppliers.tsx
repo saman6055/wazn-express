@@ -250,7 +250,7 @@ const [searchQuery, setSearchQuery] = useState("");
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 dark:border-orange-800/60">
+          <Card className="bg-gradient-to-br from-orange-50 dark:from-orange-950/40 to-orange-100 dark:to-orange-900/40 border-orange-200 dark:border-orange-800/60">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -264,7 +264,7 @@ const [searchQuery, setSearchQuery] = useState("");
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 dark:border-green-800/60">
+          <Card className="bg-gradient-to-br from-green-50 dark:from-green-950/40 to-green-100 dark:to-green-900/40 border-green-200 dark:border-green-800/60">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -278,7 +278,7 @@ const [searchQuery, setSearchQuery] = useState("");
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 dark:border-blue-800/60">
+          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-100 dark:to-blue-900/40 border-blue-200 dark:border-blue-800/60">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -292,7 +292,7 @@ const [searchQuery, setSearchQuery] = useState("");
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 dark:border-amber-800/60">
+          <Card className="bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-amber-100 dark:to-amber-900/40 border-amber-200 dark:border-amber-800/60">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>

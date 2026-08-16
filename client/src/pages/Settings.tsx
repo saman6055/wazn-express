@@ -794,7 +794,7 @@ const [companyData, setCompanyData] = useState({
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* USD to IQD */}
-                <div className="p-4 border rounded-lg bg-gradient-to-r from-green-50 to-emerald-50">
+                <div className="p-4 border rounded-lg bg-gradient-to-r from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center">
                       <span className="text-lg">🇺🇸</span>
@@ -848,7 +848,7 @@ const [companyData, setCompanyData] = useState({
                 </div>
 
                 {/* USD to RMB */}
-                <div className="p-4 border rounded-lg bg-gradient-to-r from-red-50 to-orange-50">
+                <div className="p-4 border rounded-lg bg-gradient-to-r from-red-50 dark:from-red-950/40 to-orange-50 dark:to-orange-950/40">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-950/40 flex items-center justify-center">
                       <span className="text-lg">🇺🇸</span>
@@ -1037,7 +1037,7 @@ function ProductAttributesSettings() {
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="bg-gradient-to-l from-violet-50 to-purple-50 border-b">
+      <CardHeader className="bg-gradient-to-l from-violet-50 dark:from-violet-950/40 to-purple-50 dark:to-purple-950/40 border-b">
         <CardTitle className="flex items-center gap-2">
           <Tag className="h-5 w-5 text-violet-600 dark:text-violet-300" />
           {pickLang(language, { ku: "زانیاری کاڵا", en: "Product Info", ar: "معلومات المنتج", zh: "商品信息" })}
@@ -1528,7 +1528,7 @@ function PortalThemeSettings() {
       name: pickLang(language, { ku: "نیۆبروتاڵیست", en: "Neobrutalist", ar: "نيوبروتاليست", zh: "新粗野主义" }),
       nameEn: "Neobrutalist",
       description: pickLang(language, { ku: "دیزاینێکی تایبەت و جوان - بە بۆردەری ئەستوور و شادۆی بۆڵد و ڕەنگی ئینیدگۆ", en: "A distinctive, attractive design - with thick borders, bold shadows, and indigo color", ar: "تصميم مميز وجذاب - بحدود سميكة وظلال بارزة ولون نيلي", zh: "独特出彩的设计——粗边框、醒目阴影和靛蓝色" }),
-      preview: "bg-gradient-to-br from-amber-50 to-indigo-100",
+      preview: "bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-indigo-100 dark:to-indigo-900/40",
       accent: "from-indigo-500 to-violet-600"
     }
   ];

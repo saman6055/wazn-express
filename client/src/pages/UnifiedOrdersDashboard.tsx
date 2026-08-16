@@ -174,7 +174,7 @@ export default function UnifiedOrdersDashboard() {
         <div className="grid grid-cols-3 gap-6">
           {/* Weekly Trend Chart */}
           <Card className="col-span-2 border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
+            <CardHeader className="border-b bg-gradient-to-r from-slate-50 dark:from-slate-950/40 to-gray-50 dark:to-gray-950/40">
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
                 {pickLang(language, { ku: 'ڕەوتی هەفتانە', en: 'Weekly Trend', ar: 'الاتجاه الأسبوعي', zh: '每周趋势' })}
@@ -217,7 +217,7 @@ export default function UnifiedOrdersDashboard() {
 
           {/* Type Distribution Pie Chart */}
           <Card className="border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
+            <CardHeader className="border-b bg-gradient-to-r from-slate-50 dark:from-slate-950/40 to-gray-50 dark:to-gray-950/40">
               <CardTitle className="flex items-center gap-2">
                 <Gem className="h-5 w-5 text-purple-500 dark:text-purple-400" />
                 {pickLang(language, { ku: 'دابەشبوونی جۆرەکان', en: 'Type Distribution', ar: 'توزيع الأنواع', zh: '类型分布' })}
@@ -261,7 +261,7 @@ export default function UnifiedOrdersDashboard() {
         <div className="grid grid-cols-3 gap-6">
           {/* Status Overview */}
           <Card className="border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
+            <CardHeader className="border-b bg-gradient-to-r from-slate-50 dark:from-slate-950/40 to-gray-50 dark:to-gray-950/40">
               <CardTitle className="flex items-center gap-2">
                 <RefreshCw className="h-5 w-5 text-blue-500 dark:text-blue-400" />
                 {pickLang(language, { ku: 'بارودۆخی ئۆردەرەکان', en: 'Order Status', ar: 'حالة الطلبات', zh: '订单状态' })}
@@ -290,7 +290,7 @@ export default function UnifiedOrdersDashboard() {
 
           {/* Recent Activity */}
           <Card className="col-span-2 border-0 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
+            <CardHeader className="border-b bg-gradient-to-r from-slate-50 dark:from-slate-950/40 to-gray-50 dark:to-gray-950/40">
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-orange-500 dark:text-orange-400" />
                 {pickLang(language, { ku: 'چالاکییە دواییەکان', en: 'Recent Activity', ar: 'النشاط الأخير', zh: '最近活动' })}
@@ -302,7 +302,7 @@ export default function UnifiedOrdersDashboard() {
                 <div className="space-y-4">
                   {filteredOrders.slice(0, 5).map((order, i) => (
                     <div key={i} className="flex items-center gap-4 rounded-lg border p-3 hover:bg-gray-50 transition-colors">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-100 to-indigo-100">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-100 dark:from-purple-900/40 to-indigo-100 dark:to-indigo-900/40">
                         <Package className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                       </div>
                       <div className="flex-1">
@@ -326,7 +326,7 @@ export default function UnifiedOrdersDashboard() {
 
         {/* Filters & Table */}
         <Card className="border-0 shadow-lg">
-          <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-gray-50">
+          <CardHeader className="border-b bg-gradient-to-r from-slate-50 dark:from-slate-950/40 to-gray-50 dark:to-gray-950/40">
             <div className="flex items-center justify-between">
               <CardTitle>{pickLang(language, { ku: 'لیستی ئۆردەرەکان', en: 'Orders List', ar: 'قائمة الطلبات', zh: '订单列表' })}</CardTitle>
               <div className="flex items-center gap-2">

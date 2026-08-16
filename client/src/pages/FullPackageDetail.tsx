@@ -921,7 +921,7 @@ export default function FullPackageDetail() {
             <div className="lg:col-span-2 space-y-6">
               {/* Product Info Card */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-blue-50 to-white">
+                <CardHeader className="border-b bg-gradient-to-l from-blue-50 dark:from-blue-950/40 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
                       <Package className="h-5 w-5 text-blue-600 dark:text-blue-300" />
@@ -1030,7 +1030,7 @@ export default function FullPackageDetail() {
 
               {/* Product Images Gallery */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-indigo-50 to-white">
+                <CardHeader className="border-b bg-gradient-to-l from-indigo-50 dark:from-indigo-950/40 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
                       <Image className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
@@ -1060,7 +1060,7 @@ export default function FullPackageDetail() {
 
               {/* Customer Info Card */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-emerald-50 to-white">
+                <CardHeader className="border-b bg-gradient-to-l from-emerald-50 dark:from-emerald-950/40 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-emerald-100 dark:bg-emerald-950/40 rounded-lg">
                       <User className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
@@ -1099,7 +1099,7 @@ export default function FullPackageDetail() {
             <div className="space-y-6">
               {/* Pricing Card */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-green-50 to-white">
+                <CardHeader className="border-b bg-gradient-to-l from-green-50 dark:from-green-950/40 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
                       <DollarSign className="h-5 w-5 text-green-600 dark:text-green-300" />
@@ -1188,7 +1188,7 @@ export default function FullPackageDetail() {
                   </div>
 
                   {/* Profit */}
-                  <div className={`p-4 rounded-xl ${totalProfit >= 0 ? "bg-gradient-to-l from-green-100 to-green-50 border border-green-200 dark:border-green-800/60" : "bg-gradient-to-l from-red-100 to-red-50 border border-red-200 dark:border-red-800/60"}`}>
+                  <div className={`p-4 rounded-xl ${totalProfit >= 0 ? "bg-gradient-to-l from-green-100 dark:from-green-900/40 to-green-50 dark:to-green-950/40 border border-green-200 dark:border-green-800/60" : "bg-gradient-to-l from-red-100 dark:from-red-900/40 to-red-50 dark:to-red-950/40 border border-red-200 dark:border-red-800/60"}`}>
                     <div className="flex justify-between items-center">
                       <div>
                         <span className="font-semibold block">{t("fullPackage.profit")}</span>
@@ -1209,7 +1209,7 @@ export default function FullPackageDetail() {
                     const isFullyPaid = advancePaid >= totalSelling && totalSelling > 0;
                     if (advancePaid <= 0) return null;
                     return (
-                      <div className="rounded-xl border-2 border-teal-200 dark:border-teal-800/60 bg-gradient-to-l from-teal-50 to-emerald-50 p-4 space-y-2">
+                      <div className="rounded-xl border-2 border-teal-200 dark:border-teal-800/60 bg-gradient-to-l from-teal-50 dark:from-teal-950/40 to-emerald-50 dark:to-emerald-950/40 p-4 space-y-2">
                         <div className="flex items-center gap-2 mb-1">
                           <DollarSign className="h-4 w-4 text-teal-600 dark:text-teal-300" />
                           <span className="text-sm font-bold text-teal-800 dark:text-teal-200">{pickLang(language, { ku: "پوختەی پارەدان", en: "Payment summary", ar: "ملخص الدفع", zh: "付款摘要" })}</span>
@@ -1248,7 +1248,7 @@ export default function FullPackageDetail() {
 
               {/* Status & Date Card */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-blue-50 to-white">
+                <CardHeader className="border-b bg-gradient-to-l from-blue-50 dark:from-blue-950/40 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
                       <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-300" />
@@ -1289,7 +1289,7 @@ export default function FullPackageDetail() {
 
               {/* Notes */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-purple-50 to-white">
+                <CardHeader className="border-b bg-gradient-to-l from-purple-50 dark:from-purple-950/40 to-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
                       <FileText className="h-5 w-5 text-purple-600 dark:text-purple-300" />
@@ -1309,7 +1309,7 @@ export default function FullPackageDetail() {
 
               {/* Quick Actions */}
               <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gradient-to-l from-gray-50 to-white">
+                <CardHeader className="border-b bg-gradient-to-l from-gray-50 dark:from-gray-950/40 to-white">
                   <CardTitle className="text-sm">{t("fullPackage.actionsColumn")}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 space-y-2">
