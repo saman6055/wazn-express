@@ -21,6 +21,8 @@ import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
 import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
+import { BAND_CLASS, BAND_MEANING, ageLabel, batchAge } from "@shared/batchAge";
+import { cn } from "@/lib/utils";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import {
   FILTER_LABEL,
@@ -1185,6 +1187,25 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           </Badge>
                         </div>
                       )}
+                      {/* How long this one has been open.
+                          Green for the first three weeks, amber past twenty
+                          days, red past thirty. On a list sorted by date, a
+                          shipment that is late and one that nobody closed
+                          look identical — both are just an old row. */}
+                      {(() => {
+                        const age = batchAge(batch as never);
+                        if (age.band === "settled") return null;
+                        return (
+                          <div className="mt-1">
+                            <span
+                              className={cn("inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold", BAND_CLASS[age.band])}
+                              title={pickLang(language, BAND_MEANING[age.band])}
+                            >
+                              {pickLang(language, ageLabel(age.days))}
+                            </span>
+                          </div>
+                        );
+                      })()}
                       {/* One click from the list to wherever the carrier says
                           the shipment is — the number is no use sitting here. */}
                       {(batch.awbNumber || batch.containerNumber) && (

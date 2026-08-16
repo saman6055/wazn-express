@@ -11,6 +11,7 @@ import {
   findLanded,
   watchDecision,
 } from "@shared/flightWatch";
+import { BAND_MEANING, overdueBatches } from "@shared/batchAge";
 
 /**
  * Watching for our flights to land, and telling everybody once they have.
@@ -123,6 +124,36 @@ export async function checkFlights(now = new Date()): Promise<void> {
   }
 
   await moveLandedBatchesToCustoms(batches, now);
+  await reportOverdueBatches(batches, now);
+}
+
+/**
+ * Shipments that have been open far too long.
+ *
+ * Thirty days and still not delivered means either something went wrong or
+ * nobody closed it, and on a list sorted by date those look the same as every
+ * other old row. Only red ones are reported: an amber badge on the screen is
+ * enough for something merely slower than usual, and alerting on those is how
+ * alerts become wallpaper.
+ *
+ * One digest rather than one alert each, and only when there are any.
+ */
+async function reportOverdueBatches(batches: WatchableRow[], now: Date): Promise<void> {
+  const overdue = overdueBatches(batches, now);
+  if (overdue.length === 0) return;
+
+  const lines = overdue
+    .slice(0, 10)
+    .map((batch) => `• ${batch.batchCode || `#${batch.id}`} — ${batch.days} ڕۆژ (${batch.status ?? "?"})`);
+  if (overdue.length > 10) lines.push(`… و ${overdue.length - 10} باچی تر`);
+
+  await notifyStaffAlert({
+    action: "batches_overdue",
+    category: "batches",
+    severity: "warning",
+    title: `⏳ ${overdue.length} باچ زیاتر لە ٣٠ ڕۆژە کراوەن`,
+    content: [BAND_MEANING.red.ku, "", ...lines].join("\n"),
+  }).catch(() => undefined);
 }
 
 /** A landing: written down first, announced second. */
