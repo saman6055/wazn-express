@@ -67,6 +67,26 @@ export const superAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+/**
+ * Admins, plus the read-only auditor.
+ *
+ * For anything an auditor genuinely needs and an ordinary staff account has
+ * no business reading — the audit log above all. "Who changed this figure,
+ * and when" is the first question asked about a number that looks wrong, and
+ * an auditor locked out of the answer can only report that something is odd.
+ *
+ * Safe to widen because the read-only rule already refuses every mutation
+ * before this runs (server/_core/trpc.ts), so this can only ever open reads.
+ * It is not the same as making the auditor an admin: adminProcedure also
+ * covers the staff list, which returns password hashes with every row.
+ */
+export const auditorProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!["super_admin", "admin", "auditor"].includes(ctx.user.role)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+  }
+  return next({ ctx });
+});
+
 export const accountantProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (!["super_admin", "admin", "accountant", "auditor"].includes(ctx.user.role)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Accountant access required" });

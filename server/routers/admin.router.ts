@@ -3,7 +3,7 @@ import { z } from "zod";
 import { DASHBOARD_FIGURE_IDS, type DashboardFigureId } from "@shared/dashboardExplain";
 import { eq, desc } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
-import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
+import { staffProcedure, adminProcedure, accountantProcedure, auditorProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
@@ -500,7 +500,7 @@ export const usersRouter = router({
 
 export const auditLogsRouter = router({
     // Advanced list with filters
-    list: adminProcedure
+    list: auditorProcedure
       .input(z.object({
         limit: z.number().optional().default(100),
         offset: z.number().optional().default(0),
@@ -544,14 +544,14 @@ export const auditLogsRouter = router({
       }),
     
     // Get single audit log by ID
-    getById: adminProcedure
+    getById: auditorProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return db.getAuditLogById(input.id);
       }),
     
     // Get audit logs for specific entity
-    getByEntity: adminProcedure
+    getByEntity: auditorProcedure
       .input(z.object({
         entityType: z.string(),
         entityId: z.number(),
@@ -568,12 +568,12 @@ export const auditLogsRouter = router({
       }),
     
     // Get audit log statistics
-    getStats: adminProcedure.query(async () => {
+    getStats: auditorProcedure.query(async () => {
       return db.getAuditLogStats();
     }),
     
     // Get available filters (for dropdowns)
-    getFilters: adminProcedure.query(async () => {
+    getFilters: auditorProcedure.query(async () => {
       return {
         categories: [
           { value: 'customer', label: 'کڕیارەکان' },

@@ -100,6 +100,9 @@ describe("who can call what", () => {
       "customerProcedure",
       "staffProcedure",
       "accountantProcedure",
+      // Admins plus the read-only auditor. Only ever reads: the blanket
+      // mutation refusal in _core/trpc.ts runs before it.
+      "auditorProcedure",
       "adminProcedure",
       "superAdminProcedure",
     ]);
